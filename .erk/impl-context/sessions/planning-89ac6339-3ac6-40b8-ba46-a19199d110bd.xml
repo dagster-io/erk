@@ -1,0 +1,1186 @@
+<session>
+  <meta branch="plnd/objective-nodes-screen-03-05-1119" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-incremental-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-incremental-dispatch&lt;/command-name&gt;
+&lt;command-args&gt;"/Users/schrockn/.claude/plans/unified-floating-spindle.md"&lt;/command-args&gt;</user>
+  <user># /erk:pr-incremental-dispatch
+
+## Goal
+
+Dispatch a plan written in plan mode against an existing PR's branch for remote AI implementation, without creating a separate planned PR.
+
+## Steps
+
+### 1. Find the plan file
+
+Search for the most recent plan file in `~/.claude/plans/` (same as plan-save discovery). Store the path as `PLAN_FILE`.
+
+If no plan file found, tell the user to write a plan in plan mode first and stop.
+
+### 2. Get PR context
+
+If `"/Users/schrockn/.claude/plans/unified-floating-spindle.md"` contains a PR number, use that. Otherwise, run:
+
+```bash
+gh pr view --json number,title,headRefName
+```
+
+to get the current branch's PR. If no PR found, ask the user to specify one and stop.
+
+Store the PR number as `PR_NUMBER`.
+
+### 3. Confirm with user
+
+Show the user:
+
+- Plan title (first `# ` heading from the plan file)
+- PR number and title
+- "Dispatching plan against PR #NNNN (branch: xxx). Proceed?"
+
+Wait for confirmation before continuing.
+
+### 4. Run dispatch
+
+```bash
+erk exec incremental-dispatch --plan-file "$PLAN_FILE" --pr $PR_NUMBER --format json
+```
+
+### 5. Display results
+
+Parse the JSON output and display:
+
+- PR URL
+- Workflow URL
+- Any errors
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15749" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15749}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01CLsq4EoB4C7fxCHUPsKWf8">
+    <param name="query">select:Read,Bash</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15749" cache_read_input_tokens="0" output_tokens="169" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15749, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CLsq4EoB4C7fxCHUPsKWf8">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WieirJnD3ibVxnb7r1cYek">
+    <param name="file_path">/Users/schrockn/.claude/plans/unified-floating-spindle.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3974" cache_read_input_tokens="15749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3974}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WieirJnD3ibVxnb7r1cYek">
+     1→# Colorize Objective Nodes Screen
+     2→
+     3→## Context
+     4→
+     5→The objective nodes modal screen (image 1) shows "impl" for merged/closed PRs because `compute_lifecycle_display()` reads the `lifecycle_stage` header field first, which is set to "impl" during implementation and never updated when the PR is merged/closed. The PR state metadata should override this stale header value for terminal states (MERGED, CLOSED).
+     6→
+     7→Additionally, the nodes screen looks visually sparse compared to the Planned PRs dashboard (image 2). The dashboard has colored header rows, styled cursor/hover, and better visual density. The nodes screen should match this look.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Fix stage for merged/closed PRs
+    12→
+    13→**File**: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+    14→
+    15→In `compute_lifecycle_display()`, after reading the header field (line 30), check `pr_state` for terminal states and override the header value:
+    16→
+    17→```python
+    18→stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+    19→
+    20→# Terminal PR states override header field (header may be stale)
+    21→if plan.metadata:
+    22→    pr_state = plan.metadata.get("pr_state")
+    23→    if pr_state == "MERGED":
+    24→        stage = "merged"
+    25→    elif pr_state == "CLOSED":
+    26→        stage = "closed"
+    27→
+    28→# Fall back to inferring from PR metadata (existing logic, only when stage is still None)
+    29→if stage is None and plan.metadata:
+    30→    ...existing inference...
+
+... [81 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QhLAxxG6U3uhYjBwA1b5ov">
+    <param name="command">gh pr view --json number,title,headRefName 2&gt;&amp;1</param>
+    <param name="description">Get current branch's PR info</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3974" cache_read_input_tokens="15749" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3974, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QhLAxxG6U3uhYjBwA1b5ov">
+{"headRefName":"plnd/objective-nodes-screen-03-05-1119","number":8778,"title":"Add objective nodes detail modal (b keybinding)"}
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_012W6Q1VqUWrEzjKMp6p6ZWY">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1806" cache_read_input_tokens="19723" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1806, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012W6Q1VqUWrEzjKMp6p6ZWY">
+
+  </tool_result>
+  <assistant>Dispatching plan against **PR #8778** — "Add objective nodes detail modal (b keybinding)" (branch: `plnd/objective-nodes-screen-03-05-1119`).
+
+**Plan**: Colorize Objective Nodes Screen</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1327" cache_read_input_tokens="21529" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1327}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01X3BHn7RuQd47QDCtPMALwv">
+    <param name="questions">[{'question': 'Dispatch this plan against PR #8778 (Add objective nodes detail modal)?', '...[truncated 88 chars]...PR #8778'}, {'label': 'Cancel', 'description': 'Do not dispatch'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1327" cache_read_input_tokens="21529" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1327, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X3BHn7RuQd47QDCtPMALwv">
+User has answered your questions: "Dispatch this plan against PR #8778 (Add objective nodes detail modal)?"="Yes, dispatch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EbvQfb8eJx5GcAzGKL3L6k">
+    <param name="command">erk exec incremental-dispatch --plan-file "/Users/schrockn/.claude/plans/unified-floating-spindle.md" --pr 8778 --format json 2&gt;&amp;1</param>
+    <param name="description">Dispatch plan against PR #8778</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="22856" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 340, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EbvQfb8eJx5GcAzGKL3L6k">
+Exit code 1
+Syncing master with origin/master...
+✓ master synced with origin/master
+Syncing branch: plnd/objective-nodes-screen-03-05-1119
+Committing plan to branch...
+{"success": false, "error": "Push failed: Failed to push branch 'plnd/objective-nodes-screen-03-05-1119' to remote 'origin'\nCommand: git push origin plnd/objective-nodes-screen-03-05-1119\nExit code: 1\nstderr: To https://github.com/dagster-io/erk.git\n ! [rejected]            plnd/objective-nodes-screen-03-05-1119 -&gt; plnd/objective-nodes-screen-03-05-1119 (non-fast-forward)\nerror: failed to push some refs to 'https://github.com/dagster-io/erk.git'\nhint: Updates were rejected because the tip of your current branch is behind\nhint: its remote counterpart. If you want to integrate the remote changes,\nhint: use 'git pull' before pushing again.\nhint: See the 'Note about fast-forwards' in 'git push --help' for details."}
+
+Syncing master with origin/master...
+✓ master synced with origin/master
+Syncing branch: plnd/objective-nodes-screen-03-05-1119
+Committing plan to branch...
+{"success": false, "error": "Push failed: Failed to push branch 'plnd/objective-nodes-screen-03-05-1119' to remote 'origin'\nCommand: git push origin plnd/objective-nodes-screen-03-05-1119\nExit code: 1\nstderr: To https://github.com/dagster-io/erk.git\n ! [rejected]            plnd/objective-nodes-screen-03-05-1119 -&gt; plnd/objective-nodes-screen-03-05-1119 (non-fast-forward)\nerror: failed to push some refs to 'https://github.com/dagster-io/erk.git'\nhint: Updates were rejected because the tip of your current branch is behind\nhint: its remote counterpart. If you want to integrate the remote changes,\nhint: use 'git pull' before pushing again.\nhint: See the 'Note about fast-forwards' in 'git push --help' for details."}
+  </tool_result>
+  <assistant>The dispatch failed — the local branch is behind its remote counterpart. The branch needs to be synced with the remote first.
+
+Let me check the state of divergence.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="23196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 717}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011F3TVzbC9GjxPNFuyBFPQA">
+    <param name="command">git fetch origin plnd/objective-nodes-screen-03-05-1119 &amp;&amp; git log --oneline HEAD..origin/plnd/objective-nodes-screen-03-05-1119 2&gt;&amp;1</param>
+    <param name="description">Check commits the remote has that local doesn't</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="23196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 717}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011F3TVzbC9GjxPNFuyBFPQA">
+From https://github.com/dagster-io/erk
+ * branch                plnd/objective-nodes-screen-03-05-1119 -&gt; FETCH_HEAD
+00b50c21b Remove .erk/impl-context/ before submission
+b188ec8e3 Add plan for PR #8784
+e538bef46 Add plan: Colorize Objective Nodes Screen
+73003624b Address PR review comments (batch 1/1)
+c888e23d4 Address PR review comments (batch 1/1)
+29d331d16 update
+2658aa7b8 Fix test_objective_nodes_screen.py to use _build_table_rows
+6e473987d update
+fdea72c6c Add objective nodes detail modal (keybinding: b)
+7f9f0072d Remove .erk/impl-context/ before implementation
+afb5a3d10 Add plan: Objective Nodes Detail Screen
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q74axHg54dMAqfKhiD667D">
+    <param name="command">git log --oneline origin/plnd/objective-nodes-screen-03-05-1119..HEAD 2&gt;&amp;1</param>
+    <param name="description">Check commits local has that remote doesn't</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="23196" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 717, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q74axHg54dMAqfKhiD667D">
+7baf40ed5 Add incremental plan for PR #8778
+2511d5566 Add plan: Objective Nodes Detail Screen
+1f0003c46 Add /erk:pr-incremental-dispatch — dispatch local plan against existing PR (#8785)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="23913" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 703}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The local branch has diverged from the remote:
+- **Local-only**: 3 commits (including a previous incremental plan attempt)
+- **Remote-only**: 11 commits (the actual implementation + review fixes)
+
+The local branch needs to be synced with remote before dispatching.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="23913" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 703}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01WnXq6x9F8HXsSmS9pj6Uqm">
+    <param name="questions">[{'question': 'The local branch is behind remote by 11 commits and has 3 local-only commit...[truncated 322 chars]...cel', 'description': "Don't dispatch, I'll handle this manually"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="23913" output_tokens="498" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 703, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WnXq6x9F8HXsSmS9pj6Uqm">
+User has answered your questions: "The local branch is behind remote by 11 commits and has 3 local-only commits. How should I resolve this before retrying dispatch?"="Pull --rebase". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019d5V5bgo6tmpG2Dsn6z8Pk">
+    <param name="command">git pull --rebase origin plnd/objective-nodes-screen-03-05-1119 2&gt;&amp;1</param>
+    <param name="description">Rebase local commits on top of remote</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="24616" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 658, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019d5V5bgo6tmpG2Dsn6z8Pk">
+Exit code 128
+error: cannot pull with rebase: Your index contains uncommitted changes.
+error: Please commit or stash them.
+
+error: cannot pull with rebase: Your index contains uncommitted changes.
+error: Please commit or stash them.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LNeTum46JGdsKkzwAdwsjL">
+    <param name="command">git status --short 2&gt;&amp;1</param>
+    <param name="description">Check what uncommitted changes exist</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="25274" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 176, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LNeTum46JGdsKkzwAdwsjL">
+D  .erk/impl-context/plan.md
+D  .erk/impl-context/ref.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NxAcd9eSDSypLTRYUMvbAt">
+    <param name="command">git stash &amp;&amp; git pull --rebase origin plnd/objective-nodes-screen-03-05-1119 2&gt;&amp;1</param>
+    <param name="description">Stash staged deletions, then rebase</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="25450" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 120, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NxAcd9eSDSypLTRYUMvbAt">
+Saved working directory and index state WIP on plnd/objective-nodes-screen-03-05-1119: 7baf40ed5 Add incremental plan for PR #8778
+From https://github.com/dagster-io/erk
+ * branch                plnd/objective-nodes-screen-03-05-1119 -&gt; FETCH_HEAD
+Rebasing (1/3)Rebasing (2/3)dropping 2511d5566d5a71ffe14ca9d36c115b4c0d2cb732 Add plan: Objective Nodes Detail Screen -- patch contents already upstream
+Rebasing (3/3)Successfully rebased and updated refs/heads/plnd/objective-nodes-screen-03-05-1119.
+  </tool_result>
+  <assistant>Rebase succeeded. Now let me drop the stash (it was just staged deletions of impl-context files that remote already handled) and retry the dispatch.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="25570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 295}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SZrS34vv4bfrcBQ6s5sHaG">
+    <param name="command">git stash drop 2&gt;&amp;1</param>
+    <param name="description">Drop the stash</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="25570" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SZrS34vv4bfrcBQ6s5sHaG">
+Dropped refs/stash@{0} (95b20420222252da86a2e35a42789a4fb5e34bec)
+  </tool_result>
+  <assistant>Now retrying the dispatch.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2962" cache_read_input_tokens="25865" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2962}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JMVy9cTUKAkhU72oA3HgcB">
+    <param name="command">erk exec incremental-dispatch --plan-file "/Users/schrockn/.claude/plans/unified-floating-spindle.md" --pr 8778 --format json 2&gt;&amp;1</param>
+    <param name="description">Retry dispatch after rebase</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2962" cache_read_input_tokens="25865" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2962, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JMVy9cTUKAkhU72oA3HgcB">
+Syncing branch: plnd/objective-nodes-screen-03-05-1119
+Committing plan to branch...
+✓ Branch pushed to remote
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched
+{"success": true, "pr_number": 8778, "branch_name": "plnd/objective-nodes-screen-03-05-1119", "workflow_run_id": "22743250929", "workflow_url": "https://github.com/dagster-io/erk/actions/runs/22743250929"}
+  </tool_result>
+  <assistant>Dispatch succeeded.
+
+- **PR**: #8778 — Add objective nodes detail modal (b keybinding)
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22743250929
+
+The plan "Colorize Objective Nodes Screen" is now being implemented remotely against PR #8778.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="28827" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Y4GiZHYofyYxW64w6F2QYv">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="28827" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y4GiZHYofyYxW64w6F2QYv">
+
+  </tool_result>
+  <assistant>The dispatch is complete — nothing more to do here. The remote workflow is running at the link above. You can monitor it there or check back on PR #8778 for the implementation commits.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="924" cache_read_input_tokens="29128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 924}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01SFcf8ji9nrdWUc7CYY66hW">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="924" cache_read_input_tokens="29128" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 924, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SFcf8ji9nrdWUc7CYY66hW">
+User has approved exiting plan mode. You can now proceed.
+  </tool_result>
+  <assistant>Dispatch complete. The workflow is running at https://github.com/dagster-io/erk/actions/runs/22743250929.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="146" cache_read_input_tokens="30052" output_tokens="35" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 146, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>incremental dispatch struggled a bit here. i bet we can imrpove it to be more robust and not error like it did here
+
+it also left the pr with this change:
+
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+        modified:   .erk/impl-context/ref.json
+
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="1458" cache_read_input_tokens="30198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1458}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the incremental-dispatch implementation to understand the current behavior and failure modes.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1458" cache_read_input_tokens="30198" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1458}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01GYEDyJGSqwNkw8zcCMvq6b">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1458" cache_read_input_tokens="30198" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1458, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GYEDyJGSqwNkw8zcCMvq6b">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_0139hTWABDVuh6uVqB4oEfWQ">
+    <param name="description">Explore incremental-dispatch impl</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 573 chars]...rk/impl-context/ref.json` after running
+
+Be thorough - read the full implementation files.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2467" cache_read_input_tokens="31656" output_tokens="280" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2467, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0139hTWABDVuh6uVqB4oEfWQ">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary document.
+
+## Summary: `erk exec incremental-dispatch` Implementation Analysis
+
+I've thoroughly reviewed the implementation of the `erk exec incremental-dispatch` command and identified the root causes of the two issues you mentioned.
+
+### **Current Implementation Overview**
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+
+The command flow (lines 61-187):
+
+1. **Validates PR exists and is OPEN** (lines 79-87)
+2. **Reads plan content** (lines 91-92)
+3. **Ensures trunk is synced** (line 99) - calls `ensure_trunk_synced()`
+4. **Syncs local branch ref to remote** (lines 102-105):
+   - `git.remote.fetch_branch(repo_root, "origin", branch_name)` - fetches from remote
+   - Creates local branch if needed: `git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)`
+5. **Commits impl-context files to branch** (lines 108-123):
+   - Calls `build_impl_context_files()` to create dict of `{".erk/impl-context/plan.md": content, ".erk/impl-context/ref.json": json_content}`
+   - Uses `git.commit.commit_files_to_branch()` to commit directly to the branch without checkout
+6. **Pushes to remote** (lines 126-132):
+   - `git.remote.push_to_remote(repo_root, "origin", branch_name, set_upstream=False, force=False)`
+   - Fails if push is rejected (non-fast-forward, etc.)
+7. **Triggers workflow** (lines 156-161)
+
+### **Root Cause #1: Non-Fast-Forward Push Rejection**
+
+**Problem:** When the local branch is behind the remote, the push fails instead of syncing first.
+
+
+... [144 lines omitted] ...
+
+- If `git.commit.commit_files_to_branch()` raises an exception before cleanup
+- `ensure_trunk_synced()` (lines 26-81) - Validates trunk is fast-forward synced, raises SystemExit on failure
+- PR not found error
+- PR not open error
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2734" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2734}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key implementation files directly to verify the findings and design the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2734" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2734}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019nCge5z1yh64jaKbT4anb1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2734" cache_read_input_tokens="34123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2734}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019nCge5z1yh64jaKbT4anb1">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
+     2→
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
+     5→
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-plan label — just an OPEN PR.
+     9→"""
+    10→
+    11→import json
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    17→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    18→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    19→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    20→from erk_shared.context.helpers import (
+    21→    require_context,
+    22→    require_git,
+    23→    require_github,
+    24→    require_repo_root,
+    25→    require_time,
+    26→)
+    27→from erk_shared.context.types import NoRepoSentinel
+    28→from erk_shared.gateway.git.remote_ops.types import PushError
+    29→from erk_shared.gateway.github.parsing import (
+    30→    construct_workflow_run_url,
+
+... [165 lines omitted] ...
+
+    82→        _output_error(output_format, f"PR #{pr_number} not found")
+    86→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+    97→        _output_error(output_format, "Not in a git repository")
+   129→    if isinstance(push_result, PushError):
+   130→        _output_error(output_format, f"Push failed: {push_result.message}")
+   189→def _output_error(output_format: str, message: str) -&gt; None:
+   190→    """Output error in the requested format."""
+   192→        click.echo(json.dumps({"success": False, "error": message}))
+   194→        user_output(click.style("Error: ", fg="red") + message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HjzpYLKP3Gz1BurEigb1Lu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2734" cache_read_input_tokens="34123" output_tokens="261" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2734, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HjzpYLKP3Gz1BurEigb1Lu">
+     1→"""Production implementation of Git commit operations using subprocess."""
+     2→
+     3→import os
+     4→import subprocess
+     5→import tempfile
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+     9→from erk_shared.gateway.git.lock import wait_for_index_lock
+    10→from erk_shared.gateway.time.abc import Time
+    11→from erk_shared.subprocess_utils import run_subprocess_with_context
+    12→
+    13→
+    14→class RealGitCommitOps(GitCommitOps):
+    15→    """Real implementation of Git commit operations using subprocess."""
+    16→
+    17→    def __init__(self, time: Time) -&gt; None:
+    18→        """Initialize RealGitCommitOps with Time provider.
+    19→
+    20→        Args:
+    21→            time: Time provider for lock waiting
+    22→        """
+    23→        self._time = time
+    24→
+    25→    # ============================================================================
+    26→    # Mutation Operations
+    27→    # ============================================================================
+    28→
+    29→    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -&gt; None:
+    30→        """Stage specific files for commit."""
+
+... [204 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6681" cache_read_input_tokens="36857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6681}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the branch ops gateway and the dispatch_cmd for comparison.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6681" cache_read_input_tokens="36857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6681}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01GuBVyUq9trVcDytcaLSno6">
+    <param name="query">select:Grep</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6681" cache_read_input_tokens="36857" output_tokens="5262" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6681, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GuBVyUq9trVcDytcaLSno6">
+
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QrYyLU3EeJE9bqgY4m9Y9Y">
+    <param name="pattern">def force_update_ref|def update_ref|def create_branch</param>
+    <param name="path">packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6282" cache_read_input_tokens="43538" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6282}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QrYyLU3EeJE9bqgY4m9Y9Y">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:28:    def create_branch(
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:30:    def create_branch(
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:27:    def create_branch(
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:111:    def create_branch(
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:33:    def create_branch(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Tgg6V91uV53BA4qLCeaniX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6282" cache_read_input_tokens="43538" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6282}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tgg6V91uV53BA4qLCeaniX">
+     1→"""Production implementation of Git branch operations using subprocess."""
+     2→
+     3→import re
+     4→import subprocess
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+     8→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+     9→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    10→from erk_shared.gateway.git.lock import wait_for_index_lock
+    11→from erk_shared.gateway.time.abc import Time
+    12→from erk_shared.gateway.time.real import RealTime
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealGitBranchOps(GitBranchOps):
+    17→    """Production implementation of branch operations using subprocess.
+    18→
+    19→    All git operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def __init__(self, time: Time | None = None) -&gt; None:
+    23→        """Initialize RealGitBranchOps with optional Time provider.
+    24→
+    25→        Args:
+    26→            time: Time provider for lock waiting. Defaults to RealTime().
+    27→        """
+    28→        self._time = time if time is not None else RealTime()
+    29→
+    30→    def create_branch(
+
+... [435 lines omitted] ...
+
+   228→            RuntimeError: If the specified branch doesn't exist
+   239→        error_msg = (
+   240→            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   243→        raise RuntimeError(error_msg)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RfoxcrFgjKJk8SLvVNsx14">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6282" cache_read_input_tokens="43538" output_tokens="318" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6282, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RfoxcrFgjKJk8SLvVNsx14">
+     1→"""Abstract base class for Git branch operations.
+     2→
+     3→This sub-gateway extracts branch operations from the main Git gateway,
+     4→including both mutation and query operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+    17→
+    18→
+    19→class GitBranchOps(ABC):
+    20→    """Abstract interface for Git branch operations.
+    21→
+    22→    This interface contains both mutation and query operations for branches.
+    23→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def create_branch(
+    28→        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    29→    ) -&gt; BranchCreated | BranchAlreadyExists:
+    30→        """Create a new branch without checking it out.
+
+... [288 lines omitted] ...
+
+    84→            subprocess.CalledProcessError: If git command fails
+   184→            RuntimeError: If the specified branch doesn't exist
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10121" cache_read_input_tokens="49820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10121}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how dispatch_cmd.py handles this and look at the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10121" cache_read_input_tokens="49820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10121}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015eFrwMnbtMoCdp9wGzJTW4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">170</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10121" cache_read_input_tokens="49820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10121}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015eFrwMnbtMoCdp9wGzJTW4">
+   170→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   171→            "Cannot dispatch closed PRs for automated implementation."
+   172→        )
+   173→        raise SystemExit(1)
+   174→
+   175→    return ValidatedPlannedPR(
+   176→        number=plan_number,
+   177→        title=pr_result.title,
+   178→        url=pr_result.url,
+   179→        branch_name=pr_result.head_ref_name,
+   180→    )
+   181→
+   182→
+   183→def _dispatch_planned_pr_plan(
+   184→    ctx: ErkContext,
+   185→    *,
+   186→    repo: RepoContext,
+   187→    validated: ValidatedPlannedPR,
+   188→    submitted_by: str,
+   189→    base_branch: str,
+   190→    ref: str | None,
+   191→) -&gt; DispatchResult:
+   192→    """Dispatch a validated planned-PR plan for implementation.
+   193→
+   194→    For planned-PR plans, the branch and PR already exist. This function:
+   195→    - Syncs local branch ref to remote using git plumbing (no checkout)
+   196→    - Commits .erk/impl-context/ files directly to branch (no checkout)
+   197→    - Pushes and triggers the workflow with plan_backend="planned_pr"
+   198→
+   199→    Args:
+
+... [50 lines omitted] ...
+
+   216→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   247→    if isinstance(push_result, PushError):
+   248→        raise UserFacingCliError(push_result.message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_014ZgxFZz64sVieabgjK4Fn4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10121" cache_read_input_tokens="49820" output_tokens="919" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10121, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014ZgxFZz64sVieabgjK4Fn4">
+     1→"""Unit tests for incremental-dispatch command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.types import PRDetails
+    13→
+    14→
+    15→def _make_pr(number: int, *, state: str = "OPEN", branch: str = "feature-branch") -&gt; PRDetails:
+    16→    return PRDetails(
+    17→        number=number,
+    18→        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+    19→        title=f"Test PR #{number}",
+    20→        body="PR body",
+    21→        state=state,
+    22→        is_draft=False,
+    23→        base_ref_name="main",
+    24→        head_ref_name=branch,
+    25→        is_cross_repository=False,
+    26→        mergeable="MERGEABLE",
+    27→        merge_state_status="CLEAN",
+    28→        owner="test-owner",
+    29→        repo="test-repo",
+    30→        labels=["erk-pr"],
+
+... [114 lines omitted] ...
+
+    60→    assert result.exit_code == 0, f"Failed: {result.output}"
+    86→    """Test error when PR does not exist."""
+   102→    assert "not found" in output["error"]
+   106→    """Test error when PR is not OPEN."""
+   123→    assert "CLOSED" in output["error"]
+   142→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8461" cache_read_input_tokens="59941" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me also check the fake implementations for `update_local_ref` and `is_branch_checked_out` to ensure test support exists.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8461" cache_read_input_tokens="59941" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BQw1bH4BZ1EYNUPPaoB24j">
+    <param name="pattern">def update_local_ref|def is_branch_checked_out</param>
+    <param name="path">packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8461" cache_read_input_tokens="59941" output_tokens="1959" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BQw1bH4BZ1EYNUPPaoB24j">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:54:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py:37:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:282:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:61:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py:92:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:157:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:419:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:251:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py:158:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py:42:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+  </tool_result>
+  <assistant>Good — `update_local_ref` and `is_branch_checked_out` both exist across all implementations (real, fake, dry-run, printing). Now let me check the fake's `is_branch_checked_out` to see how to configure it in tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2621" cache_read_input_tokens="68402" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2621}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XVsBjMyRYfpvvi6TanqoLk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+    <param name="offset">150</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2621" cache_read_input_tokens="68402" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2621}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XVsBjMyRYfpvvi6TanqoLk">
+   150→    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+   151→        """Find worktree path for given branch name in fake data."""
+   152→        worktrees = self.list_worktrees(repo_root)
+   153→        for wt in worktrees:
+   154→            if wt.branch == branch:
+   155→                return wt.path
+   156→        return None
+   157→
+   158→    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+   159→        """Check if a branch is already checked out in any worktree."""
+   160→        return self.find_worktree_for_branch(repo_root, branch)
+   161→
+   162→    def is_worktree_clean(self, worktree_path: Path) -&gt; bool:
+   163→        """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
+   164→        # Check if path exists (LBYL pattern)
+   165→        if worktree_path not in self._existing_paths:
+   166→            return False
+   167→
+   168→        # Check if worktree is marked as dirty
+   169→        if worktree_path in self._dirty_worktrees:
+   170→            return False
+   171→
+   172→        return True
+   173→
+   174→    def _is_parent(self, parent: Path, child: Path) -&gt; bool:
+   175→        """Check if parent is an ancestor of child."""
+   176→        return child.is_relative_to(parent)
+   177→
+   178→    def _is_sentinel_path(self, path: Path) -&gt; bool:
+   179→        """Check if path is a SentinelPath (pure test mode).
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pxypb3xZheyaojcn32Zo5L">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="offset">245</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2621" cache_read_input_tokens="68402" output_tokens="344" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2621, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pxypb3xZheyaojcn32Zo5L">
+   245→
+   246→        Returns list of (repo_root, branch, target_sha) tuples.
+   247→        This property is for test assertions only.
+   248→        """
+   249→        return self._updated_refs.copy()
+   250→
+   251→    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+   252→        """Update a local branch ref (fake implementation).
+   253→
+   254→        Tracks the update for test assertions and updates branch_heads state.
+   255→        """
+   256→        self._updated_refs.append((repo_root, branch, target_sha))
+   257→        self._branch_heads[branch] = target_sha
+   258→
+   259→    def link_mutation_tracking(
+   260→        self,
+   261→        created_branches: list[tuple[Path, str, str, bool]],
+   262→        deleted_branches: list[str],
+   263→        checked_out_branches: list[tuple[Path, str]],
+   264→        detached_checkouts: list[tuple[Path, str]],
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1246" cache_read_input_tokens="71023" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1246}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1246" cache_read_input_tokens="71023" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1246}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NPzoUzerB7yVk5djHwUiqV">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1246" cache_read_input_tokens="71023" output_tokens="1976" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1246, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NPzoUzerB7yVk5djHwUiqV">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01SP9aaSeQ7ReiiW15dvMApH">
+    <param name="file_path">/Users/schrockn/.claude/plans/typed-baking-cake.md</param>
+    <param name="content"># Fix incremental-dispatch robustness: branch sync and index desync
+
+## Context
+
+`erk exec...[truncated 4202 chars]..., run `erk exec incremental-dispatch` — push succeeds and `git status` is clean afterward
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2344" cache_read_input_tokens="72269" output_tokens="1415" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SP9aaSeQ7ReiiW15dvMApH">
+File created successfully at: /Users/schrockn/.claude/plans/typed-baking-cake.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012oS1zyWiqk4uATwWukGpnB">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run pytest for incremental dispatch and PR dispatch tests'}, {'tool': 'Bash', 'prompt': 'run git status to verify clean state'}]</param>
+    <param name="plan"># Fix incremental-dispatch robustness: branch sync and index desync
+
+## Context
+
+`erk exec...[truncated 4202 chars]..., run `erk exec incremental-dispatch` — push succeeds and `git status` is clean afterward
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1454" cache_read_input_tokens="74613" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1454, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012oS1zyWiqk4uATwWukGpnB">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/typed-baking-cake.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix incremental-dispatch robustness: branch sync and index desync
+Current context: (wt:colorize-obj-nodes-screen-03-05-1523) (br:plnd/objective-nodes-screen-03-05-1119) (pr:#8778)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/obje"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 89ac6339-3ac6-40b8-ba46-a19199d110bd \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/typed-baking-cake.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Let me display the plan and ask about next steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="737" cache_read_input_tokens="76067" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 737}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GGf4SSEXNWzoChSkMs9rFj">
+    <param name="file_path">/Users/schrockn/.claude/plans/typed-baking-cake.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="737" cache_read_input_tokens="76067" output_tokens="84" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 737, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GGf4SSEXNWzoChSkMs9rFj">
+     1→# Fix incremental-dispatch robustness: branch sync and index desync
+     2→
+     3→## Context
+     4→
+     5→`erk exec incremental-dispatch` fails with a non-fast-forward push rejection when the local branch is behind the remote. It also leaves staged changes to `.erk/impl-context/ref.json` after running when the branch is checked out in the current worktree. Both issues stem from the branch sync logic on lines 101-105 of `incremental_dispatch.py` — when the branch IS checked out, it skips updating the local ref to match the remote.
+     6→
+     7→The same pattern exists in `dispatch_cmd.py` (lines 220-225) and should be fixed there too.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Fix branch sync for checked-out branches
+    12→
+    13→**File**: `src/erk/cli/commands/exec/scripts/incremental_dispatch.py` (lines 101-105)
+    14→
+    15→Current code only syncs the local ref when the branch is NOT checked out:
+    16→
+    17→```python
+    18→git.remote.fetch_branch(repo_root, "origin", branch_name)
+    19→if git.worktree.is_branch_checked_out(repo_root, branch_name) is None:
+    20→    git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
+    21→```
+    22→
+    23→Replace with logic that handles both cases using the existing `update_local_ref` gateway method:
+    24→
+    25→```python
+    26→git.remote.fetch_branch(repo_root, "origin", branch_name)
+    27→checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
+    28→if checked_out_path is None:
+    29→    git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
+    30→else:
+
+... [60 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_019szHMN3Fsfhg7s7w43tYg4">
+    <param name="questions">[{'question': 'Fix incremental-dispatch robustness: branch sync and index desync\nCurrent ...[truncated 449 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1720" cache_read_input_tokens="76804" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1720, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019szHMN3Fsfhg7s7w43tYg4">
+User has answered your questions: "Fix incremental-dispatch robustness: branch sync and index desync
+Current context: (wt:colorize-obj-nodes-screen-03-05-1523) (br:plnd/objective-nodes-screen-03-05-1119) (pr:#8778)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01ESdR4Fksg8Xn8vqTndYp8v">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1794" cache_read_input_tokens="78524" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1794, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ESdR4Fksg8Xn8vqTndYp8v">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_015YY1XkuLrwaz1rSBUBWEVz">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="80318" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015YY1XkuLrwaz1rSBUBWEVz">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="89ac6339-3ac6-40b8-ba46-a19199d110bd" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="89ac6339-3ac6-40b8-ba46-a19199d110bd" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "89ac6339-3ac6-40b8-ba46-a19199d110bd" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "89ac6339-3ac6-40b8-ba46-a19199d110bd" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "89ac6339-3ac6-40b8-ba46-a19199d110bd" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "89ac6339-3ac6-40b8-ba46-a19199d110bd" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2271" cache_read_input_tokens="80880" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2271}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Running plan-save workflow.
+
+**Branch slug**: `fix-incremental-dispatch-sync`
+
+**Summary**: Fixes two bugs in incremental-dispatch where the command fails with a non-fast-forward push rejection when the local branch is behind remote, and leaves stale staged changes to impl-context files when the branch is checked out in the current worktree. Uses existing update_local_ref gateway method and adds index reset after plumbing commits.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2271" cache_read_input_tokens="80880" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2271}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RHC5MnUkURH9eRshn5eMR1">
+    <param name="command">erk exec plan-save --format json --session-id="89ac6339-3ac6-40b8-ba46-a19199d110bd" --bra...[truncated 290 chars]...xisting update_local_ref gateway method and adds index reset after plumbing commits." 2&gt;&amp;1</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2271" cache_read_input_tokens="80880" output_tokens="423" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2271, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RHC5MnUkURH9eRshn5eMR1">
+{"success": true, "plan_number": 8789, "plan_url": "https://github.com/dagster-io/erk/pull/8789", "title": "[erk-plan] Fix incremental-dispatch robustness: branch sync and index desync", "branch_name": "plnd/fix-incremental-dispatch-s-03-05-1642", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/plnd/colorize-obj-nodes-screen-03-05-1523/.erk/scratch/sessions/89ac6339-3ac6-40b8-ba46-a19199d110bd/plan_snapshots/000001-018c153c"}
+  </tool_result>
+  <assistant>Plan saved successfully. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="733" cache_read_input_tokens="83151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 733}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MWr9ok6tetQ5ESKCn7ssQq">
+    <param name="command">erk exec upload-impl-session --session-id "89ac6339-3ac6-40b8-ba46-a19199d110bd" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="733" cache_read_input_tokens="83151" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 733, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MWr9ok6tetQ5ESKCn7ssQq">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan "Fix incremental-dispatch robustness: branch sync and index desync" saved as draft PR #8789
+URL: https://github.com/dagster-io/erk/pull/8789</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="83884" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 252}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01Mhq6kGvnW86mDgRDGLWKsG">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run pytest for incremental dispatch and PR dispatch tests'}, {'tool': 'Bash', 'prompt': 'run git status to verify clean state'}]</param>
+    <param name="plan"># Fix incremental-dispatch robustness: branch sync and index desync
+
+## Context
+
+`erk exec...[truncated 4202 chars]..., run `erk exec incremental-dispatch` — push succeeds and `git status` is clean afterward
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="83884" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 252, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mhq6kGvnW86mDgRDGLWKsG">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8789 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8789:
+  In current wt:    source "$(erk br co --for-plan 8789 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8789 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8789 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8789 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8789:
+  In current wt:  erk br co --for-plan 8789
+  In new wt:      erk br co --new-slot --for-plan 8789
+
+Dispatch plan #8789:
+  CLI command:    erk pr dispatch 8789
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8789 saved. Here are next steps:
+
+**Implement plan #8789:**
+```
+In current wt:    source "$(erk br co --for-plan 8789 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8789 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8789 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8789 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8789:**
+```
+In current wt:  erk br co --for-plan 8789
+In new wt:      erk br co --new-slot --for-plan 8789
+```
+
+**Dispatch plan #8789:**
+```
+CLI command:    erk pr dispatch 8789
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="84136" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 530, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
