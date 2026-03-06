@@ -25,7 +25,6 @@ from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan
 
-
 _SLUG_MAX_LEN = 30
 
 
