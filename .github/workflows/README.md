@@ -6,7 +6,7 @@ This directory contains GitHub Actions workflows for the erk project.
 
 ### GitHub PAT: `ERK_QUEUE_GH_PAT`
 
-A Personal Access Token (PAT) with the following permissions is required for workflows that push commits or trigger other workflows:
+A Personal Access Token (PAT) with the following permissions is required for workflows that push commits, dispatch other workflows, or upload workflow session artifacts:
 
 **Required permissions:**
 
@@ -24,28 +24,35 @@ The built-in `GITHUB_TOKEN` has two limitations that require using a PAT:
 
 **Used in:**
 
-- `learn.yml` - Checkout (for push), dispatch to plan-implement
-- `plan-implement.yml` - Checkout (for push)
+- `ci.yml` - `fix-formatting` checkout for auto-push
+- `learn.yml` - Checkout, branch updates, dispatch to `plan-implement`
+- `one-shot.yml` - Remote setup and PR submission
+- `plan-implement.yml` - Remote setup, push, and session uploads
+- `pr-address.yml` - Remote setup for Claude-driven PR updates
+- `pr-rebase.yml` - Remote setup for rebase operations
+- `pr-rewrite.yml` - Remote setup for rewrite operations
 
 ### Claude API Secrets
 
-| Secret                    | Purpose                                 | Used in                                                       |
-| ------------------------- | --------------------------------------- | ------------------------------------------------------------- |
-| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code CLI authentication          | plan-implement, dignified-python-review, tripwires-review     |
-| `ANTHROPIC_API_KEY`       | Anthropic API authentication (fallback) | plan-implement, dignified-python-review, tripwires-review, ci |
+| Secret                    | Purpose                                 | Used in                                                                                              |
+| ------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code CLI authentication          | `code-reviews`, `learn`, `one-shot`, `plan-implement`, `pr-address`, `pr-rebase`, `pr-rewrite`       |
+| `ANTHROPIC_API_KEY`       | Anthropic API authentication (fallback) | `ci`, `code-reviews`, `learn`, `one-shot`, `plan-implement`, `pr-address`, `pr-rebase`, `pr-rewrite` |
 
 ## Workflow Overview
 
-| Workflow                      | Trigger               | Purpose                                                     |
-| ----------------------------- | --------------------- | ----------------------------------------------------------- |
-| `ci.yml`                      | push, PR              | Run tests, linting, type checking                           |
-| `learn.yml`                   | issue labeled, manual | Create branch and dispatch to plan-implement for extraction |
-| `plan-implement.yml`          | workflow_dispatch     | Execute Claude Code to implement plans                      |
-| `pr-rebase.yml`               | workflow_dispatch     | Rebase PR with AI-powered conflict resolution               |
-| `dignified-python-review.yml` | PR                    | Automated Python code review                                |
-| `tripwires-review.yml`        | PR                    | Automated tripwire violation detection                      |
-| `docs.yml`                    | push to master        | Build and deploy documentation                              |
-| `build-ci-image.yml`          | manual                | Build Docker image for CI                                   |
+| Workflow             | Trigger                | Purpose                                                     |
+| -------------------- | ---------------------- | ----------------------------------------------------------- |
+| `ci.yml`             | push, PR, manual       | Repo-local formatting, validation, and CI failure summaries |
+| `code-reviews.yml`   | PR                     | Convention-based shipped review capability entrypoint       |
+| `docs.yml`           | push to master, manual | Build and deploy MkDocs documentation                       |
+| `docs-v2.yml`        | manual                 | Build and deploy the docs-v2 site                           |
+| `learn.yml`          | issue labeled, manual  | Create a branch and dispatch learning work                  |
+| `one-shot.yml`       | manual                 | Plan and implement a task in one remote workflow            |
+| `plan-implement.yml` | manual                 | Execute Claude Code to implement a saved plan               |
+| `pr-address.yml`     | manual                 | Address PR feedback with Claude                             |
+| `pr-rebase.yml`      | manual                 | Rebase a PR with AI-assisted conflict handling              |
+| `pr-rewrite.yml`     | manual                 | Rewrite a PR branch with Claude                             |
 
 ## Repository Settings
 

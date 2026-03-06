@@ -4,7 +4,7 @@ last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 tripwires:
   - action: "creating .claude/ markdown commands without formatting"
-    warning: "Run 'make prettier' via devrun after editing markdown. CI runs prettier-check as a separate job and will fail on unformatted files."
+    warning: "Run 'make prettier' via devrun after editing markdown. CI will either push an auto-fix commit or fail on unformatted markdown, so don't rely on CI to clean it up."
   - action: "attempting to use prettier on Python files"
     warning: "Prettier only formats markdown in erk. Python uses ruff format. See formatter-tools.md for the complete matrix."
   - action: "investigating a bot complaint about formatting"
@@ -27,7 +27,7 @@ Erk uses **formatter separation by file type**:
 This separation prevents formatter conflicts and ensures each tool operates on file types it understands. Prettier cannot parse Python syntax; ruff cannot parse markdown tables.
 
 <!-- Source: Makefile, prettier and format targets -->
-<!-- Source: .github/workflows/ci.yml, prettier job -->
+<!-- Source: .github/workflows/ci.yml, fix-formatting job -->
 
 See the `prettier` and `format` targets in the Makefile for the exact command invocations.
 
@@ -45,33 +45,21 @@ prettier --write '**/*.md' --ignore-path .gitignore
 
 See [makefile-prettier-ignore-path.md](makefile-prettier-ignore-path.md) for the complete pattern and edge cases.
 
-## CI Architecture: Prettier as a Separate Job
+## CI Architecture: Markdown Formatting in `fix-formatting`
 
-The CI workflow runs Prettier as an independent job, not part of the Python format/lint sequence:
+The current CI workflow treats markdown formatting as part of the single mutating `fix-formatting` job:
 
-```yaml
-jobs:
-  prettier: # Independent job
-    runs-on: ubuntu-latest
-    steps:
-      - uses: ./.github/actions/setup-prettier
-      - run: prettier --check '**/*.md' --ignore-path .gitignore
+<!-- Source: .github/workflows/ci.yml, fix-formatting job (lines ~53-74) and format job (lines ~35-40) -->
 
-  format: # Separate Python job
-    runs-on: ubuntu-latest
-    steps:
-      - run: make format-check
-```
+The `fix-formatting` job runs three mutating steps in sequence: `make docs-fix`, `uv run ruff format`, and `prettier --write '**/*.md' --ignore-path .gitignore`. If any files change, it commits and pushes. The separate `format` job runs `make format-check` as a read-only Python formatting validation.
 
-**Why separate jobs**: Prettier and ruff have different dependencies (Node.js vs Python). Separating them allows:
+**Why this structure**:
 
-1. **Parallel execution** - Both jobs run simultaneously
-2. **Granular failure reporting** - Know immediately if the failure is markdown or Python
-3. **Targeted autofix** - The autofix job can apply prettier fixes without touching Python formatting
+1. **Single mutating boundary** - docs sync, Python formatting, and Prettier fixes happen in one place
+2. **Cleaner validation graph** - downstream jobs either validate the already-clean commit or skip while the new run starts
+3. **Less duplicated coordination** - review workflows do not need to know about markdown-fixing internals
 
-The `autofix` job has permission to run `prettier --write **/*.md` when the prettier job fails, automatically fixing markdown formatting and pushing a commit.
-
-See [autofix-job-needs.md](autofix-job-needs.md) for how the autofix job depends on formatter job results.
+`format` still exists as a read-only Python formatting check. Markdown is fixed earlier by `fix-formatting`, then validated indirectly by the restarted run and downstream docs checks.
 
 ## The Devrun Delegation Pattern
 
@@ -101,7 +89,7 @@ Prettier failures typically indicate:
 2. **Transient artifacts weren't cleaned up** - Check for `.erk/impl-context/*.md` files that should have been deleted
 3. **Manual formatting attempt** - Let prettier handle line wrapping and list indentation, don't try to match it manually
 
-The CI prettier job output shows exactly which files have formatting violations. The autofix job will attempt to fix them automatically, but only if the PR is from the same repository (forks don't have write permissions).
+If `fix-formatting` detects markdown changes on a same-repo PR, it pushes an auto-fix commit. On `master` pushes or fork PRs, it fails instead of mutating the branch.
 
 ## Related Documentation
 

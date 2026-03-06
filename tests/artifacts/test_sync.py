@@ -20,7 +20,6 @@ from erk.artifacts.sync import (
     _sync_hooks,
     _sync_workflows,
     sync_artifacts,
-    sync_dignified_review,
 )
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
@@ -621,77 +620,40 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
     assert (target_dir / ".github" / "actions" / "setup-claude-code" / "action.yml").exists()
 
 
-def test_sync_dignified_review_copies_all_artifacts(tmp_path: Path) -> None:
-    """sync_dignified_review copies skill, workflow, and prompt."""
-    # Create bundled .claude/ with dignified-python skill
+def test_sync_artifacts_includes_code_reviews_workflow(tmp_path: Path) -> None:
+    """sync_artifacts copies the unified review workflow for code-reviews-system."""
     bundled_claude = tmp_path / "bundled_claude"
-    skill_dir = bundled_claude / "skills" / "dignified-python"
-    skill_dir.mkdir(parents=True)
-    (skill_dir / "dignified-python.md").write_text("# Skill", encoding="utf-8")
-    (skill_dir / "dignified-python-core.md").write_text("# Core", encoding="utf-8")
+    bundled_claude.mkdir()
 
-    # Create bundled .github/ with workflow and prompt
     bundled_github = tmp_path / "bundled_github"
     workflow_dir = bundled_github / "workflows"
     workflow_dir.mkdir(parents=True)
-    (workflow_dir / "dignified-python-review.yml").write_text("name: Review", encoding="utf-8")
-
-    prompt_dir = bundled_github / "prompts"
-    prompt_dir.mkdir(parents=True)
-    (prompt_dir / "dignified-python-review.md").write_text("# Prompt", encoding="utf-8")
+    (workflow_dir / "code-reviews.yml").write_text("name: code-reviews", encoding="utf-8")
 
     # Create target directory
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
-    ):
-        result = sync_dignified_review(target_dir)
+    config = ArtifactSyncConfig(
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_claude,
+            bundled_github_dir=bundled_github,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="1.0.0",
+        ),
+        installed_capabilities=frozenset({"code-reviews-system"}),
+        sync_capabilities=False,
+        backend="claude",
+    )
+    result = sync_artifacts(target_dir, force=False, config=config)
 
     assert result.success is True
-    # 2 skill files + 1 workflow + 1 prompt = 4 files
-    assert result.artifacts_installed == 4
-    assert "dignified-review" in result.message
+    assert result.artifacts_installed == 1
 
-    # Verify skill was copied
-    assert (target_dir / ".claude" / "skills" / "dignified-python" / "dignified-python.md").exists()
-    assert (
-        target_dir / ".claude" / "skills" / "dignified-python" / "dignified-python-core.md"
-    ).exists()
-
-    # Verify workflow was copied
-    workflow_path = target_dir / ".github" / "workflows" / "dignified-python-review.yml"
+    workflow_path = target_dir / ".github" / "workflows" / "code-reviews.yml"
     assert workflow_path.exists()
-    assert workflow_path.read_text(encoding="utf-8") == "name: Review"
-
-    # Verify prompt was copied
-    prompt_path = target_dir / ".github" / "prompts" / "dignified-python-review.md"
-    assert prompt_path.exists()
-    assert prompt_path.read_text(encoding="utf-8") == "# Prompt"
-
-
-def test_sync_dignified_review_handles_missing_sources(tmp_path: Path) -> None:
-    """sync_dignified_review succeeds with 0 files when sources don't exist."""
-    # Create empty bundled directories
-    bundled_claude = tmp_path / "bundled_claude"
-    bundled_claude.mkdir()
-
-    bundled_github = tmp_path / "bundled_github"
-    bundled_github.mkdir()
-
-    target_dir = tmp_path / "project"
-    target_dir.mkdir()
-
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
-    ):
-        result = sync_dignified_review(target_dir)
-
-    assert result.success is True
-    assert result.artifacts_installed == 0
+    assert workflow_path.read_text(encoding="utf-8") == "name: code-reviews"
 
 
 def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> None:

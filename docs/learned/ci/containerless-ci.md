@@ -34,7 +34,7 @@ The standard `curl -fsSL https://claude.ai/install.sh | bash` approach frequentl
 
 - **Claude Code PATH**: `~/.local/bin` (not `~/.claude/local/bin`)
 - **`--dangerously-skip-permissions`**: Required for non-interactive CI execution. Works on `ubuntu-latest` because the runner executes as a non-root user (UID typically 1001).
-- **erk install**: `uv tool install -e . --with-editable ./packages/erk-shared` (via `erk-remote-setup`) or `uv tool install --from . --with ./packages/erk-shared erk` (in simpler workflows like `code-reviews.yml`).
+- **erk install**: `uv tool install -e . --with-editable ./packages/erk-shared` (via `erk-remote-setup`) or via the `setup-claude-erk` composite action (in simpler workflows like `code-reviews.yml`).
 
 ## Comparison: Container vs Container-less
 
@@ -66,7 +66,7 @@ The standard `curl -fsSL https://claude.ai/install.sh | bash` approach frequentl
 
 All current erk CI workflows use the containerless pattern:
 
-- `.github/workflows/code-reviews.yml` -- Uses `setup-claude-code` directly plus inline uv/erk steps (see [convention-based-reviews.md](convention-based-reviews.md))
+- `.github/workflows/code-reviews.yml` -- Uses `setup-claude-erk` plus `setup-claude-code` directly (see [convention-based-reviews.md](convention-based-reviews.md))
 - `.github/workflows/plan-implement.yml` -- Uses `erk-remote-setup` composite action
 - `.github/workflows/pr-address.yml` -- Uses `erk-remote-setup` composite action
 - `.github/workflows/pr-rebase.yml` -- Uses `erk-remote-setup` composite action

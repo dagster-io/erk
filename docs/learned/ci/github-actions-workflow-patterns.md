@@ -16,17 +16,17 @@ audit_result: edited
 
 # GitHub Actions Workflow Patterns
 
-Cross-cutting patterns for composing conditions and coordinating multi-job workflows in erk's CI.
+Cross-cutting patterns for composing conditions and coordinating multi-job workflows in erk's GitHub Actions setup.
 
 ## Why Compound Conditions Matter in Erk
 
-Erk's CI architecture uses **compound conditions** to coordinate 10+ parallel jobs with conditional downstream steps. A silent condition failure (typo in a step ID, wrong output key) causes the autofix job to skip when it should run, or worse, run when conditions aren't met.
+Erk's workflow architecture uses compound conditions to coordinate repo-local validation, a mutating `fix-formatting` boundary, and a separate review matrix workflow. A silent condition failure (typo in a step ID, wrong output key) causes stale validation, skipped summaries, or unnecessary runner allocation.
 
 The cost of silent failures:
 
-- **Autofix skips** → developer manually fixes issues that could auto-resolve
-- **Autofix runs prematurely** → pushes broken code, re-triggers CI loop
-- **Jobs run unnecessarily** → waste CI minutes on draft PRs or plan reviews
+- **Validation runs on stale code** → jobs execute before the formatter rerun takes over
+- **Summaries skip unexpectedly** → CI failures lose their synthesized explanation
+- **Review discovery runs unnecessarily** → advisory workflows burn CI minutes on drafts or locally-reviewed commits
 
 ## Compound Condition Failure Modes
 
@@ -43,9 +43,9 @@ The most common silent failure: referencing a step ID that doesn't exist.
 
 GitHub Actions silently evaluates the missing step as undefined, making the condition false. No error is raised.
 
-<!-- Source: .github/workflows/ci.yml, autofix job conditions -->
+<!-- Source: .github/workflows/ci.yml, ci-summarize job -->
 
-See the autofix job in `.github/workflows/ci.yml:152-163` for a production example of compound conditions across multiple job outputs. The condition checks 5 different `needs.<job>.result` values, each of which must reference an actual job name.
+See the `ci-summarize` job in `.github/workflows/ci.yml` for a production example of compound conditions across multiple upstream job results.
 
 ### Output Key Mismatch
 
@@ -59,8 +59,9 @@ Less obvious: referencing the wrong key in a step's outputs.
 ```
 
 <!-- Source: .github/workflows/ci.yml, check-submission job -->
+<!-- Source: .github/workflows/ci.yml, fix-formatting job -->
 
-See `.github/workflows/ci.yml:20-29` where the `check-submission` job exposes `skip` as an output. Multiple downstream jobs reference `needs.check-submission.outputs.skip` — if any job used `should_skip` instead, it would silently skip.
+See `.github/workflows/ci.yml` where `check-submission` exposes `skip` and `fix-formatting` exposes `pushed`. Multiple downstream jobs reference both outputs — if any job used the wrong key, it would silently skip or validate the wrong commit.
 
 ### Missing Step ID
 
@@ -109,9 +110,10 @@ GitHub Actions has three similar-sounding properties with different semantics:
 
 **Critical distinction:** Steps in job A cannot reference `steps.*` from job B. Use `needs.<job>.outputs.*` to access outputs from upstream jobs.
 
-<!-- Source: .github/workflows/ci.yml, autofix job -->
+<!-- Source: .github/workflows/ci.yml, ci-summarize job -->
+<!-- Source: .github/workflows/code-reviews.yml, discover job -->
 
-See the `autofix` job in `.github/workflows/ci.yml` for `needs.<job>.result` usage (job-level) and the `check-submission` job for `steps.<step>.outputs.*` usage (step-level within the same job).
+See `ci-summarize` in `.github/workflows/ci.yml` for `needs.<job>.result` usage and `discover` in `.github/workflows/code-reviews.yml` for `steps.<step>.outputs.*` usage within a job.
 
 ## Step Condition Patterns
 
@@ -180,8 +182,8 @@ Erk's workflows use `kebab-case` for step IDs to match the broader naming conven
 
 **Pattern:**
 
-- Descriptive, not generic: `discover-pr` not `step1`
-- Verb-noun structure: `check-submission`, `collect-failures`, `run-autofix`
+- Descriptive, not generic: `check-local-review` not `step1`
+- Verb-noun structure: `check-submission`, `fix-formatting`, `discover`
 - No abbreviations: `implementation` not `impl`
 
 <!-- Source: .github/workflows/ci.yml, all step IDs -->
@@ -190,24 +192,34 @@ Browse `.github/workflows/ci.yml` for 20+ examples of step ID naming that follow
 
 ## Multi-Job Coordination Pattern
 
-Erk's CI uses a **fan-out → fan-in** pattern:
+Erk now uses two distinct orchestration shapes:
 
-1. **Gate job** (`check-submission`) runs first, exposes `skip` output
-2. **Parallel jobs** (`format`, `lint`, `prettier`, `docs-check`, `ty`, `unit-tests`, `integration-tests`) all depend on gate job and check `needs.check-submission.outputs.skip`
-3. **Autofix job** depends on parallel style/lint jobs, checks their `result` values
+### Repo CI (`ci.yml`)
+
+1. **Gate job** (`check-submission`) runs first and exposes `skip`
+2. **Mutating boundary** (`fix-formatting`) runs next and exposes `pushed`
+3. **Parallel validation jobs** depend on both and skip when `pushed == 'true'`
+4. **Failure fan-in** (`ci-summarize`) depends on all validation jobs and inspects `needs.<job>.result`
 
 This architecture requires:
 
-- Gate job MUST expose outputs that downstream jobs reference
-- Autofix condition MUST check `needs.<job>.result` for EVERY parallel job
-- Any new parallel job MUST be added to autofix's `needs:` list and condition
+- Validation jobs MUST depend on both `check-submission` and `fix-formatting`
+- Validation jobs MUST use the correct `skip` and `pushed` outputs
+- Any new validation job that should appear in summaries MUST be added to `ci-summarize.needs`
 
-<!-- Source: .github/workflows/ci.yml, jobs structure -->
+### Review Workflow (`code-reviews.yml`)
 
-See `.github/workflows/ci.yml:20-30` for the gate job, `.github/workflows/ci.yml:32-146` for parallel jobs, and `.github/workflows/ci.yml:148-397` for the autofix fan-in.
+1. **Discover job** computes a matrix and `has_reviews`
+2. **Review job** fans out across the matrix
+
+This architecture requires:
+
+- Discovery step IDs and output keys MUST stay in sync with job outputs
+- Review execution belongs in `code-reviews.yml`, not `ci.yml`
 
 ## Related Documentation
 
-- [Autofix Job Needs](autofix-job-needs.md) - Keeping autofix job synchronized with upstream jobs
+- [CI Job Ordering Strategy](job-ordering-strategy.md) - Repo CI job ordering and `fix-formatting` gating
+- [Convention-Based Code Reviews](convention-based-reviews.md) - Separate review workflow architecture
 - [GitHub Actions Output Patterns](github-actions-output-patterns.md) - Multi-line outputs and GITHUB_OUTPUT usage
 - [Composite Action Patterns](composite-action-patterns.md) - Reusable action setup patterns

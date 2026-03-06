@@ -58,21 +58,22 @@ The automatic `github.token` is intentionally limited to repository operations f
 
 ## Operation Reference
 
-| Operation                            | Token to Use       | Why                                        |
-| ------------------------------------ | ------------------ | ------------------------------------------ |
-| Create/comment on issues             | `github.token`     | Repository-scoped operation                |
-| Create/update PRs                    | `github.token`     | Repository-scoped operation                |
-| Push commits (no CI trigger needed)  | `github.token`     | Repository-scoped operation                |
-| Push commits (must trigger CI)       | `ERK_QUEUE_GH_PAT` | `GITHUB_TOKEN` pushes don't trigger events |
-| Create gists                         | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources             |
-| Upload session to gist               | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources             |
-| Get current user (`gh api user`)     | `ERK_QUEUE_GH_PAT` | User identity is user-scoped               |
-| Checkout with PAT                    | `ERK_QUEUE_GH_PAT` | Enables pushing back to repo               |
-| Auto-commit that needs CI re-trigger | `ERK_QUEUE_GH_PAT` | `GITHUB_TOKEN` pushes don't trigger events |
+| Operation                                      | Token to Use       | Why                                                   |
+| ---------------------------------------------- | ------------------ | ----------------------------------------------------- |
+| Create/comment on issues                       | `github.token`     | Repository-scoped operation                           |
+| Create/update PRs                              | `github.token`     | Repository-scoped operation                           |
+| Push commits without needing new workflow runs | `github.token`     | Repository-scoped operation                           |
+| Push commits that must re-trigger workflows    | `ERK_QUEUE_GH_PAT` | `github.token` pushes do not fire new workflow events |
+| Create gists                                   | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources                        |
+| Upload session to gist                         | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources                        |
+| Get current user (`gh api user`)               | `ERK_QUEUE_GH_PAT` | User identity is user-scoped                          |
+| Checkout (normal workflows)                    | `github.token`     | Standard checkout for most operations                 |
+| Checkout (`fix-formatting` in `ci.yml`)        | `ERK_QUEUE_GH_PAT` | Enables push that re-triggers CI checks               |
+| Trigger CI workflows                           | `ERK_QUEUE_GH_PAT` | PAT needed for `gh workflow run` dispatch             |
 
 ## Auto-Commit Re-Triggering Pattern
 
-When CI auto-commits fixes (e.g., the `fix-formatting` job running Prettier), the push must trigger a new CI run to validate the fixed code. Pushes made with `GITHUB_TOKEN` do not trigger workflow events (a GitHub security measure to prevent infinite loops).
+When CI auto-commits fixes in `fix-formatting`, the push must trigger a new CI run to validate the fixed code. Pushes made with `github.token` do not trigger workflow events (a GitHub security measure to prevent infinite loops).
 
 **Solution:** Use `ERK_QUEUE_GH_PAT` for checkout so that `git push` triggers a new CI run. See the checkout step in `.github/workflows/ci.yml` (the `fix-formatting` job) for the canonical implementation.
 

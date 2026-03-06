@@ -14,6 +14,8 @@ tripwires:
 
 Erk runs automated code reviews on every non-draft PR via the convention-based review discovery system. This document provides a high-level overview of the review bot ecosystem.
 
+The review system is deliberately separate from repo-local `ci.yml`. Reviews run through the shipped `code-reviews-system` capability in `.github/workflows/code-reviews.yml`, while `ci.yml` stays focused on formatting, tests, and CI summaries.
+
 ## Review Bots Overview
 
 | Bot                       | Review File                                 | What It Checks                                 |
@@ -28,7 +30,7 @@ Erk runs automated code reviews on every non-draft PR via the convention-based r
 
 ## How Reviews Are Triggered
 
-Reviews are triggered by the `code-reviews.yml` GitHub Actions workflow, which runs on:
+Reviews are triggered by the `code-reviews.yml` GitHub Actions workflow, which is installed by the `code-reviews-system` capability and runs on:
 
 - `pull_request` events: `opened`, `synchronize`, `reopened`, `ready_for_review`
 - Only on **non-draft** PRs (`github.event.pull_request.draft != true`)

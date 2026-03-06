@@ -27,40 +27,54 @@ This asymmetry is architectural, not a bug. Push events are branch operations; G
 
 ## Why This Matters for CI Gating
 
-Label-based gating (like "skip autofix on plan review PRs") must work for both event types:
+Any workflow that wants to make decisions based on PR labels must handle both event types correctly:
 
 - Users can trigger CI via **pull_request events** (opening/updating PR in GitHub UI)
 - Users can trigger CI via **push events** (git push from local terminal)
 
 If your workflow only handles pull_request events, local pushes will bypass your gating logic.
 
-## Defense-in-Depth Pattern
+## Recommended Pattern
 
-The solution is two-layered label checking:
+After the CI simplification, no active repo workflow uses step-level label queries. But if you add a push-triggered workflow that must respect PR labels, this is still the correct pattern:
 
-**Layer 1: Job-level condition** (pull_request events only)
+1. **Use a job-level condition for pull_request events** when possible to avoid runner allocation
+2. **Discover the PR number in a step** for push events
+3. **Fetch labels via `gh api`**
+4. **Publish a single output** that later steps consume
 
-- Fast path: GitHub evaluates the condition before allocating a runner
-- Prevents job execution entirely if label check fails
-- Cannot work for push events (no PR context available)
+Example:
 
-**Layer 2: Step-level API query** (all events)
+```yaml
+- name: Discover PR
+  id: discover-pr
+  env:
+    GH_TOKEN: ${{ github.token }}
+  run: |
+    if [ "${{ github.event_name }}" = "pull_request" ]; then
+      echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+      exit 0
+    fi
 
-- Required path for push events: Query GitHub API to discover PR and fetch labels
-- Safety net for pull_request events: Redundant check, but provides defense-in-depth
-- Runs after checkout, so it sees current repository state
+    PR_NUMBER=$(gh api "repos/${{ github.repository }}/pulls" \
+      --jq ".[] | select(.head.ref == \"${{ github.ref_name }}\" and .state == \"open\") | .number" \
+      | head -n1)
+    echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
-<!-- Source: .github/workflows/ci.yml, autofix job -->
-
-See the `autofix` job in `.github/workflows/ci.yml` for the canonical implementation. Key steps:
-
-1. **Discover PR step**: For pull_request events, use `github.event.pull_request.number`. For push events, query `gh api repos/.../pulls` to find open PRs for the current branch.
-
-2. **Check label step**: Query `gh api repos/.../pulls/{pr_number}` to fetch labels array, then grep for the target label.
-
-3. **Consolidate conditions step**: Combine all skip conditions (has_pr, is_fork, has_plan_review_label, has_impl_folder) into a single boolean output.
-
-4. **Gate all subsequent steps**: Check `steps.should-autofix.outputs.run == 'true'` instead of repeating complex conditions.
+- name: Check label
+  id: check-label
+  if: steps.discover-pr.outputs.pr_number != ''
+  env:
+    GH_TOKEN: ${{ github.token }}
+  run: |
+    LABELS=$(gh api "repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }}" \
+      --jq '[.labels[].name] | join(\",\")')
+    if printf '%s' "$LABELS" | grep -q 'erk-plan-review'; then
+      echo "skip=true" >> "$GITHUB_OUTPUT"
+    else
+      echo "skip=false" >> "$GITHUB_OUTPUT"
+    fi
+```
 
 ## Why Not Job-Level Only?
 
@@ -70,7 +84,7 @@ A: Job-level conditions are evaluated before runner allocation. If a pull_reques
 
 Step-level queries require a runner to be allocated, checkout to complete, and API calls to execute. This wastes resources for cases that could be rejected earlier.
 
-The defense-in-depth pattern uses the fast path when available (job-level for pull_request) and falls back to the required path when necessary (step-level for push).
+The combined pattern uses the fast path when available (job-level for pull_request) and falls back to the required path when necessary (step-level for push).
 
 ## API Query Pattern
 
@@ -86,17 +100,16 @@ Use `gh api` instead of `gh pr view` because the latter requires being in a repo
 **WRONG:**
 
 ```yaml
-autofix:
-  if: |
-    github.event_name == 'push' &&
-    !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+if: |
+  github.event_name == 'push' &&
+  !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 ```
 
 This condition will always evaluate to true for push events because `github.event.pull_request` is null. The `contains()` function returns false when the array is empty/null, so the negation becomes true.
 
-The job will run even when the PR has the label, bypassing your gating logic.
+The job or step will run even when the PR has the label, bypassing your gating logic.
 
 ## Related Patterns
 
-- [Workflow Gating Patterns](workflow-gating-patterns.md) - Autofix safety pattern
+- [Workflow Gating Patterns](workflow-gating-patterns.md) - Choosing the right gating layer
 - [CI Tripwires](tripwires.md) - All CI-related tripwires

@@ -40,6 +40,8 @@ Rules triggered by matching actions in code.
 
 **adding a new CI job without including fix-formatting in its needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily.
 
+**adding code review execution to ci.yml** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Keep shipped review behavior in code-reviews.yml. Repo-local ci.yml should only own formatting, validation, and CI summaries.
+
 **adding new Claude-dependent exec scripts to workflows** → Read [Exec Script Environment Requirements](exec-script-environment-requirements.md) first. Check workflow environment: ANTHROPIC_API_KEY, GH_TOKEN, CLAUDE_CODE_OAUTH_TOKEN
 
 **adding or modifying exec scripts that use require_prompt_executor()** → Read [Exec Script Environment Requirements](exec-script-environment-requirements.md) first. Ensure workflow step has ANTHROPIC_API_KEY in environment. See exec-script-environment-requirements.md
@@ -58,7 +60,7 @@ Rules triggered by matching actions in code.
 
 **counting SKIPPED checks in the total** → Read [Check State Classification](check-state-classification.md) first. SKIPPED checks must be excluded from BOTH passing and total counts. They are subtracted from total_count at return time in parse_aggregated_check_counts().
 
-**creating .claude/ markdown commands without formatting** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Run 'make prettier' via devrun after editing markdown. CI runs prettier-check as a separate job and will fail on unformatted files.
+**creating .claude/ markdown commands without formatting** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Run 'make prettier' via devrun after editing markdown. CI will either push an auto-fix commit or fail on unformatted markdown, so don't rely on CI to clean it up.
 
 **creating a new review without checking taxonomy** → Read [Review Types Taxonomy](review-types-taxonomy.md) first. Consult this taxonomy first. Creating overlapping reviews wastes CI resources and confuses PR status checks.
 
@@ -82,15 +84,11 @@ Rules triggered by matching actions in code.
 
 **placing test files outside both tests/ and packages/\*/tests/ directories** → Read [Test Coverage Detection](test-coverage-detection.md) first. The test-coverage-review bot only searches tests/**/ and packages/\*/tests/**/ for corresponding test files. Tests placed elsewhere will not be detected and will cause false 'no tests' flags.
 
-**pushing code without running formatters locally first** → Read [Formatting Workflow Decision Tree](formatting-workflow.md) first. Format-then-commit: run ruff format (Python) and prettier (Markdown) locally and commit the formatted output BEFORE pushing. CI format checks verify but do not auto-fix. Pushing unformatted code requires a second commit to fix.
+**pushing code without running formatters locally first** → Read [Formatting Workflow Decision Tree](formatting-workflow.md) first. Format-then-commit: run ruff format (Python) and prettier (Markdown) locally before pushing. CI may auto-fix same-repo PRs, but that causes a restart and does not help on master pushes or fork PRs.
 
 **reading statusCheckRollup results immediately after push** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. After push, results show completed runs only, not in-progress. Wait for new check suite to appear before reading CI status.
 
 **referencing \_enable_secret(), \_disable_secret(), or \_display_auth_status() functions** → Read [GitHub Actions API Key Management](dual-secret-auth-model.md) first. These private functions do not exist. The logic is inline within gh_actions_api_key() in src/erk/cli/commands/admin.py.
-
-**removing test jobs from autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt intelligent fixes. See the needs array in ci.yml.
-
-**removing test jobs from autofix's needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md.
 
 **resolving git rebase modify/delete conflicts using merge-style terminology** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. In rebase, 'them' = upstream (opposite to merge). For modify/delete conflicts where the file was deleted upstream, use `git rm <file>` on the conflicted staged files, then `git rebase --continue`. Do not use `git checkout --theirs` which has inverted semantics during rebase.
 

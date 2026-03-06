@@ -33,15 +33,16 @@ This expression:
 
 ## Affected Workflows
 
-- `.github/workflows/ci.yml` — Gates the `autofix` job (Claude-driven CI fixes) at line 153
-- `.github/workflows/code-reviews.yml` — Gates code review discovery at line 11
+- `.github/workflows/ci.yml` — Gates `ci-summarize`
+- `.github/workflows/code-reviews.yml` — Gates review discovery
+- `.github/workflows/learn.yml` — Gates learning runs
+- `.github/workflows/one-shot.yml` — Gates one-shot execution
+- `.github/workflows/plan-implement.yml` — Gates remote plan implementation
+- `.github/workflows/pr-address.yml` — Gates PR feedback handling
+- `.github/workflows/pr-rebase.yml` — Gates PR rebases
+- `.github/workflows/pr-rewrite.yml` — Gates PR rewrites
 
-The autofix job has additional conditions beyond the kill switch:
-
-- Not on `master` or `main` branch
-- Not a draft PR
-- Not labeled with `erk-plan-review`
-- At least one CI check failed
+Disabling Claude does **not** disable repo validation. `ci.yml` still runs formatting, lint, docs, type checks, and tests; only Claude-powered jobs are skipped.
 
 ## Admin Command
 

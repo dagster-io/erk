@@ -105,37 +105,23 @@ Operation result:
 
 The `.*` is GitHub's syntax, not standard JSON path notation.
 
-## Defense-in-Depth Pattern
+## Current Architecture
 
-**Problem:** Job-level `if` conditions can't access PR labels on push events (no `pull_request` context).
+In the current workflow set, label filtering is handled at job level in `.github/workflows/ci.yml` and `.github/workflows/code-reviews.yml`:
 
-**Solution:** Two-layer checks:
+- `ci.yml` uses `!contains(...)` so PR plan-review labels skip jobs while push events still run safely
+- `code-reviews.yml` is PR-only, so the same job-level condition cleanly skips plan-review PRs before runner allocation
 
-1. **Job level** — Fast path for PR events with label context
-2. **Step level** — API query for push events to fetch labels via gh CLI
-
-<!-- Source: .github/workflows/ci.yml, autofix job lines 148-228 -->
-
-See the `autofix` job in `.github/workflows/ci.yml` for the complete pattern:
-
-- Job-level `if` uses `github.event.pull_request.labels.*.name` (fast, PR events only)
-- "Check erk-plan-review label" step uses `gh api` to query labels (slower, works on push events)
-
-**Why both layers:**
-
-- Job-level check skips the entire job for labeled PRs (saves CI minutes)
-- Step-level check handles push events where job-level check can't access labels
-- Double-checking prevents label bypass via direct branch pushes
+If a future push-triggered workflow needs to know the labels of an associated PR, use the API-query pattern documented in [GitHub Actions Label Queries](github-actions-label-queries.md).
 
 ## When to Use This Pattern
 
-| Scenario                             | Use Label Filtering? | Notes                                           |
-| ------------------------------------ | -------------------- | ----------------------------------------------- |
-| Skip CI for plan review PRs          | Yes                  | Standard usage (ci.yml, code-reviews.yml)       |
-| Skip autofix for submission-only PRs | Yes                  | Autofix job uses both job and step-level checks |
-| Conditional workflow dispatch        | No                   | Use workflow inputs instead                     |
-| Matrix job filtering                 | No                   | Filter in discover job, not each matrix element |
-| Filtering within a composite action  | No                   | Composite actions can't access event context    |
+| Scenario                            | Use Label Filtering? | Notes                                               |
+| ----------------------------------- | -------------------- | --------------------------------------------------- |
+| Skip CI for plan review PRs         | Yes                  | Standard usage in `ci.yml` and `code-reviews.yml`   |
+| Conditional workflow dispatch       | No                   | Use workflow inputs instead                         |
+| Matrix job filtering                | No                   | Filter in the discover job, not each matrix element |
+| Filtering within a composite action | No                   | Composite actions can't access event context        |
 
 ## Related Documentation
 
