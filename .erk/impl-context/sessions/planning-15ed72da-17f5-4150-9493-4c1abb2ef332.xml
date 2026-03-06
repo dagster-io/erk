@@ -1,0 +1,1221 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>i want to add a feature to the erk dash tui that takes advantage of the ci failures: https://github.com/dagster-io/erk/runs/65969286303
+
+a keyboard short that happens over prs with failures that fetches the pre-computed summaries</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15327" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15327}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the codebase to understand the TUI dashboard, CI failure infrastructure, and what pre-computed summaries are available.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15327" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15327}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01WtyFE6itardGYA94XfgBbH">
+    <param name="query">select:Agent,Read,Grep,Glob</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15327" cache_read_input_tokens="0" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15327, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01WtyFE6itardGYA94XfgBbH">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4333" cache_read_input_tokens="15327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4333}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01BoawSwob1FAYSxgYQMnSeV">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore TUI dashboard and keybindings</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 652 chars]...ted functionality in the TUI
+- The data model backing PR rows (what fields are available)
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4333" cache_read_input_tokens="15327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4333}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01FFEXV52T3KHJT224z23hAm">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore CI failure summaries infrastructure</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 788 chars]...hub/workflows/plan-implement.yml
+
+Also check docs/learned/ci/ for existing documentation.
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4333" cache_read_input_tokens="15327" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4333}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01TNPk1b7W7dGomz25Rqsm2S">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore PR data model and gateway</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 677 chars]...ching code
+
+Focus on src/erk/gateway/ and src/erk/domain/ or wherever the PR model lives.
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4333" cache_read_input_tokens="15327" output_tokens="999" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BoawSwob1FAYSxgYQMnSeV">
+Perfect! Now I have a comprehensive understanding. Let me create a final comprehensive summary document:
+
+## Summary: ERK TUI Dashboard Implementation
+
+Based on my thorough exploration of the erk TUI codebase, here's a complete understanding of the TUI dashboard implementation:
+
+### 1. **Keyboard Shortcuts/Keybindings Definition and Handling**
+
+**Location:** `/Users/schrockn/code/erk/src/erk/tui/app.py` (lines 59-87)
+
+**BINDINGS list structure:**
+```python
+BINDINGS = [
+    Binding("q", "exit_app", "Quit"),
+    Binding("escape", "exit_app", "Quit"),
+    Binding("r", "refresh", "Refresh"),
+    Binding("?", "help", "Help"),
+    Binding("j", "cursor_down", "Down", show=False),      # vim-style navigation
+    Binding("k", "cursor_up", "Up", show=False),          # vim-style navigation
+    Binding("enter", "show_detail", "Detail"),            # enter detail view
+    Binding("space", "show_detail", "Detail", show=False),
+    Binding("o", "toggle_objective_filter", "Objective", show=False),
+    Binding("p", "open_pr", "Open PR"),
+    Binding("n", "open_run", "Run"),
+    Binding("c", "view_comments", "Comments", show=False),
+    Binding("h", "view_checks", "Checks", show=False),    # Opens CI check modal
+    Binding("i", "show_implement", "Implement"),
+    Binding("v", "view_plan_body", "View", show=False),
+    Binding("l", "launch", "Launch"),
+    Binding("slash", "start_filter", "Filter", key_display="/"),
+
+... [207 lines omitted] ...
+
+- **Phase 2:** Asynchronously fetches CI failure summaries from the ci-summarize job
+    """Fetch CI failure summaries from ci-summarize job logs"""
+    conclusion: str | None   # "success", "failure", "cancelled", etc. None if not completed
+  </tool_result>
+  <tool_result tool="toolu_01FFEXV52T3KHJT224z23hAm">
+Perfect! Now I have a comprehensive understanding of the CI failure summary infrastructure. Let me provide a detailed summary:
+
+## Summary: CI Failure Summary Infrastructure in Erk
+
+I've thoroughly explored the CI failure detection and storage system in erk. Here's a comprehensive overview:
+
+### 1. **Architecture Overview**
+
+The CI failure summarization system uses a two-stage pipeline:
+
+```
+Failing CI Check
+  ↓
+ci-summarize Job (ci.yml) Runs
+  ↓
+erk exec ci-generate-summaries Fetches Job Logs &amp; Calls Haiku
+  ↓
+ERK-CI-SUMMARY Markers Embedded in Job Output
+  ↓
+Markers Parsed &amp; Stored as dict[check_name, summary_text]
+  ↓
+TUI CheckRunsScreen Displays as Blockquotes
+```
+
+### 2. **CI Failure Detection &amp; Storage**
+
+**Files:**
+- `/Users/schrockn/code/erk/.github/workflows/ci.yml` (lines 434-478)
+- `/Users/schrockn/code/erk/.github/workflows/plan-implement.yml`
+
+
+... [163 lines omitted] ...
+
+- Individual job failures don't stop other jobs from being summarized
+  - What specific check/test failed (file names, test names)
+  - Error message or root cause
+5. Returns `dict[str, str]` (empty dict on any failure, gracefully degraded)
+- **unit-tests (3.12)** — failure ([details](...))
+  &gt; - Test `test_foo()` failed in `src/bar.py`
+  &gt; - AttributeError: 'NoneType' has no attribute 'value'
+- `/Users/schrockn/code/erk/docs/learned/ci/ci-failure-summarization.md` - Complete architecture, patterns, and tripwires
+This infrastructure enables erk to automatically generate human-readable summaries of CI failures using Haiku, then display them alongside check details in the TUI for quick triage without context-switching to GitHub.
+  </tool_result>
+  <tool_result tool="toolu_01TNPk1b7W7dGomz25Rqsm2S">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary document:
+
+## Summary
+
+I've completed a thorough analysis of how PR data flows from GitHub into the erk TUI dashboard. Here's what I found:
+
+### 1. PR Data Model
+
+**Primary Types** (in `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`):
+
+- **`PullRequestInfo`** (frozen dataclass): The main PR data model with fields:
+  - `number`, `state`, `url`, `is_draft`, `title`
+  - **Check-related**: `checks_passing` (bool | None), `checks_counts` (tuple[int, int] | None = (passing, total))
+  - `has_conflicts`, `review_decision`, `review_thread_counts`
+  - `head_branch`, `base_ref_name`
+  - `will_close_target` (True if "Closes #N" keywords detected)
+
+- **`PRCheckRun`** (frozen dataclass): Individual check run details:
+  - `name`: Check name (e.g., "CI / unit-tests")
+  - `status`: "completed", "in_progress", "queued", "pending"
+  - `conclusion`: "success", "failure", "cancelled", etc. (None if not completed)
+  - `detail_url`: Link to check run detail page
+
+- **`PRReviewThread`** (frozen dataclass): Review thread with comments and resolved status
+
+### 2. Display Data Model
+
+**`PlanRowData`** (in `/Users/schrockn/code/erk/src/erk/tui/data/types.py`):
+
+The TUI displays PR data through a frozen dataclass with 48+ fields including:
+
+... [130 lines omitted] ...
+
+| `fetch_ci_summaries()` | Get failure summaries from logs | `packages/erk-shared/.../plan_data_provider/real.py:514` |
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="9630" cache_read_input_tokens="19660" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9630}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I notice there's already an `h` keybinding that opens `CheckRunsScreen` with two-phase loading (check runs + CI summaries). Let me read the key files to understand what's different about what you want.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="9630" cache_read_input_tokens="19660" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9630}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cc91GYQxD132fy6hYh2oii">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/screens/check_runs_screen.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9630" cache_read_input_tokens="19660" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9630}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cc91GYQxD132fy6hYh2oii">
+     1→"""Modal screen displaying failing CI check runs for a PR."""
+     2→
+     3→from textual import work
+     4→from textual.app import ComposeResult
+     5→from textual.binding import Binding
+     6→from textual.containers import Container, Vertical
+     7→from textual.screen import ModalScreen
+     8→from textual.widgets import Label, Markdown
+     9→
+    10→from erk_shared.gateway.github.ci_summary_parsing import match_summary_to_check
+    11→from erk_shared.gateway.github.types import PRCheckRun
+    12→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    13→
+    14→
+    15→def _format_check_line(check: PRCheckRun) -&gt; str:
+    16→    """Format a single check run as a markdown list item.
+    17→
+    18→    Args:
+    19→        check: The check run to format
+    20→
+    21→    Returns:
+    22→        Markdown list item string
+    23→    """
+    24→    conclusion_str = check.conclusion or "in progress"
+    25→    if check.detail_url is not None:
+    26→        return f"- **{check.name}** — {conclusion_str} ([details]({check.detail_url}))"
+    27→    return f"- **{check.name}** — {conclusion_str}"
+    28→
+    29→
+    30→def _format_summary_blockquote(
+
+... [278 lines omitted] ...
+
+   158→    #checks-error {
+   159→        color: $error;
+   223→        error: str | None = None
+   227→        except Exception as e:
+   228→            error = str(e)
+   230→        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+   232→    def _on_check_runs_loaded(self, check_runs: list[PRCheckRun], error: str | None) -&gt; None:
+   240→            error: Error message if fetch failed, or None
+   247→        if error is not None:
+   248→            container.mount(Label(f"Error: {error}", id="checks-error"))
+   265→        container.mount(Label("Loading failure summaries...", id="checks-summaries-loading"))
+   270→        """Fetch CI failure summaries in background thread."""
+   275→        except Exception:
+   276→            # Summaries are best-effort; silently ignore failures
+  </tool_result>
+  <tool_use name="Read" id="toolu_019QXxURf4nHSne3Bo3oUP28">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">160</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9630" cache_read_input_tokens="19660" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9630}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019QXxURf4nHSne3Bo3oUP28">
+   160→                provider=self._provider,
+   161→                pr_number=row.pr_number,
+   162→                full_title=row.full_title,
+   163→                resolved_count=row.resolved_comment_count,
+   164→                total_count=row.total_comment_count,
+   165→            )
+   166→        )
+   167→
+   168→    def action_view_checks(self: ErkDashApp) -&gt; None:
+   169→        """Display failing CI checks in a modal."""
+   170→        row = self._get_selected_row()
+   171→        if row is None:
+   172→            return
+   173→        if row.pr_number is None:
+   174→            if self._status_bar is not None:
+   175→                self._status_bar.set_message("No PR linked to this plan")
+   176→            return
+   177→        if row.checks_passing is None:
+   178→            if self._status_bar is not None:
+   179→                self._status_bar.set_message("No checks available")
+   180→            return
+   181→        if row.checks_passing is True:
+   182→            if self._status_bar is not None:
+   183→                self._status_bar.set_message("All checks passing")
+   184→            return
+   185→        passing_count, total_count = row.checks_counts if row.checks_counts is not None else (0, 0)
+   186→        self.push_screen(
+   187→            CheckRunsScreen(
+   188→                provider=self._provider,
+   189→                pr_number=row.pr_number,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TQXSbWzvXznX82QVLsoU4e">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/plan-implement.yml</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9630" cache_read_input_tokens="19660" output_tokens="664" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9630, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TQXSbWzvXznX82QVLsoU4e">
+     1→name: plan-implement
+     2→run-name: "${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      plan_id:
+     8→        description: "Plan identifier to implement"
+     9→        required: true
+    10→        type: string
+    11→      submitted_by:
+    12→        description: "GitHub username of the person who submitted the issue"
+    13→        required: true
+    14→        type: string
+    15→      distinct_id:
+    16→        description: "Unique identifier for run discovery (base36)"
+    17→        required: true
+    18→        type: string
+    19→      plan_title:
+    20→        description: "Plan title for workflow run display"
+    21→        required: true
+    22→        type: string
+    23→      branch_name:
+    24→        description: "Branch name for implementation (created by submit command)"
+    25→        required: true
+    26→        type: string
+    27→      pr_number:
+    28→        description: "PR number for implementation (created by submit command)"
+    29→        required: true
+    30→        type: string
+
+... [70 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7610" cache_read_input_tokens="29290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7610}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01BFZ8EFPRyX66eDFbeDXBSg">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7610" cache_read_input_tokens="29290" output_tokens="378" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7610, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01BFZ8EFPRyX66eDFbeDXBSg">
+
+  </tool_result>
+  <assistant>
+
+There's already an `h` keybinding that opens a `CheckRunsScreen` modal which fetches check runs and then asynchronously loads CI failure summaries. This seems very close to what you're describing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1832" cache_read_input_tokens="36900" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1832}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01R6qFNKmZFpeCJGPWgxPGWM">
+    <param name="questions">[{'question': "The `h` key already opens a modal showing failing checks with pre-computed ...[truncated 642 chars]...ine preview, toast notification, or summary in the table itself'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1832" cache_read_input_tokens="36900" output_tokens="313" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1832, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R6qFNKmZFpeCJGPWgxPGWM">
+User has answered your questions: "The `h` key already opens a modal showing failing checks with pre-computed Haiku summaries (two-phase load). What's different about what you want? Is this about a different UX (e.g., inline preview instead of modal), different data source (plan-implement workflow failures vs ci.yml), or something else entirely?"="i want the summaries displayed inline" user notes: i want the summaries displayed inline. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="38732" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 446}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it — inline summaries instead of a modal. Let me explore how the TUI handles inline content and what patterns exist for detail panels.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="38732" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 446}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01A9KXwMbZq2Tv7P9wvatvrP">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore TUI inline detail patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 841 chars]...d an inline summary panel that shows CI failure summaries for the currently selected row.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="38732" output_tokens="581" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 446, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A9KXwMbZq2Tv7P9wvatvrP">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary of the TUI dashboard layout and patterns.
+
+## Summary: TUI Dashboard Layout &amp; Inline Panel Pattern
+
+Based on my exploration of the erk TUI codebase, here's what I found:
+
+### 1. **Current Layout Structure**
+
+The dashboard uses a simple vertical layout in `src/erk/tui/app.py`:
+
+```
+Header (with clock)
+↓
+ViewBar (tab switcher: Plans/Learn/Objectives)
+↓
+Container(id="main-container")
+  ├─ Loading message (initial state)
+  └─ PlanDataTable (main content, height: 1fr)
+↓
+Input(id="filter-input") (hidden, shown when filtering)
+↓
+StatusBar (footer with plan count, refresh countdown, messages)
+```
+
+**Key points:**
+- The `main-container` uses `height: 1fr` (see `/Users/schrockn/code/erk/src/erk/tui/styles/dash.tcss` line 18)
+- There's **no existing detail panel** or preview pane below/beside the table
+- The layout is purely vertical with only the table taking flexible space
+
+### 2. **Modal vs Inline Design Philosophy**
+
+... [167 lines omitted] ...
+
+### 3. **Existing Patterns for Showing Check Failures**
+`CheckRunsScreen` (`src/erk/tui/screens/check_runs_screen.py`) is the gold standard for CI failure display:
+**For showing CI failure summaries, stick with the modal pattern** (`action_view_checks` → `CheckRunsScreen`). The key advantages:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2511" cache_read_input_tokens="39178" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2511}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me design the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2511" cache_read_input_tokens="39178" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2511}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_012obbwKSK7iFZPymyTqTEAa">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Design inline CI summary panel</param>
+    <param name="prompt">Design an implementation plan for adding an inline CI failure summary panel to the erk TUI...[truncated 2494 chars]...ile or extend existing ones. Consider how to handle auto-update when cursor changes rows.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2511" cache_read_input_tokens="39178" output_tokens="1227" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2511, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012obbwKSK7iFZPymyTqTEAa">
+I now have a thorough understanding of the codebase. Here is my implementation plan.
+
+---
+
+## Implementation Plan: Inline CI Failure Summary Panel
+
+### Overview
+
+Replace the `CheckRunsScreen` modal (opened via `h`) with an inline collapsible panel below the `PlanDataTable` inside `#main-container`. The panel auto-updates when the cursor moves to a different row.
+
+### Architecture Decisions
+
+**1. New widget file, not extending existing ones.**
+The `CommandOutputPanel` in `widgets/command_output.py` is the closest existing pattern -- a `Static` subclass that lives below the table with its own CSS and `compose()`. The CI panel has different lifecycle (toggle, auto-update on cursor change, two-phase fetch) so it warrants its own widget file: `src/erk/tui/widgets/ci_panel.py`.
+
+**2. Keep `h` as the toggle key, but change behavior.**
+`h` currently pushes `CheckRunsScreen`. Change it to toggle the inline panel instead. The modal code in `check_runs_screen.py` remains untouched for now (it can be removed in a follow-up).
+
+**3. Use `DataTable.RowHighlighted` for cursor-change tracking.**
+Textual's `DataTable` posts `RowHighlighted(data_table, cursor_row, row_key)` when cursor_type is `"row"` and the highlighted row changes. The app can handle this with `@on(PlanDataTable.RowHighlighted)` to trigger panel updates.
+
+**4. Debounce fetches on rapid cursor movement.**
+When the user holds `j`/`k` to scroll quickly, we should not fire a fetch for every intermediate row. Use a timer-based debounce (e.g., 200ms) -- cancel previous pending fetch when cursor moves again.
+
+**5. Two-phase rendering (same as modal).**
+Phase 1: show check run names immediately after `fetch_check_runs`. Phase 2: fetch summaries via `fetch_ci_summaries` and re-render with blockquotes. Reuse the existing formatting functions (`_format_check_runs`, `_format_check_line`, `_format_summary_blockquote`) by importing them from `check_runs_screen.py`.
+
+### Step-by-Step Implementation
+
+#### Step 1: Create `src/erk/tui/widgets/ci_panel.py`
+
+... [231 lines omitted] ...
+
+New widget: `CIFailurePanel(Static)` with:
+- `show_loading_summaries()` -- shows "Loading failure summaries..." indicator.
+- `show_error(message: str)` -- shows error state.
+    Markdown(id="ci-panel-content") or Label for loading/error states
+CIFailurePanel {
+CIFailurePanel.visible {
+In `compose()`, add the `CIFailurePanel` widget inside `#main-container`, after the `PlanDataTable`:
+    yield CIFailurePanel()  # NEW
+Add instance variable `self._ci_panel: CIFailurePanel | None = None` in `__init__`, set in `on_mount`.
+    """Toggle inline CI failure panel for selected row."""
+No changes needed in the external CSS file. The `CIFailurePanel` uses `DEFAULT_CSS` inline (matching the pattern of `CommandOutputPanel` and `StatusBar`).
+self._ci_panel: CIFailurePanel | None = None
+- Test empty/error states
+7. **Panel open + row with no failures**: Show "All checks passing" in the panel body rather than hiding it (so the user sees the panel is active but there is nothing to show)
+| `src/erk/tui/widgets/ci_panel.py` | **NEW** | CIFailurePanel widget |
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="46461" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46461}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify a few key implementation details before finalizing the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="46461" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46461}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VQWdfx7B3a8cbBxxN4nhoc">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="46461" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46461}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VQWdfx7B3a8cbBxxN4nhoc">
+     1→"""Main Textual application for erk dash interactive mode."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→import time
+     7→from collections.abc import Iterator
+     8→from datetime import datetime
+     9→from pathlib import Path
+    10→
+    11→from textual import on
+    12→from textual.app import App, ComposeResult, SystemCommand
+    13→from textual.binding import Binding
+    14→from textual.containers import Container
+    15→from textual.screen import Screen
+    16→from textual.widgets import Header, Input, Label
+    17→
+    18→from erk.tui.actions.filter_actions import FilterActionsMixin
+    19→from erk.tui.actions.navigation import NavigationActionsMixin
+    20→from erk.tui.actions.palette import PaletteActionsMixin
+    21→from erk.tui.commands.provider import MainListCommandProvider
+    22→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    23→from erk.tui.filtering.logic import filter_plans
+    24→from erk.tui.filtering.types import FilterMode, FilterState
+    25→from erk.tui.operations.logic import build_github_url
+    26→from erk.tui.operations.streaming import StreamingOperationsMixin
+    27→from erk.tui.operations.workers import BackgroundWorkersMixin
+    28→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    29→from erk.tui.sorting.logic import sort_plans
+    30→from erk.tui.sorting.types import BranchActivity, SortKey, SortState
+
+... [90 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01KekLkNNR5b9A9qqssDsuyu">
+    <param name="pattern">src/erk/tui/widgets/command_output*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="46461" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 46461}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017gETwr5PFMaycfLmorcEaK">
+    <param name="pattern">src/erk/tui/widgets/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="46461" cache_read_input_tokens="0" output_tokens="270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 46461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KekLkNNR5b9A9qqssDsuyu">
+/Users/schrockn/code/erk/src/erk/tui/widgets/command_output.py
+  </tool_result>
+  <tool_result tool="toolu_017gETwr5PFMaycfLmorcEaK">
+/Users/schrockn/code/erk/src/erk/tui/widgets/__init__.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/clickable_link.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/copyable_label.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/command_output.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/view_bar.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py
+/Users/schrockn/code/erk/src/erk/tui/widgets/status_bar.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HHk3L7HYpW5TmK1Ci4hCiR">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="offset">120</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2466" cache_read_input_tokens="46461" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2466}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HHk3L7HYpW5TmK1Ci4hCiR">
+   120→        """
+   121→        super().__init__()
+   122→        self._provider = provider
+   123→        self._plan_filters = filters
+   124→        self._refresh_interval = refresh_interval
+   125→        self._cmux_integration = cmux_integration
+   126→        self._table: PlanDataTable | None = None
+   127→        self._status_bar: StatusBar | None = None
+   128→        self._filter_input: Input | None = None
+   129→        self._all_rows: list[PlanRowData] = []  # Unfiltered data
+   130→        self._rows: list[PlanRowData] = []  # Currently displayed (possibly filtered)
+   131→        self._refresh_task: asyncio.Task | None = None
+   132→        self._loading = True
+   133→        self._filter_state = FilterState.initial()
+   134→        self._stack_filter_branches: frozenset[str] | None = None
+   135→        self._stack_filter_label: str | None = None
+   136→        self._objective_filter_issue: int | None = None
+   137→        self._objective_filter_label: str | None = None
+   138→        self._sort_state = initial_sort if initial_sort is not None else SortState.initial()
+   139→        self._activity_by_plan: dict[int, BranchActivity] = {}
+   140→        self._activity_loading = False
+   141→        self._view_mode: ViewMode = ViewMode.PLANS
+   142→        self._view_bar: ViewBar | None = None
+   143→        self._data_cache: dict[tuple[str, ...], list[PlanRowData]] = {}
+   144→        self._show_all_users = False
+   145→        self._original_creator: str | None = filters.creator
+   146→
+   147→    def _display_name_for_view(self, mode: ViewMode) -&gt; str:
+   148→        """Get the display name for a view mode.
+   149→
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DRLPS21XZ19KHskF2kgxvN">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/widgets/command_output.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2466" cache_read_input_tokens="46461" output_tokens="173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2466, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DRLPS21XZ19KHskF2kgxvN">
+     1→"""Widget for displaying live subprocess output in the TUI."""
+     2→
+     3→from textual.app import ComposeResult
+     4→from textual.containers import Vertical
+     5→from textual.widgets import RichLog, Static
+     6→
+     7→
+     8→class CommandOutputPanel(Static):
+     9→    """Bottom panel showing live subprocess output.
+    10→
+    11→    Displays streaming output from a subprocess with status indicator
+    12→    and dismiss hint after completion.
+    13→    """
+    14→
+    15→    DEFAULT_CSS = """
+    16→    CommandOutputPanel {
+    17→        height: auto;
+    18→        max-height: 45;
+    19→        background: $surface-darken-1;
+    20→        border-top: solid $primary;
+    21→        padding: 0 1;
+    22→    }
+    23→
+    24→    CommandOutputPanel #output-header {
+    25→        height: 1;
+    26→        color: $primary;
+    27→        text-style: bold;
+    28→    }
+    29→
+    30→    CommandOutputPanel #output-log {
+
+... [83 lines omitted] ...
+
+    45→    CommandOutputPanel #output-status.failure {
+    84→            is_stderr: If True, style as error output (red)
+   111→            status.update("✗ Failed - Press Esc to close, y to copy logs")
+   112→            status.add_class("failure")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2977" cache_read_input_tokens="48927" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2977}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Q4Nh59MnFdoYuzSsSz6CAN">
+    <param name="pattern">CommandOutputPanel</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2977" cache_read_input_tokens="48927" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2977}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q4Nh59MnFdoYuzSsSz6CAN">
+Found 2 files
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/widgets/command_output.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015k484hpTXJvWQ7DHGgivq7">
+    <param name="pattern">RowHighlighted</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2977" cache_read_input_tokens="48927" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2977, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015k484hpTXJvWQ7DHGgivq7">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01D5jEDUgDoChPMPmBGDQaxU">
+    <param name="pattern">cursor_row|on_data_table|RowSelected|row_highlighted|on_row</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="51904" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 347, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D5jEDUgDoChPMPmBGDQaxU">
+src/erk/tui/widgets/plan_table.py:233:        if self._rows and self.cursor_row is not None and 0 &lt;= self.cursor_row &lt; len(self._rows):
+src/erk/tui/widgets/plan_table.py:234:            selected_key = str(self._rows[self.cursor_row].plan_id)
+src/erk/tui/widgets/plan_table.py:237:        saved_cursor_row = self.cursor_row
+src/erk/tui/widgets/plan_table.py:265:            if saved_cursor_row is not None and saved_cursor_row &gt;= 0:
+src/erk/tui/widgets/plan_table.py:266:                target_row = min(saved_cursor_row, len(rows) - 1)
+src/erk/tui/widgets/plan_table.py:373:        cursor_row = self.cursor_row
+src/erk/tui/widgets/plan_table.py:374:        if cursor_row is None or cursor_row &lt; 0 or cursor_row &gt;= len(self._rows):
+src/erk/tui/widgets/plan_table.py:376:        return self._rows[cursor_row]
+src/erk/tui/app.py:450:    @on(PlanDataTable.RowSelected)
+src/erk/tui/app.py:451:    def on_row_selected(self, event: PlanDataTable.RowSelected) -&gt; None:
+src/erk/tui/AGENTS.md:146:- Enter key handling via `RowSelected` event
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NzPvUzfiTsunSU69D3kpLS">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+    <param name="offset">440</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="553" cache_read_input_tokens="52251" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 553, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NzPvUzfiTsunSU69D3kpLS">
+   440→    def action_next_view(self) -&gt; None:
+   441→        """Cycle to the next view (right arrow)."""
+   442→        self._switch_view(get_next_view_mode(self._view_mode))
+   443→
+   444→    def action_previous_view(self) -&gt; None:
+   445→        """Cycle to the previous view (left arrow)."""
+   446→        self._switch_view(get_previous_view_mode(self._view_mode))
+   447→
+   448→    # --- Event handlers (must be on concrete class for Textual @on discovery) ---
+   449→
+   450→    @on(PlanDataTable.RowSelected)
+   451→    def on_row_selected(self, event: PlanDataTable.RowSelected) -&gt; None:
+   452→        """Handle Enter/double-click on row - show plan details."""
+   453→        self.action_show_detail()
+   454→
+   455→    @on(Input.Changed, "#filter-input")
+   456→    def on_filter_changed(self, event: Input.Changed) -&gt; None:
+   457→        """Handle filter input text changes."""
+   458→        self._filter_state = self._filter_state.with_query(event.value)
+   459→        self._apply_filter()
+   460→
+   461→    @on(Input.Submitted, "#filter-input")
+   462→    def on_filter_submitted(self, event: Input.Submitted) -&gt; None:
+   463→        """Handle Enter in filter input - return focus to table."""
+   464→        if self._table is not None:
+   465→            self._table.focus()
+   466→
+   467→    @on(ViewBar.ViewTabClicked)
+   468→    def on_view_tab_clicked(self, event: ViewBar.ViewTabClicked) -&gt; None:
+   469→        """Handle click on a view bar tab - switch to that view."""
+  </tool_result>
+  <assistant>Good. I have all the info I need. Let me also check how `CommandOutputPanel` is dynamically mounted (not in compose) since that's the pattern we need.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="52804" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 599}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Xn1KPjx87aZ8K9DvFSx5vU">
+    <param name="pattern">CommandOutputPanel|command_output</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="52804" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 599, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xn1KPjx87aZ8K9DvFSx5vU">
+21-from erk.tui.data.types import PlanRowData
+22-from erk.tui.views.types import ViewMode
+23-from erk.tui.widgets.clickable_link import ClickableLink
+24:from erk.tui.widgets.command_output import CommandOutputPanel
+25-from erk.tui.widgets.copyable_label import CopyableLabel
+26-from erk_shared.gateway.command_executor.abc import CommandExecutor
+27-
+--
+254-        self._repo_root = repo_root
+255-        self._view_mode = view_mode
+256-        self._cmux_integration = cmux_integration
+257:        self._output_panel: CommandOutputPanel | None = None
+258-        self._command_running = False
+259-        self._auto_open_palette = auto_open_palette
+260-        self._running_process: subprocess.Popen[str] | None = None
+--
+452-            on_success: Optional callback to invoke on successful completion.
+453-        """
+454-        # Create and mount output panel
+455:        self._output_panel = CommandOutputPanel(title)
+456-        dialog = self.query_one("#detail-dialog")
+457-        dialog.mount(self._output_panel)
+458-        self._command_running = True
+--
+482-        """
+483-        # Create and mount output panel
+484-        title = f"Closing Plan #{plan_id}"
+485:        self._output_panel = CommandOutputPanel(title)
+486-        dialog = self.query_one("#detail-dialog")
+487-        dialog.mount(self._output_panel)
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Good — `CommandOutputPanel` is dynamically mounted, not in `compose()`. Now let me check one more thing about the escape chain to understand the progressive-escape pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1788" cache_read_input_tokens="53403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1788}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012edUbrJvVjccGP5dQXsBwt">
+    <param name="pattern">action_exit_app</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="context">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1788" cache_read_input_tokens="53403" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1788, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012edUbrJvVjccGP5dQXsBwt">
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-10-from erk.tui.screens.help_screen import HelpScreen
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-11-from erk.tui.screens.launch_screen import LaunchScreen
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-12-from erk.tui.screens.plan_body_screen import PlanBodyScreen
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-13-from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-14-from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-15-from erk.tui.views.types import ViewMode
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-16-from erk_shared.gateway.command_executor.real import RealCommandExecutor
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-17-
+src/erk/tui/actions/navigation.py-18-if TYPE_CHECKING:
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-19-    from erk.tui.app import ErkDashApp
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-20-
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-21-
+src/erk/tui/actions/navigation.py-22-class NavigationActionsMixin:
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-23-    """Mixin providing navigation and detail-view action handlers.
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-24-
+src/erk/tui/actions/navigation.py:25:    Includes action_exit_app, action_refresh, action_help, action_launch,
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-26-    action_show_detail, action_view_plan_body, action_view_comments,
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-27-    action_view_checks, action_cursor_down, action_cursor_up,
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-28-    action_open_pr, action_open_run, action_show_implement,
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-29-    action_copy_checkout, action_close_plan, and helpers.
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-30-    """
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-31-
+src/erk/tui/actions/navigation.py:32:    def action_exit_app(self: ErkDashApp) -&gt; None:
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-33-        """Quit the application or handle progressive escape from filter mode.
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-34-
+src/erk/tui/actions/navigation.py-35-        Progressive escape: all-users -&gt; objective -&gt; stack -&gt; text content -&gt; text mode -&gt; quit.
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-36-        """
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-37-        from erk.tui.filtering.types import FilterMode
+/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py-38-
+src/erk/tui/actions/navigation.py-39-        if self._show_all_users:
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>I have everything I need. Let me write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1748" cache_read_input_tokens="55191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1748}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_012RwNpbn9VE8kFLLjCfpq54">
+    <param name="query">select:Write,ExitPlanMode</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1748" cache_read_input_tokens="55191" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1748, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_012RwNpbn9VE8kFLLjCfpq54">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Vif4tw2Y5qETfrYnKo1KUF">
+    <param name="file_path">/Users/schrockn/.claude/plans/abstract-brewing-wave.md</param>
+    <param name="content"># Inline CI Failure Summary Panel
+
+## Context
+
+The TUI dashboard (`erk dash -i`) currently...[truncated 5330 chars]...views (1/2/3) — panel dismisses
+7. Run tests: `pytest tests/tui/widgets/test_ci_panel.py`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1027" cache_read_input_tokens="56939" output_tokens="1803" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1027, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vif4tw2Y5qETfrYnKo1KUF">
+File created successfully at: /Users/schrockn/.claude/plans/abstract-brewing-wave.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01HU5erm91fowSHy44ztNQCm">
+    <param name="plan"># Inline CI Failure Summary Panel
+
+## Context
+
+The TUI dashboard (`erk dash -i`) currently...[truncated 5330 chars]...views (1/2/3) — panel dismisses
+7. Run tests: `pytest tests/tui/widgets/test_ci_panel.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="55001" cache_read_input_tokens="4867" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 55001, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HU5erm91fowSHy44ztNQCm">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/abstract-brewing-wave.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Inline CI Failure Summary Panel
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 15ed72da-17f5-4150-9493-4c1abb2ef332 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VB1ZQD2Exx1PPWM1CRMo4i">
+    <param name="file_path">/Users/schrockn/.claude/plans/abstract-brewing-wave.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="59868" output_tokens="71" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 673, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VB1ZQD2Exx1PPWM1CRMo4i">
+     1→# Inline CI Failure Summary Panel
+     2→
+     3→## Context
+     4→
+     5→The TUI dashboard (`erk dash -i`) currently shows CI failure details via a modal (`h` key → `CheckRunsScreen`). The user wants CI failure summaries displayed **inline** — a collapsible panel below the table that auto-updates as the cursor moves between rows with failures. This gives faster triage without the context-switch of opening/dismissing modals.
+     6→
+     7→## Implementation
+     8→
+     9→### 1. Create `src/erk/tui/widgets/ci_panel.py`
+    10→
+    11→New widget `CIFailurePanel(Static)` following the `CommandOutputPanel` pattern:
+    12→
+    13→- **Layout**: Header (PR title + counts), scrollable Markdown content area, footer hint
+    14→- **DEFAULT_CSS**: `height: auto; max-height: 20; display: none;` — hidden by default, toggled via `.visible` class
+    15→- **Methods**:
+    16→  - `show_for_row(*, pr_number, full_title, passing_count, total_count)` — set header, show "Loading..." state
+    17→  - `show_check_runs(check_runs, *, summaries)` — render formatted content
+    18→  - `show_empty(message)` — for "All passing" / "No checks" states
+    19→  - `show_error(message)` — error state
+    20→  - `clear_and_hide()` — remove visible class, reset content
+    21→
+    22→Reuse formatting functions from `check_runs_screen.py`: import `_format_check_runs`, `_format_check_line`, `_format_summary_blockquote`. Extract these to a shared module first (see step 2).
+    23→
+    24→### 2. Extract formatting to `src/erk/tui/formatting/ci_checks.py`
+    25→
+    26→Move `_format_check_line()`, `_format_summary_blockquote()`, and `_format_check_runs()` from `check_runs_screen.py` into a new shared module. Update `check_runs_screen.py` to import from the new location. This avoids duplication between the modal and the inline panel.
+    27→
+    28→### 3. Modify `src/erk/tui/app.py`
+    29→
+    30→- **compose()**: Add `CIFailurePanel()` inside `#main-container` after `PlanDataTable`. The table's `height: 1fr` will naturally share space when the panel appears.
+
+... [85 lines omitted] ...
+
+    33→  - `self._ci_panel: CIFailurePanel | None = None`
+    83→- Empty/error states
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Inline CI Failure Summary Panel
+
+**Context**: Replace the `h` key modal (`CheckRunsScreen`) with an inline collapsible panel below the table for faster CI failure triage.
+
+**Key changes**:
+1. **New `CIFailurePanel` widget** — follows `CommandOutputPanel` pattern, hidden by default, toggled via CSS class
+2. **Extract shared formatting** — move `_format_check_runs()` etc. to `src/erk/tui/formatting/ci_checks.py` so both modal and panel can reuse them
+3. **Toggle via `h` key** — replaces modal push with inline panel toggle, same guard logic
+4. **Auto-update on cursor move** — debounced fetch when cursor moves to a different row while panel is open
+5. **Progressive escape** — `Esc` dismisses panel before other escape-chain items
+6. **Two-phase loading** — check runs shown immediately, summaries fetched in background (same pattern as modal)
+7. **Tests** — visibility toggle, content rendering, cursor-change updates, stale fetch rejection</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2173" cache_read_input_tokens="60541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2173}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01N1dM9upzCAPKD3jchg2dm1">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 283 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2173" cache_read_input_tokens="60541" output_tokens="432" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2173, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N1dM9upzCAPKD3jchg2dm1">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01C8NEf2Jb1hfyGzGNATdaad">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="58327" cache_read_input_tokens="4881" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 58327, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01C8NEf2Jb1hfyGzGNATdaad">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_017QzA4bXSpwgtYag7c9JwFK">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="661" cache_read_input_tokens="63208" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 661, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017QzA4bXSpwgtYag7c9JwFK">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="15ed72da-17f5-4150-9493-4c1abb2ef332" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="15ed72da-17f5-4150-9493-4c1abb2ef332" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "15ed72da-17f5-4150-9493-4c1abb2ef332" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "15ed72da-17f5-4150-9493-4c1abb2ef332" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "15ed72da-17f5-4150-9493-4c1abb2ef332" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "15ed72da-17f5-4150-9493-4c1abb2ef332" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll save the plan as a draft PR.
+
+**Branch slug**: `inline-ci-summary-panel`
+
+**Plan summary**: Replaces the modal CheckRunsScreen with an inline collapsible panel below the dashboard table, toggled via the h key. The panel auto-updates when the cursor moves between rows, showing CI failure check runs and pre-computed Haiku summaries with debounced fetching.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2280" cache_read_input_tokens="63869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2280}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01WGMD1QXXpjvq8senr9NwRp">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2280" cache_read_input_tokens="63869" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2280, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01WGMD1QXXpjvq8senr9NwRp">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01D1DjFh1sT5zj86vMz3yjfw">
+    <param name="command">erk exec plan-save --format json --session-id="15ed72da-17f5-4150-9493-4c1abb2ef332" --bra...[truncated 201 chars]..., showing CI failure check runs and pre-computed Haiku summaries with debounced fetching."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3427" cache_read_input_tokens="66149" output_tokens="213" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3427, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D1DjFh1sT5zj86vMz3yjfw">
+{"success": true, "plan_number": 8808, "plan_url": "https://github.com/dagster-io/erk/pull/8808", "title": "[erk-plan] Inline CI Failure Summary Panel", "branch_name": "plnd/inline-ci-summary-panel-03-05-1821", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/15ed72da-17f5-4150-9493-4c1abb2ef332/plan_snapshots/000001-883657ec"}
+  </tool_result>
+  <assistant>Plan saved successfully. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="69576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 385}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LgEfVQuu9HYhUYDXC6TXNV">
+    <param name="command">erk exec upload-impl-session --session-id "15ed72da-17f5-4150-9493-4c1abb2ef332" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="69576" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 385}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LgEfVQuu9HYhUYDXC6TXNV">
+{"uploaded": true, "plan_id": 8751}
+  </tool_result>
+  <assistant>Plan **"Inline CI Failure Summary Panel"** saved as draft PR **#8808**.
+URL: https://github.com/dagster-io/erk/pull/8808</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="69961" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 269}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01Ao6mSXCRa2JJLQ3GCXptVW">
+    <param name="plan"># Inline CI Failure Summary Panel
+
+## Context
+
+The TUI dashboard (`erk dash -i`) currently...[truncated 5330 chars]...views (1/2/3) — panel dismisses
+7. Run tests: `pytest tests/tui/widgets/test_ci_panel.py`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="69961" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 269, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ao6mSXCRa2JJLQ3GCXptVW">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8808 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8808:
+  In current wt:    source "$(erk br co --for-plan 8808 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8808 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8808 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8808 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8808:
+  In current wt:  erk br co --for-plan 8808
+  In new wt:      erk br co --new-slot --for-plan 8808
+
+Dispatch plan #8808:
+  CLI command:    erk pr dispatch 8808
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8808 saved. Here are the next steps:
+
+**Implement plan #8808:**
+```
+In current wt:    source "$(erk br co --for-plan 8808 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8808 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8808 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8808 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8808:**
+```
+In current wt:  erk br co --for-plan 8808
+In new wt:      erk br co --new-slot --for-plan 8808
+```
+
+**Dispatch plan #8808:**
+```
+CLI command:    erk pr dispatch 8808
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="463" cache_read_input_tokens="70230" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 463, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
