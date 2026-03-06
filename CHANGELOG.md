@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of 2e0bb588e -->
+
+### Added
+
+- Add `/erk:pr-incremental-dispatch` command to dispatch a local plan against an existing PR (1f0003c46)
+- Add `erk pr teleport` command and rename PR sync→teleport terminology (d38e74395)
+- Add author filter toggle to erk TUI dashboard (f30f74be8)
+- Add skill-creator skill for creating and benchmarking skills (78f3043a2)
+
+### Changed
+
+- Speed up `erk pr submit` pipeline by caching Graphite auth checks and eliminating redundant API calls (2e0bb588e)
+- Simplify `/erk:pr-dispatch` by removing manual plan number argument in favor of auto-detection (1dc0214cb)
+- Promote `erk release-notes` to top-level command (88472044b)
+
+### Fixed
+
+- Fix `erk pr dispatch` failing when branch is checked out in current worktree (f6b4e9211)
+- Fix StatusBar MarkupError crash from subprocess error display in TUI (d29fd053e)
+
+### Removed
+
+- Remove ability to set `ERK_MCP_PORT` environment variable in erk-mcp due to conflict (bf47168c3)
+
 ## [0.9.5] - 2026-03-04 15:53 PT
 
 ### Major Changes
