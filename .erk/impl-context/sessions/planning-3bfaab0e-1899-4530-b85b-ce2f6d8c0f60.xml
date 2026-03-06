@@ -1,0 +1,662 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>good feedback on dignified python standards
+
+common imports at library level (dagster as dg, pandas as pd) are perfectly fine
+
+asserts in any test level fine</user>
+  <usage input_tokens="3" cache_creation_input_tokens="16792" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16792}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good feedback - two false positives to fix. Let me find where these rules are defined.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16792" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16792}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01GoGVZPMX4dhs8hXiaj4R1Z">
+    <param name="query">select:Read,Grep,Glob,Agent</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16792" cache_read_input_tokens="0" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16792, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01GoGVZPMX4dhs8hXiaj4R1Z">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4339" cache_read_input_tokens="16792" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4339}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find where the assert and import alias rules are defined in the code review system.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4339" cache_read_input_tokens="16792" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4339}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WaBcfw98cU46xXcHFLZNxn">
+    <param name="pattern">assert</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">**/dignified*</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4339" cache_read_input_tokens="16792" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4339}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WaBcfw98cU46xXcHFLZNxn">
+Found 2 files
+.claude/skills/dignified-python/dignified-python-core.md
+.erk/reviews/dignified-python.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RSaWKrGW2XYGpQW1PaeWms">
+    <param name="pattern">import.*as</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">**/dignified*</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4339" cache_read_input_tokens="16792" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4339}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RSaWKrGW2XYGpQW1PaeWms">
+Found 1 file
+.claude/skills/dignified-python/dignified-python-core.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FEJ9TrAx6XJXCQKssUX5xN">
+    <param name="pattern">assert|import alias</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">**/review*</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4339" cache_read_input_tokens="16792" output_tokens="397" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4339, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FEJ9TrAx6XJXCQKssUX5xN">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WDLUq5ptUSASY19fJ8eSoF">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="643" cache_read_input_tokens="21131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 643}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WDLUq5ptUSASY19fJ8eSoF">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [486 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   103→The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+   115→- `.resolve()` raises `OSError` for non-existent paths
+   116→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   117→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   132→# WRONG: Using exceptions for path validation
+   137→except (OSError, ValueError):
+   177→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   208→**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+   217→# CORRECT (rare exception): Resolving genuine collision
+   469→    log.warning("Non-numeric plan_id")
+   483→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   510→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pg6LwnEs9Cg38TKuRwUsYQ">
+    <param name="file_path">/Users/schrockn/code/erk/.erk/reviews/dignified-python.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="643" cache_read_input_tokens="21131" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 643, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pg6LwnEs9Cg38TKuRwUsYQ">
+     1→---
+     2→name: Dignified Python Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-python-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Dignified Python Standards
+    13→
+    14→Read these skill files from the repository:
+    15→
+    16→1. .claude/skills/dignified-python/SKILL.md (routing and version detection)
+    17→2. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+    18→3. .claude/skills/dignified-python/cli-patterns.md (Click best practices)
+    19→4. .claude/skills/dignified-python/subprocess.md (subprocess handling)
+    20→
+    21→## Step 2: Identify Changed Lines
+    22→
+    23→For each Python file, determine which lines were actually modified (not just context):
+    24→
+    25→- Lines starting with `+` in the diff are additions/modifications
+    26→- Lines starting with ` ` (space) are unchanged context
+    27→
+    28→For the `__all__` / re-export rule specifically:
+    29→
+    30→- If `__all__` appears on a `+` line → Flag as violation (actively being modified)
+
+... [89 lines omitted] ...
+
+    40→- Exception handling (no silent swallowing, log at boundaries)
+    80→**CRITICAL: Check for exceptions before flagging violations.**
+    82→Many rules have explicit exceptions documented in the skill files you loaded in Step 1. Before flagging a violation, verify that NO exception applies. Common exceptions include:
+    85→- **LBYL rule**: Exceptions allowed at error boundaries, for third-party API compatibility, or when adding context before re-raising. `assert` used purely for type narrowing after a guard check is NOT a violation (e.g., `assert x is not None` after `if not is_valid: return None` where `is_valid` checks `x is not None`)
+    88→If the code matches a documented exception, it is NOT a violation. Do not flag it.
+   116→- "False positive dismissed: CLI error boundary pattern"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7460" cache_read_input_tokens="21774" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7460}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I can see both issues clearly. Let me also check for any reference files that might be relevant.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7460" cache_read_input_tokens="21774" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7460}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01UCQ5WAZ8y1U7E6qPhaVnSf">
+    <param name="pattern">.claude/skills/dignified-python/**/*.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7460" cache_read_input_tokens="21774" output_tokens="405" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7460, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UCQ5WAZ8y1U7E6qPhaVnSf">
+/Users/schrockn/code/erk/.claude/skills/dignified-python/subprocess.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/versions/python-3.10.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/versions/python-3.11.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/versions/python-3.12.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/versions/python-3.13.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/checklists.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/interfaces.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/cli-patterns.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/module-design.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/typing-advanced.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/exception-handling.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/references/api-design.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/dignified-python-core.md
+  </tool_result>
+  <assistant>Good. I have a clear picture of the two issues. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="940" cache_read_input_tokens="29234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 940}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_019FH8mK4iUSui6B1g7Qs3AV">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="940" cache_read_input_tokens="29234" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 940, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_019FH8mK4iUSui6B1g7Qs3AV">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01AS9swnAoB9WNUMyJ46TomP">
+    <param name="file_path">/Users/schrockn/.claude/plans/federated-forging-eagle.md</param>
+    <param name="content"># Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Aliases
+
+## Conte...[truncated 1745 chars]...es make the boundaries clear (library aliases OK, project-internal aliases still flagged)
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="488" cache_read_input_tokens="30174" output_tokens="591" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 488, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AS9swnAoB9WNUMyJ46TomP">
+File created successfully at: /Users/schrockn/.claude/plans/federated-forging-eagle.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01DJRcQxUuhHwnsVZikt7pgz">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="30662" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 631, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01DJRcQxUuhHwnsVZikt7pgz">
+
+  </tool_result>
+  <assistant>
+
+Straightforward fix — two false positives in the dignified python rules, two files to update.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="31293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_011vMQwsF4DwzhbU35SPQWKi">
+    <param name="plan"># Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Aliases
+
+## Conte...[truncated 1745 chars]...es make the boundaries clear (library aliases OK, project-internal aliases still flagged)
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="31293" output_tokens="61" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011vMQwsF4DwzhbU35SPQWKi">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/federated-forging-eagle.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Aliases
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 3bfaab0e-1899-4530-b85b-ce2f6d8c0f60 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_0194kPGvE4bzLbZNnhrtZzf8">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="32031" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 715, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_0194kPGvE4bzLbZNnhrtZzf8">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+## Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Aliases
+
+### Context
+Users report two false positives from the Dignified Python code review:
+1. `assert` in test code is flagged as a violation — but `assert` is the standard pytest assertion mechanism and should be fine in all test code
+2. Common library-level import aliases like `import dagster as dg`, `import pandas as pd`, `import numpy as np` are flagged — but these are well-established community conventions
+
+### Changes
+
+**1. Update assert rule in `dignified-python-core.md` (line ~86-103)**
+- Add that `assert` is always acceptable in test code (`test_*.py`, `*_test.py`, `conftest.py`). The type-narrowing restriction only applies to production code.
+
+**2. Update import alias rule in `dignified-python-core.md` (line ~202-222)**
+- Add a second exception for well-known library-level aliases that are community conventions (e.g., `import pandas as pd`, `import numpy as np`, `import dagster as dg`, `import matplotlib.pyplot as plt`). The rule still prohibits gratuitous renaming of internal/project imports.
+
+**3. Update review prompt in `.erk/reviews/dignified-python.md` (line ~85-86)**
+- Update the LBYL exception note to mention `assert` is unrestricted in test files
+- Add an exception note for the import alias rule mentioning well-known library aliases
+
+### Files to Modify
+- `.claude/skills/dignified-python/dignified-python-core.md`
+- `.erk/reviews/dignified-python.md`</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1428" cache_read_input_tokens="32746" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1428}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_015r1L7AiysCfpDQVEhQwrGf">
+    <param name="questions">[{'question': '📋 Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Al...[truncated 411 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1428" cache_read_input_tokens="32746" output_tokens="619" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015r1L7AiysCfpDQVEhQwrGf">
+User has answered your questions: "📋 Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Aliases
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01MGYACdqqGnkKvG66gT5Trs">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="34174" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 708, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01MGYACdqqGnkKvG66gT5Trs">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01MhFM7ncEcWdk5VDiybiHZY">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="677" cache_read_input_tokens="34882" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 677, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MhFM7ncEcWdk5VDiybiHZY">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="3bfaab0e-1899-4530-b85b-ce2f6d8c0f60" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="3bfaab0e-1899-4530-b85b-ce2f6d8c0f60" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "3bfaab0e-1899-4530-b85b-ce2f6d8c0f60" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "3bfaab0e-1899-4530-b85b-ce2f6d8c0f60" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "3bfaab0e-1899-4530-b85b-ce2f6d8c0f60" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "3bfaab0e-1899-4530-b85b-ce2f6d8c0f60" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me generate the branch slug and summary, then save the plan.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2310" cache_read_input_tokens="35559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2310}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01KixYbNhSHtN8n4MJakEfqk">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2310" cache_read_input_tokens="35559" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2310, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01KixYbNhSHtN8n4MJakEfqk">
+
+  </tool_result>
+  <assistant>
+
+**Branch slug:** `fix-dignified-python-false-positives`
+
+**Plan summary:** Fixes two false positives in the Dignified Python code review: allows assert statements in all test code (not just type narrowing), and permits well-known library-level import aliases like `import pandas as pd` and `import dagster as dg`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3337" cache_read_input_tokens="37869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3337}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011bypYBbDtQEM5gtGHJNbt2">
+    <param name="command">erk exec plan-save --format json --session-id="3bfaab0e-1899-4530-b85b-ce2f6d8c0f60" --bra...[truncated 184 chars]...ell-known library-level import aliases like import pandas as pd and import dagster as dg."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3337" cache_read_input_tokens="37869" output_tokens="287" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011bypYBbDtQEM5gtGHJNbt2">
+{"success": true, "plan_number": 8843, "plan_url": "https://github.com/dagster-io/erk/pull/8843", "title": "[erk-plan] Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Aliases", "branch_name": "plnd/fix-dignified-python-false-03-06-0910", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/3bfaab0e-1899-4530-b85b-ce2f6d8c0f60/plan_snapshots/000001-21d671bf"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8843. Now let me push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="41206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 478}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VsrfbGoSxTKgAqVBMi83db">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="41206" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 478, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VsrfbGoSxTKgAqVBMi83db">
+SESSION_ID=3bfaab0e-1899-4530-b85b-ce2f6d8c0f60
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/3bfaab0e-1899-4530-b85b-ce2f6d8c0f60.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014GTkpx8ZjCAcRSbWtqXdBR">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4530-b85b-ce2f6d8c0f60" --stage planning --source local --plan-id 8843 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="41684" output_tokens="214" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 226, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014GTkpx8ZjCAcRSbWtqXdBR">
+{"uploaded": true, "plan_id": 8843, "session_branch": "async-learn/8843", "session_id": "3bfaab0e-1899-4530-b85b-ce2f6d8c0f60", "stage": "planning", "files": ["planning-3bfaab0e-1899-4530-b85b-ce2f6d8c0f60-3bfaab0e-1899-4530-b85b-ce2f6d8c0f60.xml"]}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8843.
+
+Now calling ExitPlanMode to wrap up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1559" cache_read_input_tokens="41910" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1559}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01P3LBBseFjBa6bkf19aSUky">
+    <param name="plan"># Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Aliases
+
+## Conte...[truncated 1745 chars]...es make the boundaries clear (library aliases OK, project-internal aliases still flagged)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1559" cache_read_input_tokens="41910" output_tokens="60" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1559, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P3LBBseFjBa6bkf19aSUky">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8843 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8843:
+  In current wt:    source "$(erk br co --for-plan 8843 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8843 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8843 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8843 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8843:
+  In current wt:  erk br co --for-plan 8843
+  In new wt:      erk br co --new-slot --for-plan 8843
+
+Dispatch plan #8843:
+  CLI command:    erk pr dispatch 8843
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan **"Fix Dignified Python False Positives: Assert in Tests &amp; Library Import Aliases"** saved as draft PR #8843.
+
+**Next steps:**
+
+Implement plan #8843:
+- In current wt: `source "$(erk br co --for-plan 8843 --script)" &amp;&amp; erk implement`
+  - (dangerously): `source "$(erk br co --for-plan 8843 --script)" &amp;&amp; erk implement -d`
+- In new wt: `source "$(erk br co --new-slot --for-plan 8843 --script)" &amp;&amp; erk implement`
+  - (dangerously): `source "$(erk br co --new-slot --for-plan 8843 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8843:
+- In current wt: `erk br co --for-plan 8843`
+- In new wt: `erk br co --new-slot --for-plan 8843`
+
+Dispatch plan #8843:
+- CLI command: `erk pr dispatch 8843`
+- Slash command: `/erk:pr-dispatch`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="43469" output_tokens="273" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 551, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
