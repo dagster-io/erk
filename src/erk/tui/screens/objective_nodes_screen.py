@@ -23,6 +23,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.gateway.plan_service.abc import PlanService
 
 
 def _styled_stage(lifecycle_display: str) -> str | Text:
@@ -233,6 +234,7 @@ class ObjectiveNodesScreen(ModalScreen):
         self,
         *,
         provider: PlanDataProvider,
+        service: PlanService,
         plan_id: int,
         plan_body: str,
         full_title: str,
@@ -241,12 +243,14 @@ class ObjectiveNodesScreen(ModalScreen):
 
         Args:
             provider: Data provider for fetching PR details
+            service: Plan service for browser/clipboard/repo_root access
             plan_id: The objective issue number
             plan_body: The objective body text with roadmap metadata
             full_title: The full objective title for display
         """
         super().__init__()
         self._provider = provider
+        self._service = service
         self._plan_id = plan_id
         self._plan_body = plan_body
         self._full_title = full_title
@@ -367,7 +371,7 @@ class ObjectiveNodesScreen(ModalScreen):
         url = row.pr_url or row.plan_url
         if url is None:
             return
-        self._provider.browser.launch(url)
+        self._service.browser.launch(url)
 
     def action_open_objective(self) -> None:
         """Open the parent objective issue in browser."""
@@ -376,7 +380,7 @@ class ObjectiveNodesScreen(ModalScreen):
             if pr_data.plan_url is not None:
                 base_url = pr_data.plan_url.rsplit("/", 2)[0]
                 objective_url = f"{base_url}/issues/{self._plan_id}"
-                self._provider.browser.launch(objective_url)
+                self._service.browser.launch(objective_url)
                 return
 
     def action_open_detail(self) -> None:
@@ -389,9 +393,9 @@ class ObjectiveNodesScreen(ModalScreen):
         self.app.push_screen(
             PlanDetailScreen(
                 row=row,
-                clipboard=self._provider.clipboard,
-                browser=self._provider.browser,
-                repo_root=self._provider.repo_root,
+                clipboard=self._service.clipboard,
+                browser=self._service.browser,
+                repo_root=self._service.repo_root,
                 view_mode=ViewMode.PLANS,
             )
         )
@@ -411,25 +415,25 @@ class ObjectiveNodesScreen(ModalScreen):
 
         if command_id == "open_issue":
             if row.plan_url:
-                self._provider.browser.launch(row.plan_url)
+                self._service.browser.launch(row.plan_url)
                 self.notify(f"Opened plan #{row.plan_id}")
 
         elif command_id == "open_pr":
             url = row.pr_url or row.plan_url
             if url:
-                self._provider.browser.launch(url)
+                self._service.browser.launch(url)
                 self.notify(f"Opened PR #{row.pr_number or row.plan_id}")
 
         elif command_id == "open_run":
             if row.run_url:
-                self._provider.browser.launch(row.run_url)
+                self._service.browser.launch(row.run_url)
                 self.notify(f"Opened run {row.run_id_display}")
 
         elif command_id.startswith("copy_"):
             ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}", timeout=2)
 
     @work(thread=True)

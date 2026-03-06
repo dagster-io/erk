@@ -545,7 +545,7 @@ class RealPlanDataProvider(PlanDataProvider):
         is_learn_plan = "erk-learn" in plan.labels
 
         lifecycle_display = _compute_lifecycle_display(
-            plan, has_workflow_run=workflow_run is not None
+            plan, has_workflow_run=workflow_run is not None, linked_pr_state=pr_state
         )
 
         status_display = compute_status_indicators(
@@ -668,11 +668,15 @@ def _format_learn_display_icon(
     return "-"
 
 
-def _compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
+def _compute_lifecycle_display(
+    plan: Plan, *, has_workflow_run: bool, linked_pr_state: str | None
+) -> str:
     """Compute lifecycle stage display string for a plan."""
     from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
 
-    return compute_lifecycle_display(plan, has_workflow_run=has_workflow_run)
+    return compute_lifecycle_display(
+        plan, has_workflow_run=has_workflow_run, linked_pr_state=linked_pr_state
+    )
 
 
 def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -> None:

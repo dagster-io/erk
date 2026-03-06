@@ -208,6 +208,7 @@ class NavigationActionsMixin:
         self.push_screen(
             ObjectiveNodesScreen(
                 provider=self._provider,
+                service=self._service,
                 plan_id=row.plan_id,
                 plan_body=row.plan_body,
                 full_title=row.full_title,

@@ -133,7 +133,9 @@ class TestActionViewNodes:
         """No selected row → early return, no screen pushed."""
         provider = FakePlanDataProvider(plans=[])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -151,7 +153,9 @@ class TestActionViewNodes:
         """In Plans view, pressing 'b' does nothing."""
         provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -169,7 +173,9 @@ class TestActionViewNodes:
         """Objective row with empty plan_body → status bar shows message."""
         provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Objective")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -192,7 +198,9 @@ class TestActionViewNodes:
             plans=[make_plan_row(123, "Test Objective", plan_body=_V2_ROADMAP_BODY)]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
