@@ -334,3 +334,91 @@ def test_install_fails_on_invalid_json(tmp_path: Path) -> None:
 
     assert result.success is False
     assert "Invalid JSON" in result.message
+
+
+# =============================================================================
+# Tests for HooksCapability properties and registration
+# =============================================================================
+
+
+def test_hooks_capability_properties() -> None:
+    """Test HooksCapability has correct properties."""
+    cap = HooksCapability()
+    assert cap.name == "erk-hooks"
+    assert cap.scope == "project"
+    assert "hooks" in cap.description.lower() or "session" in cap.description.lower()
+    assert "UserPromptSubmit" in cap.installation_check_description
+    assert "ExitPlanMode" in cap.installation_check_description
+
+
+def test_hooks_capability_is_required() -> None:
+    """Test HooksCapability is marked as required."""
+    cap = HooksCapability()
+    assert cap.required is True
+
+
+def test_hooks_capability_artifacts() -> None:
+    """Test HooksCapability lists correct artifacts."""
+    cap = HooksCapability()
+    artifacts = cap.artifacts
+
+    # settings.json is shared by multiple capabilities, so not listed
+    assert len(artifacts) == 0
+
+
+def test_hooks_is_installed_false_when_only_user_prompt_hook(tmp_path: Path) -> None:
+    """Test is_installed returns False when only UserPromptSubmit hook exists."""
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook",
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+    cap = HooksCapability()
+    assert cap.is_installed(tmp_path, backend="claude") is False
+
+
+def test_hooks_install_adds_to_existing(tmp_path: Path) -> None:
+    """Test install adds hooks to existing settings.json."""
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": ["Read(/tmp/*)"]}}),
+        encoding="utf-8",
+    )
+
+    cap = HooksCapability()
+    result = cap.install(tmp_path, backend="claude")
+
+    assert result.success is True
+    assert "Added" in result.message
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "hooks" in settings
+    assert "UserPromptSubmit" in settings["hooks"]
+    assert "PreToolUse" in settings["hooks"]
+    # Preserves existing keys
+    assert "permissions" in settings
+    assert "Read(/tmp/*)" in settings["permissions"]["allow"]
+
+
+def test_hooks_capability_registered() -> None:
+    """Test that hooks capability is registered."""
+    from erk.core.capabilities.registry import get_capability
+
+    cap = get_capability("erk-hooks")
+    assert cap is not None
+    assert cap.name == "erk-hooks"
