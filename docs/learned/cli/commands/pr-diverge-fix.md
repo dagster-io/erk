@@ -1,5 +1,5 @@
 ---
-title: erk pr reconcile-with-remote Command
+title: erk pr diverge-fix Command
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 read_when:
@@ -8,14 +8,14 @@ read_when:
   - "reconciling local branch with remote tracking branch"
 ---
 
-# erk pr reconcile-with-remote Command
+# erk pr diverge-fix Command
 
-Reconciles a diverged local branch with its remote tracking branch, handling rebase and conflicts using Claude.
+Fixes a diverged local branch with its remote tracking branch, handling rebase and conflicts using Claude.
 
 ## Usage
 
 ```bash
-erk pr reconcile-with-remote --dangerous
+erk pr diverge-fix --dangerous
 ```
 
 ## When to Use
@@ -52,7 +52,7 @@ This is useful for workflows where you've accepted the risk of Claude executing 
 
 ## How It Works
 
-See `src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:62-92` for the implementation sequence.
+See `src/erk/cli/commands/pr/diverge_fix_cmd.py:62-92` for the implementation sequence.
 
 ## Output Patterns
 
@@ -75,9 +75,9 @@ The command uses streaming output to show Claude's progress in real-time:
 ## Relationship to Other Commands
 
 - `erk pr rebase` - Fix conflicts in merge state (not divergence)
-- `gt submit` - What you retry after reconcile-with-remote succeeds
-- `/erk:reconcile-with-remote` - The slash command this wraps
+- `gt submit` - What you retry after diverge-fix succeeds
+- `/erk:diverge-fix` - The slash command this wraps
 
 ## Reference Implementation
 
-See `src/erk/cli/commands/pr/reconcile_with_remote_cmd.py`.
+See `src/erk/cli/commands/pr/diverge_fix_cmd.py`.

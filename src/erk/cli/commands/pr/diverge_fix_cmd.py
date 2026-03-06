@@ -1,18 +1,18 @@
-"""Reconcile branch with remote.
+"""Fix branch divergence with remote.
 
 Uses Claude to reconcile a diverged local branch with its remote tracking branch,
-handling rebase and conflicts as needed. Invokes the /erk:reconcile-with-remote
+handling rebase and conflicts as needed. Invokes the /erk:diverge-fix
 Claude slash command.
 """
 
 import click
 
 from erk.cli.ensure import Ensure
-from erk.cli.output import stream_reconcile_with_remote
+from erk.cli.output import stream_diverge_fix
 from erk.core.context import ErkContext
 
 
-@click.command("reconcile-with-remote")
+@click.command("diverge-fix")
 @click.option(
     "-d",
     "--dangerous",
@@ -20,8 +20,8 @@ from erk.core.context import ErkContext
     help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
 )
 @click.pass_obj
-def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -> None:
-    """Reconcile branch with remote and resolve divergence.
+def pr_diverge_fix(ctx: ErkContext, *, dangerous: bool) -> None:
+    """Fix branch divergence with remote.
 
     When gt submit fails with "Branch has been updated remotely", this command
     fetches remote changes, analyzes divergence, rebases if needed, and resolves
@@ -30,8 +30,8 @@ def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -> None:
     Examples:
 
     \b
-      # Reconcile with remote and resolve divergence
-      erk pr reconcile-with-remote --dangerous
+      # Fix divergence with remote
+      erk pr diverge-fix --dangerous
 
     To disable the --dangerous flag requirement:
 
@@ -80,12 +80,12 @@ def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -> None:
 
     click.echo(click.style("Analyzing divergence and invoking Claude...", fg="yellow"))
 
-    # Execute reconcile with remote
-    result = stream_reconcile_with_remote(executor, cwd)
+    # Execute diverge fix
+    result = stream_diverge_fix(executor, cwd)
 
     if result.requires_interactive:
         raise click.ClickException("Semantic decision requires interactive resolution")
     if not result.success:
-        raise click.ClickException(result.error_message or "Reconcile with remote failed")
+        raise click.ClickException(result.error_message or "Diverge fix failed")
 
     click.echo(click.style("\nBranch synced with remote!", fg="green", bold=True))

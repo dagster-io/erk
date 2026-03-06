@@ -313,7 +313,9 @@ class RealGitBranchOps(GitBranchOps):
             track = parts[2] if len(parts) > 2 else ""
 
             ahead, behind = 0, 0
+            gone = False
             if track:
+                gone = "gone" in track
                 # Parse "[ahead N, behind M]" or "[ahead N]" or "[behind M]"
                 ahead_match = re.search(r"ahead (\d+)", track)
                 behind_match = re.search(r"behind (\d+)", track)
@@ -327,6 +329,7 @@ class RealGitBranchOps(GitBranchOps):
                 upstream=upstream,
                 ahead=ahead,
                 behind=behind,
+                gone=gone,
             )
 
         return sync_info

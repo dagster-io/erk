@@ -73,23 +73,23 @@ This commonly happens when:
 
 ### Divergence vs Conflicts
 
-| Situation          | What It Means                             | Command to Use                 |
-| ------------------ | ----------------------------------------- | ------------------------------ |
-| Branch diverged    | Local and remote both have new commits    | `erk pr reconcile-with-remote` |
-| Rebase in progress | Conflict markers in files during a rebase | `erk pr rebase`                |
+| Situation          | What It Means                             | Command to Use       |
+| ------------------ | ----------------------------------------- | -------------------- |
+| Branch diverged    | Local and remote both have new commits    | `erk pr diverge-fix` |
+| Rebase in progress | Conflict markers in files during a rebase | `erk pr rebase`      |
 
-### Reconcile With Remote Command
+### Diverge Fix Command
 
 **CLI command** (outside a Claude session):
 
 ```bash
-erk pr reconcile-with-remote --dangerous
+erk pr diverge-fix --dangerous
 ```
 
 **Slash command** (inside a Claude Code session):
 
 ```
-/erk:reconcile-with-remote
+/erk:diverge-fix
 ```
 
 ### How It Works

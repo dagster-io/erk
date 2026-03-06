@@ -48,7 +48,7 @@ The core flow can auto-rebase because it controls the push directly. The Graphit
 
 When divergence is detected, the error message suggests two options:
 
-1. **`erk pr reconcile-with-remote --dangerous`**: Fetch, rebase onto remote, resolve any conflicts
+1. **`erk pr diverge-fix --dangerous`**: Fetch, rebase onto remote, resolve any conflicts
 2. **`erk pr submit -f`**: Force push, overriding whatever is on remote
 
 ## Graphite Tracking Divergence After Setup

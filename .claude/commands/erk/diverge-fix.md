@@ -1,8 +1,8 @@
 ---
-description: Reconcile branch with remote and resolve divergence intelligently
+description: Fix branch divergence with remote by rebasing and resolving conflicts
 ---
 
-# Reconcile With Remote
+# Diverge Fix
 
 Resolve "Branch X has been updated remotely" errors by reconciling with remote and handling any resulting conflicts.
 
@@ -113,7 +113,7 @@ If the commit SHAs don't match at all (not just diverged, but completely differe
 
 If there are uncommitted changes when starting:
 
-1. Stash changes: `git stash push -m "reconcile-with-remote: uncommitted work"`
+1. Stash changes: `git stash push -m "diverge-fix: uncommitted work"`
 2. Perform sync
 3. Pop stash: `git stash pop`
 4. Handle any stash conflicts

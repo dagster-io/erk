@@ -381,21 +381,21 @@ def stream_rebase(
 
 
 @dataclass(frozen=True)
-class ReconcileWithRemoteResult:
-    """Result from reconcile-with-remote streaming execution."""
+class DivergenceFixResult:
+    """Result from diverge-fix streaming execution."""
 
     success: bool
     error_message: str | None = None
     requires_interactive: bool = False
 
 
-def stream_reconcile_with_remote(
+def stream_diverge_fix(
     executor: PromptExecutor,
     worktree_path: Path,
-) -> ReconcileWithRemoteResult:
-    """Stream reconcile-with-remote command via Claude executor with live feedback.
+) -> DivergenceFixResult:
+    """Stream diverge-fix command via Claude executor with live feedback.
 
-    Handles the /erk:reconcile-with-remote command execution with:
+    Handles the /erk:diverge-fix command execution with:
     - Live output streaming with visual feedback
     - Semantic conflict detection (AskUserQuestion)
     - Deduped spinner updates
@@ -403,10 +403,10 @@ def stream_reconcile_with_remote(
 
     Args:
         executor: Prompt executor
-        worktree_path: Path to run the divergence reconciliation in
+        worktree_path: Path to run the divergence fix in
 
     Returns:
-        ReconcileWithRemoteResult with success status and error details
+        DivergenceFixResult with success status and error details
     """
     error_message: str | None = None
     success = True
@@ -415,11 +415,11 @@ def stream_reconcile_with_remote(
     start_time = time.time()
 
     # Print start marker with bold styling
-    click.echo(click.style("--- /erk:reconcile-with-remote ---", bold=True))
+    click.echo(click.style("--- /erk:diverge-fix ---", bold=True))
     click.echo("")
 
     for event in executor.execute_command_streaming(
-        command="/erk:reconcile-with-remote",
+        command="/erk:diverge-fix",
         worktree_path=worktree_path,
         dangerous=True,  # Divergence resolution modifies git state
         permission_mode="edits",
@@ -444,9 +444,9 @@ def stream_reconcile_with_remote(
                     click.echo("Claude needs your input to resolve this divergence.")
                     click.echo("Run divergence sync interactively:")
                     click.echo("")
-                    click.echo(click.style("    claude /erk:reconcile-with-remote", fg="cyan"))
+                    click.echo(click.style("    claude /erk:diverge-fix", fg="cyan"))
                     click.echo("")
-                    return ReconcileWithRemoteResult(
+                    return DivergenceFixResult(
                         success=False,
                         requires_interactive=True,
                     )
@@ -473,14 +473,14 @@ def stream_reconcile_with_remote(
                 error_message = msg
                 success = False
             case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
-                pass  # PR metadata not relevant for reconcile-with-remote
+                pass  # PR metadata not relevant for diverge-fix
 
     # Check for no-work-events failure mode
     if success and not has_work_events:
         success = False
         error_message = (
             "Claude completed without producing any output - "
-            "check hooks or run 'claude /erk:reconcile-with-remote' directly to debug"
+            "check hooks or run 'claude /erk:diverge-fix' directly to debug"
         )
         click.echo(click.style(f"   {error_message}", fg="yellow"))
 
@@ -494,4 +494,4 @@ def stream_reconcile_with_remote(
     else:
         click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
 
-    return ReconcileWithRemoteResult(success=success, error_message=error_message)
+    return DivergenceFixResult(success=success, error_message=error_message)

@@ -25,6 +25,19 @@ class GitRemoteOps(ABC):
     """
 
     @abstractmethod
+    def fetch_prune(self, repo_root: Path, remote: str) -> None:
+        """Fetch from a remote and prune deleted tracking branches.
+
+        Runs `git fetch --prune <remote>` to update remote refs and remove
+        any remote-tracking references that no longer exist on the remote.
+
+        Args:
+            repo_root: Path to the git repository root
+            remote: Remote name (e.g., "origin")
+        """
+        ...
+
+    @abstractmethod
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch a specific branch from a remote.
 

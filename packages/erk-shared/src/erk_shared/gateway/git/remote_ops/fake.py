@@ -49,6 +49,7 @@ class FakeGitRemoteOps(GitRemoteOps):
         pull_branch_raises: Exception | None = None,
         push_to_remote_error: PushError | None = None,
         pull_rebase_error: PullRebaseError | None = None,
+        fetch_prune_raises: Exception | None = None,
     ) -> None:
         """Create FakeGitRemoteOps with pre-configured state.
 
@@ -66,12 +67,21 @@ class FakeGitRemoteOps(GitRemoteOps):
         self._push_to_remote_error = push_to_remote_error
         self._pull_rebase_error = pull_rebase_error
 
+        self._fetch_prune_raises = fetch_prune_raises
+
         # Mutation tracking
+        self._fetch_prune_calls: list[tuple[Path, str]] = []
         self._fetched_branches: list[tuple[str, str]] = []
         self._pulled_branches: list[tuple[str, str, bool]] = []
         # Note: _pushed_branches uses PushedBranch from git.fake module
         self._pushed_branches: list[PushedBranch] = []
         self._pull_rebase_calls: list[tuple[Path, str, str]] = []
+
+    def fetch_prune(self, repo_root: Path, remote: str) -> None:
+        """Fetch and prune from remote (tracks mutation)."""
+        if self._fetch_prune_raises is not None:
+            raise self._fetch_prune_raises
+        self._fetch_prune_calls.append((repo_root, remote))
 
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch a specific branch from a remote (tracks mutation)."""
@@ -142,6 +152,14 @@ class FakeGitRemoteOps(GitRemoteOps):
     # ============================================================================
     # Mutation Tracking Properties
     # ============================================================================
+
+    @property
+    def fetch_prune_calls(self) -> list[tuple[Path, str]]:
+        """Read-only access to fetch_prune calls for test assertions.
+
+        Returns list of (repo_root, remote) tuples.
+        """
+        return list(self._fetch_prune_calls)
 
     @property
     def fetched_branches(self) -> list[tuple[str, str]]:

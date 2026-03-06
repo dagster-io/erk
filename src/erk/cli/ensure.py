@@ -123,7 +123,7 @@ class Ensure:
         """Ensure --dangerous flag is provided unless config disables the requirement.
 
         Centralizes the check for commands that invoke Claude with
-        --dangerously-skip-permissions (rebase, reconcile-with-remote, address).
+        --dangerously-skip-permissions (rebase, diverge-fix, address).
 
         Args:
             ctx: Application context with global config
