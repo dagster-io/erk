@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: Automated pushes attributed to user instead of bot"
-}
