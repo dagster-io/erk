@@ -1,0 +1,1154 @@
+<session>
+  <meta source="agent-a8613d4" />
+  <meta branch="plnd/add-erk-reconcile-rename-d-03-06-0728" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>I need to understand the test infrastructure for writing tests for a new `erk reconcile` CLI command. Find and return the following:
+
+1. The full content of `tests/commands/test_land.py` - specifically the first 100 lines showing imports, fixtures, and how test context is built
+2. The `build_workspace_test_context` function signature and implementation in `tests/conftest.py` or wherever it's defined
+3. The FakeGitHub class constructor - specifically how `prs_by_branch` parameter works and the `get_pr_for_branch` method
+4. The FakeGitBranchOps constructor - specifically how `branch_sync_info` parameter works and `list_local_branches` method
+5. The FakeGitWorktreeOps constructor - specifically the `find_worktree_for_branch` method
+6. How `FakePlanBackend` works - specifically `resolve_plan_id_for_branch`
+7. The `objective_helpers.get_objective_for_branch` function signature
+8. How `CliRunner` is used in existing tests (e.g. test_land.py) to invoke click commands
+
+Be thorough - I need exact signatures and patterns.</user>
+  <assistant>I'll help you understand the test infrastructure for writing tests for the new `erk reconcile` CLI command. Let me search for these components systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18950" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XdpNXhbxubouxjcfwexSrB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_land.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18950" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014zFVJaDSFBaHhTUmpBAtCE">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18950" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017ogrjukd8C234Y3NhJENyM">
+    <param name="pattern">class FakeGitHub</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18950" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012zv9zBP1CSWaHRLWijgHW9">
+    <param name="pattern">class FakeGitBranchOps</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18950" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015sdhHVANyT9BUozE1FPK5Q">
+    <param name="pattern">class FakeGitWorktreeOps</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18950" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Kzo751kLCCcxoLQhmcgaaZ">
+    <param name="pattern">class FakePlanBackend</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18950" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012UdjGV2dhHm819vhCnALTY">
+    <param name="pattern">def get_objective_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18950" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XdpNXhbxubouxjcfwexSrB">
+&lt;tool_use_error&gt;File does not exist.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_017ogrjukd8C234Y3NhJENyM">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_014zFVJaDSFBaHhTUmpBAtCE">
+Found 1 file
+tests/test_utils/context_builders.py
+  </tool_result>
+  <tool_result tool="toolu_012zv9zBP1CSWaHRLWijgHW9">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01Kzo751kLCCcxoLQhmcgaaZ">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_012UdjGV2dhHm819vhCnALTY">
+Found 2 files
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py
+  </tool_result>
+  <tool_result tool="toolu_015sdhHVANyT9BUozE1FPK5Q">
+No files found
+  </tool_result>
+  <assistant>Let me find the actual test files and fake implementations:</assistant>
+  <usage input_tokens="99" cache_creation_input_tokens="1002" cache_read_input_tokens="18950" cache_creation="{'ephemeral_5m_input_tokens': 1002, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01MQvG8pshD9aJguntF5WFqw">
+    <param name="pattern">tests/commands/test_*.py</param>
+  </tool_use>
+  <usage input_tokens="99" cache_creation_input_tokens="1002" cache_read_input_tokens="18950" cache_creation="{'ephemeral_5m_input_tokens': 1002, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QyFtHfYFQEfqzaChmxRNCs">
+    <param name="pattern">class Fake</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="99" cache_creation_input_tokens="1002" cache_read_input_tokens="18950" cache_creation="{'ephemeral_5m_input_tokens': 1002, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Rk31ctmd6pfqpBnDuyucyu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="99" cache_creation_input_tokens="1002" cache_read_input_tokens="18950" cache_creation="{'ephemeral_5m_input_tokens': 1002, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F8Jbicd5nUopXFhWogyi8o">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="99" cache_creation_input_tokens="1002" cache_read_input_tokens="18950" cache_creation="{'ephemeral_5m_input_tokens': 1002, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rk31ctmd6pfqpBnDuyucyu">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <tool_result tool="toolu_01F8Jbicd5nUopXFhWogyi8o">
+     1→"""Shared helpers for objective tracking in land commands.
+     2→
+     3→These helpers are used by `erk land` to check for linked objectives
+     4→and prompt users to update them after landing.
+     5→"""
+     6→
+     7→import logging
+     8→from pathlib import Path
+     9→
+    10→import click
+    11→
+    12→from erk.cli.output import stream_command_with_feedback
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.naming import extract_objective_number
+    15→from erk_shared.output.output import user_output
+    16→from erk_shared.plan_store.types import PlanNotFound, PlanState
+    17→
+    18→logger = logging.getLogger(__name__)
+    19→
+    20→
+    21→def check_and_display_plan_issue_closure(
+    22→    ctx: ErkContext,
+    23→    repo_root: Path,
+    24→    branch: str,
+    25→) -&gt; int | None:
+    26→    """Check and display plan issue closure status after landing.
+    27→
+    28→    Since PRs no longer contain "Closes #N", this always closes the plan
+    29→    issue directly via the API.
+    30→
+
+... [128 lines omitted] ...
+
+    67→    except RuntimeError:
+    84→    This is fail-open: catches all errors and never raises, because the
+   107→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+   123→    This is fail-open: catches all errors and never raises, because the
+   150→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+  </tool_result>
+  <tool_result tool="toolu_01QyFtHfYFQEfqzaChmxRNCs">
+Found 7 files
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/cli/commands/exec/scripts/test_push_session.py
+tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py
+tests/fakes/parallel_task_runner.py
+tests/fakes/prompt_executor.py
+tests/fakes/script_writer.py
+tests/cli/commands/split/test_plan.py
+  </tool_result>
+  <tool_result tool="toolu_01MQvG8pshD9aJguntF5WFqw">
+/home/runner/work/erk/erk/tests/commands/test_create.py
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py
+/home/runner/work/erk/erk/tests/commands/test_dash_workflow_runs.py
+/home/runner/work/erk/erk/tests/commands/test_top_level_commands.py
+/home/runner/work/erk/erk/tests/commands/test_status_with_fakes.py
+/home/runner/work/erk/erk/tests/commands/test_release_notes.py
+/home/runner/work/erk/erk/tests/commands/test_wt_checkout.py
+/home/runner/work/erk/erk/tests/commands/test_ensure_worktree.py
+  </tool_result>
+  <assistant>Now let me find test examples and fake implementations:</assistant>
+  <usage input_tokens="4379" cache_creation_input_tokens="3521" cache_read_input_tokens="19952" cache_creation="{'ephemeral_5m_input_tokens': 3521, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PXhBNRrrtgbEYQCdSeM1xK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_wt_checkout.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="4379" cache_creation_input_tokens="3521" cache_read_input_tokens="19952" cache_creation="{'ephemeral_5m_input_tokens': 3521, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012Gx8ckMbC4dG9mupu3vsUe">
+    <param name="pattern">tests/fakes/*.py</param>
+  </tool_use>
+  <usage input_tokens="4379" cache_creation_input_tokens="3521" cache_read_input_tokens="19952" cache_creation="{'ephemeral_5m_input_tokens': 3521, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SZixPWxidZucRAL3oUYzy6">
+    <param name="pattern">class FakeGit</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="4379" cache_creation_input_tokens="3521" cache_read_input_tokens="19952" cache_creation="{'ephemeral_5m_input_tokens': 3521, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PXhBNRrrtgbEYQCdSeM1xK">
+     1→"""Tests for erk wt checkout command (and co alias)."""
+     2→
+     3→import os
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.cli import cli
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from tests.test_utils.env_helpers import erk_inmem_env
+    13→
+    14→
+    15→def test_checkout_named_worktree() -&gt; None:
+    16→    """Test navigating to an existing worktree by name using 'co' alias."""
+    17→    runner = CliRunner()
+    18→    with erk_inmem_env(runner) as env:
+    19→        # Set up worktrees: root on main, feature-work on feature-1
+    20→        worktree_path = env.repo.worktrees_dir / "feature-work"
+    21→
+    22→        git_ops = FakeGit(
+    23→            worktrees={
+    24→                env.cwd: [
+    25→                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+    26→                    WorktreeInfo(path=worktree_path, branch="feature-1", is_root=False),
+    27→                ]
+    28→            },
+    29→            current_branches={env.cwd: "main", worktree_path: "feature-1"},
+    30→            default_branches={env.cwd: "main"},
+
+... [125 lines omitted] ...
+
+    41→            catch_exceptions=False,
+    82→            catch_exceptions=False,
+    98→    """Test error when worktree doesn't exist."""
+   120→            catch_exceptions=False,
+   123→        # Assert: Command failed
+   126→        # Assert: Error message shows available worktrees
+   127→        assert "Error:" in result.output
+  </tool_result>
+  <tool_result tool="toolu_01SZixPWxidZucRAL3oUYzy6">
+Found 19 files
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py
+tests/cli/commands/split/test_plan.py
+packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py
+packages/erk-shared/src/erk_shared/gateway/github/fake.py
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/tag_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py
+docs/learned/architecture/protocol-vs-abc.md
+docs/learned/architecture/gateway-abc-implementation.md
+docs/learned/architecture/gateway-error-boundaries.md
+docs/learned/architecture/erk-architecture.md
+.claude/skills/dignified-python/references/api-design.md
+  </tool_result>
+  <tool_result tool="toolu_012Gx8ckMbC4dG9mupu3vsUe">
+/home/runner/work/erk/erk/tests/fakes/__init__.py
+/home/runner/work/erk/erk/tests/fakes/shell.py
+/home/runner/work/erk/erk/tests/fakes/parallel_task_runner.py
+/home/runner/work/erk/erk/tests/fakes/github_admin.py
+/home/runner/work/erk/erk/tests/fakes/completion.py
+/home/runner/work/erk/erk/tests/fakes/context.py
+/home/runner/work/erk/erk/tests/fakes/script_writer.py
+/home/runner/work/erk/erk/tests/fakes/prompt_executor.py
+  </tool_result>
+  <assistant>Now let me read the fake implementations:</assistant>
+  <usage input_tokens="450" cache_creation_input_tokens="9208" cache_read_input_tokens="23473" cache_creation="{'ephemeral_5m_input_tokens': 9208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011wdPT6wFvCr1ZDJD1KWbjb">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="450" cache_creation_input_tokens="9208" cache_read_input_tokens="23473" cache_creation="{'ephemeral_5m_input_tokens': 9208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0181ExC2zvrJxDVLzt2bUqZY">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="450" cache_creation_input_tokens="9208" cache_read_input_tokens="23473" cache_creation="{'ephemeral_5m_input_tokens': 9208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HaYDsAmp593fkzTNYKz7d3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="450" cache_creation_input_tokens="9208" cache_read_input_tokens="23473" cache_creation="{'ephemeral_5m_input_tokens': 9208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FR8ib3TzYP52CsEob99uLt">
+    <param name="pattern">class.*WorktreeOps</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="450" cache_creation_input_tokens="9208" cache_read_input_tokens="23473" cache_creation="{'ephemeral_5m_input_tokens': 9208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011wdPT6wFvCr1ZDJD1KWbjb">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
+    22→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    23→from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    24→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    25→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    26→from erk_shared.gateway.git.commit_ops.fake import (
+    27→    BranchCommitRecord,
+    28→    CommitRecord,
+    29→    FakeGitCommitOps,
+    30→)
+
+... [175 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   135→        delete_branch_raises: dict[str, Exception] | None = None,
+   138→        tracking_branch_failures: dict[str, str] | None = None,
+   148→        add_all_raises: Exception | None = None,
+   149→        fetch_branch_raises: Exception | None = None,
+   150→        pull_branch_raises: Exception | None = None,
+   153→        rebase_continue_raises: Exception | None = None,
+   160→        push_to_remote_error: PushError | None = None,
+   164→        rebase_abort_raises: Exception | None = None,
+   165→        pull_rebase_error: PullRebaseError | None = None,
+   167→        create_branch_error: BranchAlreadyExists | None = None,
+   168→        add_worktree_error: str | None = None,
+   169→        remove_worktree_error: str | None = None,
+   170→        ahead_behind_raises: RuntimeError | None = None,
+   195→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+   199→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+  </tool_result>
+  <tool_result tool="toolu_0181ExC2zvrJxDVLzt2bUqZY">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import GitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+
+... [175 lines omitted] ...
+
+    71→        resolve_thread_failures: set[str] | None = None,
+    72→        pr_diff_error: str | None = None,
+    73→        workflow_runs_error: str | None = None,
+    81→        add_label_errors: dict[str, str] | None = None,
+   111→                RuntimeError simulating GraphQL rate limit
+   112→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   113→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   114→                Use to simulate HTTP 406 "diff too large" errors.
+   115→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   116→                RuntimeError with this message. Use to simulate API failures.
+   120→                False or raise to simulate failure.
+   156→        self._resolve_thread_failures = resolve_thread_failures or set()
+   157→        self._pr_diff_error = pr_diff_error
+   158→        self._workflow_runs_error = workflow_runs_error
+   191→        self._add_label_errors = add_label_errors or {}
+  </tool_result>
+  <tool_result tool="toolu_01HaYDsAmp593fkzTNYKz7d3">
+     1→"""Fake Git branch operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, WorktreeInfo
+     9→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    10→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    11→
+    12→
+    13→class FakeGitBranchOps(GitBranchOps):
+    14→    """In-memory fake implementation of Git branch operations.
+    15→
+    16→    State Management:
+    17→    -----------------
+    18→    This fake maintains mutable state to simulate git's stateful behavior.
+    19→    Operations like create_branch, checkout_branch modify internal state.
+    20→    State changes are visible to subsequent method calls within the same test.
+    21→
+    22→    Mutation Tracking:
+    23→    -----------------
+    24→    This fake tracks mutations for test assertions via read-only properties:
+    25→    - created_branches: Branches created via create_branch()
+    26→    - deleted_branches: Branches deleted via delete_branch()
+    27→    - checked_out_branches: Branches checked out via checkout_branch()
+    28→    - detached_checkouts: Refs checked out via checkout_detached()
+    29→    - created_tracking_branches: Tracking branches created via create_tracking_branch()
+    30→    """
+
+... [125 lines omitted] ...
+
+    48→        delete_branch_raises: dict[str, Exception] | None = None,
+    49→        tracking_branch_failures: dict[str, str] | None = None,
+    50→        create_branch_error: BranchAlreadyExists | None = None,
+    51→        ahead_behind_raises: RuntimeError | None = None,
+    68→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+    69→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+    71→            create_branch_error: If set, create_branch returns this error instead of BranchCreated
+    72→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+    95→        self._tracking_branch_failures = (
+    96→            tracking_branch_failures if tracking_branch_failures is not None else {}
+    98→        self._create_branch_error = create_branch_error
+   117→        Returns create_branch_error if configured, otherwise BranchCreated.
+   119→        if self._create_branch_error is not None:
+   120→            return self._create_branch_error
+   127→        If delete_branch_raises contains a CalledProcessError, it is wrapped in
+   128→        RuntimeError to match run_subprocess_with_context behavior.
+   130→        # Check if we should raise an exception for this branch
+   133→            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
+   134→            if isinstance(exc, subprocess.CalledProcessError):
+   135→                raise RuntimeError(f"Failed to delete branch {branch_name}") from exc
+   150→                    msg = f"fatal: '{branch}' is already checked out at '{wt.path}'"
+  </tool_result>
+  <tool_result tool="toolu_01FR8ib3TzYP52CsEob99uLt">
+No files found
+  </tool_result>
+  <assistant>Let me find worktree operations:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10903" cache_read_input_tokens="32681" cache_creation="{'ephemeral_5m_input_tokens': 10903, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JSGwE2p1DJkGMAf137oecH">
+    <param name="pattern">class.*Worktree</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10903" cache_read_input_tokens="32681" cache_creation="{'ephemeral_5m_input_tokens': 10903, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CQ3esozj6z7y1aqYUQRSwz">
+    <param name="pattern">class FakePlanBackend</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10903" cache_read_input_tokens="32681" cache_creation="{'ephemeral_5m_input_tokens': 10903, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017x7PoqSpFrFopPKArtmEGj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_status_with_fakes.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10903" cache_read_input_tokens="32681" cache_creation="{'ephemeral_5m_input_tokens': 10903, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017x7PoqSpFrFopPKArtmEGj">
+     1→"""CLI tests for erk status command.
+     2→
+     3→This file focuses on CLI-specific concerns for the status command:
+     4→- Command execution and exit codes
+     5→- Output formatting and display
+     6→- Path resolution (subdirectories, worktree detection)
+     7→- Error handling and messages
+     8→
+     9→The status command orchestrates multiple collectors (git, PR, stack, plan).
+    10→The business logic of these collectors is tested in their respective unit test files:
+    11→- tests/unit/status/test_github_pr_collector.py - PR collector logic
+    12→- tests/unit/status/test_graphite_stack_collector.py - Stack collector logic
+    13→- tests/unit/status/test_plan_collector.py - Plan collector logic
+    14→- tests/unit/status/test_orchestrator.py - Collector orchestration
+    15→
+    16→This file trusts that unit layer and only tests CLI integration.
+    17→"""
+    18→
+    19→import os
+    20→from pathlib import Path
+    21→
+    22→from click.testing import CliRunner
+    23→
+    24→from erk.cli.commands.status import status_cmd
+    25→from erk.core.context import context_for_test
+    26→from erk_shared.context.types import GlobalConfig
+    27→from erk_shared.gateway.git.abc import WorktreeInfo
+    28→from erk_shared.gateway.git.fake import FakeGit
+    29→from tests.fakes.context import create_test_context
+    30→from tests.test_utils.builders import WorktreeScenario
+
+... [75 lines omitted] ...
+
+    40→        result = runner.invoke(status_cmd, obj=simple_repo.ctx, catch_exceptions=False)
+    58→        result = runner.invoke(status_cmd, obj=repo_with_feature.ctx, catch_exceptions=False)
+  </tool_result>
+  <tool_result tool="toolu_01CQ3esozj6z7y1aqYUQRSwz">
+Found 2 files
+.claude/skills/fake-driven-testing/references/anti-patterns.md
+.claude/skills/fake-driven-testing/references/gateway-architecture.md
+  </tool_result>
+  <tool_result tool="toolu_01JSGwE2p1DJkGMAf137oecH">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/git/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py
+  </tool_result>
+  <assistant>Now let me read the worktree fake and find plan backend:</assistant>
+  <usage input_tokens="1600" cache_creation_input_tokens="641" cache_read_input_tokens="43584" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XGiwEQQvtCT8iUsXP2DLro">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1600" cache_creation_input_tokens="641" cache_read_input_tokens="43584" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015aoDzGah8CHjZqHfxCn5Wt">
+    <param name="pattern">resolve_plan_id_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1600" cache_creation_input_tokens="641" cache_read_input_tokens="43584" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ttx2hvDRxbvQC12VSKBvcw">
+    <param name="pattern">class.*PlanBackend</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1600" cache_creation_input_tokens="641" cache_read_input_tokens="43584" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XGiwEQQvtCT8iUsXP2DLro">
+     1→"""Fake worktree operations for testing.
+     2→
+     3→FakeWorktree is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import os
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from erk_shared.gateway.git.worktree.abc import Worktree
+    12→
+    13→
+    14→class FakeWorktree(Worktree):
+    15→    """In-memory fake implementation of git worktree operations.
+    16→
+    17→    State Management:
+    18→    -----------------
+    19→    This fake maintains mutable state to simulate git's stateful behavior.
+    20→    Operations like add_worktree, move_worktree modify internal state.
+    21→    State changes are visible to subsequent method calls within the same test.
+    22→
+    23→    Constructor Injection:
+    24→    ---------------------
+    25→    All INITIAL state is provided via constructor (immutable after construction).
+    26→    Runtime mutations occur through operation methods.
+    27→    Tests should construct fakes with complete initial state.
+    28→
+    29→    Mutation Tracking:
+    30→    -----------------
+
+... [125 lines omitted] ...
+
+    43→        add_worktree_error: str | None = None,
+    44→        remove_worktree_error: str | None = None,
+    52→            add_worktree_error: If set, add_worktree raises RuntimeError with this message
+    53→            remove_worktree_error: Error message to raise from remove_worktree() for error injection
+    60→        self._add_worktree_error = add_worktree_error
+    61→        self._remove_worktree_error = remove_worktree_error
+   102→        Raises RuntimeError if add_worktree_error is configured.
+   104→        if self._add_worktree_error is not None:
+   105→            raise RuntimeError(self._add_worktree_error)
+   133→        # Check for error injection first
+   134→        if self._remove_worktree_error is not None:
+   135→            raise RuntimeError(self._remove_worktree_error)
+  </tool_result>
+  <tool_result tool="toolu_01Ttx2hvDRxbvQC12VSKBvcw">
+Found 4 files
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+.claude/skills/fake-driven-testing/references/anti-patterns.md
+.claude/skills/fake-driven-testing/references/gateway-architecture.md
+  </tool_result>
+  <tool_result tool="toolu_015aoDzGah8CHjZqHfxCn5Wt">
+Found 24 files
+src/erk/cli/commands/reconcile_pipeline.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/cli/commands/pr/test_dispatch_cmd.py
+tests/commands/pr/test_rewrite.py
+tests/commands/land/test_get_objective_for_branch.py
+tests/commands/land/test_plan_issue_closure.py
+src/erk/cli/commands/pr/view_cmd.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/implement_shared.py
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+docs/learned/planning/tripwires.md
+docs/learned/planning/metadata-update-patterns.md
+docs/learned/planning/branch-name-inference.md
+docs/learned/planning/branch-plan-resolution.md
+docs/learned/erk/dispatch-ref-config.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MPHphCyH58ShTKfhiDjfCE">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="120" cache_creation_input_tokens="4825" cache_read_input_tokens="44225" cache_creation="{'ephemeral_5m_input_tokens': 4825, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0184z4WM5gjPqwc88nrifNYk">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="120" cache_creation_input_tokens="4825" cache_read_input_tokens="44225" cache_creation="{'ephemeral_5m_input_tokens': 4825, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011gscZHRjahjSCHUBiBpA72">
+    <param name="pattern">class.*Fake.*Plan</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="120" cache_creation_input_tokens="4825" cache_read_input_tokens="44225" cache_creation="{'ephemeral_5m_input_tokens': 4825, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MPHphCyH58ShTKfhiDjfCE">
+     1→"""Abstract interface for plan storage backends.
+     2→
+     3→PlanBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+     4→and should NOT have fake implementations. To test code that uses a PlanBackend,
+     5→inject fake gateways into the real backend implementation.
+     6→
+     7→Example:
+     8→    # Testing with fake gateway
+     9→    fake_issues = FakeGitHubIssues()
+    10→    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    11→    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    12→    result = backend.create_plan(...)
+    13→
+    14→    # Assert on gateway mutations
+    15→    assert fake_issues.created_issues[0][0] == "expected title"
+    16→
+    17→See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
+    18→for the full gateway vs backend architecture.
+    19→"""
+    20→
+    21→from __future__ import annotations
+    22→
+    23→from abc import ABC, abstractmethod
+    24→from collections.abc import Mapping
+    25→from pathlib import Path
+    26→
+    27→from erk_shared.gateway.github.metadata.schemas import (
+    28→    CREATED_FROM_SESSION,
+    29→    LAST_LEARN_SESSION,
+    30→    LAST_LOCAL_IMPL_SESSION,
+
+... [75 lines omitted] ...
+
+    99→            RuntimeError: If provider fails
+  </tool_result>
+  <tool_result tool="toolu_0184z4WM5gjPqwc88nrifNYk">
+     1→"""Draft PR implementation of plan storage.
+     2→
+     3→Uses GitHub draft pull requests as the backing store for plans.
+     4→PR body contains the plan-header metadata block followed by plan content.
+     5→The "erk-plan" label identifies plan PRs vs regular draft PRs.
+     6→"""
+     7→
+     8→import logging
+     9→from collections.abc import Mapping
+    10→from datetime import UTC
+    11→from pathlib import Path
+    12→
+    13→from erk_shared.gateway.github.abc import GitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    add_metadata_block,
+    18→    find_metadata_block,
+    19→    has_metadata_block,
+    20→    render_metadata_block,
+    21→    replace_metadata_block_in_body,
+    22→)
+    23→from erk_shared.gateway.github.metadata.plan_header import (
+    24→    format_plan_header_body,
+    25→)
+    26→from erk_shared.gateway.github.metadata.schemas import (
+    27→    CREATED_FROM_SESSION,
+    28→    CREATED_FROM_WORKFLOW_RUN_URL,
+    29→    LEARNED_FROM_ISSUE,
+    30→    OBJECTIVE_ISSUE,
+
+... [75 lines omitted] ...
+
+    47→    PlanHeaderNotFoundError,
+    68→        ValueError: If value cannot be converted to int
+    76→    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+  </tool_result>
+  <tool_result tool="toolu_011gscZHRjahjSCHUBiBpA72">
+Found 7 files
+src/erk/tui/data/fake_provider.py
+packages/erk-shared/tests/unit/learn/extraction/claude_code_session_store/test_fake.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py
+packages/erk-shared/src/erk_shared/core/fakes.py
+.claude/skills/fake-driven-testing/references/anti-patterns.md
+.claude/skills/fake-driven-testing/references/gateway-architecture.md
+  </tool_result>
+  <assistant>Now let me look at a complete test example and understand how PlannedPRBackend is used in tests:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3275" cache_read_input_tokens="49050" cache_creation="{'ephemeral_5m_input_tokens': 3275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N4BLxQoatSxR9rmcK4RPyJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_plan_issue_closure.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3275" cache_read_input_tokens="49050" cache_creation="{'ephemeral_5m_input_tokens': 3275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018pDeuopPdaUafJ9A331PZ4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_get_objective_for_branch.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3275" cache_read_input_tokens="49050" cache_creation="{'ephemeral_5m_input_tokens': 3275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Gf5HfnZ4M4ueFYvD3ChTB1">
+    <param name="pattern">def test_land</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3275" cache_read_input_tokens="49050" cache_creation="{'ephemeral_5m_input_tokens': 3275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N4BLxQoatSxR9rmcK4RPyJ">
+     1→"""Tests for plan issue closure display in erk land command.
+     2→
+     3→Since resolve_plan_id_for_branch always returns None (plan IDs are not
+     4→encoded in branch names), check_and_display_plan_issue_closure always
+     5→returns None for any branch. These tests verify that behavior.
+     6→"""
+     7→
+     8→from io import StringIO
+     9→from pathlib import Path
+    10→from unittest.mock import patch
+    11→
+    12→from erk.cli.commands.objective_helpers import check_and_display_plan_issue_closure
+    13→from erk.core.context import context_for_test
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→
+    16→
+    17→def test_returns_none_for_plnd_branch(tmp_path: Path) -&gt; None:
+    18→    """plnd/ branches don't encode plan IDs — returns None with no output."""
+    19→    issues_ops = FakeGitHubIssues(username="testuser", issues={})
+    20→    ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
+    21→
+    22→    captured = StringIO()
+    23→    with patch("sys.stderr", captured):
+    24→        result = check_and_display_plan_issue_closure(ctx, tmp_path, "plnd/test-feature-01-15-1430")
+    25→
+    26→    assert result is None
+    27→    assert captured.getvalue() == ""
+    28→
+    29→
+    30→def test_returns_none_for_feature_branch(tmp_path: Path) -&gt; None:
+
+... [29 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018pDeuopPdaUafJ9A331PZ4">
+     1→"""Tests for get_objective_for_branch helper in erk land command.
+     2→
+     3→Tests the branch-name extraction behavior: since resolve_plan_id_for_branch
+     4→always returns None (plan IDs are not encoded in branch names), the function
+     5→relies solely on extract_objective_number() which parses plnd/O{N}-... patterns.
+     6→"""
+     7→
+     8→from pathlib import Path
+     9→
+    10→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    11→from erk.core.context import context_for_test
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→
+    14→
+    15→def test_extracts_objective_from_plnd_branch(tmp_path: Path) -&gt; None:
+    16→    """plnd/ branch with O-prefix — extract objective from branch name."""
+    17→    issues_ops = FakeGitHubIssues(username="testuser", issues={})
+    18→    ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
+    19→
+    20→    result = get_objective_for_branch(ctx, tmp_path, "plnd/O100-test-feature-01-15-1430")
+    21→
+    22→    assert result == 100
+    23→
+    24→
+    25→def test_extracts_objective_from_plnd_branch_large_number(tmp_path: Path) -&gt; None:
+    26→    """plnd/ branch with large objective number."""
+    27→    issues_ops = FakeGitHubIssues(username="testuser", issues={})
+    28→    ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
+    29→
+    30→    result = get_objective_for_branch(ctx, tmp_path, "plnd/O7709-plan-lazy-tip-sync-f-02-21-1116")
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Gf5HfnZ4M4ueFYvD3ChTB1">
+Found 9 files
+tests/commands/land/test_branch_errors.py
+tests/commands/land/test_confirmation.py
+tests/commands/land/test_core.py
+tests/commands/land/test_git_pull.py
+tests/commands/land/test_learn_skip_remote.py
+tests/commands/land/test_objective_update.py
+tests/commands/land/test_pr_arguments.py
+tests/commands/land/test_unresolved_comments.py
+tests/commands/land/test_up_flag.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_015XxM2jAj45peFWi3WMC61q">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/land/test_core.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2962" cache_read_input_tokens="52325" cache_creation="{'ephemeral_5m_input_tokens': 2962, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dfx8Arg6uCAUUcdB9gb8Ua">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+    <param name="offset">150</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2962" cache_read_input_tokens="52325" cache_creation="{'ephemeral_5m_input_tokens': 2962, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011YbzW7ua1zjUpDDSTbfW1x">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">300</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2962" cache_read_input_tokens="52325" cache_creation="{'ephemeral_5m_input_tokens': 2962, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015XxM2jAj45peFWi3WMC61q">
+     1→"""Tests for erk land command - core functionality.
+     2→
+     3→The land command:
+     4→1. Merges the PR
+     5→2. Deletes worktree and navigates to trunk
+     6→
+     7→It accepts:
+     8→- No argument (current branch's PR)
+     9→- PR number
+    10→- PR URL
+    11→- Branch name
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→from click.testing import CliRunner
+    17→
+    18→from erk.cli.cli import cli
+    19→from erk.core.repo_discovery import RepoContext
+    20→from erk_shared.gateway.git.abc import WorktreeInfo
+    21→from erk_shared.gateway.git.fake import FakeGit
+    22→from erk_shared.gateway.github.fake import FakeGitHub
+    23→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    24→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    25→from erk_shared.gateway.graphite.fake import FakeGraphite
+    26→from erk_shared.gateway.graphite.types import BranchMetadata
+    27→from tests.test_utils.cli_helpers import assert_cli_error
+    28→from tests.test_utils.env_helpers import erk_inmem_env
+    29→
+    30→
+
+... [175 lines omitted] ...
+
+   115→            cli, ["land", "--script", "--force", "--down"], obj=test_ctx, catch_exceptions=False
+   135→        assert 'PR_NUMBER="${1:?Error: PR number required}"' in script_content
+   136→        assert 'BRANCH="${2:?Error: Branch name required}"' in script_content
+  </tool_result>
+  <tool_result tool="toolu_01Dfx8Arg6uCAUUcdB9gb8Ua">
+   150→    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+   151→        """Find worktree path for given branch name in fake data."""
+   152→        worktrees = self.list_worktrees(repo_root)
+   153→        for wt in worktrees:
+   154→            if wt.branch == branch:
+   155→                return wt.path
+   156→        return None
+   157→
+   158→    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+   159→        """Check if a branch is already checked out in any worktree."""
+   160→        return self.find_worktree_for_branch(repo_root, branch)
+   161→
+   162→    def is_worktree_clean(self, worktree_path: Path) -&gt; bool:
+   163→        """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
+   164→        # Check if path exists (LBYL pattern)
+   165→        if worktree_path not in self._existing_paths:
+   166→            return False
+   167→
+   168→        # Check if worktree is marked as dirty
+   169→        if worktree_path in self._dirty_worktrees:
+   170→            return False
+   171→
+   172→        return True
+   173→
+   174→    def _is_parent(self, parent: Path, child: Path) -&gt; bool:
+   175→        """Check if parent is an ancestor of child."""
+   176→        return child.is_relative_to(parent)
+   177→
+   178→    def _is_sentinel_path(self, path: Path) -&gt; bool:
+   179→        """Check if path is a SentinelPath (pure test mode).
+
+... [25 lines omitted] ...
+
+   188→        except ImportError:
+  </tool_result>
+  <tool_result tool="toolu_011YbzW7ua1zjUpDDSTbfW1x">
+   300→        Returns:
+   301→            An incrementing fake PR number for testing
+   302→        """
+   303→        pr_number = self._next_pr_number
+   304→        self._next_pr_number += 1
+   305→        self._created_prs.append((branch, title, body, base, draft))
+   306→
+   307→        effective_base = base if base is not None else "main"
+   308→        pr_url = (
+   309→            f"https://github.com/{self._repo_info.owner}/{self._repo_info.name}/pull/{pr_number}"
+   310→        )
+   311→
+   312→        details = PRDetails(
+   313→            number=pr_number,
+   314→            url=pr_url,
+   315→            title=title,
+   316→            body=body,
+   317→            state="OPEN",
+   318→            is_draft=draft,
+   319→            base_ref_name=effective_base,
+   320→            head_ref_name=branch,
+   321→            is_cross_repository=False,
+   322→            mergeable="UNKNOWN",
+   323→            merge_state_status="UNKNOWN",
+   324→            owner=self._repo_info.owner,
+   325→            repo=self._repo_info.name,
+   326→            labels=(),
+   327→            created_at=self._time.now().replace(tzinfo=UTC),
+   328→            updated_at=self._time.now().replace(tzinfo=UTC),
+   329→            author=self._repo_info.owner,
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Let me get one more piece - how to look up prs_by_branch:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5539" cache_read_input_tokens="55287" cache_creation="{'ephemeral_5m_input_tokens': 5539, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0143RKoGYRUNyB9aRm4FX1xB">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">500</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5539" cache_read_input_tokens="55287" cache_creation="{'ephemeral_5m_input_tokens': 5539, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QSo6F6ufK3sUiPf7QFvKoV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="offset">170</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5539" cache_read_input_tokens="55287" cache_creation="{'ephemeral_5m_input_tokens': 5539, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01X5VQSxH3PZRNqFweZohmy9">
+    <param name="command">find packages/erk-shared/src/erk_shared/plan_store -name "*.py" -type f | head -20</param>
+    <param name="description">List plan store files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5539" cache_read_input_tokens="55287" cache_creation="{'ephemeral_5m_input_tokens': 5539, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0143RKoGYRUNyB9aRm4FX1xB">
+   500→
+   501→            # Priority 2: failed completed runs
+   502→            failed_runs = [
+   503→                r for r in branch_runs if r.status == "completed" and r.conclusion == "failure"
+   504→            ]
+   505→            if failed_runs:
+   506→                result[branch] = failed_runs[0]
+   507→                continue
+   508→
+   509→            # Priority 3: successful completed runs (most recent = first in list)
+   510→            completed_runs = [r for r in branch_runs if r.status == "completed"]
+   511→            if completed_runs:
+   512→                result[branch] = completed_runs[0]
+   513→                continue
+   514→
+   515→            # Priority 4: any other runs (unknown status, etc.)
+   516→            if branch_runs:
+   517→                result[branch] = branch_runs[0]
+   518→
+   519→        return result
+   520→
+   521→    def poll_for_workflow_run(
+   522→        self,
+   523→        *,
+   524→        repo_root: Path,
+   525→        workflow: str,
+   526→        branch_name: str,
+   527→        timeout: int = 30,
+   528→        poll_interval: int = 2,
+   529→    ) -&gt; str | None:
+
+... [75 lines omitted] ...
+
+   590→        Raises RuntimeError if workflow_runs_error is set, simulating API failures.
+   599→        if self._workflow_runs_error is not None:
+  </tool_result>
+  <tool_result tool="toolu_01QSo6F6ufK3sUiPf7QFvKoV">
+   170→        for repo_root, worktrees in self._worktrees.items():
+   171→            for i, wt in enumerate(worktrees):
+   172→                if wt.path.resolve() == cwd.resolve():
+   173→                    self._worktrees[repo_root][i] = WorktreeInfo(
+   174→                        path=wt.path, branch=None, is_root=wt.is_root
+   175→                    )
+   176→                    break
+   177→        # Track the detached checkout
+   178→        self._detached_checkouts.append((cwd, ref))
+   179→
+   180→    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; None:
+   181→        """Create a local tracking branch from a remote branch (fake implementation)."""
+   182→        # Check if this branch should fail
+   183→        if branch in self._tracking_branch_failures:
+   184→            error_msg = self._tracking_branch_failures[branch]
+   185→            raise subprocess.CalledProcessError(
+   186→                returncode=1, cmd=["git", "branch", "--track", branch, remote_ref], stderr=error_msg
+   187→            )
+   188→
+   189→        # Track this mutation
+   190→        self._created_tracking_branches.append((branch, remote_ref))
+   191→
+   192→        # In the fake, we simulate branch creation by adding to local branches
+   193→        if repo_root not in self._local_branches:
+   194→            self._local_branches[repo_root] = []
+   195→        if branch not in self._local_branches[repo_root]:
+   196→            self._local_branches[repo_root].append(branch)
+   197→
+   198→    @property
+   199→    def created_branches(self) -&gt; list[tuple[Path, str, str, bool]]:
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01X5VQSxH3PZRNqFweZohmy9">
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/plan_content.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+packages/erk-shared/src/erk_shared/plan_store/conversion.py
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+packages/erk-shared/src/erk_shared/plan_store/__init__.py
+packages/erk-shared/src/erk_shared/plan_store/types.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_015VfNgjisjPHinK7HvLcsPH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">100</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2772" cache_read_input_tokens="60826" cache_creation="{'ephemeral_5m_input_tokens': 2772, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0181XpWH8mAeUZFpM6avsYgc">
+    <param name="pattern">def get_pr_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-B">2</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2772" cache_read_input_tokens="60826" cache_creation="{'ephemeral_5m_input_tokens': 2772, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015VfNgjisjPHinK7HvLcsPH">
+   100→        """
+   101→        ...
+   102→
+   103→    @abstractmethod
+   104→    def get_provider_name(self) -&gt; str:
+   105→        """Get the name of the provider.
+   106→
+   107→        Returns:
+   108→            Provider name (e.g., "github", "gitlab", "linear")
+   109→        """
+   110→        ...
+   111→
+   112→    @abstractmethod
+   113→    def get_metadata_field(
+   114→        self,
+   115→        repo_root: Path,
+   116→        plan_id: str,
+   117→        field_name: str,
+   118→    ) -&gt; object | PlanNotFound:
+   119→        """Get a single metadata field from a plan.
+   120→
+   121→        Args:
+   122→            repo_root: Repository root directory
+   123→            plan_id: Provider-specific identifier
+   124→            field_name: Name of the metadata field to read
+   125→
+   126→        Returns:
+   127→            Field value (may be None if unset), or PlanNotFound if plan doesn't exist
+   128→        """
+   129→        ...
+
+... [75 lines omitted] ...
+
+   165→            RuntimeError: If provider fails or plan not found
+   196→            RuntimeError: If plan not found
+  </tool_result>
+  <tool_result tool="toolu_0181XpWH8mAeUZFpM6avsYgc">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-403-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-404-    @abstractmethod
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:405:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-406-        """Get comprehensive PR details for a branch.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-407-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-408-        Args:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-409-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-410-            branch: Branch name to look up
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-411-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-412-        Returns:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-413-            PRDetails if a PR exists for the branch, PRNotFound otherwise
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-414-        """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-415-        ...
+--
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-193-        return self._wrapped.get_pr(repo_root, pr_number)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-194-
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:195:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-196-        """Delegate read operation to wrapped implementation."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-197-        return self._wrapped.get_pr_for_branch(repo_root, branch)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-198-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-199-    def list_prs(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-200-        self,
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-201-        repo_root: Path,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-202-        *,
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-203-        state: PRListState,
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-204-        labels: list[str] | None = None,
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-205-        author: str | None = None,
+--
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1366-        return self._parse_pr_details_from_rest_api(data, self._repo_info)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1367-
+
+... [39 lines omitted] ...
+  </tool_result>
+</session>

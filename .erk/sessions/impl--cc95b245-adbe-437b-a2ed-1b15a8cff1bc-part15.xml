@@ -1,0 +1,447 @@
+<session>
+  <meta source="agent-a8613d4" />
+  <meta branch="plnd/add-erk-reconcile-rename-d-03-06-0728" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <assistant>Perfect! Now I have enough information. Let me compile a comprehensive report:
+
+---
+
+# Test Infrastructure Guide for `erk reconcile` CLI Command
+
+## 1. Test File Location &amp; Imports Pattern
+
+Based on `/home/runner/work/erk/erk/tests/commands/test_wt_checkout.py`:
+
+```python
+"""Tests for erk reconcile command."""
+
+from pathlib import Path
+from click.testing import CliRunner
+
+from erk.cli.cli import cli
+from erk_shared.gateway.git.abc import WorktreeInfo, BranchSyncInfo
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails
+from tests.test_utils.env_helpers import erk_inmem_env
+```
+
+## 2. Test Context Builder Function
+
+**Location**: `/home/runner/work/erk/erk/tests/test_utils/context_builders.py`
+
+**Signature**:
+```python
+def build_workspace_test_context(
+    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    *,
+    dry_run: bool = False,
+    use_graphite: bool = False,
+    current_branch: str | None = None,
+    **kwargs,
+) -&gt; ErkContext
+```
+
+**Key Features**:
+- Automatically creates `FakeGit` with sensible defaults if not provided in `kwargs`
+- Automatically sets up remote URLs for repo discovery
+- Provides default `FakeGitHub()` and `FakeShell()` if not in kwargs
+- Returns fully configured `ErkContext`
+
+**Usage Pattern**:
+```python
+with erk_inmem_env(runner) as env:
+    ctx = build_workspace_test_context(
+        env,
+        current_branch="feature-1",
+        git=custom_git_ops,  # Optional override
+        github=custom_github_ops  # Optional override
+    )
+```
+
+## 3. FakeGitHub Constructor &amp; Key Methods
+
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py`
+
+**Constructor Signature** (relevant params only):
+```python
+def __init__(
+    self,
+    *,
+    repo_info: RepoInfo | None = None,
+    prs: dict[str, PullRequestInfo] | None = None,  # branch -&gt; PullRequestInfo
+    pr_details: dict[int, PRDetails] | None = None,  # pr_number -&gt; PRDetails
+    prs_by_branch: dict[str, PRDetails] | None = None,  # branch -&gt; PRDetails (simpler)
+    merge_should_succeed: bool = True,
+    authenticated: bool = True,
+    # ... many more params
+) -&gt; None
+```
+
+**Key Method - `get_pr_for_branch`**:
+```python
+def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+    """Get comprehensive PR details for a branch.
+    
+    Checks prs_by_branch first (simpler lookup), then falls back to
+    prs + pr_details (original two-step lookup).
+    """
+    # Simple lookup first
+    if branch in self._prs_by_branch:
+        return self._prs_by_branch[branch]
+    
+    # Fallback: legacy two-step lookup
+    if branch not in self._prs:
+        return PRNotFound()
+    
+    pr_number = self._prs[branch].number
+    if pr_number not in self._pr_details:
+        return PRNotFound()
+    
+    return self._pr_details[pr_number]
+```
+
+**Usage Example** from `/home/runner/work/erk/erk/tests/commands/land/test_core.py`:
+```python
+github_ops = FakeGitHub(
+    prs_by_branch={
+        "feature-1": PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature 1",
+            body="PR body",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-1",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+    },
+    merge_should_succeed=True,
+)
+```
+
+## 4. FakeGit (FakeGitBranchOps) Constructor
+
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py`
+
+**Constructor Signature** (branch-related params):
+```python
+def __init__(
+    self,
+    *,
+    worktrees: dict[Path, list[WorktreeInfo]] | None = None,
+    current_branches: dict[Path, str | None] | None = None,
+    local_branches: dict[Path, list[str]] | None = None,
+    remote_branches: dict[Path, list[str]] | None = None,
+    branch_heads: dict[str, str] | None = None,
+    trunk_branches: dict[Path, str] | None = None,
+    ahead_behind: dict[tuple[Path, str], tuple[int, int]] | None = None,
+    branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
+    branch_sync_info: dict[Path, dict[str, BranchSyncInfo]] | None = None,
+    behind_commit_authors: dict[tuple[Path, str], list[str]] | None = None,
+    # ... more params
+) -&gt; None
+```
+
+**Key Parameters Explained**:
+- `branch_sync_info`: Maps `repo_root -&gt; {branch_name -&gt; BranchSyncInfo}`
+  - `BranchSyncInfo` contains: `tracking_branch`, `ahead`, `behind`, `commit_authors`
+- `local_branches`: Maps `repo_root -&gt; list[branch_name]`
+- `ahead_behind`: Maps `(cwd, branch) -&gt; (ahead_count, behind_count)`
+
+**Key Method - `list_local_branches`**:
+```python
+def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+    """List all local branches in the repository."""
+    return self._local_branches.get(repo_root, [])
+```
+
+## 5. FakeWorktree Constructor &amp; Methods
+
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`
+
+**Constructor Signature**:
+```python
+def __init__(
+    self,
+    *,
+    worktrees: dict[Path, list[WorktreeInfo]] | None = None,
+    existing_paths: set[Path] | None = None,
+    dirty_worktrees: set[Path] | None = None,
+    add_worktree_error: str | None = None,
+    remove_worktree_error: str | None = None,
+) -&gt; None
+```
+
+**Key Method - `find_worktree_for_branch`**:
+```python
+def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+    """Find worktree path for given branch name in fake data."""
+    worktrees = self.list_worktrees(repo_root)
+    for wt in worktrees:
+        if wt.branch == branch:
+            return wt.path
+    return None
+```
+
+## 6. PlannedPRBackend (Plan Backend - NOT a fake!)
+
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py`
+
+**CRITICAL**: `PlanBackend` is a BACKEND, not a gateway. **Do NOT create fake implementations**. Instead, inject fake gateways into the real backend:
+
+```python
+# ✅ CORRECT - Use real backend with fake gateways
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.time.fake import FakeTime
+
+fake_github = FakeGitHub(prs_by_branch={...})
+fake_issues = FakeGitHubIssues()
+fake_time = FakeTime()
+
+plan_backend = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+```
+
+**Key Method - `resolve_plan_id_for_branch`**:
+
+From `/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py`:
+```python
+plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
+# Returns: str (plan ID) or None if no plan for branch
+```
+
+Currently **always returns None** (plan IDs are not encoded in branch names).
+
+## 7. objective_helpers.get_objective_for_branch Function
+
+**Location**: `/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py` (lines 56-73)
+
+**Signature**:
+```python
+def get_objective_for_branch(
+    ctx: ErkContext, 
+    repo_root: Path, 
+    branch: str
+) -&gt; int | None:
+    """Extract objective issue number from branch's linked plan issue.
+    
+    Returns objective issue number if:
+    1. Branch is associated with a plan with objective_id in metadata, OR
+    2. Branch name encodes the objective number (fallback)
+    
+    Returns None otherwise (fail-open - never blocks landing).
+    """
+    try:
+        result = ctx.plan_backend.get_plan_for_branch(repo_root, branch)
+    except RuntimeError:
+        return extract_objective_number(branch)
+    if isinstance(result, PlanNotFound):
+        return extract_objective_number(branch)
+    if result.objective_id is not None:
+        return result.objective_id
+    return extract_objective_number(branch)
+```
+
+**Test Example** from `/home/runner/work/erk/erk/tests/commands/land/test_get_objective_for_branch.py`:
+```python
+def test_extracts_objective_from_plnd_branch(tmp_path: Path) -&gt; None:
+    """plnd/ branch with O-prefix — extract objective from branch name."""
+    issues_ops = FakeGitHubIssues(username="testuser", issues={})
+    ctx = context_for_test(issues=issues_ops, cwd=tmp_path)
+    
+    result = get_objective_for_branch(ctx, tmp_path, "plnd/O100-test-feature-01-15-1430")
+    
+    assert result == 100
+```
+
+## 8. CliRunner Usage Pattern
+
+**Complete Test Example** from `/home/runner/work/erk/erk/tests/commands/test_wt_checkout.py`:
+
+```python
+def test_checkout_named_worktree() -&gt; None:
+    """Test navigating to an existing worktree by name using 'co' alias."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        # Set up worktrees: root on main, feature-work on feature-1
+        worktree_path = env.repo.worktrees_dir / "feature-work"
+        
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=worktree_path, branch="feature-1", is_root=False),
+                ]
+            },
+            current_branches={env.cwd: "main", worktree_path: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+        )
+        
+        test_ctx = env.build_context(git=git_ops)
+        
+        # Act: Navigate to feature-work worktree using 'co' alias
+        result = runner.invoke(
+            cli,
+            ["wt", "co", "feature-work", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+        
+        # Assert: Command succeeded
+        assert result.exit_code == 0
+        
+        # Assert: Script path is in stdout
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        
+        # Assert: Script contains cd to worktree
+        assert str(worktree_path) in script_content
+```
+
+## 9. Complete Land Command Test Example
+
+From `/home/runner/work/erk/erk/tests/commands/land/test_core.py` (lines 31-140):
+
+```python
+def test_land_outputs_deferred_execution_script() -&gt; None:
+    """Test land validation phase outputs script with deferred execution."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+        
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+        
+        github_ops = FakeGitHub(
+            prs_by_branch={
+                "feature-1": PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            merge_should_succeed=True,
+        )
+        
+        issues_ops = FakeGitHubIssues(username="testuser")
+        
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+        
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
+        )
+        
+        # Phase 1: Validation - outputs script, does NOT merge
+        result = runner.invoke(
+            cli, ["land", "--script", "--force", "--down"], 
+            obj=test_ctx, 
+            catch_exceptions=False
+        )
+        
+        assert result.exit_code == 0
+        
+        # Verify PR was NOT merged yet (deferred to script execution)
+        assert 123 not in github_ops.merged_prs
+        
+        # Verify script was written with execution command
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert "erk exec land-execute" in script_content
+```
+
+## 10. Key Testing Patterns Summary
+
+### Pattern 1: Use `env.build_context()` helper
+```python
+# ✅ CORRECT
+test_ctx = env.build_context(git=git_ops, github=github_ops)
+
+# ❌ WRONG - Manual GlobalConfig construction
+global_config = GlobalConfig(erks_root=..., use_graphite=..., ...)
+test_ctx = context_for_test(git=git_ops, global_config=global_config, ...)
+```
+
+### Pattern 2: Set up branch sync info for reconcile tests
+```python
+git_ops = FakeGit(
+    branch_sync_info={
+        repo_root: {
+            "feature-1": BranchSyncInfo(
+                tracking_branch="origin/feature-1",
+                ahead=2,  # Local has 2 commits ahead
+                behind=3,  # Local is 3 commits behind
+                commit_authors=["alice", "bob", "charlie"]
+            )
+        }
+    },
+    local_branches={repo_root: ["main", "feature-1"]},
+    remote_branches={repo_root: ["origin/main", "origin/feature-1"]},
+)
+```
+
+### Pattern 3: Mutation tracking assertions
+```python
+# FakeGit exposes read-only mutation tracking properties
+assert "feature-1" in git_ops.branch_ops.deleted_branches
+assert (env.cwd, "new-branch") in git_ops.branch_ops.checked_out_branches
+assert len(git_ops.worktree.added_worktrees) == 1
+
+# FakeGitHub exposes mutation tracking
+assert 123 in github_ops.merged_prs
+assert len(github_ops.created_prs) == 1
+```
+
+### Pattern 4: Test organization
+- Place tests in `/home/runner/work/erk/erk/tests/commands/reconcile/`
+- Use plain functions, not test classes (unless testing a class itself)
+- Use descriptive test names: `test_reconcile_diverged_branch_prompts_resolution()`
+
+---
+
+This infrastructure gives you everything needed to write comprehensive tests for `erk reconcile` with proper fake injection, mutation tracking, and assertion patterns.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4415" cache_read_input_tokens="63598" cache_creation="{'ephemeral_5m_input_tokens': 4415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

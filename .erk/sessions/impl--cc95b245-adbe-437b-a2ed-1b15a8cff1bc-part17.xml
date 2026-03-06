@@ -1,0 +1,678 @@
+<session>
+  <meta source="agent-ad32082" />
+  <meta branch="plnd/add-erk-reconcile-rename-d-03-06-0728" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the existing `reconcile-with-remote` code for a rename to `diverge-fix`. Read the FULL content of these files:
+
+1. `.claude/commands/erk/reconcile-with-remote.md`
+2. `src/erk/cli/commands/pr/reconcile_with_remote_cmd.py`
+3. `tests/commands/pr/test_reconcile_with_remote.py`
+4. `docs/learned/cli/commands/pr-reconcile-with-remote.md`
+5. `src/erk/cli/commands/pr/__init__.py`
+6. `src/erk/cli/output.py` - find ReconcileWithRemoteResult and stream_reconcile_with_remote
+7. `src/erk/cli/ensure.py` - around line 126
+8. `src/erk/cli/commands/pr/submit_pipeline.py` - around line 297
+
+Return the FULL content of all files.</user>
+  <assistant>I'll read all these files for you. Let me gather them in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M2SX6GDjiKYY4ohFxCLcgk">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/reconcile-with-remote.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RWYbcno7sJpYym1dZmexJ5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/reconcile_with_remote_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VYPtBAJoqJByngGkt5BqTy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_reconcile_with_remote.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014LKKebEYqYkjHULW1dWLXp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-reconcile-with-remote.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LS6MdfYtpTsvYTtk8qtwdc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PH8qZfcb2vwG9BsFSWiGwt">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011QKECGH1dkaWuedWPiDGGk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Du546Ee1EoQeKuGHGTimu7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15239, 'ephemeral_1h_input_tokens': 0}" output_tokens="538" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M2SX6GDjiKYY4ohFxCLcgk">
+     1→---
+     2→description: Reconcile branch with remote and resolve divergence intelligently
+     3→---
+     4→
+     5→# Reconcile With Remote
+     6→
+     7→Resolve "Branch X has been updated remotely" errors by reconciling with remote and handling any resulting conflicts.
+     8→
+     9→## Steps
+    10→
+    11→1. **Fetch remote state**
+    12→
+    13→   ```bash
+    14→   git fetch origin
+    15→   ```
+    16→
+    17→2. **Get current branch name**
+    18→
+    19→   ```bash
+    20→   BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    21→   ```
+    22→
+    23→3. **Diagnose divergence** - Understand what changed on each side:
+    24→
+    25→   ```bash
+    26→   # Commits only on remote (what we need to incorporate)
+    27→   git log --oneline HEAD..origin/$BRANCH
+    28→
+    29→   # Commits only on local (our work that might be lost)
+    30→   git log --oneline origin/$BRANCH..HEAD
+
+... [103 lines omitted] ...
+
+    42→   | 0                   | 1+                 | Already ahead (shouldn't trigger this error)       |
+    84→   &gt; Without this step, `gt restack` will fail with a "diverged from tracking" error because Graphite's cached SHAs no longer match the rebased commits.
+  </tool_result>
+  <tool_result tool="toolu_01RWYbcno7sJpYym1dZmexJ5">
+     1→"""Reconcile branch with remote.
+     2→
+     3→Uses Claude to reconcile a diverged local branch with its remote tracking branch,
+     4→handling rebase and conflicts as needed. Invokes the /erk:reconcile-with-remote
+     5→Claude slash command.
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.cli.ensure import Ensure
+    11→from erk.cli.output import stream_reconcile_with_remote
+    12→from erk.core.context import ErkContext
+    13→
+    14→
+    15→@click.command("reconcile-with-remote")
+    16→@click.option(
+    17→    "-d",
+    18→    "--dangerous",
+    19→    is_flag=True,
+    20→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    21→)
+    22→@click.pass_obj
+    23→def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    24→    """Reconcile branch with remote and resolve divergence.
+    25→
+    26→    When gt submit fails with "Branch has been updated remotely", this command
+    27→    fetches remote changes, analyzes divergence, rebases if needed, and resolves
+    28→    any conflicts using Claude.
+    29→
+    30→    Examples:
+
+... [67 lines omitted] ...
+
+    48→        raise click.ClickException("Not on a branch (detached HEAD)")
+    52→        raise click.ClickException(f"No remote tracking branch: origin/{current_branch}")
+    76→        raise click.ClickException(
+    87→        raise click.ClickException("Semantic decision requires interactive resolution")
+    89→        raise click.ClickException(result.error_message or "Reconcile with remote failed")
+  </tool_result>
+  <tool_result tool="toolu_01VYPtBAJoqJByngGkt5BqTy">
+     1→"""Tests for erk pr reconcile-with-remote command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.abc import BranchDivergence
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from tests.fakes.prompt_executor import FakePromptExecutor
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_pr_reconcile_with_remote_success() -&gt; None:
+    15→    """Test successful reconciliation when branch is diverged."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git = FakeGit(
+    19→            git_common_dirs={env.cwd: env.git_dir},
+    20→            local_branches={env.cwd: ["main", "feature-branch"]},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "feature-branch"},
+    24→            remote_branches={env.cwd: ["origin/feature-branch", "origin/main"]},
+    25→            branch_divergence={
+    26→                (env.cwd, "feature-branch", "origin"): BranchDivergence(
+    27→                    is_diverged=True, ahead=2, behind=3
+    28→                )
+    29→            },
+    30→        )
+
+... [330 lines omitted] ...
+
+    74→        # Verify error message includes config hint
+   180→    """Test error when no remote tracking branch."""
+   204→    """Test error when not on a branch."""
+   227→    """Test error when Claude is not installed."""
+   291→def test_pr_reconcile_with_remote_fails_on_command_error() -&gt; None:
+   319→        # Error message from FakePromptExecutor
+   320→        assert "failed" in result.output.lower()
+  </tool_result>
+  <tool_result tool="toolu_014LKKebEYqYkjHULW1dWLXp">
+     1→---
+     2→title: erk pr reconcile-with-remote Command
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "resolving branch divergence from remote"
+     7→  - "fixing gt submit 'Branch has been updated remotely' errors"
+     8→  - "reconciling local branch with remote tracking branch"
+     9→---
+    10→
+    11→# erk pr reconcile-with-remote Command
+    12→
+    13→Reconciles a diverged local branch with its remote tracking branch, handling rebase and conflicts using Claude.
+    14→
+    15→## Usage
+    16→
+    17→```bash
+    18→erk pr reconcile-with-remote --dangerous
+    19→```
+    20→
+    21→## When to Use
+    22→
+    23→This command resolves the common scenario when `gt submit` fails with:
+    24→
+    25→```
+    26→Branch has been updated remotely. Pull the latest changes and try again.
+    27→```
+    28→
+    29→This happens when:
+    30→
+
+... [59 lines omitted] ...
+
+    64→- Final success/failure message
+    66→## Error Conditions
+    68→| Error                             | Cause                                   |
+  </tool_result>
+  <tool_result tool="toolu_01LS6MdfYtpTsvYTtk8qtwdc">
+     1→"""PR management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.pr.address_cmd import address
+     7→from erk.cli.commands.pr.check_cmd import pr_check
+     8→from erk.cli.commands.pr.checkout_cmd import pr_checkout
+     9→from erk.cli.commands.pr.close_cmd import pr_close
+    10→from erk.cli.commands.pr.create_cmd import pr_create
+    11→from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
+    12→from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
+    13→from erk.cli.commands.pr.list_cmd import pr_list
+    14→from erk.cli.commands.pr.log_cmd import pr_log
+    15→from erk.cli.commands.pr.rebase_cmd import rebase
+    16→from erk.cli.commands.pr.reconcile_with_remote_cmd import pr_reconcile_with_remote
+    17→from erk.cli.commands.pr.replan_cmd import pr_replan
+    18→from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
+    19→from erk.cli.commands.pr.submit_cmd import pr_submit
+    20→from erk.cli.commands.pr.teleport_cmd import pr_teleport
+    21→from erk.cli.commands.pr.view_cmd import pr_view
+    22→
+    23→
+    24→@click.group("pr")
+    25→def pr_group() -&gt; None:
+    26→    """Manage pull requests."""
+    27→    pass
+    28→
+    29→
+    30→pr_group.add_command(address, name="address")
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PH8qZfcb2vwG9BsFSWiGwt">
+     1→"""Output utilities for CLI commands with clear intent.
+     2→
+     3→For user_output, machine_output, format_duration - import from erk_shared.output.
+     4→This module provides format_implement_summary and stream_command_with_feedback.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import sys
+    10→import time
+    11→from dataclasses import dataclass
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING
+    14→
+    15→import click
+    16→from rich.panel import Panel
+    17→from rich.text import Text
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.context.types import PermissionMode
+    21→
+    22→from erk.core.prompt_executor import (
+    23→    CommandResult,
+    24→    ErrorEvent,
+    25→    NoOutputEvent,
+    26→    NoTurnsEvent,
+    27→    PlanNumberEvent,
+    28→    PrNumberEvent,
+    29→    ProcessErrorEvent,
+    30→    PromptExecutor,
+
+... [473 lines omitted] ...
+
+    41→    """Format final summary box with status, PR link, timing, errors.
+    65→        lines.append(Text("❌ Status: Failed", style="red"))
+   108→    # Error details (if failed)
+   112→                if result.error_message:
+   114→                    lines.append(Text(f"Error in command {i + 1}:", style="red bold"))
+   115→                    lines.append(Text(result.error_message, style="red"))
+   121→    title = "Implementation Complete" if overall_success else "Implementation Failed"
+   148→    - Error events: `  ! error message` (red)
+   150→    - End (failure): `--- Failed (1m 23s) ---` (red)
+   179→    error_message: str | None = None
+   224→            case ErrorEvent(message=msg):
+   226→                error_message = msg
+   230→                error_message = diag
+   234→                error_message = diag
+   236→            case ProcessErrorEvent(message=msg):
+   238→                error_message = msg
+   252→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True), err=True)
+   261→        error_message=error_message,
+   271→    error_message: str | None = None
+   292→        RebaseResult with success status and error details
+   294→    error_message: str | None = None
+   342→            case ErrorEvent(message=msg):
+   344→                error_message = msg
+   348→                error_message = diag
+   352→                error_message = diag
+   354→            case ProcessErrorEvent(message=msg):
+   356→                error_message = msg
+   361→    # Check for no-work-events failure mode
+   364→        error_message = (
+   368→        click.echo(click.style(f"   {error_message}", fg="yellow"))
+   378→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+   380→    return RebaseResult(success=success, error_message=error_message)
+   388→    error_message: str | None = None
+   409→        ReconcileWithRemoteResult with success status and error details
+   411→    error_message: str | None = None
+   459→            case ErrorEvent(message=msg):
+   461→                error_message = msg
+   465→                error_message = diag
+   469→                error_message = diag
+   471→            case ProcessErrorEvent(message=msg):
+   473→                error_message = msg
+   478→    # Check for no-work-events failure mode
+   481→        error_message = (
+   485→        click.echo(click.style(f"   {error_message}", fg="yellow"))
+   495→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+   497→    return ReconcileWithRemoteResult(success=success, error_message=error_message)
+  </tool_result>
+  <tool_result tool="toolu_011QKECGH1dkaWuedWPiDGGk">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+
+... [557 lines omitted] ...
+
+    33→class UserFacingCliError(click.ClickException):
+    34→    """Exception for user-facing CLI errors with styled output.
+    36→    Extends click.ClickException so Click catches it automatically at every
+    37→    level (groups, subgroups, commands) and converts it to a styled error
+    42→        raise UserFacingCliError("Not a GitHub repository")
+    43→        raise UserFacingCliError(push_result.message)
+    51→        """Display styled error message to stderr."""
+    52→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    56→    """Helper class for asserting invariants with consistent error handling."""
+    59→    def invariant(condition: bool, error_message: str) -&gt; None:
+    60→        """Ensure condition is true, otherwise output styled error and exit.
+    64→            error_message: Error message to display if condition is false.
+    65→                          "Error: " prefix will be added automatically in red.
+    68→            UserFacingCliError: If condition is false
+    71→            raise UserFacingCliError(error_message)
+    74→    def truthy(value: T, error_message: str) -&gt; T:
+    75→        """Ensure value is truthy, otherwise output styled error and exit.
+    79→            error_message: Error message to display if value is falsy.
+    80→                          "Error: " prefix will be added automatically in red.
+    86→            UserFacingCliError: If value is falsy
+    89→            raise UserFacingCliError(error_message)
+    93→    def not_none(value: T | None, error_message: str) -&gt; T:
+    94→        """Ensure value is not None, otherwise output styled error and exit.
+   102→            error_message: Error message to display if value is None.
+   103→                          "Error: " prefix will be added automatically in red.
+   109→            UserFacingCliError: If value is None
+   118→            raise UserFacingCliError(error_message)
+   133→            click.UsageError: If flag is required but not provided
+   143→            raise click.UsageError(
+   151→        error_message: str | None = None,
+   153→        """Ensure path exists, otherwise output styled error and exit.
+   164→            error_message: Optional custom error message. If not provided,
+   166→                          "Error: " prefix will be added automatically in red.
+   169→            UserFacingCliError: If path does not exist
+   172→            &gt;&gt;&gt; # Basic usage with default error message
+   175→            &gt;&gt;&gt; # With custom error message
+   179→            if error_message is None:
+   180→                error_message = f"Path not found: {path}"
+   181→            raise UserFacingCliError(error_message)
+   184→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   189→            error_message: Error message to display if value is empty.
+   190→                          "Error: " prefix will be added automatically in red.
+   193→            UserFacingCliError: If value is None, empty string, empty list, or empty dict
+   200→            raise UserFacingCliError(error_message)
+   204→        """Ensure worktree exists at path, otherwise output styled error and exit.
+   209→            name: Optional worktree name for friendlier error message
+   216→            &gt;&gt;&gt; Ensure.git_worktree_exists(ctx, wt_path)  # Uses path in error
+   219→            error_message = f"Worktree '{name}' does not exist"
+   221→            error_message = f"Worktree not found: {wt_path}"
+   222→        Ensure.path_exists(ctx, wt_path, error_message)
+   226→        """Ensure git branch exists, otherwise output styled error and exit.
+   234→            UserFacingCliError: If branch does not exist
+   241→            raise UserFacingCliError(
+   247→        """Ensure currently in a git worktree, otherwise output styled error and exit.
+   250→            ctx: Application context (for error handling)
+   254→            UserFacingCliError: If not in a git worktree
+   261→            raise UserFacingCliError(
+   269→        error_message: str | None = None,
+   271→        """Ensure argument count matches expected, otherwise output styled error and exit.
+   276→            error_message: Optional custom error message
+   279→            UserFacingCliError: If argument count does not match expected
+   286→            if error_message is None:
+   288→                    error_message = f"Expected no arguments, got {len(args)}"
+   290→                    error_message = f"Expected 1 argument, got {len(args)}"
+   292→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   293→            raise UserFacingCliError(error_message)
+   299→        error_message: str | None = None,
+   301→        """Ensure configuration field is set, otherwise output styled error and exit.
+   306→            error_message: Optional custom error message
+   309→            UserFacingCliError: If field is not set (None or missing)
+   320→        except AttributeError:
+   323→            except (KeyError, TypeError):
+   327→            if error_message is None:
+   328→                error_message = (
+   332→            raise UserFacingCliError(error_message)
+   335→    def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -&gt; None:
+   336→        """Ensure path exists and is a directory, otherwise output styled error and exit.
+   341→            error_message: Optional custom error message
+   344→            UserFacingCliError: If path doesn't exist or is not a directory
+   349→        Ensure.path_exists(ctx, path, error_message)
+   351→            if error_message is None:
+   352→                error_message = f"Path is not a directory: {path}"
+   353→            raise UserFacingCliError(error_message)
+   356→    def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   357→        """Ensure path does NOT exist, otherwise output styled error and exit.
+   364→            error_message: Error message to display if path exists
+   367→            UserFacingCliError: If path already exists
+   378→            raise UserFacingCliError(error_message)
+   388→            UserFacingCliError: If gh CLI is not found on PATH
+   396→            raise UserFacingCliError(
+   410→            UserFacingCliError: If gt CLI is not found on PATH
+   418→            raise UserFacingCliError(
+   429→        outputs a helpful error message based on why Graphite is unavailable
+   438→            UserFacingCliError: If Graphite is disabled or not installed
+   446→            error = GraphiteDisabledError(ctx.graphite.reason)
+   447→            raise UserFacingCliError(str(error))
+   457→            UserFacingCliError: If claude CLI is not found on PATH
+   465→            raise UserFacingCliError(
+   482→            UserFacingCliError: If gt is not authenticated
+   492→            raise UserFacingCliError(
+   511→            UserFacingCliError: If gh is not installed or not authenticated
+   522→            raise UserFacingCliError(
+   544→        If branch exists and is NOT tracked, errors with remediation steps.
+   571→        # Branch exists but is not tracked - error with remediation
+   572→        raise UserFacingCliError(
+  </tool_result>
+  <tool_result tool="toolu_01Du546Ee1EoQeKuGHGTimu7">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.core.commit_message_generator import CommitMessageGenerator
+    30→from erk.core.context import ErkContext
+
+... [1054 lines omitted] ...
+
+    32→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   118→class SubmitError:
+   119→    """Error result from a pipeline step."""
+   122→    error_type: str
+   131→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   134→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   147→        return SubmitError(
+   149→            error_type="no_branch",
+   163→        except ValueError as e:
+   164→            return SubmitError(
+   166→                error_type="issue_linkage_mismatch",
+   209→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   229→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   239→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   251→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   268→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   275→    # but the first submit attempt failed before pushing.
+   289→            return SubmitError(
+   291→                error_type="remote_diverged",
+   321→    except RuntimeError as e:
+   322→        error_str = str(e)
+   323→        if "restack" in error_str.lower():
+   324→            return SubmitError(
+   326→                error_type="graphite_restack_required",
+   335→        return SubmitError(
+   337→            error_type="graphite_submit_failed",
+   338→            message=f"Graphite submit failed: {e}",
+   350→        return SubmitError(
+   352→            error_type="pr_not_found",
+   381→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   389→        return SubmitError(
+   391→            error_type="github_auth_failed",
+   401→        return SubmitError(
+   403→            error_type="no_commits",
+   421→        if isinstance(pull_result, PullRebaseError):
+   422→            return SubmitError(
+   424→                error_type="rebase_failed",
+   426→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   427→                    f"Error: {pull_result.message}\n\n"
+   437→        return SubmitError(
+   439→            error_type="branch_diverged",
+   458→    if isinstance(push_result, PushError):
+   460→            return SubmitError(
+   462→                error_type="branch_diverged",
+   471→        raise UserFacingCliError(push_result.message)
+   481→                return SubmitError(
+   483→                    error_type="parent_branch_no_pr",
+   555→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   561→        return SubmitError(
+   563→            error_type="no_base_branch",
+   591→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   611→) -&gt; SubmitState | SubmitError:
+   624→    if isinstance(diff_result, SubmitError):
+   626→    if isinstance(plan_result, SubmitError):
+   638→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   645→        return SubmitError(
+   647→            error_type="no_diff_file",
+   648→            message="Failed to extract diff for AI analysis",
+   668→        return SubmitError(
+   670→            error_type="ai_generation_failed",
+   671→            message=f"Failed to generate message: {msg_result.error_message}",
+   684→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   726→    except RuntimeError as e:
+   727→        error_msg = str(e).lower()
+   728→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   732→        return SubmitError(
+   734→            error_type="graphite_enhance_failed",
+   735→            message=f"Graphite enhancement failed: {e}",
+   752→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   759→        return SubmitError(
+   761→            error_type="no_pr_number",
+   834→        except OSError as e:
+   836→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   864→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   890→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   928→            except ValueError:
+   982→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   987→        except Exception as e:
+   989→            return SubmitError(
+   991→                error_type="unhandled_exception",
+   992→                message=f"Unexpected error in {step_name}: {e}",
+   996→        if isinstance(result, SubmitError):
+  1018→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1019→    """Run the submit pipeline, returning final state or first error."""
+  1023→        except Exception as e:
+  1025→            return SubmitError(
+  1027→                error_type="unhandled_exception",
+  1028→                message=f"Unexpected error in {step_name}: {e}",
+  1032→        if isinstance(result, SubmitError):
+  </tool_result>
+  <assistant>Perfect! I now have all the full content of the 8 files you requested. Here's a comprehensive summary:
+
+## Summary of `reconcile-with-remote` Implementation
+
+### File Overview
+
+1. **`.claude/commands/erk/reconcile-with-remote.md`** (Lines 1-128)
+   - Command documentation with 10-step procedure for branch divergence resolution
+   - Covers diagnosis (fast-forward vs rebase), conflict resolution, Graphite tracking updates
+   - Includes edge case handling (force-push history rewrites, uncommitted changes, multi-branch stacks)
+
+2. **`src/erk/cli/commands/pr/reconcile_with_remote_cmd.py`** (Lines 1-92)
+   - Click command implementation (`pr_reconcile_with_remote`)
+   - Requires `--dangerous` flag (unless config disables)
+   - Checks for valid branch and remote tracking, fetches remote, analyzes divergence
+   - Invokes Claude via `/erk:reconcile-with-remote` command through `stream_reconcile_with_remote()`
+
+3. **`tests/commands/pr/test_reconcile_with_remote.py`** (Lines 1-355)
+   - 9 test cases covering:
+     - Success path with divergence
+     - Dangerous flag requirement/bypass via config
+     - Already-in-sync branch (early exit)
+     - Behind-only (fast-forward possible)
+     - Error conditions: no remote branch, detached HEAD, Claude unavailable
+     - Semantic conflicts requiring interactive resolution
+     - Command execution failures
+     - No-work-events failure mode
+
+4. **`docs/learned/cli/commands/pr-reconcile-with-remote.md`** (Lines 1-84)
+   - User documentation with usage, when to use, flags, and error conditions
+   - Links to implementation details and related commands
+
+5. **`src/erk/cli/commands/pr/__init__.py`** (Lines 1-46)
+   - PR command group registration
+   - Imports `pr_reconcile_with_remote` and registers as `reconcile-with-remote` (Line 44)
+
+6. **`src/erk/cli/output.py`** (Lines 266-498)
+   - `ReconcileWithRemoteResult` dataclass (Lines 384-389): `success`, `error_message`, `requires_interactive`
+   - `stream_reconcile_with_remote()` function (Lines 392-497):
+     - Streams `/erk:reconcile-with-remote` command execution
+     - Detects semantic conflicts via "AskUserQuestion" tool events
+     - Handles no-work-events failure mode
+     - Returns result with error details
+
+7. **`src/erk/cli/ensure.py`** (Lines 122-146)
+   - `Ensure.dangerous_flag()` method validates `--dangerous` requirement
+   - Checks `ctx.global_config.require_dangerous_flag_for_implicitly_dangerous_operations`
+   - Raises `UsageError` with config hint if flag required but not provided
+
+8. **`src/erk/cli/commands/pr/submit_pipeline.py`** (Lines 279-305)
+   - Remote divergence pre-check in `_graphite_first_flow()`
+   - Auto-detects divergence before `gt submit`
+   - Returns `SubmitError` with remediation message:
+     ```
+     erk pr reconcile-with-remote --dangerous
+     erk pr submit -f
+     ```
+
+---
+
+## Key Implementation Details for Rename `reconcile-with-remote` → `diverge-fix`
+
+### Naming Pattern
+- **Command name**: `reconcile-with-remote` → `diverge-fix` (kebab-case in CLI)
+- **Python function**: `pr_reconcile_with_remote` → `pr_diverge_fix` (snake_case)
+- **Slash command**: `/erk:reconcile-with-remote` → `/erk:diverge-fix`
+- **Output function**: `stream_reconcile_with_remote` → `stream_diverge_fix`
+- **Result class**: `ReconcileWithRemoteResult` → `DivergeFix­Result` (following frozen dataclass pattern)
+- **Files to rename**: `reconcile_with_remote_cmd.py` → `diverge_fix_cmd.py`
+- **Documentation**: `pr-reconcile-with-remote.md` → `pr-diverge-fix.md`
+- **Test file**: `test_reconcile_with_remote.py` → `test_diverge_fix.py`
+- **Slash command file**: `.claude/commands/erk/reconcile-with-remote.md` → `.claude/commands/erk/diverge-fix.md`
+
+### Critical Dependencies to Update
+1. Import statement in `src/erk/cli/commands/pr/__init__.py` (Line 16)
+2. Registration in `pr_group.add_command()` (Line 44)
+3. Reference in `submit_pipeline.py` error message (Line 297)
+4. All docstring references to the command
+5. Test imports and invocations
+6. Documentation references in `docs/learned/cli/commands/`
+
+### User-Facing Changes
+- Help text, docstrings, and error messages should reflect new name
+- Config hint for `require_dangerous_flag_for_implicitly_dangerous_operations` stays the same
+- Error messages that suggest `erk pr reconcile-with-remote --dangerous` become `erk pr diverge-fix --dangerous`
+
+This is all the information needed to perform a comprehensive rename of the feature.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="44486" cache_read_input_tokens="15239" cache_creation="{'ephemeral_5m_input_tokens': 44486, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

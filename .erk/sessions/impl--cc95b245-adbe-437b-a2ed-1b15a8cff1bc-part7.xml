@@ -1,0 +1,512 @@
+<session>
+  <meta source="agent-a09f845" />
+  <meta branch="plnd/add-erk-reconcile-rename-d-03-06-0728" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the git layer for implementing Part 2 of the plan. Specifically:
+
+1. Read `packages/erk-shared/src/erk_shared/gateway/git/abc.py` - find the `BranchSyncInfo` dataclass
+2. Read `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py` - find the `get_all_branch_sync_info` method, especially the parsing logic around line 316
+3. Read all 5 implementations of `GitRemoteOps`:
+   - `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py`
+   - `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py`
+   - `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py`
+   - `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py`
+   - `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py`
+
+Return the FULL content of each file so I can see every detail.</user>
+  <assistant>I'll help you explore the git layer. Let me start by checking the documentation index, then read all the files you specified.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PMAgBCDr1JYj6ZTToWb3uQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cty2Jc4zdpNTZQYMXjBJuA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Tti1PAXn4RuNw5Pp5u3mFX">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HnXRCQjHFSHDykTQ6t3JwT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EoAFpGionGdbjT2WG1vCqa">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XpYVsR22XdRX4wcJMn63zs">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019LRrAufDXrZsAEXjLrSSnM">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Di9Prj291QwQWT9K8xYw41">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15307" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15307, 'ephemeral_1h_input_tokens': 0}" output_tokens="608" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PMAgBCDr1JYj6ZTToWb3uQ">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Cty2Jc4zdpNTZQYMXjBJuA">
+     1→"""High-level git operations interface.
+     2→
+     3→This module provides a clean abstraction over git subprocess calls, making the
+     4→codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Git: Abstract base class defining the interface
+     8→- RealGit: Production implementation using subprocess
+     9→- Standalone functions: Convenience wrappers delegating to module singleton
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→from abc import ABC, abstractmethod
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING, NamedTuple
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→    from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    22→    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    23→    from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    24→    from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    25→    from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    26→    from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    27→    from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    28→    from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+    29→    from erk_shared.gateway.git.worktree.abc import Worktree
+    30→
+
+... [141 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Tti1PAXn4RuNw5Pp5u3mFX">
+     1→"""Production implementation of Git branch operations using subprocess."""
+     2→
+     3→import re
+     4→import subprocess
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+     8→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+     9→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    10→from erk_shared.gateway.git.lock import wait_for_index_lock
+    11→from erk_shared.gateway.time.abc import Time
+    12→from erk_shared.gateway.time.real import RealTime
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealGitBranchOps(GitBranchOps):
+    17→    """Production implementation of branch operations using subprocess.
+    18→
+    19→    All git operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def __init__(self, time: Time | None = None) -&gt; None:
+    23→        """Initialize RealGitBranchOps with optional Time provider.
+    24→
+    25→        Args:
+    26→            time: Time provider for lock waiting. Defaults to RealTime().
+    27→        """
+    28→        self._time = time if time is not None else RealTime()
+    29→
+    30→    def create_branch(
+
+... [440 lines omitted] ...
+
+   228→            RuntimeError: If the specified branch doesn't exist
+   239→        error_msg = (
+   240→            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   243→        raise RuntimeError(error_msg)
+  </tool_result>
+  <tool_result tool="toolu_01HnXRCQjHFSHDykTQ6t3JwT">
+     1→"""Abstract base class for Git remote operations.
+     2→
+     3→This sub-gateway extracts remote operations from the main Git gateway,
+     4→including fetch, pull, and push operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→from erk_shared.gateway.git.remote_ops.types import (
+    13→    PullRebaseError,
+    14→    PullRebaseResult,
+    15→    PushError,
+    16→    PushResult,
+    17→)
+    18→
+    19→
+    20→class GitRemoteOps(ABC):
+    21→    """Abstract interface for Git remote operations.
+    22→
+    23→    This interface contains both mutation and query operations for remotes.
+    24→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    25→    """
+    26→
+    27→    @abstractmethod
+    28→    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -&gt; None:
+    29→        """Fetch a specific branch from a remote.
+    30→
+
+... [110 lines omitted] ...
+
+    68→            subprocess.CalledProcessError: If git command fails
+    81→    ) -&gt; PushResult | PushError:
+    92→            PushResult on success, PushError on failure.
+    99→    ) -&gt; PullRebaseResult | PullRebaseError:
+   112→            PullRebaseResult on success, PullRebaseError on failure.
+   132→            ValueError: If remote doesn't exist or has no URL
+  </tool_result>
+  <tool_result tool="toolu_01EoAFpGionGdbjT2WG1vCqa">
+     1→"""Production implementation of Git remote operations using subprocess."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.git.lock import wait_for_index_lock
+     7→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+     8→from erk_shared.gateway.git.remote_ops.types import (
+     9→    PullRebaseError,
+    10→    PullRebaseResult,
+    11→    PushError,
+    12→    PushResult,
+    13→)
+    14→from erk_shared.gateway.time.abc import Time
+    15→from erk_shared.subprocess_utils import copied_env_for_git_subprocess, run_subprocess_with_context
+    16→
+    17→# Timeout in seconds for network-touching git operations (push, pull, fetch).
+    18→# Prevents indefinite hangs on network issues or credential prompts.
+    19→_GIT_NETWORK_TIMEOUT = 120
+    20→
+    21→
+    22→class RealGitRemoteOps(GitRemoteOps):
+    23→    """Real implementation of Git remote operations using subprocess."""
+    24→
+    25→    def __init__(self, time: Time) -&gt; None:
+    26→        """Initialize RealGitRemoteOps with Time provider.
+    27→
+    28→        Args:
+    29→            time: Time provider for lock waiting
+    30→        """
+
+... [115 lines omitted] ...
+
+    84→    ) -&gt; PushResult | PushError:
+   101→        except RuntimeError as e:
+   102→            return PushError(message=str(e))
+   107→    ) -&gt; PullRebaseResult | PullRebaseError:
+   117→        except RuntimeError as e:
+   118→            return PullRebaseError(message=str(e))
+   125→            ValueError: If remote doesn't exist or has no URL
+   135→            raise ValueError(f"Remote '{remote}' not found in repository")
+   138→            raise ValueError(f"Remote '{remote}' has no URL configured")
+  </tool_result>
+  <tool_result tool="toolu_01XpYVsR22XdRX4wcJMn63zs">
+     1→"""Fake implementation of Git remote operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from pathlib import Path
+     6→from typing import TYPE_CHECKING
+     7→
+     8→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+     9→from erk_shared.gateway.git.remote_ops.types import (
+    10→    PullRebaseError,
+    11→    PullRebaseResult,
+    12→    PushError,
+    13→    PushResult,
+    14→)
+    15→
+    16→if TYPE_CHECKING:
+    17→    # Import PushedBranch type from parent module to avoid circular import
+    18→    from erk_shared.gateway.git.fake import PushedBranch
+    19→
+    20→
+    21→class FakeGitRemoteOps(GitRemoteOps):
+    22→    """In-memory fake implementation of Git remote operations.
+    23→
+    24→    This fake accepts pre-configured state in its constructor and tracks
+    25→    mutations for test assertions.
+    26→
+    27→    Constructor Injection:
+    28→    ---------------------
+    29→    - remote_urls: Mapping of (repo_root, remote_name) -&gt; remote URL
+    30→    - pull_branch_raises: Exception to raise when pull_branch() is called
+
+... [182 lines omitted] ...
+
+    31→    - push_to_remote_error: PushError to return when push_to_remote() is called
+    32→    - pull_rebase_error: PullRebaseError to return when pull_rebase() is called
+    48→        fetch_branch_raises: Exception | None = None,
+    49→        pull_branch_raises: Exception | None = None,
+    50→        push_to_remote_error: PushError | None = None,
+    51→        pull_rebase_error: PullRebaseError | None = None,
+    57→            fetch_branch_raises: Exception to raise when fetch_branch() is called
+    58→            pull_branch_raises: Exception to raise when pull_branch() is called
+    59→            push_to_remote_error: PushError to return when push_to_remote() is called
+    60→            pull_rebase_error: PullRebaseError to return when pull_rebase() is called
+    66→        self._push_to_remote_error = push_to_remote_error
+    67→        self._pull_rebase_error = pull_rebase_error
+   107→    ) -&gt; PushResult | PushError:
+   108→        """Record push to remote, or return error if failure configured."""
+   112→        if self._push_to_remote_error is not None:
+   113→            return self._push_to_remote_error
+   121→    ) -&gt; PullRebaseResult | PullRebaseError:
+   124→        Tracks call for test assertions. Returns configured error if set.
+   127→        if self._pull_rebase_error is not None:
+   128→            return self._pull_rebase_error
+   135→            ValueError: If remote doesn't exist or has no URL
+   139→            raise ValueError(f"Remote '{remote}' not found in repository")
+  </tool_result>
+  <tool_result tool="toolu_019LRrAufDXrZsAEXjLrSSnM">
+     1→"""No-op Git remote operations wrapper for dry-run mode.
+     2→
+     3→This module provides a wrapper that prevents execution of destructive
+     4→remote operations while delegating read-only operations to the wrapped implementation.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    10→from erk_shared.gateway.git.remote_ops.types import (
+    11→    PullRebaseResult,
+    12→    PushResult,
+    13→)
+    14→
+    15→
+    16→class DryRunGitRemoteOps(GitRemoteOps):
+    17→    """No-op wrapper that prevents execution of destructive remote operations.
+    18→
+    19→    This wrapper intercepts destructive git operations (fetch, pull, push) and
+    20→    returns without executing. Read-only operations (get_remote_url) are delegated
+    21→    to the wrapped implementation.
+    22→
+    23→    Usage:
+    24→        real_ops = RealGitRemoteOps(time)
+    25→        noop_ops = DryRunGitRemoteOps(real_ops)
+    26→
+    27→        # Query operations work normally
+    28→        url = noop_ops.get_remote_url(repo_root, "origin")
+    29→
+    30→        # Mutation operations are no-ops
+
+... [61 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Di9Prj291QwQWT9K8xYw41">
+     1→"""Printing Git remote operations wrapper for verbose output.
+     2→
+     3→This module provides a wrapper that prints styled output for remote operations
+     4→before delegating to the wrapped implementation.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    10→from erk_shared.gateway.git.remote_ops.types import (
+    11→    PullRebaseError,
+    12→    PullRebaseResult,
+    13→    PushError,
+    14→    PushResult,
+    15→)
+    16→from erk_shared.printing.base import PrintingBase
+    17→
+    18→
+    19→class PrintingGitRemoteOps(PrintingBase, GitRemoteOps):
+    20→    """Wrapper that prints remote operations before delegating to inner implementation.
+    21→
+    22→    This wrapper prints styled output for operations, then delegates to the
+    23→    wrapped implementation (which could be Real or DryRun).
+    24→
+    25→    Usage:
+    26→        # For production
+    27→        printing_ops = PrintingGitRemoteOps(real_ops, script_mode=False, dry_run=False)
+    28→
+    29→        # For dry-run
+    30→        noop_inner = DryRunGitRemoteOps(real_ops)
+
+... [66 lines omitted] ...
+
+    68→    ) -&gt; PushResult | PushError:
+    79→    ) -&gt; PullRebaseResult | PullRebaseError:
+  </tool_result>
+  <assistant>Perfect! I've read all the files you requested. Here's a comprehensive summary of the git layer for Part 2 implementation:
+
+## Git Layer Overview for Part 2
+
+### 1. BranchSyncInfo Dataclass
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py` (lines 56-63)
+
+```python
+@dataclass(frozen=True)
+class BranchSyncInfo:
+    """Sync status for a branch relative to its upstream."""
+
+    branch: str
+    upstream: str | None  # None if no tracking branch
+    ahead: int
+    behind: int
+```
+
+This is a **frozen dataclass** representing the synchronization status between a local branch and its upstream tracking branch. It's used to track how many commits ahead/behind a branch is.
+
+---
+
+### 2. Parsing Logic in RealGitBranchOps
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py` (lines 288-332)
+
+The `get_all_branch_sync_info()` method executes:
+```bash
+git for-each-ref --format='%(refname:short)\t%(upstream:short)\t%(upstream:track)' refs/heads/
+```
+
+**Key parsing points (lines 316-323):**
+- Reads the git output: tab-separated values with branch name, upstream, and track status
+- The `track` field contains strings like `[ahead 5, behind 3]` or `[ahead 5]` or `[behind 3]`
+- Uses regex to parse: `re.search(r"ahead (\d+)", track)` and `re.search(r"behind (\d+)", track)`
+- If track field is empty, sets ahead/behind to 0
+
+---
+
+### 3. GitRemoteOps Abstract Base Class
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py` (lines 20-134)
+
+Defines 6 abstract methods that all implementations must provide:
+
+1. **fetch_branch()** - Fetch a specific branch from remote
+2. **pull_branch()** - Pull with optional `--ff-only` flag
+3. **fetch_pr_ref()** - Fetch PR head ref using GitHub's `pull/&lt;number&gt;/head` syntax
+4. **push_to_remote()** - Push with `set_upstream` and `force` options, returns `PushResult | PushError`
+5. **pull_rebase()** - Pull with `--rebase`, returns `PullRebaseResult | PullRebaseError`
+6. **get_remote_url()** - Query remote URL (read-only, raises ValueError if not found)
+
+---
+
+### 4. RealGitRemoteOps (Production Implementation)
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py` (lines 22-140)
+
+**Key features:**
+- Uses `subprocess` to execute actual git commands
+- Network timeout: `_GIT_NETWORK_TIMEOUT = 120` seconds (lines 17-19)
+- Uses `wait_for_index_lock()` before `pull_branch()` to avoid conflicts with other git operations (line 46)
+- Wraps network calls with `copied_env_for_git_subprocess()` for credential handling
+- `push_to_remote()` catches `RuntimeError` and returns `PushError` (lines 101-102)
+- `pull_rebase()` catches `RuntimeError` and returns `PullRebaseError` (lines 117-118)
+
+---
+
+### 5. FakeGitRemoteOps (Testing Implementation)
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py` (lines 21-207)
+
+**Constructor injection:**
+- `remote_urls`: Dict mapping `(Path, str)` -&gt; URL
+- `fetch_branch_raises`, `pull_branch_raises`: Exceptions to raise
+- `push_to_remote_error`, `pull_rebase_error`: Error results to return
+
+**Mutation tracking properties (read-only for assertions):**
+- `fetched_branches`: List of `(remote, branch)` tuples
+- `pulled_branches`: List of `(remote, branch, ff_only)` tuples
+- `pushed_branches`: List of `PushedBranch` named tuples (from `erk_shared.gateway.git.fake`)
+- `pull_rebase_calls`: List of `(cwd, remote, branch)` tuples
+
+**Link mutation tracking:** `link_mutation_tracking()` method allows FakeGit to integrate this fake's tracking into its own properties.
+
+---
+
+### 6. DryRunGitRemoteOps (Dry-run Implementation)
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py` (lines 16-86)
+
+**Pattern:** Wrapper around another `GitRemoteOps` implementation
+
+**Behavior:**
+- **Mutation operations** (fetch, pull, push, pull_rebase): No-ops (do nothing)
+- **Query operations** (get_remote_url): Delegate to wrapped implementation
+
+Returns successful dummy results for mutations:
+- `push_to_remote()` returns `PushResult()` 
+- `pull_rebase()` returns `PullRebaseResult()`
+
+---
+
+### 7. PrintingGitRemoteOps (Verbose Output Implementation)
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py` (lines 19-91)
+
+**Pattern:** Decorator pattern wrapping another `GitRemoteOps` implementation
+
+**Behavior:**
+- Inherits from both `PrintingBase` and `GitRemoteOps`
+- Before each mutation, calls `self._emit(self._format_command(...))` to print the git command
+- Then delegates to wrapped implementation
+
+**Examples of formatted output:**
+```
+git fetch origin main
+git pull --ff-only origin main
+git fetch origin pull/42/head:pr-42
+git push -u --force origin feature
+git pull --rebase origin main
+```
+
+---
+
+## Implementation Pattern Summary
+
+The git layer uses a **strategy pattern with composition**:
+
+1. **ABC** (abstract base class) defines the interface
+2. **Real** implements with actual subprocess calls
+3. **Fake** tracks mutations for testing without I/O
+4. **DryRun** prevents mutations while delegating queries
+5. **Printing** wraps any implementation to add verbose output
+
+All implementations are frozen dataclasses/ABC-based and use dependency injection for flexibility. The error handling uses discriminated unions (`Result | Error` return types) rather than exceptions for expected failures.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="18763" cache_read_input_tokens="15307" cache_creation="{'ephemeral_5m_input_tokens': 18763, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

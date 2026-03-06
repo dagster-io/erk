@@ -1,0 +1,1062 @@
+<session>
+  <meta branch="plnd/add-erk-reconcile-rename-d-03-06-0728" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Good, the code looks right. Part 2 is done. Now let me move to Part 1 - the rename.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1050" cache_read_input_tokens="73391" cache_creation="{'ephemeral_5m_input_tokens': 1050, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01X6abMux7XkiYdAtHnTZS4r">
+    <param name="todos">[{'content': 'Part 2: Git layer extensions (gone field, fetch_prune)', 'status': 'complete...[truncated 668 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1050" cache_read_input_tokens="73391" cache_creation="{'ephemeral_5m_input_tokens': 1050, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X6abMux7XkiYdAtHnTZS4r">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Part 1 is a mechanical rename. Let me use a rename swarm to handle this efficiently since it involves many files.
+
+First, let me do the file renames via git mv, then update the content. Let me read the files that need content updates and then use the libcst-refactor agent for the Python renames, and handle the rest manually.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="74441" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Ui35DAXgESATyDGCCBCRZE">
+    <param name="command">git mv .claude/commands/erk/reconcile-with-remote.md .claude/commands/erk/diverge-fix.md &amp;...[truncated 198 chars]...arned/cli/commands/pr-reconcile-with-remote.md docs/learned/cli/commands/pr-diverge-fix.md</param>
+    <param name="description">Rename 4 files via git mv</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="74441" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ui35DAXgESATyDGCCBCRZE">
+
+  </tool_result>
+  <assistant>Good. Now let me read the renamed files and all content-only files to update them. I'll read them in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="74812" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XLcFejz6QxRWGjhedSbGfn">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/diverge-fix.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="74812" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ua4UixQQevcoL8CnzxaGQK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="74812" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013KQMEs3Aes1qv8KuLFVfEP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="74812" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014FGRBsx8MLp5LGP1YJGW69">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="offset">380</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="74812" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SPLyajZ6acNG33bhyNmFKz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+    <param name="offset">120</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="74812" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01VKyrbiG5TGSBQe7vMtekhf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">290</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="74812" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019ezV44zW7aS5NSNqg59Voz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="74812" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XLcFejz6QxRWGjhedSbGfn">
+     1→---
+     2→description: Reconcile branch with remote and resolve divergence intelligently
+     3→---
+     4→
+     5→# Reconcile With Remote
+     6→
+     7→Resolve "Branch X has been updated remotely" errors by reconciling with remote and handling any resulting conflicts.
+     8→
+     9→## Steps
+    10→
+    11→1. **Fetch remote state**
+    12→
+    13→   ```bash
+    14→   git fetch origin
+    15→   ```
+    16→
+    17→2. **Get current branch name**
+    18→
+    19→   ```bash
+    20→   BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    21→   ```
+    22→
+    23→3. **Diagnose divergence** - Understand what changed on each side:
+    24→
+    25→   ```bash
+    26→   # Commits only on remote (what we need to incorporate)
+    27→   git log --oneline HEAD..origin/$BRANCH
+    28→
+    29→   # Commits only on local (our work that might be lost)
+    30→   git log --oneline origin/$BRANCH..HEAD
+
+... [103 lines omitted] ...
+
+    42→   | 0                   | 1+                 | Already ahead (shouldn't trigger this error)       |
+    84→   &gt; Without this step, `gt restack` will fail with a "diverged from tracking" error because Graphite's cached SHAs no longer match the rebased commits.
+  </tool_result>
+  <tool_result tool="toolu_01Ua4UixQQevcoL8CnzxaGQK">
+     1→"""Reconcile branch with remote.
+     2→
+     3→Uses Claude to reconcile a diverged local branch with its remote tracking branch,
+     4→handling rebase and conflicts as needed. Invokes the /erk:reconcile-with-remote
+     5→Claude slash command.
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.cli.ensure import Ensure
+    11→from erk.cli.output import stream_reconcile_with_remote
+    12→from erk.core.context import ErkContext
+    13→
+    14→
+    15→@click.command("reconcile-with-remote")
+    16→@click.option(
+    17→    "-d",
+    18→    "--dangerous",
+    19→    is_flag=True,
+    20→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    21→)
+    22→@click.pass_obj
+    23→def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    24→    """Reconcile branch with remote and resolve divergence.
+    25→
+    26→    When gt submit fails with "Branch has been updated remotely", this command
+    27→    fetches remote changes, analyzes divergence, rebases if needed, and resolves
+    28→    any conflicts using Claude.
+    29→
+    30→    Examples:
+
+... [67 lines omitted] ...
+
+    48→        raise click.ClickException("Not on a branch (detached HEAD)")
+    52→        raise click.ClickException(f"No remote tracking branch: origin/{current_branch}")
+    76→        raise click.ClickException(
+    87→        raise click.ClickException("Semantic decision requires interactive resolution")
+    89→        raise click.ClickException(result.error_message or "Reconcile with remote failed")
+  </tool_result>
+  <tool_result tool="toolu_013KQMEs3Aes1qv8KuLFVfEP">
+     1→"""PR management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.pr.address_cmd import address
+     7→from erk.cli.commands.pr.check_cmd import pr_check
+     8→from erk.cli.commands.pr.checkout_cmd import pr_checkout
+     9→from erk.cli.commands.pr.close_cmd import pr_close
+    10→from erk.cli.commands.pr.create_cmd import pr_create
+    11→from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
+    12→from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
+    13→from erk.cli.commands.pr.list_cmd import pr_list
+    14→from erk.cli.commands.pr.log_cmd import pr_log
+    15→from erk.cli.commands.pr.rebase_cmd import rebase
+    16→from erk.cli.commands.pr.reconcile_with_remote_cmd import pr_reconcile_with_remote
+    17→from erk.cli.commands.pr.replan_cmd import pr_replan
+    18→from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
+    19→from erk.cli.commands.pr.submit_cmd import pr_submit
+    20→from erk.cli.commands.pr.teleport_cmd import pr_teleport
+    21→from erk.cli.commands.pr.view_cmd import pr_view
+    22→
+    23→
+    24→@click.group("pr")
+    25→def pr_group() -&gt; None:
+    26→    """Manage pull requests."""
+    27→    pass
+    28→
+    29→
+    30→pr_group.add_command(address, name="address")
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014FGRBsx8MLp5LGP1YJGW69">
+   380→    return RebaseResult(success=success, error_message=error_message)
+   381→
+   382→
+   383→@dataclass(frozen=True)
+   384→class ReconcileWithRemoteResult:
+   385→    """Result from reconcile-with-remote streaming execution."""
+   386→
+   387→    success: bool
+   388→    error_message: str | None = None
+   389→    requires_interactive: bool = False
+   390→
+   391→
+   392→def stream_reconcile_with_remote(
+   393→    executor: PromptExecutor,
+   394→    worktree_path: Path,
+   395→) -&gt; ReconcileWithRemoteResult:
+   396→    """Stream reconcile-with-remote command via Claude executor with live feedback.
+   397→
+   398→    Handles the /erk:reconcile-with-remote command execution with:
+   399→    - Live output streaming with visual feedback
+   400→    - Semantic conflict detection (AskUserQuestion)
+   401→    - Deduped spinner updates
+   402→    - Rich console output with start/end markers
+   403→
+   404→    Args:
+   405→        executor: Prompt executor
+   406→        worktree_path: Path to run the divergence reconciliation in
+   407→
+   408→    Returns:
+   409→        ReconcileWithRemoteResult with success status and error details
+
+... [94 lines omitted] ...
+
+   411→    error_message: str | None = None
+   459→            case ErrorEvent(message=msg):
+   461→                error_message = msg
+   465→                error_message = diag
+   469→                error_message = diag
+   471→            case ProcessErrorEvent(message=msg):
+   473→                error_message = msg
+   478→    # Check for no-work-events failure mode
+   481→        error_message = (
+   485→        click.echo(click.style(f"   {error_message}", fg="yellow"))
+   495→        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+   497→    return ReconcileWithRemoteResult(success=success, error_message=error_message)
+  </tool_result>
+  <tool_result tool="toolu_01SPLyajZ6acNG33bhyNmFKz">
+   120→
+   121→    @staticmethod
+   122→    def dangerous_flag(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+   123→        """Ensure --dangerous flag is provided unless config disables the requirement.
+   124→
+   125→        Centralizes the check for commands that invoke Claude with
+   126→        --dangerously-skip-permissions (rebase, reconcile-with-remote, address).
+   127→
+   128→        Args:
+   129→            ctx: Application context with global config
+   130→            dangerous: Whether the --dangerous flag was provided
+   131→
+   132→        Raises:
+   133→            click.UsageError: If flag is required but not provided
+   134→        """
+   135→        if dangerous:
+   136→            return
+   137→        require_flag = (
+   138→            ctx.global_config is None
+   139→            or ctx.global_config.require_dangerous_flag_for_implicitly_dangerous_operations
+   140→        )
+   141→        if require_flag:
+   142→            config_key = "require_dangerous_flag_for_implicitly_dangerous_operations"
+   143→            raise click.UsageError(
+   144→                f"Missing option '--dangerous'.\nTo disable: erk config set {config_key} false"
+   145→            )
+   146→
+   147→    @staticmethod
+   148→    def path_exists(
+   149→        ctx: ErkContext,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01VKyrbiG5TGSBQe7vMtekhf">
+   290→                phase="push_and_create_pr",
+   291→                error_type="remote_diverged",
+   292→                message=(
+   293→                    f"Branch '{state.branch_name}' is behind remote by "
+   294→                    f"{divergence.behind} commit(s){ahead_msg}.\n\n"
+   295→                    "The remote branch has been updated (e.g., by CI or another session).\n\n"
+   296→                    "To fix:\n"
+   297→                    "  erk pr reconcile-with-remote --dangerous  # Reconcile with remote\n"
+   298→                    "  erk pr submit -f                          # Force push"
+   299→                ),
+   300→                details={
+   301→                    "branch": state.branch_name,
+   302→                    "ahead": str(divergence.ahead),
+   303→                    "behind": str(divergence.behind),
+   304→                },
+   305→            )
+   306→        if is_plan_impl and not state.force and divergence.behind &gt; 0:
+   307→            if not state.quiet:
+   308→                click.echo(click.style("   Auto-forcing: plan implementation branch", dim=True))
+   309→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_019ezV44zW7aS5NSNqg59Voz">
+     1→"""Tests for erk pr reconcile-with-remote command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.abc import BranchDivergence
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from tests.fakes.prompt_executor import FakePromptExecutor
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_pr_reconcile_with_remote_success() -&gt; None:
+    15→    """Test successful reconciliation when branch is diverged."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git = FakeGit(
+    19→            git_common_dirs={env.cwd: env.git_dir},
+    20→            local_branches={env.cwd: ["main", "feature-branch"]},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "feature-branch"},
+    24→            remote_branches={env.cwd: ["origin/feature-branch", "origin/main"]},
+    25→            branch_divergence={
+    26→                (env.cwd, "feature-branch", "origin"): BranchDivergence(
+    27→                    is_diverged=True, ahead=2, behind=3
+    28→                )
+    29→            },
+    30→        )
+
+... [330 lines omitted] ...
+
+    74→        # Verify error message includes config hint
+   180→    """Test error when no remote tracking branch."""
+   204→    """Test error when not on a branch."""
+   227→    """Test error when Claude is not installed."""
+   291→def test_pr_reconcile_with_remote_fails_on_command_error() -&gt; None:
+   319→        # Error message from FakePromptExecutor
+   320→        assert "failed" in result.output.lower()
+  </tool_result>
+  <assistant>Now I have all the content. Let me perform all the renames. I'll update the renamed files and content-only files in parallel batches.
+
+**Batch 1: Update renamed files**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12739" cache_read_input_tokens="75137" cache_creation="{'ephemeral_5m_input_tokens': 12739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012anbzyPLAAEWjdvcF8kJt7">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/diverge-fix.md</param>
+    <param name="old_string">description: Reconcile branch with remote and resolve divergence intelligently
+---
+
+# Reco...[truncated 25 chars]... updated remotely" errors by reconciling with remote and handling any resulting conflicts.</param>
+    <param name="new_string">description: Fix branch divergence with remote by rebasing and resolving conflicts
+---
+
+# ...[truncated 19 chars]... updated remotely" errors by reconciling with remote and handling any resulting conflicts.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12739" cache_read_input_tokens="75137" cache_creation="{'ephemeral_5m_input_tokens': 12739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JUCUYhiEefQMVBZezFPsqK">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/diverge-fix.md</param>
+    <param name="old_string">1. Stash changes: `git stash push -m "reconcile-with-remote: uncommitted work"`</param>
+    <param name="new_string">1. Stash changes: `git stash push -m "diverge-fix: uncommitted work"`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12739" cache_read_input_tokens="75137" cache_creation="{'ephemeral_5m_input_tokens': 12739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NS7G4PC7qu6HjCerJFqYMr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py</param>
+    <param name="old_string">"""Reconcile branch with remote.
+
+Uses Claude to reconcile a diverged local branch with it...[truncated 985 chars]...   erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
+    """</param>
+    <param name="new_string">"""Fix branch divergence with remote.
+
+Uses Claude to reconcile a diverged local branch wi...[truncated 904 chars]...   erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12739" cache_read_input_tokens="75137" cache_creation="{'ephemeral_5m_input_tokens': 12739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016FFBwuyKbT6sogTRobRkCr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py</param>
+    <param name="old_string">    # Execute reconcile with remote
+    result = stream_reconcile_with_remote(executor, cw...[truncated 219 chars]...iled")
+
+    click.echo(click.style("\nBranch synced with remote!", fg="green", bold=True))</param>
+    <param name="new_string">    # Execute diverge fix
+    result = stream_diverge_fix(executor, cwd)
+
+    if result.re...[truncated 189 chars]...iled")
+
+    click.echo(click.style("\nBranch synced with remote!", fg="green", bold=True))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12739" cache_read_input_tokens="75137" cache_creation="{'ephemeral_5m_input_tokens': 12739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012anbzyPLAAEWjdvcF8kJt7">
+The file /home/runner/work/erk/erk/.claude/commands/erk/diverge-fix.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01JUCUYhiEefQMVBZezFPsqK">
+The file /home/runner/work/erk/erk/.claude/commands/erk/diverge-fix.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01NS7G4PC7qu6HjCerJFqYMr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016FFBwuyKbT6sogTRobRkCr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `__init__.py` and `output.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1917" cache_read_input_tokens="87876" cache_creation="{'ephemeral_5m_input_tokens': 1917, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016wXWf62tt8PCnKDPLj2CiR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py</param>
+    <param name="old_string">from erk.cli.commands.pr.reconcile_with_remote_cmd import pr_reconcile_with_remote</param>
+    <param name="new_string">from erk.cli.commands.pr.diverge_fix_cmd import pr_diverge_fix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1917" cache_read_input_tokens="87876" cache_creation="{'ephemeral_5m_input_tokens': 1917, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01MU4Qq7YtkBWgMWRy2t3FSP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py</param>
+    <param name="old_string">pr_group.add_command(pr_reconcile_with_remote, name="reconcile-with-remote")</param>
+    <param name="new_string">pr_group.add_command(pr_diverge_fix, name="diverge-fix")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1917" cache_read_input_tokens="87876" cache_creation="{'ephemeral_5m_input_tokens': 1917, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QeTvqCoDBwbcjp5sDUfn4G">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class ReconcileWithRemoteResult:
+    """Result from reconcile-with...[truncated 678 chars]...  Returns:
+        ReconcileWithRemoteResult with success status and error details
+    """</param>
+    <param name="new_string">@dataclass(frozen=True)
+class DivergenceFixResult:
+    """Result from diverge-fix streamin...[truncated 609 chars]...in
+
+    Returns:
+        DivergenceFixResult with success status and error details
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1917" cache_read_input_tokens="87876" cache_creation="{'ephemeral_5m_input_tokens': 1917, 'ephemeral_1h_input_tokens': 0}" output_tokens="865" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016wXWf62tt8PCnKDPLj2CiR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MU4Qq7YtkBWgMWRy2t3FSP">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QeTvqCoDBwbcjp5sDUfn4G">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the remaining references in `output.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="89793" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LiWUCRshb5gfebzaBjzyqq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">    # Print start marker with bold styling
+    click.echo(click.style("--- /erk:reconcile-with-remote ---", bold=True))</param>
+    <param name="new_string">    # Print start marker with bold styling
+    click.echo(click.style("--- /erk:diverge-fix ---", bold=True))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="89793" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01EcS1jDNvpLDhB2J5pxhsF6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">    for event in executor.execute_command_streaming(
+        command="/erk:reconcile-with-remote",</param>
+    <param name="new_string">    for event in executor.execute_command_streaming(
+        command="/erk:diverge-fix",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="89793" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LvWshKz66TxuV7Qryedf3n">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">                    click.echo(click.style("    claude /erk:reconcile-with-remote", fg="cyan"))</param>
+    <param name="new_string">                    click.echo(click.style("    claude /erk:diverge-fix", fg="cyan"))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="89793" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016TmWu1pWC8UWh1XsqJWEYb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">                    return ReconcileWithRemoteResult(
+                        success=False,
+                        requires_interactive=True,
+                    )</param>
+    <param name="new_string">                    return DivergenceFixResult(
+                        success=False,
+                        requires_interactive=True,
+                    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="89793" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01G5XTnC8oFh7QYSpSPx9hmo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
+                pass  # PR metadata not relevant for reconcile-with-remote</param>
+    <param name="new_string">            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
+                pass  # PR metadata not relevant for diverge-fix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="89793" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01U3wYQ5cuvKFsJrL2BScYeY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">        error_message = (
+            "Claude completed without producing any output - "
+            "check hooks or run 'claude /erk:reconcile-with-remote' directly to debug"
+        )</param>
+    <param name="new_string">        error_message = (
+            "Claude completed without producing any output - "
+            "check hooks or run 'claude /erk:diverge-fix' directly to debug"
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="89793" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014odYJpBSKJdMwQXo2ueE3n">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">    return ReconcileWithRemoteResult(success=success, error_message=error_message)</param>
+    <param name="new_string">    return DivergenceFixResult(success=success, error_message=error_message)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1276" cache_read_input_tokens="89793" cache_creation="{'ephemeral_5m_input_tokens': 1276, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LiWUCRshb5gfebzaBjzyqq">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01EcS1jDNvpLDhB2J5pxhsF6">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LvWshKz66TxuV7Qryedf3n">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016TmWu1pWC8UWh1XsqJWEYb">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01G5XTnC8oFh7QYSpSPx9hmo">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01U3wYQ5cuvKFsJrL2BScYeY">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014odYJpBSKJdMwQXo2ueE3n">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `ensure.py`, `submit_pipeline.py`, and the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1740" cache_read_input_tokens="91069" cache_creation="{'ephemeral_5m_input_tokens': 1740, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PDq35xvYD3L8YD7ofQXqC3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+    <param name="old_string">        --dangerously-skip-permissions (rebase, reconcile-with-remote, address).</param>
+    <param name="new_string">        --dangerously-skip-permissions (rebase, diverge-fix, address).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1740" cache_read_input_tokens="91069" cache_creation="{'ephemeral_5m_input_tokens': 1740, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0144ddujG2YKhU7UHGcJe17w">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">                    "To fix:\n"
+                    "  erk pr reconcile-with-remote --dang...[truncated 2 chars]...h remote\n"
+                    "  erk pr submit -f                          # Force push"</param>
+    <param name="new_string">                    "To fix:\n"
+                    "  erk pr diverge-fix --dangerous  # Fix divergence with remote\n"
+                    "  erk pr submit -f                # Force push"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1740" cache_read_input_tokens="91069" cache_creation="{'ephemeral_5m_input_tokens': 1740, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PDq35xvYD3L8YD7ofQXqC3">
+The file /home/runner/work/erk/erk/src/erk/cli/ensure.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0144ddujG2YKhU7UHGcJe17w">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test file - replace all references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="729" cache_read_input_tokens="92809" cache_creation="{'ephemeral_5m_input_tokens': 729, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DnRZGEjkzh8JscHfwEiq5x">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py</param>
+    <param name="old_string">"""Tests for erk pr reconcile-with-remote command."""</param>
+    <param name="new_string">"""Tests for erk pr diverge-fix command."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="729" cache_read_input_tokens="92809" cache_creation="{'ephemeral_5m_input_tokens': 729, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PwLFzyCnmczBL5iyRTmeGL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py</param>
+    <param name="old_string">def test_pr_reconcile_with_remote_success</param>
+    <param name="new_string">def test_pr_diverge_fix_success</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="729" cache_read_input_tokens="92809" cache_creation="{'ephemeral_5m_input_tokens': 729, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0139Pfd1bANr8H6rrwR9EdN2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py</param>
+    <param name="old_string">        result = runner.invoke(pr_group, ["reconcile-with-remote", "--dangerous"], obj=ctx...[truncated 330 chars]... assert dangerous_flag is True
+
+
+def test_pr_reconcile_with_remote_requires_dangerous_flag</param>
+    <param name="new_string">        result = runner.invoke(pr_group, ["diverge-fix", "--dangerous"], obj=ctx)
+
+       ...[truncated 300 chars]...x"
+        assert dangerous_flag is True
+
+
+def test_pr_diverge_fix_requires_dangerous_flag</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="729" cache_read_input_tokens="92809" cache_creation="{'ephemeral_5m_input_tokens': 729, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DnRZGEjkzh8JscHfwEiq5x">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PwLFzyCnmczBL5iyRTmeGL">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0139Pfd1bANr8H6rrwR9EdN2">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me do the remaining test function renames and invocation updates with replace_all for efficiency:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1059" cache_read_input_tokens="93538" cache_creation="{'ephemeral_5m_input_tokens': 1059, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SDqDYC6f2f6sWePBwAz5oe">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py</param>
+    <param name="old_string">reconcile-with-remote</param>
+    <param name="new_string">diverge-fix</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1059" cache_read_input_tokens="93538" cache_creation="{'ephemeral_5m_input_tokens': 1059, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SDqDYC6f2f6sWePBwAz5oe">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py has been updated. All occurrences of 'reconcile-with-remote' were successfully replaced with 'diverge-fix'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DphdqyQ7corXsPuBbLKULn">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py</param>
+    <param name="old_string">test_pr_reconcile_with_remote_</param>
+    <param name="new_string">test_pr_diverge_fix_</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="94597" cache_creation="{'ephemeral_5m_input_tokens': 235, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DphdqyQ7corXsPuBbLKULn">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py has been updated. All occurrences of 'test_pr_reconcile_with_remote_' were successfully replaced with 'test_pr_diverge_fix_'.
+  </tool_result>
+  <assistant>Now update the test submit file and the remaining doc files. Let me also update the `test_submit.py` assertion:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="94832" cache_creation="{'ephemeral_5m_input_tokens': 467, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01DMbHVEFKsm9ybwvwg1ytjA">
+    <param name="pattern">reconcile-with-remote</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="94832" cache_creation="{'ephemeral_5m_input_tokens': 467, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DMbHVEFKsm9ybwvwg1ytjA">
+1790:        assert "erk pr reconcile-with-remote" in result.output
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B4VWfhwz6HtDaeDQ7KB9mG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="offset">1785</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="95299" cache_creation="{'ephemeral_5m_input_tokens': 193, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B4VWfhwz6HtDaeDQ7KB9mG">
+  1785→        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+  1786→
+  1787→        assert result.exit_code != 0
+  1788→        assert "behind remote by 2 commit(s)" in result.output
+  1789→        assert "ahead by 1 commit(s)" in result.output
+  1790→        assert "erk pr reconcile-with-remote" in result.output
+  1791→        assert "erk pr submit -f" in result.output
+  1792→        # gt submit should never have been called
+  1793→        assert len(graphite.submit_stack_calls) == 0
+  1794→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NB2az9xzfFTpXe7KSua7wB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        assert "erk pr reconcile-with-remote" in result.output</param>
+    <param name="new_string">        assert "erk pr diverge-fix" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="95492" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NB2az9xzfFTpXe7KSua7wB">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the documentation files. Let me read them and update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="96092" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011xjJFLzdKHqhTiwzsRHJDR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-diverge-fix.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="96092" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01CnFfYwyimYLMGirzmijz2B">
+    <param name="description">Find remaining reconcile-with-remote refs</param>
+    <param name="prompt">Search the entire codebase for remaining references to "reconcile-with-remote" or "reconci...[truncated 208 chars]...ep to search for each pattern separately and report ALL file paths and line numbers found.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="96092" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011xjJFLzdKHqhTiwzsRHJDR">
+     1→---
+     2→title: erk pr reconcile-with-remote Command
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "resolving branch divergence from remote"
+     7→  - "fixing gt submit 'Branch has been updated remotely' errors"
+     8→  - "reconciling local branch with remote tracking branch"
+     9→---
+    10→
+    11→# erk pr reconcile-with-remote Command
+    12→
+    13→Reconciles a diverged local branch with its remote tracking branch, handling rebase and conflicts using Claude.
+    14→
+    15→## Usage
+    16→
+    17→```bash
+    18→erk pr reconcile-with-remote --dangerous
+    19→```
+    20→
+    21→## When to Use
+    22→
+    23→This command resolves the common scenario when `gt submit` fails with:
+    24→
+    25→```
+    26→Branch has been updated remotely. Pull the latest changes and try again.
+    27→```
+    28→
+    29→This happens when:
+    30→
+
+... [59 lines omitted] ...
+
+    64→- Final success/failure message
+    66→## Error Conditions
+    68→| Error                             | Cause                                   |
+  </tool_result>
+  <tool_result tool="toolu_01CnFfYwyimYLMGirzmijz2B">
+Async agent launched successfully.
+agentId: a6d8ba9 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Let me update the doc file while waiting for the search results:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1773" cache_read_input_tokens="96278" cache_creation="{'ephemeral_5m_input_tokens': 1773, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01WMv31UfRxpYEDkXdb13cg5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-diverge-fix.md</param>
+    <param name="content">---
+title: erk pr diverge-fix Command
+last_audited: "2026-02-17 16:00 PT"
+audit_result: cl...[truncated 2315 chars]...his wraps
+
+## Reference Implementation
+
+See `src/erk/cli/commands/pr/diverge_fix_cmd.py`.
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1773" cache_read_input_tokens="96278" cache_creation="{'ephemeral_5m_input_tokens': 1773, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WMv31UfRxpYEDkXdb13cg5">
+The file /home/runner/work/erk/erk/docs/learned/cli/commands/pr-diverge-fix.md has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→---
+     2→title: erk pr diverge-fix Command
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "resolving branch divergence from remote"
+     7→  - "fixing gt submit 'Branch has been updated remotely' errors"
+     8→  - "reconciling local branch with remote tracking branch"
+     9→---
+    10→
+    11→# erk pr diverge-fix Command
+    12→
+    13→Fixes a diverged local branch with its remote tracking branch, handling rebase and conflicts using Claude.
+    14→
+    15→## Usage
+    16→
+    17→```bash
+    18→erk pr diverge-fix --dangerous
+    19→```
+    20→
+    21→## When to Use
+    22→
+    23→This command resolves the common scenario when `gt submit` fails with:
+    24→
+    25→```
+    26→Branch has been updated remotely. Pull the latest changes and try again.
+    27→```
+    28→
+    29→This happens when:
+
+... [55 lines omitted] ...
+
+    64→- Final success/failure message
+    66→## Error Conditions
+    68→| Error                             | Cause                                   |
+  </tool_result>
+  <assistant>Now let me get the search results for remaining references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1776" cache_read_input_tokens="98051" cache_creation="{'ephemeral_5m_input_tokens': 1776, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01JBkQjPZcSsM9xsrymgX3rB">
+    <param name="task_id">a6d8ba9</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1776" cache_read_input_tokens="98051" cache_creation="{'ephemeral_5m_input_tokens': 1776, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JBkQjPZcSsM9xsrymgX3rB">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a6d8ba9&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Grep] {"pattern":"reconcile-with-remote","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Grep] {"pattern":"reconcile_with_remote","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Grep] {"pattern":"ReconcileWithRemote","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Grep] {"pattern":"stream_reconcile_with_remote","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Grep] {"pattern":"pr_reconcile_with_remote","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Grep] {"pattern":"pr_reconcile_with_remote","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Grep] {"pattern":"reconcile_with_remote_cmd","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Glob] {"pattern":"**/reconcile_with_remote_cmd.py"}
+[Tool: Glob] {"pattern":"**/*reconcile*remote*.py"}
+[Tool: Glob] {"pattern":"**/*reconcile*remote*.py"}
+[Tool: Grep] {"pattern":"diverge.?fix|diverge-fix","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/src -name \"*.py\" -type f | grep -E \"(pr|command)\" | head -20","description":"List Python files in pr/command areas"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/src -name \"*.py\" -type f | grep -E \"(pr|command)\" | head -20","description":"List Python files in pr/command areas"}
+[Tool: Grep] {"pattern":"pr-reconcile-with-remote","path":"/home/runner/work/erk/erk","output_mode":"content","-n":true}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/docs -name \"*reconcile*\" -o -name \"*diverge*\" | grep -v \".git\"","description":"Find files with reconcile or diverge in name"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/docs -name \"*reconcile*\" -o -name \"*diverge*\" | grep -v \".git\"","description":"Find files with reconcile or diverge in name"}
+[Tool: Bash] {"command":"ls -la /home/runner/work/erk/erk/docs/learned/cli/commands/ | grep reconcile","description":"Check for reconcile files in commands"}
+[Tool: Bash] {"command":"ls -la /home/runner/work/erk/erk/docs/learned/cli/commands/ | grep reconcile","description":"Check for reconcile files in commands"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/commands/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/howto/pr-checkout-sync.md"}
+
+... [73 lines omitted] ...
+
+   - Line 22: `- **[commands/pr-reconcile-with-remote.md](commands/pr-reconcile-with-remote.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch`
+   - Line 22: `warning: "Use /erk:reconcile-with-remote instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."`
+  </tool_result>
+  <assistant>There are many documentation files to update. Let me handle all of them now in parallel batches. First let me read the ones I haven't read yet:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="99827" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015nUy4iM6d5aibTC4XJFaXb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/index.md</param>
+    <param name="offset">12</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="99827" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01No8TS6Pg8X7rCcHG8gFdxt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/index.md</param>
+    <param name="offset">18</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="99827" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01V5YK8VRDF7zt3LPi9VTPiN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/command-organization.md</param>
+    <param name="offset">73</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="99827" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RKF6rE7djCHXoF9mbi7qFb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/graphite-divergence-detection.md</param>
+    <param name="offset">47</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="99827" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01K19YcFfkVVF87VdEdHUwy2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/draft-pr-handling.md</param>
+    <param name="offset">93</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="99827" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JWftKGH2FtB6rQmqyN7XDx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/git-graphite-quirks.md</param>
+    <param name="offset">18</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="99827" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016m1PE2NiezNoeGcQdgPKgE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+    <param name="offset">333</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="99827" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015nUy4iM6d5aibTC4XJFaXb">
+    12→Reference documentation for specific erk CLI commands.
+    13→
+    14→## Documents in This Category
+    15→
+    16→### erk pr reconcile-with-remote
+    17→
+    18→**File:** [pr-reconcile-with-remote.md](pr-reconcile-with-remote.md)
+    19→
+    20→Reconciles a diverged local branch with its remote tracking branch using Claude.
+    21→
+    22→## Related Topics
+    23→
+    24→- [CLI Output Styling](../output-styling.md) - Output formatting conventions
+    25→- [Exec Command Patterns](../exec-command-patterns.md) - Patterns for exec scripts
+    26→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01No8TS6Pg8X7rCcHG8gFdxt">
+    18→- **[command-deletion-patterns.md](command-deletion-patterns.md)** — deleting a CLI command or command group, removing dead code after a feature deletion, identifying vestigial features for removal
+    19→- **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
+    20→- **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
+    21→- **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
+    22→- **[commands/pr-reconcile-with-remote.md](commands/pr-reconcile-with-remote.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
+    23→- **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
+    24→- **[commands/update-objective-node.md](commands/update-objective-node.md)** — working with objective roadmap tables, updating step PR references
+    25→- **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
+    26→- **[doctor-workflow.md](doctor-workflow.md)** — modifying doctor command or workflow diagnostics, adding health checks to doctor
+    27→- **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01V5YK8VRDF7zt3LPi9VTPiN">
+    73→| `checkout` (`co`)       | Checkout PR into a worktree for review              |
+    74→| `rebase`                | Fix merge conflicts with AI resolution              |
+    75→| `rewrite`               | Squash, regenerate commit message, push             |
+    76→| `sync`                  | Synchronize current PR branch with remote base      |
+    77→| `reconcile-with-remote` | Reconcile branch with remote and resolve divergence |
+    78→
+    79→### Grouped Commands
+    80→
+    81→Infrastructure and supporting operations are grouped under noun prefixes for clarity:
+    82→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01RKF6rE7djCHXoF9mbi7qFb">
+    47→## Resolution Steps
+    48→
+    49→When divergence is detected, the error message suggests two options:
+    50→
+    51→1. **`erk pr reconcile-with-remote --dangerous`**: Fetch, rebase onto remote, resolve any conflicts
+    52→2. **`erk pr submit -f`**: Force push, overriding whatever is on remote
+    53→
+    54→## Graphite Tracking Divergence After Setup
+    55→
+    56→A separate divergence scenario occurs when Graphite's internal tracking gets out of sync (e.g., after branch setup or manual git operations). Resolution:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01K19YcFfkVVF87VdEdHUwy2">
+    93→**Cause**: Branch updated remotely (by CI or another session) between local changes and `gt submit`.
+    94→
+    95→**Symptoms**: `gt submit` fails or `erk pr submit` returns `remote_diverged` error with behind count.
+    96→
+    97→**Resolution**: Run `erk pr reconcile-with-remote --dangerous` to fetch, rebase, and resolve conflicts. Or use `erk pr submit -f` to force push (overrides remote). See [Graphite Divergence Detection](../erk/graphite-divergence-detection.md).
+    98→
+    99→### .erk/impl-context/ Already Exists
+   100→
+   101→**Cause**: Stale `.erk/impl-context/` from a prior failed submission was not cleaned up.
+   102→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01JWftKGH2FtB6rQmqyN7XDx">
+    18→  - action: "using `gt restack` to resolve branch divergence errors"
+    19→    warning: "gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first."
+    20→    pattern: "gt\\s+restack"
+    21→  - action: "using git pull or git pull --rebase on a Graphite-managed branch"
+    22→    warning: "Use /erk:reconcile-with-remote instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
+    23→    pattern: "git\\s+pull"
+    24→  - action: "comparing git SHA to Graphite's tracked SHA for divergence detection"
+    25→    warning: "Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches."
+    26→  - action: "amending a commit when Graphite is enabled"
+    27→    warning: "After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in checkout_cmd, rewrite_cmd, submit_pipeline, and branch_manager."
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_016m1PE2NiezNoeGcQdgPKgE">
+   333→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   334→
+   335→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   336→
+   337→**using git pull or git pull --rebase on a Graphite-managed branch** [pattern: `git\s+pull`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:reconcile-with-remote instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
+   338→
+   339→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   340→
+   341→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   342→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me read the remaining files and update all of them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3649" cache_read_input_tokens="103000" cache_creation="{'ephemeral_5m_input_tokens': 3649, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019E6P89qARrTHVpWRrjMX9M">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md</param>
+    <param name="offset">369</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3649" cache_read_input_tokens="103000" cache_creation="{'ephemeral_5m_input_tokens': 3649, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DMDDyDMEfHroyMiYcGHaDN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/howto/pr-checkout-sync.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3649" cache_read_input_tokens="103000" cache_creation="{'ephemeral_5m_input_tokens': 3649, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017a3CVTMw2viJ6iLYt8mJ9w">
+    <param name="file_path">/home/runner/work/erk/erk/docs/howto/conflict-resolution.md</param>
+    <param name="offset">74</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3649" cache_read_input_tokens="103000" cache_creation="{'ephemeral_5m_input_tokens': 3649, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019E6P89qARrTHVpWRrjMX9M">
+   369→Next steps:
+   370→1. Push changes:
+   371→   - **Graphite repos**: `gt submit` (or `gt ss`)
+   372→   - **Plain git repos**: `git push`
+   373→   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+   374→2. Wait for CI to pass
+   375→3. Request re-review if needed
+   376→```
+   377→
+   378→#### Handle Any Skipped Comments
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01DMDDyDMEfHroyMiYcGHaDN">
+     1→# Checkout and Sync PRs
+     2→
+     3→Review and iterate on existing PRs locally.
+     4→
+     5→## Overview
+     6→
+     7→Use this workflow when you need to:
+     8→
+     9→- **Review teammate PRs**: Check out code locally to test or explore
+    10→- **Debug remote execution**: Investigate issues from agent-created PRs
+    11→- **Take over PRs**: Continue work started by others or remote agents
+    12→- **Address review comments**: Make changes in response to PR feedback
+    13→
+    14→## Checking Out a PR
+    15→
+    16→Use `erk pr checkout` (alias: `erk pr co`) to check out a PR into a new worktree:
+    17→
+    18→```bash
+    19→# By PR number
+    20→erk pr co 123
+    21→
+    22→# By GitHub URL
+    23→erk pr co https://github.com/owner/repo/pull/123
+    24→
+    25→# See what would be created (no changes)
+    26→erk pr co 123 --dry-run
+    27→```
+    28→
+    29→This command:
+    30→
+
+... [123 lines omitted] ...
+
+    57→**Warning**: The `--dangerous` flag is required because syncing can rewrite history. Use `/erk:reconcile-with-remote` if you're unsure about the sync strategy.
+   140→| Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit                         |
+  </tool_result>
+  <tool_result tool="toolu_017a3CVTMw2viJ6iLYt8mJ9w">
+    74→### Divergence vs Conflicts
+    75→
+    76→| Situation          | What It Means                             | Command to Use                 |
+    77→| ------------------ | ----------------------------------------- | ------------------------------ |
+    78→| Branch diverged    | Local and remote both have new commits    | `erk pr reconcile-with-remote` |
+    79→| Rebase in progress | Conflict markers in files during a rebase | `erk pr rebase`                |
+    80→
+    81→### Reconcile With Remote Command
+    82→
+    83→**CLI command** (outside a Claude session):
+    84→
+    85→```bash
+    86→erk pr reconcile-with-remote --dangerous
+    87→```
+    88→
+    89→**Slash command** (inside a Claude Code session):
+    90→
+    91→```
+    92→/erk:reconcile-with-remote
+    93→```
+    94→
+    95→### How It Works
+    96→
+    97→Claude will:
+    98→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me update all remaining files in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2739" cache_read_input_tokens="106649" cache_creation="{'ephemeral_5m_input_tokens': 2739, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+</session>
