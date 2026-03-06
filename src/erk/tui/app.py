@@ -81,6 +81,7 @@ class ErkDashApp(
         Binding("3", "switch_view_objectives", "Objectives", show=False),
         Binding("t", "toggle_stack_filter", "Stack", show=False),
         Binding("a", "toggle_all_users", "All Users", show=False),
+        Binding("b", "view_nodes", "Nodes", show=False),
         Binding("x", "one_shot_prompt", "One-Shot"),
         Binding("right", "next_view", "Next View", show=False, priority=True),
         Binding("left", "previous_view", "Previous View", show=False, priority=True),

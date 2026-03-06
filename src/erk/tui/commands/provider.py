@@ -9,11 +9,12 @@ from rich.text import Text
 from textual.command import DiscoveryHit, Hit, Hits, Provider
 
 from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands, get_display_name
-from erk.tui.commands.types import CommandContext
+from erk.tui.commands.types import CommandCategory, CommandContext
 from erk.tui.views.types import ViewMode
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp, PlanDetailScreen
+    from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
 
 
 def _format_palette_display(emoji: str, label: str, command_text: str) -> Text:
@@ -85,9 +86,16 @@ class MainListCommandProvider(Provider):
     def _get_context(self) -> CommandContext | None:
         """Build command context from selected row.
 
+        Returns None when a modal screen is active (the modal's own
+        command provider handles commands instead).
+
         Returns:
-            CommandContext if a row is selected, None otherwise
+            CommandContext if a row is selected and no modal is active, None otherwise
         """
+        from textual.screen import ModalScreen
+
+        if isinstance(self.screen, ModalScreen):
+            return None
         row = self._app._get_selected_row()
         if row is None:
             return None
@@ -251,4 +259,99 @@ class PlanCommandProvider(Provider):
                     score,
                     display,
                     partial(self._detail_screen.execute_command, cmd.id),
+                )
+
+
+class NodeCommandProvider(Provider):
+    """Command provider for objective nodes modal.
+
+    Provides OPEN and COPY commands for the selected node's PR.
+    ACTION commands (close, dispatch, land, etc.) are excluded because
+    they require the full app context.
+    """
+
+    _ALLOWED_CATEGORIES = {CommandCategory.OPEN, CommandCategory.COPY}
+
+    @property
+    def _nodes_screen(self) -> ObjectiveNodesScreen:
+        """Get the ObjectiveNodesScreen from current screen context.
+
+        Returns:
+            The ObjectiveNodesScreen instance
+
+        Raises:
+            AssertionError: If not called from an ObjectiveNodesScreen
+        """
+        from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
+
+        screen = self.screen
+        if not isinstance(screen, ObjectiveNodesScreen):
+            msg = f"NodeCommandProvider expected ObjectiveNodesScreen, got {type(screen)}"
+            raise AssertionError(msg)
+        return screen
+
+    def _get_context(self) -> CommandContext | None:
+        """Build command context from selected row.
+
+        Returns:
+            CommandContext if a row with PR data is selected, None otherwise
+        """
+        row = self._nodes_screen._get_selected_row()
+        if row is None:
+            return None
+        return CommandContext(row=row, view_mode=ViewMode.PLANS)
+
+    async def discover(self) -> Hits:
+        """Show available commands when palette opens.
+
+        Yields:
+            DiscoveryHit for each available command
+        """
+        ctx = self._get_context()
+        if ctx is None:
+            return
+
+        for cmd in get_available_commands(ctx):
+            if cmd.category not in self._ALLOWED_CATEGORIES:
+                continue
+            emoji = CATEGORY_EMOJI[cmd.category]
+            name = get_display_name(cmd, ctx)
+            display = _format_palette_display(emoji, cmd.description, name)
+            yield DiscoveryHit(
+                display,
+                partial(self._nodes_screen.execute_command, cmd.id),
+            )
+
+    async def search(self, query: str) -> Hits:
+        """Fuzzy search commands.
+
+        Args:
+            query: The search query from user input
+
+        Yields:
+            Hit for each matching command, with fuzzy match score
+        """
+        ctx = self._get_context()
+        if ctx is None:
+            return
+
+        matcher = self.matcher(query)
+
+        for cmd in get_available_commands(ctx):
+            if cmd.category not in self._ALLOWED_CATEGORIES:
+                continue
+            name = get_display_name(cmd, ctx)
+            search_text = f"{cmd.description}: {name}"
+            score = matcher.match(search_text)
+            if score > 0:
+                emoji = CATEGORY_EMOJI[cmd.category]
+                highlighted = matcher.highlight(search_text)
+                if isinstance(highlighted, Text):
+                    display = _format_search_display(emoji, highlighted, len(cmd.description))
+                else:
+                    display = _format_palette_display(emoji, cmd.description, name)
+                yield Hit(
+                    score,
+                    display,
+                    partial(self._nodes_screen.execute_command, cmd.id),
                 )

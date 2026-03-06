@@ -9,6 +9,7 @@ from erk.tui.data.types import PlanRowData
 from erk.tui.screens.check_runs_screen import CheckRunsScreen
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.screens.launch_screen import LaunchScreen
+from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
 from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
@@ -190,6 +191,26 @@ class NavigationActionsMixin:
                 full_title=row.full_title,
                 passing_count=passing_count,
                 total_count=total_count,
+            )
+        )
+
+    def action_view_nodes(self: ErkDashApp) -> None:
+        """Display objective node breakdown in a modal."""
+        if self._view_mode != ViewMode.OBJECTIVES:
+            return
+        row = self._get_selected_row()
+        if row is None:
+            return
+        if not row.plan_body:
+            if self._status_bar is not None:
+                self._status_bar.set_message("No objective body available")
+            return
+        self.push_screen(
+            ObjectiveNodesScreen(
+                provider=self._provider,
+                plan_id=row.plan_id,
+                plan_body=row.plan_body,
+                full_title=row.full_title,
             )
         )
 
