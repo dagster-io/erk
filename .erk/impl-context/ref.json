@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable"
+}
