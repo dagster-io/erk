@@ -35,7 +35,7 @@ class BackgroundWorkersMixin:
         # Error boundary: catch all exceptions from the close operation to display
         # them as toast notifications rather than crashing the TUI.
         try:
-            closed_prs = self._provider.close_plan(plan_id, plan_url)
+            closed_prs = self._service.close_plan(plan_id, plan_url)
             # Success toast
             if closed_prs:
                 msg = f"Closed plan #{plan_id} (and {len(closed_prs)} linked PRs)"

@@ -13,12 +13,11 @@ from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
+from erk.tui.data.real_provider import RealPlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import SortKey, SortState
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.browser.real import RealBrowserLauncher
-from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.github.emoji import get_pr_status_emoji
 from erk_shared.gateway.github.types import (
@@ -27,7 +26,7 @@ from erk_shared.gateway.github.types import (
     IssueFilterState,
     PullRequestInfo,
 )
-from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+from erk_shared.gateway.plan_service.real import RealPlanService
 from erk_shared.output.output import user_output
 
 P = ParamSpec("P")
@@ -282,8 +281,6 @@ def _pr_list_impl(
     provider = RealPlanDataProvider(
         ctx,
         location=location,
-        clipboard=FakeClipboard(),
-        browser=FakeBrowserLauncher(),
         http_client=http_client,
     )
 
@@ -401,6 +398,11 @@ def _run_interactive_mode(
     provider = RealPlanDataProvider(
         ctx,
         location=location,
+        http_client=http_client,
+    )
+    service = RealPlanService(
+        ctx,
+        location=location,
         clipboard=clipboard,
         browser=browser,
         http_client=http_client,
@@ -431,6 +433,7 @@ def _run_interactive_mode(
     # Run the TUI app
     app = ErkDashApp(
         provider=provider,
+        service=service,
         filters=filters,
         refresh_interval=interval,
         initial_sort=initial_sort,

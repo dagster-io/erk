@@ -9,7 +9,7 @@ from textual.widgets import Label, Markdown
 
 from erk.tui.formatting.ci_checks import format_check_runs
 from erk_shared.gateway.github.types import PRCheckRun
-from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.gateway.plan_service.abc import PlanService
 
 
 class CheckRunsScreen(ModalScreen):
@@ -96,7 +96,7 @@ class CheckRunsScreen(ModalScreen):
     def __init__(
         self,
         *,
-        provider: PlanDataProvider,
+        service: PlanService,
         pr_number: int,
         full_title: str,
         passing_count: int,
@@ -105,14 +105,14 @@ class CheckRunsScreen(ModalScreen):
         """Initialize with PR metadata and provider for async loading.
 
         Args:
-            provider: Data provider for fetching check runs
+            service: Plan service for fetching check runs
             pr_number: The PR number to fetch check runs for
             full_title: The full plan title for display
             passing_count: Number of passing checks
             total_count: Total number of checks
         """
         super().__init__()
-        self._provider = provider
+        self._service = service
         self._pr_number = pr_number
         self._full_title = full_title
         self._passing_count = passing_count
@@ -149,7 +149,7 @@ class CheckRunsScreen(ModalScreen):
         error: str | None = None
 
         try:
-            check_runs = self._provider.fetch_check_runs(self._pr_number)
+            check_runs = self._service.fetch_check_runs(self._pr_number)
         except Exception as e:
             error = str(e)
 
@@ -197,7 +197,7 @@ class CheckRunsScreen(ModalScreen):
         summaries: dict[str, str] = {}
 
         try:
-            summaries = self._provider.fetch_ci_summaries(self._pr_number)
+            summaries = self._service.fetch_ci_summaries(self._pr_number)
         except Exception:
             # Summaries are best-effort; silently ignore failures
             pass

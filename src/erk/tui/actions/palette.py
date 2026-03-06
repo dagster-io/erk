@@ -33,22 +33,22 @@ class PaletteActionsMixin:
         if command_id == "open_browser":
             url = row.pr_url or row.plan_url
             if url:
-                self._provider.browser.launch(url)
+                self._service.browser.launch(url)
                 self.notify(f"Opened {url}")
 
         elif command_id == "open_issue":
             if row.plan_url:
-                self._provider.browser.launch(row.plan_url)
+                self._service.browser.launch(row.plan_url)
                 self.notify(f"Opened plan #{row.plan_id}")
 
         elif command_id == "open_pr":
             if row.pr_url:
-                self._provider.browser.launch(row.pr_url)
+                self._service.browser.launch(row.pr_url)
                 self.notify(f"Opened PR #{row.pr_number}")
 
         elif command_id == "open_run":
             if row.run_url:
-                self._provider.browser.launch(row.run_url)
+                self._service.browser.launch(row.run_url)
                 self.notify(f"Opened run {row.run_id_display}")
 
         elif command_id == "copy_checkout":
@@ -65,7 +65,7 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_implement_local":
@@ -74,7 +74,7 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_dispatch":
@@ -83,7 +83,7 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_replan":
@@ -92,7 +92,7 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_land":
@@ -101,7 +101,7 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_close_plan":
@@ -110,7 +110,7 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_rebase_remote":
@@ -119,7 +119,7 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_address_remote":
@@ -128,13 +128,13 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "copy_rewrite_remote":
             if row.pr_number is not None:
                 cmd = f"erk launch pr-rewrite --pr {row.pr_number}"
-                self._provider.clipboard.copy(cmd)
+                self._service.clipboard.copy(cmd)
                 self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_cmux_checkout":
@@ -143,7 +143,7 @@ class PaletteActionsMixin:
             )
             text = get_copy_text(command_id, ctx)
             if text is not None:
-                self._provider.clipboard.copy(text)
+                self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}")
 
         elif command_id == "cmux_checkout":
@@ -210,23 +210,23 @@ class PaletteActionsMixin:
 
         elif command_id == "copy_replan":
             cmd = f"/erk:replan {row.plan_id}"
-            self._provider.clipboard.copy(cmd)
+            self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         # === OBJECTIVE COMMANDS ===
         elif command_id == "copy_plan":
             cmd = f"erk objective plan {row.plan_id}"
-            self._provider.clipboard.copy(cmd)
+            self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_view":
             cmd = f"erk objective view {row.plan_id}"
-            self._provider.clipboard.copy(cmd)
+            self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "open_objective":
             if row.plan_url:
-                self._provider.browser.launch(row.plan_url)
+                self._service.browser.launch(row.plan_url)
                 self.notify(f"Opened objective #{row.plan_id}")
 
         elif command_id == "one_shot_plan":
@@ -249,7 +249,7 @@ class PaletteActionsMixin:
 
         elif command_id == "codespace_run_plan":
             cmd = f"erk codespace run objective plan {row.plan_id}"
-            self._provider.clipboard.copy(cmd)
+            self._service.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
     def action_one_shot_prompt(self: ErkDashApp) -> None:

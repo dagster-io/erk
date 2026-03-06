@@ -21,14 +21,20 @@ def _make_provider(
     mock_plan_service = plan_service or MagicMock()
     mock_ctx.objective_list_service = mock_objective_service
     mock_ctx.plan_list_service = mock_plan_service
-    mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
-    mock_plan_service.get_plan_list_data.return_value = MagicMock(plans=[])
+    mock_objective_service.get_objective_list_data.return_value = MagicMock(
+        plans=[], api_ms=0.0, plan_parsing_ms=0.0, workflow_runs_ms=0.0, warnings=[]
+    )
+    mock_plan_service.get_plan_list_data.return_value = MagicMock(
+        plans=[], api_ms=0.0, plan_parsing_ms=0.0, workflow_runs_ms=0.0, warnings=[]
+    )
+    # Timing calls need real numbers for arithmetic in fetch_plans
+    mock_ctx.time.monotonic.return_value = 0.0
+    # Worktree listing needs to return an iterable
+    mock_ctx.git.worktree.list_worktrees.return_value = []
 
     return RealPlanDataProvider(
         mock_ctx,
         location=MagicMock(),
-        clipboard=MagicMock(),
-        browser=MagicMock(),
         http_client=MagicMock(),
     )
 
@@ -43,7 +49,9 @@ class TestPlanDataProviderRouting:
         # Arrange
         mock_objective_service = MagicMock()
         mock_plan_service = MagicMock()
-        mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
+        mock_objective_service.get_objective_list_data.return_value = MagicMock(
+            plans=[], api_ms=0.0, plan_parsing_ms=0.0, workflow_runs_ms=0.0, warnings=[]
+        )
         provider = _make_provider(
             objective_service=mock_objective_service, plan_service=mock_plan_service
         )

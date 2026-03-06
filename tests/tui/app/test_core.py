@@ -8,6 +8,7 @@ from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 class TestErkDashAppCompose:
@@ -18,7 +19,9 @@ class TestErkDashAppCompose:
         """App composes all required widgets."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test():
             # Check for PlanDataTable
@@ -43,7 +46,9 @@ class TestErkDashAppDataLoading:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             # Wait for async data load
@@ -59,7 +64,9 @@ class TestErkDashAppDataLoading:
             fetch_error="Network unreachable",
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             # Wait for async data load attempt
@@ -86,7 +93,9 @@ class TestErkDashAppNavigation:
         """Pressing q quits the app."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.press("q")
@@ -97,7 +106,9 @@ class TestErkDashAppNavigation:
         """Pressing escape quits the app."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.press("escape")
@@ -108,7 +119,9 @@ class TestErkDashAppNavigation:
         """Pressing ? shows help screen."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.press("?")
@@ -125,7 +138,9 @@ class TestErkDashAppNavigation:
         """Pressing an unmapped key does NOT dismiss HelpScreen."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.press("?")
@@ -145,7 +160,9 @@ class TestErkDashAppNavigation:
         """Pressing Esc dismisses HelpScreen."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.press("?")
@@ -164,7 +181,9 @@ class TestErkDashAppNavigation:
         """Pressing q dismisses HelpScreen."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.press("?")
@@ -187,7 +206,9 @@ class TestErkDashAppRefresh:
         """Pressing r refreshes data."""
         provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             # Wait for initial load

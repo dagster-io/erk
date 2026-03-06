@@ -1,0 +1,254 @@
+"""Real implementation of PlanService for production use."""
+
+import subprocess
+from pathlib import Path
+
+from erk.core.context import ErkContext
+from erk_shared.gateway.browser.abc import BrowserLauncher
+from erk_shared.gateway.clipboard.abc import Clipboard
+from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+from erk_shared.gateway.github.metadata.core import (
+    extract_objective_from_comment,
+    extract_objective_header_comment_id,
+)
+from erk_shared.gateway.github.types import (
+    GitHubRepoId,
+    GitHubRepoLocation,
+    PRCheckRun,
+    PRNotFound,
+    PRReviewThread,
+)
+from erk_shared.gateway.http.abc import HttpClient
+from erk_shared.gateway.plan_service.abc import PlanService
+
+
+class RealPlanService(PlanService):
+    """Production implementation of domain plan operations.
+
+    Contains operations independent of TUI display: closing plans,
+    dispatching, fetching content, and GitHub PR data.
+    """
+
+    def __init__(
+        self,
+        ctx: ErkContext,
+        *,
+        location: GitHubRepoLocation,
+        clipboard: Clipboard,
+        browser: BrowserLauncher,
+        http_client: HttpClient,
+    ) -> None:
+        """Initialize with context and repository info.
+
+        Args:
+            ctx: ErkContext with all dependencies
+            location: GitHub repository location (local root + repo identity)
+            clipboard: Clipboard interface for copy operations
+            browser: BrowserLauncher interface for opening URLs
+            http_client: HTTP client for direct API calls
+        """
+        self._ctx = ctx
+        self._location = location
+        self._clipboard = clipboard
+        self._browser = browser
+        self._http_client = http_client
+
+    @property
+    def repo_root(self) -> Path:
+        """Get the repository root path."""
+        return self._location.root
+
+    @property
+    def clipboard(self) -> Clipboard:
+        """Get the clipboard interface for copy operations."""
+        return self._clipboard
+
+    @property
+    def browser(self) -> BrowserLauncher:
+        """Get the browser launcher interface for opening URLs."""
+        return self._browser
+
+    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
+        """Close a plan and its linked PRs using direct HTTP calls.
+
+        Args:
+            plan_id: The plan ID to close
+            plan_url: The plan URL for PR linkage lookup
+
+        Returns:
+            List of PR numbers that were also closed
+        """
+        owner_repo = _parse_owner_repo_from_url(plan_url)
+        if owner_repo is None:
+            return []
+        owner, repo = owner_repo
+
+        closed_prs = self._close_linked_prs_http(plan_id, owner, repo)
+
+        self._http_client.patch(
+            f"repos/{owner}/{repo}/issues/{plan_id}",
+            data={"state": "closed"},
+        )
+
+        return closed_prs
+
+    def _close_linked_prs_http(
+        self,
+        plan_id: int,
+        owner: str,
+        repo: str,
+    ) -> list[int]:
+        """Close all OPEN PRs linked to an issue using HTTP.
+
+        Args:
+            plan_id: The plan ID
+            owner: Repository owner
+            repo: Repository name
+
+        Returns:
+            List of PR numbers that were closed
+        """
+        location = GitHubRepoLocation(
+            root=self._location.root,
+            repo_id=GitHubRepoId(owner=owner, repo=repo),
+        )
+        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [plan_id])
+        linked_prs = pr_linkages.get(plan_id, [])
+
+        closed_prs: list[int] = []
+        for pr in linked_prs:
+            if pr.state == "OPEN":
+                self._http_client.patch(
+                    f"repos/{owner}/{repo}/pulls/{pr.number}",
+                    data={"state": "closed"},
+                )
+                closed_prs.append(pr.number)
+
+        return closed_prs
+
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+        """Dispatch a plan to the implementation queue.
+
+        Args:
+            plan_id: The plan ID to dispatch
+            plan_url: The plan URL (unused, kept for interface consistency)
+        """
+        subprocess.run(
+            ["erk", "pr", "dispatch", str(plan_id), "-f"],
+            cwd=self._location.root,
+            check=True,
+            capture_output=True,
+        )
+
+    def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
+        """Return plan content from the PR body.
+
+        Args:
+            plan_id: The GitHub PR number
+            plan_body: The extracted plan content from the PR body
+
+        Returns:
+            The plan content, or None if empty
+        """
+        return plan_body if plan_body.strip() else None
+
+    def fetch_objective_content(self, plan_id: int, plan_body: str) -> str | None:
+        """Fetch objective content from the first comment of an issue.
+
+        Args:
+            plan_id: The GitHub issue number
+            plan_body: The issue body (to extract objective_comment_id from metadata)
+
+        Returns:
+            The extracted objective content, or None if not found
+        """
+        comment_id = extract_objective_header_comment_id(plan_body)
+        if comment_id is None:
+            return None
+
+        owner = self._location.repo_id.owner
+        repo = self._location.repo_id.repo
+        endpoint = f"repos/{owner}/{repo}/issues/comments/{comment_id}"
+
+        response = self._http_client.get(endpoint)
+        comment_body = response.get("body", "")
+
+        return extract_objective_from_comment(comment_body)
+
+    def get_branch_stack(self, branch: str) -> list[str] | None:
+        """Get the Graphite stack containing a branch.
+
+        Args:
+            branch: The branch name to look up
+
+        Returns:
+            Ordered list of branch names in the stack, or None
+        """
+        return self._ctx.branch_manager.get_branch_stack(self._location.root, branch)
+
+    def fetch_check_runs(self, pr_number: int) -> list[PRCheckRun]:
+        """Fetch failing check runs for a pull request.
+
+        Args:
+            pr_number: The PR number to fetch check runs for
+
+        Returns:
+            List of PRCheckRun for failing checks, sorted by name
+        """
+        return self._ctx.github.get_pr_check_runs(self._location.root, pr_number)
+
+    def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
+        """Fetch unresolved review threads for a pull request.
+
+        Args:
+            pr_number: The PR number to fetch threads for
+
+        Returns:
+            List of unresolved PRReviewThread objects sorted by (path, line)
+        """
+        return self._ctx.github.get_pr_review_threads(
+            self._location.root, pr_number, include_resolved=False
+        )
+
+    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
+        """Fetch CI failure summaries for a pull request.
+
+        Args:
+            pr_number: The PR number to fetch summaries for
+
+        Returns:
+            Mapping of check name to summary text, or empty dict
+        """
+        pr_result = self._ctx.github.get_pr(self._location.root, pr_number)
+        if isinstance(pr_result, PRNotFound):
+            return {}
+
+        runs_by_branch = self._ctx.github.get_workflow_runs_by_branches(
+            self._location.root, "ci.yml", [pr_result.head_ref_name]
+        )
+        run = runs_by_branch.get(pr_result.head_ref_name)
+        if run is None:
+            return {}
+
+        log_text = self._ctx.github.get_ci_summary_logs(self._location.root, str(run.run_id))
+        if log_text is None:
+            return {}
+
+        return parse_ci_summaries(log_text)
+
+
+def _parse_owner_repo_from_url(url: str) -> tuple[str, str] | None:
+    """Parse owner and repo from a GitHub URL.
+
+    Args:
+        url: GitHub URL (e.g., "https://github.com/owner/repo/issues/123")
+
+    Returns:
+        Tuple of (owner, repo) or None if parsing fails
+    """
+    if not url.startswith("https://github.com/"):
+        return None
+    parts = url.split("/")
+    if len(parts) < 5:
+        return None
+    return (parts[3], parts[4])

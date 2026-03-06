@@ -10,6 +10,7 @@ from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
 from erk.tui.widgets.status_bar import StatusBar
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 class TestActionViewComments:
@@ -20,7 +21,9 @@ class TestActionViewComments:
         """No selected row → early return, no screen pushed."""
         provider = FakePlanDataProvider(plans=[])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -40,7 +43,9 @@ class TestActionViewComments:
             plans=[make_plan_row(123, "Test Plan")]  # No pr_number
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -59,7 +64,9 @@ class TestActionViewComments:
             plans=[make_plan_row(123, "Test Plan", pr_number=456, comment_counts=(5, 5))]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -78,7 +85,9 @@ class TestActionViewComments:
             plans=[make_plan_row(123, "Test Plan", pr_number=456, comment_counts=(3, 5))]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -209,7 +218,9 @@ class TestActionLaunch:
         """Pressing 'l' with no rows does not push a screen."""
         provider = FakePlanDataProvider(plans=[])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -237,7 +248,9 @@ class TestActionLaunch:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -256,10 +269,14 @@ class TestActionLaunch:
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(clipboard=clipboard),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -275,10 +292,14 @@ class TestActionLaunch:
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=123)],
-            clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(clipboard=clipboard),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -304,7 +325,9 @@ class TestActionLaunch:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()

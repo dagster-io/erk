@@ -9,6 +9,7 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 class TestClosePlanViaCommandPalette:
@@ -30,7 +31,9 @@ class TestClosePlanViaCommandPalette:
             ],
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             # Wait for data to load
@@ -59,6 +62,9 @@ class TestCommandPaletteFromMain:
     @pytest.mark.asyncio
     async def test_execute_palette_command_open_pr(self) -> None:
         """Execute palette command opens PR in browser."""
+        from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+
+        browser = FakeBrowserLauncher()
         provider = FakePlanDataProvider(
             plans=[
                 make_plan_row(
@@ -67,7 +73,12 @@ class TestCommandPaletteFromMain:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(browser=browser),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -76,15 +87,20 @@ class TestCommandPaletteFromMain:
             # Execute open_pr command
             app.execute_palette_command("open_pr")
 
-            assert provider.browser.last_launched == "https://github.com/test/pr/456"
+            assert browser.last_launched == "https://github.com/test/pr/456"
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_with_no_selection(self) -> None:
         """Execute palette command with no selection does nothing."""
         clipboard = FakeClipboard()
-        provider = FakePlanDataProvider(plans=[], clipboard=clipboard)
+        provider = FakePlanDataProvider(plans=[])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(clipboard=clipboard),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -101,7 +117,9 @@ class TestCommandPaletteFromMain:
         """Space opens detail screen without palette."""
         provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -127,10 +145,14 @@ class TestCommandPaletteFromMainCopyVariants:
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(clipboard=clipboard),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -146,10 +168,14 @@ class TestCommandPaletteFromMainCopyVariants:
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(clipboard=clipboard),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -165,10 +191,14 @@ class TestCommandPaletteFromMainCopyVariants:
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(clipboard=clipboard),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -192,7 +222,9 @@ class TestExecutePaletteCommandLandPR:
             plans=[make_plan_row(123, "Test Plan")]  # No pr_number
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -214,7 +246,9 @@ class TestExecutePaletteCommandLandPR:
             plans=[make_plan_row(123, "Test Plan", pr_number=456)]  # Has PR but no pr_head_branch
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -243,7 +277,9 @@ class TestExecutePaletteCommandRebaseRemote:
             plans=[make_plan_row(123, "Test Plan")]  # No pr_number
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -265,10 +301,14 @@ class TestExecutePaletteCommandRebaseRemote:
         """Execute palette command rebase_remote uses toast, not modal."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         # Capture calls to _rebase_remote_async
         captured_pr: int | None = None
@@ -309,10 +349,14 @@ class TestExecutePaletteCommandCodespaceRunPlan:
         objective_plans = [make_plan_row(7100, "Test Objective")]
         provider = FakePlanDataProvider(
             plans_by_labels={("erk-objective",): objective_plans},
-            clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(clipboard=clipboard),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()

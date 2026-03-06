@@ -8,6 +8,7 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.screens.plan_body_screen import PlanBodyScreen
 from erk.tui.views.types import ViewMode
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 class TestPlanBodyScreen:
@@ -19,9 +20,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
-        provider.set_plan_content(123, "# Test Plan\n\nThis is the plan content.")
+        service = FakePlanService()
+        service.set_plan_content(123, "# Test Plan\n\nThis is the plan content.")
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -43,9 +45,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
-        provider.set_plan_content(123, plan_content)
+        service = FakePlanService()
+        service.set_plan_content(123, plan_content)
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -68,9 +71,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
-        provider.set_plan_content(123, "Plan content")
+        service = FakePlanService()
+        service.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -95,9 +99,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
-        provider.set_plan_content(123, "Plan content")
+        service = FakePlanService()
+        service.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -120,9 +125,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
-        provider.set_plan_content(123, "Plan content")
+        service = FakePlanService()
+        service.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -145,9 +151,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
-        provider.set_plan_content(123, "Plan content")
+        service = FakePlanService()
+        service.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -170,9 +177,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
+        service = FakePlanService()
         # Don't set plan content - fetch will return None
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -196,9 +204,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(456, full_title, plan_body="metadata body")]
         )
-        provider.set_plan_content(456, "Plan content")
+        service = FakePlanService()
+        service.set_plan_content(456, "Plan content")
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -220,9 +229,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
-        provider.set_plan_content(123, plan_content)
+        service = FakePlanService()
+        service.set_plan_content(123, plan_content)
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -250,9 +260,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans_by_labels={("erk-objective",): objective_plans},
         )
-        provider.set_objective_content(100, objective_content)
+        service = FakePlanService()
+        service.set_objective_content(100, objective_content)
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -283,9 +294,10 @@ class TestPlanBodyScreen:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
         )
-        provider.set_plan_content(123, "Plan content")
+        service = FakePlanService()
+        service.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()

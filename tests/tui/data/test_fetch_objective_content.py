@@ -1,4 +1,4 @@
-"""Tests for fetch_objective_content on RealPlanDataProvider."""
+"""Tests for fetch_objective_content on RealPlanService."""
 
 from pathlib import Path
 
@@ -10,7 +10,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.metadata.core import format_objective_content_comment
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+from erk_shared.gateway.plan_service.real import RealPlanService
 from tests.fakes.context import create_test_context
 
 
@@ -27,8 +27,8 @@ def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
     )
 
 
-def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanDataProvider:
-    """Create a RealPlanDataProvider with minimal setup for testing."""
+def _make_service(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanService:
+    """Create a RealPlanService with minimal setup for testing."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     erk_dir = repo_root / ".erk"
@@ -54,8 +54,8 @@ def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanDa
         repo_id=GitHubRepoId(owner="test", repo="repo"),
     )
 
-    return RealPlanDataProvider(
-        ctx=ctx,
+    return RealPlanService(
+        ctx,
         location=location,
         clipboard=FakeClipboard(),
         browser=FakeBrowserLauncher(),
@@ -108,8 +108,8 @@ def test_fetch_objective_content_returns_content(tmp_path: Path) -> None:
         response={"body": comment_body},
     )
 
-    provider = _make_provider(tmp_path, http_client=http_client)
-    result = provider.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)
+    service = _make_service(tmp_path, http_client=http_client)
+    result = service.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)
 
     assert result is not None
     assert "# My Objective" in result
@@ -124,9 +124,9 @@ def test_fetch_objective_content_returns_content(tmp_path: Path) -> None:
 def test_fetch_objective_content_missing_comment_id(tmp_path: Path) -> None:
     """Issue body has no objective-header block, returns None without HTTP call."""
     http_client = FakeHttpClient()
-    provider = _make_provider(tmp_path, http_client=http_client)
+    service = _make_service(tmp_path, http_client=http_client)
 
-    result = provider.fetch_objective_content(123, "Plain issue body without metadata.")
+    result = service.fetch_objective_content(123, "Plain issue body without metadata.")
 
     assert result is None
     assert len(http_client.requests) == 0
@@ -135,9 +135,9 @@ def test_fetch_objective_content_missing_comment_id(tmp_path: Path) -> None:
 def test_fetch_objective_content_null_comment_id(tmp_path: Path) -> None:
     """Objective_comment_id is null, returns None without HTTP call."""
     http_client = FakeHttpClient()
-    provider = _make_provider(tmp_path, http_client=http_client)
+    service = _make_service(tmp_path, http_client=http_client)
 
-    result = provider.fetch_objective_content(123, ISSUE_BODY_WITH_NULL_COMMENT_ID)
+    result = service.fetch_objective_content(123, ISSUE_BODY_WITH_NULL_COMMENT_ID)
 
     assert result is None
     assert len(http_client.requests) == 0
@@ -151,7 +151,7 @@ def test_fetch_objective_content_empty_comment_body(tmp_path: Path) -> None:
         response={"body": ""},
     )
 
-    provider = _make_provider(tmp_path, http_client=http_client)
-    result = provider.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)
+    service = _make_service(tmp_path, http_client=http_client)
+    result = service.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)
 
     assert result is None

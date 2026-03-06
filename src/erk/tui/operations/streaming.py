@@ -61,7 +61,7 @@ class StreamingOperationsMixin:
             stdin=subprocess.DEVNULL,
             bufsize=1,
             text=True,
-            cwd=str(self._provider.repo_root),
+            cwd=str(self._service.repo_root),
         )
         if proc.stdout is not None:
             for line in proc.stdout:

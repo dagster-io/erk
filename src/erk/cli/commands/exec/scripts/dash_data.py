@@ -22,12 +22,10 @@ import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.tui.data.real_provider import RealPlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk_shared.context.helpers import require_context
-from erk_shared.gateway.browser.real import RealBrowserLauncher
-from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
-from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
 
 
 def _serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
@@ -92,8 +90,6 @@ def dash_data(
     provider = RealPlanDataProvider(
         erk_ctx,
         location=location,
-        clipboard=RealClipboard(),
-        browser=RealBrowserLauncher(),
         http_client=http_client,
     )
 
