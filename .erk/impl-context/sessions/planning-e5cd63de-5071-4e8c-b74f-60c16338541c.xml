@@ -1,0 +1,1691 @@
+<session>
+  <meta branch="plnd/create-module-to-subpackag-03-06-0351" />
+  <meta model="claude-opus-4-6" />
+  <user>➜  erk git:(plnd/split-test-capabilities-03-06-0146) erk pr checkout 8825
+Fetching PR #8825...
+✓ Assigned plnd/create-module-to-subpackag-03-06-0351 to erk-slot-03
+Rebasing onto base branch...
+Created worktree for PR #8825 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+  ⚠ Local has diverged from origin: 2↑ 2↓
+  Run 'git fetch &amp;&amp; git status' to see details, or 'git reset --hard origin/&lt;branch&gt;' to sync
+
+To activate the worktree environment:
+  source /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/bin/activate.sh  (copied to clipboard)
+➜  erk git:(plnd/split-test-capabilities-03-06-0146) source /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-03/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-03/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.venv (3.13.1)
+-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+OK workspace:47
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+➜  erk-slot-03 git:(plnd/create-module-to-subpackag-03-06-0351) g tls
+git: 'tls' is not a git command. See 'git --help'.
+
+The most similar commands are
+        notes
+        stash
+        tag
+➜  erk-slot-03 git:(plnd/create-module-to-subpackag-03-06-0351) gt ls
+
+WARNING: The following branch has diverged from Graphite's tracking:
+WARNING: ▸ plnd/create-module-to-subpackag-03-06-0351
+WARNING: This can happen when a Git command run outside of Graphite changes the commit history of a branch.
+WARNING: You can use gt track &lt;branch&gt; to remediate a diverged branch.
+WARNING: To silence reminders about a diverged branch, untrack it with gt untrack &lt;branch&gt;.
+➜  erk-slot-03 git:(plnd/create-module-to-subpackag-03-06-0351)
+
+diverengce happened here even though i don't think it shoudl have.
+
+seems like it should have the same logic as
+
+➜  erk-slot-03 git:(plnd/create-module-to-subpackag-03-06-0351) erk br co -h
+Usage: erk br co [OPTIONS] BRANCH
+
+  Checkout BRANCH by finding and switching to its worktree.
+
+  Prints the activation path for the target worktree. Enable shell integration
+  for automatic navigation: erk config set shell_integration true
+
+  This command finds which worktree has the specified branch checked out and
+  switches to it. If the branch exists but isn't checked out anywhere, a
+  worktree is automatically created. If the branch exists on origin but not
+  locally, a tracking branch and worktree are created automatically.
+
+  Use --for-plan to resolve a plan and set up .erk/impl-context/ after
+  checkout.
+
+  Examples:
+
+      erk br co feature/user-auth      # Checkout existing worktree
+
+      erk br co unchecked-branch       # Auto-create worktree
+
+      erk br co --for-plan 123         # Checkout plan branch with .erk/impl-
+      context/ setup
+
+  If multiple worktrees contain the branch, all options are shown.
+
+Options:
+  --for-plan TEXT  Plan number or PR with erk-plan label
+  --no-slot        Create worktree without slot assignment
+  --new-slot       Force allocation of a new slot instead of stacking in place
+  -f, --force      Auto-unassign oldest branch if pool is full
+  -h, --help       Show this message and exit.
+
+Hidden Options:
+  --script  Output shell script for integration. NOT a dry run.
+➜  erk-slot-03 git:(plnd/create-module-to-subpackag-03-06-0351)
+
+--for-plan
+
+what do you think?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="16501" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16501}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the code for both commands to understand the divergence issue.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16501" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16501}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01T8d72Fvex1h3yUkSqyF5SN">
+    <param name="query">select:Agent,Read,Grep,Glob</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16501" cache_read_input_tokens="0" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16501, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01T8d72Fvex1h3yUkSqyF5SN">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4312" cache_read_input_tokens="16501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4312}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore both commands to understand the divergence issue.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4312" cache_read_input_tokens="16501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4312}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01H36fqU4fwMgXqyVmrXqBxL">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore pr checkout vs br co</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 846 chars]...earch in src/erk/ for the CLI command definitions and the underlying service/gateway code.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4312" cache_read_input_tokens="16501" output_tokens="445" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H36fqU4fwMgXqyVmrXqBxL">
+Perfect! Now I have all the pieces. Let me create a comprehensive summary of my findings:
+
+## Summary: Why `erk pr checkout` Causes Graphite Divergence but `erk br co --for-plan` Doesn't
+
+Based on my exploration of the codebase, I found the root cause and the fix. Here are the key differences:
+
+### `erk pr checkout` - The Problem
+
+When you run `erk pr checkout 8825`, here's what happens:
+
+1. **Line 254** in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py`:
+   ```python
+   _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
+   ```
+   This function (lines 90-123) does a **force-update** of the local branch to match remote:
+   - Line 116: `ctx.git.branch.create_branch(repo.root, branch_name, remote_ref, force=True)`
+
+2. **Lines 256-262** - The critical retrack happens, BUT ONLY if:
+   ```python
+   if (
+       ctx.graphite_branch_ops is not None
+       and ctx.branch_manager.get_parent_branch(repo.root, branch_name) is not None
+   ):
+       ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+   ```
+   This retrack is **immediate** (right after force-update, line 262).
+
+3. **Lines 264-267** - Then create the worktree:
+   ```python
+   worktree_path, already_existed = ensure_branch_has_worktree(
+
+... [97 lines omitted] ...
+  </tool_result>
+  <assistant>The agent found the root cause. Let me verify the key code sections.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2229" cache_read_input_tokens="20813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2229}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019RFVvL5c5ZPZDg943e7aQv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">245</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2229" cache_read_input_tokens="20813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2229}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019RFVvL5c5ZPZDg943e7aQv">
+   245→        return
+   246→
+   247→    # For cross-repository PRs, always fetch via refs/pull/&lt;n&gt;/head
+   248→    # For same-repo PRs, always fetch from remote and force-update local branch
+   249→    if pr.is_cross_repository:
+   250→        ctx.git.remote.fetch_pr_ref(
+   251→            repo_root=repo.root, remote="origin", pr_number=pr_number, local_branch=branch_name
+   252→        )
+   253→    else:
+   254→        _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
+   255→
+   256→        # Retrack immediately after force-update if branch was already tracked by Graphite.
+   257→        # This prevents divergence if subsequent operations (worktree creation, rebase) fail.
+   258→        if (
+   259→            ctx.graphite_branch_ops is not None
+   260→            and ctx.branch_manager.get_parent_branch(repo.root, branch_name) is not None
+   261→        ):
+   262→            ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+   263→
+   264→    # Create worktree using shared helper
+   265→    worktree_path, already_existed = ensure_branch_has_worktree(
+   266→        ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
+   267→    )
+   268→
+   269→    # For stacked PRs (base is not trunk), rebase onto base branch
+   270→    # This ensures git history includes the base branch as an ancestor,
+   271→    # which `gt track` requires for proper stacking
+   272→    trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
+   273→    if pr.base_ref_name != trunk_branch and not pr.is_cross_repository:
+   274→        local_branches = ctx.git.branch.list_local_branches(repo.root)
+
+... [35 lines omitted] ...
+
+   288→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LuLmYLoGoDG7S25vPM4sxh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">340</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2229" cache_read_input_tokens="20813" output_tokens="257" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2229, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LuLmYLoGoDG7S25vPM4sxh">
+   340→        result.output_for_shell_integration()
+   341→        sys.exit(0)
+   342→
+   343→    user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+   344→
+   345→
+   346→def _rebase_and_track_for_plan(
+   347→    ctx: ErkContext,
+   348→    *,
+   349→    repo_root: Path,
+   350→    worktree_path: Path,
+   351→    branch: str,
+   352→    parent_branch: str,
+   353→    trunk: str,
+   354→) -&gt; None:
+   355→    """Rebase onto parent branch (if stacked) and track with Graphite.
+   356→
+   357→    For stacked plans where parent_branch != trunk, the parent may have advanced
+   358→    since the plan was saved. Rebasing ensures git history includes the parent's
+   359→    tip, which gt track requires for proper stacking.
+   360→
+   361→    Mirrors the pattern from pr/checkout_cmd.py for stacked PRs.
+   362→
+   363→    Args:
+   364→        ctx: Erk context
+   365→        repo_root: Repository root path
+   366→        worktree_path: Path to the worktree (used as cwd for rebase)
+   367→        branch: The plan branch name
+   368→        parent_branch: The parent branch to rebase onto and track with
+   369→        trunk: The trunk branch name
+
+... [35 lines omitted] ...
+
+   396→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2508" cache_read_input_tokens="23042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2508}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear picture. The issue is a **timing bug**: `erk pr checkout` retracks with Graphite at line 262 (capturing the pre-rebase SHA), then rebases at line 283 (changing the SHA). Graphite's cache is now stale.
+
+`erk br co --for-plan` does it correctly: rebase first, then track (lines 391→400).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2508" cache_read_input_tokens="23042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2508}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Qjz5ozQQ1t9ASZtAXQLgvg">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2508" cache_read_input_tokens="23042" output_tokens="332" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2508, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Qjz5ozQQ1t9ASZtAXQLgvg">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_0138qVY7BF6bFzkaR9zNufmN">
+    <param name="file_path">/Users/schrockn/.claude/plans/humble-napping-rabin.md</param>
+    <param name="content"># Fix Graphite divergence in `erk pr checkout` for stacked PRs
+
+## Context
+
+`erk pr checko...[truncated 1429 chars]...st: `erk pr checkout &lt;stacked-pr-number&gt;`, then `gt ls` should show no divergence warning
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="629" cache_read_input_tokens="25550" output_tokens="585" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 629, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0138qVY7BF6bFzkaR9zNufmN">
+File created successfully at: /Users/schrockn/.claude/plans/humble-napping-rabin.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01RNfWiGpgKiFptjCeGnC9z6">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="26179" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 735, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01RNfWiGpgKiFptjCeGnC9z6">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01GkmNEG9wS526qXTorx7bNG">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Fix Graphite divergence in `erk pr checkout` for stacked PRs
+
+## Context
+
+`erk pr checko...[truncated 1429 chars]...st: `erk pr checkout &lt;stacked-pr-number&gt;`, then `gt ls` should show no divergence warning
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="26914" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GkmNEG9wS526qXTorx7bNG">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/humble-napping-rabin.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix Graphite divergence in `erk pr checkout` for stacked PRs
+Current context: (wt:erk-slot-03) (br:plnd/create-module-to-subpackag-03-06-0351) (pr:#8825)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/crea"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e5cd63de-5071-4e8c-b74f-60c16338541c \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/humble-napping-rabin.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01EtEKExni43b1e7jpPKCXvw">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="809" cache_read_input_tokens="27652" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 809, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01EtEKExni43b1e7jpPKCXvw">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+## Fix Graphite divergence in `erk pr checkout` for stacked PRs
+
+### Context
+`erk pr checkout` causes Graphite to report branch divergence for stacked PRs. The root cause is a timing bug: the command retracks with Graphite **before** rebasing onto the base branch, so Graphite's cached SHA becomes stale after the rebase.
+
+`erk br co --for-plan` handles this correctly by rebasing first, then tracking (see `_rebase_and_track_for_plan` in `branch/checkout_cmd.py:346-401`).
+
+### The Bug
+In `src/erk/cli/commands/pr/checkout_cmd.py`:
+1. **Line 262**: `retrack_branch()` — captures pre-rebase SHA
+2. **Line 283**: `rebase_onto()` — changes the SHA
+3. **Line 300-303**: `track_branch()` — only runs for **untracked** branches, so already-tracked branches keep the stale SHA
+
+### Fix
+**File:** `src/erk/cli/commands/pr/checkout_cmd.py`
+
+Move the retrack logic to **after** the stacked-PR rebase (lines 272-290):
+1. **Remove** the early retrack block (lines 256-262)
+2. **After** the rebase block (after line 290), add retrack logic for already-tracked branches
+3. Keep the existing track logic for untracked branches (lines 295-303) as-is
+
+The resulting flow:
+```
+fetch + force-update branch → create worktree → rebase (if stacked) → retrack/track
+```
+
+### Verification
+- Run existing tests: `pytest tests/ -k "pr_checkout"`
+- Manual test: `erk pr checkout &lt;stacked-pr&gt;`, then `gt ls` — no divergence warning</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="28461" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_015KDZtTxcj2QXYtvcysY9mF">
+    <param name="questions">[{'question': '📋 Fix Graphite divergence in `erk pr checkout` for stacked PRs\nCurrent con...[truncated 428 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="28461" output_tokens="693" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015KDZtTxcj2QXYtvcysY9mF">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>here's a question. do we even need erk br co --for-plan? can we just have erk pr checkout</user>
+  <usage input_tokens="3" cache_creation_input_tokens="964" cache_read_input_tokens="29794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good question. Let me check what `--for-plan` does that `pr checkout` doesn't.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="964" cache_read_input_tokens="29794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ApxnLr3uxjyby9xSfhnzc2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">403</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="964" cache_read_input_tokens="29794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ApxnLr3uxjyby9xSfhnzc2">
+   403→@alias("co")
+   404→@click.command("checkout", cls=CommandWithHiddenOptions)
+   405→@click.argument("branch", metavar="BRANCH", required=False, shell_complete=complete_branch_names)
+   406→@click.option(
+   407→    "--for-plan",
+   408→    "for_plan",
+   409→    type=str,
+   410→    default=None,
+   411→    help="Plan number or PR with erk-plan label",
+   412→)
+   413→@click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
+   414→@click.option(
+   415→    "--new-slot", is_flag=True, help="Force allocation of a new slot instead of stacking in place"
+   416→)
+   417→@click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
+   418→@script_option
+   419→@click.pass_obj
+   420→def branch_checkout(
+   421→    ctx: ErkContext,
+   422→    branch: str | None,
+   423→    for_plan: str | None,
+   424→    no_slot: bool,
+   425→    new_slot: bool,
+   426→    force: bool,
+   427→    script: bool,
+   428→) -&gt; None:
+   429→    """Checkout BRANCH by finding and switching to its worktree.
+   430→
+   431→    Prints the activation path for the target worktree. Enable shell integration
+   432→    for automatic navigation: erk config set shell_integration true
+
+... [70 lines omitted] ...
+
+   451→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   474→    """Implementation body for branch_checkout — separated for error wrapping."""
+   478→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   484→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   488→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01J8uMCFYF6kgqRfEFMZYnt3">
+    <param name="pattern">for.plan|for_plan|impl.context|setup_impl</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="964" cache_read_input_tokens="29794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J8uMCFYF6kgqRfEFMZYnt3">
+290:def _setup_impl_for_plan(
+298:    """Create impl folder and save plan ref after checkout for --for-plan.
+333:            comment="erk branch checkout --for-plan activation script",
+338:            comment=f"branch checkout --for-plan {setup.plan_number}",
+343:    user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+346:def _rebase_and_track_for_plan(
+407:    "--for-plan",
+408:    "for_plan",
+423:    for_plan: str | None,
+439:    Use --for-plan to resolve a plan and set up .erk/impl-context/ after checkout.
+447:        erk br co --for-plan 123         # Checkout plan branch with .erk/impl-context/ setup
+456:            for_plan=for_plan,
+468:    for_plan: str | None,
+476:    if for_plan is not None and branch is not None:
+478:            "Error: Cannot specify both BRANCH and --for-plan.\n"
+479:            "Use --for-plan to derive branch name from plan, or provide BRANCH directly."
+483:    if for_plan is None and branch is None:
+484:        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+498:    # Plan setup - fetches plan and derives branch name if --for-plan is used
+502:    if for_plan is not None:
+503:        plan_number = parse_issue_identifier(for_plan)
+523:    # If --for-plan, handle branch creation/tracking before checkout
+586:                # Skip if --for-plan already handled branch creation
+630:                    # Checkout the branch before _setup_impl_for_plan, which may
+642:                        _rebase_and_track_for_plan(
+650:                        _setup_impl_for_plan(
+671:                    # --for-plan from a non-slot worktree: checkout in current worktree
+672:                    # (only --new-slot should trigger slot allocation for --for-plan)
+676:                    _rebase_and_track_for_plan(
+684:                    _setup_impl_for_plan(
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01K589WasYQoDtgcwyECbV9J">
+    <param name="pattern">for.plan|for_plan|impl.context|setup_impl</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="964" cache_read_input_tokens="29794" output_tokens="571" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 964, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K589WasYQoDtgcwyECbV9J">
+8:- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+154:        erk pr checkout P456      # Find branches/PRs for plan #456
+369:            f"No open PR found for plan #{plan_number}\n\n"
+371:            f"  erk br co --for-plan {plan_number}"
+429:            script_message_existing=f'echo "Went to worktree for plan #{plan_number}"',
+443:    new_msg = f"Created worktree for plan #{plan_number} (PR #{pr_number}) at {{styled_path}}"
+453:        script_message_existing=f'echo "Went to worktree for plan #{plan_number}"',
+461:    user_output(f"Multiple open PRs found for plan #{plan_number}:\n")
+  </tool_result>
+  <tool_use name="Read" id="toolu_019VrWf1dCztt33AnZ8FtfCu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">290</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2870" cache_read_input_tokens="30758" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2870, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019VrWf1dCztt33AnZ8FtfCu">
+   290→def _setup_impl_for_plan(
+   291→    ctx: ErkContext,
+   292→    *,
+   293→    setup: IssueBranchSetup,
+   294→    worktree_path: Path,
+   295→    branch_name: str,
+   296→    script: bool,
+   297→) -&gt; None:
+   298→    """Create impl folder and save plan ref after checkout for --for-plan.
+   299→
+   300→    In script mode, outputs an activation script and exits. In normal mode,
+   301→    prints a confirmation message.
+   302→
+   303→    Args:
+   304→        ctx: Erk context
+   305→        setup: Plan setup info from prepare_plan_for_worktree
+   306→        worktree_path: Path to the target worktree
+   307→        branch_name: Git branch name for scoping the impl directory
+   308→        script: Whether to output only the activation script
+   309→    """
+   310→    impl_path = create_impl_folder(
+   311→        worktree_path,
+   312→        setup.plan_content,
+   313→        branch_name=branch_name,
+   314→        overwrite=True,
+   315→    )
+   316→
+   317→    save_plan_ref(
+   318→        impl_path,
+   319→        provider="github",
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check what `erk pr checkout` does for plans (P-prefixed).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="914" cache_read_input_tokens="33628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 914}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ai9mYW3AecFJmtDnAArRqY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="914" cache_read_input_tokens="33628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 914}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ai9mYW3AecFJmtDnAArRqY">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.cli.activation import (
+    16→    activation_config_activate_only,
+    17→    ensure_worktree_activate_script,
+    18→    print_activation_instructions,
+    19→)
+    20→from erk.cli.alias import alias
+    21→from erk.cli.commands.checkout_helpers import (
+    22→    ensure_branch_has_worktree,
+    23→    navigate_and_display_checkout,
+    24→)
+    25→from erk.cli.ensure import Ensure
+    26→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    27→from erk.core.context import ErkContext
+    28→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    29→from erk_shared.gateway.github.parsing import (
+    30→    parse_plan_number_from_url,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01S9Uo217qiK87YZLmg6xQBJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">140</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="914" cache_read_input_tokens="33628" output_tokens="262" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 914, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S9Uo217qiK87YZLmg6xQBJ">
+   140→
+   141→    \b
+   142→    PR references:
+   143→      123                                    Plain PR number
+   144→      https://github.com/owner/repo/pull/123 GitHub PR URL
+   145→
+   146→    \b
+   147→    Plan references:
+   148→      P123                                      Plan ID (P-prefix)
+   149→      https://github.com/owner/repo/issues/123  GitHub issue URL
+   150→
+   151→    \b
+   152→    Examples:
+   153→        erk pr checkout 123       # Checkout PR #123
+   154→        erk pr checkout P456      # Find branches/PRs for plan #456
+   155→        erk pr co 123             # Short alias
+   156→    """
+   157→    # Validate preconditions upfront (LBYL)
+   158→    Ensure.gh_authenticated(ctx)
+   159→
+   160→    if isinstance(ctx.repo, NoRepoSentinel):
+   161→        ctx.console.error("Not in a git repository")
+   162→        raise SystemExit(1)
+   163→    repo: RepoContext = ctx.repo
+   164→
+   165→    ref = _parse_checkout_reference(reference)
+   166→
+   167→    if isinstance(ref, _PlanRef):
+   168→        _checkout_plan(
+   169→            ctx, repo, plan_number=ref.number, no_slot=no_slot, force=force, script=script
+
+... [90 lines omitted] ...
+
+   197→        ctx.console.error(
+   205→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_013jq9Fjcam7zrgmhEMcLzYr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">340</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2476" cache_read_input_tokens="34542" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2476, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013jq9Fjcam7zrgmhEMcLzYr">
+   340→# Plan checkout (merged from plan/checkout_cmd.py)
+   341→# =============================================================================
+   342→
+   343→
+   344→def _checkout_plan(
+   345→    ctx: ErkContext,
+   346→    repo: RepoContext,
+   347→    *,
+   348→    plan_number: int,
+   349→    no_slot: bool,
+   350→    force: bool,
+   351→    script: bool,
+   352→) -&gt; None:
+   353→    """Checkout a branch associated with a plan.
+   354→
+   355→    Plan IDs are no longer encoded in branch names, so we look up PRs
+   356→    referencing the plan issue directly.
+   357→
+   358→    1. If single open PR -&gt; fetch and checkout
+   359→    2. If multiple open PRs -&gt; display table, no interactive selection
+   360→    3. If no open PRs -&gt; display helpful message
+   361→    """
+   362→    prs = ctx.issues.get_prs_referencing_issue(repo.root, plan_number)
+   363→
+   364→    # Filter to OPEN PRs only
+   365→    open_prs = [pr for pr in prs if pr.state == "OPEN"]
+   366→
+   367→    if len(open_prs) == 0:
+   368→        user_output(
+   369→            f"No open PR found for plan #{plan_number}\n\n"
+
+... [100 lines omitted] ...
+
+   409→        ctx.console.error(
+  </tool_result>
+  <assistant>Here's the key difference:
+
+**`erk br co --for-plan`** does two things `erk pr checkout` doesn't:
+1. **Creates `.erk/impl-context/`** — writes the plan content, plan ref, objective link into the worktree so the implementation agent knows what to build
+2. **Handles the "no PR yet" case** — when a plan exists as a GitHub issue but hasn't been implemented yet, `--for-plan` creates the branch and sets up impl-context. `erk pr checkout P123` would just say "No open PR found" and suggest using `--for-plan`.
+
+So they serve different purposes:
+- **`erk pr checkout`** = "I want to look at/work on this existing PR"
+- **`erk br co --for-plan`** = "I want to **implement** this plan" (creates the impl scaffolding)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1993" cache_read_input_tokens="37018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1993}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01UjvsBZQtVnuc5Y6Xt8joaw">
+    <param name="questions">[{'question': "The --for-plan flag creates .erk/impl-context/ (plan content, plan ref, obj...[truncated 446 chars]...ontext setup into erk pr checkout. Larger scope, separate plan."}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1993" cache_read_input_tokens="37018" output_tokens="434" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1993, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UjvsBZQtVnuc5Y6Xt8joaw">
+User has answered your questions: "The --for-plan flag creates .erk/impl-context/ (plan content, plan ref, objective link) which erk pr checkout doesn't do. It also handles plans with no PR yet. Do you want to consolidate them anyway (move impl-context setup into pr checkout), or keep them separate and just fix the Graphite divergence bug?"="what about an explicit command to convert a pr from an empty stage to a planning phase, which is really what we are doing here" user notes: what about an explicit command to convert a pr from an empty stage to a planning phase, which is really what we are doing here. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="598" cache_read_input_tokens="39011" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 598}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Interesting idea. So the flow would be:
+
+1. `erk pr checkout 8825` — just gets the code into a worktree (fix the divergence bug here)
+2. A new command (e.g., `erk impl prepare` or `erk pr prepare`) — takes the current worktree's PR and creates `.erk/impl-context/` from its plan
+
+This decouples "get the code" from "set up for implementation". The `--for-plan` flag on `br co` is doing both at once, which is arguably two responsibilities.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="598" cache_read_input_tokens="39011" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 598}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_011iHEes29hQo2dNBBVKmTju">
+    <param name="questions">[{'question': 'Is this the right mental model? A command that takes an already-checked-out...[truncated 396 chars]...scription': 'I have a different idea for the command structure.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="598" cache_read_input_tokens="39011" output_tokens="494" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 598, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011iHEes29hQo2dNBBVKmTju">
+User has answered your questions: "Is this the right mental model? A command that takes an already-checked-out PR branch and sets up .erk/impl-context/ from the associated plan. If so, what should the command be called?"="erk pr prepare". You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="39609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 574}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what `erk impl` commands already exist and what `_setup_impl_for_plan` needs as inputs.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="39609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 574}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018MuhiiPsdR3apAAsaGDj7G">
+    <param name="pattern">setup.impl|impl.init|impl_init</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="39609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 574}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018MuhiiPsdR3apAAsaGDj7G">
+Found 9 files
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/one_shot.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/exec/scripts/setup_impl.py
+src/erk/cli/commands/exec/scripts/impl_init.py
+src/erk/cli/commands/checkout_helpers.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Vz9xWu9ZbELZoWYdgEUZnD">
+    <param name="pattern">create_impl_folder|save_plan_ref</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="39609" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 574}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vz9xWu9ZbELZoWYdgEUZnD">
+Found 7 files
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/branch/create_cmd.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/exec/scripts/setup_impl.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01TUNJo7axypMcgYfvErdWz3">
+    <param name="pattern">src/erk/cli/commands/pr/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="39609" output_tokens="531" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 574, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TUNJo7axypMcgYfvErdWz3">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/parse_pr_reference.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/close_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/duplicate_check_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/replan_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/view_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/dispatch_helpers.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/metadata_helpers.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/log_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/check_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/create_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/shared.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/address_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/reconcile_with_remote_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/teleport_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/dispatch_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/submit_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/rebase_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/rewrite_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/submit_pipeline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/list_cmd.py
+  </tool_result>
+  <assistant>There's already `setup_impl_from_pr.py` which looks relevant. Let me check it and the existing `erk exec setup-impl` to understand what already exists.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3190" cache_read_input_tokens="40183" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3190}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TnhpfKfPqoSXejG6C1hE6R">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3190" cache_read_input_tokens="40183" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3190}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TnhpfKfPqoSXejG6C1hE6R">
+     1→"""Set up .erk/impl-context/ folder from GitHub PR in current worktree.
+     2→
+     3→This exec command fetches a plan from a GitHub PR, creates a feature branch,
+     4→checks it out, and creates the .erk/impl-context/ folder structure for implementation.
+     5→
+     6→Usage:
+     7→    erk exec setup-impl-from-pr &lt;plan-number&gt; [--session-id &lt;id&gt;]
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and folder details
+    11→
+    12→Exit Codes:
+    13→    0: Success (.erk/impl-context/ folder created, branch checked out)
+    14→    1: Error (PR not found, plan fetch failed, git operations failed)
+    15→
+    16→Examples:
+    17→    $ erk exec setup-impl-from-pr 1028
+    18→    {"success": true, "impl_path": "/path/to/.erk/impl-context",
+    19→     "plan_number": 1028, "branch": "P1028-..."}
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→
+    25→import click
+    26→
+    27→from erk_shared.context.helpers import (
+    28→    require_branch_manager,
+    29→    require_cwd,
+    30→    require_git,
+
+... [265 lines omitted] ...
+
+    36→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    59→        raise click.ClickException(msg)
+   104→        if isinstance(pull_result, PullRebaseError):
+   105→            error_output = {
+   107→                "error": "pull_rebase_failed",
+   109→                    f"Failed to teleport branch '{branch_name}' from remote: {pull_result.message}"
+   112→            click.echo(json.dumps(error_output), err=True)
+   169→        error_output = {
+   171→            "error": "plan_not_found",
+   174→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ba6anTKVMqJBcnDqJK5EJ1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/exec/scripts/setup_impl.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3190" cache_read_input_tokens="40183" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3190, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ba6anTKVMqJBcnDqJK5EJ1">
+     1→"""Consolidated implementation setup command for plan-implement.
+     2→
+     3→Replaces the entire Steps 0-2d decision tree in plan-implement.md with a
+     4→single command. Handles argument parsing, source detection, branch creation,
+     5→.erk/impl-context/ setup, and impl-context cleanup.
+     6→
+     7→Usage:
+     8→    erk exec setup-impl                              # Auto-detect from .erk/impl-context/ or branch
+     9→    erk exec setup-impl --issue 2521                 # Set up from issue #2521
+    10→    erk exec setup-impl --file ./my-plan.md          # Set up from local file
+    11→
+    12→Output:
+    13→    JSON with setup result including plan metadata and related docs.
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Error (plan not found, git operation failed, etc.)
+    18→
+    19→Examples:
+    20→    $ erk exec setup-impl --issue 2521
+    21→    {"success": true, "plan_number": 2521, "source": "issue_arg", ...}
+    22→
+    23→    $ erk exec setup-impl
+    24→    {"success": true, "plan_number": 2521, "source": "branch_detection", ...}
+    25→
+    26→    $ erk exec setup-impl
+    27→    {"success": false, "error": "no_plan_found", ...}
+    28→"""
+    29→
+    30→import json
+
+... [283 lines omitted] ...
+
+   105→            "error": "file_not_found",
+   126→            "error": "detached_head",
+   254→                "error": "no_plan_found",
+   294→                    "error": "impl_init_failed",
+   295→                    "message": "Implementation setup succeeded but init validation failed.",
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8856" cache_read_input_tokens="43373" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Interesting — there's already `erk exec setup-impl` which does exactly this (auto-detects plan from current branch, creates `.erk/impl-context/`). And `erk exec setup-impl-from-pr` handles the PR-specific case.
+
+So `erk pr prepare` would essentially be a top-level UX wrapper around `erk exec setup-impl`. The machinery exists, it's just buried under `exec`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8856" cache_read_input_tokens="43373" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01ReFqDeAhWSc4oStioqjj2c">
+    <param name="questions">[{'question': 'Given that `erk exec setup-impl` already does the impl-context setup (auto-...[truncated 520 chars]...plan, exec setup-impl, and pr checkout into a cleaner workflow.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8856" cache_read_input_tokens="43373" output_tokens="857" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8856, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ReFqDeAhWSc4oStioqjj2c">
+User has answered your questions: "Given that `erk exec setup-impl` already does the impl-context setup (auto-detect from branch, --issue, --file), what should the scope of this plan be?"="Rethink the whole flow". You can now continue with the user's answers in mind.
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/model&lt;/command-name&gt;
+            &lt;command-message&gt;model&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Set model to [1mDefault (Opus 4.6 · Most capable for complex work)[22m with [1mhigh[22m effort&lt;/local-command-stdout&gt;</user>
+  <user>continue</user>
+  <assistant>
+
+OK, let me do a deeper exploration of the full checkout/implementation flow to understand all the pieces before redesigning.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="53553" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 53553}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_018rcsJGbhsHS2pVPQD2qc27">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Map full checkout/impl flow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1274 chars]... is to find all the overlap and understand what a clean consolidated flow would look like.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="53553" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 53553}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01FvpwwKg4HcsQtUBGRgKffq">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find all callers of checkout</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 634 chars]...mands/pr/
+
+I want to understand the full dependency graph - who calls what and from where.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="53553" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 53553}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FvpwwKg4HcsQtUBGRgKffq">
+Excellent. Now let me create a comprehensive summary of the dependency graph I've found. Let me compile the final report based on all the data I've gathered:
+
+## DEPENDENCY GRAPH: Command Callers and References
+
+Based on my thorough search of the erk codebase, here's the complete dependency graph for the commands and functions you requested:
+
+### 1. **erk pr checkout** Command
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py`
+
+**Callers:**
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py` (Line 125)
+  - Calls as shell command: `erk pr checkout {pr} --script --sync` wrapped in `source "$(...)"`
+  - Used in cmux workspace creation with `--script --sync` flags
+  
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.claude/skills/cmux/SKILL.md` (Line 156)
+  - Documents usage pattern: `source "$(erk pr checkout 456 --script --sync)"`
+  - Shows example of PR checkout with activation script
+
+**Exports:**
+- Registered in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/__init__.py` (Line 32)
+- Aliased as "co" (from `@alias("co")` decorator in checkout_cmd.py:126)
+
+**Key Entry Points:**
+- `_checkout_pr()` - Handles PR checkout (existing behavior)
+- `_checkout_plan()` - Handles plan checkout (merged from plan/checkout_cmd.py)
+- `_checkout_plan_pr()` - Fetches and checkouts a PR that references a plan issue
+
+---
+
+### 2. **erk br co --for-plan** Command
+
+... [153 lines omitted] ...
+
+- Line 371: User error message when plan not found: `erk br co --for-plan {plan_number}`
+  </tool_result>
+  <tool_result tool="toolu_018rcsJGbhsHS2pVPQD2qc27">
+Excellent! Now let me compile a comprehensive report of my findings. I'll structure it according to the user's request:
+
+## Checkout and Implementation-Setup Flow Mapping
+
+Based on my analysis of the codebase, here's a comprehensive map of all checkout and implementation-setup entry points:
+
+### **Entry Point 1: `erk pr checkout &lt;number&gt;`**
+**File**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/checkout_cmd.py`
+
+- **Input**: PR number (plain integer), PR URL, or plan number with P-prefix
+- **Routing**: 
+  - Plain number or PR URL → calls `_checkout_pr()`
+  - P-prefix or issue URL → calls `_checkout_plan()` (merged from old `plan/checkout_cmd.py`)
+- **What it does**:
+  1. Fetches PR metadata from GitHub (`ctx.github.get_pr()`)
+  2. Determines branch name (uses `pr/N` for cross-repo, actual branch name for same-repo)
+  3. Fetches branch via `_fetch_and_update_branch()` (handles remote-only, force-update, or PR refs)
+  4. Creates worktree via `ensure_branch_has_worktree()` (slot-based or direct path)
+  5. Rebases onto base branch if stacked (not cross-repo)
+  6. Tracks with Graphite if not already tracked
+  7. Generates activation script
+- **Output**: Activation script or printed worktree path
+- **Callers**: User directly, `erk pr co` (alias)
+
+---
+
+### **Entry Point 2: `erk pr checkout P&lt;number&gt;` (Plan checkout)**
+**File**: Same as above (`pr/checkout_cmd.py`)
+
+- **Input**: Plan ID with P-prefix (e.g., `P123`)
+
+... [270 lines omitted] ...
+
+- **Output**: Worktree activation script or error
+- **Exit codes**: 0 (success), 1 (plan not found, git error, etc.)
+- **Exit codes**: 0 (success), 1 (PR not found, plan fetch failed)
+  </tool_result>
+  <usage input_tokens="2940" cache_creation_input_tokens="5522" cache_read_input_tokens="53553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5522}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, now I have the full picture. Let me design the consolidated approach.</assistant>
+  <usage input_tokens="2940" cache_creation_input_tokens="5522" cache_read_input_tokens="53553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5522}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NygYFfuf1icACXg2cc7Koo">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Design consolidated checkout flow</param>
+    <param name="prompt">Design a plan to consolidate the checkout/implementation-setup flow in erk.
+
+## Current St...[truncated 2657 chars]...ib always
+- No default parameter values
+- Absolute imports only
+- Max 4 indentation levels</param>
+  </tool_use>
+  <usage input_tokens="2940" cache_creation_input_tokens="5522" cache_read_input_tokens="53553" output_tokens="1647" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5522, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NygYFfuf1icACXg2cc7Koo">
+Now I have a comprehensive understanding of the entire codebase. Let me summarize my findings and present the plan.
+
+---
+
+## Plan: Consolidate Checkout/Implementation-Setup Flow
+
+### Analysis Summary
+
+After reading all the key files, here is my precise understanding of the current state, the bug, and the design:
+
+#### The Graphite Divergence Bug in `pr/checkout_cmd.py`
+
+The bug is at lines 256-262 and 292-303. The current flow in `_checkout_pr()` for stacked PRs is:
+
+1. `_fetch_and_update_branch()` -- force-updates local branch to match remote
+2. **Bug**: `retrack_branch()` is called immediately after force-update (line 262) for already-tracked branches. This retracks with the OLD parent, before the rebase.
+3. Worktree creation
+4. Rebase onto parent branch (lines 269-290)
+5. `track_branch()` for newly-untracked branches (lines 292-303)
+
+The correct flow (as implemented in `branch/checkout_cmd.py::_rebase_and_track_for_plan`) is:
+
+1. Fetch/update branch
+2. Rebase onto parent branch
+3. **Then** track with Graphite (after rebase, so git history is correct)
+
+The `retrack_branch()` call at line 262 is the bug: it retracks before rebase, which means Graphite sees stale ancestry. The correct pattern is: rebase first, then track/retrack.
+
+#### Current Responsibilities Map
+
+
+... [141 lines omitted] ...
+
+   - Test error when not on a plan branch and no number provided
+**What**: Update help text, error messages, and TUI references that currently point to `erk br co --for-plan` to also mention `erk pr prepare` as an alternative.
+- `src/erk/cli/commands/pr/checkout_cmd.py` line 371-372: The `_checkout_plan` error message says "erk br co --for-plan" -- add `erk pr prepare` as alternative
+4. **Phase 4** (references): Update help text and error messages.
+  </tool_result>
+  <assistant>
+
+Let me verify a couple of key files before finalizing the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7994" cache_read_input_tokens="59075" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7994}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NpEjnVbrQg4ie8DZ35yF4T">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7994" cache_read_input_tokens="59075" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7994}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NpEjnVbrQg4ie8DZ35yF4T">
+     1→"""PR management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.pr.address_cmd import address
+     7→from erk.cli.commands.pr.check_cmd import pr_check
+     8→from erk.cli.commands.pr.checkout_cmd import pr_checkout
+     9→from erk.cli.commands.pr.close_cmd import pr_close
+    10→from erk.cli.commands.pr.create_cmd import pr_create
+    11→from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
+    12→from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
+    13→from erk.cli.commands.pr.list_cmd import pr_list
+    14→from erk.cli.commands.pr.log_cmd import pr_log
+    15→from erk.cli.commands.pr.rebase_cmd import rebase
+    16→from erk.cli.commands.pr.reconcile_with_remote_cmd import pr_reconcile_with_remote
+    17→from erk.cli.commands.pr.replan_cmd import pr_replan
+    18→from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
+    19→from erk.cli.commands.pr.submit_cmd import pr_submit
+    20→from erk.cli.commands.pr.teleport_cmd import pr_teleport
+    21→from erk.cli.commands.pr.view_cmd import pr_view
+    22→
+    23→
+    24→@click.group("pr")
+    25→def pr_group() -&gt; None:
+    26→    """Manage pull requests."""
+    27→    pass
+    28→
+    29→
+    30→pr_group.add_command(address, name="address")
+
+... [16 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RyNXoB1VTt83jRTLBoqJTt">
+    <param name="pattern">test_pr_checkout.*retrack|test_pr_checkout.*graphite|test_pr_checkout.*stacked</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7994" cache_read_input_tokens="59075" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7994, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RyNXoB1VTt83jRTLBoqJTt">
+Found 2 files
+tests/commands/pr/test_checkout_graphite_linking.py
+tests/commands/pr/test_checkout.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_018FJRJPn3GE6FdZMJ6eWeQV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/commands/pr/test_checkout_graphite_linking.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1122" cache_read_input_tokens="67069" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1122, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018FJRJPn3GE6FdZMJ6eWeQV">
+     1→"""Tests for Graphite tracking at PR checkout.
+     2→
+     3→These tests verify that pr checkout properly tracks and submits branches
+     4→with Graphite when checking out PRs into new worktrees.
+     5→"""
+     6→
+     7→import os
+     8→from pathlib import Path
+     9→from unittest.mock import patch
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.pr import pr_group
+    14→from erk_shared.gateway.git.abc import WorktreeInfo
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.types import PRDetails
+    18→from erk_shared.gateway.graphite.fake import FakeGraphite
+    19→from tests.test_utils.context_builders import build_workspace_test_context
+    20→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    21→
+    22→
+    23→def _make_pr_details(
+    24→    number: int,
+    25→    head_ref_name: str,
+    26→    is_cross_repository: bool,
+    27→    state: str,
+    28→    base_ref_name: str = "main",
+    29→) -&gt; PRDetails:
+    30→    """Create a PRDetails for testing."""
+
+... [448 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="12452" cache_read_input_tokens="68191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12452}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have everything I need. Let me write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12452" cache_read_input_tokens="68191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12452}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_019mmy1mjKgnPoRLwQYzZD2V">
+    <param name="query">select:Edit</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12452" cache_read_input_tokens="68191" output_tokens="253" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12452, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_019mmy1mjKgnPoRLwQYzZD2V">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_016m9Y333PUSueonmGPuN847">
+    <param name="file_path">/Users/schrockn/.claude/plans/humble-napping-rabin.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="818" cache_read_input_tokens="80643" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 818, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016m9Y333PUSueonmGPuN847">
+     1→# Fix Graphite divergence in `erk pr checkout` for stacked PRs
+     2→
+     3→## Context
+     4→
+     5→`erk pr checkout` causes Graphite to report branch divergence for stacked PRs. The root cause is a timing bug: the command retracks with Graphite **before** rebasing onto the base branch, so Graphite's cached SHA becomes stale after the rebase.
+     6→
+     7→`erk br co --for-plan` handles this correctly by rebasing first, then tracking (see `_rebase_and_track_for_plan` in `branch/checkout_cmd.py:346-401`).
+     8→
+     9→## The Bug
+    10→
+    11→In `src/erk/cli/commands/pr/checkout_cmd.py`:
+    12→
+    13→1. **Line 262**: `retrack_branch()` — captures pre-rebase SHA
+    14→2. **Line 283**: `rebase_onto()` — changes the SHA
+    15→3. **Line 300-303**: `track_branch()` — only runs for **untracked** branches, so already-tracked branches keep the stale SHA
+    16→
+    17→## Fix
+    18→
+    19→**File:** `src/erk/cli/commands/pr/checkout_cmd.py`
+    20→
+    21→Move the retrack logic to **after** the stacked-PR rebase (lines 272-290). Specifically:
+    22→
+    23→1. **Remove** the early retrack block (lines 256-262)
+    24→2. **After** the rebase block (after line 290), add retrack logic for already-tracked branches
+    25→3. Keep the existing track logic for untracked branches (lines 295-303) as-is
+    26→
+    27→The resulting flow should be:
+    28→```
+    29→fetch + force-update branch
+    30→create worktree
+
+... [11 lines omitted] ...
+
+    40→2. Manual test: `erk pr checkout &lt;stacked-pr-number&gt;`, then `gt ls` should show no divergence warning
+  </tool_result>
+  <tool_use name="Write" id="toolu_019x6ebX7K4y4bSbqsmV5ZVy">
+    <param name="file_path">/Users/schrockn/.claude/plans/humble-napping-rabin.md</param>
+    <param name="content"># Consolidate checkout/implementation-setup flow + fix Graphite divergence
+
+## Context
+
+`e...[truncated 5082 chars]...nce warning
+5. Manual: `erk pr checkout &lt;N&gt;` then `erk pr prepare` — creates impl-context
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="720" cache_read_input_tokens="81461" output_tokens="1738" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 720, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019x6ebX7K4y4bSbqsmV5ZVy">
+The file /Users/schrockn/.claude/plans/humble-napping-rabin.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01UEFTwo5z9Y9yC9sU6DsqKm">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Consolidate checkout/implementation-setup flow + fix Graphite divergence
+
+## Context
+
+`e...[truncated 5082 chars]...nce warning
+5. Manual: `erk pr checkout &lt;N&gt;` then `erk pr prepare` — creates impl-context
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1777" cache_read_input_tokens="82181" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1777, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UEFTwo5z9Y9yC9sU6DsqKm">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/humble-napping-rabin.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Consolidate checkout/implementation-setup flow + fix Graphite divergence
+Current context: (wt:erk-slot-03) (br:plnd/create-module-to-subpackag-03-06-0351) (pr:#8825)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/crea"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e5cd63de-5071-4e8c-b74f-60c16338541c \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/humble-napping-rabin.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the final plan:
+
+---
+
+# Consolidate checkout/implementation-setup flow + fix Graphite divergence
+
+## Context
+
+`erk pr checkout` causes Graphite divergence for stacked PRs (retracks before rebase). Meanwhile, the checkout/implementation-setup flow is fragmented across 6+ entry points with overlapping responsibilities. The user wants to:
+
+1. Fix the Graphite divergence bug
+2. Add `erk pr prepare` as the clean way to set up impl-context for a checked-out PR
+3. Rationalize the relationship between the overlapping commands
+
+## Current Landscape
+
+| Command | Checkout? | Worktree? | Rebase stacked? | Graphite? | Impl-context? |
+|---|---|---|---|---|---|
+| `erk pr checkout &lt;N&gt;` | Yes | Yes | Yes (buggy) | Yes (buggy) | No |
+| `erk pr checkout P&lt;N&gt;` | Yes | Yes | No | No | No |
+| `erk br co --for-plan &lt;N&gt;` | Yes | Yes | Yes (correct) | Yes (correct) | Yes |
+| `erk exec setup-impl` | Yes | No | No | No | Yes |
+| `erk exec setup-impl-from-pr` | Yes | No | No | No | Yes |
+
+The intended clean flow after this change:
+```
+erk pr checkout &lt;N&gt;     →  get code into a worktree (fix Graphite bug here)
+erk pr prepare [&lt;N&gt;]    →  set up impl-context for current worktree's PR
+```
+
+## Changes
+
+### Step 1: Fix Graphite divergence in `erk pr checkout`
+Remove early retrack (line 262), move all Graphite tracking to after the stacked-PR rebase. Add `update_local_ref` for stale parent branches. Update existing tests.
+
+### Step 2: Extract shared impl-context creation logic
+Extract `create_impl_context_from_pr()` from `setup_impl_from_pr.py` — creates impl-context without checkout/worktree operations.
+
+### Step 3: Create `erk pr prepare` command
+New command that sets up impl-context for the current worktree's PR. Auto-detects plan from branch or accepts explicit number.
+
+### Step 4: Update references
+Add `erk pr prepare` as alternative in error messages. Do NOT deprecate `erk br co --for-plan` yet (follow-up).
+
+## Verification
+- Run PR checkout Graphite tests, new prepare tests, all PR checkout tests
+- Manual: `erk pr checkout &lt;stacked-pr&gt;` then `gt ls` — no divergence
+- Manual: `erk pr checkout &lt;N&gt;` then `erk pr prepare` — creates impl-context
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="709" cache_read_input_tokens="83958" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 709}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01NjL3TJ8iKVGe6n7RvgLqW2">
+    <param name="questions">[{'question': '📋 Consolidate checkout/implementation-setup flow + fix Graphite divergence\...[truncated 440 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="709" cache_read_input_tokens="83958" output_tokens="899" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 709, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NjL3TJ8iKVGe6n7RvgLqW2">
+User has answered your questions: "📋 Consolidate checkout/implementation-setup flow + fix Graphite divergence
+Current context: (wt:erk-slot-03) (br:plnd/create-module-to-subpackag-03-06-0351) (pr:#8825)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01QEdmhUsDnLUAoFWCTzDhTc">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1219" cache_read_input_tokens="84667" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1219, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01QEdmhUsDnLUAoFWCTzDhTc">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01N2e4U38QbaX2jY3LMSVyUz">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="85886" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N2e4U38QbaX2jY3LMSVyUz">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="e5cd63de-5071-4e8c-b74f-60c16338541c" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="e5cd63de-5071-4e8c-b74f-60c16338541c" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "e5cd63de-5071-4e8c-b74f-60c16338541c" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "e5cd63de-5071-4e8c-b74f-60c16338541c" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "e5cd63de-5071-4e8c-b74f-60c16338541c" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "e5cd63de-5071-4e8c-b74f-60c16338541c" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `consolidate-checkout-prepare`
+
+**Plan summary:** Fixes Graphite divergence bug in erk pr checkout by reordering retrack to happen after stacked-PR rebase. Adds new erk pr prepare command that sets up impl-context for an already-checked-out PR, extracting shared logic from setup-impl-from-pr. This establishes a clean two-step flow: checkout then prepare.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="86454" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2286}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01TSst3BnJWDH7YWQc7KiFjQ">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="86454" output_tokens="173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01TSst3BnJWDH7YWQc7KiFjQ">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SfdCGgzrTPYcXGyvuFZr5p">
+    <param name="command">erk exec plan-save --format json --session-id="e5cd63de-5071-4e8c-b74f-60c16338541c" --bra...[truncated 248 chars]...c from setup-impl-from-pr. This establishes a clean two-step flow: checkout then prepare."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3324" cache_read_input_tokens="88740" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3324, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SfdCGgzrTPYcXGyvuFZr5p">
+{"success": true, "plan_number": 8830, "plan_url": "https://github.com/dagster-io/erk/pull/8830", "title": "[erk-plan] Consolidate checkout/implementation-setup flow + fix Graphite divergence", "branch_name": "plnd/consolidate-checkout-prepa-03-06-0452", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/scratch/sessions/e5cd63de-5071-4e8c-b74f-60c16338541c/plan_snapshots/000001-b018f819"}
+  </tool_result>
+  <assistant>Plan saved successfully. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1626" cache_read_input_tokens="92064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1626}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0163CN67hvsKhsXrfjDuy3Ua">
+    <param name="command">erk exec upload-impl-session --session-id "e5cd63de-5071-4e8c-b74f-60c16338541c" 2&gt;/dev/null || true</param>
+    <param name="description">Upload planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1626" cache_read_input_tokens="92064" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1626, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0163CN67hvsKhsXrfjDuy3Ua">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8830: https://github.com/dagster-io/erk/pull/8830</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="93690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01DfsywtvokyBB7q66uui85x">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Consolidate checkout/implementation-setup flow + fix Graphite divergence
+
+## Context
+
+`e...[truncated 5082 chars]...nce warning
+5. Manual: `erk pr checkout &lt;N&gt;` then `erk pr prepare` — creates impl-context
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="93690" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DfsywtvokyBB7q66uui85x">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8830 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8830:
+  In current wt:    source "$(erk br co --for-plan 8830 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8830 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8830 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8830 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8830:
+  In current wt:  erk br co --for-plan 8830
+  In new wt:      erk br co --new-slot --for-plan 8830
+
+Dispatch plan #8830:
+  CLI command:    erk pr dispatch 8830
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved as **draft PR #8830**: https://github.com/dagster-io/erk/pull/8830
+
+**Next steps:**
+
+Implement plan #8830:
+```
+In current wt:    source "$(erk br co --for-plan 8830 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8830 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8830 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8830 --script)" &amp;&amp; erk implement -d
+```
+
+Checkout plan #8830:
+```
+In current wt:  erk br co --for-plan 8830
+In new wt:      erk br co --new-slot --for-plan 8830
+```
+
+Dispatch plan #8830:
+```
+CLI command:    erk pr dispatch 8830
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="93867" output_tokens="267" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 483, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "e5cd63de-5071-4e8c-b74f-60c16338541c" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8830. Dispatching it for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3740" cache_read_input_tokens="94350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3740}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AMPRJLTaEoNPrQjcsuxRVZ">
+    <param name="command">erk pr dispatch 8830</param>
+    <param name="description">Dispatch plan #8830 for remote AI implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3740" cache_read_input_tokens="94350" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3740, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AMPRJLTaEoNPrQjcsuxRVZ">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8830...
+
+✓ All 1 plan(s) validated
+
+  #8830: [erk-plan] Consolidate checkout/implementation-setup flow + fix Graphite divergence
+
+Dispatching PR #8830...
+
+Fetching plan content...
+Syncing branch: plnd/consolidate-checkout-prepa-03-06-0452
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GqghVpNn8MMSEDhxffMDzF">
+    <param name="command">erk exec marker delete --session-id "e5cd63de-5071-4e8c-b74f-60c16338541c" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker to allow new plans</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="98090" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 472, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GqghVpNn8MMSEDhxffMDzF">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+</session>
