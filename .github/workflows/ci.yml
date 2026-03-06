@@ -32,7 +32,7 @@ jobs:
   # === Style Checks (parallel) ===
   format:
     needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -43,7 +43,7 @@ jobs:
 
   lint:
     needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -57,6 +57,8 @@ jobs:
     if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      pushed: ${{ steps.commit.outputs.pushed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,9 +75,11 @@ jobs:
       - name: Fix markdown formatting
         run: prettier --write '**/*.md' --ignore-path .gitignore
       - name: Commit and push if changes
+        id: commit
         run: |
           if git diff --quiet; then
             echo "No formatting changes needed"
+            echo "pushed=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -83,6 +87,7 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "::error::Files need formatting or docs are out of sync"
             git diff --stat
+            echo "pushed=false" >> $GITHUB_OUTPUT
             exit 1
           fi
 
@@ -91,6 +96,7 @@ jobs:
           BASE_REPO="${{ github.event.pull_request.base.repo.full_name }}"
           if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
             echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+            echo "pushed=false" >> $GITHUB_OUTPUT
             exit 1
           fi
 
@@ -100,11 +106,12 @@ jobs:
           git add '*.md' '*.py'
           git commit -m "Auto-fix formatting (docs-sync + ruff + Prettier)"
           git push
+          echo "pushed=true" >> $GITHUB_OUTPUT
           echo "::notice::Auto-fixed formatting and pushed"
 
   docs-check:
     needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -119,7 +126,7 @@ jobs:
   # === Type/Test Checks (parallel) ===
   ty:
     needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -130,7 +137,7 @@ jobs:
 
   unit-tests:
     needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -150,7 +157,7 @@ jobs:
 
   integration-tests:
     needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -163,7 +170,7 @@ jobs:
 
   erk-mcp-tests:
     needs: [check-submission, fix-formatting]
-    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -479,7 +486,7 @@ jobs:
   # === Code Reviews (downstream of fix-formatting) ===
   discover-reviews:
     needs: [check-submission, fix-formatting]
-    if: vars.CLAUDE_ENABLED != 'false' && github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') && needs.check-submission.outputs.skip == 'false'
+    if: vars.CLAUDE_ENABLED != 'false' && github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:

@@ -53,13 +53,16 @@ Seven jobs run in parallel, all depending on both `check-submission` AND `fix-fo
 | `integration-tests` | Integration tests                       |
 | `erk-mcp-tests`     | MCP package tests (`make test-erk-mcp`) |
 
-## Cancellation Mechanism
+## Skip-on-Push Mechanism
 
-The workflow uses branch-level concurrency grouping with `cancel-in-progress: true`:
+When `fix-formatting` pushes an autofix commit, a new CI run is triggered with the corrected code. To prevent tier 3 jobs from running against the old (unformatted) code during the race window before cancellation arrives, `fix-formatting` exposes a `pushed` output:
 
-<!-- Source: .github/workflows/ci.yml, concurrency block -->
+- `pushed=true` — autofix commit was pushed, new CI run incoming
+- `pushed=false` — no changes needed (or error exit on master/fork)
 
-The `concurrency` block groups runs by branch ref and cancels in-progress runs when a new push arrives. When `fix-formatting` pushes a commit, a new workflow run starts and the in-progress run is cancelled. This means validation jobs always run against formatted code, at the cost of ~2 minutes for the restart cycle.
+All tier 3 jobs include `&& needs.fix-formatting.outputs.pushed != 'true'` in their `if:` condition. When `pushed` is `true`, these jobs skip immediately rather than racing against the cancellation signal.
+
+The workflow also uses branch-level concurrency grouping with `cancel-in-progress: true` as a secondary mechanism — when the new run starts from the autofix push, it cancels any remaining jobs from the old run.
 
 ## Completion Jobs
 
