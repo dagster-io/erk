@@ -1,0 +1,1388 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>  erk-slot-05 git:(refactor-ci-with-codex) erk pr rebase
+Restacking with Graphite...
+Error: gt restack failed:
+
+➜  erk-slot-05 git:(6c8c2694d) ✗ claude
+
+ ▐▛███▜▌   Claude Code v2.1.70
+▝▜█████▛▘  Opus 4.6 with high effort · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-05
+
+❯ /erk:rebase
+
+⏺ Let me check the current git status to understand the state of the rebase.
+
+❯ Tool loaded.
+
+✢ Razzmatazzing… (4s · ↑ 29 tokens · thinking with high effort)
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪ ─
+❯ 
+──────────────────────────
+
+when erk pr rebase encounters a conflict and launches claude it should run erk:rebase automatically (i had to do it manually ehre)</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15591" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15591}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore how `erk pr rebase` works and how it launches Claude Code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15591" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15591}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01HgZKv67x5ftcYW7Q2Hirms">
+    <param name="query">select:Agent,Read,Grep,Glob</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15591" cache_read_input_tokens="0" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15591, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01HgZKv67x5ftcYW7Q2Hirms">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4312" cache_read_input_tokens="15591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4312}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Hb1JWu5uL2GDpvt17o2NXo">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore erk pr rebase flow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 485 chars]... the rebase skill.
+
+Also check docs/learned/ for any documentation about rebase workflows.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4312" cache_read_input_tokens="15591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4312}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016NgtEwfRok142MCSBcNubs">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore Claude launch patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 566 chars].../erk/ for subprocess calls that invoke "claude" and understand the argument patterns used.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4312" cache_read_input_tokens="15591" output_tokens="560" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hb1JWu5uL2GDpvt17o2NXo">
+Perfect! Now I have all the information I need. Let me compile a comprehensive summary of the `erk pr rebase` flow:
+
+## Complete Flow of `erk pr rebase`
+
+I've traced the entire flow of the `erk pr rebase` command. Here's the comprehensive breakdown:
+
+---
+
+### 1. CLI Command Definition
+**File**: `/Users/schrockn/code/erk/src/erk/cli/commands/pr/rebase_cmd.py`
+
+The CLI command `erk pr rebase` is defined with:
+- `--dangerous` flag: Required acknowledgment to invoke Claude with `--dangerously-skip-permissions`
+- `--target` flag: Optional target branch for non-Graphite rebases (git-only)
+
+**Two-Phase Architecture**:
+- **Phase 1**: Attempt mechanical rebase using:
+  - `gt restack --no-interactive` (if Graphite is enabled)
+  - `git rebase --onto &lt;target&gt;` (if Graphite is disabled)
+- **Phase 2**: If conflicts arise → launch Claude TUI with `/erk:rebase` skill
+
+---
+
+### 2. Conflict Detection &amp; Claude Launch
+**In `rebase_cmd.py` lines 102-129**:
+
+When a rebase hits conflicts (detected via `ctx.git.rebase.is_rebase_in_progress(cwd)`), the command launches Claude interactively:
+
+```python
+executor.execute_interactive(
+
+... [139 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016NgtEwfRok142MCSBcNubs">
+Perfect! Now I have a comprehensive understanding. Let me create a summary document of my findings:
+
+## Summary: How Erk Launches Claude Code with Initial Prompts/Commands
+
+Based on my exploration of the erk codebase, here's what I found:
+
+### 1. **Subprocess Invocation Patterns**
+
+Erk invokes Claude Code in three primary ways:
+
+#### A. Interactive Mode (Process Replacement)
+**File:** `/Users/schrockn/code/erk/src/erk/core/prompt_executor.py` (lines 463-540)
+
+```python
+def execute_interactive(
+    self,
+    *,
+    worktree_path: Path,
+    dangerous: bool,
+    command: str,  # The slash command
+    target_subpath: Path | None,
+    model: str | None = None,
+    permission_mode: PermissionMode,
+) -&gt; None:
+```
+
+This method:
+- Builds command args: `["claude", "--permission-mode", &lt;mode&gt;, optional flags, command]`
+- Changes directory to the worktree
+- Uses `os.execvp("claude", cmd_args)` to replace the current process
+
+... [138 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4660" cache_read_input_tokens="19903" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4660}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to verify the details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4660" cache_read_input_tokens="19903" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4660}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NVKuYPhxqZtts3VNpRhuHQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/rebase_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4660" cache_read_input_tokens="19903" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4660}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NVKuYPhxqZtts3VNpRhuHQ">
+     1→"""Rebase PR onto base branch with mechanical rebase and Claude TUI fallback.
+     2→
+     3→Phase 1: Attempt mechanical rebase via gt restack (Graphite) or git rebase (non-Graphite).
+     4→Phase 2: If conflicts arise, launch Claude TUI interactively with /erk:rebase.
+     5→"""
+     6→
+     7→import subprocess
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import Ensure
+    12→from erk.core.context import ErkContext
+    13→from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+    14→from erk_shared.gateway.graphite.dry_run import DryRunGraphite
+    15→
+    16→
+    17→def _is_graphite_enabled(ctx: ErkContext) -&gt; bool:
+    18→    graphite = ctx.graphite
+    19→    if isinstance(graphite, DryRunGraphite):
+    20→        graphite = graphite._wrapped
+    21→    return not isinstance(graphite, GraphiteDisabled)
+    22→
+    23→
+    24→@click.command("rebase")
+    25→@click.option(
+    26→    "-d",
+    27→    "--dangerous",
+    28→    is_flag=True,
+    29→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    30→)
+
+... [101 lines omitted] ...
+
+   103→            raise click.ClickException(f"gt restack failed:\n{result.stderr}")
+   108→                raise click.ClickException(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R4KGrXvwXF5nhE2LEKQuAL">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/prompt_executor.py</param>
+    <param name="offset">460</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4660" cache_read_input_tokens="19903" output_tokens="324" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4660, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R4KGrXvwXF5nhE2LEKQuAL">
+   460→
+   461→        return result
+   462→
+   463→    def execute_interactive(
+   464→        self,
+   465→        *,
+   466→        worktree_path: Path,
+   467→        dangerous: bool,
+   468→        command: str,
+   469→        target_subpath: Path | None,
+   470→        model: str | None = None,
+   471→        permission_mode: PermissionMode,
+   472→    ) -&gt; None:
+   473→        """Execute Claude CLI in interactive mode by replacing current process.
+   474→
+   475→        Implementation details:
+   476→        - Verifies Claude CLI is available
+   477→        - Changes to worktree directory (and to subpath if provided)
+   478→        - Builds command arguments with the specified command
+   479→        - Replaces current process using os.execvp
+   480→
+   481→        Note:
+   482→            This function never returns - the process is replaced by Claude CLI.
+   483→
+   484→            The target_subpath is trusted to exist because it was computed from
+   485→            the source worktree's directory structure. Since the new worktree
+   486→            shares git history with the source, the path should exist.
+   487→        """
+   488→        # Verify Claude is available
+   489→        if not self.is_available():
+
+... [60 lines omitted] ...
+
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3420" cache_read_input_tokens="24563" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3420}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the `is_rebase_in_progress` implementation and understand the actual failure mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3420" cache_read_input_tokens="24563" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3420}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01T4nQytxqj5sS7uzgjTcpjJ">
+    <param name="pattern">is_rebase_in_progress</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3420" cache_read_input_tokens="24563" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3420}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T4nQytxqj5sS7uzgjTcpjJ">
+Found 2 files
+src/erk/cli/commands/pr/rebase_cmd.py
+src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016eR5Dm276eN6i78rC3vbEd">
+    <param name="pattern">is_rebase_in_progress</param>
+    <param name="path">/Users/schrockn/code/erk/packages</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3420" cache_read_input_tokens="24563" output_tokens="1793" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3420, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016eR5Dm276eN6i78rC3vbEd">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TZrZ78T9QhcpHfEjzZ4tTp">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2123" cache_read_input_tokens="27983" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TZrZ78T9QhcpHfEjzZ4tTp">
+     1→"""Production implementation of Git rebase operations using subprocess."""
+     2→
+     3→import os
+     4→import subprocess
+     5→from collections.abc import Callable
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.abc import RebaseResult
+     9→from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    10→from erk_shared.subprocess_utils import run_subprocess_with_context
+    11→
+    12→
+    13→class RealGitRebaseOps(GitRebaseOps):
+    14→    """Real implementation of Git rebase operations using subprocess."""
+    15→
+    16→    def __init__(self, get_git_common_dir: Callable, get_conflicted_files: Callable) -&gt; None:
+    17→        """Initialize RealGitRebaseOps with helper functions.
+    18→
+    19→        Args:
+    20→            get_git_common_dir: Function to get git common directory for worktree support
+    21→            get_conflicted_files: Function to get list of conflicted files
+    22→        """
+    23→        self._get_git_common_dir = get_git_common_dir
+    24→        self._get_conflicted_files = get_conflicted_files
+    25→
+    26→    def rebase_onto(self, cwd: Path, target_ref: str) -&gt; RebaseResult:
+    27→        """Rebase the current branch onto a target ref."""
+    28→        result = subprocess.run(
+    29→            ["git", "rebase", target_ref],
+    30→            cwd=cwd,
+
+... [39 lines omitted] ...
+
+    40→        # Rebase failed - get conflict files
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1076" cache_read_input_tokens="30106" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1076}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `get_git_common_dir` works — this could be the root cause in worktrees.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1076" cache_read_input_tokens="30106" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1076}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KmNDPKEeQ6WMXZnuDKEgGq">
+    <param name="pattern">get_git_common_dir</param>
+    <param name="path">/Users/schrockn/code/erk/packages</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1076" cache_read_input_tokens="30106" output_tokens="874" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1076, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KmNDPKEeQ6WMXZnuDKEgGq">
+Found 9 files
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+packages/erk-shared/src/erk_shared/gateway/git/real.py
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/github/issues/label_cache.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YYQhe6RoP7w3NLoteVPabY">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1213" cache_read_input_tokens="31182" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1213, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YYQhe6RoP7w3NLoteVPabY">
+     1→"""Real implementation of git repository operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+     6→from erk_shared.subprocess_utils import run_subprocess_with_context
+     7→
+     8→
+     9→class RealGitRepoOps(GitRepoOps):
+    10→    """Real implementation of Git repository operations using subprocess."""
+    11→
+    12→    # ============================================================================
+    13→    # Query Operations
+    14→    # ============================================================================
+    15→
+    16→    def get_repository_root(self, cwd: Path) -&gt; Path:
+    17→        """Get the repository root directory."""
+    18→        result = run_subprocess_with_context(
+    19→            cmd=["git", "rev-parse", "--show-toplevel"],
+    20→            operation_context="get repository root",
+    21→            cwd=cwd,
+    22→        )
+    23→        return Path(result.stdout.strip())
+    24→
+    25→    def get_git_common_dir(self, cwd: Path) -&gt; Path | None:
+    26→        """Get the common git directory."""
+    27→        import subprocess
+    28→
+    29→        result = subprocess.run(
+    30→            ["git", "rev-parse", "--git-common-dir"],
+
+... [14 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="32395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 589}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `RealGitRebaseOps` is constructed and how the gateway ABC is defined.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="32395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 589}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018jBc7u1r1krwXMRyMVtLUm">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="32395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 589}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018jBc7u1r1krwXMRyMVtLUm">
+     1→"""Production Git implementation using subprocess.
+     2→
+     3→This module provides the real Git implementation that executes actual git
+     4→commands via subprocess. Located in erk-shared so it can be used by both
+     5→the main erk package and erk-kits without circular dependencies.
+     6→"""
+     7→
+     8→from erk_shared.gateway.git.abc import Git
+     9→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    10→from erk_shared.gateway.git.analysis_ops.real import RealGitAnalysisOps
+    11→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    12→from erk_shared.gateway.git.branch_ops.real import RealGitBranchOps
+    13→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    14→from erk_shared.gateway.git.commit_ops.real import RealGitCommitOps
+    15→from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    16→from erk_shared.gateway.git.config_ops.real import RealGitConfigOps
+    17→from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    18→from erk_shared.gateway.git.rebase_ops.real import RealGitRebaseOps
+    19→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    20→from erk_shared.gateway.git.remote_ops.real import RealGitRemoteOps
+    21→from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    22→from erk_shared.gateway.git.repo_ops.real import RealGitRepoOps
+    23→from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    24→from erk_shared.gateway.git.status_ops.real import RealGitStatusOps
+    25→from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+    26→from erk_shared.gateway.git.tag_ops.real import RealGitTagOps
+    27→from erk_shared.gateway.git.worktree.abc import Worktree
+    28→from erk_shared.gateway.git.worktree.real import RealWorktree
+    29→from erk_shared.gateway.time.abc import Time
+    30→from erk_shared.gateway.time.real import RealTime
+
+... [81 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MNLtRpcJd13fZVDc76otcb">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="32395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 589}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MNLtRpcJd13fZVDc76otcb">
+     1→"""Abstract base class for Git rebase operations.
+     2→
+     3→This sub-gateway extracts rebase operations from the main Git gateway,
+     4→including rebase_onto, rebase_continue, rebase_abort, and is_rebase_in_progress.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.gateway.git.abc import RebaseResult
+    15→
+    16→
+    17→class GitRebaseOps(ABC):
+    18→    """Abstract interface for Git rebase operations.
+    19→
+    20→    This interface contains both mutation and query operations for rebasing.
+    21→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    22→    """
+    23→
+    24→    # ============================================================================
+    25→    # Mutation Operations
+    26→    # ============================================================================
+    27→
+    28→    @abstractmethod
+    29→    def rebase_onto(self, cwd: Path, target_ref: str) -&gt; RebaseResult:
+    30→        """Rebase the current branch onto a target ref.
+
+... [59 lines omitted] ...
+
+    53→            subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
+    68→            subprocess.CalledProcessError: If no rebase is in progress
+  </tool_result>
+  <tool_use name="Read" id="toolu_017rD24gYwhtahk5w5hFfVTN">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="32395" output_tokens="2174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 589, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017rD24gYwhtahk5w5hFfVTN">
+     1→"""Abstract interface for git repository operations."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→
+     7→class GitRepoOps(ABC):
+     8→    """Abstract interface for Git repository location operations.
+     9→
+    10→    This interface contains query operations for repository structure.
+    11→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    12→    """
+    13→
+    14→    # ============================================================================
+    15→    # Query Operations
+    16→    # ============================================================================
+    17→
+    18→    @abstractmethod
+    19→    def get_repository_root(self, cwd: Path) -&gt; Path:
+    20→        """Get the repository root directory.
+    21→
+    22→        Uses `git rev-parse --show-toplevel` to find the repository root.
+    23→
+    24→        Args:
+    25→            cwd: Working directory to start search from
+    26→
+    27→        Returns:
+    28→            Path to the repository root
+    29→
+    30→        Raises:
+
+... [20 lines omitted] ...
+
+    31→            subprocess.CalledProcessError: If not in a git repository
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5361" cache_read_input_tokens="32984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5361}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Found the root cause. Let me check the fake and other implementations for the full scope of changes needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5361" cache_read_input_tokens="32984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5361}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013AarPt6tjPjXgmVvZ2t6da">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5361" cache_read_input_tokens="32984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5361}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013AarPt6tjPjXgmVvZ2t6da">
+     1→"""Fake implementation of Git rebase operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from collections.abc import Callable
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.abc import RebaseResult
+     9→from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    10→
+    11→
+    12→class FakeGitRebaseOps(GitRebaseOps):
+    13→    """In-memory fake implementation of Git rebase operations.
+    14→
+    15→    This fake accepts pre-configured state in its constructor and tracks
+    16→    mutations for test assertions.
+    17→
+    18→    Constructor Injection:
+    19→    ---------------------
+    20→    - rebase_in_progress: Initial state for is_rebase_in_progress() (bool or callable)
+    21→    - rebase_onto_result: Result to return from rebase_onto()
+    22→    - rebase_continue_raises: Exception to raise when rebase_continue() is called
+    23→    - rebase_continue_clears_rebase: If True, rebase_continue() clears rebase state
+    24→    - rebase_abort_raises: Exception to raise when rebase_abort() is called
+    25→
+    26→    Mutation Tracking:
+    27→    -----------------
+    28→    This fake tracks mutations for test assertions via read-only properties:
+    29→    - rebase_onto_calls: List of (cwd, target_ref) tuples from rebase_onto()
+    30→    - rebase_continue_calls: List of cwd from rebase_continue()
+
+... [159 lines omitted] ...
+
+    39→        rebase_continue_raises: Exception | None = None,
+    41→        rebase_abort_raises: Exception | None = None,
+    49→            rebase_continue_raises: Exception to raise when rebase_continue() is called
+    51→            rebase_abort_raises: Exception to raise when rebase_abort() is called
+    90→        Tracks call for test assertions. Raises configured exception if set.
+   102→        Tracks call for test assertions. Raises configured exception if set.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JzYjcw4XsJNP36gny3dZdR">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5361" cache_read_input_tokens="32984" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5361}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JzYjcw4XsJNP36gny3dZdR">
+     1→"""No-op Git rebase operations wrapper for dry-run mode.
+     2→
+     3→This module provides a wrapper that prevents execution of destructive
+     4→rebase operations while delegating read-only operations to the wrapped implementation.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.git.abc import RebaseResult
+    10→from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    11→
+    12→
+    13→class DryRunGitRebaseOps(GitRebaseOps):
+    14→    """No-op wrapper that prevents execution of destructive rebase operations.
+    15→
+    16→    This wrapper intercepts destructive git operations (rebase_onto, rebase_continue,
+    17→    rebase_abort) and returns without executing. Read-only operations (is_rebase_in_progress)
+    18→    are delegated to the wrapped implementation.
+    19→    """
+    20→
+    21→    def __init__(self, wrapped: GitRebaseOps) -&gt; None:
+    22→        """Create a dry-run wrapper around a GitRebaseOps implementation.
+    23→
+    24→        Args:
+    25→            wrapped: The GitRebaseOps implementation to wrap
+    26→        """
+    27→        self._wrapped = wrapped
+    28→
+    29→    # ============================================================================
+    30→    # Mutation Operations (no-ops in dry-run mode)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01S7uRiX8iw8C8pnNnYEjgy8">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5361" cache_read_input_tokens="32984" output_tokens="667" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5361, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S7uRiX8iw8C8pnNnYEjgy8">
+     1→"""Printing Git rebase operations wrapper for verbose output.
+     2→
+     3→This module provides a wrapper that prints styled output for rebase operations
+     4→before delegating to the wrapped implementation.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.git.abc import RebaseResult
+    10→from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    11→from erk_shared.printing.base import PrintingBase
+    12→
+    13→
+    14→class PrintingGitRebaseOps(PrintingBase, GitRebaseOps):
+    15→    """Wrapper that prints rebase operations before delegating to inner implementation.
+    16→
+    17→    This wrapper prints styled output for operations, then delegates to the
+    18→    wrapped implementation (which could be Real or DryRun).
+    19→    """
+    20→
+    21→    # Inherits __init__, _emit, and _format_command from PrintingBase
+    22→
+    23→    # ============================================================================
+    24→    # Mutation Operations (print before delegating)
+    25→    # ============================================================================
+    26→
+    27→    def rebase_onto(self, cwd: Path, target_ref: str) -&gt; RebaseResult:
+    28→        """Rebase onto target ref with printed output."""
+    29→        self._emit(self._format_command(f"git rebase {target_ref}"))
+    30→        return self._wrapped.rebase_onto(cwd, target_ref)
+
+... [19 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4859" cache_read_input_tokens="38345" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4859}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the other `GitRepoOps` implementations and see what tests exist.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4859" cache_read_input_tokens="38345" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4859}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013swy4jcSeDUjq7JbxsRNvN">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4859" cache_read_input_tokens="38345" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4859}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013swy4jcSeDUjq7JbxsRNvN">
+     1→"""Fake implementation of git repository operations for testing."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+     6→
+     7→
+     8→class FakeGitRepoOps(GitRepoOps):
+     9→    """In-memory fake implementation for testing.
+    10→
+    11→    Constructor Injection: pre-configured state passed via constructor.
+    12→    """
+    13→
+    14→    def __init__(
+    15→        self,
+    16→        *,
+    17→        repository_roots: dict[Path, Path] | None = None,
+    18→        git_common_dirs: dict[Path, Path] | None = None,
+    19→        worktrees: dict[Path, list] | None = None,
+    20→    ) -&gt; None:
+    21→        """Create FakeGitRepoOps with pre-configured state.
+    22→
+    23→        Args:
+    24→            repository_roots: Mapping of cwd -&gt; repo root
+    25→            git_common_dirs: Mapping of cwd -&gt; git common dir
+    26→            worktrees: Mapping of repo_root -&gt; list of worktree info (for root inference)
+    27→        """
+    28→        self._repository_roots: dict[Path, Path] = (
+    29→            repository_roots if repository_roots is not None else {}
+    30→        )
+
+... [97 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KHvSgXRkTh756pkZBK74KB">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4859" cache_read_input_tokens="38345" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4859}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KHvSgXRkTh756pkZBK74KB">
+     1→"""Dry-run wrapper for git repository operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+     6→
+     7→
+     8→class DryRunGitRepoOps(GitRepoOps):
+     9→    """Dry-run wrapper that delegates read-only operations.
+    10→
+    11→    All operations in RepoOps are read-only, so this simply delegates.
+    12→    """
+    13→
+    14→    def __init__(self, wrapped: GitRepoOps) -&gt; None:
+    15→        """Create a dry-run wrapper around a GitRepoOps implementation."""
+    16→        self._wrapped = wrapped
+    17→
+    18→    # ============================================================================
+    19→    # Query Operations (delegate to wrapped implementation)
+    20→    # ============================================================================
+    21→
+    22→    def get_repository_root(self, cwd: Path) -&gt; Path:
+    23→        """Query operation (read-only, delegates to wrapped)."""
+    24→        return self._wrapped.get_repository_root(cwd)
+    25→
+    26→    def get_git_common_dir(self, cwd: Path) -&gt; Path | None:
+    27→        """Query operation (read-only, delegates to wrapped)."""
+    28→        return self._wrapped.get_git_common_dir(cwd)
+    29→
+  </tool_result>
+  <tool_use name="Read" id="toolu_018zy6gnaCUUYx8sVfdng76Z">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/printing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4859" cache_read_input_tokens="38345" output_tokens="1030" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4859, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018zy6gnaCUUYx8sVfdng76Z">
+     1→"""Printing wrapper for git repository operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+     6→from erk_shared.printing.base import PrintingBase
+     7→
+     8→
+     9→class PrintingGitRepoOps(PrintingBase, GitRepoOps):
+    10→    """Wrapper that delegates without printing (all operations are read-only)."""
+    11→
+    12→    # Inherits __init__, _emit, and _format_command from PrintingBase
+    13→
+    14→    # ============================================================================
+    15→    # Query Operations (delegate without printing)
+    16→    # ============================================================================
+    17→
+    18→    def get_repository_root(self, cwd: Path) -&gt; Path:
+    19→        """Query operation (read-only, no printing)."""
+    20→        return self._wrapped.get_repository_root(cwd)
+    21→
+    22→    def get_git_common_dir(self, cwd: Path) -&gt; Path | None:
+    23→        """Query operation (read-only, no printing)."""
+    24→        return self._wrapped.get_git_common_dir(cwd)
+    25→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3627" cache_read_input_tokens="43204" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3627}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check for existing tests for the rebase command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3627" cache_read_input_tokens="43204" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3627}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KjW72wkhLhvHmyVevM7rpk">
+    <param name="pattern">rebase</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*rebase*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3627" cache_read_input_tokens="43204" output_tokens="464" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3627, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KjW72wkhLhvHmyVevM7rpk">
+Found 3 files
+tests/commands/pr/test_rebase.py
+tests/commands/pr/test_rebase_remote.py
+tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01P67SBtiqBcawnZZqUEzyT2">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_rebase.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="528" cache_read_input_tokens="46831" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 528, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P67SBtiqBcawnZZqUEzyT2">
+     1→"""Tests for erk pr rebase command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.abc import RebaseResult
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from tests.fakes.prompt_executor import FakePromptExecutor
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_pr_rebase_non_graphite_success() -&gt; None:
+    15→    """Test successful rebase via git rebase (Graphite disabled)."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git = FakeGit(
+    19→            git_common_dirs={env.cwd: env.git_dir},
+    20→            local_branches={env.cwd: ["main", "feature-branch"]},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "feature-branch"},
+    24→        )
+    25→
+    26→        executor = FakePromptExecutor(available=True)
+    27→
+    28→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    29→
+    30→        result = runner.invoke(pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx)
+
+... [159 lines omitted] ...
+
+    65→def test_pr_rebase_non_graphite_no_target_error() -&gt; None:
+    66→    """Test error when --target not provided with Graphite disabled."""
+   167→    """Test error when Claude is not installed."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7712" cache_read_input_tokens="47359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7712}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check FakeGit to understand the full wiring.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7712" cache_read_input_tokens="47359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7712}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013ysG5FDrrkAa1DyFaNGbsM">
+    <param name="pattern">class FakeGit</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7712" cache_read_input_tokens="47359" output_tokens="936" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7712, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ysG5FDrrkAa1DyFaNGbsM">
+Found 10 files
+packages/erk-shared/src/erk_shared/gateway/git/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/tag_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GuUo7PFttK8KNkvBW7BDiF">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2394" cache_read_input_tokens="55071" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2394, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GuUo7PFttK8KNkvBW7BDiF">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
+    22→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    23→from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    24→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    25→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    26→from erk_shared.gateway.git.commit_ops.fake import (
+    27→    BranchCommitRecord,
+    28→    CommitRecord,
+    29→    FakeGitCommitOps,
+    30→)
+
+... [70 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PSmiNbhSvnUgAXtbv3TkP8">
+    <param name="pattern">git_common_dir|get_git_common_dir|get_git_dir</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1667" cache_read_input_tokens="57465" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1667, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PSmiNbhSvnUgAXtbv3TkP8">
+99:            git_common_dirs={repo: repo / ".git"},
+123:        git_common_dirs: dict[Path, Path] | None = None,
+180:            git_common_dirs: Mapping of cwd -&gt; git common directory
+242:        self._git_common_dirs = git_common_dirs or {}
+315:            git_common_dirs=self._git_common_dirs,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01D4qjqEvdVZpgKktX5YfRX3">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">100</param>
+    <param name="limit">230</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="59132" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 244, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D4qjqEvdVZpgKktX5YfRX3">
+   100→        )
+   101→
+   102→        # Mutation through operation
+   103→        git_ops.worktree.add_worktree(repo, wt2, branch="feature")
+   104→
+   105→        # Verify mutation
+   106→        assert len(git_ops.worktree.list_worktrees(repo)) == 2
+   107→        assert (wt2, "feature") in git_ops.added_worktrees
+   108→
+   109→        # Verify sequence of operations
+   110→        git_ops.checkout_branch(repo, "feature")
+   111→        git_ops.delete_branch(repo, "old-feature", force=True)
+   112→        assert (repo, "feature") in git_ops.checked_out_branches
+   113→        assert "old-feature" in git_ops.deleted_branches
+   114→    """
+   115→
+   116→    def __init__(
+   117→        self,
+   118→        *,
+   119→        worktrees: dict[Path, list[WorktreeInfo]] | None = None,
+   120→        current_branches: dict[Path, str | None] | None = None,
+   121→        default_branches: dict[Path, str] | None = None,
+   122→        trunk_branches: dict[Path, str] | None = None,
+   123→        git_common_dirs: dict[Path, Path] | None = None,
+   124→        branch_heads: dict[str, str] | None = None,
+   125→        commit_messages: dict[str, str] | None = None,
+   126→        staged_repos: set[Path] | None = None,
+   127→        file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] | None = None,
+   128→        ahead_behind: dict[tuple[Path, str], tuple[int, int]] | None = None,
+   129→        behind_commit_authors: dict[tuple[Path, str], list[str]] | None = None,
+
+... [200 lines omitted] ...
+
+   135→        delete_branch_raises: dict[str, Exception] | None = None,
+   138→        tracking_branch_failures: dict[str, str] | None = None,
+   148→        add_all_raises: Exception | None = None,
+   149→        fetch_branch_raises: Exception | None = None,
+   150→        pull_branch_raises: Exception | None = None,
+   153→        rebase_continue_raises: Exception | None = None,
+   160→        push_to_remote_error: PushError | None = None,
+   164→        rebase_abort_raises: Exception | None = None,
+   165→        pull_rebase_error: PullRebaseError | None = None,
+   167→        create_branch_error: BranchAlreadyExists | None = None,
+   168→        add_worktree_error: str | None = None,
+   169→        remove_worktree_error: str | None = None,
+   170→        ahead_behind_raises: RuntimeError | None = None,
+   194→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+   198→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+   209→            add_all_raises: Exception to raise when add_all() is called
+   210→            fetch_branch_raises: Exception to raise when fetch_branch() is called
+   211→            pull_branch_raises: Exception to raise when pull_branch() is called
+   215→            rebase_continue_raises: Exception to raise when rebase_continue() is called
+   222→            push_to_remote_error: PushError to return when push_to_remote() is called
+   227→            rebase_abort_raises: Exception to raise when rebase_abort() is called
+   228→            pull_rebase_error: PullRebaseError to return when pull_rebase() is called
+   232→            create_branch_error: BranchAlreadyExists to return from create_branch()
+   233→            add_worktree_error: Error message to raise as RuntimeError from add_worktree()
+   234→            remove_worktree_error: Error message to raise as RuntimeError from remove_worktree()
+   235→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+   257→        self._tracking_branch_failures = tracking_branch_failures or {}
+   277→        self._push_to_remote_error = push_to_remote_error
+   282→        self._pull_rebase_error = pull_rebase_error
+   284→        self._remove_worktree_error = remove_worktree_error
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4706" cache_read_input_tokens="59376" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4706}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a clear understanding of the bug and the fix needed. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4706" cache_read_input_tokens="59376" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4706}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_0119CSsGsFhZ3TKRTPAgomBC">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4706" cache_read_input_tokens="59376" output_tokens="2078" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4706, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_0119CSsGsFhZ3TKRTPAgomBC">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01YGgfTWE7VthCXfmuiWvnzq">
+    <param name="file_path">/Users/schrockn/.claude/plans/valiant-meandering-cerf.md</param>
+    <param name="content"># Fix `is_rebase_in_progress` in git worktrees
+
+## Context
+
+`erk pr rebase` fails to launc...[truncated 3079 chars]...repo ops tests if any exist
+3. Run ty type checker on changed packages
+4. Run ruff linter
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2457" cache_read_input_tokens="64082" output_tokens="1263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2457, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YGgfTWE7VthCXfmuiWvnzq">
+File created successfully at: /Users/schrockn/.claude/plans/valiant-meandering-cerf.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01T25dbXAZAgEA8kL2Y8PbP8">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1304" cache_read_input_tokens="66539" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01T25dbXAZAgEA8kL2Y8PbP8">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01A6LtYTP9qHmF1Lqit1QjB7">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests with pytest'}, {'tool': 'Bash', 'prompt': 'run ty type checker'}, {'tool': 'Bash', 'prompt': 'run ruff linter'}]</param>
+    <param name="plan"># Fix `is_rebase_in_progress` in git worktrees
+
+## Context
+
+`erk pr rebase` fails to launc...[truncated 3079 chars]...repo ops tests if any exist
+3. Run ty type checker on changed packages
+4. Run ruff linter
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="67843" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A6LtYTP9qHmF1Lqit1QjB7">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/valiant-meandering-cerf.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix `is_rebase_in_progress` in git worktrees
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id b8260517-e6aa-49f9-b7cc-0686b978c82b \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Let me display the plan and ask.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="759" cache_read_input_tokens="68581" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 759}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C1KHBeHExx3CCfCyBvNJY7">
+    <param name="file_path">/Users/schrockn/.claude/plans/valiant-meandering-cerf.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="759" cache_read_input_tokens="68581" output_tokens="83" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 759, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C1KHBeHExx3CCfCyBvNJY7">
+     1→# Fix `is_rebase_in_progress` in git worktrees
+     2→
+     3→## Context
+     4→
+     5→`erk pr rebase` fails to launch Claude with `/erk:rebase` when run in a non-root worktree (e.g., `erk-slot-05`). Instead of detecting the in-progress rebase and launching Claude, it throws `ClickException("gt restack failed:")`.
+     6→
+     7→**Root cause**: `RealGitRebaseOps.is_rebase_in_progress()` checks for `rebase-merge`/`rebase-apply` directories under the **common** git dir (`git rev-parse --git-common-dir`). In worktrees, these directories are stored in the **per-worktree** git dir (`git rev-parse --git-dir`). So the check always returns `False` in non-root worktrees.
+     8→
+     9→- Common dir (shared): `/path/to/repo/.git` — does NOT contain rebase state for worktrees
+    10→- Per-worktree dir: `/path/to/repo/.git/worktrees/erk-slot-05` — DOES contain `rebase-merge`/`rebase-apply`
+    11→
+    12→In `rebase_cmd.py:102`, when `is_rebase_in_progress()` returns `False`, the command raises an error instead of falling through to launch Claude with `/erk:rebase`.
+    13→
+    14→## Changes
+    15→
+    16→### 1. Add `get_git_dir()` to `GitRepoOps` ABC
+    17→
+    18→**File**: `packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py`
+    19→
+    20→Add abstract method `get_git_dir(self, cwd: Path) -&gt; Path | None` — returns the per-worktree git directory via `git rev-parse --git-dir`. Distinct from `get_git_common_dir` which returns the shared dir.
+    21→
+    22→### 2. Implement in `RealGitRepoOps`
+    23→
+    24→**File**: `packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py`
+    25→
+    26→Add `get_git_dir()` that calls `git rev-parse --git-dir` (same pattern as existing `get_git_common_dir` but with `--git-dir`).
+    27→
+    28→### 3. Implement in `FakeGitRepoOps`
+    29→
+    30→**File**: `packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py`
+
+... [43 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_017AXNJbUgFV5ruCDp5HemLv">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="69340" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1614, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_017AXNJbUgFV5ruCDp5HemLv">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_0181XKgih9J61RsDXu8kPWwR">
+    <param name="questions">[{'question': '📋 Fix `is_rebase_in_progress` in git worktrees\nCurrent context: (wt:erk) (...[truncated 397 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1442" cache_read_input_tokens="70954" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1442, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0181XKgih9J61RsDXu8kPWwR">
+User has answered your questions: "📋 Fix `is_rebase_in_progress` in git worktrees
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01EpVEn5TBeowkg4rAsRzpWc">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="72396" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 311, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01EpVEn5TBeowkg4rAsRzpWc">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01GevZ3k1bkonc2UELmVmbJy">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="72707" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GevZ3k1bkonc2UELmVmbJy">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="b8260517-e6aa-49f9-b7cc-0686b978c82b" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="b8260517-e6aa-49f9-b7cc-0686b978c82b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "b8260517-e6aa-49f9-b7cc-0686b978c82b" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "b8260517-e6aa-49f9-b7cc-0686b978c82b" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "b8260517-e6aa-49f9-b7cc-0686b978c82b" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "b8260517-e6aa-49f9-b7cc-0686b978c82b" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Branch slug**: `fix-worktree-rebase-detection`
+
+**Plan summary**: Fixes is_rebase_in_progress() returning False in non-root worktrees by using the per-worktree git dir instead of the common git dir for rebase state detection. This caused erk pr rebase to error out instead of launching Claude for conflict resolution.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="73275" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2286}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01RaxYsqrHj9bf3TFyzvCzwF">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="73275" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01RaxYsqrHj9bf3TFyzvCzwF">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Unq8fRDZ6XDr9QSKGRxEKn">
+    <param name="command">erk exec plan-save --format json --session-id="b8260517-e6aa-49f9-b7cc-0686b978c82b" --bra...[truncated 194 chars]...is caused erk pr rebase to error out instead of launching Claude for conflict resolution."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3414" cache_read_input_tokens="75561" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3414, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Unq8fRDZ6XDr9QSKGRxEKn">
+{"success": true, "plan_number": 8838, "plan_url": "https://github.com/dagster-io/erk/pull/8838", "title": "[erk-plan] Fix `is_rebase_in_progress` in git worktrees", "branch_name": "plnd/fix-worktree-rebase-detect-03-06-0559", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/b8260517-e6aa-49f9-b7cc-0686b978c82b/plan_snapshots/000001-baa2ff68"}
+  </tool_result>
+  <assistant>Plan saved successfully:
+
+- **Plan**: "[erk-plan] Fix `is_rebase_in_progress` in git worktrees" — **#8838**
+- **URL**: https://github.com/dagster-io/erk/pull/8838
+
+Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="403" cache_read_input_tokens="78975" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 403}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011e245xqMTEiEJ4tnU6xXcH">
+    <param name="command">erk exec upload-impl-session --session-id "b8260517-e6aa-49f9-b7cc-0686b978c82b" 2&gt;/dev/null || true</param>
+    <param name="description">Upload planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="403" cache_read_input_tokens="78975" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 403, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011e245xqMTEiEJ4tnU6xXcH">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01CH42PCkYWHV34aztxBdwGX">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests with pytest'}, {'tool': 'Bash', 'prompt': 'run ty type checker'}, {'tool': 'Bash', 'prompt': 'run ruff linter'}]</param>
+    <param name="plan"># Fix `is_rebase_in_progress` in git worktrees
+
+## Context
+
+`erk pr rebase` fails to launc...[truncated 3079 chars]...repo ops tests if any exist
+3. Run ty type checker on changed packages
+4. Run ruff linter
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="79378" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 235, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CH42PCkYWHV34aztxBdwGX">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8838 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8838:
+  In current wt:    source "$(erk br co --for-plan 8838 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8838 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8838 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8838 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8838:
+  In current wt:  erk br co --for-plan 8838
+  In new wt:      erk br co --new-slot --for-plan 8838
+
+Dispatch plan #8838:
+  CLI command:    erk pr dispatch 8838
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8838 saved. Here are the next steps:
+
+**Implement plan #8838:**
+```
+In current wt:    source "$(erk br co --for-plan 8838 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8838 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8838 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8838 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8838:**
+```
+In current wt:  erk br co --for-plan 8838
+In new wt:      erk br co --new-slot --for-plan 8838
+```
+
+**Dispatch plan #8838:**
+```
+CLI command:    erk pr dispatch 8838
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="79613" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 492, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
