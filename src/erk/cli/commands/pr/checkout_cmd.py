@@ -21,7 +21,6 @@ from erk.cli.alias import alias
 from erk.cli.commands.checkout_helpers import (
     ensure_branch_has_worktree,
     navigate_and_display_checkout,
-    sync_parent_and_rebase,
 )
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
@@ -264,9 +263,31 @@ def _checkout_pr(
     # which `gt track` requires for proper stacking
     trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
     if pr.base_ref_name != trunk_branch and not pr.is_cross_repository:
-        sync_parent_and_rebase(
-            ctx, repo_root=repo.root, worktree_path=worktree_path, parent_branch=pr.base_ref_name
-        )
+        local_branches = ctx.git.branch.list_local_branches(repo.root)
+        if pr.base_ref_name not in local_branches:
+            ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
+            ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
+            ctx.branch_manager.create_tracking_branch(
+                repo.root, pr.base_ref_name, f"origin/{pr.base_ref_name}"
+            )
+        else:
+            # Parent exists locally but may be stale after squash/rebase.
+            # Update to match origin so gt track sees consistent history.
+            ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
+            remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{pr.base_ref_name}")
+            local_sha = ctx.git.branch.get_branch_head(repo.root, pr.base_ref_name)
+            if remote_sha is not None and remote_sha != local_sha:
+                ctx.git.branch.update_local_ref(repo.root, pr.base_ref_name, remote_sha)
+
+        ctx.console.info("Rebasing onto base branch...")
+        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
+
+        if not rebase_result.success:
+            ctx.git.rebase.rebase_abort(worktree_path)
+            ctx.console.info(
+                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+                f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
+            )
 
     # Graphite integration: Track or retrack AFTER rebase completes.
     # Tracking must happen after rebase so Graphite's cached SHA matches

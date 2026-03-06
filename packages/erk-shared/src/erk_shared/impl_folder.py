@@ -87,42 +87,6 @@ def resolve_impl_dir(base_path: Path, *, branch_name: str | None) -> Path | None
     return None
 
 
-def find_existing_plan_ref(
-    base_path: Path,
-    *,
-    branch_name: str,
-    plan_id: str,
-) -> PlanRef | None:
-    """Check if impl-context is already set up for a specific plan.
-
-    Resolves the impl directory, reads the plan ref, and checks if it matches
-    the given plan_id. Returns the PlanRef if it matches, None otherwise.
-
-    This consolidates the idempotent "already set up?" check used in both
-    prepare_cmd.py and setup_impl_from_pr.py.
-
-    Args:
-        base_path: Repository root or worktree path
-        branch_name: Git branch name for scoping the impl directory
-        plan_id: Expected plan ID to match against
-
-    Returns:
-        PlanRef if impl-context exists and matches plan_id, None otherwise
-    """
-    impl_dir = resolve_impl_dir(base_path, branch_name=branch_name)
-    if impl_dir is None:
-        return None
-
-    existing_ref = read_plan_ref(impl_dir)
-    if existing_ref is None:
-        return None
-
-    if existing_ref.plan_id != plan_id:
-        return None
-
-    return existing_ref
-
-
 def create_impl_folder(
     worktree_path: Path,
     plan_content: str,

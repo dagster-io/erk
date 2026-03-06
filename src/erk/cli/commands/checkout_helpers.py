@@ -277,54 +277,6 @@ def ensure_branch_has_worktree(
     return worktree_path, False
 
 
-def sync_parent_and_rebase(
-    ctx: ErkContext,
-    *,
-    repo_root: Path,
-    worktree_path: Path,
-    parent_branch: str,
-) -> None:
-    """Fetch parent branch, ensure local ref is up-to-date, and rebase onto it.
-
-    This encapsulates the "fetch parent + update stale local ref + rebase onto parent"
-    sequence shared between pr/checkout_cmd.py and branch/checkout_cmd.py.
-
-    Does NOT include Graphite tracking — that differs between callers and stays
-    at call sites.
-
-    Args:
-        ctx: Erk context with git and branch_manager
-        repo_root: Repository root path
-        worktree_path: Path to the worktree (used as cwd for rebase)
-        parent_branch: The parent branch to rebase onto
-    """
-    local_branches = ctx.git.branch.list_local_branches(repo_root)
-    if parent_branch not in local_branches:
-        user_output(f"Fetching base branch '{parent_branch}'...")
-        ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
-        ctx.branch_manager.create_tracking_branch(
-            repo_root, parent_branch, f"origin/{parent_branch}"
-        )
-    else:
-        # Parent exists locally but may be stale after squash/rebase.
-        # Update to match origin so gt track sees consistent history.
-        ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
-        remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch}")
-        local_sha = ctx.git.branch.get_branch_head(repo_root, parent_branch)
-        if remote_sha is not None and remote_sha != local_sha:
-            ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)
-
-    user_output("Rebasing onto base branch...")
-    rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{parent_branch}")
-
-    if not rebase_result.success:
-        ctx.git.rebase.rebase_abort(worktree_path)
-        user_output(
-            f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
-            f"Run: cd {worktree_path} && git rebase origin/{parent_branch}"
-        )
-
-
 def navigate_and_display_checkout(
     ctx: ErkContext,
     *,

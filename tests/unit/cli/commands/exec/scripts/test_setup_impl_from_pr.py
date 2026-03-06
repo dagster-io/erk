@@ -601,13 +601,11 @@ def test_create_impl_context_valid_ref_json(tmp_path: Path) -> None:
         "plan-test-branch",
         impl_context_files={
             "plan.md": "# Plan\n\nContent.",
-            "ref.json": json.dumps(
-                {
-                    "objective_id": 42,
-                    "title": "Custom Title",
-                    "node_ids": ["node-1", "node-2"],
-                }
-            ),
+            "ref.json": json.dumps({
+                "objective_id": 42,
+                "title": "Custom Title",
+                "node_ids": ["node-1", "node-2"],
+            }),
         },
     )
     assert result["success"] is True

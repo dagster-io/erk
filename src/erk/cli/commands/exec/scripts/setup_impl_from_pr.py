@@ -40,8 +40,9 @@ from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_folder import (
     create_impl_folder,
-    find_existing_plan_ref,
     get_impl_dir,
+    read_plan_ref,
+    resolve_impl_dir,
     save_plan_ref,
 )
 from erk_shared.plan_store.planned_pr_lifecycle import (
@@ -240,22 +241,24 @@ def _setup_planned_pr_plan(
     # plan branch would abandon the implementation branch, causing work to
     # land on the wrong branch.
     current_branch = _get_current_branch(git, cwd)
-    existing_ref = find_existing_plan_ref(cwd, branch_name=current_branch, plan_id=str(plan_number))
-    if existing_ref is not None:
-        click.echo(
-            f"Found existing impl dir for plan #{plan_number}, skipping branch setup",
-            err=True,
-        )
-        impl_path_str = str(get_impl_dir(cwd, branch_name=current_branch)) if not no_impl else None
-        return {
-            "success": True,
-            "impl_path": impl_path_str,
-            "plan_number": plan_number,
-            "plan_url": existing_ref.url,
-            "branch": current_branch,
-            "plan_title": "",
-            "no_impl": no_impl,
-        }
+    impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
+    if impl_dir is not None:
+        existing_ref = read_plan_ref(impl_dir)
+        if existing_ref is not None and existing_ref.plan_id == str(plan_number):
+            click.echo(
+                f"Found existing impl dir for plan #{plan_number}, skipping branch setup",
+                err=True,
+            )
+            impl_path_str = str(impl_dir) if not no_impl else None
+            return {
+                "success": True,
+                "impl_path": impl_path_str,
+                "plan_number": plan_number,
+                "plan_url": existing_ref.url,
+                "branch": current_branch,
+                "plan_title": "",
+                "no_impl": no_impl,
+            }
 
     repo_root = require_repo_root(ctx)
     github = require_github(ctx)

@@ -17,7 +17,6 @@ from erk.cli.commands.checkout_helpers import (
     display_sync_status,
     navigate_to_worktree,
     script_error_handler,
-    sync_parent_and_rebase,
 )
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.slot.common import (
@@ -369,55 +368,36 @@ def _rebase_and_track_for_plan(
         parent_branch: The parent branch to rebase onto and track with
         trunk: The trunk branch name
     """
+    # For stacked plans (parent is not trunk), rebase onto parent first
     if parent_branch != trunk:
-        sync_parent_and_rebase(
-            ctx, repo_root=repo_root, worktree_path=worktree_path, parent_branch=parent_branch
-        )
+        # Ensure parent branch is up to date locally
+        local_branches = ctx.git.branch.list_local_branches(repo_root)
+        if parent_branch not in local_branches:
+            user_output(f"Fetching base branch '{parent_branch}'...")
+            ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
+            ctx.branch_manager.create_tracking_branch(
+                repo_root, parent_branch, f"origin/{parent_branch}"
+            )
+        else:
+            # Parent exists locally but may be stale after squash/rebase.
+            # Update to match origin so gt track sees consistent history.
+            ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
+            remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch}")
+            local_sha = ctx.git.branch.get_branch_head(repo_root, parent_branch)
+            if remote_sha is not None and remote_sha != local_sha:
+                ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)
+
+        user_output("Rebasing onto base branch...")
+        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{parent_branch}")
+
+        if not rebase_result.success:
+            ctx.git.rebase.rebase_abort(worktree_path)
+            user_output(
+                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+                f"Run: cd {worktree_path} && git rebase origin/{parent_branch}"
+            )
 
     ctx.branch_manager.track_branch(repo_root, branch, parent_branch)
-
-
-def _apply_plan_setup(
-    ctx: ErkContext,
-    *,
-    setup: IssueBranchSetup,
-    repo_root: Path,
-    worktree_path: Path,
-    branch: str,
-    parent_branch: str,
-    trunk: str,
-    script: bool,
-) -> None:
-    """Rebase, track, and create impl folder for a plan checkout.
-
-    Combines _rebase_and_track_for_plan and _setup_impl_for_plan into a single
-    call. The caller's ``if setup is not None:`` guard remains at the call site.
-
-    Args:
-        ctx: Erk context
-        setup: Plan setup info from prepare_plan_for_worktree
-        repo_root: Repository root path
-        worktree_path: Path to the target worktree
-        branch: Git branch name
-        parent_branch: Parent branch for Graphite tracking
-        trunk: Trunk branch name
-        script: Whether to output only the activation script
-    """
-    _rebase_and_track_for_plan(
-        ctx,
-        repo_root=repo_root,
-        worktree_path=worktree_path,
-        branch=branch,
-        parent_branch=parent_branch,
-        trunk=trunk,
-    )
-    _setup_impl_for_plan(
-        ctx,
-        setup=setup,
-        worktree_path=worktree_path,
-        branch_name=branch,
-        script=script,
-    )
 
 
 @alias("co")
@@ -659,14 +639,19 @@ def _branch_checkout_impl(
                     )
 
                     if setup is not None:
-                        _apply_plan_setup(
+                        _rebase_and_track_for_plan(
                             ctx,
-                            setup=setup,
                             repo_root=repo.root,
                             worktree_path=target_wt.path,
                             branch=branch,
                             parent_branch=parent_branch,
                             trunk=trunk,
+                        )
+                        _setup_impl_for_plan(
+                            ctx,
+                            setup=setup,
+                            worktree_path=target_wt.path,
+                            branch_name=branch,
                             script=script,
                         )
 
@@ -688,14 +673,19 @@ def _branch_checkout_impl(
                     ctx.branch_manager.checkout_branch(repo.root, branch)
                     target_wt = WorktreeInfo(path=repo.root, branch=branch)
 
-                    _apply_plan_setup(
+                    _rebase_and_track_for_plan(
                         ctx,
-                        setup=setup,
                         repo_root=repo.root,
                         worktree_path=target_wt.path,
                         branch=branch,
                         parent_branch=parent_branch,
                         trunk=trunk,
+                    )
+                    _setup_impl_for_plan(
+                        ctx,
+                        setup=setup,
+                        worktree_path=target_wt.path,
+                        branch_name=branch,
                         script=script,
                     )
 
@@ -746,14 +736,19 @@ def _branch_checkout_impl(
 
         # Set up impl folder if --for-plan was used
         if setup is not None:
-            _apply_plan_setup(
+            _rebase_and_track_for_plan(
                 ctx,
-                setup=setup,
                 repo_root=repo.root,
                 worktree_path=target_worktree.path,
                 branch=branch,
                 parent_branch=parent_branch,
                 trunk=trunk,
+            )
+            _setup_impl_for_plan(
+                ctx,
+                setup=setup,
+                worktree_path=target_worktree.path,
+                branch_name=branch,
                 script=script,
             )
 
@@ -785,14 +780,19 @@ def _branch_checkout_impl(
 
             # Set up impl folder if --for-plan was used
             if setup is not None:
-                _apply_plan_setup(
+                _rebase_and_track_for_plan(
                     ctx,
-                    setup=setup,
                     repo_root=repo.root,
                     worktree_path=target_worktree.path,
                     branch=branch,
                     parent_branch=parent_branch,
                     trunk=trunk,
+                )
+                _setup_impl_for_plan(
+                    ctx,
+                    setup=setup,
+                    worktree_path=target_worktree.path,
+                    branch_name=branch,
                     script=script,
                 )
 
