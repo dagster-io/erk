@@ -432,7 +432,7 @@ def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
 
 
 def test_pr_checkout_stacked_pr_base_already_local() -> None:
-    """Test that stacked PR checkout skips fetch/tracking when base exists locally."""
+    """Test that stacked PR checkout syncs base branch when it exists locally."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -461,8 +461,8 @@ def test_pr_checkout_stacked_pr_base_already_local() -> None:
 
         assert result.exit_code == 0
         assert "Created worktree for PR #778" in result.output
-        # Should NOT fetch base branch since it exists locally
-        assert ("origin", "feature-a") not in git.fetched_branches
+        # Base branch is fetched to check for staleness (sync with remote)
+        assert ("origin", "feature-a") in git.fetched_branches
         # Should NOT create tracking branch since base exists locally
         assert len(git.created_tracking_branches) == 0
         # Rebase should still be called
