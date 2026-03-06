@@ -839,4 +839,177 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8864
 }
   </tool_result>
+  <tool_result tool="toolu_01N3Z1zwTWt9bwoM5FhJQZWn">
+{"uploaded": true, "plan_id": 8864}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SNN1L78j9d68m8emiH7FMU">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="50199" cache_creation="{'ephemeral_5m_input_tokens': 337, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SNN1L78j9d68m8emiH7FMU">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <assistant>Now let me run CI and submit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="50536" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01XJ3WZHW5oxHh1uhUcGvJZF">
+    <param name="description">Run full fast CI checks</param>
+    <param name="prompt">Run `uv run pytest tests/core/test_fast_llm.py -v &amp;&amp; uv run ty check src/erk/core/fast_llm...[truncated 98 chars]...re/fast_llm.py tests/core/test_fast_llm.py` and report all results. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="50536" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="218" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XJ3WZHW5oxHh1uhUcGvJZF">
+## Test Results Summary
+
+**pytest passed:** 6 passed in 0.81s
+
+**ty check passed:** All checks passed!
+
+**ruff check passed:** All checks passed!
+
+**ruff format failed:** 2 files would be reformatted
+- `/home/runner/work/erk/erk/src/erk/core/fast_llm.py`
+- `/home/runner/work/erk/erk/tests/core/test_fast_llm.py`
+
+The codebase has formatting issues that would be corrected by ruff format. Tests pass and type checking passes, but the code needs formatting adjustments.
+agentId: affef55 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+Let me fix the formatting:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="502" cache_read_input_tokens="50641" cache_creation="{'ephemeral_5m_input_tokens': 502, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_014HWdym7KpApu1M1QpKKzkp">
+    <param name="command">uv run ruff format src/erk/core/fast_llm.py tests/core/test_fast_llm.py</param>
+    <param name="description">Format files with ruff</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="502" cache_read_input_tokens="50641" cache_creation="{'ephemeral_5m_input_tokens': 502, 'ephemeral_1h_input_tokens': 0}" output_tokens="125" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014HWdym7KpApu1M1QpKKzkp">
+2 files reformatted
+  </tool_result>
+  <assistant>Now let me verify everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1206" cache_read_input_tokens="51143" cache_creation="{'ephemeral_5m_input_tokens': 1206, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01JgnrJ6Su5yL476pRmY5pVF">
+    <param name="description">Verify all CI checks pass</param>
+    <param name="prompt">Run `uv run pytest tests/core/test_fast_llm.py -v &amp;&amp; uv run ty check src/erk/core/fast_llm...[truncated 98 chars]...re/fast_llm.py tests/core/test_fast_llm.py` and report all results. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1206" cache_read_input_tokens="51143" cache_creation="{'ephemeral_5m_input_tokens': 1206, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JgnrJ6Su5yL476pRmY5pVF">
+Perfect! All checks passed. Here are the results:
+
+## Test Results
+
+**pytest passed:** 6 passed in 0.82s
+- File: `/home/runner/work/erk/erk/tests/core/test_fast_llm.py`
+- All 6 tests executed successfully
+
+## Type Checking
+
+**ty check passed:** All checks passed!
+- File: `/home/runner/work/erk/erk/src/erk/core/fast_llm.py`
+- No type errors detected
+
+## Linting
+
+**ruff check passed:** All checks passed!
+- Files: `/home/runner/work/erk/erk/src/erk/core/fast_llm.py` and `/home/runner/work/erk/erk/tests/core/test_fast_llm.py`
+- No linting violations
+
+## Code Formatting
+
+**ruff format check passed:** 2 files already formatted
+- Files: `/home/runner/work/erk/erk/src/erk/core/fast_llm.py` and `/home/runner/work/erk/erk/tests/core/test_fast_llm.py`
+- Both files conform to Ruff formatting standards
+
+**Summary:** All quality checks passed successfully with no issues to report.
+agentId: aa53c54 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+All CI checks pass. Now let me submit the PR:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="661" cache_read_input_tokens="52349" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01TcKu3nnzdX5RDgc3Bb4etN">
+    <param name="todos">[{'content': 'Add Claude CLI fallback in src/erk/core/fast_llm.py', 'status': 'completed',...[truncated 300 chars]...ation'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="661" cache_read_input_tokens="52349" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="219" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TcKu3nnzdX5RDgc3Bb4etN">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Vg3A2HH8Avr6oR29N6CaTc">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="53010" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Vg3A2HH8Avr6oR29N6CaTc">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8864 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8864
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (5,215 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8864
+  Branch:      plnd/fallback-claude-cli-llm-03-06-1435 → master
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UGZMEWfqqhSJQAReDohjMB">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="53273" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01REDBfbvtJZ3kV3MoS73G7N">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="53273" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UGZMEWfqqhSJQAReDohjMB">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8864
+}
+  </tool_result>
+  <tool_result tool="toolu_01REDBfbvtJZ3kV3MoS73G7N">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01DVENybXu1canZnHum3Qixh">
+    <param name="todos">[{'content': 'Add Claude CLI fallback in src/erk/core/fast_llm.py', 'status': 'completed',...[truncated 298 chars]...ication'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="53663" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="202" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DVENybXu1canZnHum3Qixh">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's the summary:
+
+**PR #8864**: https://github.com/dagster-io/erk/pull/8864
+
+**Changes made:**
+
+- **`src/erk/core/fast_llm.py`** — Added `_call_claude_cli()` function that falls back to `claude --print` when `ANTHROPIC_API_KEY` is unavailable. Uses LBYL pattern (`shutil.which` check, then `subprocess.run` with `check=False`), `build_claude_subprocess_env()` for env stripping, and `--no-session-persistence` per subprocess wrapper conventions.
+
+- **`tests/core/test_fast_llm.py`** — Updated existing test to also mock `shutil.which` (since the fallback now intercepts the no-key case). Added 2 new tests: CLI fallback success path and CLI fallback failure path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="53911" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
