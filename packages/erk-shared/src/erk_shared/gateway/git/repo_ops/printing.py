@@ -22,3 +22,7 @@ class PrintingGitRepoOps(PrintingBase, GitRepoOps):
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Query operation (read-only, no printing)."""
         return self._wrapped.get_git_common_dir(cwd)
+
+    def get_git_dir(self, cwd: Path) -> Path | None:
+        """Query operation (read-only, no printing)."""
+        return self._wrapped.get_git_dir(cwd)

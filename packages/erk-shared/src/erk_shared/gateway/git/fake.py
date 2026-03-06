@@ -308,11 +308,15 @@ class FakeGit(Git):
         self._config_sets_records: list[ConfigSetRecord] = []
         self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
 
+        # Per-worktree git dirs (empty by default; get_git_dir falls back to common dir)
+        self._git_dirs: dict[Path, Path] = {}
+
         # Repo operations subgateway
         self._repo_gateway = FakeGitRepoOps()
         self._repo_gateway.link_state(
             repository_roots=self._repository_roots,
             git_common_dirs=self._git_common_dirs,
+            git_dirs=self._git_dirs,
             worktrees=self._worktrees,
         )
 

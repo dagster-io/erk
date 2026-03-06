@@ -41,3 +41,23 @@ class RealGitRepoOps(GitRepoOps):
             git_dir = cwd / git_dir
 
         return git_dir.resolve()
+
+    def get_git_dir(self, cwd: Path) -> Path | None:
+        """Get the per-worktree git directory."""
+        import subprocess
+
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-dir"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+
+        git_dir = Path(result.stdout.strip())
+        if not git_dir.is_absolute():
+            git_dir = cwd / git_dir
+
+        return git_dir.resolve()
