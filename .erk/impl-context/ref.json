@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Split test_capabilities.py into subpackage"
+}
