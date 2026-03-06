@@ -44,25 +44,25 @@ This command:
 When remote changes have been pushed (e.g., by CI, remote agents, or teammates), sync your local branch:
 
 ```bash
-# Use the automated divergence resolver (recommended)
-/erk:reconcile-with-remote
+# Use the automated divergence fixer (recommended)
+/erk:diverge-fix
 
 # Or via CLI
-erk pr reconcile-with-remote --dangerous
+erk pr diverge-fix --dangerous
 
 # Git-only sync (without Graphite)
 git fetch origin && git rebase origin/<branch>
 ```
 
-**Warning**: The `--dangerous` flag is required because syncing can rewrite history. Use `/erk:reconcile-with-remote` if you're unsure about the sync strategy.
+**Warning**: The `--dangerous` flag is required because syncing can rewrite history. Use `/erk:diverge-fix` if you're unsure about the sync strategy.
 
 ### When Divergence Occurs
 
 If your local branch has diverged from remote:
 
 ```bash
-# Use the automated divergence resolver
-/erk:reconcile-with-remote
+# Use the automated divergence fixer
+/erk:diverge-fix
 ```
 
 This command analyzes the divergence and chooses the appropriate sync strategy.
@@ -138,10 +138,10 @@ The `erk land` command:
 | Address my PR's comments  | `erk pr co 123` → `/erk:pr-address` → submit                               |
 | Take over remote agent PR | `erk pr co 123` → make changes → submit                                    |
 | Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit                         |
-| Sync after force push     | `/erk:reconcile-with-remote` or `erk pr reconcile-with-remote --dangerous` |
+| Sync after force push     | `/erk:diverge-fix` or `erk pr diverge-fix --dangerous` |
 
 ## See Also
 
 - [Run Remote Execution](remote-execution.md) - When PRs come from remote agents
 - [Resolve Merge Conflicts](conflict-resolution.md) - If sync causes conflicts
-- [pr-reconcile-with-remote](../learned/cli/commands/pr-reconcile-with-remote.md) - Divergence resolution details
+- [pr-diverge-fix](../learned/cli/commands/pr-diverge-fix.md) - Divergence resolution details

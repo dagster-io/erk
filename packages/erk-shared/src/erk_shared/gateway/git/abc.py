@@ -61,6 +61,7 @@ class BranchSyncInfo:
     upstream: str | None  # None if no tracking branch
     ahead: int
     behind: int
+    gone: bool = False  # True if upstream tracking branch has been deleted
 
 
 @dataclass(frozen=True)

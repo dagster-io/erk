@@ -42,6 +42,117 @@ if TYPE_CHECKING:
     from erk.cli.commands.land_pipeline import LandState
 
 
+def _create_learn_pr_for_merged_branch(
+    ctx: ErkContext,
+    *,
+    plan_id: str,
+    merged_pr_number: int,
+    main_repo_root: Path,
+    cwd: Path,
+) -> None:
+    """Create learn PR for a branch merged outside erk land.
+
+    Thin wrapper around the same learn PR internals used by the land pipeline,
+    but constructs the needed state locally without requiring a full LandState.
+
+    Fire-and-forget: raises on error (caller should catch).
+
+    Args:
+        ctx: ErkContext
+        plan_id: Plan identifier string
+        merged_pr_number: The PR number that was merged
+        main_repo_root: Main repository root
+        cwd: Current working directory
+    """
+    # Check config
+    if not _should_create_learn_pr(ctx):
+        return
+
+    # Fetch plan to check labels — skip learn plans (cycle prevention)
+    plan_result = ctx.plan_store.get_plan(main_repo_root, plan_id)
+    if isinstance(plan_result, PlanNotFound):
+        return
+    if "erk-learn" in plan_result.labels:
+        return
+
+    # Discover sessions for the plan
+    sessions = ctx.plan_backend.find_sessions_for_plan(main_repo_root, plan_id)
+    all_session_ids = sessions.all_session_ids()
+
+    # Log session discovery summary and collect XML files for embedding
+    xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+
+    if not xml_files:
+        if not all_session_ids:
+            detail = " (no sessions were tracked for this plan)"
+        else:
+            detail = " (sessions found but no XML could be extracted)"
+        user_output(
+            click.style("\u2139", fg="blue")
+            + f" Skipping learn plan for #{plan_id}: no session material found"
+            + detail
+        )
+        return
+
+    # Build learn plan body
+    session_lines = [f"- `{sid}`" for sid in all_session_ids]
+    session_section = "\n".join(session_lines)
+    plan_content = (
+        f"# Learn: {plan_result.title}\n\n"
+        f"Source plan: #{plan_id}\n"
+        f"Merged PR: #{merged_pr_number}\n\n"
+        f"## Sessions\n\n{session_section}"
+    )
+
+    # Generate branch name with LLM slug
+    learn_title = f"Learn: {plan_result.title}"
+    slug = generate_branch_slug(ctx.prompt_executor, learn_title)
+    branch_name = generate_planned_pr_branch_name(slug, ctx.time.now(), objective_id=None)
+
+    # Build deterministic summary
+    summary = (
+        f'Learn plan for "{plan_result.title}" (PR #{merged_pr_number}). '
+        f"Captures implementation insights from {len(all_session_ids)} session(s)."
+    )
+
+    # Create the learn plan as a draft PR
+    result = create_plan_draft_pr(
+        git=ctx.git,
+        github=ctx.github,
+        github_issues=ctx.issues,
+        branch_manager=ctx.branch_manager,
+        time=ctx.time,
+        repo_root=main_repo_root,
+        cwd=cwd,
+        plan_content=plan_content,
+        branch_name=branch_name,
+        title=learn_title,
+        labels=["erk-pr", "erk-learn"],
+        source_repo=None,
+        objective_id=None,
+        created_from_session=None,
+        created_from_workflow_run_url=None,
+        learned_from_issue=int(plan_id),
+        summary=summary,
+        extra_files=xml_files or None,
+    )
+
+    if result.success:
+        user_output(
+            click.style("\u2713", fg="green")
+            + f" Created learn plan #{result.plan_number} for plan #{plan_id}"
+        )
+        if result.plan_url:
+            user_output(f"  {result.plan_url}")
+        else:
+            user_output("  (no plan URL available)")
+        _log_learn_pr_files(plan_content=plan_content, xml_files=xml_files)
+    elif result.error:
+        user_output(
+            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+        )
+
+
 @dataclass(frozen=True)
 class SessionStats:
     """Preprocessing stats for a single session."""

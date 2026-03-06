@@ -31,6 +31,7 @@ from erk.cli.commands.pr import pr_group
 from erk.cli.commands.pr.list_cmd import dash
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.cli.commands.project import project_group
+from erk.cli.commands.reconcile_cmd import reconcile
 from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
@@ -191,6 +192,7 @@ cli.add_command(down_cmd)
 register_with_aliases(cli, implement)  # Has @alias("impl")
 cli.add_command(init_group)
 cli.add_command(land)
+cli.add_command(reconcile)
 if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
     from erk.cli.commands.learn.learn_cmd import learn_cmd
 

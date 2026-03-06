@@ -1787,7 +1787,7 @@ def test_pr_submit_graphite_flow_detects_remote_divergence() -> None:
         assert result.exit_code != 0
         assert "behind remote by 2 commit(s)" in result.output
         assert "ahead by 1 commit(s)" in result.output
-        assert "erk pr reconcile-with-remote" in result.output
+        assert "erk pr diverge-fix" in result.output
         assert "erk pr submit -f" in result.output
         # gt submit should never have been called
         assert len(graphite.submit_stack_calls) == 0

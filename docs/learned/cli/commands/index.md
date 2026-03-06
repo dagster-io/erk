@@ -13,11 +13,11 @@ Reference documentation for specific erk CLI commands.
 
 ## Documents in This Category
 
-### erk pr reconcile-with-remote
+### erk pr diverge-fix
 
-**File:** [pr-reconcile-with-remote.md](pr-reconcile-with-remote.md)
+**File:** [pr-diverge-fix.md](pr-diverge-fix.md)
 
-Reconciles a diverged local branch with its remote tracking branch using Claude.
+Fixes a diverged local branch with its remote tracking branch using Claude.
 
 ## Related Topics
 

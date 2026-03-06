@@ -43,6 +43,10 @@ class DryRunGitRemoteOps(GitRemoteOps):
     # Mutation Operations (no-ops in dry-run mode)
     # ============================================================================
 
+    def fetch_prune(self, repo_root: Path, remote: str) -> None:
+        """No-op for fetch --prune in dry-run mode."""
+        pass
+
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """No-op for fetching branch in dry-run mode."""
         # Do nothing - prevents actual fetch execution

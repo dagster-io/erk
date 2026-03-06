@@ -74,7 +74,7 @@ Plan and PR operations are under the `erk pr` group:
 | `rebase`                | Fix merge conflicts with AI resolution              |
 | `rewrite`               | Squash, regenerate commit message, push             |
 | `sync`                  | Synchronize current PR branch with remote base      |
-| `reconcile-with-remote` | Reconcile branch with remote and resolve divergence |
+| `diverge-fix`           | Fix branch divergence with remote                   |
 
 ### Grouped Commands
 
