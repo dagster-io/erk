@@ -9,7 +9,6 @@ the erk-plan label — just an OPEN PR.
 """
 
 import json
-import logging
 from pathlib import Path
 
 import click
@@ -19,6 +18,7 @@ from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import DISPATCH_WORKFLOW_NAME
 from erk_shared.context.helpers import (
+    require_branch_manager,
     require_context,
     require_git,
     require_github,
@@ -34,9 +34,6 @@ from erk_shared.gateway.github.parsing import (
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_context import build_impl_context_files
 from erk_shared.output.output import user_output
-from erk_shared.subprocess_utils import run_subprocess_with_context
-
-logger = logging.getLogger(__name__)
 
 
 @click.command(name="incremental-dispatch")
@@ -131,17 +128,17 @@ def incremental_dispatch(
         message=f"Add incremental plan for PR #{pr_number}",
     )
 
-    # If branch is checked out, sync index for committed files to avoid stale staged changes
+    # Update Graphite tracking after plumbing commit advanced the branch
+    branch_manager = require_branch_manager(ctx)
+    branch_manager.retrack_branch(repo_root, branch_name)
+
+    # If branch is checked out, write files to disk and stage so git status is clean
     if checked_out_path is not None:
-        try:
-            impl_context_paths = list(files.keys())
-            run_subprocess_with_context(
-                cmd=["git", "checkout", "HEAD", "--"] + impl_context_paths,
-                operation_context="sync index after plumbing commit",
-                cwd=checked_out_path,
-            )
-        except Exception:
-            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+        for rel_path, content in files.items():
+            abs_path = checked_out_path / rel_path
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_text(content, encoding="utf-8")
+        git.commit.stage_files(checked_out_path, list(files.keys()), force=True)
 
     # Push
     push_result = git.remote.push_to_remote(

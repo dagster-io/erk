@@ -143,16 +143,12 @@ def create_impl_context_from_pr(
 
     pr_result = github.get_pr(repo_root, plan_number)
     if isinstance(pr_result, PRNotFound):
-        click.echo(
-            json.dumps(
-                {
-                    "success": False,
-                    "error": "plan_not_found",
-                    "message": f"Could not fetch plan for PR #{plan_number}: PR not found.",
-                }
-            ),
-            err=True,
-        )
+        error_output = {
+            "success": False,
+            "error": "plan_not_found",
+            "message": f"Could not fetch plan for PR #{plan_number}: PR not found.",
+        }
+        click.echo(json.dumps(error_output), err=True)
         raise SystemExit(1)
 
     pr_url = pr_result.url
