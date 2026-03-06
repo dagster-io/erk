@@ -18,6 +18,7 @@ from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import DISPATCH_WORKFLOW_NAME
 from erk_shared.context.helpers import (
+    require_context,
     require_git,
     require_github,
     require_repo_root,
@@ -66,9 +67,7 @@ def incremental_dispatch(
     output_format: str,
 ) -> None:
     """Dispatch a local plan against an existing PR for remote implementation."""
-    from erk.core.context import ErkContext
-
-    erk_ctx: ErkContext = ctx.obj
+    erk_ctx = require_context(ctx)
     repo_root = require_repo_root(ctx)
     git = require_git(ctx)
     github = require_github(ctx)
@@ -97,8 +96,7 @@ def incremental_dispatch(
     # Sync local branch ref to remote (no checkout required)
     user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
     git.remote.fetch_branch(repo_root, "origin", branch_name)
-    worktree_with_branch = git.worktree.is_branch_checked_out(repo_root, branch_name)
-    if worktree_with_branch is None:
+    if git.worktree.is_branch_checked_out(repo_root, branch_name) is None:
         git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
 
     # Build and commit impl-context files to branch
