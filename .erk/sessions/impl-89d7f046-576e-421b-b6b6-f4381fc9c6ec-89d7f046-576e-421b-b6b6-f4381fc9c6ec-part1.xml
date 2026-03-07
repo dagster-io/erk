@@ -1,0 +1,1258 @@
+<session>
+  <meta branch="plnd/O8832-no-repo-infrastructu-03-06-1636" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8880&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8880` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8880.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28401" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28401, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_014qxDvL8S3raFoSYCHCAD8j">
+    <param name="command">erk exec setup-impl --issue 8880</param>
+    <param name="description">Set up implementation for plan #8880</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28401" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28401, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014qxDvL8S3raFoSYCHCAD8j">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O8832-no-repo-infrastructu-03-06-1636", "plan_number": 8880, "plan_url": "https://github.com/dagster-io/erk/pull/8880", "branch": "plnd/O8832-no-repo-infrastructu-03-06-1636", "plan_title": "[erk-plan] Plan: No-Repo Infrastructure (Objective #8832, Node 1.4)", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8880, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+⚠️  Your erk (0.9.8) doesn't match required (0.9.7)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+Already on plan branch 'plnd/O8832-no-repo-infrastructu-03-06-1636', teleporting from remote...
+  </tool_result>
+  <assistant>Setup complete. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="28401" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BkDPLKDESWHjDDdREr8seQ">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O8832-no-repo-infrastructu-03-06-1636/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="28401" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="106" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BkDPLKDESWHjDDdREr8seQ">
+     1→# Plan: No-Repo Infrastructure (Objective #8832, Node 1.4)
+     2→
+     3→## Context
+     4→
+     5→Objective #8832 decouples CLI commands from the git repo requirement. Nodes 1.1–1.3 (PR #8835) created `HttpClient`, `RemoteGitHub` gateway, and the `--repo` flag on `one-shot`. Node 1.4 creates the foundational infrastructure that all subsequent nodes depend on: a `@no_repo_required` decorator for Click commands and sentinel gateway implementations (`NoRepoGit`, `NoRepoGitHub`) that raise descriptive errors when repo-dependent operations are accidentally called outside a repo context.
+     6→
+     7→Currently, `create_context()` constructs `RealGit` and `RealGitHub` even when `repo` is `NoRepoSentinel`. This means commands running outside a repo get cryptic subprocess failures instead of clear error messages. The sentinels fix this.
+     8→
+     9→## Design Decisions
+    10→
+    11→1. **Follow GraphiteDisabled pattern** — Sentinels are `@dataclass(frozen=True)` classes implementing the gateway ABCs. All methods raise `NoRepoError`.
+    12→2. **Git subgateway properties raise immediately** — Since Git is a pure facade with 10 property accessors, NoRepoGit raises `NoRepoError` on property access. No need to create 10 separate NoRepo subgateway classes.
+    13→3. **NoRepoGitHub returns NoRepoGitHubIssues for `.issues`** — The `issues` property returns a sentinel (not raises) because `PlannedPRBackend` and other services are constructed with `issues` as a separate parameter during context creation. The sentinel raises on actual method calls.
+    14→4. **Shared `NoRepoError` exception** — Single exception class used by all sentinels, with descriptive messages explaining what happened and how to fix it.
+    15→5. **`@no_repo_required` is a simple Click decorator** — Sets `command.no_repo_required = True`, inspectable by CLI infrastructure. No commands are converted in this PR — that's phases 2/3.
+    16→
+    17→## Implementation
+    18→
+    19→### Phase 1: Sentinel Infrastructure (erk-shared)
+    20→
+    21→#### 1A. Create `NoRepoError` exception
+    22→**File:** `packages/erk-shared/src/erk_shared/gateway/no_repo.py` (new)
+    23→
+    24→```python
+    25→class NoRepoError(Exception):
+    26→    """Raised when a repo-dependent gateway operation is called outside a git repository."""
+    27→    def __init__(self, operation: str) -&gt; None:
+    28→        super().__init__(
+    29→            f"{operation} requires a local git repository.\n\n"
+    30→            "You are running outside a git repository. Either:\n"
+
+... [138 lines omitted] ...
+
+    40→- All 10 subgateway properties (`worktree`, `branch`, `remote`, `commit`, `status`, `rebase`, `tag`, `repo`, `analysis`, `config`) raise `NoRepoError` on access
+    41→- Pattern: `raise NoRepoError("Git worktree operations")`
+    47→- All ~17 methods raise `NoRepoError`
+    55→- All ~30 other methods raise `NoRepoError`
+    80→- Services like `plan_store`, `plan_list_service`, `objective_list_service` get the sentinels — they'll raise clear errors if used
+   110→- Test each subgateway property access raises `NoRepoError`
+   111→- Test error message includes operation name and remediation steps
+   117→- Test representative methods raise `NoRepoError`
+   118→- Test `NoRepoGitHubIssues` methods raise `NoRepoError`
+   132→- Test accessing `ctx.git.branch` raises `NoRepoError`
+   138→| `packages/erk-shared/src/erk_shared/gateway/no_repo.py` | Create (NoRepoError) |
+   151→- **GraphiteDisabled** (`packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py`): Sentinel pattern with `@dataclass(frozen=True)`, reason enum, descriptive errors
+   160→2. Run `ty` — no type errors from sentinel implementations
+   161→3. Manual: Run `erk` from a non-git directory → should get clear `NoRepoError` messages instead of subprocess failures when commands try to use git/github
+  </tool_result>
+  <assistant>Now let me explore the existing patterns and ABCs I need to implement. I'll load relevant documentation and explore the codebase in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3211" cache_read_input_tokens="28811" cache_creation="{'ephemeral_5m_input_tokens': 3211, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01QdVGPhMhEAEQtrYkexE5mD">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3211" cache_read_input_tokens="28811" cache_creation="{'ephemeral_5m_input_tokens': 3211, 'ephemeral_1h_input_tokens': 0}" output_tokens="85" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QdVGPhMhEAEQtrYkexE5mD">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the core dignified-python rules and detect the Python version, then explore the key patterns I need to follow.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="905" cache_read_input_tokens="32022" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012KjEYoindWF91vE1qJRrt1">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="905" cache_read_input_tokens="32022" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CLrqc22ojZ3nV1hk4Az44e">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/references/interfaces.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="905" cache_read_input_tokens="32022" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_011Cyvv5UTsn4UXEkCtTTu1i">
+    <param name="description">Explore sentinel &amp; ABC patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 842 chars]...
+Report the FULL contents of files 1-6 (critical for implementation), and file 7 results.
+</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="905" cache_read_input_tokens="32022" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01N2DkXyn2zFDotdQahn1et8">
+    <param name="pattern">**/pyproject.toml</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="905" cache_read_input_tokens="32022" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012KjEYoindWF91vE1qJRrt1">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [491 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   103→The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+   115→- `.resolve()` raises `OSError` for non-existent paths
+   116→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   117→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   132→# WRONG: Using exceptions for path validation
+   137→except (OSError, ValueError):
+   177→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   208→**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+   217→# CORRECT (rare exception): Resolving genuine collision
+   469→    log.warning("Non-numeric plan_id")
+   483→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   510→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01CLrqc22ojZ3nV1hk4Az44e">
+     1→---
+     2→description: ABC vs Protocol decision guide, dependency injection patterns, and complete DI examples.
+     3→---
+     4→
+     5→# Interface Design Reference
+     6→
+     7→**Read when**: Creating ABC/Protocol classes, writing @abstractmethod, designing gateway interfaces
+     8→
+     9→---
+    10→
+    11→## ABC vs Protocol: Choosing the Right Interface
+    12→
+    13→**ABCs (nominal typing)** and **Protocols (structural typing)** serve different purposes. Choose based on ownership and coupling needs.
+    14→
+    15→| Use Case                                  | Recommended | Why                                                  |
+    16→| ----------------------------------------- | ----------- | ---------------------------------------------------- |
+    17→| Internal interfaces you control           | ABC         | Explicit enforcement, runtime validation, code reuse |
+    18→| Third-party library boundaries            | Protocol    | No inheritance required, loose coupling              |
+    19→| Plugin systems with isinstance checks     | ABC         | Reliable runtime type validation                     |
+    20→| Minimal interface contracts (1-2 methods) | Protocol    | Less boilerplate, focused contracts                  |
+    21→
+    22→**Default for erk internal code: ABC. Default for external library facades: Protocol.**
+    23→
+    24→---
+    25→
+    26→## ABC Interface Pattern
+    27→
+    28→```python
+    29→# CORRECT: Use ABC for interfaces
+    30→from abc import ABC, abstractmethod
+
+... [158 lines omitted] ...
+
+    58→2. **Runtime validation** - Errors at instantiation if abstract methods missing
+  </tool_result>
+  <tool_result tool="toolu_011Cyvv5UTsn4UXEkCtTTu1i">
+Async agent launched successfully.
+agentId: a166de6 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01N2DkXyn2zFDotdQahn1et8">
+/home/runner/work/erk/erk/packages/erk-shared/pyproject.toml
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QcreqEbzSMFtAMeiG2kDo4">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/pyproject.toml</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8874" cache_read_input_tokens="32927" cache_creation="{'ephemeral_5m_input_tokens': 8874, 'ephemeral_1h_input_tokens': 0}" output_tokens="94" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QcreqEbzSMFtAMeiG2kDo4">
+     1→[project]
+     2→name = "erk-shared"
+     3→version = "0.9.7"
+     4→description = "Shared utilities and interfaces for erk and erk-kits"
+     5→readme = "README.md"
+     6→requires-python = "&gt;=3.11"
+     7→dependencies = [
+     8→    "pyyaml&gt;=6.0",
+     9→    "python-frontmatter&gt;=1.0.0",
+    10→    "click&gt;=8.1.7",
+    11→    "httpx&gt;=0.27.0",
+    12→    "tomlkit&gt;=0.12.0",
+    13→]
+    14→
+    15→[build-system]
+    16→requires = ["hatchling"]
+    17→build-backend = "hatchling.build"
+    18→
+    19→[tool.hatch.build.targets.wheel]
+    20→packages = ["src/erk_shared"]
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Python 3.11. Let me load the version-specific file and get the explore agent results.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="41801" cache_creation="{'ephemeral_5m_input_tokens': 478, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PbFe3du1QdxMPxZoNg1C8A">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.11.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="41801" cache_creation="{'ephemeral_5m_input_tokens': 478, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01L21dTmMm4fRTjKH7onyc4U">
+    <param name="task_id">a166de6</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="41801" cache_creation="{'ephemeral_5m_input_tokens': 478, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PbFe3du1QdxMPxZoNg1C8A">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.11
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.11.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.11 builds on 3.10's type syntax with the addition of the `Self` type (PEP 673), making method chaining and builder patterns significantly cleaner. All modern syntax from 3.10 continues to work.
+    11→
+    12→**What's new in 3.11:**
+    13→
+    14→- `Self` type for self-returning methods (PEP 673)
+    15→- Variadic generics with TypeVarTuple (PEP 646)
+    16→- Significantly improved error messages
+    17→
+    18→**Available from 3.10:**
+    19→
+    20→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    21→- Union types with `|` operator (PEP 604)
+    22→- Optional with `X | None`
+    23→
+    24→**What you need from typing module:**
+    25→
+    26→- `Self` for self-returning methods (NEW)
+    27→- `TypeVar` for generic functions/classes
+    28→- `Generic` for generic classes
+    29→- `Protocol` for structural typing (rare - prefer ABC)
+    30→- `TYPE_CHECKING` for conditional imports
+
+... [512 lines omitted] ...
+
+   370→            raise ValueError("FROM table not specified")
+   412→            raise FileNotFoundError(f"Config not found: {path}")
+   473→All code should pass type checking without errors.
+   528→2. **Enjoy improved error messages** (no code changes needed)
+  </tool_result>
+  <tool_result tool="toolu_01L21dTmMm4fRTjKH7onyc4U">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a166de6&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/index.md"}
+[Tool: Glob] {"pattern":"**/no_repo.py"}
+[Tool: Glob] {"pattern":"**/no_repo.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/context.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/context.py"}
+
+--- RESULT ---
+Perfect! I've successfully read all the critical source files. Let me compile a comprehensive report of the patterns and findings.
+
+## COMPREHENSIVE ANALYSIS REPORT
+
+### 1. GraphiteDisabled Sentinel Pattern (File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py`)
+
+**FULL CONTENTS PROVIDED ABOVE (Lines 1-99)**
+
+This is an excellent pattern for implementing no-repo sentinels. Key characteristics:
+
+... [170 lines omitted] ...
+
+- **Mutating methods raise helpful errors**: `GraphiteDisabledError` exception with actionable messages
+  - Errors differ based on `GraphiteDisabledReason` (config disabled vs not installed)
+    except ValueError:
+   - Mutating → raise helpful exceptions with actionable messages
+  </tool_result>
+  <assistant>Excellent. I have a thorough understanding of the codebase patterns. Let me now read the actual source files I need to implement against, and set up my task tracking.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8135" cache_read_input_tokens="42279" cache_creation="{'ephemeral_5m_input_tokens': 8135, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_017dtXJ9qYizHvhAW36iuURq">
+    <param name="todos">[{'content': 'Phase 1A: Create NoRepoError exception', 'status': 'pending', 'activeForm': ...[truncated 1123 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8135" cache_read_input_tokens="42279" cache_creation="{'ephemeral_5m_input_tokens': 8135, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017dtXJ9qYizHvhAW36iuURq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me read the key source files I need to understand for implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="50414" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PYgz7gWaZGQZVDu49tECwi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="50414" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JFbtdqwok4nRsPAAADSFU8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="50414" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HBhKjg7otqf8N9nT65j2hQ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="50414" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DYDfm47jarprkgibosR3tH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="50414" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PYgz7gWaZGQZVDu49tECwi">
+     1→"""GraphiteDisabled sentinel for when Graphite is not available.
+     2→
+     3→This module provides a sentinel implementation of the Graphite ABC that
+     4→raises helpful errors on mutating operations while allowing read-only
+     5→operations to return empty/no-op results.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from enum import Enum
+    10→from pathlib import Path
+    11→
+    12→from erk_shared.gateway.git.abc import Git
+    13→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+    14→from erk_shared.gateway.graphite.abc import Graphite
+    15→from erk_shared.gateway.graphite.types import BranchMetadata
+    16→
+    17→
+    18→class GraphiteDisabledReason(Enum):
+    19→    """Reason why Graphite is disabled."""
+    20→
+    21→    CONFIG_DISABLED = "config_disabled"
+    22→    NOT_INSTALLED = "not_installed"
+    23→
+    24→
+    25→class GraphiteDisabledError(Exception):
+    26→    """Raised when attempting mutating Graphite operations while disabled."""
+    27→
+    28→    def __init__(self, reason: GraphiteDisabledReason) -&gt; None:
+    29→        self.reason = reason
+    30→        if reason == GraphiteDisabledReason.CONFIG_DISABLED:
+
+... [74 lines omitted] ...
+
+    52→    Mutating methods raise GraphiteDisabledError with helpful messages.
+    81→        """Raise error - squash_branch is a mutating operation."""
+    82→        raise GraphiteDisabledError(self.reason)
+    93→        """Raise error - submit_stack is a mutating operation."""
+    94→        raise GraphiteDisabledError(self.reason)
+  </tool_result>
+  <tool_result tool="toolu_01JFbtdqwok4nRsPAAADSFU8">
+     1→"""High-level git operations interface.
+     2→
+     3→This module provides a clean abstraction over git subprocess calls, making the
+     4→codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Git: Abstract base class defining the interface
+     8→- RealGit: Production implementation using subprocess
+     9→- Standalone functions: Convenience wrappers delegating to module singleton
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→from abc import ABC, abstractmethod
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING, NamedTuple
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→    from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    22→    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    23→    from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    24→    from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    25→    from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    26→    from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    27→    from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    28→    from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+    29→    from erk_shared.gateway.git.worktree.abc import Worktree
+    30→
+
+... [141 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01DYDfm47jarprkgibosR3tH">
+     1→"""Abstract interface for GitHub issue operations."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.github.issues.types import (
+     7→    CreateIssueResult,
+     8→    IssueComment,
+     9→    IssueInfo,
+    10→    IssueNotFound,
+    11→    PRReference,
+    12→)
+    13→from erk_shared.gateway.github.types import BodyContent
+    14→
+    15→
+    16→class GitHubIssues(ABC):
+    17→    """Abstract interface for GitHub issue operations.
+    18→
+    19→    All implementations (real and fake) must implement this interface.
+    20→    """
+    21→
+    22→    @abstractmethod
+    23→    def create_issue(
+    24→        self, *, repo_root: Path, title: str, body: str, labels: list[str]
+    25→    ) -&gt; CreateIssueResult:
+    26→        """Create a new GitHub issue.
+    27→
+    28→        Args:
+    29→            repo_root: Repository root directory
+    30→            title: Issue title
+
+... [321 lines omitted] ...
+
+    38→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+    54→            RuntimeError: If gh CLI fails (not installed, not authenticated)
+    70→            RuntimeError: If gh CLI fails (not installed, not authenticated)
+    87→            RuntimeError: If gh CLI fails or issue not found
+   104→            RuntimeError: If gh CLI fails or issue not found
+   129→            RuntimeError: If gh CLI fails
+   145→            RuntimeError: If gh CLI fails or issue not found
+   161→            RuntimeError: If gh CLI fails or comment not found
+   177→            RuntimeError: If gh CLI fails or issue not found
+   194→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+   210→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+   224→            RuntimeError: If gh CLI fails or issue not found
+   238→            RuntimeError: If gh CLI fails or issue not found
+   251→            RuntimeError: If gh CLI fails or issue not found
+   308→            RuntimeError: If gh CLI fails (not installed, not authenticated,
+   323→            RuntimeError: If gh CLI fails or issue not found
+   342→            RuntimeError: If gh CLI fails (not installed, not authenticated,
+  </tool_result>
+  <tool_result tool="toolu_01HBhKjg7otqf8N9nT65j2hQ">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class GitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [808 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+   242→        2. Failed completed runs (failures are more actionable than successes)
+   427→            Empty dict if no PRs match or on API failure.
+   479→            RuntimeError: If gh command fails
+   492→            RuntimeError: If gh command fails
+   508→            RuntimeError: If gh command fails
+   527→            RuntimeError: If gh command fails
+   541→            RuntimeError: If gh command fails
+   697→            RuntimeError: If update fails
+   737→            False if deletion failed (e.g., protected branch)
+   756→            Empty list if no PRs match or on API failure.
+   825→            state: Status state - one of "success", "failure", "pending", "error"
+   830→            True on success, False on failure
+  </tool_result>
+  <assistant>Now let me read the context.py file to understand the wiring:</assistant>
+  <usage input_tokens="3684" cache_creation_input_tokens="13009" cache_read_input_tokens="50956" cache_creation="{'ephemeral_5m_input_tokens': 13009, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XF31MbHQXfGTnMoGMbUMKb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+  </tool_use>
+  <usage input_tokens="3684" cache_creation_input_tokens="13009" cache_read_input_tokens="50956" cache_creation="{'ephemeral_5m_input_tokens': 13009, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XF31MbHQXfGTnMoGMbUMKb">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→import shutil
+     9→from collections.abc import MutableMapping
+    10→from pathlib import Path
+    11→from typing import Any, cast
+    12→
+    13→import click
+    14→import tomlkit
+    15→
+    16→# Re-export types from erk_shared.context and erk.artifacts.paths
+    17→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    18→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    19→from erk.core.codex_prompt_executor import CodexPromptExecutor
+    20→from erk.core.completion import RealCompletion
+    21→from erk.core.prompt_executor import ClaudePromptExecutor
+    22→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    23→from erk.core.script_writer import RealScriptWriter
+    24→from erk.core.services.objective_list_service import RealObjectiveListService
+    25→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    26→from erk.core.shell import RealShell
+    27→
+    28→# Re-export ErkContext from erk_shared for isinstance() compatibility
+    29→# This ensures that both erk CLI and kit commands use the same class identity
+    30→from erk_shared.context.context import ErkContext as ErkContext
+
+... [701 lines omitted] ...
+
+   494→        tuple[Path | None, str | None]: (path, error_message)
+   496→        - If directory deleted: (None, error_message)
+   505→    except (FileNotFoundError, OSError):
+   523→        debug: If True, enable debug mode for error handling (default False)
+   535→    cwd_result, error_msg = safe_cwd()
+   537→        assert error_msg is not None
+   538→        # Emit clear error and exit
+   539→        user_output(click.style("Error: ", fg="red") + error_msg)
+   590→        except ValueError:
+  </tool_result>
+  <assistant>I now have a thorough understanding of all the ABCs and patterns. Let me also check the architecture tripwires since I'm working in gateway code, and check the GitHub issues types:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15184" cache_read_input_tokens="63965" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AA7PFbQHenfGrNcnUiHe89">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15184" cache_read_input_tokens="63965" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KjtqhcWryG18XYyrzqs4Np">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15184" cache_read_input_tokens="63965" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AA7PFbQHenfGrNcnUiHe89">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+
+... [25 lines omitted] ...
+
+    41→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+  </tool_result>
+  <tool_result tool="toolu_01KjtqhcWryG18XYyrzqs4Np">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "adding a new method to Git ABC"
+    11→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    12→  - action: "adding a new method to GitHub ABC"
+    13→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    14→  - action: "adding a new method to Graphite ABC"
+    15→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [772 lines omitted] ...
+
+    31→    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+    42→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   136→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   138→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   140→### Decision: Discriminated Union or Exception?
+   144→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   145→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   146→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   150→- [ ] At least one caller branches on the error and continues with different logic
+   151→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   152→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   156→### Checklist: Use Exceptions When
+   158→- [ ] All callers terminate on failure (extract message and stop)
+   159→- [ ] No caller inspects error type or branches on error content
+   160→- [ ] Use `UserFacingCliError` at CLI boundary
+   166→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   181→**Methods using discriminated unions** (callers branch on error):
+   185→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   186→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   187→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   189→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   191→**Methods using exceptions** (all callers terminate):
+   193→| Method              | Exception      | Why                                                         |
+   195→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   196→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   200→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   207→   - [ ] `real.py` - Return appropriate error types for failure cases
+   209→   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+   212→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   217→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   221→- Updated tests to use `isinstance(result, MergeError)`
+   243→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   251→- When error messages from `get_X()` on missing resources are unclear
+   274→    user_output(f"Error: Issue #{issue_number} not found")
+   353→5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   597→The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   686→**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+   704→1. Run type checker (`ty`) to verify no abstract method errors
+   761→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   763→├── fake.py       # Constructor-injected errors, mutation tracking
+   770→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   771→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   772→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   795→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <assistant>I now have a comprehensive understanding. Important note from the gateway ABC checklist: sentinels like `NoRepoGit`, `NoRepoGitHub`, and `NoRepoGitHubIssues` are NOT the 5-place pattern (abc/real/fake/dry_run/printing) — they are sentinels like `GraphiteDisabled`. They are separate implementations of the ABC, not new methods on the ABC. Let me also quickly check the GitHub issues types I'll need for return types:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14249" cache_read_input_tokens="79149" cache_creation="{'ephemeral_5m_input_tokens': 14249, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01D2g6KJ9Qv3smXgofNrfL64">
+    <param name="command">erk exec impl-signal started --session-id "89d7f046-576e-421b-b6b6-f4381fc9c6ec" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14249" cache_read_input_tokens="79149" cache_creation="{'ephemeral_5m_input_tokens': 14249, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D2g6KJ9Qv3smXgofNrfL64">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8880
+}
+  </tool_result>
+  <assistant>Now let me start implementing. Phase 1A first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="93398" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HdvgayEw6MBg366sEAdrCS">
+    <param name="todos">[{'content': 'Phase 1A: Create NoRepoError exception', 'status': 'in_progress', 'activeFor...[truncated 1127 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="93398" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="477" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HdvgayEw6MBg366sEAdrCS">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019M6pcABbxhUHrRrfNURwrE">
+    <param name="command">ls /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/</param>
+    <param name="description">List gateway directory contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="519" cache_read_input_tokens="93666" cache_creation="{'ephemeral_5m_input_tokens': 519, 'ephemeral_1h_input_tokens': 0}" output_tokens="101" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019M6pcABbxhUHrRrfNURwrE">
+__init__.py
+__pycache__
+agent_docs
+agent_launcher
+branch_manager
+browser
+ci_runner
+claude_installation
+clipboard
+codespace
+codespace_registry
+command_executor
+completion
+console
+erk_installation
+git
+github
+github_admin
+graphite
+gt
+http
+live_display
+parallel
+plan_data_provider
+plan_service
+pr
+remote_github
+shell
+time
+  </tool_result>
+  <tool_use name="Write" id="toolu_01TMbFRpQ98wj2E8Bdi4RVtZ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/no_repo.py</param>
+    <param name="content">"""NoRepoError exception for sentinel gateway operations.
+
+Raised when a repo-dependent ga...[truncated 462 chars]...it repository\n"
+            "  2. Use --repo owner/repo for remote operations"
+        )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="94185" cache_creation="{'ephemeral_5m_input_tokens': 209, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TMbFRpQ98wj2E8Bdi4RVtZ">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/no_repo.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XDz8wtHviT79XJLKEKiMzm">
+    <param name="todos">[{'content': 'Phase 1A: Create NoRepoError exception', 'status': 'completed', 'activeForm'...[truncated 1129 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="94394" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XDz8wtHviT79XJLKEKiMzm">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Phase 1B: Create NoRepoGit sentinel. I need to understand the subgateway types imported by the Git ABC:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="94723" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01WZx9s7E9atHnggSNmMbgJj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/no_repo.py</param>
+    <param name="content">"""NoRepoGit sentinel for when no git repository is available.
+
+All subgateway property ac...[truncated 2227 chars]...rty
+    def config(self) -&gt; GitConfigOps:
+        _raise_no_repo("Git config operations")
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="94723" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="877" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WZx9s7E9atHnggSNmMbgJj">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/no_repo.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_012J72swM5nZW8jLs8GSPGJ7">
+    <param name="todos">[{'content': 'Phase 1A: Create NoRepoError exception', 'status': 'completed', 'activeForm'...[truncated 1131 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="930" cache_read_input_tokens="95229" cache_creation="{'ephemeral_5m_input_tokens': 930, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012J72swM5nZW8jLs8GSPGJ7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Phase 1C: NoRepoGitHubIssues. I need to check existing directory structure and implement all 21 abstract methods:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="96159" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012hp1j7cv2bpP8Pk1CRLrU8">
+    <param name="command">ls /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/</param>
+    <param name="description">List GitHub issues directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="96159" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012hp1j7cv2bpP8Pk1CRLrU8">
+__init__.py
+__pycache__
+abc.py
+dry_run.py
+fake.py
+label_cache.py
+real.py
+types.py
+  </tool_result>
+  <tool_use name="Write" id="toolu_01MbPDFgoL8T5N4BemAjJF8N">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/no_repo.py</param>
+    <param name="content">"""NoRepoGitHubIssues sentinel for when no git repository is available.
+
+All methods raise...[truncated 3550 chars]...int,
+        body: str,
+    ) -&gt; None:
+        _raise_no_repo("Updating GitHub comments")
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="96665" cache_creation="{'ephemeral_5m_input_tokens': 189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1268" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MbPDFgoL8T5N4BemAjJF8N">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/no_repo.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_012erqKygQSfcecodCwC1MLh">
+    <param name="todos">[{'content': 'Phase 1A: Create NoRepoError exception', 'status': 'completed', 'activeForm'...[truncated 1133 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1323" cache_read_input_tokens="96854" cache_creation="{'ephemeral_5m_input_tokens': 1323, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012erqKygQSfcecodCwC1MLh">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Phase 1D: NoRepoGitHub. This has ~30+ methods plus the `issues` property that returns `NoRepoGitHubIssues` (doesn't raise):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="98177" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01Nvs4a7YpWKGG3n3pFFvMW2">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/no_repo.py</param>
+    <param name="content">"""NoRepoGitHub sentinel for when no git repository is available.
+
+The `issues` property r...[truncated 8970 chars]...        description: str,
+    ) -&gt; bool:
+        _raise_no_repo("Creating commit status")
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="98177" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="3085" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Nvs4a7YpWKGG3n3pFFvMW2">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/no_repo.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_019f4WZhpfSNSNQeWAkJiAVa">
+    <param name="todos">[{'content': 'Phase 1A: Create NoRepoError exception', 'status': 'completed', 'activeForm'...[truncated 1135 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3138" cache_read_input_tokens="98683" cache_creation="{'ephemeral_5m_input_tokens': 3138, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019f4WZhpfSNSNQeWAkJiAVa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Phase 2A: Wire sentinels into `create_context()`. I need to modify the no-repo branch in `create_context()` to use the sentinels instead of RealGit/RealGitHub/RealGitHubIssues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="101821" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01V23kf3ZL1xjT6z7hbpx8VB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="offset">555</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="506" cache_read_input_tokens="101821" cache_creation="{'ephemeral_5m_input_tokens': 506, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V23kf3ZL1xjT6z7hbpx8VB">
+   555→        global_config = None
+   556→
+   557→    # 4. Create integration classes (need git for repo discovery)
+   558→    # Create time and console first
+   559→    time: Time = RealTime()
+   560→    console: Console = ScriptConsole() if script else InteractiveConsole()
+   561→    git: Git = RealGit(time)
+   562→
+   563→    # Create Graphite based on config and availability
+   564→    graphite: Graphite
+   565→    graphite_branch_ops: GraphiteBranchOps | None = None
+   566→    if global_config is not None and global_config.use_graphite:
+   567→        # Config says use Graphite - check if gt is installed
+   568→        if shutil.which("gt") is None:
+   569→            graphite = GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED)
+   570→        else:
+   571→            graphite = RealGraphite()
+   572→            graphite_branch_ops = RealGraphiteBranchOps()
+   573→    else:
+   574→        # Graphite disabled by config (or config doesn't exist yet)
+   575→        graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
+   576→
+   577→    # 5. Discover repo (only needs cwd, erk_root, git)
+   578→    # If global_config is None, use placeholder path for repo discovery
+   579→    erk_root = global_config.erk_root if global_config else erk_installation.root() / "worktrees"
+   580→    repo = discover_repo_or_sentinel(cwd, erk_root, git)
+   581→
+   582→    # 6. Fetch repo_info (if in a repo with origin remote)
+   583→    # Note: try-except is acceptable at CLI entry point boundary per LBYL conventions
+   584→    repo_info: RepoInfo | None = None
+
+... [75 lines omitted] ...
+
+   590→        except ValueError:
+  </tool_result>
+</session>
