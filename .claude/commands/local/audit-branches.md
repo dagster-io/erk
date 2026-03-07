@@ -50,30 +50,30 @@ Total: {total_local_branches} local branches, {total_worktrees} worktrees, {tota
 
 **Blocking Worktrees** (if any):
 
-| Worktree | Branch | PR | Status | Action |
-|----------|--------|----|--------|--------|
+| Worktree    | Branch   | PR           | Status     | Action                                          |
+| ----------- | -------- | ------------ | ---------- | ----------------------------------------------- |
 | {slot_name} | {branch} | #{pr_number} | {pr_state} | {is_slot ? "Unassign slot" : "Remove worktree"} |
 
 **Auto-Cleanup** (if any):
 
-| Branch | Reason | Has Remote |
-|--------|--------|------------|
+| Branch   | Reason   | Has Remote   |
+| -------- | -------- | ------------ |
 | {branch} | {reason} | {has_remote} |
 
 **Closed PR Branches** (if any):
 
-| Branch | PR | Status | In Worktree | Graphite |
-|--------|-----|--------|-------------|----------|
+| Branch   | PR           | Status     | In Worktree   | Graphite              |
+| -------- | ------------ | ---------- | ------------- | --------------------- |
 | {branch} | #{pr_number} | {pr_state} | {in_worktree} | {tracked_by_graphite} |
 
 **Pattern Branches** (if any):
 
-For `async_learn`: "{count} async-learn/* branches" with parent PR state breakdown.
+For `async_learn`: "{count} async-learn/\* branches" with parent PR state breakdown.
 
 **Needs Attention** (if any):
 
-| PR | Title | Mergeable | Branch |
-|----|-------|-----------|--------|
+| PR           | Title   | Mergeable   | Branch   |
+| ------------ | ------- | ----------- | -------- |
 | #{pr_number} | {title} | {mergeable} | {branch} |
 
 **Active PRs**: "{count} active open PRs (skipped)"
@@ -85,7 +85,7 @@ Use AskUserQuestion to ask which categories to clean up:
 - "Free all blocking worktrees (unassign slots / remove non-slots)"
 - "Delete all auto-cleanup branches (no unique work)"
 - "Delete all closed-PR branches"
-- "Delete all async-learn/* pattern branches"
+- "Delete all async-learn/\* pattern branches"
 - "Close stale open PRs"
 - "Skip cleanup for now"
 
