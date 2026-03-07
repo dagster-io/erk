@@ -76,4 +76,115 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8893
 }
   </tool_result>
+  <tool_result tool="toolu_01WSZfnxkPrq96ahS89LXWGt">
+{"uploaded": true, "plan_id": 8893}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0182uaGmFQL7ATsHaGkfwdDk">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="92927" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0182uaGmFQL7ATsHaGkfwdDk">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013qqRyBKiCtzpz7PF4CsPR9">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="93260" cache_creation="{'ephemeral_5m_input_tokens': 106, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013qqRyBKiCtzpz7PF4CsPR9">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8893 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8893
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (13,413 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8893
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Be79sjSTw7aHujfRt6kSsJ">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="398" cache_read_input_tokens="93366" cache_creation="{'ephemeral_5m_input_tokens': 398, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015yg46EyJj9u1h3ihweedDc">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="398" cache_read_input_tokens="93366" cache_creation="{'ephemeral_5m_input_tokens': 398, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Be79sjSTw7aHujfRt6kSsJ">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8893
+}
+  </tool_result>
+  <tool_result tool="toolu_015yg46EyJj9u1h3ihweedDc">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_014qtGXbmrVn9k1iiduvk2nA">
+    <param name="todos">[{'content': 'Add _fetch_xmls_from_async_learn_branch() function to land_learn.py', 'statu...[truncated 716 chars]... checks'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="93764" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014qtGXbmrVn9k1iiduvk2nA">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary:
+
+## Summary
+
+**PR #8893**: https://github.com/dagster-io/erk/pull/8893
+
+### Changes Made
+
+**`src/erk/cli/commands/land_learn.py`**:
+1. Added `import json` to imports
+2. Added `Git` to `TYPE_CHECKING` imports
+3. Added `_fetch_xmls_from_async_learn_branch()` function that:
+   - Checks if `async-learn/{plan_id}` branch exists on remote
+   - Fetches the branch and reads the manifest
+   - Downloads each XML file listed in the manifest
+   - Returns a dict mapping file paths to XML content
+4. Added branch fallback in both `_create_learn_pr_impl()` and `_create_learn_pr_for_merged_branch()`:
+   - After `_log_session_discovery()` returns empty but `all_session_ids` is non-empty, tries the async-learn branch fallback
+   - Logs success message when files are fetched remotely
+
+**`tests/unit/cli/commands/land/test_land_learn.py`**:
+- `test_fetch_xmls_returns_empty_when_no_branch` — no remote branch → empty dict
+- `test_fetch_xmls_returns_xml_content_from_manifest` — happy path with manifest and XML
+- `test_fetch_xmls_returns_empty_when_manifest_missing` — branch exists but no manifest
+- `test_fetch_xmls_handles_multiple_sessions` — multiple sessions with multi-part files
+- `test_fetches_from_async_learn_branch_when_local_not_found` — integration test: creates learn PR from remote XML
+- `test_skips_when_async_learn_branch_not_found` — integration test: still skips when no remote branch
+
+### CI Results
+- **34 tests passed** (6 new)
+- **ty**: No type errors
+- **ruff**: No linting issues</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="94241" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>

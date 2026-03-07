@@ -5,8 +5,8 @@
     {
       "session_id": "a476cf23-2df3-426b-b49b-5da6d619adee",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-07T05:32:49.019080+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-07T05:33:37.987685+00:00",
       "files": [
         "impl-a476cf23-2df3-426b-b49b-5da6d619adee-a476cf23-2df3-426b-b49b-5da6d619adee-part1.xml",
         "impl-a476cf23-2df3-426b-b49b-5da6d619adee-a476cf23-2df3-426b-b49b-5da6d619adee-part2.xml",
