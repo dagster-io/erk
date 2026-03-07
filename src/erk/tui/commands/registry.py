@@ -112,7 +112,12 @@ def _display_copy_teleport_new_slot(ctx: CommandContext) -> str:
 
 def _display_cmux_checkout(ctx: CommandContext) -> str:
     """Display name for cmux_checkout command."""
-    return f"erk exec cmux-checkout-workspace --pr {ctx.row.pr_number}"
+    return f"erk pr checkout {ctx.row.pr_number} --script"
+
+
+def _display_cmux_teleport(ctx: CommandContext) -> str:
+    """Display name for cmux_teleport command."""
+    return f"erk pr teleport {ctx.row.pr_number} --new-slot --script --sync"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
@@ -289,7 +294,7 @@ def get_all_commands() -> list[CommandDefinition]:
             description="cmux checkout",
             category=CommandCategory.ACTION,
             shortcut=None,
-            launch_key="m",
+            launch_key="n",
             is_available=lambda ctx: (
                 _is_plan_view(ctx)
                 and ctx.row.pr_number is not None
@@ -297,6 +302,21 @@ def get_all_commands() -> list[CommandDefinition]:
                 and ctx.cmux_integration
             ),
             get_display_name=_display_cmux_checkout,
+        ),
+        CommandDefinition(
+            id="cmux_teleport",
+            name="cmux teleport",
+            description="cmux teleport",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            launch_key="m",
+            is_available=lambda ctx: (
+                _is_plan_view(ctx)
+                and ctx.row.pr_number is not None
+                and ctx.row.pr_head_branch is not None
+                and ctx.cmux_integration
+            ),
+            get_display_name=_display_cmux_teleport,
         ),
         CommandDefinition(
             id="incremental_dispatch",
@@ -458,6 +478,21 @@ def get_all_commands() -> list[CommandDefinition]:
                 and ctx.cmux_integration
             ),
             get_display_name=_display_cmux_checkout,
+        ),
+        CommandDefinition(
+            id="copy_cmux_teleport",
+            name="cmux teleport",
+            description="cmux teleport",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            launch_key=None,
+            is_available=lambda ctx: (
+                _is_plan_view(ctx)
+                and ctx.row.pr_number is not None
+                and ctx.row.pr_head_branch is not None
+                and ctx.cmux_integration
+            ),
+            get_display_name=_display_cmux_teleport,
         ),
         CommandDefinition(
             id="copy_dispatch",

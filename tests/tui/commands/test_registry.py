@@ -349,12 +349,21 @@ def test_display_name_copy_teleport_new_slot_shows_pr() -> None:
 
 
 def test_display_name_copy_cmux_checkout() -> None:
-    """copy_cmux_checkout generates erk exec command."""
+    """copy_cmux_checkout generates checkout command."""
     row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_checkout")
     result = get_display_name(cmd, ctx)
-    assert result == "erk exec cmux-checkout-workspace --pr 456"
+    assert result == "erk pr checkout 456 --script"
+
+
+def test_display_name_copy_cmux_teleport() -> None:
+    """copy_cmux_teleport generates teleport command."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_teleport")
+    result = get_display_name(cmd, ctx)
+    assert result == "erk pr teleport 456 --new-slot --script --sync"
 
 
 def test_display_name_cmux_checkout_action() -> None:
@@ -366,22 +375,35 @@ def test_display_name_cmux_checkout_action() -> None:
     assert get_display_name(action_cmd, ctx) == get_display_name(copy_cmd, ctx)
 
 
+def test_display_name_cmux_teleport_action() -> None:
+    """cmux_teleport ACTION command uses same display name as copy_cmux_teleport."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    action_cmd = next(c for c in get_all_commands() if c.id == "cmux_teleport")
+    copy_cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_teleport")
+    assert get_display_name(action_cmd, ctx) == get_display_name(copy_cmd, ctx)
+
+
 def test_copy_cmux_checkout_unavailable_without_branch() -> None:
-    """cmux_checkout and copy_cmux_checkout are unavailable when no head branch exists."""
+    """cmux commands are unavailable when no head branch exists."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
     assert "cmux_checkout" not in cmd_ids
+    assert "cmux_teleport" not in cmd_ids
     assert "copy_cmux_checkout" not in cmd_ids
+    assert "copy_cmux_teleport" not in cmd_ids
 
 
 def test_copy_cmux_checkout_unavailable_without_cmux_integration() -> None:
-    """cmux_checkout and copy_cmux_checkout are unavailable when cmux_integration is disabled."""
+    """cmux commands are unavailable when cmux_integration is disabled."""
     row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
     assert "cmux_checkout" not in cmd_ids
+    assert "cmux_teleport" not in cmd_ids
     assert "copy_cmux_checkout" not in cmd_ids
+    assert "copy_cmux_teleport" not in cmd_ids
 
 
 def test_display_name_copy_dispatch_shows_issue() -> None:
@@ -627,6 +649,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "address_remote",
         "rewrite_remote",
         "cmux_checkout",
+        "cmux_teleport",
         "incremental_dispatch",
         "open_issue",
         "open_pr",
@@ -637,6 +660,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "copy_teleport",
         "copy_teleport_new_slot",
         "copy_cmux_checkout",
+        "copy_cmux_teleport",
         "copy_dispatch",
         "copy_replan",
         "copy_land",
@@ -897,11 +921,19 @@ def test_get_copy_text_returns_none_for_wrong_view_mode() -> None:
 
 
 def test_get_copy_text_copy_cmux_checkout() -> None:
-    """get_copy_text for copy_cmux_checkout generates erk exec command."""
+    """get_copy_text for copy_cmux_checkout generates checkout command."""
     row = make_plan_row(123, "Test", pr_number=456, pr_head_branch="my-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     result = get_copy_text("copy_cmux_checkout", ctx)
-    assert result == "erk exec cmux-checkout-workspace --pr 456"
+    assert result == "erk pr checkout 456 --script"
+
+
+def test_get_copy_text_copy_cmux_teleport() -> None:
+    """get_copy_text for copy_cmux_teleport generates teleport command."""
+    row = make_plan_row(123, "Test", pr_number=456, pr_head_branch="my-branch")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
+    result = get_copy_text("copy_cmux_teleport", ctx)
+    assert result == "erk pr teleport 456 --new-slot --script --sync"
 
 
 # === Launch Key Safety Tests ===

@@ -128,12 +128,9 @@ def _fetch_and_update_branch(
 @click.argument("reference")
 @click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
-@click.option("--sync", is_flag=True, help="Run gt submit after checkout to sync with Graphite")
 @script_option
 @click.pass_obj
-def pr_checkout(
-    ctx: ErkContext, reference: str, no_slot: bool, force: bool, sync: bool, script: bool
-) -> None:
+def pr_checkout(ctx: ErkContext, reference: str, no_slot: bool, force: bool, script: bool) -> None:
     """Checkout PR or plan into a worktree for review.
 
     REFERENCE can be:
@@ -169,9 +166,7 @@ def pr_checkout(
             ctx, repo, plan_number=ref.number, no_slot=no_slot, force=force, script=script
         )
     else:
-        _checkout_pr(
-            ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, sync=sync, script=script
-        )
+        _checkout_pr(ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, script=script)
 
 
 # =============================================================================
@@ -186,7 +181,6 @@ def _checkout_pr(
     pr_number: int,
     no_slot: bool,
     force: bool,
-    sync: bool,
     script: bool,
 ) -> None:
     """Checkout a pull request into a worktree."""
@@ -320,9 +314,7 @@ def _checkout_pr(
         new_message=f"Created worktree for PR #{pr_number} at {{styled_path}}",
         script_message_existing=f'echo "Went to existing worktree for PR #{pr_number}"',
         script_message_new=f'echo "Checked out PR #{pr_number} at $(pwd)"',
-        post_cd_commands=["gt submit --no-interactive"]
-        if should_track_with_graphite and sync
-        else None,
+        post_cd_commands=None,
     )
 
     # Print activation instructions (non-script mode only)

@@ -26,7 +26,7 @@ from erk.cli.commands.exec.scripts.close_pr import (
     close_pr,
 )
 from erk.cli.commands.exec.scripts.close_prs import close_prs
-from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_checkout_workspace
+from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_open_pr
 from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
     create_impl_context_from_plan,
 )
@@ -197,7 +197,7 @@ exec_group.add_command(add_pr_labels, name="add-pr-labels")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(capture_session_info, name="capture-session-info")
 exec_group.add_command(cleanup_impl_context, name="cleanup-impl-context")
-exec_group.add_command(cmux_checkout_workspace, name="cmux-checkout-workspace")
+exec_group.add_command(cmux_open_pr, name="cmux-open-pr")
 exec_group.add_command(create_pr_from_session, name="create-pr-from-session")
 exec_group.add_command(dash_data, name="dash-data")
 exec_group.add_command(create_impl_context_from_plan, name="create-impl-context-from-plan")

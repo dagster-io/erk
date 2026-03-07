@@ -1,11 +1,16 @@
-"""Create a cmux workspace with PR checkout and sync.
+"""Create a cmux workspace with PR checkout or teleport.
 
-This script creates a cmux workspace that automatically checks out a PR,
-syncs it with the trunk, and renames the workspace to the PR's head branch.
+This script creates a cmux workspace that automatically opens a PR
+and renames the workspace to the PR's head branch.
 
 Usage:
-    erk exec cmux-checkout-workspace --pr 8152
-    erk exec cmux-checkout-workspace --pr 8152 --branch "my-branch"
+    erk exec cmux-open-pr --pr 8152
+    erk exec cmux-open-pr --pr 8152 --mode teleport
+    erk exec cmux-open-pr --pr 8152 --branch "my-branch"
+
+Modes:
+    checkout (default): lightweight -- runs `erk pr checkout {pr} --script`
+    teleport: heavyweight -- runs `erk pr teleport {pr} --new-slot --script --sync`
 
 Output:
     JSON with {success, pr_number, branch, workspace_name} on success
@@ -24,8 +29,8 @@ import click
 
 
 @dataclass(frozen=True)
-class CmuxCheckoutSuccess:
-    """Success response for cmux-checkout-workspace command."""
+class CmuxOpenPrSuccess:
+    """Success response for cmux-open-pr command."""
 
     success: bool
     pr_number: int
@@ -34,8 +39,8 @@ class CmuxCheckoutSuccess:
 
 
 @dataclass(frozen=True)
-class CmuxCheckoutError:
-    """Error response for cmux-checkout-workspace command."""
+class CmuxOpenPrError:
+    """Error response for cmux-open-pr command."""
 
     success: bool
     error: str
@@ -82,25 +87,30 @@ def _extract_workspace_name(output: str) -> str | None:
     return None
 
 
-@click.command(name="cmux-checkout-workspace")
+@click.command(name="cmux-open-pr")
 @click.option(
     "--pr",
     required=True,
     type=int,
-    help="PR number to checkout and sync",
+    help="PR number to open",
 )
 @click.option(
     "--branch",
     default=None,
     help="PR head branch name (auto-detected via gh if omitted)",
 )
-def cmux_checkout_workspace(pr: int, branch: str | None) -> None:
-    """Create a cmux workspace with PR checkout and sync.
+@click.option(
+    "--mode",
+    type=click.Choice(["checkout", "teleport"]),
+    default="checkout",
+    help="checkout (lightweight) or teleport (heavyweight with sync)",
+)
+def cmux_open_pr(pr: int, branch: str | None, mode: str) -> None:
+    """Create a cmux workspace to open a PR.
 
     Creates a new cmux workspace that:
-    1. Checks out the PR and syncs it with trunk
-    2. Submits changes via Graphite
-    3. Renames the workspace to the PR's head branch
+    1. Opens the PR (checkout or teleport based on --mode)
+    2. Renames the workspace to the PR's head branch
 
     If --branch is not provided, it will be auto-detected from GitHub.
     """
@@ -111,7 +121,7 @@ def cmux_checkout_workspace(pr: int, branch: str | None) -> None:
             click.echo(
                 json.dumps(
                     asdict(
-                        CmuxCheckoutError(
+                        CmuxOpenPrError(
                             success=False,
                             error=f"Failed to detect head branch for PR #{pr}. "
                             "Provide --branch explicitly.",
@@ -122,7 +132,10 @@ def cmux_checkout_workspace(pr: int, branch: str | None) -> None:
             raise SystemExit(1)
 
     # Build the checkout command that will run inside the new workspace
-    checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)"'
+    if mode == "teleport":
+        checkout_cmd = f'source "$(erk pr teleport {pr} --new-slot --script --sync)"'
+    else:
+        checkout_cmd = f'source "$(erk pr checkout {pr} --script)"'
 
     # Build the shell pipeline:
     # 1. Create workspace with checkout command
@@ -147,7 +160,7 @@ def cmux_checkout_workspace(pr: int, branch: str | None) -> None:
         click.echo(
             json.dumps(
                 asdict(
-                    CmuxCheckoutSuccess(
+                    CmuxOpenPrSuccess(
                         success=True,
                         pr_number=pr,
                         branch=branch,
@@ -161,7 +174,7 @@ def cmux_checkout_workspace(pr: int, branch: str | None) -> None:
         click.echo(
             json.dumps(
                 asdict(
-                    CmuxCheckoutError(
+                    CmuxOpenPrError(
                         success=False,
                         error=f"Failed to create cmux workspace: {error_output}",
                     )

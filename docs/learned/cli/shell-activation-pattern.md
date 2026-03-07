@@ -59,7 +59,7 @@ source /path/to/worktree/.erk/bin/activate.sh && erk implement
 
 Activation scripts support appending commands after the `cd` line via `post_cd_commands`. These run in the target directory after navigation completes.
 
-**Used by:** PR checkout with `--sync` flag — appends `gt submit --no-interactive` so the branch is submitted to Graphite after checkout navigation.
+**Used by:** PR teleport with `--sync` flag — appends `gt submit --no-interactive` so the branch is submitted to Graphite after teleport navigation.
 
 ## Usage in TUI and Plan Checkout
 
