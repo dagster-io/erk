@@ -523,12 +523,18 @@ def test_validate_plan_format_fails_missing_first_comment() -> None:
         author="test-user",
     )
 
-    issues = FakeGitHubIssues(
+    fake_remote = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-123",
         issues={42: issue},
-        comments={42: []},  # No comments
+        issue_comments={42: []},  # No comments
+        pr_references=None,
     )
 
-    result = validate_plan_format(issues, tmp_path, 42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -537,7 +543,7 @@ def test_validate_plan_format_fails_missing_first_comment() -> None:
     assert "First comment exists" in failed_checks
 
 
-def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
+def test_validate_plan_format_fails_missing_plan_body() -> None:
     """Returns PlanValidationSuccess with passed=False when plan-body missing."""
     from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
@@ -562,12 +568,18 @@ def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
         author="test-user",
     )
 
-    issues = FakeGitHubIssues(
+    fake_remote = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-123",
         issues={42: issue},
-        comments={42: ["Just a regular comment"]},  # No plan-body block
+        issue_comments={42: ["Just a regular comment"]},  # No plan-body block
+        pr_references=None,
     )
 
-    result = validate_plan_format(issues, tmp_path, 42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -576,20 +588,29 @@ def test_validate_plan_format_fails_missing_plan_body(tmp_path: Path) -> None:
     assert "plan-body content extractable" in failed_checks
 
 
-def test_validate_plan_format_returns_error_on_github_failure(tmp_path: Path) -> None:
+def test_validate_plan_format_returns_error_on_github_failure() -> None:
     """Returns PlanValidationError when GitHub API fails."""
     from erk.cli.commands.pr.check_cmd import PlanValidationError, validate_plan_format
 
-    # FakeGitHubIssues with no issues configured will raise on get_issue
-    issues = FakeGitHubIssues(issues={}, comments={})
+    # FakeRemoteGitHub with no issues configured will raise on get_issue
+    fake_remote = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-123",
+        issues={},
+        issue_comments={},
+        pr_references=None,
+    )
 
-    result = validate_plan_format(issues, tmp_path, 999)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=999)
 
     assert isinstance(result, PlanValidationError)
     assert "999" in result.error or "not found" in result.error.lower()
 
 
-def test_validate_plan_format_passes_draft_pr_plan(tmp_path: Path) -> None:
+def test_validate_plan_format_passes_draft_pr_plan() -> None:
     """Returns PlanValidationSuccess with passed=True for draft-PR format plan."""
     from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
@@ -622,12 +643,18 @@ def test_validate_plan_format_passes_draft_pr_plan(tmp_path: Path) -> None:
         author="test-user",
     )
 
-    issues = FakeGitHubIssues(
+    fake_remote = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-123",
         issues={42: issue},
-        comments={42: []},
+        issue_comments={42: []},
+        pr_references=None,
     )
 
-    result = validate_plan_format(issues, tmp_path, 42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is True

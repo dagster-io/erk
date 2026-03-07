@@ -8,6 +8,8 @@ from erk.cli.cli import cli
 from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -200,6 +202,29 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
     plan_200 = _make_plan(plan_identifier="200", title="Plan B", body="body B for checking")
     plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
 
+    issue_200 = IssueInfo(
+        number=200,
+        title="Plan B",
+        body="body B for checking",
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/200",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2025, 1, 1),
+        updated_at=datetime(2025, 1, 1),
+        author="test-user",
+    )
+    fake_remote = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues={200: issue_200},
+        issue_comments=None,
+        pr_references=None,
+    )
+
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
@@ -208,6 +233,7 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
             console=_non_interactive_console(),
             plan_store=plan_store,
             plan_list_service=_make_plan_list_service([plan_100, plan_200]),
+            remote_github=fake_remote,
         )
 
         result = runner.invoke(
@@ -265,6 +291,16 @@ def test_progress_reporting_lists_plans() -> None:
 def test_plan_flag_not_found() -> None:
     """--plan with nonexistent plan ID returns exit code 1 with error."""
     plan_store, _ = create_plan_store_with_plans({})
+    fake_remote = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues={},
+        issue_comments=None,
+        pr_references=None,
+    )
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -273,6 +309,7 @@ def test_plan_flag_not_found() -> None:
             console=_non_interactive_console(),
             plan_store=plan_store,
             plan_list_service=_make_plan_list_service([]),
+            remote_github=fake_remote,
         )
 
         result = runner.invoke(

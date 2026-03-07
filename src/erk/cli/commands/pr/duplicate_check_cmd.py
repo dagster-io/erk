@@ -163,10 +163,14 @@ def duplicate_check_plan(
     # Trunk commit relevance check (local only)
     if not isinstance(ctx.repo, NoRepoSentinel):
         trunk_branch = ctx.git.branch.detect_trunk_branch(ctx.repo.root)
-        recent_commits = ctx.git.commit.get_recent_commits(ctx.repo.root, limit=20, branch=trunk_branch)
+        recent_commits = ctx.git.commit.get_recent_commits(
+            ctx.repo.root, limit=20, branch=trunk_branch
+        )
 
         if recent_commits:
-            user_output(f"Checking against {len(recent_commits)} recent {trunk_branch} commit(s)...")
+            user_output(
+                f"Checking against {len(recent_commits)} recent {trunk_branch} commit(s)..."
+            )
             user_output("")
 
             relevance_checker = PlanRelevanceChecker(ctx.prompt_executor)

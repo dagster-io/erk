@@ -19,12 +19,12 @@ from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk_shared.context.types import NoRepoSentinel
 from erk.tui.app import ErkDashApp
 from erk.tui.data.real_provider import RealPlanDataProvider
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import SortKey, SortState
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.github.emoji import get_pr_status_emoji

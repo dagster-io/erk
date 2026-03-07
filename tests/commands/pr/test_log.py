@@ -16,6 +16,7 @@ from erk_shared.gateway.github.metadata.core import (
     create_workflow_started_block,
     render_metadata_block,
 )
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import Plan, PlanState
@@ -41,6 +42,24 @@ def _make_issue_info(plan: Plan) -> IssueInfo:
         created_at=plan.created_at.astimezone(UTC),
         updated_at=plan.updated_at.astimezone(UTC),
         author="test-author",
+    )
+
+
+def _make_fake_remote(
+    issue: IssueInfo | None = None, comments: list[str] | None = None
+) -> FakeRemoteGitHub:
+    """Build a FakeRemoteGitHub with optional issue and comment data."""
+    issues = {issue.number: issue} if issue is not None else {}
+    issue_comments = {issue.number: comments} if issue is not None and comments is not None else {}
+    return FakeRemoteGitHub(
+        authenticated_user="test-author",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues,
+        issue_comments=issue_comments,
+        pr_references=None,
     )
 
 
@@ -101,7 +120,12 @@ def test_log_displays_timeline_chronologically() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
+        ctx = build_workspace_test_context(
+            env,
+            plan_store=store,
+            issues=fake_issues,
+            remote_github=_make_fake_remote(issue, [comment1, comment2, comment3]),
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
@@ -162,7 +186,12 @@ def test_log_json_output() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
+        ctx = build_workspace_test_context(
+            env,
+            plan_store=store,
+            issues=fake_issues,
+            remote_github=_make_fake_remote(issue, [comment]),
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "42", "--json"], obj=ctx)
@@ -212,7 +241,12 @@ def test_log_with_no_events() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
+        ctx = build_workspace_test_context(
+            env,
+            plan_store=store,
+            issues=fake_issues,
+            remote_github=_make_fake_remote(issue, []),
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
@@ -286,7 +320,12 @@ def test_log_with_all_event_types() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
+        ctx = build_workspace_test_context(
+            env,
+            plan_store=store,
+            issues=fake_issues,
+            remote_github=_make_fake_remote(issue, comments),
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
@@ -307,7 +346,7 @@ def test_log_with_invalid_plan_identifier() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store, _ = create_plan_store_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store)
+        ctx = build_workspace_test_context(env, plan_store=store, remote_github=_make_fake_remote())
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "999"], obj=ctx)
@@ -369,7 +408,12 @@ def test_log_multiple_status_updates() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
+        ctx = build_workspace_test_context(
+            env,
+            plan_store=store,
+            issues=fake_issues,
+            remote_github=_make_fake_remote(issue, comments),
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
@@ -422,7 +466,12 @@ def test_log_json_structure() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_issues)
+        ctx = build_workspace_test_context(
+            env,
+            plan_store=store,
+            issues=fake_issues,
+            remote_github=_make_fake_remote(issue, [comment]),
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "42", "--json"], obj=ctx)
