@@ -1,0 +1,1775 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>
+To land the PR:
+  source /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/bin/land.sh 8835 plnd/O8832-decouple-cli-git-rep-03-06-1316 -f --up  (copied to clipboard)
+(erk) ➜  erk-slot-03 git:(plnd/O8832-decouple-cli-git-rep-03-06-1316) source /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/bin/land.sh 8835 plnd/O8832-decouple-cli-git-rep-03-06-1316 -f --up
+  Getting current branch...
+  Getting parent branch...
+  Validating parent is trunk branch...
+  Checking PR status...
+  Validating PR base branch...
+  Getting child branches...
+  Updating upstack PR base branches...
+  Updating Graphite tracking for child branches...
+  Getting PR metadata...
+  Merging PR #8835...
+  PR #8835 merged successfully
+  Deleting remote branch 'plnd/O8832-decouple-cli-git-rep-03-06-1316'...
+✓ Merged PR #8835 [plnd/O8832-decouple-cli-git-rep-03-06-1316]
+  📋 Discovered 1 session(s): 1 planning, 0 impl
+       📝  planning:  77c9681c...  (not found)
+ℹ Skipping learn plan for #8835: no session material found (sessions found but no XML could be extracted)
+✓ Unassigned slot and deleted branch
+   Linked to Objective #8832
+
+Starting objective update...
+--- /erk:system:objective-update-with-landed-pr --pr 8835 --objective 8832 --branch plnd/O8832-decouple-cli-git-rep-03-06-1316 --plan 8835 --auto-close ---
+Updating objective #8832 after landing PR #8835.
+  &gt; Using ToolSearch...
+  ... Using ToolSearch...
+
+what happened with the learn sessions here</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14766" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14766}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The log tells the story:
+
+```
+📋 Discovered 1 session(s): 1 planning, 0 impl
+     📝  planning:  77c9681c...  (not found)
+ℹ Skipping learn plan for #8835: no session material found (sessions found but no XML could be extracted)
+```
+
+It found 1 planning session (ID `77c9681c...`) via markers, but when it tried to locate the actual session log file on disk, it was **"(not found)"**. Since there was no session file to extract XML from, learning was skipped.
+
+This typically happens when the planning session ran in a **different worktree** (or machine) and the session log files live under a different `~/.claude/projects/` path that doesn't match where the land script is looking.
+
+Let me check how session discovery works to confirm.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14766" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14766}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_018oBDjnE75XQ5mzoPQfKZ6d">
+    <param name="query">select:Grep,Bash,Read</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14766" cache_read_input_tokens="0" output_tokens="485" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14766, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018oBDjnE75XQ5mzoPQfKZ6d">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="5261" cache_read_input_tokens="14766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5261}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017MS26omupDjZaFmyFCF5b3">
+    <param name="pattern">no session material found</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5261" cache_read_input_tokens="14766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5261}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017MS26omupDjZaFmyFCF5b3">
+Found 2 files
+src/erk/cli/commands/land_learn.py
+tests/unit/cli/commands/land/test_land_learn.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XsPdUZeZtUdGDMjubbhKU5">
+    <param name="pattern">not found.*session</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5261" cache_read_input_tokens="14766" output_tokens="330" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5261, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XsPdUZeZtUdGDMjubbhKU5">
+Found 2 files
+packages/erk-shared/src/erk_shared/non_ideal_state.py
+.claude/commands/erk/diag-lock-error.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YFf3G2z12RLHgtqoEkdXHH">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="20027" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 470, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YFf3G2z12RLHgtqoEkdXHH">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.branch_slug_generator import generate_branch_slug
+    27→from erk.core.context import ErkContext
+    28→from erk_shared.learn.extraction.session_schema import (
+    29→    iter_jsonl_entries,
+    30→    parse_session_timestamp,
+
+... [523 lines omitted] ...
+
+    58→    Fire-and-forget: raises on error (caller should catch).
+   150→    elif result.error:
+   152→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+   301→    except Exception as exc:
+   302→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   461→    """Inner implementation for learn plan creation (raises on error)."""
+   549→    elif result.error:
+   551→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <assistant>Now let me check `get_readable_sessions` — that's what resolves session IDs to file paths:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7521" cache_read_input_tokens="20497" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7521}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018Be58dUyxHgfa2UZoUtqdj">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/sessions/discovery.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7521" cache_read_input_tokens="20497" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7521, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018Be58dUyxHgfa2UZoUtqdj">
+     1→"""Session discovery for plans.
+     2→
+     3→This module provides functions to discover Claude Code sessions
+     4→associated with a plan issue.
+     5→"""
+     6→
+     7→import sys
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→from erk_shared.gateway.claude_installation.abc import (
+    12→    ClaudeInstallation,
+    13→    FoundSession,
+    14→)
+    15→from erk_shared.learn.extraction.session_schema import extract_git_branch
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class SessionsForPlan:
+    20→    """Sessions associated with a plan issue.
+    21→
+    22→    Attributes:
+    23→        planning_session_id: Session that created the plan (from created_from_session)
+    24→        implementation_session_ids: Sessions where plan was implemented
+    25→        learn_session_ids: Sessions where learn was previously invoked
+    26→        last_remote_impl_at: Timestamp of remote implementation (if implemented via GitHub Actions)
+    27→        last_remote_impl_run_id: GitHub Actions run ID for remote implementation
+    28→        last_remote_impl_session_id: Claude Code session ID for remote implementation
+    29→        last_session_branch: Branch containing latest session JSONL
+    30→        last_session_id: Session ID of latest uploaded session
+
+... [127 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check `find_session_globally`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1997" cache_read_input_tokens="28018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1997}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Pgydr2KRmx3QPjkNWPzHn1">
+    <param name="pattern">find_session_globally</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1997" cache_read_input_tokens="28018" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1997, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pgydr2KRmx3QPjkNWPzHn1">
+Found 9 files
+docs/learned/sessions/tripwires.md
+docs/learned/sessions/lifecycle.md
+packages/erk-shared/src/erk_shared/sessions/discovery.py
+docs/learned/sessions/discovery-fallback.md
+docs/learned/architecture/claude-installation-gateway.md
+tests/unit/fakes/test_fake_claude_installation.py
+packages/erk-shared/src/erk_shared/gateway/claude_installation/abc.py
+packages/erk-shared/src/erk_shared/gateway/claude_installation/fake.py
+packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015fGo6nxVkEM2qLdUremmQB">
+    <param name="pattern">def find_session_globally</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="30015" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 294, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015fGo6nxVkEM2qLdUremmQB">
+523:    def find_session_globally(self, session_id: str) -&gt; FoundSession | SessionNotFound:
+524-        """Find a session by ID across all project directories."""
+525-        projects_dir = self.get_projects_dir_path()
+526-        if not projects_dir.exists():
+527-            return SessionNotFound(session_id)
+528-
+529-        # Search all project directories
+530-        for project_dir in projects_dir.iterdir():
+531-            if not project_dir.is_dir():
+532-                continue
+533-
+534-            session_file = project_dir / f"{session_id}.jsonl"
+535-            if session_file.exists():
+536-                stat = session_file.stat()
+537-                is_agent = session_id.startswith("agent-")
+538-                parent_session_id = None
+539-                if is_agent:
+540-                    parent_session_id = _extract_parent_session_id(session_file)
+541-
+542-                session = Session(
+543-                    session_id=session_id,
+544-                    size_bytes=stat.st_size,
+545-                    modified_at=stat.st_mtime,
+546-                    is_current=False,
+547-                    parent_session_id=parent_session_id,
+548-                )
+549-                return FoundSession(session=session, path=session_file)
+550-
+551-        return SessionNotFound(session_id)
+  </tool_result>
+  <assistant>Here's what happened:
+
+**The planning session `77c9681c...` was not found on disk.**
+
+The `find_session_globally` method (line 523 of `real.py`) searches all project directories under `~/.claude/projects/` for a file named `{session_id}.jsonl`. It iterated through every project directory and didn't find `77c9681c*.jsonl` anywhere.
+
+This happens because the planning session ran in a context where the session log was either:
+
+1. **Already cleaned up** — the session file was deleted (e.g., by a `claude sessions prune` or manual cleanup)
+2. **On a different machine** — if the plan was created remotely (e.g., via `erk:pr-dispatch`), the session log only exists on the CI runner, not locally
+3. **Stored under a different project path** — session files are keyed by project directory hash, so if the worktree path changed, the lookup might miss it
+
+You can verify by checking if the session file actually exists:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="632" cache_read_input_tokens="30309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 632}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015oF5w23BTmNaRwKa1MMoyV">
+    <param name="command">find /Users/schrockn/.claude/projects/ -name "77c9681c*" -type f 2&gt;/dev/null | head -5</param>
+    <param name="description">Search for session file 77c9681c* in Claude projects directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="632" cache_read_input_tokens="30309" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 632, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015oF5w23BTmNaRwKa1MMoyV">
+
+  </tool_result>
+  <assistant>Confirmed — the session file `77c9681c*` doesn't exist anywhere in `~/.claude/projects/`. The session ID was recorded as a marker on the plan issue (via `created_from_session` metadata), but the actual JSONL log file was never on this machine or has since been deleted.
+
+Was PR #8835 planned locally or remotely?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="30941" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 382}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018Qzg6XpG1Xk7xdvSPq39zg">
+    <param name="command">gh issue view 8835 --repo schrockn/erk --json labels,body --jq '.body' 2&gt;/dev/null | head -30</param>
+    <param name="description">Check PR #8835 metadata for session origin</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="30941" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 382, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018Qzg6XpG1Xk7xdvSPq39zg">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HXx3ptjBmwgGpGYQEiMuzn">
+    <param name="command">gh pr view 8835 --json body --jq '.body' 2&gt;/dev/null | head -40</param>
+    <param name="description">Check PR #8835 body for session metadata</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="31323" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 247, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HXx3ptjBmwgGpGYQEiMuzn">
+This PR implements Phase 1 of decoupling CLI commands from git repo requirement by introducing a RemoteGitHub gateway that uses the GitHub REST API directly, enabling `erk one-shot --repo owner/repo` to work without a local git clone.
+
+## Key Changes
+
+- Add `put()` method to HttpClient gateway (abc/real/fake) to support GitHub Contents API
+- Create new RemoteGitHub gateway package with read/write methods for branch creation, file commits, PR management, and workflow dispatch — all via HTTP without local git
+- Remove git-repo guard from HttpClient creation in `create_context()` so authentication is based on GitHub token alone
+- Add `--repo owner/repo` flag to one-shot command with validation and remote dispatch flow
+- Implement `dispatch_one_shot_remote()` that mirrors local dispatch but uses RemoteGitHub for all operations
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Added (8 files)
+- `packages/erk-shared/src/erk_shared/gateway/remote_github/` — New gateway package (abc.py, real.py, fake.py)
+- `src/erk/cli/commands/one_shot_remote_dispatch.py` — Remote dispatch orchestration
+- `tests/unit/gateways/remote_github/` — Unit tests for RemoteGitHub implementations
+- `tests/commands/one_shot/test_one_shot_remote_dispatch.py` — Command integration tests
+
+### Modified (5 files)
+- `packages/erk-shared/src/erk_shared/gateway/http/abc.py` — Add abstract `put()` method
+- `packages/erk-shared/src/erk_shared/gateway/http/real.py` — Implement HTTP PUT with 204 No Content handling
+- `packages/erk-shared/src/erk_shared/gateway/http/fake.py` — Implement fake PUT
+- `src/erk/core/context.py` — Remove repo guard from HttpClient creation (lines 592-599)
+- `src/erk/cli/commands/one_shot.py` — Add --repo flag and remote dispatch routing
+
+&lt;/details&gt;
+
+## User Experience
+
+
+... [10 lines omitted] ...
+
+Error: not in a git repository
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WsBwbqKR5vbverD6i4Pz46">
+    <param name="command">gh pr view 8835 --json body --jq '.body' 2&gt;/dev/null | grep -i 'session\|created_from\|workflow_run'</param>
+    <param name="description">Check for session metadata in PR body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="31570" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 696, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WsBwbqKR5vbverD6i4Pz46">
+last_local_impl_session: null
+last_remote_impl_session_id: a1c14e68-f258-44ba-baa3-2bd884c6188c
+created_from_session: 77c9681c-97e9-47ba-90f2-0fda5a897b45
+last_session_branch: async-learn/8835
+last_session_id: a1c14e68-f258-44ba-baa3-2bd884c6188c
+last_session_at: '2026-03-06T13:31:38.128226+00:00'
+last_session_source: remote
+  </tool_result>
+  <assistant>There's the answer:
+
+- **Planning session** `77c9681c...` — this was the session that *created* the plan. It ran locally, but on a different worktree/session that has since been cleaned up (the file no longer exists on disk).
+- **Implementation session** `a1c14e68...` — this ran **remotely** (`last_session_source: remote`), so the JSONL is on the CI runner, not your machine.
+
+Neither session's JSONL exists locally, so the learn step found the session IDs from PR metadata but couldn't read the actual log files, resulting in `(not found)` and skipping learn extraction.
+
+**TL;DR**: The planning session log was deleted or ran in a context that no longer exists locally, and the implementation ran remotely on CI. No session material was available on this machine to extract learnings from.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="32266" output_tokens="201" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>remote implementation sessions should be uploading session info into a branch like happens locally. what i am missing?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="379" cache_read_input_tokens="32549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 379}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good point. The metadata confirms the remote session was uploaded to `async-learn/8835`:
+
+```
+last_session_branch: async-learn/8835
+last_session_id: a1c14e68-f258-44ba-baa3-2bd884c6188c
+last_session_source: remote
+```
+
+But `get_readable_sessions` only checks local disk via `find_session_globally`. It never fetches from the branch. Let me trace the gap.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="379" cache_read_input_tokens="32549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 379}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QshVJAFT5UiS7wvnhBb1p5">
+    <param name="pattern">async-learn|last_session_branch|session_branch</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="379" cache_read_input_tokens="32549" output_tokens="459" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 379, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QshVJAFT5UiS7wvnhBb1p5">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012mThmui3oQTxk1R79J9wFJ">
+    <param name="pattern">last_session_branch|session_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/sessions</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="32928" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 474, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012mThmui3oQTxk1R79J9wFJ">
+packages/erk-shared/src/erk_shared/sessions/discovery.py:29:        last_session_branch: Branch containing latest session JSONL
+packages/erk-shared/src/erk_shared/sessions/discovery.py:41:    last_session_branch: str | None
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017dCdrtZ8KaMEqkkDcr4tyt">
+    <param name="pattern">last_session_branch</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="33402" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 332, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017dCdrtZ8KaMEqkkDcr4tyt">
+Found 16 files
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+tests/unit/cli/commands/land/test_land_learn.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+src/erk/cli/commands/exec/scripts/push_session.py
+packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py
+docs/learned/sessions/lifecycle.md
+docs/learned/glossary.md
+docs/learned/architecture/session-discovery.md
+docs/learned/architecture/session-storage-revert-rationale.md
+tests/unit/plan_store/test_plan_backend_interface.py
+packages/erk-shared/src/erk_shared/sessions/discovery.py
+docs/learned/planning/remote-branch-learn.md
+docs/learned/sessions/discovery-fallback.md
+tests/unit/sessions/test_discovery.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HEdKzRnHvceMyJDQww36hp">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/planning/remote-branch-learn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="33734" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 408}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HEdKzRnHvceMyJDQww36hp">
+     1→---
+     2→title: Remote Branch Learn Support
+     3→read_when:
+     4→  - "modifying learn workflow branch checks"
+     5→  - "understanding why learn runs for non-current branches"
+     6→  - "debugging learn status prompts on landing"
+     7→tripwires:
+     8→  - action: "adding redundant branch-location guards to learn status checks"
+     9→    warning: "Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via async-learn branches."
+    10→---
+    11→
+    12→# Remote Branch Learn Support
+    13→
+    14→The learn workflow's `check_learn_status()` in the land pipeline only prompts for learn when the branch is locally accessible: `is_current_branch or worktree_path is not None` (land_pipeline.py:341). Remote plan branches skip the interactive learn prompt.
+    15→
+    16→## Branch-Location Guard Behavior
+    17→
+    18→Remote plan branches (implemented by CI workers) have:
+    19→
+    20→- `is_current_branch = False` (not checked out locally)
+    21→- `worktree_path = None` (no local worktree)
+    22→
+    23→The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. This is intentional — remote sessions are uploaded to `async-learn/{plan_id}` branches by the CI worker and don't need interactive prompting during land.
+    24→
+    25→## Session Discovery for Remote Branches
+    26→
+    27→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, check_learn_status --&gt;
+    28→
+    29→`check_learn_status()` in the land pipeline resolves the plan ID from the branch name. If the branch is locally accessible (current branch or has a worktree), it delegates to `_check_learn_status_and_prompt()` for interactive learn prompting.
+    30→
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01M8SqYDnWGdrroqKyEgrxMS">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/sessions/lifecycle.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="33734" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 408, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M8SqYDnWGdrroqKyEgrxMS">
+     1→---
+     2→title: Session File Lifecycle and Persistence
+     3→read_when:
+     4→  - "working with Claude Code session files across workflows"
+     5→  - "implementing learn or analysis workflows that consume session data"
+     6→  - "debugging missing session files in plan-based workflows"
+     7→tripwires:
+     8→  - action: "accessing a session by ID without checking existence first"
+     9→    warning: "Session files are session-scoped — Claude Code may clean them up at any time. Always use LBYL discovery (ClaudeInstallation.find_session_globally) before reading."
+    10→  - action: "failing a workflow because a session file is missing"
+    11→    warning: "Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → branch → local scan → skip."
+    12→  - action: "constructing session file paths manually"
+    13→    warning: "Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change."
+    14→last_audited: "2026-02-16 14:20 PT"
+    15→audit_result: edited
+    16→---
+    17→
+    18→# Session File Lifecycle and Persistence
+    19→
+    20→This document explains _why_ session file availability is unreliable and the architectural decisions that flow from that constraint. The core problem: erk workflows (learn, analysis) often need session data from _previous_ Claude Code sessions, but Claude Code owns the session storage lifecycle and may clean up files at any time. Erk cannot control this policy.
+    21→
+    22→## The Fundamental Constraint
+    23→
+    24→Session JSONL files are managed by Claude Code, not erk. Their lifetime is tied to the Claude Code session that created them, with no guaranteed persistence beyond that. This means a session ID stored in GitHub issue metadata (plan-header fields, issue comments) may point to a file that no longer exists on disk.
+    25→
+    26→This constraint drives two architectural decisions:
+    27→
+    28→1. **All session access must go through discovery** — never assume an ID maps to a file
+    29→2. **All session-consuming workflows must degrade gracefully** — missing data narrows scope but never causes failure
+    30→
+
+... [80 lines omitted] ...
+
+    91→### Anti-pattern: hard failure on missing session
+    93→Never `exit 1` or raise when a session file is unavailable. The entire hierarchy exists because session availability is _inherently unreliable_. Log a warning and degrade to the next level.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3433" cache_read_input_tokens="34142" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3433}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0193iiaL8J35gEV9HsW7Lavv">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3433" cache_read_input_tokens="34142" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3433, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0193iiaL8J35gEV9HsW7Lavv">
+     1→"""Get session information for a plan.
+     2→
+     3→This exec script returns JSON with session data for use by the /erk:learn skill.
+     4→It replaces the `erk learn --json --no-track` workflow, separating data retrieval
+     5→from tracking.
+     6→
+     7→Usage:
+     8→    erk exec get-learn-sessions &lt;issue-number&gt;
+     9→    erk exec get-learn-sessions &lt;issue-url&gt;
+    10→
+    11→Output:
+    12→    JSON object with session information:
+    13→    {
+    14→        "success": true,
+    15→        "plan_id": "123",
+    16→        "planning_session_id": "abc-123" | null,
+    17→        "implementation_session_ids": [...],
+    18→        "learn_session_ids": [...],
+    19→        "readable_session_ids": [...],
+    20→        "session_paths": [...],
+    21→        "local_session_ids": [...],
+    22→        "last_remote_impl_at": "2024-01-01T..." | null,
+    23→        "last_remote_impl_run_id": "12345678" | null,
+    24→        "last_remote_impl_session_id": "abc-def-ghi" | null
+    25→    }
+    26→
+    27→Exit Codes:
+    28→    0: Success
+    29→    1: Error (invalid issue, GitHub failure, etc.)
+    30→"""
+
+... [284 lines omitted] ...
+
+    46→    GetLearnSessionsErrorDict,
+   284→            error = GetLearnSessionsErrorDict(
+   286→                error=f"Invalid issue identifier: {issue}",
+   288→            click.echo(json.dumps(error))
+   295→        error = GetLearnSessionsErrorDict(
+   297→            error="No issue specified and could not infer from branch name",
+   299→        click.echo(json.dumps(error))
+  </tool_result>
+  <assistant>Now I see the full picture. There are **two different learn paths** and they use different session discovery:
+
+1. **`get_learn_sessions.py`** (used by the `/erk:learn` skill) — this one **does** handle remote sessions properly. It checks for the `async-learn/{plan_id}` branch manifest (line 179) and adds `RemoteSessionSource` entries (lines 222-245).
+
+2. **`land_learn.py`** (used by the land pipeline) — this one only calls `get_readable_sessions()` which only checks **local disk**. It never fetches from the `async-learn` branch.
+
+The land pipeline's learn step is the simpler, older path that never got the branch-based remote session support. It discovers session IDs from plan metadata, tries to find them locally, fails, and skips.
+
+**The gap**: `_log_session_discovery` in `land_learn.py` uses `get_readable_sessions()` → `find_session_globally()` (local-only), while `get_learn_sessions.py` has the full `_fetch_preprocessed_manifest()` + `RemoteSessionSource` logic. The land pipeline would need to either:
+
+1. Fetch the preprocessed XML from the `async-learn/8835` branch (like `get_learn_sessions.py` does with the manifest), or
+2. Delegate to `get_learn_sessions.py` instead of reimplementing discovery
+
+Want me to look into closing this gap?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4886" cache_read_input_tokens="37575" output_tokens="350" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4886, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>yes. the local land path should absolutley be parsing sessions. when is /erk:learn invoked?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="530" cache_read_input_tokens="42461" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 530}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BucTZkKe3Q8tHef4Q3kXYr">
+    <param name="pattern">erk:learn</param>
+    <param name="path">/Users/schrockn/code/erk/.claude</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="530" cache_read_input_tokens="42461" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 530}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BucTZkKe3Q8tHef4Q3kXYr">
+Found 3 files
+.claude/commands/erk/learn.md
+.claude/commands/local/replan-learn-plans.md
+.claude/agents/learn/existing-docs-checker.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GQB4doGuRKq5kWitG1RME4">
+    <param name="pattern">erk:learn|learn skill|learn command</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="530" cache_read_input_tokens="42461" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 530}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQB4doGuRKq5kWitG1RME4">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/code/erk/src/erk/cli/commands/land. Note: your current working directory is /Users/schrockn/code/erk.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B4BzBymaBf3FsHxbcDTctm">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/learn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="434" cache_read_input_tokens="42991" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 434, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B4BzBymaBf3FsHxbcDTctm">
+     1→---
+     2→description: Extract insights from plan-associated sessions
+     3→argument-hint: "[plan-number]"
+     4→---
+     5→
+     6→# /erk:learn
+     7→
+     8→Create a documentation plan from Claude Code sessions associated with a plan implementation. The verb "learn" means: analyze what happened, extract insights, and create an actionable plan to document those learnings.
+     9→
+    10→## Usage
+    11→
+    12→```
+    13→/erk:learn                              # Infers plan from current branch
+    14→/erk:learn 4655                          # Explicit plan number
+    15→```
+    16→
+    17→## Purpose
+    18→
+    19→All documentation produced by this command follows the content quality standards in the `learned-docs` skill. Load that skill for the full rules on audience (AI agents), the cornerstone principle (cross-cutting insight), and what belongs in learned docs vs code comments.
+    20→
+    21→## Agent Instructions
+    22→
+    23→**Prerequisite:** Load the `learned-docs` skill for content quality standards before proceeding.
+    24→
+    25→Tell the user (choose the appropriate pipeline display based on whether `.erk/impl-context/` exists):
+    26→
+    27→**When `.erk/impl-context/` exists (CI/async mode):**
+    28→
+    29→```
+    30→Learn pipeline for plan #&lt;plan-number&gt; (using preprocessed materials):
+
+... [797 lines omitted] ...
+
+    55→Parse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:
+    58→Error: Plan #&lt;plan-number&gt; is a learn plan (has erk-learn label).
+   143→This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.
+   414→Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md, pr-comments-analysis.md) before proceeding. If any files are missing, the agent failed to write its output and must be re-launched.
+   545→If agents were not launched or failed, fall back to manual analysis.
+   574→- Error messages and how they were resolved
+   743→Parse the JSON output. If `count` is 0, no comment was added (no candidates found by the extractor). This is normal and not an error.
+   759→**If plan validation failed (no actionable documentation):**
+   825→- `&lt;tool_result&gt;` elements with errors often reveal the most useful insights
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="11252" cache_read_input_tokens="43425" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11252}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I see the full picture. There are **two independent learn paths** that have diverged:
+
+1. **`/erk:learn` skill** — The full-featured path. Used when:
+   - A user manually invokes `/erk:learn` 
+   - CI runs learn as part of an async workflow
+   - It calls `erk exec get-learn-sessions` which properly handles remote sessions (fetches manifest from `async-learn/{plan_id}` branch, creates `RemoteSessionSource` entries, downloads preprocessed XMLs)
+
+2. **`land_learn.py`** — The auto-learn path during `erk land`. Used when:
+   - A PR is landed via the land pipeline
+   - It bypasses `get-learn-sessions` entirely and calls `get_readable_sessions()` directly, which **only checks local disk**
+
+The land pipeline's learn step never fetches from the `async-learn` branch, even though the remote implementation already uploaded preprocessed session data there. That's the bug — `_log_session_discovery` in `land_learn.py:322` builds the `readable_map` from `get_readable_sessions()` (local-only), and when a session ID isn't found locally, it just prints `(not found)` and produces no XML files.
+
+The `async-learn/8835` branch has the session data. The land pipeline doesn't look there.
+
+Want me to plan a fix? The simplest approach would be to have `land_learn.py` also check the `async-learn` branch for preprocessed sessions when local lookup fails — essentially bringing the `_fetch_preprocessed_manifest` logic (or the XML fetch via `erk exec fetch-sessions`) into the land learn path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11252" cache_read_input_tokens="43425" output_tokens="689" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11252, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>plan a fix</user>
+  <assistant>
+
+Let me explore the two key areas in parallel: the land learn path and the remote session fetching infrastructure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2040" cache_read_input_tokens="54677" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2040}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_014Wm6Z2DPyDFQtwpX9FT9UC">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2040" cache_read_input_tokens="54677" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2040, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014Wm6Z2DPyDFQtwpX9FT9UC">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01DyjYKMCrLu7fUxHhXfsnGE">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore land learn path</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 666 chars]...up fails, it can fetch preprocessed session XMLs from the `async-learn/{plan_id}` branch?
+</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2416" cache_read_input_tokens="56717" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2416}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DyjYKMCrLu7fUxHhXfsnGE">
+Async agent launched successfully.
+agentId: a84af463bc5c4d5ae (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn-code-erk/tasks/a84af463bc5c4d5ae.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01JEfhjAdZvdN9qEwgYD7SBp">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore remote session fetch infra</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 790 chars]...MLs from the async-learn branch, so the land learn path doesn't have to reimplement this?
+</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2416" cache_read_input_tokens="56717" output_tokens="708" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2416, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JEfhjAdZvdN9qEwgYD7SBp">
+Async agent launched successfully.
+agentId: a605754a457f71333 (internal ID - do not mention to user. Use to resume later if needed.)
+The agent is working in the background. You will be notified automatically when it completes.
+Do not duplicate this agent's work — avoid working with the same files or topics it is using. Work on non-overlapping tasks, or briefly tell the user what you launched and end your response.
+output_file: /private/tmp/claude-501/-Users-schrockn-code-erk/tasks/a605754a457f71333.output
+If asked, you can check progress before completion by using Read or Bash tail on the output file.
+  </tool_result>
+  <assistant>Launched two explore agents in parallel:
+1. **Land learn path** — tracing how `_log_session_discovery` works and where it misses remote sessions
+2. **Remote session fetch infra** — understanding what existing utilities exist for fetching from `async-learn` branches
+
+Waiting for both to complete before designing the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1090" cache_read_input_tokens="59133" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1090, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a605754a457f71333&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01JEfhjAdZvdN9qEwgYD7SBp&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn-code-erk/tasks/a605754a457f71333.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Explore remote session fetch infra" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! Now I have a comprehensive understanding. Let me create a detailed summary document by gathering all the key information.
+
+## Summary
+
+Based on my thorough exploration of the erk codebase, here's the existing infrastructure for fetching preprocessed sessions from `async-learn` branches:
+
+### Key Files and Their Roles
+
+**1. `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py`**
+- **Primary function**: `_fetch_manifest()` (lines 28-54) and `_fetch_file_from_branch()` (lines 57-87)
+- **What it does**: Downloads preprocessed session XML files from the `async-learn/{plan_id}` branch
+- **Key operations**:
+  - Reads manifest from `.erk/sessions/manifest.json` on the branch
+  - Downloads individual XML files listed in the manifest
+  - Uses git gateway to fetch from remote via `git.commit.read_file_from_ref()`
+
+**2. `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/push_session.py`**
+- **Manifest structure** (lines 129-172 in `_build_manifest_entry()` and `_update_manifest()`):
+  ```json
+  {
+    "version": 1,
+    "plan_id": 2521,
+    "sessions": [
+      {
+        "session_id": "abc-123",
+        "stage": "planning|impl|address",
+        "source": "local|remote",
+        "uploaded_at": "ISO8601 timestamp",
+        "files": ["planning-abc-123.xml", "planning-abc-123-part2.xml"]
+      }
+    ]
+  }
+  ```
+- **File storage**: XML files go to `.erk/sessions/{filename}` on the branch
+
+**3. `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/preprocess_session.py`**
+- **Full preprocessing pipeline** with these key functions:
+  - `is_empty_session()` (lines 21-62)
+  - `is_warmup_session()` (lines 65-98)
+  - `deduplicate_documentation_blocks()` (lines 101-180)
+  - `truncate_tool_parameters()` (lines 217-264)
+  - `deduplicate_assistant_messages()` (lines 349-373)
+  - `prune_tool_result_content()` (lines 267-303)
+  - `discover_agent_logs()` (lines 605-628) — finds subagent logs in same directory
+  - `split_entries_to_chunks()` (lines 729-794) — splits into 20k token chunks
+  - `generate_compressed_xml()` (lines 376-539) — creates final XML output
+  - `process_log_file()` (lines 542-602) — reads JSONL, filters, and deduplicates
+
+**4. `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py`**
+- **Function `_fetch_preprocessed_manifest()`** (lines 83-120):
+  - Checks if `async-learn/{plan_id}` branch exists on remote
+  - Fetches the branch and reads `.erk/sessions/manifest.json`
+  - Returns parsed manifest dict or None
+  - **Called from**: `_discover_sessions()` (line 179)
+  - **Result embedded in**: `GetLearnSessionsResultDict` as `preprocessed_manifest` field (line 150)
+
+**5. `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py`**
+- **Function `_download_from_branch()`** (lines 52-86):
+  - Downloads a session JSONL from a git branch
+  - Looks for file at `.erk/session/{session_id}.jsonl` on the branch
+  - Stores in `.erk/scratch/remote-sessions/{session_id}/session.jsonl`
+
+**6. `/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py`**
+- **Session discovery for land command** (lines 16-25 imports):
+  - Reuses preprocessing functions directly: `deduplicate_assistant_messages`, `deduplicate_documentation_blocks`, `discover_agent_logs`, `is_empty_session`, `is_warmup_session`, `process_log_file`, `split_entries_to_chunks`, `truncate_tool_parameters`
+  - Calls `_log_session_discovery()` to extract and compress sessions
+  - Returns dict mapping file paths to XML content for embedding in PR
+
+**7. `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/learn/extraction/session_source.py`**
+- **`RemoteSessionSource` class** (lines 151-220):
+  - Tracks origin of remote sessions via `session_branch` property (lines 212-219)
+  - Properties: `session_id`, `run_id`, `path`, `session_branch`
+  - `to_dict()` method serializes to JSON for output
+
+### Reusable Components for Land Learn Path
+
+**Direct function imports** (these are stable and can be imported without subprocess overhead):
+
+```python
+from erk.cli.commands.exec.scripts.preprocess_session import (
+    deduplicate_assistant_messages,
+    deduplicate_documentation_blocks,
+    discover_agent_logs,
+    is_empty_session,
+    is_warmup_session,
+    process_log_file,
+    split_entries_to_chunks,
+    truncate_tool_parameters,
+    generate_compressed_xml,
+    estimate_tokens,
+    prune_tool_result_content,
+)
+```
+
+**Gateway functions** (through Git gateway):
+
+```python
+git.commit.read_file_from_ref(repo_root, ref=f"origin/{session_branch}", file_path="...")
+git.branch.branch_exists_on_remote(repo_root, "origin", branch_name)
+git.remote.fetch_branch(repo_root, "origin", branch_name)
+```
+
+**Data structures**:
+
+- `RemoteSessionSource` — tracks branch-based sessions
+- `SessionsForPlan` — aggregates planning, impl, and learn session IDs
+- `SessionStats` (in land_learn.py) — encapsulates preprocessing metrics
+
+### Key Design Patterns
+
+1. **Manifest as source of truth** — The manifest lists all preprocessed XML files on a branch, enabling reliable tracking across pipeline stages
+
+2. **Direct function call architecture** — The land workflow (documented in `/Users/schrockn/code/erk/docs/learned/planning/async-learn-local-preprocessing.md`) uses direct imports to avoid subprocess overhead when orchestrating multiple preprocessing steps
+
+3. **Token budget chunking** — Sessions exceeding 20k tokens are automatically split into `-part1`, `-part2` suffixes
+
+4. **Session classification by prefix** — Filenames include type prefix (`planning-`, `impl-`, `learn-`) that downstream agents use for weighting
+
+5. **Agent log discovery** — Subagent logs are discovered by session ID matching and included in preprocessing with `agent-` source label
+
+### What Exists That Land Learn Can Reuse
+
+1. **Manifest fetching**: Use `_fetch_preprocessed_manifest()` from `get_learn_sessions.py` or replicate its 8-line pattern
+2. **XML file downloads**: Use `_fetch_file_from_branch()` from `fetch_sessions.py`
+3. **Full preprocessing pipeline**: Import functions directly from `preprocess_session.py` (see land_learn.py for example)
+4. **Session discovery**: Use `get_readable_sessions()` and `find_sessions_for_plan()` from `erk_shared.sessions.discovery`
+5. **Remote session abstraction**: Use `RemoteSessionSource` from `session_source.py`
+
+The land learn path should **not** reimplement manifest reading or XML downloading — these are already available and battle-tested in `fetch_sessions.py`. The preprocessing logic is already designed as importable functions for exactly this use case (land_learn.py demonstrates this pattern).&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;66977&lt;/total_tokens&gt;&lt;tool_uses&gt;23&lt;/tool_uses&gt;&lt;duration_ms&gt;48898&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn-code-erk/tasks/a605754a457f71333.output</user>
+  <assistant>Good, the remote session fetch agent is done. Let me read the key file it identified — `fetch_sessions.py` — while waiting for the other agent.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2558" cache_read_input_tokens="60223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2558}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WDwyStE6tiHRN2YviMnnYU">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2558" cache_read_input_tokens="60223" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2558, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WDwyStE6tiHRN2YviMnnYU">
+     1→"""Fetch preprocessed sessions from an async-learn branch.
+     2→
+     3→Downloads the manifest and XML files from the async-learn/{plan_id} branch
+     4→for use by the learn pipeline. Returns JSON with file list and manifest metadata.
+     5→
+     6→Usage:
+     7→    erk exec fetch-sessions --plan-id 2521 --output-dir ./learn
+     8→
+     9→Output:
+    10→    Structured JSON output:
+    11→    {"success": true, "plan_id": 2521, "manifest": {...}, "files": [...]}
+    12→    {"success": false, "error": "branch_not_found"}
+    13→
+    14→Exit Codes:
+    15→    0: Success
+    16→    1: Error (branch not found, fetch failed)
+    17→"""
+    18→
+    19→import json
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk_shared.context.helpers import require_git, require_repo_root
+    25→from erk_shared.gateway.git.abc import Git
+    26→
+    27→
+    28→def _fetch_manifest(
+    29→    *,
+    30→    repo_root: Path,
+
+... [129 lines omitted] ...
+
+    75→        Path to the written file, or None on failure.
+   121→        click.echo(json.dumps({"success": False, "error": "branch_not_found"}))
+   130→        click.echo(json.dumps({"success": False, "error": "manifest_not_found"}))
+  </tool_result>
+  <assistant>Now let me read the key gateway methods used here to understand the interface.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1924" cache_read_input_tokens="62781" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1924}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Mi4zwG1tXZutsx3uTU11AT">
+    <param name="pattern">def read_file_from_ref</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1924" cache_read_input_tokens="62781" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1924, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mi4zwG1tXZutsx3uTU11AT">
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py:77:    def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -&gt; bytes | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-78-        """Read file from ref (read-only, delegates to wrapped)."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-79-        return self._wrapped.read_file_from_ref(cwd, ref=ref, file_path=file_path)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-80-
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-81-    def get_commit_message(self, repo_root: Path, commit_sha: str) -&gt; str | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-82-        """Get commit message (read-only, delegates to wrapped)."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-83-        return self._wrapped.get_commit_message(repo_root, commit_sha)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-84-
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-85-    def get_commit_messages_since(self, cwd: Path, base_branch: str) -&gt; list[str]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-86-        """Get commit messages since base branch (read-only, delegates to wrapped)."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-87-        return self._wrapped.get_commit_messages_since(cwd, base_branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-88-
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-89-    def get_head_commit_message_full(self, cwd: Path) -&gt; str:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-90-        """Get full commit message (read-only, delegates to wrapped)."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-91-        return self._wrapped.get_head_commit_message_full(cwd)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-92-
+--
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py:170:    def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -&gt; bytes | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-171-        """Return file content from pre-configured ref_file_contents, or None."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-172-        return self._ref_file_contents.get((ref, file_path))
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-173-
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-174-    def get_commit_message(self, repo_root: Path, commit_sha: str) -&gt; str | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-175-        """Get the commit message for a given commit SHA."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-176-        return self._commit_messages.get(commit_sha)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-177-
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-178-    def get_commit_messages_since(self, cwd: Path, base_branch: str) -&gt; list[str]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-179-        """Get full commit messages for commits in HEAD but not in base_branch."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-180-        return self._commit_messages_since.get((cwd, base_branch), [])
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-181-
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py-182-    def get_head_commit_message_full(self, cwd: Path) -&gt; str:
+
+... [54 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now let me wait for the first explore agent to complete.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4341" cache_read_input_tokens="64705" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4341}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01BqzD93U12cTZFXb3fxtjpB">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Check how land calls learn</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 817 chars]...it can call `git.branch.branch_exists_on_remote()` and `git.commit.read_file_from_ref()`?
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4341" cache_read_input_tokens="64705" output_tokens="399" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4341, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BqzD93U12cTZFXb3fxtjpB">
+Excellent! Now I have all the information I need. Let me create a summary document with all the findings:
+
+## Summary: Land Learn Pipeline - Context and Access Analysis
+
+Based on my thorough exploration of the codebase, here are the answers to your questions:
+
+### 1. **Function Call Chain in Land Pipeline**
+
+The land learn flow is triggered in `src/erk/cli/commands/land_pipeline.py`:
+
+- **Line 435**: `create_learn_pr()` step in the execution pipeline calls:
+  ```python
+  _create_learn_pr_with_sessions(ctx, state=state)
+  ```
+
+- **File**: `src/erk/cli/commands/land_learn.py`
+- **Main functions** (both receive full `ErkContext`):
+  - `_create_learn_pr_with_sessions()` (line 282) — wrapper with fire-and-forget error handling
+  - `_create_learn_pr_impl()` (line 456) — actual implementation that does the work
+  - `_create_learn_pr_for_merged_branch()` (line 45) — alternative entry point for PRs merged outside erk land
+
+### 2. **Arguments Passed from Land Pipeline**
+
+The `create_learn_pr()` step in `land_pipeline.py` (line 428-436) passes:
+- `ctx: ErkContext` — full application context with all gateways
+- `state: LandState` — immutable state with all land pipeline fields including:
+  - `plan_id: str | None` — the plan being landed
+  - `merged_pr_number: int` — the PR that was merged
+  - `main_repo_root: Path` — repository root
+  - `cwd: Path` — current working directory
+
+... [82 lines omitted] ...
+
+&gt; See `_create_learn_pr_with_sessions()` in `src/erk/cli/commands/land_learn.py` for the fire-and-forget wrapper. The entire learn workflow is wrapped in a try/except that catches all exceptions and emits a warning instead of raising. This ensures that learn failures never block the primary `erk land` operation.
+The wrapper (line 299-302) catches all exceptions:
+except Exception as exc:
+    user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="2081" cache_read_input_tokens="69046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2081}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Both explore agents are done. I have a complete picture. Let me now design the fix.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2081" cache_read_input_tokens="69046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2081}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01LPodt1ziMihZYa9njkSoK9">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2081" cache_read_input_tokens="69046" output_tokens="3577" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2081, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LPodt1ziMihZYa9njkSoK9">
+
+  </tool_result>
+  <assistant>
+
+Let me verify one more thing — how `branch_exists_on_remote` works in the fake for testability.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3925" cache_read_input_tokens="71127" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3925}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01L4pFrrgCkT9erDgqDwghkZ">
+    <param name="pattern">def branch_exists_on_remote</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3925" cache_read_input_tokens="71127" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3925}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L4pFrrgCkT9erDgqDwghkZ">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:189:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-190-        """Check if a branch exists on a remote.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-191-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-192-        Args:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-193-            repo_root: Path to the git repository root
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-194-            remote: Remote name (e.g., "origin")
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-195-            branch: Branch name to check
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-196-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-197-        Returns:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-198-            True if branch exists on remote, False otherwise
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-199-        """
+--
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:91:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-92-        """Check if a branch exists on a remote."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-93-        return self._wrapped.branch_exists_on_remote(repo_root, remote, branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-94-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-95-    def get_ahead_behind(self, cwd: Path, branch: str) -&gt; tuple[int, int]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-96-        """Get number of commits ahead and behind tracking branch."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-97-        return self._wrapped.get_ahead_behind(cwd, branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-98-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-99-    def get_all_branch_sync_info(self, repo_root: Path) -&gt; dict[str, BranchSyncInfo]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-100-        """Get sync status for all local branches."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-101-        return self._wrapped.get_all_branch_sync_info(repo_root)
+--
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:97:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-98-        """Check if a branch exists on a remote."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-99-        return self._wrapped.branch_exists_on_remote(repo_root, remote, branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-100-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-101-    def get_ahead_behind(self, cwd: Path, branch: str) -&gt; tuple[int, int]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-102-        """Get number of commits ahead and behind tracking branch."""
+
+... [29 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013QWwWNtjzs91ncThWsv1pA">
+    <param name="pattern">def fetch_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3925" cache_read_input_tokens="71127" output_tokens="298" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3925, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013QWwWNtjzs91ncThWsv1pA">
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py:45:    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-46-        """Fetch branch with printed output."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-47-        self._emit(self._format_command(f"git fetch {remote} {branch}"))
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-48-        self._wrapped.fetch_branch(repo_root, remote, branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-49-
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-50-    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-51-        """Pull branch with printed output."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-52-        ff_flag = " --ff-only" if ff_only else ""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-53-        self._emit(self._format_command(f"git pull{ff_flag} {remote} {branch}"))
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-54-        self._wrapped.pull_branch(repo_root, remote, branch, ff_only=ff_only)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py-55-
+--
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py:41:    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-42-        """Fetch a specific branch from a remote.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-43-
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-44-        Args:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-45-            repo_root: Path to the git repository root
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-46-            remote: Remote name (e.g., "origin")
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-47-            branch: Branch name to fetch
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-48-        """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-49-        ...
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-50-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py-51-    @abstractmethod
+--
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py:43:    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py-44-        """Fetch a specific branch from a remote."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py-45-        run_subprocess_with_context(
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py-46-            cmd=["git", "fetch", remote, branch],
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py-47-            operation_context=f"fetch branch '{branch}' from remote '{remote}'",
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py-48-            cwd=repo_root,
+
+... [29 lines omitted] ...
+  </tool_result>
+  <assistant>Good — all the gateway methods have proper fake implementations for testing. Now let me check the existing test patterns for land_learn.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6122" cache_read_input_tokens="75052" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6122}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Rwmkj9Ui1PCnkxzDeeHmQM">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6122" cache_read_input_tokens="75052" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6122, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rwmkj9Ui1PCnkxzDeeHmQM">
+     1→"""Tests for land_learn module: learn plan creation logic."""
+     2→
+     3→import json
+     4→from dataclasses import replace
+     5→from datetime import UTC, datetime
+     6→from pathlib import Path
+     7→
+     8→import pytest
+     9→
+    10→from erk.cli.commands.land_learn import (
+    11→    _compute_session_stats,
+    12→    _create_learn_pr_impl,
+    13→    _create_learn_pr_with_sessions,
+    14→    _log_learn_pr_files,
+    15→    _log_session_discovery,
+    16→    _should_create_learn_pr,
+    17→)
+    18→from erk.cli.commands.land_pipeline import LandState, create_learn_pr
+    19→from erk.core.context import context_for_test
+    20→from erk_shared.context.types import GlobalConfig, LoadedConfig
+    21→from erk_shared.gateway.claude_installation.fake import (
+    22→    FakeClaudeInstallation,
+    23→    FakeProject,
+    24→    FakeSessionData,
+    25→)
+    26→from erk_shared.gateway.git.fake import FakeGit
+    27→from erk_shared.gateway.github.fake import FakeGitHub
+    28→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    29→from erk_shared.gateway.github.types import PRDetails
+    30→from erk_shared.gateway.time.fake import FakeTime
+
+... [813 lines omitted] ...
+
+   160→def test_shows_warning_on_exception(
+   165→    """Exception in _create_learn_pr_impl is caught and shown as warning."""
+   169→        raise RuntimeError("simulated network error")
+   176→    # Should NOT raise — exception is caught
+   180→    assert "Warning" in captured.err
+   181→    assert "simulated network error" in captured.err
+   336→    # even though sessions exist (simulating extraction failure)
+   523→    """Logs warning when no sessions discovered."""
+  </tool_result>
+  <assistant>I have everything I need. Now let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16255" cache_read_input_tokens="81174" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16255}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01MM9kTxK6Wpjx978V4Wm2xb">
+    <param name="file_path">/Users/schrockn/.claude/plans/swift-dancing-waterfall.md</param>
+    <param name="content"># Fix: Land learn pipeline should fetch remote sessions from async-learn branch
+
+## Contex...[truncated 3885 chars]...and/test_land_learn.py`
+2. Run type checker on changed file
+3. Run linter on changed file
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16255" cache_read_input_tokens="81174" output_tokens="1371" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16255, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MM9kTxK6Wpjx978V4Wm2xb">
+File created successfully at: /Users/schrockn/.claude/plans/swift-dancing-waterfall.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01Xu3RBvzMayYDStVHCsxp7K">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1408" cache_read_input_tokens="97429" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1408, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xu3RBvzMayYDStVHCsxp7K">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1070" cache_read_input_tokens="98837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1070}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01XieavkYFzrhqKx7SKbKKrn">
+    <param name="plan"># Fix: Land learn pipeline should fetch remote sessions from async-learn branch
+
+## Contex...[truncated 3885 chars]...and/test_land_learn.py`
+2. Run type checker on changed file
+3. Run linter on changed file
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1070" cache_read_input_tokens="98837" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1070, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XieavkYFzrhqKx7SKbKKrn">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/swift-dancing-waterfall.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Land learn pipeline should fetch remote sessions from async-learn branch
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e167b72b-c2e5-4d51-aee3-a2abf16fb782 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MFinMrYY3L4RPHkwQoQzVJ">
+    <param name="file_path">/Users/schrockn/.claude/plans/swift-dancing-waterfall.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="99907" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 735, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MFinMrYY3L4RPHkwQoQzVJ">
+     1→# Fix: Land learn pipeline should fetch remote sessions from async-learn branch
+     2→
+     3→## Context
+     4→
+     5→When landing a PR that was implemented remotely (via `erk:pr-dispatch`), the land pipeline's auto-learn step fails to find session data. The remote implementation uploads preprocessed session XMLs to an `async-learn/{plan_id}` branch, but `land_learn.py` only checks local disk via `get_readable_sessions()` → `find_session_globally()`. This causes `(not found)` for every session and skips learn plan creation entirely.
+     6→
+     7→The `/erk:learn` skill already handles this correctly via `get_learn_sessions.py` which fetches the manifest from the async-learn branch. The land pipeline needs the same capability.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Add `_fetch_xmls_from_async_learn_branch()` to `land_learn.py`
+    12→
+    13→**File:** `src/erk/cli/commands/land_learn.py`
+    14→
+    15→Add a new function that:
+    16→- Takes `git: Git`, `repo_root: Path`, `plan_id: str`
+    17→- Checks if `async-learn/{plan_id}` branch exists on remote via `git.branch.branch_exists_on_remote()`
+    18→- Fetches the branch via `git.remote.fetch_branch()`
+    19→- Reads `.erk/sessions/manifest.json` via `git.commit.read_file_from_ref()`
+    20→- Downloads each XML file listed in the manifest
+    21→- Returns `dict[str, str]` mapping `{IMPL_CONTEXT_DIR}/sessions/{filename}` to XML content
+    22→
+    23→Reuses the same gateway methods that `fetch_sessions.py` uses (`_fetch_manifest` and `_fetch_file_from_branch`), but inline since they're simple (3-5 lines each) and the private functions can't be imported.
+    24→
+    25→Add `import json` to the imports (already used by the module indirectly via session_schema but not directly imported).
+    26→
+    27→### 2. Add branch fallback in `_create_learn_pr_impl()`
+    28→
+    29→**File:** `src/erk/cli/commands/land_learn.py`, lines ~484-494
+    30→
+
+... [56 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01TJPDtXfUFKExcdAtWyuur6">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1749" cache_read_input_tokens="100642" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1749, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TJPDtXfUFKExcdAtWyuur6">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+## Fix: Land learn pipeline should fetch remote sessions from async-learn branch
+
+**Context:** When landing a remotely-implemented PR, the land pipeline's auto-learn step fails because it only checks local disk for session data. The remote implementation already uploaded preprocessed XMLs to an `async-learn/{plan_id}` branch, but `land_learn.py` never looks there. The `/erk:learn` skill handles this correctly — the land pipeline needs the same fallback.
+
+**Changes to `src/erk/cli/commands/land_learn.py`:**
+
+1. **New function `_fetch_xmls_from_async_learn_branch()`** — checks if the `async-learn/{plan_id}` branch exists on remote, fetches it, reads the manifest, downloads each XML file, returns `dict[str, str]`
+
+2. **Add branch fallback in `_create_learn_pr_impl()`** — after `_log_session_discovery()` returns empty xml_files but sessions exist, try fetching from the async-learn branch before skipping
+
+3. **Same fallback in `_create_learn_pr_for_merged_branch()`** — same pattern
+
+**Tests in `tests/unit/cli/commands/land/test_land_learn.py`:**
+- Integration test: learn PR created from remote branch XMLs when local sessions not found
+- Guard test: still skips when no async-learn branch exists
+- Unit tests for `_fetch_xmls_from_async_learn_branch` directly</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="102391" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01SvCxXNwTepDAuRbZ7kQAgP">
+    <param name="questions">[{'question': '📋 Fix: Land learn pipeline should fetch remote sessions from async-learn br...[truncated 418 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="102391" output_tokens="574" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SvCxXNwTepDAuRbZ7kQAgP">
+User has answered your questions: "📋 Fix: Land learn pipeline should fetch remote sessions from async-learn branch
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01HvFh5HqaJDBm8hajRGpt96">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1857" cache_read_input_tokens="103724" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1857, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HvFh5HqaJDBm8hajRGpt96">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0154eW4G9Fa3PDBqRDYNMyS3">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="105581" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0154eW4G9Fa3PDBqRDYNMyS3">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="e167b72b-c2e5-4d51-aee3-a2abf16fb782" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="e167b72b-c2e5-4d51-aee3-a2abf16fb782" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "e167b72b-c2e5-4d51-aee3-a2abf16fb782" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "e167b72b-c2e5-4d51-aee3-a2abf16fb782" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "e167b72b-c2e5-4d51-aee3-a2abf16fb782" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "e167b72b-c2e5-4d51-aee3-a2abf16fb782" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="106149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2298}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Following the plan-save workflow:
+
+**Branch slug:** `fix-land-learn-remote-fetch`
+
+**Summary:** The land pipeline's auto-learn step only checks local disk for session data, missing preprocessed XMLs uploaded to async-learn branches by remote implementations. This adds a fallback that fetches session XMLs from the async-learn branch when local lookup fails.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="106149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2298}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>[Request interrupted by user]</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a84af463bc5c4d5ae&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01DyjYKMCrLu7fUxHhXfsnGE&lt;/tool-use-id&gt;
+&lt;output-file&gt;/private/tmp/claude-501/-Users-schrockn-code-erk/tasks/a84af463bc5c4d5ae.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Explore land learn path" completed&lt;/summary&gt;
+&lt;result&gt;Excellent! Now I have a comprehensive understanding. Let me create a summary document with my findings:
+
+## Summary
+
+Based on my comprehensive exploration of the land pipeline's learn step, here's what I found about how the learn pipeline works and where it fails for remote sessions:
+
+### Current Flow: `land_learn.py` Session Discovery
+
+**Key Functions in `/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py`:**
+
+1. **`_log_session_discovery()` (lines 322-418)**
+   - Calls `get_readable_sessions(sessions, ctx.claude_installation)` from `erk_shared.sessions.discovery`
+   - Filters sessions to only those **readable locally** (JSONL files exist in `~/.claude/projects/*/sessions/`)
+   - For each readable session, calls `_compute_session_stats()` to preprocess and generate XML
+   - Returns a `dict[str, str]` mapping paths to XML content for embedding in the learn PR
+
+2. **`_compute_session_stats()` (lines 181-267)**
+   - Reads the local JSONL file directly
+   - Runs the full preprocessing pipeline (deduplication, truncation, filtering)
+   - Chunks XML at 200,000 tokens
+   - Returns `SessionStats` frozen dataclass with XML chunks
+
+3. **`_create_learn_pr_impl()` (lines 456-552)**
+   - Calls `get_readable_sessions()` which uses `claude_installation.find_session_globally(session_id)`
+   - This only finds sessions in `~/.claude/projects/*/sessions/` directories
+   - **No fallback to async-learn branch materials**
+   - If no readable sessions exist locally, skips learn plan creation with message "(sessions found but no XML could be extracted)"
+
+**The Failure Point for Remote Sessions:**
+- When `land_learn.py` is executed on a machine that didn't run the implementation, local session files don't exist
+- `get_readable_sessions()` returns empty list because `claude_installation.find_session_globally()` can't locate sessions
+- `_log_session_discovery()` gets called but processes no sessions
+- Result: empty `xml_files` dict, learn plan creation skipped
+
+### Where Preprocessed Sessions Already Live
+
+**From `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py` (lines 83-120):**
+
+The `get_learn_sessions` exec command already implements the fallback pattern:
+- `_fetch_preprocessed_manifest()` (lines 83-120) checks for `async-learn/{plan_id}` branch
+- Reads `.erk/sessions/manifest.json` from the branch via `git show`
+- Returns manifest data with preprocessed session information
+
+**Also from `fetch_sessions.py` (lines 90-150):**
+- `fetch_sessions` exec command downloads preprocessed XML files from `async-learn/{plan_id}` branch
+- Files are stored at `.erk/sessions/{filename}` on the branch
+- Manifest lists which files to fetch
+
+### What Would Need to Change in `land_learn.py`
+
+To support remote session XMLs from async-learn branches, you'd need to:
+
+1. **Modify `_log_session_discovery()` fallback logic (after line 348)**
+   - After `get_readable_sessions()` returns empty results
+   - Call a new function `_fetch_preprocessed_sessions_from_branch()` that:
+     - Tries to fetch `async-learn/{plan_id}` branch manifest
+     - Downloads each XML file via `fetch-sessions` exec command or direct git operations
+     - Returns the same `dict[str, str]` structure (path → XML content)
+
+2. **Create `_fetch_preprocessed_sessions_from_branch()` helper (new)**
+   - Takes plan_id, repo_root, git gateway
+   - Calls `git.branch.branch_exists_on_remote(repo_root, "origin", f"async-learn/{plan_id}")`
+   - Fetches the branch via `git.remote.fetch_branch()`
+   - Reads manifest from `.erk/sessions/manifest.json` via `git.commit.read_file_from_ref()`
+   - For each file in manifest, reads via git and builds output dict
+   - Returns `dict[str, str] | None` — None if branch doesn't exist
+
+3. **Update `_create_learn_pr_impl()` call (line 482)**
+   - After logging session discovery, check if result is empty
+   - If empty and `all_session_ids` is not empty, try the branch fallback
+   - Chain the two discovery paths: local first, then remote async-learn branch as fallback
+
+### Key Data Structures Involved
+
+**From `erk_shared.sessions.discovery.SessionsForPlan`:**
+- `last_session_branch: str | None` — the `async-learn/{plan_id}` branch name
+- `last_session_id: str | None` — session ID on the branch
+- These are already populated by plan backend metadata
+
+**From `get_learn_sessions.py` output:**
+- `preprocessed_manifest` field already contains manifest data
+- This is the entry point you'd reuse
+
+### Test Patterns to Follow
+
+From `/Users/schrockn/code/erk/tests/unit/cli/commands/land/test_land_learn.py`:
+- Tests use fakes: `FakeGitHub`, `FakeGit`, `FakeClaudeInstallation`
+- `_land_state()` helper constructs LandState for testing
+- Tests verify early returns, session discovery, XML generation
+
+For remote session fallback tests:
+- Mock `git.branch.branch_exists_on_remote()` to return True for async-learn branch
+- Mock `git.remote.fetch_branch()` as no-op
+- Mock `git.commit.read_file_from_ref()` to return manifest + XML content
+- Verify fallback is invoked only when local sessions return empty
+
+### Documentation References
+
+All relevant docs are in `/Users/schrockn/code/erk/docs/learned/planning/`:
+- `async-learn-local-preprocessing.md` — how sessions are preprocessed locally before branch push
+- `learn-pipeline-workflow.md` — full 7-stage pipeline (local stages 1-5, CI stages 6-7)
+- `session-preprocessing.md` — two implementations (exec script vs erk-shared)
+- `remote-branch-learn.md` — why remote branches skip interactive learn prompts
+
+The key insight: **Session preprocessing already happens in CI and materials are committed to `async-learn/{plan_id}` branch, but `land_learn.py` doesn't yet have a fallback to fetch them when the developer doesn't have local sessions.**&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;72693&lt;/total_tokens&gt;&lt;tool_uses&gt;24&lt;/tool_uses&gt;&lt;duration_ms&gt;55021&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /private/tmp/claude-501/-Users-schrockn-code-erk/tasks/a84af463bc5c4d5ae.output</user>
+  <user>[Request interrupted by user]</user>
+  <user>continue</user>
+  <usage input_tokens="3" cache_creation_input_tokens="2283" cache_read_input_tokens="108447" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2283}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012coH6BGCuv2t3QLmFFKxMJ">
+    <param name="command">erk exec plan-save --format json --session-id="e167b72b-c2e5-4d51-aee3-a2abf16fb782" --bra...[truncated 201 chars]...a fallback that fetches session XMLs from the async-learn branch when local lookup fails."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2283" cache_read_input_tokens="108447" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012coH6BGCuv2t3QLmFFKxMJ">
+{"success": true, "plan_number": 8893, "plan_url": "https://github.com/dagster-io/erk/pull/8893", "title": "[erk-plan] Fix: Land learn pipeline should fetch remote sessions from async-learn branch", "branch_name": "plnd/fix-land-learn-remote-fetc-03-06-2127", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/e167b72b-c2e5-4d51-aee3-a2abf16fb782/plan_snapshots/000001-1041ae00"}
+  </tool_result>
+  <assistant>Plan saved as draft PR **#8893**: [Fix: Land learn pipeline should fetch remote sessions from async-learn branch](https://github.com/dagster-io/erk/pull/8893)
+
+Now pushing the planning session for cross-machine learning:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="110730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 422}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Aas6HckQALKqTJATHfZQgN">
+    <param name="command">erk exec upload-impl-session --session-id "e167b72b-c2e5-4d51-aee3-a2abf16fb782" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session to async-learn branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="110730" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 422, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Aas6HckQALKqTJATHfZQgN">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01VserXjxGWPSchnBLgY1LCN">
+    <param name="plan"># Fix: Land learn pipeline should fetch remote sessions from async-learn branch
+
+## Contex...[truncated 3885 chars]...and/test_land_learn.py`
+2. Run type checker on changed file
+3. Run linter on changed file
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="111152" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 321, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VserXjxGWPSchnBLgY1LCN">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8893 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8893:
+  In current wt:    source "$(erk br co --for-plan 8893 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8893 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8893 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8893 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8893:
+  In current wt:  erk br co --for-plan 8893
+  In new wt:      erk br co --new-slot --for-plan 8893
+
+Dispatch plan #8893:
+  CLI command:    erk pr dispatch 8893
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan **#8893** saved successfully.
+
+**Implement plan #8893:**
+```
+In current wt:    source "$(erk br co --for-plan 8893 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8893 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8893 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8893 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8893:**
+```
+In current wt:  erk br co --for-plan 8893
+In new wt:      erk br co --new-slot --for-plan 8893
+```
+
+**Dispatch plan #8893:**
+```
+CLI command:    erk pr dispatch 8893
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="111473" output_tokens="246" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 529, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "e167b72b-c2e5-4d51-aee3-a2abf16fb782" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>The most recent plan is **#8893**. Dispatching for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="815" cache_read_input_tokens="112002" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 815}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VnDoqWvMvozJv7Z6zdaak7">
+    <param name="command">erk pr dispatch 8893</param>
+    <param name="description">Dispatch plan #8893 for remote implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="815" cache_read_input_tokens="112002" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 815, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VnDoqWvMvozJv7Z6zdaak7">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8893...
+
+✓ All 1 plan(s) validated
+
+  #8893: [erk-plan] Fix: Land learn pipeline should fetch remote sessions from async-learn branch
+
+Dispatching PR #8893...
+
+Fetching plan content...
+Syncing branch: plnd/fix-land-learn-remote-fetc-03-06-2127
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NJmHeiwCZ3aDbGPNSm1XXY">
+    <param name="command">erk exec marker delete --session-id "e167b72b-c2e5-4d51-aee3-a2abf16fb782" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="112817" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 469, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NJmHeiwCZ3aDbGPNSm1XXY">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan **#8893** dispatched for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8893
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22792927849</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="113286" output_tokens="66" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 240, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
