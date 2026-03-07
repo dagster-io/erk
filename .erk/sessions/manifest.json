@@ -28,6 +28,37 @@
       "raw_size_kb": 2100,
       "xml_size_kb": 446,
       "git_branch": "plnd/canonicalize-session-stora-03-07-1143"
+    },
+    {
+      "session_id": "b585ca84-c2bb-4f12-8713-404a71c5041f",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-07T17:03:04.949636+00:00",
+      "files": [
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part1.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part10.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part11.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part12.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part13.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part14.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part15.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part16.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part17.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part18.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part2.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part3.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part4.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part5.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part6.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part7.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part8.xml",
+        "impl-b585ca84-c2bb-4f12-8713-404a71c5041f-b585ca84-c2bb-4f12-8713-404a71c5041f-part9.xml"
+      ],
+      "user_turns": 6,
+      "duration_minutes": 18,
+      "raw_size_kb": 2256,
+      "xml_size_kb": 490,
+      "git_branch": "plnd/canonicalize-session-stora-03-07-1143"
     }
   ]
 }
