@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "plan_id": 8923,
+  "sessions": [
+    {
+      "session_id": "bdac787e-f504-41c8-a649-cafb7b9887d5",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-07T22:04:17.633807+00:00",
+      "files": [
+        "impl-bdac787e-f504-41c8-a649-cafb7b9887d5-bdac787e-f504-41c8-a649-cafb7b9887d5.xml"
+      ]
+    }
+  ]
+}
