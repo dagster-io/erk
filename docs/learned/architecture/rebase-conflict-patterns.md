@@ -61,7 +61,7 @@ Some files are auto-generated (e.g., `tripwires.md`, `index.md`). For these:
 
 **Phase 2: Claude TUI fallback** — If Phase 1 hits conflicts, launches Claude Code interactively with `/erk:rebase` for AI-assisted conflict resolution via `execute_interactive()`.
 
-The `_is_graphite_enabled()` helper determines the Phase 1 strategy by unwrapping `DryRunGraphite` and checking for `GraphiteDisabled`.
+The Phase 1 strategy selection checks whether Graphite is enabled by inspecting the graphite context object. See the Phase 1 dispatch logic in `src/erk/cli/commands/pr/rebase_cmd.py`.
 
 **Mid-rebase recovery**: If a rebase is already in progress (detected via `is_rebase_in_progress()`), Phase 1 is skipped entirely and Claude TUI launches directly to resolve the existing conflicts.
 
