@@ -17,7 +17,7 @@ The `--from-current-branch` flag on `erk slot assign` assigns the current branch
 
 <!-- Source: src/erk/cli/commands/slot/assign_cmd.py -->
 
-The `--from-current-branch` flag is defined as a `click.option` boolean flag on the `slot_assign` command. It is mutually exclusive with the positional `BRANCH` argument.
+The `--from-current-branch` flag is a boolean `is_flag=True` option, mutually exclusive with the positional `BRANCH` argument. See the flag definition in `src/erk/cli/commands/slot/assign_cmd.py`.
 
 ## Target Branch Selection
 

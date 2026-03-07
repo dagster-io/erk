@@ -1289,8 +1289,8 @@ git checkout -- src/**/*.py
 # Create safety branch before running
 git checkout -b refactor-backup
 # ... run transformations ...
-# If bad: git checkout main && git branch -D refactor-backup
-# If good: git checkout main && git merge refactor-backup
+# If bad: git checkout $(erk exec detect-trunk-branch | jq -r '.trunk_branch') && git branch -D refactor-backup
+# If good: git checkout $(erk exec detect-trunk-branch | jq -r '.trunk_branch') && git merge refactor-backup
 ```
 
 **Best practice:** Always commit before running transformations:

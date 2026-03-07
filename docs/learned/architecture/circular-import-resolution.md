@@ -26,7 +26,13 @@ When an ABC in `erk` is consumed by `ErkContext` (also in `erk`), but the implem
 
 1. **ABC** moved to `packages/erk-shared/src/erk_shared/core/health_check_runner.py`
 2. **Implementation** stays at `src/erk/core/health_checks/runner.py` (`RealHealthCheckRunner`)
-3. **TYPE_CHECKING guard** in the ABC file: uses `from __future__ import annotations` and a `TYPE_CHECKING` block to import `ErkContext` for type annotations only, avoiding the runtime circular import
+3. **TYPE_CHECKING guard** in the ABC file for the `ErkContext` type annotation:
+   ```python
+   from __future__ import annotations
+   from typing import TYPE_CHECKING
+   if TYPE_CHECKING:
+       from erk_shared.context.context import ErkContext
+   ```
 
 The `RealHealthCheckRunner` is a thin wrapper that delegates to `run_all_checks()` module-level function, keeping the ABC minimal.
 

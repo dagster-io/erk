@@ -40,7 +40,8 @@ Check `$ARGUMENTS` for flags.
    **Also fetch file-level restructuring context:**
 
    ```bash
-   git diff --stat -M -C main...HEAD
+   TRUNK=$(erk exec detect-trunk-branch | jq -r '.trunk_branch')
+   git diff --stat -M -C "$TRUNK"...HEAD
    ```
 
    This reveals renames, copies, and splits. Use this to inform pre-existing detection in step 2.

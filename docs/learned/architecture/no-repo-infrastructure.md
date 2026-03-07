@@ -37,11 +37,7 @@ The one-shot dispatch command demonstrates the full no-repo pattern. It supports
 
 ### Repo Resolution
 
-The repo resolution section handles the `--repo` flag:
-
-- Validates format: must contain exactly one `/` (owner/repo)
-- Falls back to local repo detection if `--repo` not provided
-- Guards with `isinstance(ctx.repo, NoRepoSentinel)` when no `--repo` flag
+The `--repo` flag handler validates the `owner/repo` format (must contain exactly one `/`), falls back to local repo detection when not provided, and guards with `isinstance(ctx.repo, NoRepoSentinel)` when no `--repo` flag is given.
 
 ### Error Handling
 
