@@ -84,6 +84,7 @@ Many rules have explicit exceptions documented in the skill files you loaded in 
 - **5+ parameters rule**: Does NOT apply to ABC/Protocol method signatures or Click command callbacks (Click injects parameters positionally)
 - **LBYL rule**: Exceptions allowed at error boundaries, for third-party API compatibility, or when adding context before re-raising. `assert` is always acceptable in test files (`test_*.py`, `*_test.py`, `conftest.py`). In production code, `assert` is acceptable as long as the asserted expression has no side effects (type narrowing, invariants, preconditions are all fine)
 - **Import alias rule**: Well-known library-level aliases are NOT violations (e.g., `import pandas as pd`, `import numpy as np`, `import dagster as dg`, `import matplotlib.pyplot as plt`). Only flag gratuitous renaming of internal/project imports
+- **No default parameters rule**: Does NOT apply to functions in test files (`test_*.py`, `conftest.py`) or Fake classes used for testing. These exist to reduce test boilerplate and defaults are their intended purpose.
 - **Import-time side effects**: Static constants are acceptable
 
 If the code matches a documented exception, it is NOT a violation. Do not flag it.
