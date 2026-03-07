@@ -44,11 +44,11 @@ Rules triggered by matching actions in code.
 
 **adding a new method to Git ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
-**adding a new method to GitHub ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
-
 **adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
 **adding a new method to HttpClient ABC without implementing in all providers** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. HttpClient follows the gateway pattern. New methods must be added to abc.py, real.py, and fake.py at minimum.
+
+**adding a new method to LocalGitHub ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
 **adding a new parameter to a gateway ABC method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests.
 
