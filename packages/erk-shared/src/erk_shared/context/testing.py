@@ -36,6 +36,7 @@ from erk_shared.gateway.github_admin.abc import GitHubAdmin
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
@@ -55,6 +56,7 @@ def context_for_test(
     codespace: Codespace | None = None,
     plan_store: PlanBackend | None = None,
     local_config: LoadedConfig | None = None,
+    remote_github: RemoteGitHub | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
@@ -219,6 +221,7 @@ def context_for_test(
         local_config=resolved_local_config,
         package_info=package_info,
         http_client=FakeHttpClient(),
+        remote_github=remote_github,
         dry_run=False,
         debug=debug,
     )

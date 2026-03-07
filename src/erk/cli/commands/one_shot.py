@@ -17,14 +17,42 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.implement_shared import normalize_model_name
-from erk.cli.commands.one_shot_dispatch import (
+from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
-    dispatch_one_shot,
+    dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.ensure import Ensure, UserFacingCliError
-from erk.core.context import ErkContext
+from erk.core.context import ErkContext, NoRepoSentinel
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
+from erk_shared.gateway.remote_github.real import RealRemoteGitHub
 from erk_shared.output.output import user_output
+
+
+def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
+    """Get or construct a RemoteGitHub from context.
+
+    Uses ctx.remote_github if provided (tests inject FakeRemoteGitHub here).
+    Otherwise constructs RealRemoteGitHub from ctx.http_client.
+
+    Args:
+        ctx: ErkContext with http_client and time
+
+    Returns:
+        RemoteGitHub instance
+
+    Raises:
+        UserFacingCliError: If no http_client is available
+    """
+    if ctx.remote_github is not None:
+        return ctx.remote_github
+
+    if ctx.http_client is None:
+        raise UserFacingCliError(
+            "GitHub authentication required.\nRun 'gh auth login' to authenticate."
+        )
+
+    return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
 
 
 @click.command("one-shot")
@@ -144,64 +172,39 @@ def one_shot(
         slug=slug,
     )
 
+    # Resolve owner/repo: from --repo flag or from local git remote
     if target_repo is not None:
-        _dispatch_remote(
-            ctx,
-            target_repo=target_repo,
-            params=params,
-            dry_run=dry_run,
-            dispatch_ref=dispatch_ref,
-            ref_current=ref_current,
-        )
+        if "/" not in target_repo or target_repo.count("/") != 1:
+            raise UserFacingCliError(
+                f"Invalid --repo format: '{target_repo}'\n"
+                "Expected format: owner/repo (e.g., dagster-io/erk)"
+            )
+        owner, repo_name = target_repo.split("/")
+    else:
+        if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+            raise UserFacingCliError(
+                "Cannot determine target repository.\n"
+                "Use --repo owner/repo or run from inside a git repository."
+            )
+        owner, repo_name = ctx.repo.github.owner, ctx.repo.github.repo
+
+    # Resolve dispatch ref
+    if target_repo is not None and ref_current:
+        raise click.UsageError("--repo and --ref-current are mutually exclusive")
+    if target_repo is not None:
+        ref = dispatch_ref  # no local branch resolution for remote
     else:
         ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
-        dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)
 
-
-def _dispatch_remote(
-    ctx: ErkContext,
-    *,
-    target_repo: str,
-    params: OneShotDispatchParams,
-    dry_run: bool,
-    dispatch_ref: str | None,
-    ref_current: bool,
-) -> None:
-    """Handle the --repo remote dispatch path.
-
-    Validates inputs, constructs RemoteGitHub, and calls dispatch_one_shot_remote.
-    """
-    from erk.cli.commands.one_shot_remote_dispatch import dispatch_one_shot_remote
-    from erk_shared.gateway.remote_github.real import RealRemoteGitHub
-
-    # Validate --repo format
-    if "/" not in target_repo or target_repo.count("/") != 1:
-        raise UserFacingCliError(
-            f"Invalid --repo format: '{target_repo}'\n"
-            "Expected format: owner/repo (e.g., dagster-io/erk)"
-        )
-
-    # --repo + --ref-current is invalid (no local branch to reference)
-    if ref_current:
-        raise click.UsageError("--repo and --ref-current are mutually exclusive (no local branch)")
-
-    # Validate http_client is available
-    if ctx.http_client is None:
-        raise UserFacingCliError(
-            "GitHub authentication required for --repo.\nRun 'gh auth login' to authenticate."
-        )
-
-    owner, repo = target_repo.split("/")
-
-    remote = RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
+    remote = _get_remote_github(ctx)
 
     dispatch_one_shot_remote(
         remote=remote,
         owner=owner,
-        repo=repo,
+        repo=repo_name,
         params=params,
         dry_run=dry_run,
-        ref=dispatch_ref,
+        ref=ref,
         time_gateway=ctx.time,
         llm_caller=ctx.llm_caller,
     )

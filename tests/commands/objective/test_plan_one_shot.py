@@ -9,6 +9,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -116,10 +117,22 @@ def _make_objective_issue(number: int, body: str) -> IssueInfo:
     )
 
 
+def _make_remote() -> FakeRemoteGitHub:
+    """Create a default FakeRemoteGitHub for tests."""
+    return FakeRemoteGitHub(
+        authenticated_user="testuser",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+    )
+
+
 def _build_one_shot_context(
     env,
     *,
     issues: FakeGitHubIssues,
+    remote: FakeRemoteGitHub | None = None,
 ):
     """Build context for one-shot tests with objective issues."""
     git = FakeGit(
@@ -129,8 +142,12 @@ def _build_one_shot_context(
         current_branches={env.cwd: "main"},
     )
     github = FakeGitHub(authenticated=True, issues_gateway=issues)
+    if remote is None:
+        remote = _make_remote()
 
-    return build_workspace_test_context(env, git=git, github=github, issues=issues)
+    return build_workspace_test_context(
+        env, git=git, github=github, issues=issues, remote_github=remote
+    )
 
 
 def test_plan_one_shot_happy_path() -> None:
@@ -154,22 +171,20 @@ def test_plan_one_shot_happy_path() -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Done!" in result.output
 
-        # Verify workflow was triggered with objective/node inputs
-        github = ctx.github
-        assert isinstance(github, FakeGitHub)
-        assert len(github.triggered_workflows) == 1
-        workflow, inputs, _ref = github.triggered_workflows[0]
-        assert workflow == "one-shot.yml"
-        assert inputs["objective_issue"] == "42"
-        assert inputs["node_id"] == "1.1"
-        assert inputs["prompt"] == (
+        # Verify workflow was triggered with objective/node inputs via RemoteGitHub
+        remote = ctx.remote_github
+        assert isinstance(remote, FakeRemoteGitHub)
+        assert len(remote.dispatched_workflows) == 1
+        wf = remote.dispatched_workflows[0]
+        assert wf.workflow == "one-shot.yml"
+        assert wf.inputs["objective_issue"] == "42"
+        assert wf.inputs["node_id"] == "1.1"
+        assert wf.inputs["prompt"] == (
             "/erk:objective-plan 42\n"
             "Implement step 1.1 of objective #42: Setup infra (Phase: Foundation)"
         )
 
         # Verify objective body was updated: node 1.1 marked as "planning" with draft PR
-        # Note: updated_bodies has 2 entries — one from skeleton plan issue creation
-        # (create_plan_issue updates body with comment_id) and one from objective update
         objective_updates = [(num, body) for num, body in issues.updated_bodies if num == 42]
         assert len(objective_updates) == 1
         _, updated_body = objective_updates[0]
@@ -200,11 +215,10 @@ def test_plan_one_shot_repeated_invocation_advances_node() -> None:
         )
         assert result1.exit_code == 0, f"First invocation failed: {result1.output}"
 
-        github = ctx.github
-        assert isinstance(github, FakeGitHub)
-        assert len(github.triggered_workflows) == 1
-        _, inputs1, _ref = github.triggered_workflows[0]
-        assert inputs1["node_id"] == "1.1"
+        remote = ctx.remote_github
+        assert isinstance(remote, FakeRemoteGitHub)
+        assert len(remote.dispatched_workflows) == 1
+        assert remote.dispatched_workflows[0].inputs["node_id"] == "1.1"
 
         # Second invocation: should dispatch node 1.2 (since 1.1 is now "planning")
         result2 = runner.invoke(
@@ -215,9 +229,8 @@ def test_plan_one_shot_repeated_invocation_advances_node() -> None:
         )
         assert result2.exit_code == 0, f"Second invocation failed: {result2.output}"
 
-        assert len(github.triggered_workflows) == 2
-        _, inputs2, _ref = github.triggered_workflows[1]
-        assert inputs2["node_id"] == "1.2"
+        assert len(remote.dispatched_workflows) == 2
+        assert remote.dispatched_workflows[1].inputs["node_id"] == "1.2"
 
 
 def test_plan_one_shot_auto_detects_next_node() -> None:
@@ -277,11 +290,10 @@ steps:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        github = ctx.github
-        assert isinstance(github, FakeGitHub)
-        _workflow, inputs, _ref = github.triggered_workflows[0]
-        assert inputs["node_id"] == "1.2"
-        assert "Add tests" in inputs["prompt"]
+        remote = ctx.remote_github
+        assert isinstance(remote, FakeRemoteGitHub)
+        assert remote.dispatched_workflows[0].inputs["node_id"] == "1.2"
+        assert "Add tests" in remote.dispatched_workflows[0].inputs["prompt"]
 
 
 def test_plan_one_shot_node_override() -> None:
@@ -304,11 +316,10 @@ def test_plan_one_shot_node_override() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        github = ctx.github
-        assert isinstance(github, FakeGitHub)
-        _workflow, inputs, _ref = github.triggered_workflows[0]
-        assert inputs["node_id"] == "2.1"
-        assert "Build feature" in inputs["prompt"]
+        remote = ctx.remote_github
+        assert isinstance(remote, FakeRemoteGitHub)
+        assert remote.dispatched_workflows[0].inputs["node_id"] == "2.1"
+        assert "Build feature" in remote.dispatched_workflows[0].inputs["prompt"]
 
 
 def test_plan_one_shot_no_pending_nodes() -> None:
@@ -333,9 +344,9 @@ def test_plan_one_shot_no_pending_nodes() -> None:
         assert "no pending nodes" in result.output
 
         # Verify no workflow was triggered
-        github = ctx.github
-        assert isinstance(github, FakeGitHub)
-        assert len(github.triggered_workflows) == 0
+        remote = ctx.remote_github
+        assert isinstance(remote, FakeRemoteGitHub)
+        assert len(remote.dispatched_workflows) == 0
 
 
 def test_plan_one_shot_node_not_found() -> None:
@@ -382,10 +393,10 @@ def test_plan_one_shot_dry_run() -> None:
         assert "Implement step 1.1" in result.output
 
         # Verify no mutations occurred
-        github = ctx.github
-        assert isinstance(github, FakeGitHub)
-        assert len(github.triggered_workflows) == 0
-        assert len(github.created_prs) == 0
+        remote = ctx.remote_github
+        assert isinstance(remote, FakeRemoteGitHub)
+        assert len(remote.dispatched_workflows) == 0
+        assert len(remote.created_pull_requests) == 0
         # No objective body update in dry-run mode
         assert len(issues.updated_bodies) == 0
 
@@ -429,10 +440,9 @@ def test_plan_one_shot_model_flag() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        github = ctx.github
-        assert isinstance(github, FakeGitHub)
-        _workflow, inputs, _ref = github.triggered_workflows[0]
-        assert inputs["model_name"] == "opus"
+        remote = ctx.remote_github
+        assert isinstance(remote, FakeRemoteGitHub)
+        assert remote.dispatched_workflows[0].inputs["model_name"] == "opus"
 
 
 def test_plan_flags_require_one_shot() -> None:
@@ -502,12 +512,11 @@ def test_plan_one_shot_next_with_issue_ref() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        github = ctx.github
-        assert isinstance(github, FakeGitHub)
-        assert len(github.triggered_workflows) == 1
-        _workflow, inputs, _ref = github.triggered_workflows[0]
-        assert inputs["node_id"] == "1.1"
-        assert inputs["objective_issue"] == "42"
+        remote = ctx.remote_github
+        assert isinstance(remote, FakeRemoteGitHub)
+        assert len(remote.dispatched_workflows) == 1
+        assert remote.dispatched_workflows[0].inputs["node_id"] == "1.1"
+        assert remote.dispatched_workflows[0].inputs["objective_issue"] == "42"
 
 
 def test_plan_one_shot_next_fails_on_branch_without_objective() -> None:

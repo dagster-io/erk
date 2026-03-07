@@ -16,6 +16,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -234,7 +235,16 @@ class TestHandleAllUnblocked:
                 current_branches={env.cwd: "main"},
             )
             github = FakeGitHub(authenticated=True, issues_gateway=issues)
-            ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+            remote = FakeRemoteGitHub(
+                authenticated_user="testuser",
+                default_branch_name="main",
+                default_branch_sha="abc123",
+                next_pr_number=1,
+                dispatch_run_id="run-1",
+            )
+            ctx = build_workspace_test_context(
+                env, git=git, github=github, issues=issues, remote_github=remote
+            )
 
             result = runner.invoke(
                 cli,
@@ -250,12 +260,10 @@ class TestHandleAllUnblocked:
             assert "Dispatched 2/2 node(s)" in result.output
 
             # Verify two workflows triggered (one per node)
-            assert len(github.triggered_workflows) == 2
-            for _workflow, inputs, _ref in github.triggered_workflows:
-                assert inputs["objective_issue"] == "42"
-            triggered_node_ids = [
-                inputs["node_id"] for _workflow, inputs, _ref in github.triggered_workflows
-            ]
+            assert len(remote.dispatched_workflows) == 2
+            for wf in remote.dispatched_workflows:
+                assert wf.inputs["objective_issue"] == "42"
+            triggered_node_ids = [wf.inputs["node_id"] for wf in remote.dispatched_workflows]
             assert triggered_node_ids == ["2.1", "2.2"]
 
     def test_dry_run_shows_preview(self) -> None:
@@ -273,7 +281,16 @@ class TestHandleAllUnblocked:
                 current_branches={env.cwd: "main"},
             )
             github = FakeGitHub(authenticated=True, issues_gateway=issues)
-            ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+            remote = FakeRemoteGitHub(
+                authenticated_user="testuser",
+                default_branch_name="main",
+                default_branch_sha="abc123",
+                next_pr_number=1,
+                dispatch_run_id="run-1",
+            )
+            ctx = build_workspace_test_context(
+                env, git=git, github=github, issues=issues, remote_github=remote
+            )
 
             result = runner.invoke(
                 cli,
@@ -288,7 +305,7 @@ class TestHandleAllUnblocked:
             assert "Would dispatch 2 node(s)" in result.output
 
             # No workflows should be triggered in dry-run
-            assert len(github.triggered_workflows) == 0
+            assert len(remote.dispatched_workflows) == 0
 
             # No objective issue body updates should occur in dry-run
             objective_body_updates = [
@@ -311,7 +328,16 @@ class TestHandleAllUnblocked:
                 current_branches={env.cwd: "main"},
             )
             github = FakeGitHub(authenticated=True, issues_gateway=issues)
-            ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+            remote = FakeRemoteGitHub(
+                authenticated_user="testuser",
+                default_branch_name="main",
+                default_branch_sha="abc123",
+                next_pr_number=1,
+                dispatch_run_id="run-1",
+            )
+            ctx = build_workspace_test_context(
+                env, git=git, github=github, issues=issues, remote_github=remote
+            )
 
             result = runner.invoke(
                 cli,
