@@ -117,7 +117,18 @@ def rebase(ctx: ErkContext, *, dangerous: bool, target: str | None) -> None:
         else:
             click.echo(click.style("Rebase in progress. Launching Claude...", fg="yellow"))
 
-    # Both paths converge: conflicts exist, launch Claude TUI
+    # Both paths converge: conflicts exist, show state and confirm
+    conflicted = ctx.git.status.get_conflicted_files(cwd)
+    if conflicted:
+        click.echo(click.style("\nConflicted files:", fg="red", bold=True))
+        for f in conflicted:
+            click.echo(f"  {f}")
+        click.echo()
+
+    if not click.confirm("Launch Claude to resolve conflicts?", default=True):
+        click.echo("Rebase paused. Conflicts remain — run 'erk pr rebase' again when ready.")
+        return
+
     click.echo("Launching Claude...", err=True)
     executor.execute_interactive(
         worktree_path=cwd,
