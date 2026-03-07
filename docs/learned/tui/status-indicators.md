@@ -69,11 +69,9 @@ Both public functions delegate to a shared helper that returns a list of emoji s
 
 ### Stage Detection
 
-Stages are detected from the content of `lifecycle_display` using substring matching (not color markup):
+<!-- Source: _build_indicators() in packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py -->
 
-- `"planned" in lifecycle_display` → planned stage
-- `"impl" in lifecycle_display` → implementing or implemented stage (matches "impl", "implementing", "implemented")
-- `"review" in lifecycle_display` → review stage
+Stages are detected from the content of `lifecycle_display` using substring matching (not color markup). See `_build_indicators()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` for the current detection logic.
 
 ## The "sts" Column
 
