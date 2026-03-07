@@ -46,8 +46,6 @@ Moving mechanical computation from LLM prompts into tested CLI commands.
 - Testability (unit tests for deterministic logic)
 - Reliability (real Python environment, structured JSON contracts)
 
-**Skill:** Load `refac-cli-push-down` for full documentation, case studies, and implementation checklist
-
 ---
 
 ## Contributing Patterns

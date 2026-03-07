@@ -21,7 +21,6 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
         "cmux",
         "command-creator",
         "learned-docs",  # has its own capability class (LearnedDocsCapability)
-        "refac-module-to-subpackage",
         "rename-swarm",
         "session-inspector",
         "erk-skill-onboarding",
@@ -44,7 +43,6 @@ _REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
 def bundled_skills() -> dict[str, str]:
     """Return the bundled skills dict. Cached to avoid re-creation."""
     return {
-        "refac-cli-push-down": "Moving mechanical computation from prompts to exec commands",
         "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
         "fake-driven-testing": "5-layer test architecture with fakes",
         "erk-diff-analysis": "Code diff analysis for commit messages",
