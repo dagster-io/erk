@@ -78,17 +78,9 @@ See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_
 
 When the target branch is currently checked out in a worktree, `update_local_ref` is used instead of `create_branch(force=True)` because git refuses to force-update a checked-out branch. The incremental dispatch script uses an LBYL check:
 
-```python
-checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
-if checked_out_path is None:
-    # Branch not checked out anywhere — safe to force-create
-    git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
-else:
-    # Branch is checked out — use update_local_ref instead
-    remote_sha = git.branch.get_branch_head(repo_root, f"origin/{branch_name}")
-    if remote_sha is not None:
-        git.branch.update_local_ref(repo_root, branch_name, remote_sha)
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, incremental_dispatch (branch sync section) -->
+
+See the branch sync section of `incremental_dispatch()` in `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`. It calls `git.worktree.is_branch_checked_out()` first — if the branch is not checked out anywhere, it uses `create_branch(force=True)` to reset the ref. If the branch is checked out, it falls back to `update_local_ref()` with the remote SHA.
 
 After a plumbing commit to a checked-out branch, the index may contain stale staged changes. Reset with `git checkout HEAD --` on the committed files to sync the index:
 
