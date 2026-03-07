@@ -18,6 +18,7 @@ Quick reference for all `erk exec` subcommands.
 
 | Command                           | Description                                                                 |
 | --------------------------------- | --------------------------------------------------------------------------- |
+| `add-objective-node`              | Add a new node to an objective's roadmap.                                   |
 | `add-plan-label`                  | Add a label to a plan via the appropriate backend.                          |
 | `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                         |
 | `add-pr-labels`                   | Add labels to a PR with automatic retry on transient failures.              |
@@ -105,7 +106,7 @@ Quick reference for all `erk exec` subcommands.
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan.                                |
 | `track-learn-result`              | Track learn workflow result on a plan.                                      |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
-| `update-objective-node`           | Update node PR cells in an objective's roadmap table.                       |
+| `update-objective-node`           | Update node fields in an objective's roadmap table.                         |
 | `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                     |
 | `upload-impl-session`             | Upload current implementation session for async learn.                      |
@@ -114,6 +115,29 @@ Quick reference for all `erk exec` subcommands.
 | `validate-plan-content`           | Validate plan content from file or stdin.                                   |
 
 ## Commands
+
+### add-objective-node
+
+Add a new node to an objective's roadmap.
+
+**Usage:** `erk exec add-objective-node` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag            | Type    | Required | Default        | Description                                       |
+| --------------- | ------- | -------- | -------------- | ------------------------------------------------- |
+| `--phase`       | INTEGER | Yes      | Sentinel.UNSET | Phase number to add to                            |
+| `--description` | TEXT    | Yes      | Sentinel.UNSET | Node description                                  |
+| `--slug`        | TEXT    | No       | -              | Kebab-case identifier (auto-generated if omitted) |
+| `--status`      | CHOICE  | No       | 'pending'      | Initial status (default: pending)                 |
+| `--depends-on`  | TEXT    | No       | Sentinel.UNSET | Dependency node IDs                               |
+| `--reason`      | TEXT    | No       | -              | Reason for adding this node                       |
 
 ### add-plan-label
 
@@ -1314,7 +1338,7 @@ Update an issue's body using REST API (avoids GraphQL rate limits).
 
 ### update-objective-node
 
-Update node PR cells in an objective's roadmap table.
+Update node fields in an objective's roadmap table.
 
 **Usage:** `erk exec update-objective-node` <issue_number>
 
@@ -1331,6 +1355,9 @@ Update node PR cells in an objective's roadmap table.
 | `--node`         | TEXT   | Yes      | Sentinel.UNSET | Node ID(s) to update (e.g., '1.3')                                      |
 | `--pr`           | TEXT   | No       | -              | PR reference (e.g., '#456', or '' to clear). Omit to preserve existing. |
 | `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from PR value)                   |
+| `--description`  | TEXT   | No       | -              | New description for the node. Omit to preserve existing.                |
+| `--slug`         | TEXT   | No       | -              | New slug for the node. Omit to preserve existing.                       |
+| `--reason`       | TEXT   | No       | -              | Reason text (e.g., why a node was skipped). Omit to preserve existing.  |
 | `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body'   |
 
 ### update-plan-header
