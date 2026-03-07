@@ -12,6 +12,9 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.real import RealGit
 from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.issues.real import RealGitHubIssues
+from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.time.real import RealTime
 
 
 @dataclass(frozen=True)
@@ -35,10 +38,6 @@ def create_context(*, dry_run: bool = False) -> ErkDevContext:
     Returns:
         ErkDevContext with appropriate gateway implementations.
     """
-    from erk_shared.gateway.github.issues.real import RealGitHubIssues
-    from erk_shared.gateway.github.real import RealGitHub
-    from erk_shared.gateway.time.real import RealTime
-
     git: Git = RealGit()
     if dry_run:
         git = DryRunGit(git)
