@@ -368,6 +368,9 @@ def _update_objective_node(
         node_id,
         new_pr=f"#{pr_number}",
         explicit_status="planning",
+        description=None,
+        slug=None,
+        reason=None,
     )
 
     if updated_body is None:
@@ -420,6 +423,9 @@ def _batch_update_objective_nodes(
             node_id,
             new_pr=f"#{pr_number}",
             explicit_status="planning",
+            description=None,
+            slug=None,
+            reason=None,
         )
         if new_body is not None:
             updated_body = new_body
@@ -464,6 +470,9 @@ def _mark_node_planning(
         node_id,
         new_pr=None,
         explicit_status="planning",
+        description=None,
+        slug=None,
+        reason=None,
     )
 
     if updated_body is None:

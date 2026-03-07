@@ -91,6 +91,9 @@ def _update_nodes_in_body(
             node_id,
             new_pr=pr_ref,
             explicit_status="done",
+            description=None,
+            slug=None,
+            reason=None,
         )
         if new_body is None:
             continue

@@ -138,8 +138,11 @@ def _replace_node_refs_in_body(
     *,
     new_pr: str | None,
     explicit_status: str | None,
+    description: str | None,
+    slug: str | None,
+    reason: str | None,
 ) -> str | None:
-    """Replace the PR cell for a node in the raw markdown body.
+    """Replace fields for a node in the raw markdown body.
 
     Checks for frontmatter first within objective-roadmap metadata block.
 
@@ -148,6 +151,9 @@ def _replace_node_refs_in_body(
         node_id: Node ID to update (e.g., "1.3").
         new_pr: New PR value. None=preserve existing, ""=clear, "#123"=set.
         explicit_status: If provided, use this status instead of inferring.
+        description: New description, or None to preserve existing.
+        slug: New slug, or None to preserve existing.
+        reason: New reason, or None to preserve existing.
 
     Returns:
         Updated body string, or None if the node row was not found.
@@ -168,6 +174,9 @@ def _replace_node_refs_in_body(
         node_id,
         pr=new_pr,
         status=cast(RoadmapNodeStatus, explicit_status) if explicit_status is not None else None,
+        description=description,
+        slug=slug,
+        reason=reason,
     )
 
     if updated_block_content is None:
@@ -205,6 +214,27 @@ def _replace_node_refs_in_body(
     help="Explicit status to set (default: infer from PR value)",
 )
 @click.option(
+    "--description",
+    "new_description",
+    required=False,
+    default=None,
+    help="New description for the node. Omit to preserve existing.",
+)
+@click.option(
+    "--slug",
+    "new_slug",
+    required=False,
+    default=None,
+    help="New slug for the node. Omit to preserve existing.",
+)
+@click.option(
+    "--reason",
+    "new_reason",
+    required=False,
+    default=None,
+    help="Reason text (e.g., why a node was skipped). Omit to preserve existing.",
+)
+@click.option(
     "--include-body",
     "include_body",
     is_flag=True,
@@ -219,16 +249,26 @@ def update_objective_node(
     node: tuple[str, ...],
     pr_ref: str | None,
     explicit_status: str | None,
+    new_description: str | None,
+    new_slug: str | None,
+    new_reason: str | None,
     include_body: bool,
 ) -> None:
-    """Update node PR cells in an objective's roadmap table."""
-    if pr_ref is None and explicit_status is None:
+    """Update node fields in an objective's roadmap table."""
+    if (
+        pr_ref is None
+        and explicit_status is None
+        and new_description is None
+        and new_slug is None
+        and new_reason is None
+    ):
         click.echo(
             json.dumps(
                 {
                     "success": False,
                     "error": "no_update",
-                    "message": "At least one of --pr or --status must be provided",
+                    "message": "At least one of --pr, --status, --description, "
+                    "--slug, or --reason must be provided",
                 }
             )
         )
@@ -307,6 +347,9 @@ def update_objective_node(
             node_id,
             new_pr=pr_ref,
             explicit_status=explicit_status,
+            description=new_description,
+            slug=new_slug,
+            reason=new_reason,
         )
         if new_body is None:
             results.append(

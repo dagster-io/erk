@@ -482,7 +482,13 @@ def test_none_pr_preserves_existing_value() -> None:
 
     # Step 1.1 has pr=#100
     result = _replace_node_refs_in_body(
-        ROADMAP_BODY_V2, "1.1", new_pr=None, explicit_status="planning"
+        ROADMAP_BODY_V2,
+        "1.1",
+        new_pr=None,
+        explicit_status="planning",
+        description=None,
+        slug=None,
+        reason=None,
     )
 
     assert result is not None
@@ -496,7 +502,15 @@ def test_empty_string_clears_pr_value() -> None:
     from erk.cli.commands.exec.scripts.update_objective_node import _replace_node_refs_in_body
 
     # Step 1.1 has pr=#100
-    result = _replace_node_refs_in_body(ROADMAP_BODY_V2, "1.1", new_pr="", explicit_status=None)
+    result = _replace_node_refs_in_body(
+        ROADMAP_BODY_V2,
+        "1.1",
+        new_pr="",
+        explicit_status=None,
+        description=None,
+        slug=None,
+        reason=None,
+    )
 
     assert result is not None
     assert "status: pending" in result
@@ -749,7 +763,7 @@ def test_status_only_without_pr() -> None:
 
 
 def test_neither_pr_nor_status_returns_error() -> None:
-    """Omitting both --pr and --status returns a no_update error."""
+    """Omitting all update flags returns a no_update error."""
     issue = _make_issue(6423, ROADMAP_BODY_V2)
     fake_gh = FakeGitHubIssues(issues={6423: issue})
     runner = CliRunner()
@@ -765,3 +779,140 @@ def test_neither_pr_nor_status_returns_error() -> None:
     assert output["success"] is False
     assert output["error"] == "no_update"
     assert len(fake_gh.updated_bodies) == 0
+
+
+def test_update_description() -> None:
+    """--description updates the node description in frontmatter YAML."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.2", "--description", "Updated core types description"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    # Description updated in YAML frontmatter
+    assert "Updated core types description" in updated_body
+
+
+def test_update_slug() -> None:
+    """--slug updates the node slug in frontmatter."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.3", "--slug", "add-utils"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "add-utils" in updated_body
+
+
+def test_update_reason() -> None:
+    """--reason sets the reason field in frontmatter."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.3", "--status", "skipped", "--reason", "Superseded by new approach"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "Superseded by new approach" in updated_body
+    assert "status: skipped" in updated_body
+
+
+def test_reason_preserved_when_not_passed() -> None:
+    """Reason is preserved when not passed in an update."""
+    # Build a body that already has a reason
+    body_with_reason = """\
+# Objective: Build Feature X
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+
+schema_version: '4'
+nodes:
+  - id: '1.1'
+    description: Set up project structure
+    status: skipped
+    pr: null
+    slug: null
+    reason: Was not needed
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+    issue = _make_issue(6423, body_with_reason)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        ["6423", "--node", "1.1", "--status", "pending"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "Was not needed" in updated_body
+    assert "status: pending" in updated_body
+
+
+def test_description_combined_with_status() -> None:
+    """--description combined with --status updates both fields."""
+    issue = _make_issue(6423, ROADMAP_BODY_V2)
+    fake_gh = FakeGitHubIssues(issues={6423: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_objective_node,
+        [
+            "6423",
+            "--node",
+            "2.1",
+            "--description",
+            "Implement main feature v2",
+            "--status",
+            "planning",
+        ],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    updated_body = fake_gh.updated_bodies[0][1]
+    assert "Implement main feature v2" in updated_body
+    assert "status: planning" in updated_body

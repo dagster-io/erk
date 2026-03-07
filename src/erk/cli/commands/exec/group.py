@@ -7,6 +7,7 @@ statically registered.
 import click
 
 # Import and register all scripts
+from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
 from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
 from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
 from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
@@ -189,6 +190,7 @@ def exec_group() -> None:
 
 
 # Register all commands
+exec_group.add_command(add_objective_node, name="add-objective-node")
 exec_group.add_command(add_plan_label, name="add-plan-label")
 exec_group.add_command(add_plan_labels, name="add-plan-labels")
 exec_group.add_command(add_pr_labels, name="add-pr-labels")

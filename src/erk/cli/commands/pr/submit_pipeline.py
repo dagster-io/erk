@@ -913,6 +913,9 @@ def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitSta
                 node_id,
                 pr=pr_ref,
                 status=None,
+                description=None,
+                slug=None,
+                reason=None,
             )
             if updated_block_content is None:
                 continue

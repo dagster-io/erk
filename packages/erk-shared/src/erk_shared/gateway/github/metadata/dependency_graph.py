@@ -201,6 +201,7 @@ def nodes_from_graph(graph: DependencyGraph) -> list[RoadmapNode]:
             pr=node.pr,
             depends_on=node.depends_on,
             slug=node.slug,
+            reason=None,
         )
         for node in graph.nodes
     ]
