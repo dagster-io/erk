@@ -845,6 +845,12 @@ class PlanDetailScreen(ModalScreen):
                         row.objective_issue,
                     )
 
+        elif command_id == "incremental_dispatch":
+            if row.pr_number is not None:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    self.app.execute_palette_command("incremental_dispatch")
+
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
         with Vertical(id="detail-dialog"):

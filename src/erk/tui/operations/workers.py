@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import subprocess
+import tempfile
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from textual import work
@@ -415,6 +417,64 @@ class BackgroundWorkersMixin:
                 severity="error",
                 timeout=5,
             )
+
+    @work(thread=True)
+    def _incremental_dispatch_async(
+        self: ErkDashApp, op_id: str, pr_number: int, plan_content: str
+    ) -> None:
+        """Dispatch incremental plan in background thread with toast.
+
+        Writes plan_content to a temp file, invokes erk exec incremental-dispatch,
+        then cleans up the temp file.
+
+        Args:
+            op_id: Operation identifier for status bar tracking
+            pr_number: The PR number to dispatch against
+            plan_content: The plan markdown content
+        """
+        temp_path: str | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                suffix=".md", delete=False, mode="w", encoding="utf-8"
+            ) as tmp:
+                tmp.write(plan_content)
+                temp_path = tmp.name
+
+            result = self._run_streaming_operation(
+                op_id=op_id,
+                command=[
+                    "erk",
+                    "exec",
+                    "incremental-dispatch",
+                    "--plan-file",
+                    temp_path,
+                    "--pr",
+                    str(pr_number),
+                    "--format",
+                    "json",
+                ],
+            )
+            self.call_from_thread(self._finish_operation, op_id=op_id)
+            if result.success:
+                self.call_from_thread(
+                    self.notify,
+                    f"Dispatched incremental plan to PR #{pr_number}",
+                    timeout=3,
+                )
+                self.call_from_thread(self.action_refresh)
+            else:
+                error_msg = last_output_line(result)
+                self.call_from_thread(
+                    self.notify,
+                    f"Incremental dispatch failed for PR #{pr_number}: {error_msg}",
+                    severity="error",
+                    timeout=5,
+                )
+        finally:
+            if temp_path is not None:
+                temp_file = Path(temp_path)
+                if temp_file.exists():
+                    temp_file.unlink()
 
     @work(thread=True)
     def _load_activity_and_resort(self: ErkDashApp) -> None:
