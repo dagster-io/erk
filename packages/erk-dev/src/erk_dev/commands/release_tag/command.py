@@ -5,7 +5,8 @@ from pathlib import Path
 import click
 
 from erk_dev.commands.bump_version.command import find_repo_root, get_current_version
-from erk_dev.context import ErkDevContext, create_context
+from erk_dev.context import ErkDevContext
+from erk_shared.gateway.git.dry_run import DryRunGit
 
 
 @click.command("release-tag")
@@ -18,12 +19,8 @@ def release_tag_command(ctx: click.Context, push: bool, dry_run: bool) -> None:
     Creates an annotated tag `v{version}` for the current version in pyproject.toml.
     Use after updating CHANGELOG and committing the release.
     """
-    # Use dry-run context if --dry-run flag is set
-    if dry_run:
-        ctx.obj = create_context(dry_run=True)
-
     erk_ctx: ErkDevContext = ctx.obj
-    git = erk_ctx.git
+    git = DryRunGit(erk_ctx.git) if dry_run else erk_ctx.git
 
     repo_root = find_repo_root(Path.cwd())
     if repo_root is None:
