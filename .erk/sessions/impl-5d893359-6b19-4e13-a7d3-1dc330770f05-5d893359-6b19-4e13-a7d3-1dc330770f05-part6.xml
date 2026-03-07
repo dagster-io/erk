@@ -1,0 +1,77 @@
+<session>
+  <meta source="agent-aad82ac" />
+  <meta branch="plnd/O8381-fix-issue-number-doc-03-07-0134" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_use name="Bash" id="toolu_01HpqqvhvGfYZusMV6ivXiK4">
+    <param name="command">git diff docs/learned/architecture/ | tail -100</param>
+    <param name="description">View remaining changes to architecture docs</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1991" cache_read_input_tokens="61051" cache_creation="{'ephemeral_5m_input_tokens': 1991, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HpqqvhvGfYZusMV6ivXiK4">
++++ b/docs/learned/architecture/plan-ref-architecture.md
+@@ -92,7 +92,7 @@ This pattern appears at several callsites across the codebase.
+ 
+ ## erk-statusline's Duplicate Reader
+ 
+-The `erk-statusline` package has its own plan-ref reading logic via `_load_impl_data()`, `get_issue_number()`, and `get_objective_issue()` because it cannot import from `erk_shared` (separate package with no dependency). This duplication is intentional and must be kept in sync manually.
++The `erk-statusline` package has its own plan-ref reading logic via `_load_impl_data()`, `get_plan_number()`, and `get_objective_issue()` because it cannot import from `erk_shared` (separate package with no dependency). This duplication is intentional and must be kept in sync manually.
+ 
+ ## Related Documentation
+ 
+diff --git a/docs/learned/architecture/selection-preservation-by-value.md b/docs/learned/architecture/selection-preservation-by-value.md
+index 0e861490e..3d044217d 100644
+--- a/docs/learned/architecture/selection-preservation-by-value.md
++++ b/docs/learned/architecture/selection-preservation-by-value.md
+@@ -10,7 +10,7 @@ audit_result: edited
+ category: architecture
+ tripwires:
+   - action: "tracking selection by array index when the array can be mutated"
+-    warning: "Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
++    warning: "Track selection by unique identifier (plan_id, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
+   - action: "assuming cursor position will persist across DataTable.clear() calls"
+     warning: "Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern."
+   - action: "skipping fallback strategies when the selected item might disappear"
+@@ -52,9 +52,9 @@ Position-based tracking fails in all three cases. Value-based tracking only fail
+ 
+ See `PlanDataTable.populate()` in `src/erk/tui/widgets/plan_table.py` (lines 149-185). The pattern:
+ 
+-- Save `selected_key` (stringified `issue_number`) before `clear()`
++- Save `selected_key` (stringified `plan_id`) before `clear()`
+ - Also save `saved_cursor_row` as secondary fallback
+
+... [70 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! All changes look correct. Let me create a summary of what was done:
+
+## Summary
+
+I successfully updated `issue_number` references to `plan_id` (or `plan_number` where appropriate) across 12 documentation files in `docs/learned/architecture/`. The changes align with the source code refactoring where:
+
+- `state.issue_number` → `state.plan_id`
+- `parse_issue_number_from_url` → `parse_plan_number_from_url`
+- `PlanContext.issue_number` → `PlanContext.plan_id`
+- `PlanRowData.issue_number` → `PlanRowData.plan_id`
+- `get_issue_number()` → `get_plan_number()`
+- Branch naming changed from `P{issue_number}` to `plnd/` prefix
+
+### Files Updated
+
+1. **state-threading-pattern.md** - Updated anti-pattern example and discovery consolidation prose (5 changes)
+2. **plan-ref-architecture.md** - Updated function name `get_issue_number()` → `get_plan_number()`
+3. **selection-preservation-by-value.md** - Updated unique identifier examples and tripwires (3 changes)
+4. **pipeline-transformation-patterns.md** - Updated dataclass examples (2 changes)
+5. **github-parsing.md** - Updated function name `parse_issue_number_from_url` → `parse_plan_number_from_url`
+6. **type-safety-patterns.md** - Updated example code accessing plan identifier
+7. **plan-context-integration.md** - Updated `PlanContext` dataclass field from `issue_number: int` to `plan_id: str`
+8. **linear-pipelines.md** - Updated execution state description
+9. **tripwires.md** - Updated tripwire warning text
+10. **optional-field-propagation.md** - Updated anti-pattern example
+11. **land-state-threading.md** - Updated derived fields description
+12. **derived-flags.md** - Updated auto-force example
+
+All changes maintain consistency with the source code refactoring while preserving:
+- Legacy documentation references (kept as-is where describing old formats)
+- Generic GitHub API endpoints (kept `issue_number` for actual GitHub API parameters)
+- Conceptual clarity about the distinction between plan identifiers and GitHub issue numbers</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2076" cache_read_input_tokens="63042" cache_creation="{'ephemeral_5m_input_tokens': 2076, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

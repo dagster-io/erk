@@ -1,0 +1,961 @@
+<session>
+  <meta source="agent-aad82ac" />
+  <meta branch="plnd/O8381-fix-issue-number-doc-03-07-0134" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>You need to fix `issue_number` references in docs/learned/architecture/ markdown files. The source code has been renamed: `state.issue_number` → `state.plan_id`, `parse_issue_number_from_url` → `parse_plan_number_from_url`, `PlanContext.issue_number` → `PlanContext.plan_id`, `PlanRowData.issue_number` → `PlanRowData.plan_id`, `get_issue_number()` → `get_plan_number()`. Branch naming changed from `P{issue_number}` to `plnd/` prefix.
+
+**Rules:**
+- Conceptual/prose references to "issue number" meaning "plan number" → update to `plan_number` or `plan_id` as appropriate
+- Code examples that reference renamed source fields → update to match current source
+- Generic GitHub API endpoints like `/repos/{owner}/{repo}/issues/{issue_number}` → KEEP as-is (that's the GitHub API)
+- Generic function parameters named `issue_number` that refer to GitHub issues (not plans) → KEEP as-is
+- Legacy fallback documentation (describing old format) → KEEP `issue_number` since it's describing the old format
+
+Here are the specific files and what to do. Read each file first, then edit:
+
+### 1. `docs/learned/architecture/state-threading-pattern.md`
+- Line 28: `issue_number = None` → `plan_id = None` (mutable state anti-pattern example)
+- Line 35: `issue_number = extract_issue(branch_name)` → `plan_id = extract_plan_id(branch_name)`
+- Line 102: `issue_number` in prose about prepare_state() → `plan_id`
+- Line 106: `issue_number` in prose → `plan_id`
+- Line 109: `issue_number` in prose → `plan_id`
+
+### 2. `docs/learned/architecture/plan-ref-architecture.md`
+- Line 23: `issue_number` (int), `issue_url` (str) — KEEP, this describes the OLD IssueReference format
+- Line 62: `issue_number` -&gt; `plan_id` mapping — KEEP, this describes legacy mapping
+- Line 85: `issue_number = int(plan_ref.plan_id)` — KEEP, this shows the conversion pattern
+- Line 95: `get_issue_number()` → update to `get_plan_number()` (source renamed). Also update the full sentence to reflect current function names.
+
+### 3. `docs/learned/architecture/selection-preservation-by-value.md`
+- Line 13 (tripwire): `issue_number` → `plan_id` (example of a unique identifier)
+- Line 55: `issue_number` → `plan_id`
+- Line 57: `issue_number` → `plan_id`
+
+### 4. `docs/learned/architecture/gateway-abc-implementation.md`
+- Lines 273-278: These use `issue_number` as a generic GitHub issue parameter — KEEP as-is (this is generic GitHub API usage, not plan-specific)
+
+### 5. `docs/learned/architecture/pipeline-transformation-patterns.md`
+- Line 59: `issue_number=plan.issue_number` → `plan_id=plan.plan_id`
+- Line 80: `issue_number: int` → `plan_id: int`
+
+### 6. `docs/learned/architecture/github-parsing.md`
+- Line 38: `parse_issue_number_from_url` → `parse_plan_number_from_url` (source renamed)
+
+### 7. `docs/learned/architecture/type-safety-patterns.md`
+- Line 66: `row.issue_number` → `row.plan_id` (PlanRowData field renamed in source)
+
+### 8. `docs/learned/architecture/state-derivation-pattern.md`
+- Line 64: `issue_number: 123` — This is in a generic anti-pattern example showing pre-rendered display strings. KEEP as-is (it's showing a generic data structure, not plan-specific).
+
+### 9. `docs/learned/architecture/github-cli-limits.md`
+- Line 122: `issue_number` as a variable in `gh issue view` example — KEEP (generic GitHub issue usage)
+
+### 10. `docs/learned/architecture/fail-open-patterns.md`
+- Lines 62, 76: `clear_pr_metadata(issue_number)` — KEEP (generic function parameter, not plan-specific)
+
+### 11. `docs/learned/architecture/ref-json-migration.md`
+- Line 55: `issue_number` → `plan_id` mapping — KEEP (this describes the legacy format mapping)
+
+### 12. `docs/learned/architecture/plan-context-integration.md`
+- Line 83: `issue_number: int # The erk-plan issue number` → `plan_id: str # The plan identifier` (source PlanContext now uses `plan_id: str`)
+
+### 13. `docs/learned/architecture/linear-pipelines.md`
+- Line 76: `plan_issue_number` re-derived from branch name → `plan_id` (field renamed in source; also branch names no longer encode plan numbers)
+
+### 14. `docs/learned/architecture/tripwires.md`
+- Line 289: `issue_number` in tripwire about selection preservation → `plan_id`
+
+### 15. `docs/learned/architecture/optional-field-propagation.md`
+- Line 65: `issue_number=plan.issue_number` → `plan_id=plan.plan_id`
+
+### 16. `docs/learned/architecture/plan-backend-migration.md`
+- Lines 29-30: `issue_number` in old-pattern examples — KEEP (this shows the "Before" pattern with direct gh calls)
+
+### 17. `docs/learned/architecture/land-state-threading.md`
+- Line 49: `plan_issue_number` → `plan_id` (field renamed in source — the land pipeline no longer has `plan_issue_number`)
+
+### 18. `docs/learned/architecture/derived-flags.md`
+- Line 28: `state.issue_number` → `state.plan_id` (source renamed)
+
+### 19. `docs/learned/architecture/github-interface-patterns.md`
+- Line 39: `issues/{issue_number}` — KEEP (this is a GitHub API endpoint)
+
+### 20. `docs/learned/architecture/erk-architecture.md`
+- Lines 193, 214: `issue_number: int` as function parameter — KEEP (this is a generic function parameter showing the time abstraction pattern, not plan-specific)
+
+Process each file: Read first, then Edit. Skip files marked KEEP (4, 8, 9, 10, 11, 16, 19, 20). Do the rest.</user>
+  <assistant>I'll process each file that needs changes. Let me start by reading all the files that need editing, then make the necessary changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0121pRs1NyKMVK5fxuprubDv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0194K2HoQSgiSLRFWgtUxjNc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TRhRPfiSPtgzQvoJoCc1iG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H5czxCvEehurYF6T8eKBNf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VKQU3PBmfyLNLBFZehZsGc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-parsing.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UtriNoHXWMVs5ri5hP6Dxe">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/type-safety-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W9wY9iCgEKrFFLdKREnETh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q2MDC9VagG5PQfJHbVL1Fy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TqWq6dj2sJBZ4Kh4xSrwDC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011KmkErX5C55tYnGYvU9mTL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/optional-field-propagation.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016LdsHPpzm6w8vVzevHmkAp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/land-state-threading.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011syrVTXXeUMAs1javDyxSv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17555" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 17555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0121pRs1NyKMVK5fxuprubDv">
+     1→---
+     2→title: State Threading Pattern
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing linear pipelines with immutable state"
+     7→  - "understanding SubmitState or pipeline architecture"
+     8→  - "implementing multi-step workflows with frozen dataclasses"
+     9→tripwires:
+    10→  - action: "mutating pipeline state directly instead of using dataclasses.replace()"
+    11→    warning: "Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step."
+    12→  - action: "adding optional fields to pipeline state without defaults"
+    13→    warning: "New pipeline state fields must have defaults (usually None) to avoid breaking make_initial_state() factories. See optional-field-propagation.md for the pattern."
+    14→---
+    15→
+    16→# State Threading Pattern
+    17→
+    18→State threading is the immutable data flow pattern underlying erk's linear pipelines. This document explains **why** frozen dataclasses and explicit state accumulation matter for pipeline composition, not **what** the code looks like (read the source for that).
+    19→
+    20→## The Core Problem: Mutable State Creates Hidden Dependencies
+    21→
+    22→Traditional imperative code mutates local variables as operations progress:
+    23→
+    24→```python
+    25→# WRONG: Mutable state pattern (anti-pattern)
+    26→branch_name = None
+    27→pr_number = None
+    28→issue_number = None
+    29→
+    30→# Step 1
+
+... [169 lines omitted] ...
+
+    57→2. Each step takes state as input, returns updated state (or error) as output
+    80→**Trade-off:** State carries fields that aren't relevant to early steps (e.g., `graphite_url` is `None` during validation). This is intentional — the runner doesn't need to know which fields are valid at which step. The `isinstance(result, Error)` check is the only branch.
+    96→**Critical constraint:** When adding new fields to state, they **must** have default values. Otherwise `make_initial_state()` breaks with "missing required argument" errors. See [Optional Field Propagation](optional-field-propagation.md) for the detailed pattern.
+   113→## Type Narrowing After Error Checks
+   115→The discriminated union pattern (`State | Error`) enables type narrowing:
+   121→    return SubmitError(phase="prepare", error_type="no_branch", ...)
+   130→- **Runtime safety** — if a step forgets to check, type error surfaces at development time
+   132→See [Discriminated Union Error Handling](discriminated-union-error-handling.md) for the full pattern.
+   139→- Steps can fail independently, and failures should stop the pipeline
+   140→- You need clear error attribution (which phase failed and why)
+   186→- Error handling is explicit (return `Error`) rather than hidden in monad machinery
+   191→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — The `State | Error` union pattern
+  </tool_result>
+  <tool_result tool="toolu_0194K2HoQSgiSLRFWgtUxjNc">
+     1→---
+     2→title: PlanRef Architecture
+     3→read_when:
+     4→  - "working with plan-ref.json"
+     5→  - "working with PlanRef dataclass"
+     6→  - "migrating from IssueReference to PlanRef"
+     7→  - "understanding provider-agnostic plan references"
+     8→tripwires:
+     9→  - action: "accessing plan_ref.plan_id as int without checking"
+    10→    warning: "plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'."
+    11→  - action: "calling save_plan_ref with positional arguments"
+    12→    warning: "All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime."
+    13→---
+    14→
+    15→# PlanRef Architecture
+    16→
+    17→PlanRef is the provider-agnostic plan reference abstraction stored in `.erk/impl-context/plan-ref.json`. It replaced the GitHub-specific `IssueReference` to support future plan providers.
+    18→
+    19→## Why PlanRef Replaced IssueReference
+    20→
+    21→The original `IssueReference` was tightly coupled to GitHub:
+    22→
+    23→- Fields: `issue_number` (int), `issue_url` (str)
+    24→- File: `.erk/impl-context/issue.json`
+    25→- Only supported GitHub issues as plan storage
+    26→
+    27→PlanRef generalizes this:
+    28→
+    29→- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
+    30→- File: `.erk/impl-context/plan-ref.json`
+
+... [76 lines omitted] ...
+
+    50→Saves a plan reference to `plan-ref.json`. All parameters after `impl_dir` are keyword-only. Raises `FileNotFoundError` if `impl_dir` doesn't exist.
+  </tool_result>
+  <tool_result tool="toolu_01TRhRPfiSPtgzQvoJoCc1iG">
+     1→---
+     2→title: Selection Preservation by Value
+     3→read_when:
+     4→  - "working with auto-refreshing lists or tables in UI components"
+     5→  - "implementing selection state that should persist across data updates"
+     6→  - "building real-time dashboard views with user-selected items"
+     7→  - "debugging cursor position resets in DataTable or list components"
+     8→last_audited: "2026-02-07 21:34 PT"
+     9→audit_result: edited
+    10→category: architecture
+    11→tripwires:
+    12→  - action: "tracking selection by array index when the array can be mutated"
+    13→    warning: "Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
+    14→  - action: "assuming cursor position will persist across DataTable.clear() calls"
+    15→    warning: "Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern."
+    16→  - action: "skipping fallback strategies when the selected item might disappear"
+    17→    warning: "Always provide fallback behavior when selected item not found in refreshed data (reset to 0, preserve index clamped, or clear selection)."
+    18→---
+    19→
+    20→# Selection Preservation by Value
+    21→
+    22→## The Problem
+    23→
+    24→Array indices are fundamentally unstable when the underlying data can mutate. When a UI component refreshes its data (new rows inserted, existing rows removed, or reordering), tracking selection by position causes the cursor to jump to a different item or reset unexpectedly. The user loses their place.
+    25→
+    26→This isn't a bug in any particular framework — it's a category error. Position is the wrong identity for items that can move.
+    27→
+    28→## The Cross-Cutting Pattern
+    29→
+    30→**Track selection by stable identifier, not array position.** After refreshing data:
+
+... [61 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01H5czxCvEehurYF6T8eKBNf">
+     1→---
+     2→title: Pipeline Transformation Patterns
+     3→read_when:
+     4→  - "designing data transformation pipelines"
+     5→  - "deciding when to enrich vs filter data"
+     6→  - "troubleshooting lost metadata in pipelines"
+     7→last_audited: "2026-02-16 14:10 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Pipeline Transformation Patterns
+    12→
+    13→When data flows through multiple transformation stages, the ordering of operations matters. This document covers patterns for maintaining data integrity.
+    14→
+    15→## The ENRICH → FILTER → DISPLAY Principle
+    16→
+    17→Data pipelines should follow this order:
+    18→
+    19→```
+    20→Raw Data → ENRICH (add metadata) → FILTER (reduce set) → DISPLAY (format for output)
+    21→```
+    22→
+    23→### Why This Order
+    24→
+    25→**ENRICH before FILTER**: Enrichment adds metadata needed for filtering decisions. If you filter first, you can't enrich filtered-out items, and re-adding them later loses metadata.
+    26→
+    27→**FILTER before DISPLAY**: Display formatting is expensive. Only format items that will be shown.
+    28→
+    29→### Anti-Pattern: Filter Before Enrich
+    30→
+
+... [72 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01VKQU3PBmfyLNLBFZehZsGc">
+     1→---
+     2→title: GitHub URL Parsing Architecture
+     3→read_when:
+     4→  - "parsing GitHub URLs"
+     5→  - "extracting PR or issue numbers from URLs"
+     6→  - "understanding github parsing layers"
+     7→last_audited: "2026-02-05 15:05 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# GitHub URL Parsing Architecture
+    12→
+    13→This document describes the two-layer architecture for parsing GitHub URLs and extracting identifiers (PR numbers, issue numbers, repo names).
+    14→
+    15→## Architecture Overview
+    16→
+    17→```
+    18→┌─────────────────────────────────────────────┐
+    19→│              CLI Layer                       │
+    20→│   erk.cli.github_parsing                     │
+    21→│   - Raises SystemExit on failure             │
+    22→│   - User-friendly error messages             │
+    23→│   - CLI-specific formatting                  │
+    24→└─────────────────────────────────────────────┘
+    25→                    │
+    26→                    ▼
+    27→┌─────────────────────────────────────────────┐
+    28→│            Pure Parsing Layer                │
+    29→│   erk_shared.gateway.github.parsing                  │
+    30→│   - Returns int | None                       │
+
+... [77 lines omitted] ...
+
+    54→- Provides user-friendly error messages
+    82→Use pure functions for predictable testing (no exceptions to catch).
+  </tool_result>
+  <tool_result tool="toolu_01UtriNoHXWMVs5ri5hP6Dxe">
+     1→---
+     2→title: Type Safety Patterns
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing flexible collection types"
+     7→  - "working with union types in Python"
+     8→  - "handling mixed-type lists"
+     9→---
+    10→
+    11→# Type Safety Patterns
+    12→
+    13→Patterns for maintaining type safety with flexible data structures in Python.
+    14→
+    15→## Union Types for Flexible Collections
+    16→
+    17→When a list needs to accept multiple types (e.g., plain strings and Rich `Text` objects), use union types:
+    18→
+    19→```python
+    20→from rich.text import Text
+    21→
+    22→def render_table(rows: list[list[str | Text]]) -&gt; None:
+    23→    """Render rows that may contain strings or Text objects."""
+    24→    for row in rows:
+    25→        for cell in row:
+    26→            # Both str and Text have __str__, so this works
+    27→            print(str(cell))
+    28→```
+    29→
+    30→### Benefits
+
+... [89 lines omitted] ...
+
+    32→- **Type checker catches errors** - Can't accidentally pass incompatible types
+  </tool_result>
+  <tool_result tool="toolu_01W9wY9iCgEKrFFLdKREnETh">
+     1→---
+     2→title: Plan Context Integration
+     3→read_when:
+     4→  - "using PlanContextProvider for PR generation"
+     5→  - "extracting plan content from branches"
+     6→  - "understanding how PR descriptions get plan context"
+     7→tripwires:
+     8→  - action: "using PlanContextProvider"
+     9→    warning: "Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case."
+    10→last_audited: "2026-02-16 14:20 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Plan Context Integration
+    15→
+    16→The `PlanContextProvider` extracts plan content for branches linked to erk-plan issues, enabling more accurate PR descriptions that understand the "why" behind changes.
+    17→
+    18→## 5-Step Extraction Algorithm
+    19→
+    20→Given a branch name, the provider attempts to extract plan context through these steps:
+    21→
+    22→```
+    23→1. Extract issue number from branch name
+    24→   P5763-fix-bug → 5763
+    25→   ↓
+    26→2. Fetch the issue body from GitHub
+    27→   GET /repos/{owner}/{repo}/issues/5763
+    28→   ↓
+    29→3. Extract plan_comment_id from issue metadata
+    30→   Parse YAML header for `plan_comment_id: 123456789`
+
+... [79 lines omitted] ...
+
+    62→- API errors occur
+  </tool_result>
+  <tool_result tool="toolu_01Q2MDC9VagG5PQfJHbVL1Fy">
+     1→---
+     2→title: Linear Pipeline Architecture
+     3→read_when:
+     4→  - "designing multi-step operations with validation and execution phases"
+     5→  - "refactoring complex commands into functional pipelines"
+     6→  - "working with land command or similar staged workflows"
+     7→tripwires:
+     8→  - action: "creating a new complex command with multiple validation steps"
+     9→    warning: "Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar."
+    10→last_audited: "2026-02-17 12:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Linear Pipeline Architecture
+    15→
+    16→Complex workflows that mix read-only validation with destructive operations benefit from explicit separation. The land command demonstrates a two-pipeline architecture that divides precondition checking from mutation execution, bridging them with a shell script serialization boundary.
+    17→
+    18→## Why Two Pipelines
+    19→
+    20→**The core problem**: Command-line tools need to validate preconditions, gather user confirmations, and perform mutations — but mixing these concerns creates fragile error handling and makes testing difficult.
+    21→
+    22→**The solution**: Split the workflow into two independent pipelines with a serialization boundary:
+    23→
+    24→1. **Validation pipeline**: Read-only operations that check preconditions, resolve values, and gather confirmations. Failures are cheap — no state has been modified.
+    25→2. **Execution pipeline**: Mutating operations that assume validation passed. Failures are expensive — rollback may be required.
+    26→
+    27→**Why this matters**:
+    28→
+    29→- **Fail-fast validation**: All precondition checks happen before any mutations. If landing fails due to unresolved comments or missing PRs, the repository state is unchanged.
+    30→- **Independent testing**: Each pipeline can be tested in isolation. Validation tests don't need to mock destructive operations. Execution tests can assume validation passed.
+
+... [173 lines omitted] ...
+
+    54→LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+    60→- **Discriminated union returns**: Each step returns either success (updated state) or error. The runner short-circuits on the first error without catching exceptions or checking status codes.
+    63→**Anti-pattern**: Don't use exceptions for control flow in pipeline steps. Raising exceptions makes it unclear whether validation failed (expected) or implementation crashed (bug). Return `LandError` for validation failures.
+   173→**Why the pipeline pattern is an evolution**: The two-phase model separates CLI concerns from business logic, but doesn't specify how to structure multi-step business logic. The pipeline pattern fills that gap by imposing functional composition and discriminated union error handling on the business logic layer.
+   181→- Validation failures are common and should be cheap (no rollback required)
+   182→- The command modifies shared state (repository, GitHub) and failures are expensive
+   188→- The command is idempotent and failures are cheap (no need for separation)
+   190→**Decision test**: If you find yourself writing rollback logic to undo partial mutations after validation failures, you need the two-pipeline pattern.
+   197→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - State | Error return types
+  </tool_result>
+  <tool_result tool="toolu_011KmkErX5C55tYnGYvU9mTL">
+     1→---
+     2→title: Optional Field Propagation
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "transforming dataclass instances in pipelines"
+     7→  - "debugging null metadata fields"
+     8→  - "adding optional fields to dataclasses"
+     9→tripwires:
+    10→  - action: "hand-constructing frozen dataclass instances with selective field copying"
+    11→    warning: "Always use dataclasses.replace() to preserve all fields. Hand-construction with partial field copying silently drops optional fields (learn_status, learn_plan_issue, objective_issue, etc.)."
+    12→---
+    13→
+    14→# Optional Field Propagation
+    15→
+    16→**The Problem**: Frozen dataclasses with many optional fields (10+ fields, half optional) flow through multi-stage pipelines (fetch → enrich → filter → transform → display). Optional fields are silently lost when transformations create new instances instead of modifying existing ones.
+    17→
+    18→**Why This Matters**: Unlike mutable objects where you can `.set_field()` incrementally, frozen dataclasses require creating new instances at each transformation. Any transformation that doesn't explicitly preserve all fields will drop optional data—and the type system won't catch it since `field: str | None` accepts `None`.
+    19→
+    20→## The Cross-Cutting Pattern
+    21→
+    22→This pattern appears wherever frozen dataclasses with optional fields flow through multi-stage processing:
+    23→
+    24→- **TUI data pipelines**: `PlanRowData` with 30+ fields (15 optional) flows through filtering/sorting
+    25→- **CLI pipelines**: `SubmitState`, `LandState` with 10+ optional fields threaded through validation/execution stages
+    26→- **Gateway responses**: API data structures enriched with local metadata
+    27→
+    28→The danger zone: any transformation between stages.
+    29→
+    30→## Why Optional Fields Disappear
+
+... [123 lines omitted] ...
+
+    54→The type system doesn't help: `field: int | None` accepts `None`, so this compiles without warnings.
+  </tool_result>
+  <tool_result tool="toolu_016LdsHPpzm6w8vVzevHmkAp">
+     1→---
+     2→title: Land State Threading Pattern
+     3→read_when:
+     4→  - "implementing pipelines with immutable state"
+     5→  - "using dataclasses.replace() for state updates"
+     6→  - "designing stateful workflows with frozen dataclasses"
+     7→tripwires:
+     8→  - action: "threading state through pipeline steps with mutable dataclasses"
+     9→    warning: "Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay."
+    10→last_audited: "2026-02-07 20:43 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Land State Threading Pattern
+    15→
+    16→Pipeline steps thread immutable state through functional transformations. This document explains **why** erk uses frozen dataclasses for pipeline state, not **what** the implementation looks like (the code already shows that).
+    17→
+    18→## Why Immutability for Pipeline State
+    19→
+    20→The land command demonstrates three critical benefits of immutable state threading that generalize to any multi-step pipeline:
+    21→
+    22→### 1. Shell Script Serialization Boundary
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, two-pipeline pattern --&gt;
+    25→
+    26→The land command splits into two pipelines separated by a shell script boundary. See `run_validation_pipeline()` and `run_execution_pipeline()` in `src/erk/cli/commands/land_pipeline.py`.
+    27→
+    28→**The problem**: After validation completes, the user must approve execution by sourcing a shell script. This creates a serialization boundary—all state must encode as CLI flags and arguments.
+    29→
+    30→**Why immutability matters**:
+
+... [118 lines omitted] ...
+
+   105→state.branch = discovered_branch  # Compiler error with frozen=True
+   118→def merge_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   132→- Pipeline step signature: `(ErkContext, LandState) -&gt; LandState | LandError`
+  </tool_result>
+  <tool_result tool="toolu_011syrVTXXeUMAs1javDyxSv">
+     1→---
+     2→title: Derived Flags Pattern
+     3→read_when:
+     4→  - "combining a user-provided flag with automatic detection"
+     5→  - "adding auto-behavior that should be transparent to the user"
+     6→  - "implementing --force auto-detection for plan implementations"
+     7→tripwires:
+     8→  - action: "auto-enabling a flag without informing the user"
+     9→    warning: "When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions."
+    10→---
+    11→
+    12→# Derived Flags Pattern
+    13→
+    14→When a boolean flag should be auto-enabled based on context (e.g., plan implementation always needs force-push), derive an **effective flag** that combines user intent with auto-detection.
+    15→
+    16→## Pattern
+    17→
+    18→```python
+    19→effective_flag = user_flag or auto_detected_condition
+    20→```
+    21→
+    22→## Canonical Example: Auto-Force Push
+    23→
+    24→In `src/erk/cli/commands/pr/submit_pipeline.py`:
+    25→
+    26→```python
+    27→# Auto-force for plan implementations (branches always diverge from remote)
+    28→is_plan_impl = state.issue_number is not None
+    29→effective_force = state.force or is_plan_impl
+    30→```
+
+... [39 lines omitted] ...
+
+    46→The dim styling signals informational output (not an error or warning).
+  </tool_result>
+  <tool_result tool="toolu_01TqWq6dj2sJBZ4Kh4xSrwDC">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+
+... [353 lines omitted] ...
+
+    41→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    61→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    83→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    91→**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+   103→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+   117→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+   119→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+   127→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   133→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   137→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   151→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   165→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   169→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   181→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   217→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   219→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   221→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   223→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   235→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   237→**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+   251→**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+   269→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+   271→**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
+   283→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   285→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   293→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   301→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   305→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   307→**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
+   311→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   313→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   333→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   335→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   339→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   341→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   359→**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+   371→**writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
+   373→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <assistant>Now I'll make the edits to each file:</assistant>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CmxwsvGcdtNLdR1tDi1yLU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md</param>
+    <param name="old_string"># WRONG: Mutable state pattern (anti-pattern)
+branch_name = None
+pr_number = None
+issue_nu...[truncated 41 chars]...ep 2
+pr_number = create_pr(branch_name)
+# Step 3
+issue_number = extract_issue(branch_name)</param>
+    <param name="new_string"># WRONG: Mutable state pattern (anti-pattern)
+branch_name = None
+pr_number = None
+plan_id ...[truncated 33 chars]... Step 2
+pr_number = create_pr(branch_name)
+# Step 3
+plan_id = extract_plan_id(branch_name)</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AP9RAfqFQtzHNqXGfHB5z4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md</param>
+    <param name="old_string">The submit pipeline's `prepare_state()` step resolves 6 fields: `repo_root`, `branch_name`...[truncated 470 chars]...ne`
+4. **Single lookup location** — easier to audit "where does `issue_number` come from?"</param>
+    <param name="new_string">The submit pipeline's `prepare_state()` step resolves 6 fields: `repo_root`, `branch_name`...[truncated 455 chars]...r `None`
+4. **Single lookup location** — easier to audit "where does `plan_id` come from?"</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01T3Vyu6y4KrqtH7ZugpceGX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+    <param name="old_string">## erk-statusline's Duplicate Reader
+
+The `erk-statusline` package has its own plan-ref re...[truncated 125 chars]...ge with no dependency). This duplication is intentional and must be kept in sync manually.</param>
+    <param name="new_string">## erk-statusline's Duplicate Reader
+
+The `erk-statusline` package has its own plan-ref re...[truncated 124 chars]...ge with no dependency). This duplication is intentional and must be kept in sync manually.</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018F8WgjL3URxvFS5NkwzT2Y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md</param>
+    <param name="old_string">tripwires:
+  - action: "tracking selection by array index when the array can be mutated"
+ ...[truncated 59 chars]...array position. Array indices become unstable when rows are added, removed, or reordered."</param>
+    <param name="new_string">tripwires:
+  - action: "tracking selection by array index when the array can be mutated"
+ ...[truncated 54 chars]...array position. Array indices become unstable when rows are added, removed, or reordered."</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018Kmu8u4S2aJBLBxp1q4h95">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md</param>
+    <param name="old_string">See `PlanDataTable.populate()` in `src/erk/tui/widgets/plan_table.py` (lines 149-185). The...[truncated 162 chars]...mber`
+- If found, move cursor to that row
+- If not found, clamp saved index to valid range</param>
+    <param name="new_string">See `PlanDataTable.populate()` in `src/erk/tui/widgets/plan_table.py` (lines 149-185). The...[truncated 152 chars]...n_id`
+- If found, move cursor to that row
+- If not found, clamp saved index to valid range</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XcggKTB1GJxz83VZns7w8m">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md</param>
+    <param name="old_string">```python
+# WRONG: Hand-constructing with missing fields
+row_data = PlanRowData(
+    issue_number=plan.issue_number,
+    title=plan.title,
+    # Missing: learn_status, learn_plan_issue, etc.
+)
+```</param>
+    <param name="new_string">```python
+# WRONG: Hand-constructing with missing fields
+row_data = PlanRowData(
+    plan_id=plan.plan_id,
+    title=plan.title,
+    # Missing: learn_status, learn_plan_issue, etc.
+)
+```</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0165TH5BESmrf4ExfPXTXvnR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md</param>
+    <param name="old_string">```python
+@dataclass(frozen=True)
+class Plan:
+    issue_number: int
+    title: str
+    learn_status: str | None
+```</param>
+    <param name="new_string">```python
+@dataclass(frozen=True)
+class Plan:
+    plan_id: int
+    title: str
+    learn_status: str | None
+```</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0179neGQhgqMt7kNi697SLTw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-parsing.md</param>
+    <param name="old_string">## Layer 1: Pure Parsing (`erk_shared.gateway.github.parsing`)
+
+See `packages/erk-shared/s...[truncated 4 chars]...thub/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_issue_number_from_url`.</param>
+    <param name="new_string">## Layer 1: Pure Parsing (`erk_shared.gateway.github.parsing`)
+
+See `packages/erk-shared/s...[truncated 3 chars]...ithub/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_plan_number_from_url`.</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TeWghKvjNskkuHF4GgpmqN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/type-safety-patterns.md</param>
+    <param name="old_string">def handle_validated_row(row: PlanRowData | None) -&gt; None:
+    # We know row is not None a...[truncated 7 chars]...row is not None
+    # Type checker now sees row as PlanRowData
+    print(row.issue_number)</param>
+    <param name="new_string">def handle_validated_row(row: PlanRowData | None) -&gt; None:
+    # We know row is not None a...[truncated 2 chars]...sert row is not None
+    # Type checker now sees row as PlanRowData
+    print(row.plan_id)</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017jUssYjKncmiXeGwH3dAhU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md</param>
+    <param name="old_string">```python
+@dataclass(frozen=True)
+class PlanContext:
+    issue_number: int       # The erk...[truncated 32 chars]...l plan markdown
+    objective_summary: str | None  # "Objective #123: Title" if linked
+```</param>
+    <param name="new_string">```python
+@dataclass(frozen=True)
+class PlanContext:
+    plan_id: str            # The pla...[truncated 26 chars]...l plan markdown
+    objective_summary: str | None  # "Objective #123: Title" if linked
+```</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019UUAAUDjRtUJ8xY7W8W4si">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md</param>
+    <param name="old_string">**Intentional recomputation**: Some fields are **not** serialized through the shell script...[truncated 168 chars]...m GitHub if needed by `merge_pr()` step
+- `plan_issue_number`: Re-derived from branch name</param>
+    <param name="new_string">**Intentional recomputation**: Some fields are **not** serialized through the shell script...[truncated 252 chars]...n_state()`; execution pipeline steps check for `None` and skip learn plan logic if not set</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MXqbWS66xB9XyCvRWCP83i">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+    <param name="old_string">**tracking selection by array index when the array can be mutated** → Read [Selection Pres...[truncated 107 chars]... array position. Array indices become unstable when rows are added, removed, or reordered.</param>
+    <param name="new_string">**tracking selection by array index when the array can be mutated** → Read [Selection Pres...[truncated 102 chars]... array position. Array indices become unstable when rows are added, removed, or reordered.</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015muKgzsAD25fbLgJhSfRMj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/optional-field-propagation.md</param>
+    <param name="old_string">```python
+# WRONG: Selective field copying
+new_plan = Plan(
+    issue_number=plan.issue_nu...[truncated 2 chars]...itle,
+    # Missing: learn_status, learn_plan_issue, objective_issue, pr_number, ...
+)
+```</param>
+    <param name="new_string">```python
+# WRONG: Selective field copying
+new_plan = Plan(
+    plan_id=plan.plan_id,
+    title=plan.title,
+    # Missing: learn_status, learn_plan_issue, objective_issue, pr_number, ...
+)
+```</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LCBjRdfBuXkyiDMcpHTzRX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/land-state-threading.md</param>
+    <param name="old_string">**Resolved target** (9 fields, populated by `resolve_target()`): `repo_root`, `main_repo_r...[truncated 149 chars]...e steps): `objective_number`, `plan_issue_number`, `cleanup_confirmed`, `merged_pr_number`</param>
+    <param name="new_string">**Resolved target** (9 fields, populated by `resolve_target()`): `repo_root`, `main_repo_r...[truncated 139 chars]...er pipeline steps): `objective_number`, `plan_id`, `cleanup_confirmed`, `merged_pr_number`</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018PwGqUquoGyj9E2WpLfnS7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md</param>
+    <param name="old_string">```python
+# Auto-force for plan implementations (branches always diverge from remote)
+is_plan_impl = state.issue_number is not None
+effective_force = state.force or is_plan_impl
+```</param>
+    <param name="new_string">```python
+# Auto-force for plan implementations (branches always diverge from remote)
+is_plan_impl = state.plan_id is not None
+effective_force = state.force or is_plan_impl
+```</param>
+  </tool_use>
+  <usage input_tokens="5585" cache_creation_input_tokens="31632" cache_read_input_tokens="17555" cache_creation="{'ephemeral_5m_input_tokens': 31632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CmxwsvGcdtNLdR1tDi1yLU">
+The file /home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AP9RAfqFQtzHNqXGfHB5z4">
+The file /home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01T3Vyu6y4KrqtH7ZugpceGX">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018F8WgjL3URxvFS5NkwzT2Y">
+The file /home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018Kmu8u4S2aJBLBxp1q4h95">
+The file /home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XcggKTB1GJxz83VZns7w8m">
+The file /home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0165TH5BESmrf4ExfPXTXvnR">
+The file /home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0179neGQhgqMt7kNi697SLTw">
+The file /home/runner/work/erk/erk/docs/learned/architecture/github-parsing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TeWghKvjNskkuHF4GgpmqN">
+The file /home/runner/work/erk/erk/docs/learned/architecture/type-safety-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017jUssYjKncmiXeGwH3dAhU">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019UUAAUDjRtUJ8xY7W8W4si">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: **Intentional recomputation**: Some fields are **not** serialized through the shell script and are recomputed fresh during execution:
+
+- `repo_root` and `main_repo_root`: Re-discovered via `discover_repo_context(ctx.cwd)` in the execution pipeline
+- `pr_details`: Re-fetched from GitHub if needed by `merge_pr()` step
+- `plan_issue_number`: Re-derived from branch name&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01MXqbWS66xB9XyCvRWCP83i">
+The file /home/runner/work/erk/erk/docs/learned/architecture/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_015muKgzsAD25fbLgJhSfRMj">
+The file /home/runner/work/erk/erk/docs/learned/architecture/optional-field-propagation.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LCBjRdfBuXkyiDMcpHTzRX">
+The file /home/runner/work/erk/erk/docs/learned/architecture/land-state-threading.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018PwGqUquoGyj9E2WpLfnS7">
+The file /home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me check the linear-pipelines.md file more carefully:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10568" cache_read_input_tokens="49187" cache_creation="{'ephemeral_5m_input_tokens': 10568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0126Dt35kkjGxLDAAJXb21sK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md</param>
+    <param name="offset">76</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10568" cache_read_input_tokens="49187" cache_creation="{'ephemeral_5m_input_tokens': 10568, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0126Dt35kkjGxLDAAJXb21sK">
+    76→- **Execution state**: `force=True` (user already confirmed by sourcing script), `dry_run=False` (always mutates), `plan_issue_number` re-derived from branch name
+    77→
+    78→**Intentional recomputation**: Some fields are **not** serialized through the shell script and are recomputed fresh during execution:
+    79→
+    80→- `repo_root` and `main_repo_root`: Re-discovered via `discover_repo_context(ctx.cwd)` in the execution pipeline
+    81→- `pr_details`: Re-fetched from GitHub if needed by `merge_pr()` step
+    82→- `plan_id`: Set to `None` by `make_execution_state()`; execution pipeline steps check for `None` and skip learn plan logic if not set
+    83→
+    84→**Why not serialize everything?**
+    85→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good, I see that line 82 was already updated in my previous edit. Now I need to update line 76:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="433" cache_read_input_tokens="59755" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015tJoCGhCNHgtvVuX3i64Bn">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md</param>
+    <param name="old_string">- **Validation state**: `force=False` (user can cancel), `dry_run=True|False` (CLI flag), ...[truncated 79 chars]...script), `dry_run=False` (always mutates), `plan_issue_number` re-derived from branch name</param>
+    <param name="new_string">- **Validation state**: `force=False` (user can cancel), `dry_run=True|False` (CLI flag), ...[truncated 104 chars]...(always mutates), `plan_id` set to `None` (execution pipeline doesn't encode plan numbers)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="433" cache_read_input_tokens="59755" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015tJoCGhCNHgtvVuX3i64Bn">
+The file /home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me verify all the changes were made correctly by checking the key sections of the updated files:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="459" cache_read_input_tokens="60188" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YCGAqbQXuKuakmLaAHR4pU">
+    <param name="command">git diff --stat docs/learned/architecture/</param>
+    <param name="description">Show git diff statistics for architecture docs</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="459" cache_read_input_tokens="60188" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YCGAqbQXuKuakmLaAHR4pU">
+ docs/learned/architecture/derived-flags.md                    |  2 +-
+ docs/learned/architecture/github-parsing.md                   |  2 +-
+ docs/learned/architecture/land-state-threading.md             |  2 +-
+ docs/learned/architecture/linear-pipelines.md                 |  2 +-
+ docs/learned/architecture/optional-field-propagation.md       |  2 +-
+ docs/learned/architecture/pipeline-transformation-patterns.md |  4 ++--
+ docs/learned/architecture/plan-context-integration.md         |  2 +-
+ docs/learned/architecture/plan-ref-architecture.md            |  2 +-
+ docs/learned/architecture/selection-preservation-by-value.md  |  6 +++---
+ docs/learned/architecture/state-threading-pattern.md          | 10 +++++-----
+ docs/learned/architecture/tripwires.md                        |  2 +-
+ docs/learned/architecture/type-safety-patterns.md             |  2 +-
+ 12 files changed, 19 insertions(+), 19 deletions(-)
+  </tool_result>
+  <assistant>Excellent! All 12 files have been updated. Let me verify the changes look correct:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="404" cache_read_input_tokens="60647" cache_creation="{'ephemeral_5m_input_tokens': 404, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BeKsS1RJPQjSnBPsKoEgW7">
+    <param name="command">git diff docs/learned/architecture/ | head -100</param>
+    <param name="description">Preview the changes made to architecture docs</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="404" cache_read_input_tokens="60647" cache_creation="{'ephemeral_5m_input_tokens': 404, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BeKsS1RJPQjSnBPsKoEgW7">
+diff --git a/docs/learned/architecture/derived-flags.md b/docs/learned/architecture/derived-flags.md
+index d119281fb..75d14649b 100644
+--- a/docs/learned/architecture/derived-flags.md
++++ b/docs/learned/architecture/derived-flags.md
+@@ -25,7 +25,7 @@ In `src/erk/cli/commands/pr/submit_pipeline.py`:
+ 
+ ```python
+ # Auto-force for plan implementations (branches always diverge from remote)
+-is_plan_impl = state.issue_number is not None
++is_plan_impl = state.plan_id is not None
+ effective_force = state.force or is_plan_impl
+ ```
+ 
+diff --git a/docs/learned/architecture/github-parsing.md b/docs/learned/architecture/github-parsing.md
+index 341f7efcc..5e65c5273 100644
+--- a/docs/learned/architecture/github-parsing.md
++++ b/docs/learned/architecture/github-parsing.md
+@@ -35,7 +35,7 @@ This document describes the two-layer architecture for parsing GitHub URLs and e
+ 
+ ## Layer 1: Pure Parsing (`erk_shared.gateway.github.parsing`)
+ 
+-See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_issue_number_from_url`.
++See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_plan_number_from_url`.
+ 
+ **Characteristics:**
+ 
+diff --git a/docs/learned/architecture/land-state-threading.md b/docs/learned/architecture/land-state-threading.md
+index 7332ee773..82c8837b4 100644
+--- a/docs/learned/architecture/land-state-threading.md
++++ b/docs/learned/architecture/land-state-threading.md
+
+... [70 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Let me continue viewing the rest of the diff:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1991" cache_read_input_tokens="61051" cache_creation="{'ephemeral_5m_input_tokens': 1991, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

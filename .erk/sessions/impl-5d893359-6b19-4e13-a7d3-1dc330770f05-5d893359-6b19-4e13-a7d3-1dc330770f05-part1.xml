@@ -1,0 +1,1187 @@
+<session>
+  <meta branch="plnd/O8381-fix-issue-number-doc-03-07-0134" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8884&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8884` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8884.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28454" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28454, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_014PXwH62zbQo9T6cu8rSHW6">
+    <param name="command">erk exec setup-impl --issue 8884</param>
+    <param name="description">Set up implementation for plan #8884</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28454" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28454, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014PXwH62zbQo9T6cu8rSHW6">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O8381-fix-issue-number-doc-03-07-0134", "plan_number": 8884, "plan_url": "https://github.com/dagster-io/erk/pull/8884", "branch": "plnd/O8381-fix-issue-number-doc-03-07-0134", "plan_title": "[erk-plan] Plan: Fix `issue_number` references in docs/learned/ (Node 6.3)", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8884, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O8381-fix-issue-number-doc-03-07-0134', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="28454" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017QDvNeZuocsz8CLrBK6s57">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O8381-fix-issue-number-doc-03-07-0134/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="28454" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017QDvNeZuocsz8CLrBK6s57">
+     1→# Plan: Fix `issue_number` references in docs/learned/ (Node 6.3)
+     2→
+     3→Part of Objective #8381, Node 6.3
+     4→
+     5→## Context
+     6→
+     7→Objective #8381 standardizes "plan-as-PR" terminology across the codebase. Phases 1-5 and nodes 6.1-6.2 are complete. Node 6.3 fixes `issue_number` references (now `plan_number`) across docs in 6 directories. Node 6.4+ handles other terminology fixes in specific files.
+     8→
+     9→## Scope
+    10→
+    11→**39 files** across 6 directories with **~126 occurrences** of `issue_number`:
+    12→
+    13→| Directory | Files | Occurrences |
+    14→|-----------|-------|-------------|
+    15→| architecture/ | 20 | ~40 |
+    16→| cli/ | 10 | ~30 |
+    17→| testing/ | 4 | ~12 |
+    18→| pr-operations/ | 2 | ~3 |
+    19→| erk/ | 2 | ~2 |
+    20→| textual/ | 1 | ~1 |
+    21→
+    22→Note: `desktop-dash/` doesn't exist (already removed).
+    23→
+    24→## Replacement Rules
+    25→
+    26→Each `issue_number` occurrence falls into one of these categories:
+    27→
+    28→### 1. Conceptual/prose references → `plan_number`
+    29→- "the issue number of the plan" → "the plan number"
+    30→- `issue_number` in JSON output examples → `plan_number` (if the actual CLI output has been updated)
+
+... [58 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me understand the scope. I need to search for all `issue_number` occurrences in the target directories and also check the source code to understand what's been renamed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1628" cache_read_input_tokens="28821" cache_creation="{'ephemeral_5m_input_tokens': 1628, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01V6rkwqpGm5jdWJnmhBWM9p">
+    <param name="pattern">issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1628" cache_read_input_tokens="28821" cache_creation="{'ephemeral_5m_input_tokens': 1628, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01QfXyRxABtGdfuv36vgJyJ8">
+    <param name="pattern">issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/cli</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1628" cache_read_input_tokens="28821" cache_creation="{'ephemeral_5m_input_tokens': 1628, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01RsXPh9ecinhto2fAW23Xrd">
+    <param name="pattern">issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/testing</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1628" cache_read_input_tokens="28821" cache_creation="{'ephemeral_5m_input_tokens': 1628, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HcJ685cw8WqahB4QS28hAd">
+    <param name="pattern">issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/pr-operations</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1628" cache_read_input_tokens="28821" cache_creation="{'ephemeral_5m_input_tokens': 1628, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UfNEAN7hRJj97KWRpG5JdK">
+    <param name="pattern">issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1628" cache_read_input_tokens="28821" cache_creation="{'ephemeral_5m_input_tokens': 1628, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018jXYAxLYk7kNYoumirhvfY">
+    <param name="pattern">issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/textual</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1628" cache_read_input_tokens="28821" cache_creation="{'ephemeral_5m_input_tokens': 1628, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HcJ685cw8WqahB4QS28hAd">
+docs/learned/pr-operations/plan-implementation-auto-force.md:15:Auto-force is triggered when `state.issue_number is not None`, which is set when `.erk/impl-context/` is valid and contains issue tracking metadata.
+docs/learned/pr-operations/plan-implementation-auto-force.md:41:Regular feature branches (no `.erk/impl-context/` folder, or `.erk/impl-context/` without issue tracking) are **not** auto-forced. Only branches where `state.issue_number is not None` receive this treatment.
+docs/learned/pr-operations/checkout-footer-syntax.md:45:footer = f"erk pr checkout {issue_data['issue_number']} --script"
+  </tool_result>
+  <tool_result tool="toolu_01V6rkwqpGm5jdWJnmhBWM9p">
+docs/learned/architecture/github-parsing.md:38:See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_issue_number_from_url`.
+docs/learned/architecture/type-safety-patterns.md:66:    print(row.issue_number)
+docs/learned/architecture/state-derivation-pattern.md:64:  issue_number: 123,
+docs/learned/architecture/github-cli-limits.md:122:result = subprocess.run(["gh", "issue", "view", issue_number, "--json", "comments"])
+docs/learned/architecture/gateway-abc-implementation.md:273:if not ctx.github.issues.issue_exists(repo.root, issue_number):
+docs/learned/architecture/gateway-abc-implementation.md:274:    user_output(f"Error: Issue #{issue_number} not found")
+docs/learned/architecture/gateway-abc-implementation.md:278:issue = ctx.github.issues.get_issue(repo.root, issue_number)
+docs/learned/architecture/fail-open-patterns.md:62:clear_pr_metadata(issue_number)  # ← Metadata says "no PR" but PR is still open!
+docs/learned/architecture/fail-open-patterns.md:76:clear_pr_metadata(issue_number)
+docs/learned/architecture/pipeline-transformation-patterns.md:59:    issue_number=plan.issue_number,
+docs/learned/architecture/pipeline-transformation-patterns.md:80:    issue_number: int
+docs/learned/architecture/ref-json-migration.md:55:| `issue_number`    | `plan_id` (converted to string) |
+docs/learned/architecture/plan-context-integration.md:83:    issue_number: int       # The erk-plan issue number
+docs/learned/architecture/linear-pipelines.md:76:- **Execution state**: `force=True` (user already confirmed by sourcing script), `dry_run=False` (always mutates), `plan_issue_number` re-derived from branch name
+docs/learned/architecture/tripwires.md:289:**tracking selection by array index when the array can be mutated** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered.
+docs/learned/architecture/selection-preservation-by-value.md:13:    warning: "Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
+docs/learned/architecture/selection-preservation-by-value.md:55:- Save `selected_key` (stringified `issue_number`) before `clear()`
+docs/learned/architecture/selection-preservation-by-value.md:57:- Loop through new rows to find matching `issue_number`
+docs/learned/architecture/plan-ref-architecture.md:23:- Fields: `issue_number` (int), `issue_url` (str)
+docs/learned/architecture/plan-ref-architecture.md:62:- `issue_number` -&gt; `plan_id` (converted to string)
+docs/learned/architecture/plan-ref-architecture.md:85:    issue_number = int(plan_ref.plan_id)
+docs/learned/architecture/plan-ref-architecture.md:95:The `erk-statusline` package has its own plan-ref reading logic via `_load_impl_data()`, `get_issue_number()`, and `get_objective_issue()` because it cannot import from `erk_shared` (separate package with no dependency). This duplication is intentional and must be kept in sync manually.
+docs/learned/architecture/optional-field-propagation.md:65:    issue_number=plan.issue_number,
+docs/learned/architecture/plan-backend-migration.md:29:subprocess.run(["gh", "api", f"repos/{owner}/{repo}/issues/{issue_number}", ...])
+docs/learned/architecture/plan-backend-migration.md:30:subprocess.run(["gh", "issue", "comment", str(issue_number), "--body", comment])
+docs/learned/architecture/land-state-threading.md:49:**Derived** (4 fields, populated by later pipeline steps): `objective_number`, `plan_issue_number`, `cleanup_confirmed`, `merged_pr_number`
+docs/learned/architecture/derived-flags.md:28:is_plan_impl = state.issue_number is not None
+docs/learned/architecture/github-interface-patterns.md:39:| Get issue by number | `/repos/{owner}/{repo}/issues/{issue_number}`                 |
+docs/learned/architecture/state-threading-pattern.md:28:issue_number = None
+docs/learned/architecture/state-threading-pattern.md:35:issue_number = extract_issue(branch_name)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QfXyRxABtGdfuv36vgJyJ8">
+docs/learned/cli/output-styling.md:232:  "issue_number": 6545,
+docs/learned/cli/output-styling.md:304:   - Format: `"   Incorporating plan from issue #{issue_number}"`
+docs/learned/cli/output-styling.md:318:See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `issue_number`) to display the plan reference.
+docs/learned/cli/output-styling.md:942:- **Internal variable names may differ.** Internal code can use `issue_number`, `plan_id`, or similar — these are implementation details. Only the user-visible strings must say "plan".
+docs/learned/cli/output-styling.md:949:click.echo(f"Issue #{issue_number} created")
+docs/learned/cli/output-styling.md:952:click.echo(f"Plan #{issue_number} created")
+docs/learned/cli/exec-script-patterns.md:137:url = f"https://github.com/{repo_id}/issues/{issue_number}"
+docs/learned/cli/pr-submit-pipeline.md:37:Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and validates `.erk/impl-context/plan-ref.json` linkage (with legacy `.erk/impl-context/issue.json` fallback).
+docs/learned/cli/pr-submit-pipeline.md:41:1. **DRY** — Before this pattern, `issue_number` was derived independently in 3+ places with subtly different logic
+docs/learned/cli/pr-submit-pipeline.md:44:4. **Single source of truth** — Grep for "where does `issue_number` come from?" finds one place, not four
+docs/learned/cli/pr-submit-pipeline.md:84:**Why in prepare_state() instead of a separate "repair" step?** Because the repair needs `issue_number` (discovered in prepare), `repo_root` (discovered in prepare), and `remote_url` (fetched for repair). Preparing and repairing are coupled — no value in separating them.
+docs/learned/cli/pr-submit-pipeline.md:143:The pipeline detects plan implementations via `state.issue_number is not None`. This drives two auto-behaviors:
+docs/learned/cli/exec-command-patterns.md:48:Closes #[issue_number]
+docs/learned/cli/workflow-commands.md:21:      branch follows the P{issue_number} naming pattern
+docs/learned/cli/workflow-commands.md:63:PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch name follows the `P{issue_number}-*` pattern. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.
+docs/learned/cli/commands/update-objective-node.md:76:Output is structured JSON with `success`, `issue_number`, `node_id`, `previous_pr`, `new_pr`, and `url` fields.
+docs/learned/cli/commands/update-objective-node.md:109:  "issue_number": 6423,
+docs/learned/cli/commands/update-objective-node.md:123:  "issue_number": 6697,
+docs/learned/cli/commands/pr-summarize.md:73:When a branch follows the `P{issue_number}-{slug}` naming convention, the command automatically fetches plan context from the linked erk-plan issue.
+docs/learned/cli/tripwires.md:181:**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern
+docs/learned/cli/ambiguity-resolution.md:57:    user_output(f"Multiple branches found for plan #{issue_number}:\n")
+docs/learned/cli/ambiguity-resolution.md:83:        f"No local branch or open PR found for plan #{issue_number}\n\n"
+docs/learned/cli/ambiguity-resolution.md:85:        f"  • Run: erk implement {issue_number}"
+docs/learned/cli/pr-operations.md:58:The `erk exec get-pr-for-plan` script (see `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`) demonstrates fallback logic when `branch_name` is missing from plan metadata: it infers the branch from the current git context if it matches the plan's issue number prefix (`P{issue_number}-`).
+  </tool_result>
+  <tool_result tool="toolu_01RsXPh9ecinhto2fAW23Xrd">
+docs/learned/testing/import-conflict-resolution.md:37:from erk_shared.gateway.github.parsing import parse_pr_number, parse_issue_number
+docs/learned/testing/import-conflict-resolution.md:40:from .issue_helpers import parse_issue_number
+docs/learned/testing/import-conflict-resolution.md:58:from erk_shared.gateway.github.parsing import parse_pr_number, parse_issue_number
+docs/learned/testing/import-conflict-resolution.md:94:    parse_issue_number,
+docs/learned/testing/import-conflict-resolution.md:99:from .issue_parser import parse_issue_number
+docs/learned/testing/import-conflict-resolution.md:108:    parse_issue_number,
+docs/learned/testing/fake-api-migration-pattern.md:57:- PR metadata: `simulated_pr_url`, `simulated_pr_number`, `simulated_pr_title`, `simulated_issue_number`
+docs/learned/testing/cli-testing.md:233:    assert output["issue_number"] == 1
+docs/learned/testing/fake-github-mutation-tracking.md:50:| `_added_comments`   | `(issue_number, body, comment_id)` | `(42, "comment", 100)`            |
+docs/learned/testing/fake-github-mutation-tracking.md:52:| `_closed_issues`    | `int` (issue_number)               | `42`                              |
+docs/learned/testing/fake-github-mutation-tracking.md:54:| `_updated_bodies`   | `(issue_number, body)`             | `(42, "new body")`                |
+docs/learned/testing/fake-github-mutation-tracking.md:55:| `_updated_titles`   | `(issue_number, title)`            | `(42, "new title")`               |
+  </tool_result>
+  <tool_result tool="toolu_01UfNEAN7hRJj97KWRpG5JdK">
+docs/learned/erk/pr-address-workflows.md:154:When the branch name follows the `P{issue_number}-*` pattern (e.g., `P5819-add-feature`), the command automatically updates the plan issue with dispatch metadata:
+docs/learned/erk/graphite-divergence-detection.md:35:4. **Check `behind &gt; 0`**: If the local branch is behind remote AND `effective_force` is `False`, return a `SubmitError` with `error_type="remote_diverged"`. Note: `effective_force = state.force or is_plan_impl`, so plan implementations (`state.issue_number is not None`) auto-force and never hit this guard — it only applies to non-plan `erk pr submit` invocations.
+  </tool_result>
+  <tool_result tool="toolu_018jXYAxLYk7kNYoumirhvfY">
+docs/learned/textual/datatable-markup-escaping.md:74:            plan.issue_number,
+  </tool_result>
+  <assistant>Now I have a clear picture of all occurrences. Let me also check the current source code to understand what's been renamed vs. what still uses `issue_number`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4421" cache_read_input_tokens="30449" cache_creation="{'ephemeral_5m_input_tokens': 4421, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NRYhB1SGH1oSTjN8RAK69G">
+    <param name="todos">[{'content': 'Phase 1: Fix issue_number in architecture/ docs (20 files)', 'status': 'pend...[truncated 547 chars]... CI', 'status': 'pending', 'activeForm': 'Verifying remaining references and running CI'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4421" cache_read_input_tokens="30449" cache_creation="{'ephemeral_5m_input_tokens': 4421, 'ephemeral_1h_input_tokens': 0}" output_tokens="301" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NRYhB1SGH1oSTjN8RAK69G">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me check what the current source code looks like to understand which fields are still `issue_number` vs `plan_number`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="34870" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01CHZvAD5JDNyCev7NFiQfRb">
+    <param name="description">Check source code field names</param>
+    <param name="prompt">I need to understand the current state of `issue_number` vs `plan_number` in the erk sourc...[truncated 820 chars]...n-ref-architecture.md - does it still exist?
+
+Report findings concisely for each question.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="34870" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CHZvAD5JDNyCev7NFiQfRb">
+Perfect! Now I have comprehensive data. Let me create a concise summary report:
+
+## Summary: Current State of `issue_number` vs `plan_number` in Erk
+
+Based on systematic code inspection, here are the findings for each question:
+
+### 1. Submit Pipeline State Dataclass
+**Current state: Uses `plan_id` (string), NOT `issue_number`**
+
+In `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py`, the `SubmitState` dataclass (lines 87-115) contains:
+```python
+plan_id: str | None
+pr_number: int | None
+```
+
+The field is `plan_id` (string), not `issue_number`. This was renamed from the previous naming scheme.
+
+### 2. plan-ref-architecture.md Field Names
+**Current state: Uses `plan_id` (string)**
+
+The doc at `/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md` describes:
+- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
+- File location: `.erk/impl-context/plan-ref.json`
+- Legacy fallback maps: `issue_number` -&gt; `plan_id` (converted to string)
+
+The doc explicitly notes (lines 42-44) that `plan_id` is deliberately a string, not int, to support non-numeric providers.
+
+### 3. Parse Function Naming
+**Current state: Function renamed to `parse_plan_number_from_url()`**
+
+
+... [65 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent. Now I have a clear understanding. Let me signal the start and begin implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1615" cache_read_input_tokens="35206" cache_creation="{'ephemeral_5m_input_tokens': 1615, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01JBDcbq1YWdYhtYAfMt3PPC">
+    <param name="command">erk exec impl-signal started --session-id "5d893359-6b19-4e13-a7d3-1dc330770f05" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1615" cache_read_input_tokens="35206" cache_creation="{'ephemeral_5m_input_tokens': 1615, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JBDcbq1YWdYhtYAfMt3PPC">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8884
+}
+  </tool_result>
+  <assistant>Now let me start Phase 1: architecture/ docs. I need to read each file with occurrences and make the appropriate edits. Let me read the files in batches.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="173" cache_read_input_tokens="36821" cache_creation="{'ephemeral_5m_input_tokens': 173, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01DG5R9U1KRDPgWTyCxzZad4">
+    <param name="todos">[{'content': 'Phase 1: Fix issue_number in architecture/ docs (20 files)', 'status': 'in_p...[truncated 551 chars]... CI', 'status': 'pending', 'activeForm': 'Verifying remaining references and running CI'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="173" cache_read_input_tokens="36821" cache_creation="{'ephemeral_5m_input_tokens': 173, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DG5R9U1KRDPgWTyCxzZad4">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read the architecture files that need changes in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="36994" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013NWYHBVg4vQzi5htV2vLr1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="36994" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Gx4aTjaMtPHJk9cvq3v2Nf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="36994" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MVeoBTgbKHz9RAXUedRGfV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="36994" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RBTWWHr6C6Q1UpcvmaCZfL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="offset">265</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="36994" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Gks5jYPoKe5wt2CeaBxu7h">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md</param>
+    <param name="offset">50</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="36994" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013NWYHBVg4vQzi5htV2vLr1">
+     1→---
+     2→title: State Threading Pattern
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing linear pipelines with immutable state"
+     7→  - "understanding SubmitState or pipeline architecture"
+     8→  - "implementing multi-step workflows with frozen dataclasses"
+     9→tripwires:
+    10→  - action: "mutating pipeline state directly instead of using dataclasses.replace()"
+    11→    warning: "Pipeline state must be frozen. Use dataclasses.replace() to create new state at each step."
+    12→  - action: "adding optional fields to pipeline state without defaults"
+    13→    warning: "New pipeline state fields must have defaults (usually None) to avoid breaking make_initial_state() factories. See optional-field-propagation.md for the pattern."
+    14→---
+    15→
+    16→# State Threading Pattern
+    17→
+    18→State threading is the immutable data flow pattern underlying erk's linear pipelines. This document explains **why** frozen dataclasses and explicit state accumulation matter for pipeline composition, not **what** the code looks like (read the source for that).
+    19→
+    20→## The Core Problem: Mutable State Creates Hidden Dependencies
+    21→
+    22→Traditional imperative code mutates local variables as operations progress:
+    23→
+    24→```python
+    25→# WRONG: Mutable state pattern (anti-pattern)
+    26→branch_name = None
+    27→pr_number = None
+    28→issue_number = None
+    29→
+    30→# Step 1
+
+... [169 lines omitted] ...
+
+    57→2. Each step takes state as input, returns updated state (or error) as output
+    80→**Trade-off:** State carries fields that aren't relevant to early steps (e.g., `graphite_url` is `None` during validation). This is intentional — the runner doesn't need to know which fields are valid at which step. The `isinstance(result, Error)` check is the only branch.
+    96→**Critical constraint:** When adding new fields to state, they **must** have default values. Otherwise `make_initial_state()` breaks with "missing required argument" errors. See [Optional Field Propagation](optional-field-propagation.md) for the detailed pattern.
+   113→## Type Narrowing After Error Checks
+   115→The discriminated union pattern (`State | Error`) enables type narrowing:
+   121→    return SubmitError(phase="prepare", error_type="no_branch", ...)
+   130→- **Runtime safety** — if a step forgets to check, type error surfaces at development time
+   132→See [Discriminated Union Error Handling](discriminated-union-error-handling.md) for the full pattern.
+   139→- Steps can fail independently, and failures should stop the pipeline
+   140→- You need clear error attribution (which phase failed and why)
+   186→- Error handling is explicit (return `Error`) rather than hidden in monad machinery
+   191→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — The `State | Error` union pattern
+  </tool_result>
+  <tool_result tool="toolu_01Gx4aTjaMtPHJk9cvq3v2Nf">
+     1→---
+     2→title: PlanRef Architecture
+     3→read_when:
+     4→  - "working with plan-ref.json"
+     5→  - "working with PlanRef dataclass"
+     6→  - "migrating from IssueReference to PlanRef"
+     7→  - "understanding provider-agnostic plan references"
+     8→tripwires:
+     9→  - action: "accessing plan_ref.plan_id as int without checking"
+    10→    warning: "plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'."
+    11→  - action: "calling save_plan_ref with positional arguments"
+    12→    warning: "All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime."
+    13→---
+    14→
+    15→# PlanRef Architecture
+    16→
+    17→PlanRef is the provider-agnostic plan reference abstraction stored in `.erk/impl-context/plan-ref.json`. It replaced the GitHub-specific `IssueReference` to support future plan providers.
+    18→
+    19→## Why PlanRef Replaced IssueReference
+    20→
+    21→The original `IssueReference` was tightly coupled to GitHub:
+    22→
+    23→- Fields: `issue_number` (int), `issue_url` (str)
+    24→- File: `.erk/impl-context/issue.json`
+    25→- Only supported GitHub issues as plan storage
+    26→
+    27→PlanRef generalizes this:
+    28→
+    29→- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
+    30→- File: `.erk/impl-context/plan-ref.json`
+
+... [76 lines omitted] ...
+
+    50→Saves a plan reference to `plan-ref.json`. All parameters after `impl_dir` are keyword-only. Raises `FileNotFoundError` if `impl_dir` doesn't exist.
+  </tool_result>
+  <tool_result tool="toolu_01MVeoBTgbKHz9RAXUedRGfV">
+     1→---
+     2→title: Selection Preservation by Value
+     3→read_when:
+     4→  - "working with auto-refreshing lists or tables in UI components"
+     5→  - "implementing selection state that should persist across data updates"
+     6→  - "building real-time dashboard views with user-selected items"
+     7→  - "debugging cursor position resets in DataTable or list components"
+     8→last_audited: "2026-02-07 21:34 PT"
+     9→audit_result: edited
+    10→category: architecture
+    11→tripwires:
+    12→  - action: "tracking selection by array index when the array can be mutated"
+    13→    warning: "Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
+    14→  - action: "assuming cursor position will persist across DataTable.clear() calls"
+    15→    warning: "Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern."
+    16→  - action: "skipping fallback strategies when the selected item might disappear"
+    17→    warning: "Always provide fallback behavior when selected item not found in refreshed data (reset to 0, preserve index clamped, or clear selection)."
+    18→---
+    19→
+    20→# Selection Preservation by Value
+    21→
+    22→## The Problem
+    23→
+    24→Array indices are fundamentally unstable when the underlying data can mutate. When a UI component refreshes its data (new rows inserted, existing rows removed, or reordering), tracking selection by position causes the cursor to jump to a different item or reset unexpectedly. The user loses their place.
+    25→
+    26→This isn't a bug in any particular framework — it's a category error. Position is the wrong identity for items that can move.
+    27→
+    28→## The Cross-Cutting Pattern
+    29→
+    30→**Track selection by stable identifier, not array position.** After refreshing data:
+
+... [61 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RBTWWHr6C6Q1UpcvmaCZfL">
+   265→    result = subprocess.run(cmd, cwd=repo_root, capture_output=True)
+   266→    return result.returncode == 0
+   267→```
+   268→
+   269→**Caller usage (LBYL):**
+   270→
+   271→```python
+   272→# Check existence before fetching
+   273→if not ctx.github.issues.issue_exists(repo.root, issue_number):
+   274→    user_output(f"Error: Issue #{issue_number} not found")
+   275→    raise SystemExit(1)
+   276→
+   277→# Safe to fetch - we know it exists
+   278→issue = ctx.github.issues.get_issue(repo.root, issue_number)
+   279→```
+   280→
+   281→See [LBYL Gateway Pattern](lbyl-gateway-pattern.md) for complete pattern documentation.
+   282→
+   283→### Mutation Methods
+   284→
+   285→**Examples**: `create_branch`, `merge_pr`, `resolve_review_thread`
+   286→
+   287→```python
+   288→# dry_run.py - No-op, return success
+   289→def resolve_review_thread(self, repo_root: Path, thread_id: str) -&gt; bool:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Gks5jYPoKe5wt2CeaBxu7h">
+    50→## Metadata Preservation Through Transformations
+    51→
+    52→When transforming data structures (e.g., `Plan` → `PlanRowData`), ensure all fields transfer:
+    53→
+    54→### Anti-Pattern: Partial Object Construction
+    55→
+    56→```python
+    57→# WRONG: Hand-constructing with missing fields
+    58→row_data = PlanRowData(
+    59→    issue_number=plan.issue_number,
+    60→    title=plan.title,
+    61→    # Missing: learn_status, learn_plan_issue, etc.
+    62→)
+    63→```
+    64→
+    65→### Correct Pattern: Complete Field Transfer
+    66→
+    67→Ensure transformation functions explicitly handle all fields, or use patterns that naturally preserve data (like dataclass `replace()`).
+    68→
+    69→## Immutability in Pipelines
+    70→
+    71→Use frozen dataclasses throughout pipelines:
+    72→
+    73→- Prevents accidental mutation during filtering
+    74→- Makes threading safer
+    75→- Clarifies that transformations create new objects
+    76→
+    77→```python
+    78→@dataclass(frozen=True)
+    79→class Plan:
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the remaining architecture files in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016CKKjUum6PxbqJq4T1tt1Z">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-parsing.md</param>
+    <param name="offset">30</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Dzw4yiurwvV7DNLSNYAguP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/type-safety-patterns.md</param>
+    <param name="offset">58</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EgbatLJLr84stQQ99bZ6Ks">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/state-derivation-pattern.md</param>
+    <param name="offset">56</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012hMYzzBsjbTbn9MKzu76gY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-cli-limits.md</param>
+    <param name="offset">115</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HZxnKgT3GLf95cUcbygKBA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md</param>
+    <param name="offset">55</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RLBFv29QuTbGSoKUFdNvGH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md</param>
+    <param name="offset">48</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AiGe1129XSbvW2GTAQKB1N">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md</param>
+    <param name="offset">75</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012UivRPqUZK4w5dWihR2spn">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md</param>
+    <param name="offset">70</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SNLAfVoPnhMbsekSE6MvNW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+    <param name="offset">283</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014D33q6ZMmVT4EkTxJPx6fQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/optional-field-propagation.md</param>
+    <param name="offset">58</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CXoN4oYaAYdycnZMEHfR6C">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="offset">22</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Uq2eKjamPhagvcFTpAhvsx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/land-state-threading.md</param>
+    <param name="offset">42</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016M5V2VBUfDR6iXPiP1UwTv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md</param>
+    <param name="offset">22</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01URyUF9eiiCVUDZs17rNHDi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-interface-patterns.md</param>
+    <param name="offset">33</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011vRmkFizmxhbJYc7VaCf5B">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="offset">187</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7783" cache_read_input_tokens="37334" cache_creation="{'ephemeral_5m_input_tokens': 7783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016CKKjUum6PxbqJq4T1tt1Z">
+    30→│   - Returns int | None                       │
+    31→│   - No side effects                          │
+    32→│   - Reusable across contexts                 │
+    33→└─────────────────────────────────────────────┘
+    34→```
+    35→
+    36→## Layer 1: Pure Parsing (`erk_shared.gateway.github.parsing`)
+    37→
+    38→See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_issue_number_from_url`.
+    39→
+    40→**Characteristics:**
+    41→
+    42→- Returns `int | None` (never raises)
+    43→- No dependencies on CLI frameworks
+    44→- Pure functions with no side effects
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Dzw4yiurwvV7DNLSNYAguP">
+    58→
+    59→When you're confident about the type (e.g., after validation):
+    60→
+    61→```python
+    62→def handle_validated_row(row: PlanRowData | None) -&gt; None:
+    63→    # We know row is not None after validation
+    64→    assert row is not None
+    65→    # Type checker now sees row as PlanRowData
+    66→    print(row.issue_number)
+    67→```
+    68→
+    69→## Duck Typing Alternative
+    70→
+    71→For truly flexible code, use duck typing with Protocol:
+    72→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01EgbatLJLr84stQQ99bZ6Ks">
+    56→3. **Display is inherently backend concern** - Localized timestamps, currency formatting based on user's stored locale
+    57→
+    58→## Anti-Pattern: Pre-Rendered Display Strings
+    59→
+    60→**WRONG**: Backend returns display strings
+    61→
+    62→```typescript
+    63→{
+    64→  issue_number: 123,
+    65→  pr_display: "PR #456 (merged)",     // ❌ Pre-rendered
+    66→  status_icon: "✓"                    // ❌ Pre-rendered
+    67→}
+    68→```
+    69→
+    70→Problems:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_012hMYzzBsjbTbn9MKzu76gY">
+   115→### Examples from Codebase
+   116→
+   117→```python
+   118→# GH-API-AUDIT: REST - Get PR number from branch
+   119→result = subprocess.run(["gh", "pr", "view", "--json", "number"])
+   120→
+   121→# GH-API-AUDIT: GraphQL - Fetch issue comments
+   122→result = subprocess.run(["gh", "issue", "view", issue_number, "--json", "comments"])
+   123→```
+   124→
+   125→**Purpose**: Identifies 60+ locations in the gateway code where we're using gh CLI abstractions that hide quota usage, lack features (like pagination), or impose size limits. The audit trail enables systematic migration when we encounter gh CLI limitations.
+   126→
+   127→## Related Limitations
+   128→
+   129→### GitHub Machines Endpoint HTTP 500 Bug
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01HZxnKgT3GLf95cUcbygKBA">
+    55→try:
+    56→    ctx.github.close_pr(repo_root, pr_number)
+    57→except RuntimeError:
+    58→    user_output("Warning: Could not close PR")
+    59→    # WRONG: Continue anyway
+    60→
+    61→# Clear metadata (always executes)
+    62→clear_pr_metadata(issue_number)  # ← Metadata says "no PR" but PR is still open!
+    63→```
+    64→
+    65→**CORRECT** — asymmetric early return:
+    66→
+    67→```python
+    68→# Close PR (critical step)
+    69→try:
+    70→    ctx.github.close_pr(repo_root, pr_number)
+    71→except RuntimeError:
+    72→    user_output("Warning: Could not close PR")
+    73→    return None  # ← Do NOT execute dependent metadata update
+    74→
+    75→# Clear metadata (dependent step - only executes if we reach this line)
+    76→clear_pr_metadata(issue_number)
+    77→```
+    78→
+    79→If the metadata update itself fails after a successful PR close, that's tolerable—the PR is already closed, the inconsistency is minor.
+    80→
+    81→## Canonical Example
+    82→
+    83→&lt;!-- Source: src/erk/cli/commands/pr/close_cmd.py, pr_close --&gt;
+    84→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RLBFv29QuTbGSoKUFdNvGH">
+    48→
+    49→## Legacy issue.json Field Mapping
+    50→
+    51→The legacy format uses different field names that are automatically mapped:
+    52→
+    53→| issue.json field  | PlanRef field                   |
+    54→| ----------------- | ------------------------------- |
+    55→| `issue_number`    | `plan_id` (converted to string) |
+    56→| `issue_url`       | `url`                           |
+    57→| `created_at`      | `created_at`                    |
+    58→| `synced_at`       | `synced_at`                     |
+    59→| `labels`          | `labels`                        |
+    60→| `objective_issue` | `objective_id`                  |
+    61→
+    62→The `provider` is hardcoded to `"github"` for legacy files.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01AiGe1129XSbvW2GTAQKB1N">
+    75→
+    76→## PlanContext Data Structure
+    77→
+    78→When extraction succeeds, the provider returns:
+    79→
+    80→```python
+    81→@dataclass(frozen=True)
+    82→class PlanContext:
+    83→    issue_number: int       # The erk-plan issue number
+    84→    plan_content: str       # Full plan markdown
+    85→    objective_summary: str | None  # "Objective #123: Title" if linked
+    86→```
+    87→
+    88→## Usage in PR Generation
+    89→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_012UivRPqUZK4w5dWihR2spn">
+    70→
+    71→**Why separate factories?**
+    72→
+    73→The validation pipeline takes CLI arguments directly. The execution pipeline reconstructs state from shell script arguments. They have different invariants:
+    74→
+    75→- **Validation state**: `force=False` (user can cancel), `dry_run=True|False` (CLI flag), `repo_root` pre-discovered
+    76→- **Execution state**: `force=True` (user already confirmed by sourcing script), `dry_run=False` (always mutates), `plan_issue_number` re-derived from branch name
+    77→
+    78→**Intentional recomputation**: Some fields are **not** serialized through the shell script and are recomputed fresh during execution:
+    79→
+    80→- `repo_root` and `main_repo_root`: Re-discovered via `discover_repo_context(ctx.cwd)` in the execution pipeline
+    81→- `pr_details`: Re-fetched from GitHub if needed by `merge_pr()` step
+    82→- `plan_id`: Set to `None` by `make_execution_state()`; execution pipeline steps check for `None` and skip learn plan logic if not set
+    83→
+    84→**Why not serialize everything?**
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01SNLAfVoPnhMbsekSE6MvNW">
+   283→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   284→
+   285→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   286→
+   287→**threading state through pipeline steps with mutable dataclasses** → Read [Land State Threading Pattern](land-state-threading.md) first. Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay.
+   288→
+   289→**tracking selection by array index when the array can be mutated** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered.
+   290→
+   291→**trusting agent-produced JSON without normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Agents drift from expected schemas over time. Always normalize at the boundary before validation. See normalize_tripwire_candidates.py for the pattern.
+   292→
+   293→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   294→
+   295→**updating a roadmap step's PR cell** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The update-objective-node command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty.
+   296→
+   297→**using --force-with-lease in multi-step workflows where earlier steps push** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Force-push silently overwrites intermediate commits from earlier workflow steps. Always `git pull --rebase` before pushing in multi-step workflows.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_014D33q6ZMmVT4EkTxJPx6fQ">
+    58→### Pattern 1: Hand-Construction Instead of replace()
+    59→
+    60→**Anti-pattern**:
+    61→
+    62→```python
+    63→# WRONG: Selective field copying
+    64→new_plan = Plan(
+    65→    issue_number=plan.issue_number,
+    66→    title=plan.title,
+    67→    # Missing: learn_status, learn_plan_issue, objective_issue, pr_number, ...
+    68→)
+    69→```
+    70→
+    71→**Why it happens**: Developers new to frozen dataclasses think "I'll just create a new instance with the fields I need." They don't realize optional fields default to `None` when not specified.
+    72→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01CXoN4oYaAYdycnZMEHfR6C">
+    22→
+    23→## Migration Pattern
+    24→
+    25→### Before: Direct `gh` Calls
+    26→
+    27→```python
+    28→# Old pattern: direct subprocess calls
+    29→subprocess.run(["gh", "api", f"repos/{owner}/{repo}/issues/{issue_number}", ...])
+    30→subprocess.run(["gh", "issue", "comment", str(issue_number), "--body", comment])
+    31→```
+    32→
+    33→### After: PlanBackend
+    34→
+    35→See `impl_signal.py` for a complete example:
+    36→[`src/erk/cli/commands/exec/scripts/impl_signal.py`](../../../src/erk/cli/commands/exec/scripts/impl_signal.py).
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Uq2eKjamPhagvcFTpAhvsx">
+    42→
+    43→The `LandState` dataclass has 21 fields organized into three lifecycle stages (matching the source code comments). See the `LandState` definition in `src/erk/cli/commands/land_pipeline.py`.
+    44→
+    45→**CLI inputs** (8 fields): `cwd`, `force`, `script`, `pull_flag`, `no_delete`, `up_flag`, `dry_run`, `target_arg`
+    46→
+    47→**Resolved target** (9 fields, populated by `resolve_target()`): `repo_root`, `main_repo_root`, `branch`, `pr_number`, `pr_details`, `worktree_path`, `is_current_branch`, `use_graphite`, `target_child_branch`
+    48→
+    49→**Derived** (4 fields, populated by later pipeline steps): `objective_number`, `plan_issue_number`, `cleanup_confirmed`, `merged_pr_number`
+    50→
+    51→**Why frozen dataclasses work**: Each validation step populates the fields it discovers using `dataclasses.replace()`, leaving others unchanged. The pattern scales to any number of discovery stages without complex initialization logic.
+    52→
+    53→**Alternative approaches considered**:
+    54→
+    55→- **Builder pattern**: Requires separate builder class, more verbose, no type safety until build()
+    56→- **Mutable dataclass**: Easy to accidentally mutate in the wrong place, no replay capability
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_016M5V2VBUfDR6iXPiP1UwTv">
+    22→## Canonical Example: Auto-Force Push
+    23→
+    24→In `src/erk/cli/commands/pr/submit_pipeline.py`:
+    25→
+    26→```python
+    27→# Auto-force for plan implementations (branches always diverge from remote)
+    28→is_plan_impl = state.issue_number is not None
+    29→effective_force = state.force or is_plan_impl
+    30→```
+    31→
+    32→**Why:** Plan implementation branches always diverge from remote because the draft PR scaffolding commits differ from the worker's implementation commits. Requiring `--force` every time would be a UX burden with no safety benefit.
+    33→
+    34→## User Transparency
+    35→
+    36→Always echo when auto-behavior activates:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01URyUF9eiiCVUDZs17rNHDi">
+    33→### REST API Endpoints
+    34→
+    35→| Operation           | Endpoint                                                      |
+    36→| ------------------- | ------------------------------------------------------------- |
+    37→| Get PR by number    | `/repos/{owner}/{repo}/pulls/{pr_number}`                     |
+    38→| Get PR by branch    | `/repos/{owner}/{repo}/pulls?head={owner}:{branch}&amp;state=all` |
+    39→| Get issue by number | `/repos/{owner}/{repo}/issues/{issue_number}`                 |
+    40→
+    41→### Example Usage
+    42→
+    43→```bash
+    44→# Get PR by number
+    45→gh api repos/owner/repo/pulls/123
+    46→
+    47→# Get PR by branch (returns array, may be empty)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_011vRmkFizmxhbJYc7VaCf5B">
+   187→```
+   188→
+   189→```python
+   190→# WRONG: Direct datetime.now() import
+   191→from datetime import UTC, datetime
+   192→
+   193→def track_event(issue_number: int) -&gt; None:
+   194→    timestamp = datetime.now(UTC).isoformat()  # Non-deterministic in tests!
+   195→    # ... use timestamp
+   196→```
+   197→
+   198→### Correct Patterns
+   199→
+   200→```python
+   201→# CORRECT: Use context.time.sleep()
+   202→def retry_operation(context: ErkContext, attempt: int) -&gt; None:
+   203→    delay = 2.0 ** attempt
+   204→    context.time.sleep(delay)  # Fast in tests with FakeTime
+   205→
+   206→# At CLI entry point, RealTime is injected
+   207→# In tests, FakeTime is injected
+   208→```
+   209→
+   210→```python
+   211→# CORRECT: Use context.time.now()
+   212→from datetime import UTC
+   213→
+   214→def track_event(context: ErkContext, issue_number: int) -&gt; None:
+   215→    timestamp = context.time.now().replace(tzinfo=UTC).isoformat()  # Deterministic in tests!
+   216→    # ... use timestamp
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have context for all the architecture files. Let me check the actual source code for a few key references to make informed decisions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7086" cache_read_input_tokens="45117" cache_creation="{'ephemeral_5m_input_tokens': 7086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Rvqditjo48rQmw42anMGD6">
+    <param name="pattern">parse_issue_number_from_url|parse_plan_number_from_url</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7086" cache_read_input_tokens="45117" cache_creation="{'ephemeral_5m_input_tokens': 7086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NaS3YJb6AMPw6qVWhzWHbc">
+    <param name="pattern">class PlanRowData|issue_number|plan_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7086" cache_read_input_tokens="45117" cache_creation="{'ephemeral_5m_input_tokens': 7086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JuWQdy9m767jP4vTBG1BNS">
+    <param name="pattern">class PlanContext</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7086" cache_read_input_tokens="45117" cache_creation="{'ephemeral_5m_input_tokens': 7086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01QeijzTCSTKmDoMah2BVxjM">
+    <param name="pattern">plan_issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7086" cache_read_input_tokens="45117" cache_creation="{'ephemeral_5m_input_tokens': 7086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
