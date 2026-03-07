@@ -153,10 +153,10 @@ Use single quotes to prevent outer shell expansion of `$()`:
 
 ```bash
 # CORRECT - subshell runs inside workspace
-cmux new-workspace --command 'source "$(erk pr checkout 456 --script --sync)"'
+cmux new-workspace --command 'source "$(erk pr teleport 456 --new-slot --script --sync)"'
 
 # WRONG - subshell expands in current shell
-cmux new-workspace --command "source \"$(erk pr checkout 456 --script --sync)\""
+cmux new-workspace --command "source \"$(erk pr teleport 456 --new-slot --script --sync)\""
 ```
 
 ### No `--working-directory` CLI flag
@@ -205,7 +205,7 @@ erk exec cmux-checkout-workspace --pr 8152 --branch "my-branch"
 What it does:
 
 1. Auto-detects PR head branch via `gh pr view --json headRefName` (if `--branch` omitted)
-2. Creates workspace running: `source "$(erk pr checkout <pr> --script --sync)" && gt submit --no-interactive`
+2. Creates workspace running: `source "$(erk pr teleport <pr> --new-slot --script --sync)"`
 3. Renames workspace to the branch name
 4. Outputs JSON: `{"success": true, "pr_number": N, "branch": "...", "workspace_name": "..."}`
 

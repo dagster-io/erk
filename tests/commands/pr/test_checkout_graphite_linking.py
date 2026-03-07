@@ -290,12 +290,12 @@ def test_pr_checkout_retracks_diverged_graphite_branch() -> None:
         assert retrack_branch == "diverged-branch"
 
 
-def test_pr_checkout_script_mode_includes_gt_submit_for_new_graphite_worktree() -> None:
-    """Test pr checkout in script mode includes gt submit in activation script.
+def test_pr_checkout_script_mode_no_gt_submit_for_new_worktree() -> None:
+    """Test pr checkout in script mode never includes gt submit.
 
-    When Graphite is enabled, the PR is same-repo, and the worktree is new,
-    the activation script should contain 'gt submit --no-interactive' as a
-    post-cd command so that the branch is submitted to Graphite after checkout.
+    Checkout no longer supports --sync. The gt submit behavior is now
+    exclusively on teleport. Checkout script mode should never include
+    gt submit in the activation script.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -317,22 +317,17 @@ def test_pr_checkout_script_mode_includes_gt_submit_for_new_graphite_worktree() 
         )
         ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
 
-        result = runner.invoke(pr_group, ["checkout", "110", "--script", "--sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["checkout", "110", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        # Script mode outputs a script path; read the script to verify post-cd commands
         script_path_str = result.stdout.strip()
         assert script_path_str != ""
         script_content = Path(script_path_str).read_text(encoding="utf-8")
-        assert "gt submit --no-interactive" in script_content
+        assert "gt submit --no-interactive" not in script_content
 
 
 def test_pr_checkout_script_mode_no_gt_submit_for_existing_worktree() -> None:
-    """Test pr checkout in script mode omits gt submit for existing worktrees.
-
-    When the worktree already exists, should_submit_to_graphite is False
-    because we skip Graphite linking for existing worktrees.
-    """
+    """Test pr checkout in script mode omits gt submit for existing worktrees."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -360,7 +355,7 @@ def test_pr_checkout_script_mode_no_gt_submit_for_existing_worktree() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
 
-        result = runner.invoke(pr_group, ["checkout", "111", "--script", "--sync"], obj=ctx)
+        result = runner.invoke(pr_group, ["checkout", "111", "--script"], obj=ctx)
 
         assert result.exit_code == 0
         script_path_str = result.stdout.strip()
@@ -370,11 +365,7 @@ def test_pr_checkout_script_mode_no_gt_submit_for_existing_worktree() -> None:
 
 
 def test_pr_checkout_script_mode_no_gt_submit_for_fork_prs() -> None:
-    """Test pr checkout in script mode omits gt submit for fork PRs.
-
-    Fork PRs (is_cross_repository=True) cannot be submitted to Graphite,
-    so the activation script should not contain gt submit.
-    """
+    """Test pr checkout in script mode omits gt submit for fork PRs."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -395,42 +386,7 @@ def test_pr_checkout_script_mode_no_gt_submit_for_fork_prs() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
 
-        result = runner.invoke(pr_group, ["checkout", "112", "--script", "--sync"], obj=ctx)
-
-        assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
-        assert "gt submit --no-interactive" not in script_content
-
-
-def test_pr_checkout_script_mode_no_gt_submit_without_sync_flag() -> None:
-    """Test pr checkout in script mode omits gt submit without --sync flag.
-
-    Even when Graphite is enabled and the worktree is new, gt submit should
-    NOT be included in the activation script unless --sync is explicitly passed.
-    """
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        env.setup_repo_structure()
-        pr_details = _make_pr_details(
-            number=113,
-            head_ref_name="feature-no-sync",
-            is_cross_repository=False,
-            state="OPEN",
-        )
-        github = FakeLocalGitHub(pr_details={113: pr_details})
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "feature-no-sync"]},
-            remote_branches={env.cwd: ["origin/main", "origin/feature-no-sync"]},
-            existing_paths={env.cwd, env.repo.worktrees_dir},
-        )
-        ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
-
-        result = runner.invoke(pr_group, ["checkout", "113", "--script"], obj=ctx)
+        result = runner.invoke(pr_group, ["checkout", "112", "--script"], obj=ctx)
 
         assert result.exit_code == 0
         script_path_str = result.stdout.strip()

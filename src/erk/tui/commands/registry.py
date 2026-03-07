@@ -112,7 +112,7 @@ def _display_copy_teleport_new_slot(ctx: CommandContext) -> str:
 
 def _display_cmux_checkout(ctx: CommandContext) -> str:
     """Display name for cmux_checkout command."""
-    return f"erk exec cmux-checkout-workspace --pr {ctx.row.pr_number}"
+    return f"erk pr teleport {ctx.row.pr_number} --new-slot --script --sync"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:

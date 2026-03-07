@@ -9,6 +9,7 @@ Operates on the current worktree by default, with --new-slot to create a fresh
 worktree slot.
 """
 
+from contextlib import nullcontext
 from pathlib import Path
 
 import click
@@ -18,21 +19,30 @@ from erk.cli.activation import (
     ensure_worktree_activate_script,
     print_activation_instructions,
 )
-from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+from erk.cli.commands.checkout_helpers import (
+    ensure_branch_has_worktree,
+    navigate_and_display_checkout,
+    script_error_handler,
+)
 from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
 from erk.cli.ensure import Ensure
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
 
 
-@click.command("teleport")
+@click.command("teleport", cls=CommandWithHiddenOptions)
 @click.argument("pr_number", type=int)
 @click.option("--new-slot", is_flag=True, help="Create a new worktree slot")
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
+@click.option("--sync", is_flag=True, help="Run gt submit after teleport to sync with Graphite")
+@script_option
 @click.pass_obj
-def pr_teleport(ctx: ErkContext, pr_number: int, new_slot: bool, force: bool) -> None:
+def pr_teleport(
+    ctx: ErkContext, pr_number: int, new_slot: bool, force: bool, sync: bool, script: bool
+) -> None:
     """Teleport a PR's remote state to local, overwriting local branch.
 
     Unlike 'checkout' which preserves local state (reusing existing worktrees
@@ -47,9 +57,10 @@ def pr_teleport(ctx: ErkContext, pr_number: int, new_slot: bool, force: bool) ->
 
     \b
     Examples:
-        erk pr teleport 123          # Overwrite current branch with PR #123's remote state
-        erk pr teleport 123 -f       # Skip confirmation
-        erk pr teleport 123 --new-slot  # Create a new worktree slot for the PR
+        erk pr teleport 123              # Overwrite current branch with PR #123's remote state
+        erk pr teleport 123 -f           # Skip confirmation
+        erk pr teleport 123 --new-slot   # Create a new worktree slot for the PR
+        erk pr teleport 123 --new-slot --script --sync  # Full setup with Graphite sync
     """
     Ensure.gh_authenticated(ctx)
 
@@ -58,41 +69,46 @@ def pr_teleport(ctx: ErkContext, pr_number: int, new_slot: bool, force: bool) ->
         raise SystemExit(1)
     repo: RepoContext = ctx.repo
 
-    # Ensure PR exists
-    ctx.console.info(f"Fetching PR #{pr_number}...")
-    pr = ctx.github.get_pr(repo.root, pr_number)
-    if isinstance(pr, PRNotFound):
-        ctx.console.error(
-            f"Could not find PR #{pr_number}\n\n"
-            "Check the PR number and ensure you're authenticated with gh CLI."
-        )
-        raise SystemExit(1)
+    with script_error_handler(ctx) if script else nullcontext():
+        # Ensure PR exists
+        ctx.console.info(f"Fetching PR #{pr_number}...")
+        pr = ctx.github.get_pr(repo.root, pr_number)
+        if isinstance(pr, PRNotFound):
+            ctx.console.error(
+                f"Could not find PR #{pr_number}\n\n"
+                "Check the PR number and ensure you're authenticated with gh CLI."
+            )
+            raise SystemExit(1)
 
-    if pr.is_cross_repository:
-        ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
-        raise SystemExit(1)
+        if pr.is_cross_repository:
+            ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+            raise SystemExit(1)
 
-    branch_name = pr.head_ref_name
-    base_ref_name = pr.base_ref_name
+        branch_name = pr.head_ref_name
+        base_ref_name = pr.base_ref_name
 
-    if new_slot:
-        _teleport_new_slot(
-            ctx,
-            repo,
-            pr_number=pr_number,
-            branch_name=branch_name,
-            base_ref_name=base_ref_name,
-            force=force,
-        )
-    else:
-        _teleport_in_place(
-            ctx,
-            repo,
-            pr_number=pr_number,
-            branch_name=branch_name,
-            base_ref_name=base_ref_name,
-            force=force,
-        )
+        if new_slot:
+            _teleport_new_slot(
+                ctx,
+                repo,
+                pr_number=pr_number,
+                branch_name=branch_name,
+                base_ref_name=base_ref_name,
+                force=force,
+                sync=sync,
+                script=script,
+            )
+        else:
+            _teleport_in_place(
+                ctx,
+                repo,
+                pr_number=pr_number,
+                branch_name=branch_name,
+                base_ref_name=base_ref_name,
+                force=force,
+                sync=sync,
+                script=script,
+            )
 
 
 def _teleport_in_place(
@@ -103,6 +119,8 @@ def _teleport_in_place(
     branch_name: str,
     base_ref_name: str,
     force: bool,
+    sync: bool,
+    script: bool,
 ) -> None:
     """Teleport by force-resetting the current branch to match remote."""
     cwd = ctx.cwd
@@ -112,24 +130,36 @@ def _teleport_in_place(
         # Check if the target branch is already checked out in another worktree
         existing = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
         if existing is not None:
-            user_output(
-                f"PR #{pr_number} branch "
-                + click.style(f"'{branch_name}'", fg="cyan", bold=True)
-                + " is already checked out at "
-                + click.style(str(existing), fg="cyan", bold=True)
-            )
-            script_path = ensure_worktree_activate_script(
+            navigate_and_display_checkout(
+                ctx,
                 worktree_path=existing,
-                post_create_commands=None,
+                branch_name=branch_name,
+                script=script,
+                command_name="pr-teleport",
+                already_existed=True,
+                existing_message=(
+                    f"PR #{pr_number} branch "
+                    + click.style(f"'{branch_name}'", fg="cyan", bold=True)
+                    + " is already checked out at {styled_path}"
+                ),
+                new_message="",
+                script_message_existing=f'echo "PR #{pr_number} already checked out at $(pwd)"',
+                script_message_new="",
+                post_cd_commands=None,
             )
-            print_activation_instructions(
-                script_path,
-                source_branch=None,
-                force=False,
-                config=activation_config_activate_only(),
-                copy=True,
-                same_worktree=False,
-            )
+            if not script:
+                script_path = ensure_worktree_activate_script(
+                    worktree_path=existing,
+                    post_create_commands=None,
+                )
+                print_activation_instructions(
+                    script_path,
+                    source_branch=None,
+                    force=False,
+                    config=activation_config_activate_only(),
+                    copy=True,
+                    same_worktree=False,
+                )
             raise SystemExit(0)
         # Branch not in any worktree — proceed; checkout below will switch branches
 
@@ -150,10 +180,24 @@ def _teleport_in_place(
     # Register with Graphite (track/retrack for all PRs, fetch base for stacked)
     _register_with_graphite(ctx, repo, branch_name=branch_name, base_ref_name=base_ref_name)
 
-    user_output(
-        click.style("Teleported ", fg="green")
-        + click.style(branch_name, fg="cyan", bold=True)
-        + click.style(f" to match remote (PR #{pr_number})", fg="green")
+    post_cd_commands = ["gt submit --no-interactive"] if sync else None
+
+    navigate_and_display_checkout(
+        ctx,
+        worktree_path=cwd,
+        branch_name=branch_name,
+        script=script,
+        command_name="pr-teleport",
+        already_existed=False,
+        existing_message="",
+        new_message=(
+            click.style("Teleported ", fg="green")
+            + click.style(branch_name, fg="cyan", bold=True)
+            + click.style(f" to match remote (PR #{pr_number})", fg="green")
+        ),
+        script_message_existing="",
+        script_message_new=f'echo "Teleported {branch_name} to match remote (PR #{pr_number})"',
+        post_cd_commands=post_cd_commands,
     )
 
 
@@ -165,6 +209,8 @@ def _teleport_new_slot(
     branch_name: str,
     base_ref_name: str,
     force: bool,
+    sync: bool,
+    script: bool,
 ) -> None:
     """Teleport into a new worktree slot, force-updating the branch."""
     # Check if branch already has a worktree
@@ -187,12 +233,41 @@ def _teleport_new_slot(
         ctx, repo, branch_name=branch_name, no_slot=False, force=force
     )
 
-    user_output(
-        click.style("Teleported ", fg="green")
-        + click.style(branch_name, fg="cyan", bold=True)
-        + click.style(f" (PR #{pr_number}) into ", fg="green")
-        + click.style(str(worktree_path), fg="cyan", bold=True)
+    post_cd_commands = ["gt submit --no-interactive"] if sync else None
+
+    navigate_and_display_checkout(
+        ctx,
+        worktree_path=worktree_path,
+        branch_name=branch_name,
+        script=script,
+        command_name="pr-teleport",
+        already_existed=False,
+        existing_message="",
+        new_message=(
+            click.style("Teleported ", fg="green")
+            + click.style(branch_name, fg="cyan", bold=True)
+            + click.style(f" (PR #{pr_number}) into ", fg="green")
+            + "{styled_path}"
+        ),
+        script_message_existing="",
+        script_message_new=f'echo "Teleported {branch_name} (PR #{pr_number}) at $(pwd)"',
+        post_cd_commands=post_cd_commands,
     )
+
+    # Print activation instructions (non-script mode only)
+    if not script:
+        act_script_path = ensure_worktree_activate_script(
+            worktree_path=worktree_path,
+            post_create_commands=None,
+        )
+        print_activation_instructions(
+            act_script_path,
+            source_branch=None,
+            force=False,
+            config=activation_config_activate_only(),
+            copy=True,
+            same_worktree=False,
+        )
 
 
 def _register_with_graphite(

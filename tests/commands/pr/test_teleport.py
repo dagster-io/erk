@@ -1,5 +1,7 @@
 """Tests for erk pr teleport command."""
 
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
@@ -294,3 +296,95 @@ def test_teleport_already_tracked_retracks() -> None:
         # (should be empty since graphite_branch_ops.retrack was called)
         # The retrack happens via graphite_branch_ops, so we just verify no fresh track happened
         assert len(git.created_tracking_branches) == 0  # Fresh tracking not called
+
+
+def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -> None:
+    """Test teleport --new-slot --script --sync includes gt submit in activation script.
+
+    When teleporting into a new slot with --script and --sync, the activation
+    script should contain 'gt submit --no-interactive' as a post-cd command.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+        pr = _make_pr_details(200, "feature-sync")
+        github = FakeGitHub(pr_details={200: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-sync"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-sync"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
+
+        result = runner.invoke(
+            pr_group, ["teleport", "200", "--new-slot", "--script", "--sync"], obj=ctx
+        )
+
+        assert result.exit_code == 0
+        script_path_str = result.stdout.strip()
+        assert script_path_str != ""
+        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        assert "gt submit --no-interactive" in script_content
+
+
+def test_teleport_new_slot_script_mode_without_sync_omits_gt_submit() -> None:
+    """Test teleport --new-slot --script without --sync omits gt submit.
+
+    When --sync is not passed, the activation script should not include
+    gt submit even in script mode.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+        pr = _make_pr_details(201, "feature-no-sync")
+        github = FakeGitHub(pr_details={201: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-no-sync"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-no-sync"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
+
+        result = runner.invoke(pr_group, ["teleport", "201", "--new-slot", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        script_path_str = result.stdout.strip()
+        assert script_path_str != ""
+        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        assert "gt submit --no-interactive" not in script_content
+
+
+def test_teleport_in_place_script_mode_with_sync_includes_gt_submit() -> None:
+    """Test teleport --script --sync in-place includes gt submit in activation script."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+        pr = _make_pr_details(202, "feature-in-place")
+        github = FakeGitHub(pr_details={202: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-in-place"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-in-place"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-in-place"]},
+            ahead_behind={(env.cwd, "feature-in-place"): (0, 1)},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
+
+        result = runner.invoke(
+            pr_group, ["teleport", "202", "--force", "--script", "--sync"], obj=ctx
+        )
+
+        assert result.exit_code == 0
+        script_path_str = result.stdout.strip()
+        assert script_path_str != ""
+        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        assert "gt submit --no-interactive" in script_content
