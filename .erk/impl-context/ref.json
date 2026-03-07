@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Disable uv cache pruning in erk-remote-setup"
+}
