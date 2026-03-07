@@ -59,6 +59,23 @@
       "raw_size_kb": 2256,
       "xml_size_kb": 490,
       "git_branch": "plnd/canonicalize-session-stora-03-07-1143"
+    },
+    {
+      "session_id": "b223c540-1c71-4e9f-89a8-a135e3b2fae1",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-07T21:26:52.431771+00:00",
+      "files": [
+        "address-b223c540-1c71-4e9f-89a8-a135e3b2fae1-b223c540-1c71-4e9f-89a8-a135e3b2fae1-part1.xml",
+        "address-b223c540-1c71-4e9f-89a8-a135e3b2fae1-b223c540-1c71-4e9f-89a8-a135e3b2fae1-part2.xml",
+        "address-b223c540-1c71-4e9f-89a8-a135e3b2fae1-b223c540-1c71-4e9f-89a8-a135e3b2fae1-part3.xml",
+        "address-b223c540-1c71-4e9f-89a8-a135e3b2fae1-b223c540-1c71-4e9f-89a8-a135e3b2fae1-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 180,
+      "xml_size_kb": 108,
+      "git_branch": "plnd/canonicalize-session-stora-03-07-1143"
     }
   ]
 }
