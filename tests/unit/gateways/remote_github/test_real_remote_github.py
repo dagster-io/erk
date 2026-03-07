@@ -306,6 +306,340 @@ def test_add_issue_comment_posts_correct_data() -> None:
     assert req.data == {"body": "Great work!"}
 
 
+# --- get_issue ---
+
+
+def test_get_issue_returns_parsed_issue() -> None:
+    remote, http, _ = _make_remote()
+    http.set_response(
+        "repos/o/r/issues/42",
+        response={
+            "number": 42,
+            "title": "Test Issue",
+            "body": "Issue body",
+            "state": "open",
+            "html_url": "https://github.com/o/r/issues/42",
+            "labels": [{"name": "erk-plan"}],
+            "assignees": [{"login": "alice"}],
+            "user": {"login": "bob"},
+            "created_at": "2024-01-15T10:00:00Z",
+            "updated_at": "2024-01-16T12:00:00Z",
+        },
+    )
+
+    result = remote.get_issue(owner="o", repo="r", number=42)
+
+    from erk_shared.gateway.github.issues.types import IssueInfo
+
+    assert isinstance(result, IssueInfo)
+    assert result.number == 42
+    assert result.title == "Test Issue"
+    assert result.body == "Issue body"
+    assert result.state == "OPEN"
+    assert result.labels == ["erk-plan"]
+    assert result.assignees == ["alice"]
+    assert result.author == "bob"
+
+
+def test_get_issue_returns_not_found_on_404() -> None:
+    remote, http, _ = _make_remote()
+    http.set_error("repos/o/r/issues/999", status_code=404, message="Not Found")
+
+    from erk_shared.gateway.github.issues.types import IssueNotFound
+
+    result = remote.get_issue(owner="o", repo="r", number=999)
+    assert isinstance(result, IssueNotFound)
+    assert result.issue_number == 999
+
+
+def test_get_issue_raises_on_non_404_error() -> None:
+    remote, http, _ = _make_remote()
+    http.set_error("repos/o/r/issues/42", status_code=500, message="Server Error")
+
+    with pytest.raises(HttpError, match="500"):
+        remote.get_issue(owner="o", repo="r", number=42)
+
+
+# --- get_issue_comments ---
+
+
+def test_get_issue_comments_returns_bodies() -> None:
+    remote, http, _ = _make_remote()
+    http.set_list_response(
+        "repos/o/r/issues/42/comments?per_page=100",
+        response=[
+            {"body": "First comment"},
+            {"body": "Second comment"},
+        ],
+    )
+
+    result = remote.get_issue_comments(owner="o", repo="r", number=42)
+    assert result == ["First comment", "Second comment"]
+
+
+def test_get_issue_comments_returns_empty_for_no_comments() -> None:
+    remote, http, _ = _make_remote()
+    http.set_list_response(
+        "repos/o/r/issues/42/comments?per_page=100",
+        response=[],
+    )
+
+    result = remote.get_issue_comments(owner="o", repo="r", number=42)
+    assert result == []
+
+
+# --- list_issues ---
+
+
+def test_list_issues_constructs_correct_query() -> None:
+    remote, http, _ = _make_remote()
+    http.set_list_response(
+        "repos/o/r/issues?state=open&labels=erk-pr,erk-plan&per_page=100",
+        response=[
+            {
+                "number": 1,
+                "title": "Issue 1",
+                "body": "body1",
+                "state": "open",
+                "html_url": "https://github.com/o/r/issues/1",
+                "labels": [],
+                "assignees": [],
+                "user": {"login": "alice"},
+                "created_at": "2024-01-01T00:00:00Z",
+                "updated_at": "2024-01-01T00:00:00Z",
+            },
+        ],
+    )
+
+    result = remote.list_issues(
+        owner="o", repo="r", labels=("erk-pr", "erk-plan"), state="open", limit=None, creator=None
+    )
+    assert len(result) == 1
+    assert result[0].number == 1
+
+
+def test_list_issues_skips_pull_requests() -> None:
+    remote, http, _ = _make_remote()
+    http.set_list_response(
+        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100",
+        response=[
+            {
+                "number": 1,
+                "title": "Issue",
+                "body": "",
+                "state": "open",
+                "html_url": "",
+                "labels": [],
+                "assignees": [],
+                "user": {},
+                "created_at": "2024-01-01T00:00:00Z",
+                "updated_at": "2024-01-01T00:00:00Z",
+            },
+            {
+                "number": 2,
+                "title": "PR masquerading as issue",
+                "body": "",
+                "state": "open",
+                "html_url": "",
+                "labels": [],
+                "assignees": [],
+                "user": {},
+                "pull_request": {"url": "https://api.github.com/repos/o/r/pulls/2"},
+                "created_at": "2024-01-01T00:00:00Z",
+                "updated_at": "2024-01-01T00:00:00Z",
+            },
+        ],
+    )
+
+    result = remote.list_issues(
+        owner="o", repo="r", labels=("erk-plan",), state="open", limit=None, creator=None
+    )
+    assert len(result) == 1
+    assert result[0].number == 1
+
+
+def test_list_issues_respects_limit() -> None:
+    remote, http, _ = _make_remote()
+    http.set_list_response(
+        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100",
+        response=[
+            {
+                "number": i,
+                "title": f"Issue {i}",
+                "body": "",
+                "state": "open",
+                "html_url": "",
+                "labels": [],
+                "assignees": [],
+                "user": {},
+                "created_at": "2024-01-01T00:00:00Z",
+                "updated_at": "2024-01-01T00:00:00Z",
+            }
+            for i in range(1, 6)
+        ],
+    )
+
+    result = remote.list_issues(
+        owner="o", repo="r", labels=("erk-plan",), state="open", limit=2, creator=None
+    )
+    assert len(result) == 2
+
+
+def test_list_issues_includes_creator_param() -> None:
+    remote, http, _ = _make_remote()
+    http.set_list_response(
+        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100&creator=alice",
+        response=[],
+    )
+
+    result = remote.list_issues(
+        owner="o", repo="r", labels=("erk-plan",), state="open", limit=None, creator="alice"
+    )
+    assert result == []
+
+    req = http.requests[0]
+    assert "creator=alice" in req.endpoint
+
+
+# --- get_prs_referencing_issue ---
+
+
+def test_get_prs_referencing_issue_parses_cross_references() -> None:
+    remote, http, _ = _make_remote()
+    http.set_list_response(
+        "repos/o/r/issues/42/timeline?per_page=100",
+        response=[
+            {
+                "event": "cross-referenced",
+                "source": {
+                    "issue": {
+                        "number": 100,
+                        "state": "open",
+                        "draft": False,
+                        "pull_request": {"merged_at": None},
+                    }
+                },
+            },
+            {
+                "event": "cross-referenced",
+                "source": {
+                    "issue": {
+                        "number": 101,
+                        "state": "closed",
+                        "draft": False,
+                        "pull_request": {"merged_at": "2024-01-15T00:00:00Z"},
+                    }
+                },
+            },
+            {"event": "labeled"},  # Non-cross-reference event, should be skipped
+        ],
+    )
+
+    result = remote.get_prs_referencing_issue(owner="o", repo="r", number=42)
+    assert len(result) == 2
+    assert result[0].number == 100
+    assert result[0].state == "OPEN"
+    assert result[1].number == 101
+    assert result[1].state == "MERGED"
+
+
+def test_get_prs_referencing_issue_deduplicates() -> None:
+    remote, http, _ = _make_remote()
+    http.set_list_response(
+        "repos/o/r/issues/42/timeline?per_page=100",
+        response=[
+            {
+                "event": "cross-referenced",
+                "source": {
+                    "issue": {
+                        "number": 100,
+                        "state": "open",
+                        "draft": False,
+                        "pull_request": {"merged_at": None},
+                    }
+                },
+            },
+            {
+                "event": "cross-referenced",
+                "source": {
+                    "issue": {
+                        "number": 100,
+                        "state": "open",
+                        "draft": False,
+                        "pull_request": {"merged_at": None},
+                    }
+                },
+            },
+        ],
+    )
+
+    result = remote.get_prs_referencing_issue(owner="o", repo="r", number=42)
+    assert len(result) == 1
+
+
+# --- close_issue ---
+
+
+def test_close_issue_patches_correct_endpoint() -> None:
+    remote, http, _ = _make_remote()
+
+    remote.close_issue(owner="o", repo="r", number=42)
+
+    req = http.requests[0]
+    assert req.method == "PATCH"
+    assert req.endpoint == "repos/o/r/issues/42"
+    assert req.data == {"state": "closed"}
+
+
+# --- close_pr ---
+
+
+def test_close_pr_patches_correct_endpoint() -> None:
+    remote, http, _ = _make_remote()
+
+    remote.close_pr(owner="o", repo="r", number=42)
+
+    req = http.requests[0]
+    assert req.method == "PATCH"
+    assert req.endpoint == "repos/o/r/pulls/42"
+    assert req.data == {"state": "closed"}
+
+
+# --- check_auth_status ---
+
+
+def test_check_auth_status_returns_authenticated() -> None:
+    remote, http, _ = _make_remote()
+    http.set_response("user", response={"login": "alice"})
+
+    is_auth, username, error = remote.check_auth_status()
+    assert is_auth is True
+    assert username == "alice"
+    assert error is None
+
+
+def test_check_auth_status_returns_false_on_missing_login() -> None:
+    remote, http, _ = _make_remote()
+    http.set_response("user", response={})
+
+    is_auth, username, error = remote.check_auth_status()
+    assert is_auth is False
+    assert username is None
+    assert error is not None
+    assert "without login" in error
+
+
+def test_check_auth_status_returns_false_on_http_error() -> None:
+    remote, http, _ = _make_remote()
+    http.set_error("user", status_code=401, message="Bad credentials")
+
+    is_auth, username, error = remote.check_auth_status()
+    assert is_auth is False
+    assert username is None
+    assert error is not None
+    assert "Authentication failed" in error
+
+
 # --- HttpError propagation ---
 
 
