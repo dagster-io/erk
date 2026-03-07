@@ -63,7 +63,7 @@ def test_pr_rebase_non_graphite_conflict_launches_tui() -> None:
         assert "Launch Claude to resolve conflicts?" in result.output
         assert len(executor.interactive_calls) == 1
         call = executor.interactive_calls[0]
-        assert call[2] == "/erk:rebase"  # command
+        assert call[2] == "/erk:pr-rebase"  # command
         assert call[5] == "edits"  # permission_mode
 
 

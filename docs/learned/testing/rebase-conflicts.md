@@ -10,7 +10,7 @@ read_when:
 
 # Erk Test Rebase Conflicts
 
-**For generic merge conflict resolution**: Use the `/erk:rebase` command.
+**For generic merge conflict resolution**: Use the `/erk:pr-rebase` command.
 
 This document covers **erk-specific test patterns** you'll encounter during rebases: ErkContext API evolution, env_helpers, parameter renames.
 
