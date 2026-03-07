@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Wire Incremental Dispatch into TUI (Objective #8470, Phase 2)",
+  "plan_id": "8887",
+  "url": "https://github.com/dagster-io/erk/pull/8887",
+  "created_at": "2026-03-07T01:53:06.268535",
+  "synced_at": "2026-03-07T01:53:06.268535",
+  "labels": [],
   "objective_id": 8470,
-  "node_ids": [
-    "2.1"
-  ]
+  "node_ids": null
 }
