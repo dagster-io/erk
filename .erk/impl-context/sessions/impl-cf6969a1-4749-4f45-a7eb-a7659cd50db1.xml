@@ -1,0 +1,2510 @@
+<session>
+  <meta branch="plnd/fix-ci-formatting-race-03-05-2301" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="cf6969a1-4749-4f45-a7eb-a7659cd50db1" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="cf6969a1-4749-4f45-a7eb-a7659cd50db1" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="cf6969a1-4749-4f45-a7eb-a7659cd50db1" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="cf6969a1-4749-4f45-a7eb-a7659cd50db1" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="16367" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16367}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="16367" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16367}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_011DkWBi8UT5sksPhL3WLYEo">
+    <param name="query">select:Bash,Read,Skill,Write,Edit,Glob,Grep</param>
+    <param name="max_results">7</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16367" cache_read_input_tokens="0" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16367, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_011DkWBi8UT5sksPhL3WLYEo">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EgWAPLWRkekRgrn2H2mARG">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6406" cache_read_input_tokens="16367" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6406, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EgWAPLWRkekRgrn2H2mARG">
+Found existing impl dir for plan #8823, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.erk/impl-context/plnd--fix-ci-formatting-race-03-05-2301", "plan_number": 8823, "plan_url": "https://github.com/dagster-io/erk/pull/8823", "branch": "plnd/fix-ci-formatting-race-03-05-2301", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8823, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="22773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VhrGHtmvgYvW8qav3LPWtz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.erk/impl-context/plnd--fix-ci-formatting-race-03-05-2301/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="22773" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 311, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VhrGHtmvgYvW8qav3LPWtz">
+     1→# Fix CI race condition: fix-formatting push vs tier 3 jobs
+     2→
+     3→## Context
+     4→
+     5→When `fix-formatting` pushes an autofix commit, `cancel-in-progress: true` is supposed to cancel the current run (since the push triggers a new one). In practice, there's a race: tier 3 jobs (lint, format, ty, etc.) start before GitHub Actions processes the cancellation, so they run against the old (unformatted) code and fail. The new run then passes, but the failed checks create noise and delay.
+     6→
+     7→Evidence from run 22752638097: fix-formatting finished at 06:53:41, lint started at 06:53:44 and failed at 06:53:55 — lint ran against the pre-fix commit before cancellation arrived.
+     8→
+     9→## Approach
+    10→
+    11→Add an output to `fix-formatting` indicating whether it pushed changes. All tier 3 jobs skip when `pushed == 'true'` since a new CI run is incoming with the fixed code.
+    12→
+    13→## Files to modify
+    14→
+    15→- `.github/workflows/ci.yml` — add output + skip conditions
+    16→- `docs/learned/ci/job-ordering-strategy.md` — update documentation
+    17→
+    18→## Steps
+    19→
+    20→### 1. Add `pushed` output to fix-formatting job
+    21→
+    22→```yaml
+    23→fix-formatting:
+    24→  needs: check-submission
+    25→  # ... existing if
+    26→  runs-on: ubuntu-latest
+    27→  timeout-minutes: 15
+    28→  outputs:
+    29→    pushed: ${{ steps.commit.outputs.pushed }}
+    30→  steps:
+
+... [36 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1019" cache_read_input_tokens="23084" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1019}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the CI workflow and the docs file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1019" cache_read_input_tokens="23084" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1019}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KAUPhanVsfE3UMqECqzgEH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1019" cache_read_input_tokens="23084" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1019}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KAUPhanVsfE3UMqECqzgEH">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-impl-context
+
+... [569 lines omitted] ...
+
+    84→            echo "::error::Files need formatting or docs are out of sync"
+    93→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   196→      (needs.format.result == 'failure' ||
+   197→       needs.lint.result == 'failure' ||
+   198→       needs.fix-formatting.result == 'failure' ||
+   199→       needs.docs-check.result == 'failure' ||
+   200→       needs.ty.result == 'failure')
+   309→      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+   336→      - name: Collect failure context
+   338→        id: failures
+   349→      - name: Collect actual errors
+   351→        id: errors
+   353→          errors=""
+   355→          if [ "${{ needs.format.result }}" = "failure" ]; then
+   356→            errors+="=== RUFF FORMAT ERRORS ===\n"
+   357→            errors+="$(uv run ruff format --check . 2&gt;&amp;1 || true)\n\n"
+   360→          if [ "${{ needs.lint.result }}" = "failure" ]; then
+   361→            errors+="=== RUFF LINT ERRORS ===\n"
+   362→            errors+="$(uv run ruff check . 2&gt;&amp;1 || true)\n\n"
+   365→          if [ "${{ needs.fix-formatting.result }}" = "failure" ]; then
+   366→            errors+="=== MARKDOWN-FIX ERRORS ===\n"
+   367→            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2&gt;&amp;1 || true)\n\n"
+   370→          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+   371→            errors+="=== DOCS CHECK ERRORS ===\n"
+   372→            errors+="$(make md-check 2&gt;&amp;1 || true)\n"
+   373→            errors+="$(make docs-check 2&gt;&amp;1 || true)\n\n"
+   376→          if [ "${{ needs.ty.result }}" = "failure" ]; then
+   377→            errors+="=== TY TYPE ERRORS ===\n"
+   378→            errors+="$(uv run ty check 2&gt;&amp;1 || true)\n\n"
+   382→          echo -e "$errors" &gt; /tmp/errors.txt
+   393→          echo "Debug: erk version: $(erk --version 2&gt;&amp;1 || echo 'version failed')"
+   403→            --var-file "ERRORS=/tmp/errors.txt" 2&gt;&amp;1); then
+   404→            echo "Error: Failed to get ci-autofix prompt"
+   411→            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+   433→  # === CI Failure Summarization (Haiku) ===
+   452→      (needs.format.result == 'failure' ||
+   453→       needs.lint.result == 'failure' ||
+   454→       needs.fix-formatting.result == 'failure' ||
+   455→       needs.docs-check.result == 'failure' ||
+   456→       needs.ty.result == 'failure' ||
+   457→       needs.unit-tests.result == 'failure' ||
+   458→       needs.integration-tests.result == 'failure' ||
+   459→       needs.erk-mcp-tests.result == 'failure')
+   473→      - name: Summarize failures
+   537→            echo "Discovery failed"
+  </tool_result>
+  <tool_use name="Read" id="toolu_019MTSzLTQdkUqs6E8JKxmEp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/job-ordering-strategy.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1019" cache_read_input_tokens="23084" output_tokens="209" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1019, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019MTSzLTQdkUqs6E8JKxmEp">
+     1→---
+     2→title: CI Job Ordering Strategy
+     3→read_when:
+     4→  - "modifying CI job dependencies"
+     5→  - "adding new CI jobs"
+     6→  - "understanding fix-formatting gating"
+     7→  - "debugging why CI restarted after a push"
+     8→tripwires:
+     9→  - action: "adding a new CI job without including fix-formatting in its needs list"
+    10→    warning: "All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily."
+    11→  - action: "removing test jobs from autofix's needs list"
+    12→    warning: "Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md."
+    13→---
+    14→
+    15→# CI Job Ordering Strategy
+    16→
+    17→The CI workflow uses a three-tier architecture where a gate job controls entry, an auto-fix job runs formatting corrections, and seven parallel validation jobs run against the cleaned state.
+    18→
+    19→&lt;!-- Source: .github/workflows/ci.yml --&gt;
+    20→
+    21→## Three-Tier Architecture
+    22→
+    23→```
+    24→Tier 1: check-submission (gate)
+    25→    │
+    26→Tier 2: fix-formatting (auto-fix, independent of parallel jobs)
+    27→    │
+    28→Tier 3: ┌──────┬──────┬───────────┬────┬────────────┬─────────────┬──────────────┐
+    29→         format  lint  docs-check  ty  unit-tests  integration  erk-mcp-tests
+    30→```
+
+... [45 lines omitted] ...
+
+    66→**`ci-summarize`** depends on all validation jobs and runs only on failure. It uses a lightweight model to summarize CI failures for developers.
+    68→**`autofix`** depends on all validation jobs: format, lint, fix-formatting, docs-check, ty, unit-tests, integration-tests, and erk-mcp-tests. It runs after all checks complete to have full failure context. Currently disabled via kill-switch (`false &amp;&amp;` guard).
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10182" cache_read_input_tokens="24103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10182}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me set up todos and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10182" cache_read_input_tokens="24103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10182}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01RcZDcbfv3NE6wrELkEXzcV">
+    <param name="query">select:TodoWrite</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10182" cache_read_input_tokens="24103" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10182, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RcZDcbfv3NE6wrELkEXzcV">
+No matching deferred tools found
+  </tool_result>
+  <assistant>Let me implement all three changes. Starting with the CI workflow.
+
+**Phase 1: Add `pushed` output to fix-formatting job**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="34285" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 295}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EieVxn7XedDugRkdxNn1WQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  fix-formatting:
+    needs: check-submission
+    if: github.event.pull_request.draft != t...[truncated 5 chars]...sion.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:</param>
+    <param name="new_string">  fix-formatting:
+    needs: check-submission
+    if: github.event.pull_request.draft != t...[truncated 67 chars]...meout-minutes: 15
+    outputs:
+      pushed: ${{ steps.commit.outputs.pushed }}
+    steps:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="34285" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EieVxn7XedDugRkdxNn1WQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FLorpypanvdRfe8sHG6D2x">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">      - name: Commit and push if changes
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes needed"
+            exit 0
+          fi</param>
+    <param name="new_string">      - name: Commit and push if changes
+        id: commit
+        run: |
+          if gi...[truncated 40 chars]... needed"
+            echo "pushed=false" &gt;&gt; $GITHUB_OUTPUT
+            exit 0
+          fi</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="34580" output_tokens="223" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 366, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FLorpypanvdRfe8sHG6D2x">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>Now add `pushed=true` at the end of the push block:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DrDRfs4hw8b7usG2DJeg2q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">          git push
+          echo "::notice::Auto-fixed formatting and pushed"</param>
+    <param name="new_string">          git push
+          echo "pushed=true" &gt;&gt; $GITHUB_OUTPUT
+          echo "::notice::Auto-fixed formatting and pushed"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="34946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DrDRfs4hw8b7usG2DJeg2q">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>Also need to set `pushed=false` for the two error exit paths (push to master, fork PRs):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="257" cache_read_input_tokens="35240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 257}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011uNhqmhJHKhKd3Fetj3vHr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">          # On push to master: fail instead of auto-committing
+          if [ "${{ github....[truncated 55 chars]...tting or docs are out of sync"
+            git diff --stat
+            exit 1
+          fi</param>
+    <param name="new_string">          # On push to master: fail instead of auto-committing
+          if [ "${{ github....[truncated 105 chars]...f --stat
+            echo "pushed=false" &gt;&gt; $GITHUB_OUTPUT
+            exit 1
+          fi</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="257" cache_read_input_tokens="35240" output_tokens="310" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 257, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011uNhqmhJHKhKd3Fetj3vHr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0131fgpKjCt7FER4YDX2Hjr4">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+            exit 1
+          fi</param>
+    <param name="new_string">          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "::error::Formatting ...[truncated 12 chars]...rk PRs)"
+            echo "pushed=false" &gt;&gt; $GITHUB_OUTPUT
+            exit 1
+          fi</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="35497" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 362, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0131fgpKjCt7FER4YDX2Hjr4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 2: Add skip condition to all tier 3 jobs**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="35859" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013NJWDxx8EEWfyKFS6NXYHN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  format:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+    <param name="new_string">  format:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request....[truncated 2 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="35859" output_tokens="265" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013NJWDxx8EEWfyKFS6NXYHN">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SabKtfpz2gZzDW8Kg8M1dG">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  lint:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+    <param name="new_string">  lint:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="428" cache_read_input_tokens="36160" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SabKtfpz2gZzDW8Kg8M1dG">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01C85N6YCDthASsVHFWJrVyj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  docs-check:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+    <param name="new_string">  docs-check:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_requ...[truncated 6 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="36588" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 300, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C85N6YCDthASsVHFWJrVyj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RkZe4qpuskPufdr1Q7qN65">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  ty:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+    <param name="new_string">  ty:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="36888" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RkZe4qpuskPufdr1Q7qN65">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01K8MiwSVM5SDHeMbXUHu29s">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  unit-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+    <param name="new_string">  unit-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_requ...[truncated 6 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="37192" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 300, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K8MiwSVM5SDHeMbXUHu29s">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01M9gUGZCPynpzqZCLe87rSD">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  integration-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+    <param name="new_string">  integration-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pu...[truncated 13 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="37492" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M9gUGZCPynpzqZCLe87rSD">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HbcmSJGXixAe1CF57MR1MC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  erk-mcp-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+    <param name="new_string">  erk-mcp-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_r...[truncated 9 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="37796" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HbcmSJGXixAe1CF57MR1MC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>Now the `discover-reviews` job:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="38100" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 312}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014deSMdZY8aSDJWtia3eSN3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="old_string">  discover-reviews:
+    needs: [check-submission, fix-formatting]
+    if: vars.CLAUDE_ENAB...[truncated 70 chars]...equest.labels.*.name, 'erk-plan-review') &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+    <param name="new_string">  discover-reviews:
+    needs: [check-submission, fix-formatting]
+    if: vars.CLAUDE_ENAB...[truncated 119 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="38100" output_tokens="340" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014deSMdZY8aSDJWtia3eSN3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 3: Update documentation**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="392" cache_read_input_tokens="38412" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 392}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017QifVdTFdrNpxiRtUvLW6t">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/job-ordering-strategy.md</param>
+    <param name="old_string">## Cancellation Mechanism
+
+The workflow uses branch-level concurrency grouping with `cance...[truncated 292 chars]...n jobs always run against formatted code, at the cost of ~2 minutes for the restart cycle.</param>
+    <param name="new_string">## Skip-on-Push Mechanism
+
+When `fix-formatting` pushes an autofix commit, a new CI run is...[truncated 645 chars]... the new run starts from the autofix push, it cancels any remaining jobs from the old run.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="392" cache_read_input_tokens="38412" output_tokens="488" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 392, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017QifVdTFdrNpxiRtUvLW6t">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/job-ordering-strategy.md has been updated successfully.
+  </tool_result>
+  <assistant>All changes implemented. Let me verify the final state.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="657" cache_read_input_tokens="38804" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 657}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NJDx8PawDszA6fgjdRf3tn">
+    <param name="command">git diff --stat</param>
+    <param name="description">Check changed files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="657" cache_read_input_tokens="38804" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 657, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NJDx8PawDszA6fgjdRf3tn">
+ .github/workflows/ci.yml                 | 23 +++++++++++++++--------
+ docs/learned/ci/job-ordering-strategy.md | 11 +++++++----
+ 2 files changed, 22 insertions(+), 12 deletions(-)
+  </tool_result>
+  <assistant>Let me do a quick verification that all tier 3 jobs have the skip condition:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="39461" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KnHMvESTEysEpDVrGWxy5e">
+    <param name="pattern">needs.fix-formatting.outputs.pushed != 'true'</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="39461" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KnHMvESTEysEpDVrGWxy5e">
+35:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+46:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+114:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+129:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+140:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+160:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+173:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+489:    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+  </tool_result>
+  <assistant>8 occurrences — all 8 tier 3 jobs (format, lint, docs-check, ty, unit-tests, integration-tests, erk-mcp-tests, discover-reviews) have the skip condition.
+
+Let me also verify the output wiring is correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="579" cache_read_input_tokens="39624" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 579}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015uvRyL8WB6dWXyfty1N2hy">
+    <param name="pattern">pushed</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="579" cache_read_input_tokens="39624" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 579, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015uvRyL8WB6dWXyfty1N2hy">
+35:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+46:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+61:      pushed: ${{ steps.commit.outputs.pushed }}
+82:            echo "pushed=false" &gt;&gt; $GITHUB_OUTPUT
+90:            echo "pushed=false" &gt;&gt; $GITHUB_OUTPUT
+99:            echo "pushed=false" &gt;&gt; $GITHUB_OUTPUT
+109:          echo "pushed=true" &gt;&gt; $GITHUB_OUTPUT
+110:          echo "::notice::Auto-fixed formatting and pushed"
+114:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+129:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+140:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+160:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+173:    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+489:    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+  </tool_result>
+  <assistant>Output wiring is correct: `steps.commit.outputs.pushed` → job output `pushed` (line 61), with `pushed=false` on all three non-push paths and `pushed=true` after successful push.
+
+Now signaling completion and submitting.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="725" cache_read_input_tokens="40203" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 725}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0167cYX3dUc2nqowiTFcZ8rb">
+    <param name="command">erk exec impl-signal started --session-id "cf6969a1-4749-4f45-a7eb-a7659cd50db1" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="725" cache_read_input_tokens="40203" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 725, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0167cYX3dUc2nqowiTFcZ8rb">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8823
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SYfq56PsurjtKiXv38U9Ee">
+    <param name="command">erk exec impl-signal ended --session-id "cf6969a1-4749-4f45-a7eb-a7659cd50db1" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="40928" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SYfq56PsurjtKiXv38U9Ee">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8823
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Qp57MTBs83gZysP6ydSuff">
+    <param name="command">erk exec upload-impl-session --session-id "cf6969a1-4749-4f45-a7eb-a7659cd50db1" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="41140" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 153, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qp57MTBs83gZysP6ydSuff">
+{"uploaded": true, "plan_id": 8823}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WnUYBuAbgX1LQeGKqXoQB7">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="41293" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WnUYBuAbgX1LQeGKqXoQB7">
+{"cleaned": true}
+  </tool_result>
+  <assistant>Now let me check if there's a post-plan-implement CI hook:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="41547" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 97}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V29BPf4KVRJnMWxVMfYa8e">
+    <param name="command">ls .erk/prompt-hooks/post-plan-implement-ci.md 2&gt;/dev/null &amp;&amp; echo "exists" || echo "not found"</param>
+    <param name="description">Check for post-plan CI hook</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="41547" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 97, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V29BPf4KVRJnMWxVMfYa8e">
+.erk/prompt-hooks/post-plan-implement-ci.md
+exists
+  </tool_result>
+  <tool_use name="Read" id="toolu_0134j1W4jkz5Bnj4matQ1QJB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="41644" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0134j1W4jkz5Bnj4matQ1QJB">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01GXTUYnZu3rDUpoummTXUxP">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="41800" output_tokens="54" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GXTUYnZu3rDUpoummTXUxP">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="41963" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1699}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01FXCCjRMfgjuGMiE1xgDwhz">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="41963" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1699, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01FXCCjRMfgjuGMiE1xgDwhz">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01HTTJnsX52Q2K9stB82KsmV">
+    <param name="query">select:TaskUpdate,TaskOutput</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="870" cache_read_input_tokens="43662" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 870, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01HTTJnsX52Q2K9stB82KsmV">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01MGxFbzG7Sx2oD6AJxx81Qy">
+    <param name="subject">Run fast-ci and fix any failures</param>
+    <param name="description">Run make fast-ci via devrun agent, iterate on failures</param>
+    <param name="activeForm">Running fast-ci</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1419" cache_read_input_tokens="44532" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1419, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MGxFbzG7Sx2oD6AJxx81Qy">
+Task #1 created successfully: Run fast-ci and fix any failures
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Kecdn23ynFuUjZgAmU4wp2">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="139" cache_read_input_tokens="45951" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kecdn23ynFuUjZgAmU4wp2">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01JFXyvmDDUZ8MiE6CpryyJV">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="46090" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01JFXyvmDDUZ8MiE6CpryyJV">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01CoXLPMoRkk1NCMSPeXgSmT">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05 and run: make fast-ci
+
+Report all output including any failures.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2278" cache_read_input_tokens="46180" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CoXLPMoRkk1NCMSPeXgSmT">
+The `make fast-ci` command completed successfully with all checks passing:
+
+**Summary:**
+- ✅ Lint: All checks passed
+- ✅ Format: 1619 files already formatted
+- ✅ Prettier: All matched files use correct style
+- ✅ Markdown: AGENTS.md standard passed, 0 violations
+- ✅ Exec Reference: .claude/skills/erk-exec/reference.md is up to date
+- ✅ Type checking (ty): All checks passed
+- ✅ Unit Tests (erk): 5648 passed in 7.53s
+- ✅ Tests (erk-dev): 136 passed in 2.56s
+- ✅ Tests (erk-statusline): 115 passed in 0.73s
+- ✅ Tests (erk-mcp): 24 passed (installed 45 packages in 82ms)
+
+**Result:** make passed: All CI checks passed with 5899 total tests passing across all packages.
+agentId: ad0851d2abfde033e (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14576
+tool_uses: 1
+duration_ms: 24136&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks passed. Let me submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="48458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 450}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01DcmTWcqsJwz1GEWozYifLt">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="48458" output_tokens="82" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 450, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DcmTWcqsJwz1GEWozYifLt">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LPhzA2rrxHXt2bAmbynb2i">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="100" cache_read_input_tokens="48908" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 100, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LPhzA2rrxHXt2bAmbynb2i">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Graphite Submit
+   Running gt submit...
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/fix-ci-formatting-race-03-05-2301 (Update code)
+
+🚀 Pushing branches to remote...
+
+📨 Creating/updating PRs...
+plnd/fix-ci-formatting-race-03-05-2301: https://app.graphite.com/github/pr/dagster-io/erk/8823 (updated)
+WARNING: Branch plnd/fix-ci-formatting-race-03-05-2301 has been updated remotely. Force submitting local version to remote...
+   Graphite submit completed
+
+   Getting PR info...
+   PR #8823 ready
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8823
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+
+... [14 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JnRAWrSoBMRNDPVuD3S7qB">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="49631" cache_read_input_tokens="0" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 49631, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JnRAWrSoBMRNDPVuD3S7qB">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DzaU37ngMTNRC3LUVNi3ug">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="49631" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 138, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DzaU37ngMTNRC3LUVNi3ug">
+
+  </tool_result>
+  <assistant>Plan execution complete. PR #8823 submitted: https://github.com/dagster-io/erk/pull/8823
+
+**Summary of changes:**
+
+1. **Added `pushed` output to `fix-formatting` job** — exposes whether an autofix commit was pushed (`true`/`false` on all code paths)
+2. **Added skip condition to all 8 tier 3 jobs** — `&amp;&amp; needs.fix-formatting.outputs.pushed != 'true'` prevents jobs from running against stale code when a new CI run is incoming
+3. **Updated documentation** — replaced the "cancellation handles it" section with the new skip-on-push mechanism in `docs/learned/ci/job-ordering-strategy.md`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="113" cache_read_input_tokens="49769" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 113, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>/local:statusline-refresh</user>
+  <user>&lt;local-command-stdout&gt;
+🔄 Status line refreshed
+&lt;/local-command-stdout&gt;</user>
+  <user>can we step back and /ultrathink and think about the best way to struture our ci pipeline. i thin we have hill climbed to a suboptioal local maxima</user>
+  <usage input_tokens="3" cache_creation_input_tokens="50385" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 50385}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me gather the full picture — the CI workflow, all CI docs, and related context.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="50385" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 50385}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011Z1R6PXrDhypJ98GPYvzPH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="50385" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 50385}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01YCqjmkf53j6XLLz297ngXp">
+    <param name="pattern">docs/learned/ci/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="50385" cache_read_input_tokens="0" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 50385, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011Z1R6PXrDhypJ98GPYvzPH">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-impl-context
+
+... [576 lines omitted] ...
+
+    88→            echo "::error::Files need formatting or docs are out of sync"
+    98→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   203→      (needs.format.result == 'failure' ||
+   204→       needs.lint.result == 'failure' ||
+   205→       needs.fix-formatting.result == 'failure' ||
+   206→       needs.docs-check.result == 'failure' ||
+   207→       needs.ty.result == 'failure')
+   316→      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+   343→      - name: Collect failure context
+   345→        id: failures
+   356→      - name: Collect actual errors
+   358→        id: errors
+   360→          errors=""
+   362→          if [ "${{ needs.format.result }}" = "failure" ]; then
+   363→            errors+="=== RUFF FORMAT ERRORS ===\n"
+   364→            errors+="$(uv run ruff format --check . 2&gt;&amp;1 || true)\n\n"
+   367→          if [ "${{ needs.lint.result }}" = "failure" ]; then
+   368→            errors+="=== RUFF LINT ERRORS ===\n"
+   369→            errors+="$(uv run ruff check . 2&gt;&amp;1 || true)\n\n"
+   372→          if [ "${{ needs.fix-formatting.result }}" = "failure" ]; then
+   373→            errors+="=== MARKDOWN-FIX ERRORS ===\n"
+   374→            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2&gt;&amp;1 || true)\n\n"
+   377→          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+   378→            errors+="=== DOCS CHECK ERRORS ===\n"
+   379→            errors+="$(make md-check 2&gt;&amp;1 || true)\n"
+   380→            errors+="$(make docs-check 2&gt;&amp;1 || true)\n\n"
+   383→          if [ "${{ needs.ty.result }}" = "failure" ]; then
+   384→            errors+="=== TY TYPE ERRORS ===\n"
+   385→            errors+="$(uv run ty check 2&gt;&amp;1 || true)\n\n"
+   389→          echo -e "$errors" &gt; /tmp/errors.txt
+   400→          echo "Debug: erk version: $(erk --version 2&gt;&amp;1 || echo 'version failed')"
+   410→            --var-file "ERRORS=/tmp/errors.txt" 2&gt;&amp;1); then
+   411→            echo "Error: Failed to get ci-autofix prompt"
+   418→            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+   440→  # === CI Failure Summarization (Haiku) ===
+   459→      (needs.format.result == 'failure' ||
+   460→       needs.lint.result == 'failure' ||
+   461→       needs.fix-formatting.result == 'failure' ||
+   462→       needs.docs-check.result == 'failure' ||
+   463→       needs.ty.result == 'failure' ||
+   464→       needs.unit-tests.result == 'failure' ||
+   465→       needs.integration-tests.result == 'failure' ||
+   466→       needs.erk-mcp-tests.result == 'failure')
+   480→      - name: Summarize failures
+   544→            echo "Discovery failed"
+  </tool_result>
+  <tool_result tool="toolu_01YCqjmkf53j6XLLz297ngXp">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/autofix-job-needs.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/automated-review-system.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/check-state-classification.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/ci-failure-summarization.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/ci-iteration.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/claude-code-docker.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/claude-commands-prettier.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/claude-kill-switch.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/commit-squash-divergence.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/composite-action-patterns.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/containerless-ci.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/convention-based-reviews.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/dual-secret-auth-model.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/edit-tool-formatting.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/exec-script-environment-requirements.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/formatter-tools.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/formatting-workflow.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/git-force-push-decision-tree.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/github-actions-claude-integration.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/github-actions-label-filtering.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/github-actions-label-queries.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/github-actions-output-patterns.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/github-actions-security.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/github-actions-workflow-patterns.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/github-cli-comment-patterns.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/github-commit-indexing-timing.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/gitignored-directory-commit-patterns.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/index.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/label-rename-checklist.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/learn-ci-environment-detection.md
+
+... [15 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="11052" cache_read_input_tokens="50385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11052}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good instinct. Let me read a few more CI docs for full context, then lay out the analysis.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11052" cache_read_input_tokens="50385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11052}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PQcacVj2L97ZSH6ZH58LAf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/autofix-job-needs.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11052" cache_read_input_tokens="50385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11052}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PQcacVj2L97ZSH6ZH58LAf">
+     1→---
+     2→title: Autofix Job Needs
+     3→read_when:
+     4→  - "modifying the autofix job's needs list in ci.yml"
+     5→  - "adding a new CI job that might block autofix"
+     6→  - "understanding autofix dependency design"
+     7→tripwires:
+     8→  - action: "removing test jobs from autofix's needs list"
+     9→    warning: "Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt intelligent fixes. See the needs array in ci.yml."
+    10→---
+    11→
+    12→# Autofix Job Needs
+    13→
+    14→## Current Design
+    15→
+    16→The autofix job depends on **all** validation jobs, including test jobs. This gives the autofix agent full failure context to attempt intelligent fixes.
+    17→
+    18→&lt;!-- Source: .github/workflows/ci.yml, autofix job needs array --&gt;
+    19→
+    20→See the `autofix` job's `needs` array in `.github/workflows/ci.yml` for the authoritative list:
+    21→
+    22→- format, lint, fix-formatting, docs-check, ty, unit-tests, integration-tests
+    23→
+    24→The job uses `always()` in its `if` condition, so it runs even when upstream jobs fail. The dependency list controls **ordering** (autofix waits for all jobs to finish) rather than **gating** (autofix still runs on failure).
+    25→
+    26→## Why All Jobs Are Included
+    27→
+    28→The autofix agent uses Claude Code with failure context from all jobs. Including test jobs in `needs` ensures:
+    29→
+    30→1. All job results are available via `needs.&lt;job&gt;.result`
+
+... [26 lines omitted] ...
+
+    31→2. The agent sees both style failures AND test failures in one pass
+    32→3. Error messages from test jobs are collected and passed to Claude
+    40→| format (ruff format) | Yes       | Failure context for auto-fix          |
+    41→| lint (ruff check)    | Yes       | Failure context for auto-fix          |
+    43→| docs-check           | Yes       | Failure context for docs-sync         |
+    44→| ty (type check)      | Yes       | Failure context for type fixes        |
+    45→| unit-tests           | Yes       | Failure context for intelligent fixes |
+    46→| integration-tests    | Yes       | Failure context for intelligent fixes |
+    54→- [CI Iteration Pattern](ci-iteration.md) - Iterative fixing of CI failures
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QFHufqm1BxD6JhxDkCMyy5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/formatting-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11052" cache_read_input_tokens="50385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11052}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QFHufqm1BxD6JhxDkCMyy5">
+     1→---
+     2→title: Formatting Workflow Decision Tree
+     3→read_when:
+     4→  - "unsure whether to run make format or make prettier"
+     5→  - "encountering CI formatting failures"
+     6→  - "working with multiple file types in a PR"
+     7→  - "setting up CI iteration workflow"
+     8→tripwires:
+     9→  - action: "running only prettier after editing Python files"
+    10→    warning: "Prettier silently skips Python files. Always use 'make format' for .py files."
+    11→  - action: "pushing code without running formatters locally first"
+    12→    warning: "Format-then-commit: run ruff format (Python) and prettier (Markdown) locally and commit the formatted output BEFORE pushing. CI format checks verify but do not auto-fix. Pushing unformatted code requires a second commit to fix."
+    13→    score: 6
+    14→last_audited: "2026-02-16 14:20 PT"
+    15→audit_result: clean
+    16→---
+    17→
+    18→# Formatting Workflow Decision Tree
+    19→
+    20→Erk uses two formatters: **ruff** (Python) and **prettier** (Markdown). Each tool is file-type-specific and silently ignores files it doesn't handle. This creates a trap where running the wrong formatter appears to succeed but does nothing.
+    21→
+    22→## The Core Problem
+    23→
+    24→**Prettier silently skips Python files.** When you run `make prettier` after editing `.py` files, the command succeeds with exit code 0 but performs no formatting. CI then fails because `ruff format --check` detects the unformatted Python code.
+    25→
+    26→This is the most common formatting failure pattern: an agent edits Python code, runs `make prettier` (the wrong formatter), sees success, and commits. CI immediately fails on the format check.
+    27→
+    28→## Why This Trap Exists
+    29→
+    30→The tools are mutually exclusive by design:
+
+... [48 lines omitted] ...
+
+    45→When in doubt, run both. The cost is negligible compared to a CI failure.
+  </tool_result>
+  <tool_use name="Read" id="toolu_012JXFbBGXzYFkZvZUmLrc1n">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/workflow-gating-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11052" cache_read_input_tokens="50385" output_tokens="3957" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11052, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012JXFbBGXzYFkZvZUmLrc1n">
+     1→---
+     2→title: GitHub Actions Workflow Gating Patterns
+     3→read_when:
+     4→  - adding conditional execution to GitHub Actions workflows
+     5→  - implementing label-based CI skipping
+     6→  - understanding why CI was skipped on a PR
+     7→tripwires:
+     8→  - action: "Use !contains() pattern for label-based gating"
+     9→    warning: "Negation is critical — contains() without ! skips all push events"
+    10→    score: 5
+    11→  - action: "Add branches-ignore for ephemeral branch patterns"
+    12→    warning: "Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing"
+    13→    score: 4
+    14→  - action: "using branches-ignore for planned/* branches"
+    15→    warning: "planned/ branches contain both metadata AND code. Use paths-ignore instead to skip CI only when commits touch exclusively metadata paths (.erk/impl-context/**, .worker-impl/**)."
+    16→    score: 4
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# GitHub Actions Workflow Gating Patterns
+    22→
+    23→GitHub Actions offers multiple mechanisms for controlling workflow execution. Choosing the right layer for each gate determines both safety and cost efficiency.
+    24→
+    25→## Why Multiple Gating Layers Exist
+    26→
+    27→GitHub Actions evaluates conditions at different points in the workflow lifecycle:
+    28→
+    29→&lt;!-- Source: .github/workflows/ci.yml, on: triggers, job if: conditions, step if: conditions --&gt;
+    30→
+
+... [197 lines omitted] ...
+
+   154→  (needs.format.result == 'failure' || ...)
+   161→**Why `always()`**: Autofix must evaluate its condition even when upstream jobs fail (that's the point — fix the failures). Without `always()`, a failed format job would prevent autofix from even considering whether to run.
+   206→| Upstream job failure                            | Downstream job `if:`                  | Use `needs.job.result` or job outputs                 |
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9883" cache_read_input_tokens="61437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9883}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Y9popXeivpdrDaWmw2Bga7">
+    <param name="pattern">.github/workflows/*.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9883" cache_read_input_tokens="61437" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9883}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y9popXeivpdrDaWmw2Bga7">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/docs.yml
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/docs-v2.yml
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/learn.yml
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/one-shot.yml
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/plan-implement.yml
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/pr-address.yml
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/pr-rebase.yml
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/pr-rewrite.yml
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/ci.yml
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TgknfpXiBWZGXM45YokAWK">
+    <param name="pattern">^(format|lint|prettier|docs|fix|fast-ci|all-ci|test|format-check|md-check|docs-check|docs-fix):</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/Makefile</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9883" cache_read_input_tokens="61437" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9883, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TgknfpXiBWZGXM45YokAWK">
+3:prettier:
+9:format-check:
+12:lint:
+15:fix:
+56:test: test-unit-erk test-erk-dev
+64:md-check:
+67:docs-check:
+76:docs-fix:
+96:fast-ci:
+112:all-ci:
+159:docs:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UcBGDa8iPdNXdDKgvrgxe2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/Makefile</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="700" cache_read_input_tokens="71320" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 700, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UcBGDa8iPdNXdDKgvrgxe2">
+     1→.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-v2-build docs-v2-serve
+     2→
+     3→prettier:
+     4→	prettier --write '**/*.md' --ignore-path .gitignore
+     5→
+     6→prettier-check:
+     7→	prettier --check '**/*.md' --ignore-path .gitignore
+     8→
+     9→format-check:
+    10→	uv run ruff format --check
+    11→
+    12→lint:
+    13→	uv run ruff check
+    14→
+    15→fix:
+    16→	uv run ruff check --fix --unsafe-fixes
+    17→	uv run ruff format
+    18→	prettier --write '**/*.md' --ignore-path .gitignore
+    19→
+    20→ty:
+    21→	uv run ty check
+    22→
+    23→upgrade-ty:
+    24→	uv remove ty --group dev &amp;&amp; uv add --dev ty
+    25→
+    26→# === Package-specific test targets ===
+    27→
+    28→test-erk-dev:
+    29→	cd packages/erk-dev &amp;&amp; uv run pytest -n auto
+    30→
+
+... [90 lines omitted] ...
+  </tool_result>
+  <assistant>OK, I now have a complete picture of the CI pipeline. Here's my analysis.
+
+---
+
+## CI Pipeline: Stepping Back
+
+### The Current Shape
+
+```
+check-submission (gate)
+    │
+fix-formatting (auto-fix, may push)
+    │
+    ├─ pushed=true  → tier 3 jobs skip (new run incoming)
+    │
+    └─ pushed=false → 8 parallel jobs:
+        format, lint, docs-check, ty, unit-tests,
+        integration-tests, erk-mcp-tests, discover-reviews
+    │
+    └─ on failure → ci-summarize (Claude)
+    └─ on failure → autofix (Claude, DISABLED via false&amp;&amp;)
+```
+
+### Problems I See
+
+**1. `fix-formatting` is doing two fundamentally different things:**
+- On PRs: auto-fix + push (write operation, triggers new run)
+- On master: validate-only, fail if issues (same as `format`/`docs-check`)
+
+This dual nature is the root cause of all the coordination complexity.
+
+**2. `format` and `docs-check` are redundant with `fix-formatting`:**
+When `fix-formatting` passes without pushing, it means code was already formatted and docs were in sync. `format` (ruff format --check) and `docs-check` will trivially pass. They're only useful on master pushes for better error messages — but `fix-formatting` already provides `git diff --stat` on that path.
+
+**3. The `autofix` job is 250 lines of dead code:**
+Disabled via `false &amp;&amp;`. It references jobs, secrets, and patterns that may drift. It's cognitive load for anyone reading the workflow.
+
+**4. The `pushed` output coordination is fragile:**
+Every new tier 3 job must remember `&amp;&amp; needs.fix-formatting.outputs.pushed != 'true'`. Forget it once and you get the race condition back.
+
+**5. Overly broad workflow permissions:**
+`contents: write`, `actions: write`, `statuses: write` at workflow level — all because of `fix-formatting` (and the dead `autofix`). Every job inherits these.
+
+### Three Options
+
+**Option A: Remove auto-fix from CI entirely**
+
+```
+check-submission (gate)
+    │
+    └─ 8 parallel jobs: lint, format, docs-check, ty,
+       unit-tests, integration-tests, erk-mcp-tests,
+       discover-reviews
+```
+
+- `erk pr submit` already formats before pushing
+- Agent workflows format before submitting
+- CI becomes pure validation — read-only permissions, no races, no coordination
+- Trade-off: someone does a raw `git push` with unformatted code → CI fails, they fix it manually. But this is rare with erk workflows.
+
+**Option B: Separate auto-fix into its own workflow**
+
+```
+auto-format.yml (PR only, contents: write)
+    └─ fix-formatting → push if needed
+
+ci.yml (PR + master, contents: read)
+    check-submission (gate)
+        └─ 7 parallel jobs (no fix-formatting dependency)
+```
+
+- Clean separation of concerns and permissions
+- Race still exists cosmetically (first run fails briefly, new run passes)
+- But no `pushed` coordination needed — `cancel-in-progress` handles it naturally
+- The "noise" is just a cancelled run, not persistent failures
+
+**Option C: Keep single workflow but clean it up**
+
+Keep the current shape but:
+- Delete the dead `autofix` job (~250 lines)
+- Merge `format` check into `fix-formatting` (run `ruff format --check` as a step, before the write step, to give clean error output)
+- Merge `docs-check` into `fix-formatting` similarly
+- Keep the `pushed` output pattern
+
+This reduces job count but doesn't solve the structural issue.
+
+### My Recommendation
+
+**Option A** (remove auto-fix from CI) is the cleanest if you're willing to accept it. The auto-fix was valuable early on but `erk pr submit` now handles formatting pre-push. The auto-fix is compensating for a gap that's been filled.
+
+If you want to keep auto-fix, **Option B** is structurally cleaner than the current design — it eliminates the coordination at the cost of brief cancelled-run noise.
+
+Either way, the dead `autofix` job should go regardless.
+
+What's your thinking?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2135" cache_read_input_tokens="72020" output_tokens="1042" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2135, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>is auto-format diffrent from fix-formatting</user>
+  <assistant>
+
+Good catch — no, they're the same thing. I was sloppy with naming. `fix-formatting` is the actual job name in `ci.yml`. When I said "auto-format" in Option B's workflow name (`auto-format.yml`), I was just proposing a clearer name for a hypothetical separate workflow that would contain only that job. Same concept, different label.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1207" cache_read_input_tokens="74155" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1207, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>are we sure that erk pr submit does the formatting fix</user>
+  <usage input_tokens="3" cache_creation_input_tokens="259" cache_read_input_tokens="75362" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check rather than assume.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="259" cache_read_input_tokens="75362" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015YCoVuTYgbS12JggLfBVmH">
+    <param name="pattern">format|prettier|ruff</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands</param>
+    <param name="glob">*submit*"</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="259" cache_read_input_tokens="75362" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 259}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015YCoVuTYgbS12JggLfBVmH">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01WBnEK89f47LcH1xYHqVhyg">
+    <param name="pattern">def.*submit|pr.submit|pr_submit</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="259" cache_read_input_tokens="75362" output_tokens="296" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 259, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WBnEK89f47LcH1xYHqVhyg">
+Found 15 files
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/tui/app.py
+src/erk/cli/commands/pr/submit_cmd.py
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py
+src/erk/cli/commands/pr/__init__.py
+src/erk/tui/screens/one_shot_prompt_screen.py
+src/erk/core/output_filter.py
+src/erk/cli/output.py
+src/erk/cli/commands/pr/check_cmd.py
+src/erk/cli/commands/implement_shared.py
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/cli/commands/exec/scripts/quick_submit.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GnoQzf8ZjyejvqKLWdvbTo">
+    <param name="pattern">format|prettier|ruff|fix</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="75621" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 626, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GnoQzf8ZjyejvqKLWdvbTo">
+68:def _add_planned_prefix(title: str) -&gt; str:
+69:    """Prepend 'plnd/' prefix to PR title (idempotent).
+72:        title: The PR title to prefix
+75:        The title with 'plnd/' prefix, skipping if already prefixed
+274:    # Fall back to branch prefix when cleanup already deleted .erk/impl-context/
+296:                    "To fix:\n"
+428:                    f"To fix manually: git pull --rebase origin {state.branch_name}"
+444:                f"To fix: git pull --rebase origin {state.branch_name}\n"
+466:                    f"To fix: git pull --rebase origin {state.branch_name}\n"
+583:        suffix=".diff",
+584:        prefix="pr-diff-",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CkT8TLiiGHAoMxfqNToear">
+    <param name="pattern">format|prettier|ruff|docs.fix|docs.sync|auto.fix</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="76247" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 346, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CkT8TLiiGHAoMxfqNToear">
+35:def _format_field(label: str, value: str) -&gt; str:
+49:    click.echo(_format_field("Action", f"{action} {pr_label}"))
+52:    click.echo(_format_field("Branch", f"{result.branch_name} → {base}"))
+55:        click.echo(_format_field("Title", result.title))
+58:        click.echo(_format_field("PR", _make_clickable(result.pr_url)))
+61:        click.echo(_format_field("Graphite", _make_clickable(result.graphite_url)))
+64:        click.echo(_format_field("Plan", f"#{result.plan_id}"))
+  </tool_result>
+  <assistant>No — `erk pr submit` does **not** run formatting. It handles git commit, push, PR creation, and description generation, but there's no `ruff format`, `prettier`, or `make docs-fix` step anywhere in the submit pipeline.
+
+So my claim was wrong. The auto-fix in CI is actually doing real work that isn't covered elsewhere. Removing it (Option A) would mean unformatted code lands in PRs and CI just fails, requiring the developer/agent to fix it manually.
+
+That changes the calculus. The `fix-formatting` job is genuinely valuable — it's not redundant with the submit pipeline.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="76593" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 436, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>right. so let's analyze again. how should we restructure the ci pipeline to make it cleaner, more DRY, more reliable, etc</user>
+  <usage input_tokens="3" cache_creation_input_tokens="330" cache_read_input_tokens="77029" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 330}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me think about this more carefully with the constraint that fix-formatting is genuinely needed.
+
+**Key insight I missed earlier:** All tier 3 jobs already wait for `fix-formatting` to finish (`needs: fix-formatting`). So `format`, `lint`, and `docs-check` aren't truly parallel with the slow jobs — they're all blocked on fix-formatting, then they all start together. The fast checks (~5s of actual work each) spend most of their time on runner allocation + checkout + setup-python-uv (~1 min each). They could run serially inside one job with zero impact on wall clock time, since the critical path is `fix-formatting → unit-tests`.
+
+Here's what I'd propose:
+
+### Proposed Architecture
+
+```
+check-submission (gate)
+    │
+style (auto-fix + fast validation, outputs pushed)
+    │
+    ├─ pushed=true  → everything skips
+    │
+    └─ pushed=false → parallel:
+        ├── ty
+        ├── unit-tests (matrix: 3.11-3.14)
+        ├── integration-tests
+        ├── erk-mcp-tests
+        ├── discover-reviews → review
+        └── ci-summarize (on failure, always())
+```
+
+### What changes
+
+| Current | Proposed | Why |
+|---------|----------|-----|
+| `fix-formatting` job | Merged into `style` | Same runner does fix + validate |
+| `format` job | Deleted (step in `style`) | Was redundant — ruff format already ran in fix phase |
+| `lint` job | Deleted (step in `style`) | Fast check, ~5s actual work, 1 min setup overhead |
+| `docs-check` job | Deleted (step in `style`) | Fast check, same story |
+| `autofix` job | Deleted | Dead code (250 lines behind `false &amp;&amp;`) |
+| 13 jobs total | 9 jobs total | 4 fewer runners, same wall clock |
+
+### The `style` job
+
+```yaml
+style:
+  needs: check-submission
+  if: &lt;draft/skip check&gt;
+  outputs:
+    pushed: ${{ steps.fix.outputs.pushed }}
+  steps:
+    - checkout (with PAT)
+    - setup-python-uv
+    - setup-prettier
+    # Phase 1: Auto-fix
+    - make docs-fix
+    - uv run ruff format
+    - prettier --write
+    # Phase 2: Check + push
+    - id: fix
+      # if diff → commit, push, set pushed=true, exit
+      # if no diff → set pushed=false
+    # Phase 3: Validation (skipped when pushed)
+    - if: pushed != 'true' → make lint
+    - if: pushed != 'true' → make md-check
+    - if: pushed != 'true' → make docs-check
+```
+
+Note: `make format-check` is intentionally omitted from Phase 3 — we just ran `ruff format` and confirmed no diff, so `ruff format --check` would trivially pass.
+
+### Wall clock impact
+
+**None.** Current critical path: `check-submission (30s) → fix-formatting (2min) → unit-tests (8min)` = ~10.5 min. Proposed: `check-submission (30s) → style (2min fix + 30s validation) → unit-tests (8min)` = ~11 min. The 30s of serial validation was happening in parallel before but wasn't on the critical path anyway.
+
+### What stays the same
+
+- `ty`, `unit-tests`, `integration-tests`, `erk-mcp-tests` — unchanged
+- `discover-reviews` → `review` — unchanged except depends on `style` instead of `fix-formatting`
+- `ci-summarize` — depends on `style` instead of separate format/lint/docs-check. It uses `erk exec ci-generate-summaries --run-id` which fetches logs from the API, so it doesn't lose per-check granularity.
+- The `pushed` output pattern — same mechanism, just lives in `style` now
+
+### What's cleaner
+
+- **DRY:** One `if:` condition per downstream job instead of the same condition repeated 8 times across 4 jobs that do the same setup
+- **Less dead code:** 250 lines of disabled `autofix` gone
+- **Fewer runners:** 4 fewer runner allocations per CI run (saves ~4 min of billable time)
+- **Simpler mental model:** "style gate → parallel heavy jobs" instead of "fix gate → 8 parallel jobs, 4 of which are trivially fast"
+
+Want me to turn this into a plan?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="330" cache_read_input_tokens="77029" output_tokens="7917" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 330, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>yes</user>
+  <tool_use name="ToolSearch" id="toolu_01T79kAHCQbgX5Xxniz6JrZP">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="86587" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 86587}" output_tokens="28" service_tier="standard" inference_geo="not_available" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01T79kAHCQbgX5Xxniz6JrZP">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="741" cache_read_input_tokens="86587" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 741}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_016HzRqV4gfPTxBXmcgUzq7V">
+    <param name="query">select:EnterPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="741" cache_read_input_tokens="86587" output_tokens="2334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 741, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_016HzRqV4gfPTxBXmcgUzq7V">
+
+  </tool_result>
+  <tool_use name="EnterPlanMode" id="toolu_01RqV4PtjYwsWAQE6obqxAXi">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="87328" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3432, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RqV4PtjYwsWAQE6obqxAXi">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1377" cache_read_input_tokens="90760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1377}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I've already explored the CI workflow extensively. Let me verify a few remaining details before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1377" cache_read_input_tokens="90760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1377}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NAWB8QkMTA2fuwGbJAiJWJ">
+    <param name="pattern">code-reviews\.yml</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1377" cache_read_input_tokens="90760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1377}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NAWB8QkMTA2fuwGbJAiJWJ">
+Found 25 files
+docs/learned/ci/tripwires.md
+docs/learned/ci/claude-kill-switch.md
+docs/learned/ci/containerless-ci.md
+docs/learned/ci/github-actions-label-filtering.md
+docs/learned/ci/github-actions-workflow-patterns.md
+docs/learned/ci/workflow-gating-patterns.md
+docs/learned/ci/automated-review-system.md
+docs/learned/ci/convention-based-reviews.md
+docs/learned/ci/job-ordering-strategy.md
+.github/workflows/README.md
+tests/artifacts/test_sync.py
+tests/unit/core/capabilities/test_code_reviews_system.py
+tests/unit/core/capabilities/test_review_capability.py
+pyproject.toml
+src/erk/core/capabilities/review_capability.py
+src/erk/capabilities/code_reviews_system.py
+docs/learned/reviews/development.md
+docs/learned/pr-operations/draft-pr-handling.md
+docs/learned/ci/review-types-taxonomy.md
+docs/learned/ci/workflow-model-policy.md
+docs/learned/ci/label-rename-checklist.md
+docs/learned/capabilities/tripwires.md
+docs/learned/capabilities/adding-reviews.md
+.claude/commands/local/review.md
+.claude/commands/local/code-review.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BTAVcKXt2vMZJ491fVbwD9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/actions/check-impl-context/action.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1377" cache_read_input_tokens="90760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1377}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BTAVcKXt2vMZJ491fVbwD9">
+     1→name: Check for Implementation Context Folder
+     2→description: Checks if .erk/impl-context folder exists and sets skip output
+     3→
+     4→outputs:
+     5→  skip:
+     6→    description: Whether to skip CI (true if .erk/impl-context exists)
+     7→    value: ${{ steps.check.outputs.skip }}
+     8→
+     9→runs:
+    10→  using: composite
+    11→  steps:
+    12→    - name: Check for implementation context folder
+    13→      id: check
+    14→      shell: bash
+    15→      run: |
+    16→        if [ -d ".erk/impl-context" ]; then
+    17→          echo "skip=true" &gt;&gt; $GITHUB_OUTPUT
+    18→          echo "Skipping CI - .erk/impl-context folder detected (AI implementation pending)"
+    19→        else
+    20→          echo "skip=false" &gt;&gt; $GITHUB_OUTPUT
+    21→        fi
+    22→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ltx5RaTH35teA3h8QJqwSU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/docs/learned/ci/convention-based-reviews.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1377" cache_read_input_tokens="90760" output_tokens="565" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1377, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ltx5RaTH35teA3h8QJqwSU">
+     1→---
+     2→title: Convention-Based Code Reviews
+     3→read_when:
+     4→  - adding a new code review to CI
+     5→  - understanding how code reviews work
+     6→  - modifying code review behavior
+     7→tripwires:
+     8→  - action: "using fnmatch for gitignore-style glob patterns"
+     9→    warning: "Use pathspec library instead. fnmatch doesn't support ** recursive globs. Example: pathspec.PathSpec.from_lines('gitignore', patterns)"
+    10→last_audited: "2026-02-15 18:50 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Convention-Based Code Reviews
+    15→
+    16→Code reviews run automatically on PRs by dropping a markdown file in `.erk/reviews/`.
+    17→
+    18→## Overview
+    19→
+    20→The system consists of:
+    21→
+    22→1. **Review definitions** in `.erk/reviews/*.md` - YAML frontmatter + prompt content
+    23→2. **Discovery** via `erk exec discover-reviews` - finds reviews matching changed files
+    24→3. **Execution** via `erk exec run-review` - assembles prompt and invokes Claude
+    25→4. **Workflow** in `.github/workflows/code-reviews.yml` - orchestrates discovery and parallel execution
+    26→
+    27→This workflow is intentionally separate from repo-local `ci.yml`. `ci.yml` owns formatting and validation for the erk repo itself; `code-reviews.yml` is the shipped `code-reviews-system` capability entrypoint that user projects install.
+    28→
+    29→## Adding a New Code Review
+    30→
+
+... [228 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4657" cache_read_input_tokens="92137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4657}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Bkk2XvWPAgqASsUJ8eAULk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/README.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4657" cache_read_input_tokens="92137" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4657}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bkk2XvWPAgqASsUJ8eAULk">
+     1→# GitHub Workflows
+     2→
+     3→This directory contains GitHub Actions workflows for the erk project.
+     4→
+     5→## Required Secrets
+     6→
+     7→### GitHub PAT: `ERK_QUEUE_GH_PAT`
+     8→
+     9→A Personal Access Token (PAT) with the following permissions is required for workflows that push commits, dispatch other workflows, or upload workflow session artifacts:
+    10→
+    11→**Required permissions:**
+    12→
+    13→- `contents: write` - Push commits to branches
+    14→- `workflows` - Trigger workflow_dispatch events
+    15→- `gist` - Create gists for session log storage
+    16→
+    17→**Why GITHUB_TOKEN isn't sufficient:**
+    18→
+    19→The built-in `GITHUB_TOKEN` has two limitations that require using a PAT:
+    20→
+    21→1. **Git push authentication**: When a workflow checks out code with `GITHUB_TOKEN`, git is not configured with credentials that allow pushing. Using a PAT at checkout time (`actions/checkout` with `token:`) configures git authentication so subsequent `git push` commands work.
+    22→
+    23→2. **Cross-workflow triggers**: `GITHUB_TOKEN` cannot trigger other workflows via `workflow_dispatch`. This is a GitHub security feature to prevent infinite workflow loops. A PAT is required for the `gh workflow run` command.
+    24→
+    25→**Used in:**
+    26→
+    27→- `ci.yml` - `fix-formatting` checkout for auto-push
+    28→- `learn.yml` - Checkout, branch updates, dispatch to `plan-implement`
+    29→- `one-shot.yml` - Remote setup and PR submission
+    30→- `plan-implement.yml` - Remote setup, push, and session uploads
+
+... [37 lines omitted] ...
+
+    46→| `ci.yml`              | push, PR, manual      | Repo-local formatting, validation, and CI failure summaries  |
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01F4zJUZPXEHKFvEJfN75i5M">
+    <param name="pattern">code.reviews.*yml|code_reviews_system</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4657" cache_read_input_tokens="92137" output_tokens="639" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4657, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F4zJUZPXEHKFvEJfN75i5M">
+Found 3 files
+src/erk/core/capabilities/registry.py
+src/erk/core/capabilities/review_capability.py
+src/erk/capabilities/code_reviews_system.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2084" cache_read_input_tokens="96794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2084}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011Ry4kbcR94DtDymWNeKqyF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/capabilities/code_reviews_system.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2084" cache_read_input_tokens="96794" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2084, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011Ry4kbcR94DtDymWNeKqyF">
+     1→"""CodeReviewsSystemCapability - unified code review workflow infrastructure.
+     2→
+     3→This capability installs the GitHub Actions workflow infrastructure that enables
+     4→convention-based code reviews. Individual review definitions are installed
+     5→separately via review-* capabilities.
+     6→
+     7→Installs:
+     8→- .github/workflows/code-reviews.yml (unified workflow)
+     9→- .github/actions/setup-claude-code/ (Claude Code binary installer)
+    10→- .github/actions/setup-claude-erk/ (erk tool installer)
+    11→- Creates empty .erk/reviews/ directory
+    12→"""
+    13→
+    14→import shutil
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal
+    19→
+    20→from erk.artifacts.paths import get_bundled_github_dir
+    21→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+    22→from erk.core.capabilities.base import (
+    23→    Capability,
+    24→    CapabilityArtifact,
+    25→    CapabilityResult,
+    26→    CapabilityScope,
+    27→    ManagedArtifact,
+    28→)
+    29→from erk_shared.context.types import AgentBackend
+    30→
+
+... [210 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3202" cache_read_input_tokens="98878" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3202}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BpW9ze9SyqE8toD3F7XkTa">
+    <param name="pattern">bundled_github_dir|get_bundled_github_dir</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/artifacts/paths.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3202" cache_read_input_tokens="98878" output_tokens="198" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3202, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BpW9ze9SyqE8toD3F7XkTa">
+95:def get_bundled_github_dir() -&gt; Path:
+125:    bundled_github_dir: Path
+134:        bundled_github_dir: Path | None = None,
+140:        Derives bundled_github_dir and bundled_erk_dir from bundled_claude_dir's
+148:            bundled_github_dir=(
+149:                bundled_github_dir if bundled_github_dir is not None else parent / ".github"
+168:            bundled_github_dir=get_bundled_github_dir(),
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01789BrCm9KRJFtH6x6hCNjm">
+    <param name="pattern">src/erk/artifacts/.github/workflows/code-reviews.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="102080" output_tokens="67" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 339, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01789BrCm9KRJFtH6x6hCNjm">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QcnoGTC1s4kk1GP4S4iNst">
+    <param name="pattern">code-reviews\\.yml</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="82" cache_read_input_tokens="102419" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 82, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QcnoGTC1s4kk1GP4S4iNst">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_012ft66p5PPiPJ1wFZU1kuiu">
+    <param name="pattern">**/bundled/**/*code-reviews*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="102501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 142}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_011gTz4vu6rYhCFE26sxFb5y">
+    <param name="pattern">src/erk/artifacts/.github/**/*.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="102501" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 142, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012ft66p5PPiPJ1wFZU1kuiu">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_011gTz4vu6rYhCFE26sxFb5y">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SBnsEkWR4K7QxXxjbsDrn5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/artifacts/paths.py</param>
+    <param name="offset">90</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="102643" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 271, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SBnsEkWR4K7QxXxjbsDrn5">
+    90→    # Wheel install: data is bundled at erk/data/erk/
+    91→    return erk_package_dir / "data" / "erk"
+    92→
+    93→
+    94→@cache
+    95→def get_bundled_github_dir() -&gt; Path:
+    96→    """Get path to bundled .github/ directory in installed erk package.
+    97→
+    98→    For wheel installs: .github/ is bundled as package data at erk/data/github/
+    99→    via pyproject.toml force-include.
+   100→
+   101→    For editable installs: .github/ is at the erk repo root.
+   102→    """
+   103→    erk_package_dir = _get_erk_package_dir()
+   104→
+   105→    if _is_editable_install():
+   106→        # Editable: erk package is at src/erk/, repo root is ../..
+   107→        erk_repo_root = erk_package_dir.parent.parent
+   108→        return erk_repo_root / ".github"
+   109→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="102914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 415}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good find — `code-reviews.yml` doesn't exist as a file yet, but the capability code, README, and docs all describe it as the target architecture. The review jobs in ci.yml need to move there.
+
+Let me now write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="102914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 415}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01JC4zUcGJauhDZ7NCAfZQvg">
+    <param name="file_path">/Users/schrockn/.claude/plans/federated-sniffing-wren.md</param>
+    <param name="content"># Restructure CI pipeline: consolidate jobs, extract reviews
+
+## Context
+
+The CI pipeline ...[truncated 7602 chars]...t-ci` locally — confirms no syntax/test issues
+4. Push to PR and verify CI runs correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="102914" output_tokens="5200" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 415, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JC4zUcGJauhDZ7NCAfZQvg">
+File created successfully at: /Users/schrockn/.claude/plans/federated-sniffing-wren.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01GMD5dZuVXb87QEh44JN4SD">
+    <param name="plan"># Restructure CI pipeline: consolidate jobs, extract reviews
+
+## Context
+
+The CI pipeline ...[truncated 7602 chars]...t-ci` locally — confirms no syntax/test issues
+4. Push to PR and verify CI runs correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5196" cache_read_input_tokens="103329" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5196, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GMD5dZuVXb87QEh44JN4SD">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/federated-sniffing-wren.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Restructure CI pipeline: consolidate jobs, extract reviews
+Current context: (wt:erk-slot-05) (br:refactor-ci-with-codex) (pr:#8828)\n\nWhat would you like to do with this plan?"
+  header: "br:refactor-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id cf6969a1-4749-4f45-a7eb-a7659cd50db1 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/federated-sniffing-wren.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="774" cache_read_input_tokens="108525" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 774}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the plan:
+
+---
+
+# Restructure CI pipeline: consolidate jobs, extract reviews
+
+## Context
+
+The CI pipeline has grown incrementally to 13 jobs with redundant validation, a 250-line dead `autofix` job, and code reviews inlined in `ci.yml` despite the shipped architecture expecting a separate `code-reviews.yml`. The `fix-formatting` → tier 3 race condition was patched with `pushed` output coordination, but the overall structure is a local maximum that can be simplified.
+
+Key insight: all tier 3 jobs already wait for `fix-formatting` to finish (`needs: fix-formatting`). The fast validation jobs (format, lint, docs-check) spend more time on runner setup (~1 min) than actual work (~5s). Merging them into the fix-formatting job adds zero wall-clock latency while saving 3 runner allocations per CI run.
+
+## Files to modify
+
+- `.github/workflows/ci.yml` — restructure jobs
+- `.github/workflows/code-reviews.yml` — new file, extracted from ci.yml
+- `docs/learned/ci/job-ordering-strategy.md` — update architecture description
+
+## Current → Proposed
+
+```
+CURRENT (13 jobs):                    PROPOSED (9 jobs):
+check-submission                      check-submission
+fix-formatting                        style (= fix-formatting + format + lint + docs-check)
+format           ─┐                   ty
+lint              ├─ merged into      unit-tests (matrix)
+docs-check       ─┘  style           integration-tests
+ty                                    erk-mcp-tests
+unit-tests (matrix)                   ci-summarize
+integration-tests
+erk-mcp-tests                         code-reviews.yml (new workflow):
+autofix (DEAD)   ─── deleted          discover-reviews
+ci-summarize                          review (matrix)
+discover-reviews ─┐
+review           ─┴─ moved to code-reviews.yml
+```
+
+## Step 1: Create `style` job (replaces fix-formatting + format + lint + docs-check)
+
+Merge into a single job with two phases:
+
+```yaml
+style:
+  needs: check-submission
+  if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'
+  runs-on: ubuntu-latest
+  timeout-minutes: 15
+  outputs:
+    pushed: ${{ steps.fix.outputs.pushed }}
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref || github.ref }}
+        token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+    - uses: ./.github/actions/setup-python-uv
+    - uses: ./.github/actions/setup-prettier
+
+    # Phase 1: Auto-fix
+    - name: Sync documentation
+      run: make docs-fix
+    - name: Fix Python formatting
+      run: uv run ruff format
+    - name: Fix markdown formatting
+      run: prettier --write '**/*.md' --ignore-path .gitignore
+    - name: Commit and push if changes
+      id: fix
+      run: |
+        # ... existing diff/push logic with pushed=true/false output ...
+
+    # Phase 2: Validate (only when no push happened)
+    - name: Lint
+      if: steps.fix.outputs.pushed != 'true'
+      run: make lint
+    - name: Check AGENTS.md standard compliance
+      if: steps.fix.outputs.pushed != 'true'
+      run: make md-check
+    - name: Check agent documentation
+      if: steps.fix.outputs.pushed != 'true'
+      run: make docs-check
+```
+
+Notes:
+- `make format-check` (ruff format --check) is intentionally omitted — we just ran `ruff format` and confirmed no diff, so it would trivially pass
+- `make lint` (ruff check) is NOT redundant with ruff format — different tool, must run
+- `make md-check` and `make docs-check` are NOT redundant with `make docs-fix` — different checks
+
+## Step 2: Update downstream jobs
+
+All jobs that currently depend on `fix-formatting` change to depend on `style`:
+
+```yaml
+ty:
+  needs: [check-submission, style]
+  if: ... &amp;&amp; needs.style.outputs.pushed != 'true'
+```
+
+Same for unit-tests, integration-tests, erk-mcp-tests.
+
+## Step 3: Update ci-summarize
+
+Replace individual job failure checks with `needs.style.result == 'failure'`. ci-summarize calls `erk exec ci-generate-summaries --run-id` which fetches run logs from the GH API — it doesn't use per-job result granularity.
+
+## Step 4: Delete the dead `autofix` job
+
+Remove the entire `autofix` job (~250 lines, disabled via `false &amp;&amp;` guard). Also remove `autofix-job-needs.md` doc.
+
+## Step 5: Extract reviews to `.github/workflows/code-reviews.yml`
+
+Move `discover-reviews` and `review` jobs to a new workflow. This matches the shipped capability architecture and the docs/README which already describe this as the target state.
+
+Key differences from the ci.yml version:
+- Own concurrency group (`code-reviews-` prefix)
+- No dependency on fix-formatting — reviews run independently
+- impl-context check is a step inside discover-reviews rather than a separate gate job
+- `push` trigger removed — reviews only run on PRs
+
+## Step 6: Update documentation
+
+Update `docs/learned/ci/job-ordering-strategy.md` and delete `docs/learned/ci/autofix-job-needs.md`.
+
+## Verification
+
+1. Confirm ci.yml has style job, no format/lint/docs-check/autofix/review jobs
+2. Confirm code-reviews.yml has discover + review jobs
+3. Run `make fast-ci` locally
+4. Push and verify CI
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="774" cache_read_input_tokens="108525" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 774}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01K822mMSLgG8qvyipWbzSRA">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="774" cache_read_input_tokens="108525" output_tokens="1554" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 774, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01K822mMSLgG8qvyipWbzSRA">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_013LEHfGDHXjZ52ciNvFMVpf">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'Plan Action', 'optio...[truncated 292 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2907" cache_read_input_tokens="109299" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2907, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013LEHfGDHXjZ52ciNvFMVpf">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01DUcxWXYxui69fzEVcwmRsr">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="112206" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 225, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DUcxWXYxui69fzEVcwmRsr">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="cf6969a1-4749-4f45-a7eb-a7659cd50db1" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="cf6969a1-4749-4f45-a7eb-a7659cd50db1" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "cf6969a1-4749-4f45-a7eb-a7659cd50db1" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "cf6969a1-4749-4f45-a7eb-a7659cd50db1" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "cf6969a1-4749-4f45-a7eb-a7659cd50db1" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "cf6969a1-4749-4f45-a7eb-a7659cd50db1" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
