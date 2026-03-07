@@ -35,11 +35,11 @@ GitHub Actions composite actions encapsulate reusable setup steps. Erk uses them
 
 <!-- Source: .github/actions/setup-python-uv/action.yml:13-15 -->
 
-The `setup-python-uv` action uses `astral-sh/setup-uv@v5` which manages both Python installation and uv in a single step.
+The `setup-python-uv` action uses `astral-sh/setup-uv@v7` which manages both Python installation and uv in a single step.
 
 **Previous approach:** `actions/setup-python@v5` + `pip install uv`. This downloaded Python from python.org, which was slow (15+ minute timeouts) and unreliable in CI.
 
-**Current approach:** `astral-sh/setup-uv@v5` installs uv first, then uv manages the Python installation via its own cache at `~/.cache/uv/`. Benefits:
+**Current approach:** `astral-sh/setup-uv@v7` installs uv first, then uv manages the Python installation via its own cache at `~/.cache/uv/`. Benefits:
 
 - Eliminates python.org download timeouts
 - Built-in caching for both uv and Python
