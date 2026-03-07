@@ -661,4 +661,97 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8890
 }
   </tool_result>
+  <tool_result tool="toolu_012eogFWwyo8ZiSqMgVzVux2">
+{"uploaded": true, "plan_id": 8890}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ST4LS2Q7vFtgYyumTNB9mA">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="49783" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ST4LS2Q7vFtgYyumTNB9mA">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TWGSb43B1HTdFTQ6FRpG8b">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="50106" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TWGSb43B1HTdFTQ6FRpG8b">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8890 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8890
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (9,901 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8890
+  Branch:      plnd/sort-command-palette-menu-03-06-2023 → master
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011JyFvkQC8yde9GdZ2uZJDk">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="50211" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01A1pQTBKCpnwLjT51ZZrsYk">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="50211" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011JyFvkQC8yde9GdZ2uZJDk">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8890
+}
+  </tool_result>
+  <tool_result tool="toolu_01A1pQTBKCpnwLjT51ZZrsYk">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01UkZAqY7rx5JpX4W3BZx1es">
+    <param name="todos">[{'content': 'Reorder PLAN ACTIONS (launch commands): address, rebase, rewrite', 'status':...[truncated 967 chars]...ubmit PR', 'status': 'completed', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="50595" cache_creation="{'ephemeral_5m_input_tokens': 529, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UkZAqY7rx5JpX4W3BZx1es">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #8890 implementation complete. PR submitted: https://github.com/dagster-io/erk/pull/8890
+
+**Summary of changes** — Reordered `CommandDefinition` entries in `src/erk/tui/commands/registry.py:203` to sort alphabetically by `description` within each sub-group:
+
+| Sub-group | Before | After |
+|---|---|---|
+| Plan Actions (launch) | rebase, address, rewrite | address, rebase, rewrite |
+| Objective Actions | plan (one-shot), check, close | check, close, plan (one-shot) |
+| Plan Copies (checkout) | checkout, checkout (cd), checkout | checkout, checkout, checkout (cd) |
+| Plan Copies (workflow) | cmux checkout, implement, dispatch, replan, land, close | close, cmux checkout, dispatch, implement, land, replan |
+| Plan Copies (launch) | rebase, address, rewrite | address, rebase, rewrite |
+| Objective Copies | plan, view, codespace | codespace, plan, view |
+
+All 533 TUI tests pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="51124" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
