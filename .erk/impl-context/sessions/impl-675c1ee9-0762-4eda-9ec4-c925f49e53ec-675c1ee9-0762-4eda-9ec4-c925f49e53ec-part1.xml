@@ -1,0 +1,1205 @@
+<session>
+  <meta branch="plnd/remove-checkout-sync-03-07-1531" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8897&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8897` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8897.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28451" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28451, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018sYcGeo4gqwiubAtKvFEX5">
+    <param name="command">erk exec setup-impl --issue 8897</param>
+    <param name="description">Set up implementation for plan #8897</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28451" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28451, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018sYcGeo4gqwiubAtKvFEX5">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--remove-checkout-sync-03-07-1531", "plan_number": 8897, "plan_url": "https://github.com/dagster-io/erk/pull/8897", "branch": "plnd/remove-checkout-sync-03-07-1531", "plan_title": "[erk-plan] Speed Up Checkout: Remove --sync, Make Teleport the Heavyweight Path", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8897, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/remove-checkout-sync-03-07-1531', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28451" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UsuhHhW1BCRfdbpdz2XY5B">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--remove-checkout-sync-03-07-1531/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28451" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UsuhHhW1BCRfdbpdz2XY5B">
+     1→# Speed Up Checkout: Remove --sync, Make Teleport the Heavyweight Path
+     2→
+     3→## Context
+     4→
+     5→`erk pr checkout --sync` duplicates work that `erk pr teleport` already does. The cmux checkout flow (`erk pr checkout &lt;PR&gt; --script --sync`) is slow because checkout does everything: fetch PR, create worktree, rebase stacked PRs, Graphite tracking, AND `gt submit`. The goal is to make checkout fast (local-focused) and teleport the heavyweight command (remote-focused with Graphite sync).
+     6→
+     7→## Changes
+     8→
+     9→### 1. Remove `--sync` from `erk pr checkout`
+    10→
+    11→**File:** `src/erk/cli/commands/pr/checkout_cmd.py`
+    12→
+    13→- Remove `--sync` Click option (line 131)
+    14→- Remove `sync` parameter from `pr_checkout` and `_checkout_pr`
+    15→- Remove `post_cd_commands=["gt submit --no-interactive"] if should_track_with_graphite and sync` logic (lines 323-325) — just pass `post_cd_commands=None`
+    16→
+    17→### 2. Add `--script` and `--sync` to `erk pr teleport`
+    18→
+    19→**File:** `src/erk/cli/commands/pr/teleport_cmd.py`
+    20→
+    21→- Add `@script_option` decorator and `--sync` flag
+    22→- Import `script_option` from `erk.cli.help_formatter`
+    23→- Import `navigate_and_display_checkout` from checkout_helpers
+    24→- In `_teleport_new_slot`: use `navigate_and_display_checkout` for navigation (same pattern as checkout) instead of plain `user_output`. Pass `post_cd_commands=["gt submit --no-interactive"]` when `sync=True`.
+    25→- In `_teleport_in_place`: add script-mode navigation support similarly. When `sync=True`, append `gt submit --no-interactive` as post-cd command.
+    26→- Add `script_error_handler` wrapping when `script=True` (import from checkout_helpers)
+    27→
+    28→### 3. Update cmux checkout script
+    29→
+    30→**File:** `src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py`
+
+... [51 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. Let me set up todos and load relevant context. First, let me read the key files I'll be modifying.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1630" cache_read_input_tokens="28797" cache_creation="{'ephemeral_5m_input_tokens': 1630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01XF2fEzaAuADW7BpFruyvjU">
+    <param name="todos">[{'content': 'Remove --sync from erk pr checkout', 'status': 'pending', 'activeForm': 'Rem...[truncated 679 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1630" cache_read_input_tokens="28797" cache_creation="{'ephemeral_5m_input_tokens': 1630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XF2fEzaAuADW7BpFruyvjU">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RD75duiJJKs13NXtXEjohn">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="30427" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RD75duiJJKs13NXtXEjohn">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Now let me read all the files I need to modify in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="30791" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WBWfL54kWCEYrXM4DUE1KL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="30791" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AxdTGHCZzWSiA7GzQJHtio">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="30791" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AVEYrbSCuzj7uZsxaYppV4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="30791" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SdHCQdNtuEi63sTvkGWALw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/commands/registry.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="30791" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QoyizdxbmBDdkt3w7ZwmHP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="30791" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WBWfL54kWCEYrXM4DUE1KL">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.cli.activation import (
+    16→    activation_config_activate_only,
+    17→    ensure_worktree_activate_script,
+    18→    print_activation_instructions,
+    19→)
+    20→from erk.cli.alias import alias
+    21→from erk.cli.commands.checkout_helpers import (
+    22→    ensure_branch_has_worktree,
+    23→    navigate_and_display_checkout,
+    24→)
+    25→from erk.cli.ensure import Ensure
+    26→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    27→from erk.core.context import ErkContext
+    28→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    29→from erk_shared.gateway.github.parsing import (
+    30→    parse_plan_number_from_url,
+
+... [462 lines omitted] ...
+
+    81→        click.style("Error: ", fg="red")
+   161→        ctx.console.error("Not in a git repository")
+   197→        ctx.console.error(
+   205→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
+   288→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   417→        ctx.console.error(
+  </tool_result>
+  <tool_result tool="toolu_01AxdTGHCZzWSiA7GzQJHtio">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.activation import (
+    17→    activation_config_activate_only,
+    18→    ensure_worktree_activate_script,
+    19→    print_activation_instructions,
+    20→)
+    21→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    22→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    23→from erk.cli.ensure import Ensure
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    26→from erk_shared.gateway.github.types import PRNotFound
+    27→from erk_shared.output.output import user_output
+    28→
+    29→
+    30→@click.command("teleport")
+
+... [239 lines omitted] ...
+
+    57→        ctx.console.error("Not in a git repository")
+    65→        ctx.console.error(
+    72→        ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   239→    except RuntimeError:
+   254→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <tool_result tool="toolu_01AVEYrbSCuzj7uZsxaYppV4">
+     1→"""Create a cmux workspace with PR checkout and sync.
+     2→
+     3→This script creates a cmux workspace that automatically checks out a PR,
+     4→syncs it with the trunk, and renames the workspace to the PR's head branch.
+     5→
+     6→Usage:
+     7→    erk exec cmux-checkout-workspace --pr 8152
+     8→    erk exec cmux-checkout-workspace --pr 8152 --branch "my-branch"
+     9→
+    10→Output:
+    11→    JSON with {success, pr_number, branch, workspace_name} on success
+    12→    JSON with {success, error} on failure
+    13→
+    14→Exit Codes:
+    15→    0: Success - workspace created
+    16→    1: Error - cmux/checkout/sync failed or branch lookup failed
+    17→"""
+    18→
+    19→import json
+    20→import subprocess
+    21→from dataclasses import asdict, dataclass
+    22→
+    23→import click
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class CmuxCheckoutSuccess:
+    28→    """Success response for cmux-checkout-workspace command."""
+    29→
+    30→    success: bool
+
+... [147 lines omitted] ...
+
+    37→class CmuxCheckoutError:
+    38→    """Error response for cmux-checkout-workspace command."""
+    41→    error: str
+    64→    except subprocess.CalledProcessError:
+   114→                        CmuxCheckoutError(
+   116→                            error=f"Failed to detect head branch for PR #{pr}. "
+   159→    except subprocess.CalledProcessError as e:
+   160→        error_output = e.stderr.strip() if e.stderr else e.stdout.strip()
+   164→                    CmuxCheckoutError(
+   166→                        error=f"Failed to create cmux workspace: {error_output}",
+  </tool_result>
+  <tool_result tool="toolu_01SdHCQdNtuEi63sTvkGWALw">
+     1→"""Command registry for command palette.
+     2→
+     3→This module defines all available commands and their availability predicates.
+     4→Commands are organized by category: Actions, Opens, Copies.
+     5→Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
+     6→"""
+     7→
+     8→from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+     9→from erk.tui.views.types import ViewMode
+    10→
+    11→CATEGORY_EMOJI: dict[CommandCategory, str] = {
+    12→    CommandCategory.ACTION: "⚡",
+    13→    CommandCategory.OPEN: "🔗",
+    14→    CommandCategory.COPY: "📋",
+    15→}
+    16→
+    17→
+    18→# === View Mode Predicates ===
+    19→
+    20→
+    21→def _is_plan_view(ctx: CommandContext) -&gt; bool:
+    22→    """True when not in Objectives view (i.e., Plans or Learn)."""
+    23→    return ctx.view_mode != ViewMode.OBJECTIVES
+    24→
+    25→
+    26→def _is_objectives_view(ctx: CommandContext) -&gt; bool:
+    27→    """True when in Objectives view."""
+    28→    return ctx.view_mode == ViewMode.OBJECTIVES
+    29→
+    30→
+
+... [589 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QoyizdxbmBDdkt3w7ZwmHP">
+     1→"""Tests for Graphite tracking at PR checkout.
+     2→
+     3→These tests verify that pr checkout properly tracks and submits branches
+     4→with Graphite when checking out PRs into new worktrees.
+     5→"""
+     6→
+     7→import os
+     8→from pathlib import Path
+     9→from unittest.mock import patch
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.pr import pr_group
+    14→from erk_shared.gateway.git.abc import WorktreeInfo
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.types import PRDetails
+    18→from erk_shared.gateway.graphite.fake import FakeGraphite
+    19→from tests.test_utils.context_builders import build_workspace_test_context
+    20→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    21→
+    22→
+    23→def _make_pr_details(
+    24→    number: int,
+    25→    head_ref_name: str,
+    26→    is_cross_repository: bool,
+    27→    state: str,
+    28→    base_ref_name: str = "main",
+    29→) -&gt; PRDetails:
+    30→    """Create a PRDetails for testing."""
+
+... [519 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me also read the checkout_helpers and the documentation files I need to update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="29757" cache_read_input_tokens="30962" cache_creation="{'ephemeral_5m_input_tokens': 29757, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01174vcL6m7eDNuZjfiVabjB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="29757" cache_read_input_tokens="30962" cache_creation="{'ephemeral_5m_input_tokens': 29757, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HRA1RMeiqdqz5pqJo1RL4P">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/shell-activation-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="29757" cache_read_input_tokens="30962" cache_creation="{'ephemeral_5m_input_tokens': 29757, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01P6ywUXgx1ZMJboZAhRL2Sw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/activation-scripts.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="29757" cache_read_input_tokens="30962" cache_creation="{'ephemeral_5m_input_tokens': 29757, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01174vcL6m7eDNuZjfiVabjB">
+     1→"""Checkout navigation helpers - shared across checkout commands.
+     2→
+     3→This module is separate from navigation_helpers.py to avoid circular imports.
+     4→navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
+     5→which imports wt.checkout_cmd. By having checkout-specific helpers here,
+     6→we break that cycle.
+     7→"""
+     8→
+     9→import contextlib
+    10→import logging
+    11→import sys
+    12→from collections.abc import Generator, Sequence
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    ensure_worktree_activate_script,
+    19→    render_activation_script,
+    20→    render_error_script,
+    21→)
+    22→from erk.cli.commands.slot.common import allocate_slot_for_branch
+    23→from erk.cli.core import worktree_path_for
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import RepoContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→logger = logging.getLogger(__name__)
+    29→
+    30→
+
+... [304 lines omitted] ...
+
+    31→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+    32→    """Write a minimal error script and output its path, then exit 1.
+    34→    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    35→    always receives a valid file path — even on failure — so the shell never
+    39→        render_error_script(),
+    41→        comment="checkout error",
+    48→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    49→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    51→    Wraps the checkout body so that any error path produces a valid script
+    54→    ``source: no such file or directory:`` error.
+    56→    Exception handling:
+    58→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    59→      write error script and exit 1.
+    60→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    61→      won't run since we catch first), write error script, exit 1.
+    62→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    69→        _write_error_script_and_exit(ctx)
+    70→    except click.ClickException as exc:
+    71→        user_output(f"Error: {exc.format_message()}")
+    72→        _write_error_script_and_exit(ctx)
+    73→    except RuntimeError as exc:
+    74→        user_output(f"Error: {exc}")
+    75→        _write_error_script_and_exit(ctx)
+   116→    - Diverged: Warning with instructions
+   129→    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+   132→    except RuntimeError:
+   133→        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+   143→        # Diverged - most important case, needs warning
+   144→        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+   146→        user_output(f"  {warning} {styled_sync}")
+  </tool_result>
+  <tool_result tool="toolu_01HRA1RMeiqdqz5pqJo1RL4P">
+     1→---
+     2→title: Shell Activation Pattern for Worktree Navigation
+     3→read_when:
+     4→  - "generating commands that switch to a different worktree"
+     5→  - "debugging why erk br co doesn't change directory"
+     6→  - "building CLI commands that need shell-level directory changes"
+     7→  - "understanding why plan checkout commands use source"
+     8→tripwires:
+     9→  - action: "generating directory-change commands using erk br co without source"
+    10→    warning: 'Subprocess directory changes do NOT persist to the parent shell. erk br co runs in a subprocess — its chdir() is invisible to the caller. Use the shell activation pattern: source "$(erk br co &lt;branch&gt; --script)" to actually navigate.'
+    11→    score: 9
+    12→---
+    13→
+    14→# Shell Activation Pattern for Worktree Navigation
+    15→
+    16→## The Problem
+    17→
+    18→`erk br co &lt;branch&gt;` switches to a worktree by finding which worktree has the branch checked out. However, when run as a subprocess, any directory change it makes is invisible to the calling shell.
+    19→
+    20→**This does NOT navigate the shell:**
+    21→
+    22→```bash
+    23→erk br co feature-branch &amp;&amp; some-command   # Wrong: chdir() happened in subprocess
+    24→```
+    25→
+    26→**This DOES navigate the shell:**
+    27→
+    28→```bash
+    29→source "$(erk br co feature-branch --script)"
+    30→```
+
+... [46 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01P6ywUXgx1ZMJboZAhRL2Sw">
+     1→---
+     2→title: Activation Scripts
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "working with worktree environment setup"
+     7→  - "understanding .erk/activate.sh scripts"
+     8→  - "configuring post-create commands"
+     9→tripwires:
+    10→  - action: "removing the VIRTUAL_ENV guard from activation scripts"
+    11→    warning: "Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate venv activation and .env loading. Moving uv sync OUTSIDE the guard is correct — guard only protects venv activation, .env loading, and shell completion."
+    12→  - action: "moving uv sync or uv pip install inside the VIRTUAL_ENV guard"
+    13→    warning: "uv sync and uv pip install run OUTSIDE the guard (always execute, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard."
+    14→---
+    15→
+    16→# Activation Scripts
+    17→
+    18→## Overview
+    19→
+    20→Erk generates `.erk/activate.sh` scripts in worktrees to provide a shell-sourceable environment setup. This enables opt-in shell integration where users explicitly source the script rather than relying on automatic shell manipulation.
+    21→
+    22→## What the Script Does
+    23→
+    24→When sourced, `.erk/activate.sh`:
+    25→
+    26→1. CDs to the worktree directory
+    27→2. Creates `.venv` with `uv sync` if not present
+    28→3. Sources `.venv/bin/activate` if present
+    29→4. Loads `.env` file (using `set -a` for allexport)
+    30→5. Runs configured post-create commands
+
+... [116 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a thorough understanding of all the files. Let me also check the cmux skill file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8187" cache_read_input_tokens="60719" cache_creation="{'ephemeral_5m_input_tokens': 8187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01FGUFahJq6GVzrdrToGc7dn">
+    <param name="pattern">.claude/skills/cmux/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8187" cache_read_input_tokens="60719" cache_creation="{'ephemeral_5m_input_tokens': 8187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FGUFahJq6GVzrdrToGc7dn">
+/home/runner/work/erk/erk/.claude/skills/cmux/SKILL.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01C2er4he9qeJxQZuy6YoxqZ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/cmux/SKILL.md</param>
+    <param name="offset">150</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="121" cache_read_input_tokens="68906" cache_creation="{'ephemeral_5m_input_tokens': 121, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C2er4he9qeJxQZuy6YoxqZ">
+   150→### Shell quoting with `--command`
+   151→
+   152→Use single quotes to prevent outer shell expansion of `$()`:
+   153→
+   154→```bash
+   155→# CORRECT - subshell runs inside workspace
+   156→cmux new-workspace --command 'source "$(erk pr checkout 456 --script --sync)"'
+   157→
+   158→# WRONG - subshell expands in current shell
+   159→cmux new-workspace --command "source \"$(erk pr checkout 456 --script --sync)\""
+   160→```
+   161→
+   162→### No `--working-directory` CLI flag
+   163→
+   164→The CLI does not expose a working directory flag. Workaround:
+   165→
+   166→```bash
+   167→cmux new-workspace --command 'cd /path/to/project'
+   168→```
+   169→
+   170→### Startup delay
+   171→
+   172→There is a ~0.5s internal delay after workspace creation before commands are sent, to allow the shell to initialize. Keep this in mind when chaining commands.
+   173→
+   174→### Workspace names are just labels
+   175→
+   176→cmux knows nothing about git branches. Branch names used as workspace titles via `rename-workspace` are purely cosmetic labels for human navigation.
+   177→
+   178→## Erk Integration
+   179→
+
+... [45 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have all the context I need. Let me start implementing. Phase 1: Remove `--sync` from checkout.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1228" cache_read_input_tokens="69027" cache_creation="{'ephemeral_5m_input_tokens': 1228, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01KpgFCZh69rqVGd7TuVbiWs">
+    <param name="todos">[{'content': 'Remove --sync from erk pr checkout', 'status': 'in_progress', 'activeForm': ...[truncated 683 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1228" cache_read_input_tokens="69027" cache_creation="{'ephemeral_5m_input_tokens': 1228, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KpgFCZh69rqVGd7TuVbiWs">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JpeNCWqmtmwewKLa4TSpZo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">@click.option("--sync", is_flag=True, help="Run gt submit after checkout to sync with Grap...[truncated 45 chars]...rkContext, reference: str, no_slot: bool, force: bool, sync: bool, script: bool
+) -&gt; None:</param>
+    <param name="new_string">@script_option
+@click.pass_obj
+def pr_checkout(
+    ctx: ErkContext, reference: str, no_slot: bool, force: bool, script: bool
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="70255" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JpeNCWqmtmwewKLa4TSpZo">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Y5mkgWJXR819Bgk4vGSi4U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">        _checkout_pr(
+            ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, sync=sync, script=script
+        )</param>
+    <param name="new_string">        _checkout_pr(
+            ctx, repo, pr_number=ref.number, no_slot=no_slot, force=force, script=script
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="70616" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y5mkgWJXR819Bgk4vGSi4U">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JExbJ9SMCM5qmpCkvEWXVN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">def _checkout_pr(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    no_slot: bool,
+    force: bool,
+    sync: bool,
+    script: bool,
+) -&gt; None:</param>
+    <param name="new_string">def _checkout_pr(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    no_slot: bool,
+    force: bool,
+    script: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="70905" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JExbJ9SMCM5qmpCkvEWXVN">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the `post_cd_commands` logic that used `sync`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="71149" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01E8eu7nrmHmPmuPoCA3uE1Z">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">        post_cd_commands=["gt submit --no-interactive"]
+        if should_track_with_graphite and sync
+        else None,</param>
+    <param name="new_string">        post_cd_commands=None,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="71149" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E8eu7nrmHmPmuPoCA3uE1Z">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 1 complete. Now Phase 2: Add `--script` and `--sync` to teleport.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="71435" cache_creation="{'ephemeral_5m_input_tokens': 223, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01USoqNE4NHt2EjVWucbx45a">
+    <param name="todos">[{'content': 'Remove --sync from erk pr checkout', 'status': 'completed', 'activeForm': 'R...[truncated 685 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="71435" cache_creation="{'ephemeral_5m_input_tokens': 223, 'ephemeral_1h_input_tokens': 0}" output_tokens="318" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01USoqNE4NHt2EjVWucbx45a">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me update the teleport command. I need to add `--script`, `--sync`, import `script_option`, `navigate_and_display_checkout`, and `script_error_handler`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="71658" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UtQtdMB3bV5bjWpuBGKAYM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="old_string">from erk.cli.activation import (
+    activation_config_activate_only,
+    ensure_worktree_...[truncated 328 chars]...ed.gateway.github.types import PRNotFound
+from erk_shared.output.output import user_output</param>
+    <param name="new_string">from erk.cli.activation import (
+    activation_config_activate_only,
+    ensure_worktree_...[truncated 447 chars]...ed.gateway.github.types import PRNotFound
+from erk_shared.output.output import user_output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="71658" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UtQtdMB3bV5bjWpuBGKAYM">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the command decorator and function signature:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="569" cache_read_input_tokens="72018" cache_creation="{'ephemeral_5m_input_tokens': 569, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014RWtkxnZgzyJe4Rd3bocU1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="old_string">@click.command("teleport")
+@click.argument("pr_number", type=int)
+@click.option("--new-slo...[truncated 123 chars]...obj
+def pr_teleport(ctx: ErkContext, pr_number: int, new_slot: bool, force: bool) -&gt; None:</param>
+    <param name="new_string">@click.command("teleport")
+@click.argument("pr_number", type=int)
+@click.option("--new-slo...[truncated 267 chars]...kContext, pr_number: int, new_slot: bool, force: bool, sync: bool, script: bool
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="569" cache_read_input_tokens="72018" cache_creation="{'ephemeral_5m_input_tokens': 569, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014RWtkxnZgzyJe4Rd3bocU1">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the docstring and the body of `pr_teleport` to pass `sync` and `script` to the helper functions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="72587" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018r4GfetjAW193cKjpp1Vrx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="old_string">    """Teleport a PR's remote state to local, overwriting local branch.
+
+    Unlike 'check...[truncated 1808 chars]...e=branch_name,
+            base_ref_name=base_ref_name,
+            force=force,
+        )</param>
+    <param name="new_string">    """Teleport a PR's remote state to local, overwriting local branch.
+
+    Unlike 'check...[truncated 2273 chars]...cript:
+        with script_error_handler(ctx):
+            _run()
+    else:
+        _run()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="72587" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018r4GfetjAW193cKjpp1Vrx">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `_teleport_in_place` to accept `sync` and `script` and use `navigate_and_display_checkout`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1671" cache_read_input_tokens="73029" cache_creation="{'ephemeral_5m_input_tokens': 1671, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01YEfEwhoQYkXukXoSyjhr8e">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="old_string">def _teleport_in_place(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: ...[truncated 2165 chars]... bold=True)
+        + click.style(f" to match remote (PR #{pr_number})", fg="green")
+    )</param>
+    <param name="new_string">def _teleport_in_place(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: ...[truncated 3230 chars]...ame} to match remote (PR #{pr_number})"',
+        post_cd_commands=post_cd_commands,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1671" cache_read_input_tokens="73029" cache_creation="{'ephemeral_5m_input_tokens': 1671, 'ephemeral_1h_input_tokens': 0}" output_tokens="1793" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YEfEwhoQYkXukXoSyjhr8e">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `_teleport_new_slot`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1841" cache_read_input_tokens="74700" cache_creation="{'ephemeral_5m_input_tokens': 1841, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01EJVuZosLreWTW4X6dH5o3d">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="old_string">def _teleport_new_slot(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: ...[truncated 1148 chars]... into ", fg="green")
+        + click.style(str(worktree_path), fg="cyan", bold=True)
+    )</param>
+    <param name="new_string">def _teleport_new_slot(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: ...[truncated 2129 chars]..._config_activate_only(),
+            copy=True,
+            same_worktree=False,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1841" cache_read_input_tokens="74700" cache_creation="{'ephemeral_5m_input_tokens': 1841, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EJVuZosLreWTW4X6dH5o3d">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 2 is done. Now Phase 3: Update the cmux checkout script.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="76541" cache_creation="{'ephemeral_5m_input_tokens': 1563, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_011ttHtFgzENwBjvq5ews8Mm">
+    <param name="todos">[{'content': 'Remove --sync from erk pr checkout', 'status': 'completed', 'activeForm': 'R...[truncated 687 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="76541" cache_creation="{'ephemeral_5m_input_tokens': 1563, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011ttHtFgzENwBjvq5ews8Mm">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FdsoRT7jzTzRwR7sqwywmX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py</param>
+    <param name="old_string">    checkout_cmd = f'source "$(erk pr checkout {pr} --script --sync)"'</param>
+    <param name="new_string">    checkout_cmd = f'source "$(erk pr teleport {pr} --new-slot --script --sync)"'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="78104" cache_creation="{'ephemeral_5m_input_tokens': 354, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FdsoRT7jzTzRwR7sqwywmX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 3 done. Now Phase 4: Update TUI command registry.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="78458" cache_creation="{'ephemeral_5m_input_tokens': 225, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NEwRi7aBReYXJ1NZCoikM5">
+    <param name="todos">[{'content': 'Remove --sync from erk pr checkout', 'status': 'completed', 'activeForm': 'R...[truncated 689 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="78458" cache_creation="{'ephemeral_5m_input_tokens': 225, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NEwRi7aBReYXJ1NZCoikM5">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>The plan says:
+- `_display_copy_pr_checkout_script` (line 92): remove `--sync` from the checkout command string — but looking at the code, it doesn't have `--sync` already! It's just `--script`. So this is already correct.
+- `_display_cmux_checkout` (line 115): change to use `erk pr teleport {pr} --new-slot --script --sync`
+
+Let me update `_display_cmux_checkout`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="78683" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Q2Lz4E4HDXmbExqWAULVXW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/commands/registry.py</param>
+    <param name="old_string">def _display_cmux_checkout(ctx: CommandContext) -&gt; str:
+    """Display name for cmux_checkout command."""
+    return f"erk exec cmux-checkout-workspace --pr {ctx.row.pr_number}"</param>
+    <param name="new_string">def _display_cmux_checkout(ctx: CommandContext) -&gt; str:
+    """Display name for cmux_checkout command."""
+    return f"erk pr teleport {ctx.row.pr_number} --new-slot --script --sync"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="78683" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q2Lz4E4HDXmbExqWAULVXW">
+The file /home/runner/work/erk/erk/src/erk/tui/commands/registry.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait, let me re-read the plan. The `_display_cmux_checkout` is used for the `cmux_checkout` action AND `copy_cmux_checkout` copy command. The action command in the TUI executes `erk exec cmux-checkout-workspace`, while the copy command copies the display text. Let me check what the action actually does — is it just copying text, or does it actually execute?
+
+Looking at the registry again, both `cmux_checkout` (action) and `copy_cmux_checkout` (copy) use `_display_cmux_checkout`. The action executes the displayed command. But the plan says to update the cmux_checkout_workspace script itself (which I did in Phase 3), and to update the display strings.
+
+Actually, let me reconsider. The `cmux_checkout` action in the TUI calls `erk exec cmux-checkout-workspace --pr N` which internally runs the checkout command. Since I already updated the internal cmux script to use teleport, the action itself still needs to use `erk exec cmux-checkout-workspace` for the action execution. But the *display name* is separate from the *execution*. Let me check how the TUI executes actions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="79035" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TtdSHA9yQDVJzac4YvFbET">
+    <param name="pattern">cmux_checkout</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="79035" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TtdSHA9yQDVJzac4YvFbET">
+Found 4 files
+src/erk/tui/commands/registry.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/operations/workers.py
+src/erk/tui/actions/palette.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0167wTy4HpEw4Y7oaYbbj97E">
+    <param name="pattern">cmux_checkout</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="79418" cache_creation="{'ephemeral_5m_input_tokens': 468, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0167wTy4HpEw4Y7oaYbbj97E">
+123-            )
+124-
+125-    @work(thread=True)
+126:    def _cmux_checkout_async(self: ErkDashApp, op_id: str, pr_number: int, branch: str) -&gt; None:
+127-        """Create cmux workspace, checkout PR, and focus the workspace.
+128-
+129-        Args:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015GwEzfcTGW3WNetL6gotmo">
+    <param name="pattern">cmux_checkout|cmux-checkout</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="79886" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015GwEzfcTGW3WNetL6gotmo">
+121-                severity="error",
+122-                timeout=5,
+123-            )
+124-
+125-    @work(thread=True)
+126:    def _cmux_checkout_async(self: ErkDashApp, op_id: str, pr_number: int, branch: str) -&gt; None:
+127-        """Create cmux workspace, checkout PR, and focus the workspace.
+128-
+129-        Args:
+130-            op_id: Operation identifier for status bar tracking
+131-            pr_number: The PR number to checkout and sync
+--
+134-        result = self._run_streaming_operation(
+135-            op_id=op_id,
+136-            command=[
+137-                "erk",
+138-                "exec",
+139:                "cmux-checkout-workspace",
+140-                "--pr",
+141-                str(pr_number),
+142-                "--branch",
+143-                branch,
+144-            ],
+  </tool_result>
+  <assistant>OK so the TUI action still runs `erk exec cmux-checkout-workspace` which internally now uses teleport. The display name in the registry is just what's shown to the user and copied to clipboard. The plan says to update the display, but actually the `cmux_checkout` action still needs to call `erk exec cmux-checkout-workspace`. The `_display_cmux_checkout` is used for both the action display name AND the copy text.
+
+Looking more carefully at the plan: it says to update `_display_cmux_checkout` to `erk pr teleport {pr} --new-slot --script --sync`. But the action still uses `erk exec cmux-checkout-workspace` under the hood. The display name is just for showing in the palette and for clipboard copy. So updating it to show the teleport command (which is what the cmux script internally does now) makes it more transparent. Let me revert my change and think more carefully.
+
+Actually, looking at it again: there are TWO entries using `_display_cmux_checkout`:
+1. `cmux_checkout` (ACTION) — executes the command shown
+2. `copy_cmux_checkout` (COPY) — copies the display text to clipboard
+
+The action `cmux_checkout` uses the worker `_cmux_checkout_async` which runs `erk exec cmux-checkout-workspace`. So the display name doesn't affect the execution. But now the display says `erk pr teleport ...` while the action still runs `erk exec cmux-checkout-workspace`. That's fine — the display name and the copy text should reflect what the user would type manually, while the action uses the exec wrapper.
+
+Actually, I think the proper approach here is: The `erk exec cmux-checkout-workspace` script is a wrapper that creates a cmux workspace. Its internal checkout command changed. The display for `cmux_checkout` action should stay as `erk exec cmux-checkout-workspace --pr N` since that IS what the action executes. But for `copy_cmux_checkout`, the copy command could be either. Let me just leave the display as-is for now — the plan only specifically mentions updating the display strings, so let me keep my change.
+
+Wait, let me re-read the plan more carefully:
+
+&gt; **File:** `src/erk/tui/commands/registry.py`
+&gt; - Update `_display_copy_pr_checkout_script` (line 92): remove `--sync` from the checkout command string
+&gt; - Update `_display_cmux_checkout` (line 115): change to use `erk pr teleport {pr} --new-slot --script --sync`
+
+The `_display_copy_pr_checkout_script` already doesn't have `--sync`, so that's a no-op. My update to `_display_cmux_checkout` is what the plan says. Let me keep it.
+
+Phase 4 done. Now Phase 5: Update tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="80116" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01LoxqUZrnYvvj9i8vhtJ9KS">
+    <param name="todos">[{'content': 'Remove --sync from erk pr checkout', 'status': 'completed', 'activeForm': 'R...[truncated 691 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="80116" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LoxqUZrnYvvj9i8vhtJ9KS">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>The plan says:
+- Remove or update tests that use `--sync` flag (lines 320, 363, 398, 408)
+- Add tests for `--script` mode on teleport (generates activation script)
+- Add tests for `--sync` mode on teleport (includes `gt submit` in post-cd commands)
+
+Looking at the test file, the tests that use `--sync`:
+
+1. `test_pr_checkout_script_mode_includes_gt_submit_for_new_graphite_worktree` (line 293) - uses `["checkout", "110", "--script", "--sync"]` — this should be moved to test teleport
+2. `test_pr_checkout_script_mode_no_gt_submit_for_existing_worktree` (line 330) - uses `["checkout", "111", "--script", "--sync"]` — `--sync` removed from checkout so need to update
+3. `test_pr_checkout_script_mode_no_gt_submit_for_fork_prs` (line 372) - uses `["checkout", "112", "--script", "--sync"]` — similar
+4. `test_pr_checkout_script_mode_no_gt_submit_without_sync_flag` (line 407) - this test verifies behavior without `--sync`, which is now the only behavior
+
+Let me update the tests. First, let me handle the checkout tests. Since `--sync` no longer exists on checkout:
+
+1. `test_pr_checkout_script_mode_includes_gt_submit_for_new_graphite_worktree` — This test verified that `--sync` included `gt submit`. Since `--sync` is removed, this test should be removed or converted to verify that checkout does NOT include `gt submit`.
+2. `test_pr_checkout_script_mode_no_gt_submit_for_existing_worktree` — Remove `--sync` from the invocation. The test still verifies no `gt submit` for existing worktrees.
+3. `test_pr_checkout_script_mode_no_gt_submit_for_fork_prs` — Remove `--sync` from the invocation.
+4. `test_pr_checkout_script_mode_no_gt_submit_without_sync_flag` — This test is now redundant since checkout never has `gt submit`. But we can keep it simplified as a "checkout --script doesn't include gt submit" test.
+
+Let me also check what teleport tests already exist:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1005" cache_read_input_tokens="80707" cache_creation="{'ephemeral_5m_input_tokens': 1005, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01Mqw3ZyWxZQbR1s1hFZyvy1">
+    <param name="pattern">tests/commands/pr/test_teleport*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1005" cache_read_input_tokens="80707" cache_creation="{'ephemeral_5m_input_tokens': 1005, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Mqw3ZyWxZQbR1s1hFZyvy1">
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GpWYT7dzBVSvk6Tpf9nfpb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="81712" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GpWYT7dzBVSvk6Tpf9nfpb">
+     1→"""Tests for erk pr teleport command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.gateway.git.abc import WorktreeInfo
+     7→from erk_shared.gateway.git.fake import FakeGit
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from erk_shared.gateway.github.types import PRDetails
+    10→from erk_shared.gateway.graphite.fake import FakeGraphite
+    11→from erk_shared.gateway.graphite.types import BranchMetadata
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    14→
+    15→
+    16→def _make_pr_details(
+    17→    number: int,
+    18→    head_ref_name: str,
+    19→    *,
+    20→    is_cross_repository: bool = False,
+    21→    state: str = "OPEN",
+    22→    base_ref_name: str = "main",
+    23→) -&gt; PRDetails:
+    24→    return PRDetails(
+    25→        number=number,
+    26→        url=f"https://github.com/owner/repo/pull/{number}",
+    27→        title=f"PR #{number}",
+    28→        body="",
+    29→        state=state,
+    30→        is_draft=False,
+
+... [272 lines omitted] ...
+
+    42→    """Teleport errors when PR doesn't exist."""
+    57→def test_teleport_cross_repo_errors() -&gt; None:
+  </tool_result>
+  <assistant>Now I understand the test landscape. Let me update the checkout tests:
+
+1. **Remove** `test_pr_checkout_script_mode_includes_gt_submit_for_new_graphite_worktree` — this tested `--sync` on checkout which no longer exists
+2. **Update** `test_pr_checkout_script_mode_no_gt_submit_for_existing_worktree` — remove `--sync` from invocation
+3. **Update** `test_pr_checkout_script_mode_no_gt_submit_for_fork_prs` — remove `--sync` from invocation
+4. **Remove** `test_pr_checkout_script_mode_no_gt_submit_without_sync_flag` — redundant, same as the updated tests above
+
+And add teleport tests for `--script` and `--sync`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4852" cache_read_input_tokens="82385" cache_creation="{'ephemeral_5m_input_tokens': 4852, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LjBsUb2N9erJoydxHrshPs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py</param>
+    <param name="old_string">def test_pr_checkout_script_mode_includes_gt_submit_for_new_graphite_worktree() -&gt; None:
+ ...[truncated 6291 chars]...d_text(encoding="utf-8")
+        assert "gt submit --no-interactive" not in script_content</param>
+    <param name="new_string">def test_pr_checkout_script_mode_no_gt_submit_for_new_worktree() -&gt; None:
+    """Test pr c...[truncated 4305 chars]...d_text(encoding="utf-8")
+        assert "gt submit --no-interactive" not in script_content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4852" cache_read_input_tokens="82385" cache_creation="{'ephemeral_5m_input_tokens': 4852, 'ephemeral_1h_input_tokens': 0}" output_tokens="3634" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LjBsUb2N9erJoydxHrshPs">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me add teleport tests for `--script` and `--sync` to the teleport test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3681" cache_read_input_tokens="87237" cache_creation="{'ephemeral_5m_input_tokens': 3681, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Bn8Xv3dUNgTD9AhAMNBkv8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+    <param name="offset">290</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3681" cache_read_input_tokens="87237" cache_creation="{'ephemeral_5m_input_tokens': 3681, 'ephemeral_1h_input_tokens': 0}" output_tokens="119" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bn8Xv3dUNgTD9AhAMNBkv8">
+   290→        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+   291→        assert result.exit_code == 0
+   292→        assert "Tracking branch with Graphite" not in result.output  # Already tracked
+   293→        # Verify retrack was called - check git's tracked branches
+   294→        # (should be empty since graphite_branch_ops.retrack was called)
+   295→        # The retrack happens via graphite_branch_ops, so we just verify no fresh track happened
+   296→        assert len(git.created_tracking_branches) == 0  # Fresh tracking not called
+   297→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PW9ACvfXjXu1vKaao6HcT3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+    <param name="old_string">"""Tests for erk pr teleport command."""
+
+from click.testing import CliRunner
+
+from erk.cl...[truncated 382 chars]... build_workspace_test_context
+from tests.test_utils.env_helpers import erk_isolated_fs_env</param>
+    <param name="new_string">"""Tests for erk pr teleport command."""
+
+from pathlib import Path
+
+from click.testing imp...[truncated 408 chars]... build_workspace_test_context
+from tests.test_utils.env_helpers import erk_isolated_fs_env</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="585" cache_read_input_tokens="90918" cache_creation="{'ephemeral_5m_input_tokens': 585, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PW9ACvfXjXu1vKaao6HcT3">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_teleport.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the new tests at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="91503" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013YcU7dBBXhtT6TyghN3irk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+    <param name="old_string">        assert len(git.created_tracking_branches) == 0  # Fresh tracking not called</param>
+    <param name="new_string">        assert len(git.created_tracking_branches) == 0  # Fresh tracking not called
+
+
+def ...[truncated 4069 chars]....read_text(encoding="utf-8")
+        assert "gt submit --no-interactive" in script_content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="91503" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1464" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013YcU7dBBXhtT6TyghN3irk">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_teleport.py has been updated successfully.
+  </tool_result>
+</session>
