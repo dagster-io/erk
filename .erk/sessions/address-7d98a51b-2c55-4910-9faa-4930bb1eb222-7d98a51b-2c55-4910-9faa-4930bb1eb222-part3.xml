@@ -1,0 +1,267 @@
+<session>
+  <meta source="agent-a51762c" />
+  <meta branch="plnd/add-objective-inference-03-07-1548" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 8912
+Return the complete JSON output as your final message.</user>
+  <assistant>I'll load the skill and execute it with the specified arguments.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6605" cache_read_input_tokens="13171" cache_creation="{'ephemeral_5m_input_tokens': 6605, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HJJYWmUbCWekZ1w5ddaEQ7">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6605" cache_read_input_tokens="13171" cache_creation="{'ephemeral_5m_input_tokens': 6605, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YAKJLhMrg3ttpwDG4qid25">
+    <param name="command">git log --oneline -20</param>
+    <param name="description">Check recent commits for PR context</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6605" cache_read_input_tokens="13171" cache_creation="{'ephemeral_5m_input_tokens': 6605, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HJJYWmUbCWekZ1w5ddaEQ7">
+     1→---
+     2→name: pr-feedback-classifier
+     3→description: &gt;
+     4→  Fetches and classifies PR review feedback with context isolation.
+     5→  Returns structured JSON with thread IDs for deterministic resolution.
+     6→  Use when analyzing PR comments before addressing them.
+     7→argument-hint: "[--pr &lt;number&gt;] [--include-resolved]"
+     8→context: fork
+     9→agent: general-purpose
+    10→model: sonnet
+    11→---
+    12→
+    13→# PR Feedback Classifier
+    14→
+    15→Fetch and classify all PR review feedback for the current branch's PR.
+    16→
+    17→## Arguments
+    18→
+    19→- `--pr &lt;number&gt;`: Target a specific PR by number (default: current branch's PR)
+    20→- `--include-resolved`: Include resolved threads (for reference)
+    21→
+    22→Check `$ARGUMENTS` for flags.
+    23→
+    24→## Critical Constraints
+    25→
+    26→**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+    27→
+    28→## Steps
+    29→
+    30→1. **Fetch PR info and all comments in a single call:**
+
+... [194 lines omitted] ...
+
+   130→      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+   132→      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
+   170→  "error": null
+   184→## Error Case
+   198→  "error": "No PR found for branch feature-xyz"
+   216→  "error": null
+  </tool_result>
+  <tool_result tool="toolu_01YAKJLhMrg3ttpwDG4qid25">
+8cab839fe Add objective inference from branch name in objective view command
+43dcec724 Consolidate documentation from 14 erk-learn plans (#8842)
+20f3cd393 Add Check 8 for roadmap table sync validation and update objective skill docs (#8902)
+932de4cca Update rebase skill to use AskUserQuestion for push options and misc fixes (#8914)
+45a822824 Update CHANGELOG.md with 15 commits since 0.9.9 release and refresh erk exec reference documentation (#8915)
+b7a18052d Rename GitHub gateway ABC classes to LocalGitHub (#8888)
+7d49225f8 Add `refac-mock-to-fake` skill for converting unittest.mock tests to gateway-based fakes (#8875)
+2db548446 Fix: Land learn pipeline should fetch remote sessions from async-learn branch (#8893)
+4d6341555 [erk-plan] Plan: Flat prompt executor namespace + kill LlmCaller (#8874)
+4cd78c397 Implement `erk-dev audit-collect` command for branch/worktree/PR data collection (#8892)
+9aa2d8813 Codespace connect auto-checks out local branch in remote environment (#8900)
+c0461e8ac Show conflicted files and confirm before launching Claude in `erk pr rebase` (#8898)
+578cc9814 Hide stub branches from `erk br list` by default (#8896)
+433c9c2e0 Make TUI help screen view-mode-aware (#8895)
+74f36b322 Add objective node management improvements: update fields and add new nodes (#8886)
+70e592342 Consolidate one-shot dispatch to RemoteGitHub REST API path (#8883)
+83ba44ce1 Add no-repo infrastructure: sentinels and remote dispatch foundation (#8880)
+e94dabcf4 Wire incremental dispatch into TUI with plan input modal (#8887)
+94957ecbf Sort command palette menu items alphabetically within each subgroup (#8890)
+c38a10fd6 Add HTTP PUT support and RemoteGitHub gateway for remote one-shot dispatch (#8835)
+  </tool_result>
+  <assistant>Now I'll execute the skill with the specified PR number:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3575" cache_read_input_tokens="19776" cache_creation="{'ephemeral_5m_input_tokens': 3575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Hg96YGH6JiTLZVTRmY9UH5">
+    <param name="command">erk exec get-pr-feedback --pr 8912</param>
+    <param name="description">Fetch PR feedback for PR 8912</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3575" cache_read_input_tokens="19776" cache_creation="{'ephemeral_5m_input_tokens': 3575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01H8UesaVrkbEWNFHUAJ47MD">
+    <param name="command">git diff --stat -M -C main...HEAD 2&gt;/dev/null || echo "No diff available"</param>
+    <param name="description">Get file restructuring context</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3575" cache_read_input_tokens="19776" cache_creation="{'ephemeral_5m_input_tokens': 3575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hg96YGH6JiTLZVTRmY9UH5">
+{
+  "success": true,
+  "pr_number": 8912,
+  "pr_url": "https://github.com/dagster-io/erk/pull/8912",
+  "pr_title": "Add objective inference from branch name in objective view command",
+  "review_threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5yzSO3",
+      "path": "docs/learned/integrations/github-review-decision.md",
+      "line": 52,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected (nearby at line 62).\n\nClaim: \"**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`\" (in the 'Wiring in real.py' section below)\nReality: That file is now a 7-line re-export stub. The actual wiring (`pr_review_decision`, `selected_pr.review_decision`, `compute_status_indicators()\\ call) lives in `src/erk/tui/data/real_provider.py` (lines 400, 426, 559).\n\nSource: `src/erk/tui/data/real_provider.py:400,426,559`\n\nSuggested fix: Update the 'Wiring in real.py' section's Location to `src/erk/tui/data/real_provider.py` and update the pipeline diagram on line 20 from `real.py` to `real_provider.py`.",
+          "created_at": "2026-03-07T21:06:23Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5yzSSq",
+      "path": "docs/learned/tui/status-indicators.md",
+      "line": 66,
+      "is_outdated": true,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 stage detection section (lines 72-76) documents specific substring matching implementation details.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:222-224`\n\nRisk: The stage detection section documents exact implementation logic (`\"planned\" in lifecycle_display`, `\"impl\" in lifecycle_display`, `\"review\" in lifecycle_display` with the REVIEW exclusion). This is high-maintenance detail \u2014 if the detection logic changes, this section will silently go stale.\n\nConsider replacing with a code reference: See `_build_indicators()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` for stage detection logic.",
+          "created_at": "2026-03-07T21:06:33Z"
+        }
+
+... [72 lines omitted] ...
+
+      "body": "\ud83d\udd04 One-Shot Dispatched\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:submission-queued --&gt;\n&lt;details&gt;\n&lt;summary&gt;submission-queued&lt;/summary&gt;\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-03-07T15:48:27.494965+00:00'\nsubmitted_by: schrockn\nplan_number: 8912\nvalidation_results:\n  issue_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: one-shot\ntrigger_mechanism: label-based-webhook\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:submission-queued --&gt;\n\n---\n\nOne-shot submitted by **schrockn** at 2026-03-07T15:48:27.494965+00:00.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22806950635\n\n**Prompt:** ! gt pr\n  \u23bf \u00a0https://app.graphite.dev/github/pr/dagster-io/erk/8888\n\n\u276f /local:objective-view\n  \u23bf  I need to validate the arguments first. No objective number was provided in the command.\n\n     Error: Objective number required.\n     Usage: /local:objective-view &lt;objective_number&gt;\n\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \u25aa\u25aa\u25aa \u2500\n\u276f\u00a0\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  \u279c  (git:erk) (wt:erk-slot-04) (br:plnd/O8832-rename-github-to-loc-03-06-1802) | (gh:#8888 st:\ud83d\udc40 chks:[\u2705:11 \ud83d\udd04:5] cmts:\u2713) \u2502 (O)\n  \u23f5\u23f5 accept edits on (shift+tab to cycle) \u00b7 PR #8888\n\n\n\n_----------\n\n\nobjective-view should be able to inference what objective to use in this case (8832). we have objective inference logic in other commands, we should reuse it",
+      "body": "\u2699\ufe0f GitHub Action Started\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:workflow-started --&gt;\n&lt;details&gt;\n&lt;summary&gt;workflow-started&lt;/summary&gt;\n\n```yaml\n\nstatus: started\nstarted_at: '2026-03-07T20:53:05Z'\nworkflow_run_id: '22806950635'\nworkflow_run_url: https://github.com/dagster-io/erk/actions/runs/22806950635\nplan_number: 8912\nbranch_name: plnd/add-objective-inference-03-07-1548\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:workflow-started --&gt;\n\n---\n\nSetup completed successfully.\n\n**Branch:** `plnd/add-objective-inference-03-07-1548`\n**PR:** [#8912](https://github.com/dagster-io/erk/pull/8912)\n**Status:** Ready for implementation\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22806950635)",
+      "body": "&lt;!-- test-coverage-review --&gt;\n\n## \u2705 Test Coverage Review\n\n**Last updated:** 2026-03-07 13:52:15 PT\n\nNo violations found. All source code changes have corresponding test coverage.\n\n&lt;details&gt;\n&lt;summary&gt;Details&lt;/summary&gt;\n\n### Summary\n\nThis PR adds objective inference from branch name to the objective view command. When no explicit objective reference is provided, the command now infers the objective ID from the current branch name (e.g., `plnd/O8832-...` \u2192 objective 8832). The change includes 2 new comprehensive test cases covering both the happy path and error scenarios.\n\n### Source Files\n\n| File | Status | Tests |\n|------|--------|-------|\n| `src/erk/cli/commands/objective/view_cmd.py` | Modified | \u2705 2 new tests added |\n\n### Test Coverage\n\n- **Happy path**: `test_view_objective_inferred_from_branch_name()` \u2014 objective successfully inferred from branch pattern, command executes successfully\n- **Error path**: `test_view_objective_no_ref_no_inference()` \u2014 proper error message when no reference provided and branch is not linked to objective\n- **Total test count**: 41 tests (39 existing + 2 new)\n\n### Excluded Files\n\n- `.claude/commands/local/objective-view.md` \u2014 command documentation\n- `docs/learned/integrations/github-review-decision.md` \u2014 docs file\n- `docs/learned/tui/status-indicators.md` \u2014 docs file\n- `.erk/impl-context/*` \u2014 implementation context files\n\n---\n\n### Activity Log\n- **2026-03-07 13:52:15 PT**: Branch inference feature with 2 new test cases covering happy path and error scenarios\n- **2026-03-07 13:03:51 PT**: All source files have test coverage (39 test cases)\n\n&lt;/details&gt;",
+      "body": "&lt;!-- dignified-python-review --&gt;\n\n## \u2705 Dignified Python Review\n\n**Last updated:** 2026-03-07 13:52:15 PT\n\nFound 0 violations. All Python code changes comply with dignified Python standards.\n\n&lt;details&gt;\n&lt;summary&gt;Details&lt;/summary&gt;\n\n### Patterns Checked\n\u2705 LBYL (Look Before You Leap) - None found\n\u2705 Exception handling - Correct usage at CLI boundary\n\u2705 Path operations - Not applicable\n\u2705 Import organization - All imports correct\n\u2705 Default parameter values - Not applicable (Click decorator exception)\n\u2705 Dependency injection - Not applicable\n\u2705 Frozen dataclasses - Not applicable\n\u2705 Keyword-only arguments - Correct (json_mode after *)\n\u2705 Re-exports - Not applicable\n\u2705 Bare subprocess - Not applicable\n\n### Files Reviewed\n- : Markdown file (excluded)\n- : 0 violations\n- : 0 violations\n\n### Key Observations\n- **New import (line 14)**: `get_objective_for_branch` is absolute and at module level \u2705\n- **Click decorators (line 170)**: Uses `required=False, default=None` correctly (not a function signature violation) \u2705\n- **Conditional logic (lines 191-201)**: Uses LBYL pattern with `if objective_ref is not None:` and `if branch is None:` \u2705\n- **Error handling**: Raises `UserFacingCliError` at CLI boundary for missing/invalid cases \u2705\n- **Type annotation (line 179)**: Modern union syntax `str | None` \u2705\n- **Tests**: All new tests use assert statements and proper LBYL patterns \u2705\n\n---\n\n### Activity Log\n- **2026-03-07 13:52:15 PT**: Verified no violations (2 test additions, 1 helper function call, proper error boundary patterns)\n- **2026-03-07 13:04:18 PT**: No violations detected\n\n&lt;/details&gt;",
+      "body": "&lt;!-- dignified-code-simplifier-review --&gt;\n\n## \u2705 Dignified Code Simplifier Review\n\n**Last updated:** 2026-03-07 13:52:11 PT\n\nFound 0 violations. Code adheres to dignified-python standards.\n\n&lt;details&gt;\n&lt;summary&gt;Details&lt;/summary&gt;\n\n### Patterns Checked\n\u2705 LBYL pattern - None checks before access\n\u2705 Exception handling - UserFacingCliError at CLI boundary\n\u2705 Import organization - Absolute imports\n\u2705 Type annotations - Modern type syntax (str | None)\n\u2705 Variable naming - Clear and explicit\n\u2705 Indentation depth - Within 4-level limit\n\u2705 Test structure - Standard pytest patterns\n\n### Files Reviewed\n- `src/erk/cli/commands/objective/view_cmd.py`: 0 violations\n- `tests/unit/cli/commands/objective/test_view_cmd.py`: 0 violations\n- `.claude/commands/local/objective-view.md`: 0 violations (documentation)\n\n---\n\n### Activity Log\n- **2026-03-07 13:52:11 PT**: No violations detected - code complies with dignified-python standards\n\n&lt;/details&gt;",
+      "body": "&lt;!-- tripwires-review --&gt;\n\n## \u2705 Tripwires Review\n\n**Last updated:** 2026-03-07 13:52:21 PT\n\nNo violations detected. All code changes follow established patterns.\n\n&lt;details&gt;\n&lt;summary&gt;Details&lt;/summary&gt;\n\n### Tripwires Triggered\n- CLI Error Handling \u2192 loaded docs/learned/cli/error-handling-antipatterns.md\n- Click Framework Conventions \u2192 loaded docs/learned/cli/click-framework-conventions.md\n\n### Tier 1 Pattern Matches\n\u2705 `subprocess\\.run|subprocess\\.call` - None found\n\u2705 `Path\\.home\\(\\)` - None found\n\u2705 `@patch|monkeypatch\\.` - None found\n\u2705 `import.*time|time\\.sleep|datetime\\.now` - None found\n\n### Tier 2 Semantic Matches\n\u2705 Using RuntimeError for expected CLI failures - None found (correctly uses UserFacingCliError)\n\u2705 Using non-None default for optional Click option - None found (uses default=None)\n\u2705 Adding bare subprocess calls - None found\n\u2705 Modifying business logic without adding tests - Not applicable (tests added)\n\n### Code Quality Observations\n- \u2705 Correct use of `UserFacingCliError` for expected failures\n- \u2705 Proper LBYL pattern (checking conditions before operations)\n- \u2705 Multiline error messages formatted correctly with `\\n` separator\n- \u2705 Click argument with `default=None` follows convention\n- \u2705 Test coverage includes both success and error cases\n- \u2705 Documentation updated in `.claude/commands/` to reflect new behavior\n\n### Files Reviewed\n- `.claude/commands/local/objective-view.md`: 0 violations\n- `src/erk/cli/commands/objective/view_cmd.py`: 0 violations\n- `tests/unit/cli/commands/objective/test_view_cmd.py`: 0 violations\n\n---\n\n### Activity Log\n- **2026-03-07 13:52:21 PT**: No tripwire violations detected. Reviewed 3 files against CLI and testing tripwires. All patterns compliant.\n- **2026-03-07 13:03:55 PT**: No tripwire violations detected. Reviewed 5 files against CLI and testing tripwires. All patterns compliant.\n\n&lt;/details&gt;",
+  </tool_result>
+  <tool_result tool="toolu_01H8UesaVrkbEWNFHUAJ47MD">
+No diff available
+  </tool_result>
+  <assistant>Now I'll classify the feedback according to the skill's guidelines:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7051" cache_read_input_tokens="23351" cache_creation="{'ephemeral_5m_input_tokens': 7051, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JnJGj8qwKbHvqov6n8YL8Y">
+    <param name="command">git show 8cab839fe:src/erk/cli/commands/objective/view_cmd.py 2&gt;/dev/null | head -50</param>
+    <param name="description">Check if the view_cmd.py file exists in the commit</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7051" cache_read_input_tokens="23351" cache_creation="{'ephemeral_5m_input_tokens': 7051, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JnJGj8qwKbHvqov6n8YL8Y">
+"""Command to fetch and display a single objective."""
+
+import json
+from datetime import datetime
+
+import click
+from rich.cells import cell_len
+from rich.console import Console
+from rich.markup import escape
+from rich.table import Table
+from rich.text import Text
+
+from erk.cli.alias import alias
+from erk.cli.commands.objective_helpers import get_objective_for_branch
+from erk.cli.core import discover_repo_context
+from erk.cli.ensure import UserFacingCliError
+from erk.cli.github_parsing import parse_issue_identifier
+from erk.core.context import ErkContext
+from erk.core.display_utils import format_relative_time
+from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import (
+    extract_raw_metadata_blocks,
+)
+from erk_shared.gateway.github.metadata.dependency_graph import (
+    DependencyGraph,
+    ObjectiveNode,
+    build_graph,
+    compute_graph_summary,
+    find_graph_next_node,
+)
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Based on my analysis of the PR feedback, I'll now classify the review comments according to the skill's classification model:
+
+```json
+{
+  "success": true,
+  "pr_number": 8912,
+  "pr_title": "Add objective inference from branch name in objective view command",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8912",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5yzSO3",
+      "type": "review",
+      "path": "docs/learned/integrations/github-review-decision.md",
+      "line": 52,
+      "is_outdated": true,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Update 'Wiring in real.py' section: Location should be src/erk/tui/data/real_provider.py (not re-export stub), and update pipeline diagram from real.py to real_provider.py",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected (nearby at line 62).\n\nClaim: \"**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`\" (in the 'Wiring in real.py' section below)\nReality: That file is now a 7-line re-export stub. The actual wiring (`pr_review_decision`, `selected_pr.review_decision`, `compute_status_indicators()\\ call) lives in `src/erk/tui/data/real_provider.py` (lines 400, 426, 559)."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5yzSSq",
+      "type": "review",
+      "path": "docs/learned/tui/status-indicators.md",
+      "line": 66,
+      "is_outdated": true,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Replace specific substring matching implementation details (lines 72-76) with code reference to _build_indicators() in packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py to avoid drift risk",
+      "complexity": "single_file",
+      "original_comment": "**Audit PR Docs**: Drift risk — stage detection section (lines 72-76) documents specific substring matching implementation details.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py:222-224`\n\nRisk: The stage detection section documents exact implementation logic (`\"planned\" in lifecycle_display`, `\"impl\" in lifecycle_display`, `\"review\" in lifecycle_display` with the REVIEW exclusion). This is high-maintenance detail — if the detection logic changes, this section will silently go stale."
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 6,
+  "batches": [
+    {
+      "name": "Pre-Existing (Auto-Resolve)",
+      "complexity": "pre_existing",
+      "auto_proceed": true,
+      "item_indices": []
+    },
+    {
+      "name": "Local Fixes",
+      "complexity": "local",
+      "auto_proceed": true,
+      "item_indices": []
+    },
+    {
+      "name": "Single-File",
+      "complexity": "single_file",
+      "auto_proceed": true,
+      "item_indices": [0, 1]
+    },
+    {
+      "name": "Cross-Cutting",
+      "complexity": "cross_cutting",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Complex",
+      "complexity": "complex",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Informational",
+      "complexity": "informational",
+      "auto_proceed": false,
+      "item_indices": []
+    }
+  ],
+  "error": null
+}
+```
+
+## Summary
+
+The PR #8912 "Add objective inference from branch name in objective view command" has **2 actionable review threads** (both from the Audit PR Docs bot) and **6 informational discussion comments** (submission status, workflow notifications, CI reviews).
+
+**Actionable Items:**
+1. **docs/learned/integrations/github-review-decision.md (line 52, outdated)**: Update 'Wiring in real.py' section with correct location and diagram reference
+2. **docs/learned/tui/status-indicators.md (line 66, outdated)**: Replace implementation detail documentation with code reference to avoid drift risk
+
+Both are single-file documentation updates that can auto-proceed. The informational comments include test coverage confirmation, Python code review passes, tripwire reviews, and workflow status notifications.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="675" cache_read_input_tokens="30402" cache_creation="{'ephemeral_5m_input_tokens': 675, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
