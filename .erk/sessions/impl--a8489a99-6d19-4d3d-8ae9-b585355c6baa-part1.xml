@@ -1,0 +1,922 @@
+<session>
+  <meta branch="plnd/O8832-rename-github-to-loc-03-06-1802" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8888&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8888` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #8888. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11263" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 11263, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Y1b3V17vuKiYok3Hcrh948">
+    <param name="command">erk exec setup-impl --issue 8888</param>
+    <param name="description">Set up implementation for plan #8888</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11263" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 11263, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y1b3V17vuKiYok3Hcrh948">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O8832-rename-github-to-loc-03-06-1802", "plan_number": 8888, "plan_url": "https://github.com/dagster-io/erk/pull/8888", "branch": "plnd/O8832-rename-github-to-loc-03-06-1802", "plan_title": "[erk-plan] Plan: Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8888, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O8832-rename-github-to-loc-03-06-1802', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="375" cache_read_input_tokens="28464" cache_creation="{'ephemeral_5m_input_tokens': 375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LgZimok6awZ1cNrg5L7quq">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O8832-rename-github-to-loc-03-06-1802/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="375" cache_read_input_tokens="28464" cache_creation="{'ephemeral_5m_input_tokens': 375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LgZimok6awZ1cNrg5L7quq">
+     1→# Plan: Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub
+     2→
+     3→**Part of Objective #8832, Node 1.6**
+     4→
+     5→## Context
+     6→
+     7→The erk codebase has two GitHub gateway abstractions:
+     8→- `GitHub` (ABC) — subprocess-based, requires a local git repo clone
+     9→- `RemoteGitHub` (ABC) — REST API-based, no local repo needed
+    10→
+    11→The `GitHub` name is ambiguous. Renaming to `LocalGitHub` clarifies that this is the local-repo gateway, contrasting with `RemoteGitHub`. This is a mechanical bulk rename with no behavioral changes.
+    12→
+    13→## Scope
+    14→
+    15→### Classes to rename (5 classes)
+    16→
+    17→| Current | New |
+    18→|---------|-----|
+    19→| `GitHub` | `LocalGitHub` |
+    20→| `RealGitHub` | `RealLocalGitHub` |
+    21→| `FakeGitHub` | `FakeLocalGitHub` |
+    22→| `DryRunGitHub` | `DryRunLocalGitHub` |
+    23→| `PrintingGitHub` | `PrintingLocalGitHub` |
+    24→
+    25→### Explicitly out of scope
+    26→- `GitHubIssues` / `RealGitHubIssues` / `FakeGitHubIssues` / `DryRunGitHubIssues` — stays as-is
+    27→- `GitHubAdmin` / `RealGitHubAdmin` / `FakeGitHubAdmin` — separate gateway
+    28→- `GitHubChecks`, `GitHubRepoId`, `GitHubRepoLocation` — utility types
+    29→- `RemoteGitHub` / `RealRemoteGitHub` / `FakeRemoteGitHub` — the REST API gateway
+    30→- Directory paths (`gateway/github/`) — no file moves
+
+... [79 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. This is a mechanical bulk rename of 5 classes across ~192 files. Let me set up the todos and load the required context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2222" cache_read_input_tokens="28839" cache_creation="{'ephemeral_5m_input_tokens': 2222, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_012NXxL5dr5iUa2CHXYqMXTv">
+    <param name="todos">[{'content': 'Phase 1: LibCST bulk rename of 5 Python class names', 'status': 'pending', '...[truncated 718 chars]...ubmit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2222" cache_read_input_tokens="28839" cache_creation="{'ephemeral_5m_input_tokens': 2222, 'ephemeral_1h_input_tokens': 0}" output_tokens="350" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012NXxL5dr5iUa2CHXYqMXTv">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Ca2Vmx9zGiZF4kvKbKY6hH">
+    <param name="todos">[{'content': 'Phase 1: LibCST bulk rename of 5 Python class names', 'status': 'pending', '...[truncated 593 chars]...ignal GitHub started', 'status': 'in_progress', 'activeForm': 'Signaling GitHub started'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="31061" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ca2Vmx9zGiZF4kvKbKY6hH">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017FNK1Tm3PZBAVeP78DpBua">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="31444" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017FNK1Tm3PZBAVeP78DpBua">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01KEviWTtVkDPRB6ykgstme5">
+    <param name="todos">[{'content': 'Phase 1: LibCST bulk rename of 5 Python class names', 'status': 'in_progress...[truncated 595 chars]...'Signal GitHub started', 'status': 'completed', 'activeForm': 'Signaling GitHub started'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="31759" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KEviWTtVkDPRB6ykgstme5">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me first read the key source files to understand the current class definitions before running the LibCST refactor.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="31930" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YSpNYxHrasUESxNm2Zk64Q">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="31930" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MvfpWden85LyKNeNR4km7K">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="31930" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XgfVJnC1gQBqVmKzUiRpuT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="31930" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Qsb4GDV3fNtjEC5GQVkA28">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="31930" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EtB33dRAxKaYjRwNf1xGps">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="31930" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Tcc2YhexRkhLayHM5PuNWW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="31930" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qsb4GDV3fNtjEC5GQVkA28">
+     1→"""No-op wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.github.abc import GitHub
+     6→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     7→from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+     8→from erk_shared.gateway.github.issues.types import IssueInfo
+     9→from erk_shared.gateway.github.types import (
+    10→    BodyContent,
+    11→    GitHubRepoLocation,
+    12→    IssueFilterState,
+    13→    MergeResult,
+    14→    PRCheckRun,
+    15→    PRDetails,
+    16→    PRListState,
+    17→    PRNotFound,
+    18→    PRReviewThread,
+    19→    PullRequestInfo,
+    20→    WorkflowRun,
+    21→)
+    22→
+    23→
+    24→class DryRunGitHub(GitHub):
+    25→    """No-op wrapper for GitHub operations.
+    26→
+    27→    Read operations are delegated to the wrapped implementation.
+    28→    Write operations return without executing (no-op behavior).
+    29→
+    30→    This wrapper prevents destructive GitHub operations from executing in dry-run mode,
+
+... [364 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EtB33dRAxKaYjRwNf1xGps">
+     1→"""Printing wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk_shared.gateway.github.abc import GitHub
+     8→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    BodyFile,
+    13→    BodyText,
+    14→    GitHubRepoLocation,
+    15→    IssueFilterState,
+    16→    MergeError,
+    17→    MergeResult,
+    18→    PRCheckRun,
+    19→    PRDetails,
+    20→    PRListState,
+    21→    PRNotFound,
+    22→    PRReviewThread,
+    23→    PullRequestInfo,
+    24→    WorkflowRun,
+    25→)
+    26→from erk_shared.printing.base import PrintingBase
+    27→
+    28→_MAX_WORKFLOW_POLL_ATTEMPTS = 15
+    29→
+    30→
+
+... [403 lines omitted] ...
+
+   112→    ) -&gt; MergeResult | MergeError:
+  </tool_result>
+  <tool_result tool="toolu_01Tcc2YhexRkhLayHM5PuNWW">
+     1→"""GitHub integration utilities.
+     2→
+     3→Import from submodules:
+     4→- abc: GitHub
+     5→- types: PRInfo, PRMergeability, PRState, PullRequestInfo, WorkflowRun
+     6→- metadata: types, schemas, core (metadata block API)
+     7→- parsing: _parse_github_pr_url
+     8→- issues: GitHubIssues, RealGitHubIssues, FakeGitHubIssues, etc.
+     9→- real: RealGitHub
+    10→"""
+    11→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01MvfpWden85LyKNeNR4km7K">
+File content (25370 tokens) exceeds maximum allowed tokens (25000). Please use offset and limit parameters to read specific portions of the file, or use the GrepTool to search for specific content.
+  </tool_result>
+  <tool_result tool="toolu_01YSpNYxHrasUESxNm2Zk64Q">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class GitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [823 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+   257→        2. Failed completed runs (failures are more actionable than successes)
+   442→            Empty dict if no PRs match or on API failure.
+   494→            RuntimeError: If gh command fails
+   507→            RuntimeError: If gh command fails
+   523→            RuntimeError: If gh command fails
+   542→            RuntimeError: If gh command fails
+   556→            RuntimeError: If gh command fails
+   712→            RuntimeError: If update fails
+   752→            False if deletion failed (e.g., protected branch)
+   771→            Empty list if no PRs match or on API failure.
+   840→            state: Status state - one of "success", "failure", "pending", "error"
+   845→            True on success, False on failure
+  </tool_result>
+  <tool_result tool="toolu_01XgfVJnC1gQBqVmKzUiRpuT">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import GitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+
+... [1186 lines omitted] ...
+
+    71→        resolve_thread_failures: set[str] | None = None,
+    72→        pr_diff_error: str | None = None,
+    73→        workflow_runs_error: str | None = None,
+    81→        add_label_errors: dict[str, str] | None = None,
+   111→                RuntimeError simulating GraphQL rate limit
+   112→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   113→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   114→                Use to simulate HTTP 406 "diff too large" errors.
+   115→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   116→                RuntimeError with this message. Use to simulate API failures.
+   120→                False or raise to simulate failure.
+   156→        self._resolve_thread_failures = resolve_thread_failures or set()
+   157→        self._pr_diff_error = pr_diff_error
+   158→        self._workflow_runs_error = workflow_runs_error
+   191→        self._add_label_errors = add_label_errors or {}
+   219→        Raises RuntimeError if pr_update_should_succeed is False.
+   222→            raise RuntimeError("PR update failed (configured to fail)")
+   242→    ) -&gt; MergeResult | MergeError:
+   245→        Returns MergeResult on success, MergeError on failure.
+   251→        return MergeError(pr_number=pr_number, message="Merge failed (configured to fail in test)")
+   416→        Raises RuntimeError if run_id not found, mimicking gh CLI behavior.
+   420→            raise RuntimeError(msg)
+   471→        matching workflow runs. Uses priority: in_progress/queued &gt; failed &gt; success &gt; other.
+   501→            # Priority 2: failed completed runs
+   502→            failed_runs = [
+   503→                r for r in branch_runs if r.status == "completed" and r.conclusion == "failure"
+   505→            if failed_runs:
+   506→                result[branch] = failed_runs[0]
+   590→        Raises RuntimeError if workflow_runs_error is set, simulating API failures.
+   599→        if self._workflow_runs_error is not None:
+   600→            raise RuntimeError(self._workflow_runs_error)
+   775→        Raises RuntimeError if pr_update_should_succeed is False.
+   778→            raise RuntimeError("PR update failed (configured to fail)")
+   827→        First checks if pr_diff_error is set and raises RuntimeError.
+   831→        if self._pr_diff_error is not None:
+   832→            raise RuntimeError(self._pr_diff_error)
+   855→        if label in self._add_label_errors:
+   856→            raise RuntimeError(self._add_label_errors[label])
+   901→        Raises RuntimeError if review_threads_rate_limited is True, simulating
+   902→        a GraphQL API rate limit error.
+   905→            raise RuntimeError("GraphQL API RATE_LIMIT exceeded")
+   945→        Returns False if thread_id is in resolve_thread_failures set.
+   948→        if thread_id in self._resolve_thread_failures:
+  </tool_result>
+  <assistant>Good, I've read all 5 key files plus the `__init__.py`. Now let me launch the LibCST bulk rename. The plan says to use the `libcst-refactor` agent to perform the 5 renames across `src/`, `packages/`, and `tests/`.</assistant>
+  <usage input_tokens="11724" cache_creation_input_tokens="27288" cache_read_input_tokens="32245" cache_creation="{'ephemeral_5m_input_tokens': 27288, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01PGn31EQVcohQohEQvzs4qT">
+    <param name="description">LibCST bulk rename 5 classes</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="prompt">Perform a bulk rename of 5 Python class names across the entire codebase. This is a mechan...[truncated 2630 chars]...le string references in `__all__` lists and similar string-based references if any exist.
+</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="11724" cache_creation_input_tokens="27288" cache_read_input_tokens="32245" cache_creation="{'ephemeral_5m_input_tokens': 27288, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PGn31EQVcohQohEQvzs4qT">
+Async agent launched successfully.
+agentId: a46595e (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>The LibCST agent is working in the background. While that runs, let me prepare Phase 2 and Phase 3 content. Let me check what docs need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13036" cache_read_input_tokens="59533" cache_creation="{'ephemeral_5m_input_tokens': 13036, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015TgnUM6gPzSFsKK4SaBZ2A">
+    <param name="pattern">\bRealGitHub\b|\bFakeGitHub\b|\bDryRunGitHub\b|\bPrintingGitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13036" cache_read_input_tokens="59533" cache_creation="{'ephemeral_5m_input_tokens': 13036, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LQ5zwQMXX4Xg5mzrdjq9NB">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13036" cache_read_input_tokens="59533" cache_creation="{'ephemeral_5m_input_tokens': 13036, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LQ5zwQMXX4Xg5mzrdjq9NB">
+     1→"""GitHub issues integration for erk plan storage.
+     2→
+     3→This package provides an abstract interface and implementations for GitHub issue operations.
+     4→
+     5→Import from submodules:
+     6→- erk_shared.gateway.github.issues.abc: GitHubIssues (ABC)
+     7→- erk_shared.gateway.github.issues.real: RealGitHubIssues
+     8→- erk_shared.gateway.github.issues.fake: FakeGitHubIssues
+     9→- erk_shared.gateway.github.issues.dry_run: DryRunGitHubIssues
+    10→- erk_shared.gateway.github.issues.types: IssueInfo, CreateIssueResult
+    11→"""
+    12→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_015TgnUM6gPzSFsKK4SaBZ2A">
+docs/learned/testing/backend-testing-composition.md:9:    warning: "Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers."
+docs/learned/testing/backend-testing-composition.md:22:fake_github = FakeGitHub()
+docs/learned/testing/backend-testing-composition.md:46:- Creates a `FakeGitHub` with test PRs
+docs/learned/testing/monkeypatch-vs-fakes-decision.md:23:fake_github = FakeGitHub()
+docs/learned/testing/monkeypatch-vs-fakes-decision.md:34:│         (FakeGit, FakeGitHub, FakeGraphite, FakeClaudeInstallation, etc.)
+docs/learned/testing/tripwires.md:27:**adding a tracking list without documenting the tuple field order** → Read [FakeGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+docs/learned/testing/tripwires.md:37:**asserting on FakeGitHubIssues.added_comments for PlannedPRBackend.add_comment()** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. PlannedPRBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations.
+docs/learned/testing/tripwires.md:55:**creating a FakeGitHub PR without checking auto-registration in \_pr_details** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. FakeGitHub.create_pr() auto-registers the PR in \_pr_details. Manually adding to \_pr_details after create_pr() causes duplicates.
+docs/learned/testing/tripwires.md:57:**creating a FakePlanBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers.
+docs/learned/testing/tripwires.md:61:**creating a fake that uses **init** when frozen dataclass would work** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses **init** because it has 30+ constructor params. Choose based on complexity.
+docs/learned/testing/tripwires.md:123:**using context_for_test without matching parameter names to the current API** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. context_for_test() parameter names evolve. Check the current function signature before adding new parameters.
+docs/learned/testing/fake-github-mutation-tracking.md:2:title: FakeGitHub Mutation Tracking
+docs/learned/testing/fake-github-mutation-tracking.md:4:  - "asserting against FakeGitHub mutations in tests"
+docs/learned/testing/fake-github-mutation-tracking.md:5:  - "adding a new mutation tracking list to FakeGitHub or FakeGitHubIssues"
+docs/learned/testing/fake-github-mutation-tracking.md:12:# FakeGitHub Mutation Tracking
+docs/learned/testing/fake-github-mutation-tracking.md:14:The `FakeGitHub` and `FakeGitHubIssues` classes track all mutations as lists of tuples. Tests assert against these lists to verify correct API call sequences without hitting real GitHub.
+docs/learned/testing/fake-github-mutation-tracking.md:22:## FakeGitHub Tracking Lists
+docs/learned/testing/fake-github-mutation-tracking.md:60:Each mutation tracking list follows a three-component pattern. Example: `mark_pr_ready` in `FakeGitHub`:
+docs/learned/testing/fake-github-mutation-tracking.md:62:&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:164, FakeGitHub.__init__ --&gt;
+docs/learned/testing/fake-github-mutation-tracking.md:63:&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:771-777, FakeGitHub.mark_pr_ready --&gt;
+docs/learned/testing/fake-github-api-reference.md:2:title: FakeGitHub API Reference
+docs/learned/testing/fake-github-api-reference.md:5:  - "understanding FakeGitHub.create_pr() auto-registration"
+docs/learned/testing/fake-github-api-reference.md:8:  - action: "creating a FakeGitHub PR without checking auto-registration in _pr_details"
+docs/learned/testing/fake-github-api-reference.md:9:    warning: "FakeGitHub.create_pr() auto-registers the PR in _pr_details. Manually adding to _pr_details after create_pr() causes duplicates."
+docs/learned/testing/fake-github-api-reference.md:14:# FakeGitHub API Reference
+docs/learned/testing/fake-github-api-reference.md:16:Reference for the FakeGitHub test double used throughout erk's test suite. Covers auto-registration behavior, mutation tracking, and common patterns.
+docs/learned/testing/fake-github-api-reference.md:18:## FakeGitHub.create_pr() Auto-Registration
+docs/learned/testing/fake-github-api-reference.md:20:When `FakeGitHub.create_pr()` is called, it automatically:
+docs/learned/testing/fake-github-api-reference.md:30:FakeGitHub tracks all mutations for test assertions:
+docs/learned/testing/fake-github-api-reference.md:69:fake_github = FakeGitHub(
+
+... [74 lines omitted] ...
+
+docs/learned/testing/fake-github-testing.md:13:    warning: "PlannedPRBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations."
+docs/learned/testing/frozen-dataclass-test-doubles.md:14:    warning: "FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses __init__ because it has 30+ constructor params. Choose based on complexity."
+docs/learned/testing/exec-script-batch-testing.md:54:&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeGitHub.__init__ resolve_thread_failures parameter --&gt;
+docs/learned/testing/exec-script-batch-testing.md:56:See the `resolve_thread_failures` parameter on `FakeGitHub.__init__()` in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`. The same pattern appears for other failure modes across fakes (e.g., `tracking_branch_failures` on `FakeGitBranchOps`).
+docs/learned/testing/exec-script-batch-testing.md:81:This follows the existing convention — `FakeGitHub` uses `resolve_thread_failures: set[str]`, `FakeGitBranchOps` uses `tracking_branch_failures: dict[str, str]` (dict when failure needs an error message, set when a boolean is sufficient).
+docs/learned/architecture/erk-architecture.md:14:    warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
+docs/learned/architecture/gateway-error-boundaries.md:46:&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.update_pr_base_branch --&gt;
+docs/learned/architecture/gateway-error-boundaries.md:48:See `RealGitHub.update_pr_base_branch()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py` for the pattern: subprocess commands wrapped in try/except to gracefully handle gh CLI availability issues.
+docs/learned/architecture/gateway-error-boundaries.md:69:&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeGitHub.__init__ --&gt;
+docs/learned/architecture/gateway-error-boundaries.md:71:Fake implementations like `FakeGitHub` (in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`) use constructor params to control error scenarios. Check the `__init__` signature: `merge_should_succeed: bool = True`, `gist_create_error: str | None = None`, `pr_diff_error: str | None = None`.
+docs/learned/architecture/gateway-error-boundaries.md:77:fake = FakeGitHub(
+docs/learned/architecture/gateway-error-boundaries.md:155:class FakeGitHub(GitHub):
+docs/learned/architecture/gateway-error-boundaries.md:173:class DryRunGitHub(GitHub):
+docs/learned/architecture/gateway-error-boundaries.md:189:class RealGitHub(GitHub):
+  </tool_result>
+  <assistant>Good - the issues `__init__.py` mentions `GitHubIssues` which is out of scope (no rename needed). Now let me also grep for bare `GitHub` in docs that refers to the ABC class specifically.</assistant>
+  <usage input_tokens="306" cache_creation_input_tokens="6257" cache_read_input_tokens="72569" cache_creation="{'ephemeral_5m_input_tokens': 6257, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014HeDhGVZN5qn5wEBq5c2NN">
+    <param name="pattern">\bclass GitHub\b|: GitHub\b|\bGitHub ABC\b|\bGitHub\b \(ABC\)|\bGitHub\b gateway</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="306" cache_creation_input_tokens="6257" cache_read_input_tokens="72569" cache_creation="{'ephemeral_5m_input_tokens': 6257, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014HeDhGVZN5qn5wEBq5c2NN">
+docs/learned/testing/monkeypatch-elimination-checklist.md:36:| `subprocess.run(["gh", ...])`     | GitHub gateway (or sub-gateways)      | All `gh` CLI operations are abstracted behind GitHub ABC |
+docs/learned/testing/testing.md:467:    github: GitHub
+docs/learned/cli/codespace-patterns.md:50:**Why the split**: GitHub generates opaque names for codespaces. Users need memorable names for CLI operations. The registry maps friendly names to GitHub names.
+docs/learned/cli/batch-exec-commands.md:35:Without batch commands, processing 50 PR threads would require 50 subprocess invocations, each re-initializing the GitHub gateway and parsing `.git/config`. With batch, one invocation handles all 50.
+docs/learned/cli/ensure-ideal-pattern.md:60:In practice, `unwrap_pr()` appears far more often because CLI commands work directly with the GitHub gateway ABC, not the `GitHubChecks` wrapper. The `pr()` method exists for specialized contexts where the NonIdealState types are already in play.
+docs/learned/cli/exec-script-patterns.md:99:Plan header operations (extracting plan content from issues, finding metadata comment IDs) live in a dedicated module, not in the generic GitHub gateway:
+docs/learned/planning/learn-plan-metadata-fields.md:80:The GitHub gateway fetches issue metadata including labels. Learn-related labels:
+docs/learned/planning/planned-pr-backend.md:37:PlannedPRBackend uses **composition** — it wraps the top-level GitHub gateway, not inheritance. The class is at `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`.
+docs/learned/planning/pr-discovery.md:32:The plan-header metadata block contains a `branch_name` field populated during `erk pr dispatch`. Given a branch name, the GitHub gateway's `get_pr_for_branch()` method returns PR details directly.
+docs/learned/erk/issue-pr-linkage-storage.md:105:**Important behavior**: GitHub's `willCloseTarget` field is set at PR creation time only. This field is part of the [`CrossReferencedEvent` GraphQL type](https://docs.github.com/en/graphql/reference/objects#crossreferencedevent).
+docs/learned/erk/dispatch-ref-config.md:38:`LoadedConfig` is a frozen dataclass with a `dispatch_ref: str | None` field. When `None`, the GitHub gateway calls `_get_default_branch()` via REST API to determine the repository's default branch. The result is cached per `repo_root` for the session.
+docs/learned/refactoring/python-package-rename-checklist.md:35:- **CI may reference package paths directly**: GitHub Actions workflows sometimes hardcode paths like `packages/old-name/`
+docs/learned/architecture/protocol-vs-abc.md:260:    github: GitHub
+docs/learned/architecture/protocol-vs-abc.md:464:    gh: GitHub
+docs/learned/architecture/tripwires.md:47:**adding a new method to GitHub ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
+docs/learned/architecture/github-graphql-label-semantics.md:2:title: GitHub GraphQL Label Semantics
+docs/learned/architecture/github-api-retry-mechanism.md:2:title: GitHub API Retry Mechanism
+docs/learned/architecture/github-cli-quirks.md:2:title: GitHub CLI Quirks and Edge Cases
+docs/learned/architecture/github-api-diagnostics.md:2:title: GitHub API Diagnostics
+docs/learned/architecture/github-api-diagnostics.md:71:**The pattern**: GitHub CLI convenience commands (like `gh codespace create`) often:
+docs/learned/architecture/gateway-hierarchy.md:59:**Responsibility**: GitHub API operations
+docs/learned/architecture/gateway-hierarchy.md:143:│         │         └── No  → Use GitHub gateway (no stack info)
+docs/learned/architecture/gateway-hierarchy.md:144:│         └── No  → Use GitHub gateway directly
+docs/learned/architecture/github-graphql.md:2:title: GitHub GraphQL API Patterns
+docs/learned/architecture/github-gist-api.md:2:title: GitHub Gist URL Patterns
+docs/learned/architecture/github-gist-api.md:35:# Robust: GitHub redirects to first (and only) file
+docs/learned/architecture/github-pr-linkage-api.md:2:title: GitHub Issue-PR Linkage API Patterns
+docs/learned/architecture/github-pr-linkage-api.md:105:- **Batch queries (dash)**: `get_prs_linked_to_issues()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py` (main GitHub gateway)
+docs/learned/architecture/github-pr-linkage-api.md:115:3. **Stale data**: GitHub's timeline events may have a short propagation delay
+docs/learned/architecture/github-api-rate-limits.md:2:title: GitHub API Rate Limits
+
+... [36 lines omitted] ...
+
+docs/learned/pr-operations/pr-creation-patterns.md:13:    warning: "Use the typed GitHub gateway (get_pr_for_branch, create_pr) instead of shelling out. The gateway returns PRDetails | PRNotFound for LBYL handling."
+docs/learned/ci/github-actions-workflow-patterns.md:11:    warning: "Reusable workflow input forwarding: GitHub Actions reusable workflows (via workflow_call) do NOT inherit environment variables from the caller workflow. Declare ERK_PLAN_BACKEND (and any other required env vars) as explicit inputs in the reusable workflow, and pass them explicitly from the caller workflow. Ambient env vars are NOT forwarded automatically."
+  </tool_result>
+  <assistant>I have a comprehensive picture of the docs that need updating. Let me check on the LibCST agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3195" cache_read_input_tokens="78826" cache_creation="{'ephemeral_5m_input_tokens': 3195, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_015rTStXUqmDYLPicVjUPXkt">
+    <param name="task_id">a46595e</param>
+    <param name="block">True</param>
+    <param name="timeout">300000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3195" cache_read_input_tokens="78826" cache_creation="{'ephemeral_5m_input_tokens': 3195, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015rTStXUqmDYLPicVjUPXkt">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a46595e&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk -type d -name \"src\" -o -name \"packages\" -o -name \"tests\" | head -20","description":"Find src, packages, and tests directories"}
+[Tool: Grep] {"pattern":"\\bclass (GitHub|RealGitHub|FakeGitHub|DryRunGitHub|PrintingGitHub)\\b","path":"/home/runner/work/erk/erk","output_mode":"files_with_matches","type":"py"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages /home/runner/work/erk/erk/tests -name \"*.py\" -type f 2&gt;/dev/null | wc -l","description":"Count total Python files to process"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages /home/runner/work/erk/erk/tests -name \"*.py\" -type f 2&gt;/dev/null | wc -l","description":"Count total Python files to process"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py"}
+[Tool: Grep] {"pattern":"\\b(GitHub|RealGitHub|FakeGitHub|DryRunGitHub|PrintingGitHub)\\b","path":"/home/runner/work/erk/erk","glob":"*.py","output_mode":"count"}
+[Tool: Grep] {"pattern":"\\b(GitHub|RealGitHub|FakeGitHub|DryRunGitHub|PrintingGitHub)\\b","path":"/home/runner/work/erk/erk","glob":"*.py","output_mode":"count"}
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/refactor_github_rename.py","content":"#!/usr/bin/env python3\n\"\"\"Rename GitHub ABC classes to LocalGitHub variants.\n\nRenames 5 class names across the codebase:\n- GitHub -&gt; LocalGitHub\n- RealGitHub -&gt; RealLocalGitHub\n- FakeGitHub -&gt; FakeLocalGitHub\n- DryRunGitHub -&gt; DryRunLocalGitHub\n- PrintingGitHub -&gt; PrintingLocalGitHub\n\nExample:\n  python refactor_github_rename.py src/ packages/ tests/ --dry-run\n  python refactor_github_rename.py src/ packages/ tests/\n\"\"\"\nimport sys\nfrom pathlib import Path\nimport libcst as cst\nfrom libcst import matchers as m\n\nRENAMES = {\n    \"GitHub\": \"LocalGitHub\",\n    \"RealGitHub\": \"RealLocalGitHub\",\n    \"FakeGitHub\": \"FakeLocalGitHub\",\n    \"DryRunGitHub\": \"DryRunLocalGitHub\",\n    \"PrintingGitHub\": \"PrintingLocalGitHub\",\n}\n\n\nclass RenameGitHubClassesTransformer(cst.CSTTransformer):\n    \"\"\"Transform GitHub class names to LocalGitHub variants.\"\"\"\n\n    def __init__(self):\n        super().__init__()\n        self.changes_made = 0\n\n    def leave_Name(self, original_node, updated_node):\n        \"\"\"Rename Name nodes if they match our rename dict.\"\"\"\n        if updated_node.value in RENAMES:\n            self.changes_made += 1\n            return updated_node.with_changes(value=RENAMES[updated_node.value])\n        return updated_node\n\n    def leave_ImportFrom(self, original_node, updated_node):\n        \"\"\"Rename imports in from ... import statements.\"\"\"\n        if not isinstance(updated_node.names, cst.ImportStar):\n            new_names = []\n            for import_alias in updated_node.names:\n                if isinstance(import_alias.name, cst.Name) and import_alias.name.value in RENAMES:\n                    self.changes_made += 1\n                    new_name = RENAMES[import_alias.name.value]\n                    new_import_alias = import_alias.with_changes(\n                        name=cst.Name(new_name)\n                    )\n                    new_names.append(new_import_alias)\n                else:\n                    new_names.append(import_alias)\n\n            if new_names != list(updated_node.names):\n                return updated_node.with_changes(names=new_names)\n\n        return updated_node\n\n    def leave_SimpleString(self, original_node, updated_node):\n        \"\"\"Rename string literals in __all__ and similar contexts.\"\"\"\n        # Check if this is a simple string that contains one of our target names\n        value = updated_node.value\n\n        # Remove quotes to get the string content\n        if len(value) &gt;= 2:\n            quote_char = value[0]\n            if quote_char in ('\"', \"'\"):\n                content = value[1:-1]\n\n                # Only rename if the entire string content is one of our targets\n                if content in RENAMES:\n                    self.changes_made += 1\n                    new_content = RENAMES[content]\n                    return updated_node.with_changes(value=f\"{quote_char}{new_content}{quote_char}\")\n\n        return updated_node\n\n\ndef transform_file(file_path: Path, dry_run: bool = False) -&gt; bool:\n    \"\"\"Transform a single file. Returns True if changes made.\"\"\"\n    if not file_path.exists():\n        print(f\"Skipping {file_path}: does not exist\")\n        return False\n\n    try:\n        source = file_path.read_text(encoding=\"utf-8\")\n    except Exception as e:\n        print(f\"Error reading {file_path}: {e}\")\n        return False\n\n    try:\n        tree = cst.parse_module(source)\n    except Exception as e:\n        print(f\"Parse error in {file_path}: {e}\")\n        return False\n\n    transformer = RenameGitHubClassesTransformer()\n    new_tree = tree.visit(transformer)\n\n    if transformer.changes_made == 0:\n        return False\n\n    if dry_run:\n        print(f\"[DRY RUN] Would modify {file_path}: {transformer.changes_made} changes\")\n        return True\n\n    try:\n        file_path.write_text(new_tree.code, encoding=\"utf-8\")\n        print(f\"✓ Modified {file_path}: {transformer.changes_made} changes\")\n        return True\n    except Exception as e:\n        print(f\"Error writing {file_path}: {e}\")\n        return False\n\n\ndef main():\n    dry_run = \"--dry-run\" in sys.argv\n    paths = [arg for arg in sys.argv[1:] if arg != \"--dry-run\"]\n\n    if not paths:\n        print(__doc__)\n        sys.exit(1)\n\n    total_modified = 0\n    all_files = []\n\n    # Collect all Python files from the specified paths\n    for path_str in paths:\n        path = Path(path_str)\n        if path.is_file() and path.suffix == \".py\":\n            all_files.append(path)\n        elif path.is_dir():\n            all_files.extend(path.rglob(\"*.py\"))\n\n    # Transform each file\n    for py_file in sorted(all_files):\n        if transform_file(py_file, dry_run):\n            total_modified += 1\n\n    action = \"[DRY RUN] Would modify\" if dry_run else \"Modified\"\n    print(f\"\\n{action} {total_modified} files\")\n\n\nif __name__ == \"__main__\":\n    main()\n"}
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/refactor_github_rename.py","content":"#!/usr/bin/env python3\n\"\"\"Rename GitHub ABC classes to LocalGitHub variants.\n\nRenames 5 class names across the codebase:\n- GitHub -&gt; LocalGitHub\n- RealGitHub -&gt; RealLocalGitHub\n- FakeGitHub -&gt; FakeLocalGitHub\n- DryRunGitHub -&gt; DryRunLocalGitHub\n- PrintingGitHub -&gt; PrintingLocalGitHub\n\nExample:\n  python refactor_github_rename.py src/ packages/ tests/ --dry-run\n  python refactor_github_rename.py src/ packages/ tests/\n\"\"\"\nimport sys\nfrom pathlib import Path\nimport libcst as cst\nfrom libcst import matchers as m\n\nRENAMES = {\n    \"GitHub\": \"LocalGitHub\",\n    \"RealGitHub\": \"RealLocalGitHub\",\n    \"FakeGitHub\": \"FakeLocalGitHub\",\n    \"DryRunGitHub\": \"DryRunLocalGitHub\",\n    \"PrintingGitHub\": \"PrintingLocalGitHub\",\n}\n\n\nclass RenameGitHubClassesTransformer(cst.CSTTransformer):\n    \"\"\"Transform GitHub class names to LocalGitHub variants.\"\"\"\n\n    def __init__(self):\n        super().__init__()\n        self.changes_made = 0\n\n    def leave_Name(self, original_node, updated_node):\n        \"\"\"Rename Name nodes if they match our rename dict.\"\"\"\n        if updated_node.value in RENAMES:\n            self.changes_made += 1\n            return updated_node.with_changes(value=RENAMES[updated_node.value])\n        return updated_node\n\n    def leave_ImportFrom(self, original_node, updated_node):\n        \"\"\"Rename imports in from ... import statements.\"\"\"\n        if not isinstance(updated_node.names, cst.ImportStar):\n            new_names = []\n            for import_alias in updated_node.names:\n                if isinstance(import_alias.name, cst.Name) and import_alias.name.value in RENAMES:\n                    self.changes_made += 1\n                    new_name = RENAMES[import_alias.name.value]\n                    new_import_alias = import_alias.with_changes(\n                        name=cst.Name(new_name)\n                    )\n                    new_names.append(new_import_alias)\n                else:\n                    new_names.append(import_alias)\n\n            if new_names != list(updated_node.names):\n                return updated_node.with_changes(names=new_names)\n\n        return updated_node\n\n    def leave_SimpleString(self, original_node, updated_node):\n        \"\"\"Rename string literals in __all__ and similar contexts.\"\"\"\n        # Check if this is a simple string that contains one of our target names\n        value = updated_node.value\n\n        # Remove quotes to get the string content\n        if len(value) &gt;= 2:\n            quote_char = value[0]\n            if quote_char in ('\"', \"'\"):\n                content = value[1:-1]\n\n                # Only rename if the entire string content is one of our targets\n                if content in RENAMES:\n                    self.changes_made += 1\n                    new_content = RENAMES[content]\n                    return updated_node.with_changes(value=f\"{quote_char}{new_content}{quote_char}\")\n\n        return updated_node\n\n\ndef transform_file(file_path: Path, dry_run: bool = False) -&gt; bool:\n    \"\"\"Transform a single file. Returns True if changes made.\"\"\"\n    if not file_path.exists():\n        print(f\"Skipping {file_path}: does not exist\")\n        return False\n\n    try:\n        source = file_path.read_text(encoding=\"utf-8\")\n    except Exception as e:\n        print(f\"Error reading {file_path}: {e}\")\n        return False\n\n    try:\n        tree = cst.parse_module(source)\n    except Exception as e:\n        print(f\"Parse error in {file_path}: {e}\")\n        return False\n\n    transformer = RenameGitHubClassesTransformer()\n    new_tree = tree.visit(transformer)\n\n    if transformer.changes_made == 0:\n        return False\n\n    if dry_run:\n        print(f\"[DRY RUN] Would modify {file_path}: {transformer.changes_made} changes\")\n        return True\n\n    try:\n        file_path.write_text(new_tree.code, encoding=\"utf-8\")\n        print(f\"✓ Modified {file_path}: {transformer.changes_made} changes\")\n        return True\n    except Exception as e:\n        print(f\"Error writing {file_path}: {e}\")\n        return False\n\n\ndef main():\n    dry_run = \"--dry-run\" in sys.argv\n    paths = [arg for arg in sys.argv[1:] if arg != \"--dry-run\"]\n\n    if not paths:\n        print(__doc__)\n        sys.exit(1)\n\n    total_modified = 0\n    all_files = []\n\n    # Collect all Python files from the specified paths\n    for path_str in paths:\n        path = Path(path_str)\n        if path.is_file() and path.suffix == \".py\":\n            all_files.append(path)\n        elif path.is_dir():\n            all_files.extend(path.rglob(\"*.py\"))\n\n    # Transform each file\n    for py_file in sorted(all_files):\n        if transform_file(py_file, dry_run):\n            total_modified += 1\n\n    action = \"[DRY RUN] Would modify\" if dry_run else \"Modified\"\n    print(f\"\\n{action} {total_modified} files\")\n\n\nif __name__ == \"__main__\":\n    main()\n"}
+[Tool: Bash] {"command":"python refactor_github_rename.py packages/erk-shared/src/erk_shared/gateway/github/abc.py --dry-run","description":"Test refactoring script on ABC file in dry-run mode"}
+[Tool: Bash] {"command":"python refactor_github_rename.py packages/erk-shared/src/erk_shared/gateway/github/abc.py --dry-run","description":"Test refactoring script on ABC file in dry-run mode"}
+[Tool: Bash] {"command":"uv pip install libcst","description":"Install LibCST using uv"}
+[Tool: Bash] {"command":"uv pip install libcst","description":"Install LibCST using uv"}
+[Tool: Bash] {"command":"python refactor_github_rename.py packages/erk-shared/src/erk_shared/gateway/github/abc.py --dry-run","description":"Test refactoring script on ABC file"}
+[Tool: Bash] {"command":"python refactor_github_rename.py packages/erk-shared/src/erk_shared/gateway/github/abc.py --dry-run","description":"Test refactoring script on ABC file"}
+[Tool: Bash] {"command":"source .venv/bin/activate &amp;&amp; python refactor_github_rename.py packages/erk-shared/src/erk_shared/gateway/github/abc.py --dry-run","description":"Test refactoring script with activated venv"}
+[Tool: Bash] {"command":"source .venv/bin/activate &amp;&amp; python refactor_github_rename.py packages/erk-shared/src/erk_shared/gateway/github/abc.py --dry-run","description":"Test refactoring script with activated venv"}
+[Tool: Bash] {"command":"source .venv/bin/activate &amp;&amp; python refactor_github_rename.py packages/erk-shared/src/erk_shared/gateway/github/fake.py --dry-run","description":"Test refactoring on fake.py"}
+[Tool: Bash] {"command":"source .venv/bin/activate &amp;&amp; python refactor_github_rename.py packages/erk-shared/src/erk_shared/gateway/github/fake.py --dry-run","description":"Test refactoring on fake.py"}
+
+... [73 lines omitted] ...
+  </tool_result>
+  <assistant>The LibCST agent completed successfully - 196 files modified, all 5 renames applied correctly. Tests passing. Compound names (GitHubIssues, GitHubAdmin, RemoteGitHub, etc.) were preserved. The refactoring script has been cleaned up.
+
+Let me verify the key changes and clean up the temporary script:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9341" cache_read_input_tokens="82021" cache_creation="{'ephemeral_5m_input_tokens': 9341, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01KUtktbn8nkf8fGE85P3ZMm">
+    <param name="command">ls refactor_github_rename.py 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "CLEANED"</param>
+    <param name="description">Check if refactor script was cleaned</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9341" cache_read_input_tokens="82021" cache_creation="{'ephemeral_5m_input_tokens': 9341, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XzMTUxAS3kaX2LaUXADiuo">
+    <param name="command">git diff --stat | wc -l</param>
+    <param name="description">Count modified files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9341" cache_read_input_tokens="82021" cache_creation="{'ephemeral_5m_input_tokens': 9341, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KUtktbn8nkf8fGE85P3ZMm">
+CLEANED
+  </tool_result>
+  <tool_result tool="toolu_01XzMTUxAS3kaX2LaUXADiuo">
+197
+  </tool_result>
+  <assistant>Good - 196 files changed (the stat line includes the summary). Let me mark Phase 1 complete and move to Phase 2.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="91362" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01UA3RBG87Z5R2WvkB4Xq8v8">
+    <param name="todos">[{'content': 'Phase 1: LibCST bulk rename of 5 Python class names', 'status': 'completed',...[truncated 623 chars]...ubmit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="91362" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="311" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UA3RBG87Z5R2WvkB4Xq8v8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me read the current `__init__.py` to see its post-rename state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="91885" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GTCrX5F41m43sooLejorcD">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="91885" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GTCrX5F41m43sooLejorcD">
+     1→"""GitHub integration utilities.
+     2→
+     3→Import from submodules:
+     4→- abc: GitHub
+     5→- types: PRInfo, PRMergeability, PRState, PullRequestInfo, WorkflowRun
+     6→- metadata: types, schemas, core (metadata block API)
+     7→- parsing: _parse_github_pr_url
+     8→- issues: GitHubIssues, RealGitHubIssues, FakeGitHubIssues, etc.
+     9→- real: RealGitHub
+    10→"""
+    11→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The docstring still references the old names. Let me update it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="92238" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KbuSePq4gseabkQsXSPsbw">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/__init__.py</param>
+    <param name="old_string">"""GitHub integration utilities.
+
+Import from submodules:
+- abc: GitHub
+- types: PRInfo, P...[truncated 116 chars]...rl
+- issues: GitHubIssues, RealGitHubIssues, FakeGitHubIssues, etc.
+- real: RealGitHub
+"""</param>
+    <param name="new_string">"""GitHub integration utilities.
+
+Import from submodules:
+- abc: LocalGitHub
+- types: PRIn...[truncated 126 chars]...issues: GitHubIssues, RealGitHubIssues, FakeGitHubIssues, etc.
+- real: RealLocalGitHub
+"""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="92238" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KbuSePq4gseabkQsXSPsbw">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/__init__.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01SXyUdJxeLTAUhtqWgenEdg">
+    <param name="todos">[{'content': 'Phase 1: LibCST bulk rename of 5 Python class names', 'status': 'completed',...[truncated 625 chars]...ubmit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="419" cache_read_input_tokens="92585" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SXyUdJxeLTAUhtqWgenEdg">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Phase 3: Update documentation. There are many files in `docs/learned/` referencing old class names. Let me launch a swarm of agents to handle this efficiently. First let me identify the exact list of doc files that need updates:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="93004" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_012ziUr5ES7g61oZumaTGwng">
+    <param name="pattern">\bRealGitHub\b|\bFakeGitHub\b|\bDryRunGitHub\b|\bPrintingGitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="93004" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012ziUr5ES7g61oZumaTGwng">
+Found 34 files
+docs/learned/testing/testing.md
+docs/learned/testing/tripwires.md
+docs/learned/testing/backend-testing-composition.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/command-group-testing.md
+docs/learned/testing/dual-backend-testing.md
+docs/learned/testing/environment-variable-isolation.md
+docs/learned/testing/exec-script-batch-testing.md
+docs/learned/testing/fake-github-api-reference.md
+docs/learned/testing/fake-github-mutation-tracking.md
+docs/learned/testing/fake-github-testing.md
+docs/learned/testing/frozen-dataclass-test-doubles.md
+docs/learned/testing/index.md
+docs/learned/testing/mock-elimination.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/monkeypatch-vs-fakes-decision.md
+docs/learned/reference/github-actions-api.md
+docs/learned/pr-operations/stub-pr-workflow-link.md
+docs/learned/planning/pr-analysis-pattern.md
+docs/learned/glossary.md
+docs/learned/cli/pr-operations.md
+docs/learned/ci/github-commit-indexing-timing.md
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/test-context-composition.md
+docs/learned/architecture/plan-backend-migration.md
+docs/learned/architecture/github-graphql.md
+docs/learned/architecture/github-interface-patterns.md
+docs/learned/architecture/github-admin-gateway.md
+docs/learned/architecture/github-api-retry-mechanism.md
+
+... [5 lines omitted] ...
+
+docs/learned/architecture/gateway-error-boundaries.md
+  </tool_result>
+  <assistant>34 files. I also need to check for bare `GitHub` references that refer to the ABC class (not GitHub the platform). Let me also check for the `GitHub` class name in context-field and type-annotation references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="93326" cache_creation="{'ephemeral_5m_input_tokens': 694, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FWBWKswBDM7UxpuKyJ4iam">
+    <param name="pattern">`: GitHub\b|class GitHub\b|\bGitHub\b \(ABC\)|\bGitHub ABC\b|\bGitHub\b gateway ABC|\bGitHub\b interface</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="93326" cache_creation="{'ephemeral_5m_input_tokens': 694, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FWBWKswBDM7UxpuKyJ4iam">
+Found 4 files
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/cli/ensure-ideal-pattern.md
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/gateway-abc-implementation.md
+  </tool_result>
+  <assistant>Let me use a rename-swarm approach. Since these are all documentation files (markdown), I can do a simple find-and-replace. Let me use `sed`-like replacements via the Edit tool. But given 34 files, let me use a more efficient approach - a batch script to do all the string replacements in docs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="94020" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LHmj5D1v49Ug1g72wy9ZQq">
+    <param name="command">python3 -c "
+import re
+from pathlib import Path
+
+# Files to update
+docs_dir = Path('docs/l...[truncated 1377 chars]... 1
+        print(f'Updated: {f}')
+
+print(f'\nTotal files updated: {total_changes}')
+" 2&gt;&amp;1</param>
+    <param name="description">Batch update docs for 4 compound names</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="94020" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+</session>

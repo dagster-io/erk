@@ -1,0 +1,415 @@
+<session>
+  <meta source="agent-a46595e" />
+  <meta branch="plnd/O8832-rename-github-to-loc-03-06-1802" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_result tool="toolu_01JFWRJ4dWhYceYo2zmfhfu5">
+ .../unit/cli/commands/test_admin_test_workflow.py  |   8 +-
+ tests/unit/cli/commands/test_implement_shared.py   |   4 +-
+ tests/unit/cli/test_navigation_helpers.py          |   8 +-
+ tests/unit/core/github/test_fake_github.py         |  30 +++---
+ tests/unit/core/github/test_trigger_workflow.py    |   6 +-
+ tests/unit/core/test_workflow_smoke_test.py        |   8 +-
+ tests/unit/entity_store/test_entity_state.py       |  24 ++---
+ tests/unit/entity_store/test_github_entity.py      |  18 ++--
+ tests/unit/fakes/test_fake_github.py               | 112 ++++++++++-----------
+ tests/unit/gateways/github/test_label_ops.py       |  12 +--
+ .../unit/gateways/github/test_parse_check_runs.py  |  20 ++--
+ tests/unit/gateways/github/test_real.py            |  42 ++++----
+ tests/unit/gateways/gt/fake_ops.py                 |  12 +--
+ .../unit/plan_store/test_plan_backend_interface.py |   8 +-
+ tests/unit/plan_store/test_planned_pr_backend.py   |  34 +++----
+ tests/unit/services/test_objective_list_service.py |  16 +--
+ tests/unit/services/test_plan_list_service.py      |  34 +++----
+ tests/unit/services/test_plan_list_service_http.py |  14 +--
+ tests/unit/status/test_github_pr_collector.py      |   4 +-
+ 196 files changed, 1372 insertions(+), 1372 deletions(-)
+  </tool_result>
+  <assistant>Perfect! The change is perfectly balanced: 1372 insertions, 1372 deletions across 196 files. This is exactly what we expect for a pure rename operation.
+
+Now let me verify that no compound names were changed by checking for accidental renames:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="705" cache_read_input_tokens="83486" cache_creation="{'ephemeral_5m_input_tokens': 705, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01D25uHfHkDrmRNLXvAHJhgq">
+    <param name="command">git diff | grep -E "^\+.*Local.*GitHub.*Issues|^\+.*Local.*GitHub.*Admin|^\+.*Local.*GitHub.*Checks|^\+.*LocalGitHubRepo|^\+.*Local.*Remote.*GitHub" | head -20</param>
+    <param name="description">Check for incorrect compound name changes</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="705" cache_read_input_tokens="83486" cache_creation="{'ephemeral_5m_input_tokens': 705, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D25uHfHkDrmRNLXvAHJhgq">
++    def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time) -&gt; None:
++    def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time) -&gt; None:
++) -&gt; tuple[PlannedPRBackend, FakeLocalGitHub, FakeGitHubIssues]:
++) -&gt; tuple[FakeLocalGitHub, FakeGitHubIssues, PlannedPRBackend]:
++    backend = PlannedPRBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())
++    backend = PlannedPRBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())
++    backend = PlannedPRBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())
++    backend = PlannedPRBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())
+  </tool_result>
+  <assistant>Good! All of those are correct - they show `LocalGitHub` next to `GitHubIssues`, not `LocalGitHubIssues`. The compound names were properly preserved.
+
+Let me check if there are any __all__ declarations that should have been updated:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="479" cache_read_input_tokens="84191" cache_creation="{'ephemeral_5m_input_tokens': 479, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HbLPh8DXwuKhhfefES43HD">
+    <param name="command">git diff | grep -E "^\+.*__all__.*=|^-.*__all__.*=" | head -20</param>
+    <param name="description">Check for __all__ changes</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="479" cache_read_input_tokens="84191" cache_creation="{'ephemeral_5m_input_tokens': 479, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HbLPh8DXwuKhhfefES43HD">
+
+  </tool_result>
+  <assistant>No __all__ changes, which is fine. Let me run a broader test suite to ensure everything still works:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="277" cache_read_input_tokens="84670" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JLvUQiDYFgxXJRZ4YfK1er">
+    <param name="command">source .venv/bin/activate &amp;&amp; python -m pytest tests/unit/gateways/github/ -v 2&gt;&amp;1 | tail -30</param>
+    <param name="description">Run GitHub gateway tests</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="277" cache_read_input_tokens="84670" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JLvUQiDYFgxXJRZ4YfK1er">
+tests/unit/gateways/github/metadata_blocks/test_render_erk_issue_event.py . [ 44%]
+..                                                                       [ 45%]
+tests/unit/gateways/github/metadata_blocks/test_rendering.py ....        [ 47%]
+tests/unit/gateways/github/metadata_blocks/test_round_trip.py .......... [ 52%]
+...................                                                      [ 61%]
+tests/unit/gateways/github/metadata_blocks/test_schema_validation.py ... [ 62%]
+..                                                                       [ 63%]
+tests/unit/gateways/github/metadata_blocks/test_state_sparkline.py ..... [ 66%]
+...                                                                      [ 67%]
+tests/unit/gateways/github/metadata_blocks/test_update_dispatch.py ...   [ 69%]
+tests/unit/gateways/github/metadata_blocks/test_update_local_impl.py ... [ 70%]
+                                                                         [ 70%]
+tests/unit/gateways/github/test_emoji.py ...........................     [ 83%]
+tests/unit/gateways/github/test_label_ops.py .....                       [ 86%]
+tests/unit/gateways/github/test_parse_check_runs.py .........            [ 90%]
+tests/unit/gateways/github/test_real.py ....................             [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/_pytest/config/__init__.py:1428
+  /home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/_pytest/config/__init__.py:1428: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv/lib/python3.13/site-packages/_pytest/config/__init__.py:1428
+  /home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/_pytest/config/__init__.py:1428: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 208 passed, 2 warnings in 0.48s ========================
+  </tool_result>
+  <assistant>Perfect! All 208 tests pass. Let me also run a quick smoke test on some of the other tests that use GitHub:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="804" cache_read_input_tokens="84947" cache_creation="{'ephemeral_5m_input_tokens': 804, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0167jBi1vWgBtWPE9gQd6z8X">
+    <param name="command">source .venv/bin/activate &amp;&amp; python -m pytest tests/unit/core/github/ -v 2&gt;&amp;1 | tail -20</param>
+    <param name="description">Run core GitHub tests</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="804" cache_read_input_tokens="84947" cache_creation="{'ephemeral_5m_input_tokens': 804, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0167jBi1vWgBtWPE9gQd6z8X">
+configfile: pyproject.toml
+plugins: anyio-4.12.1
+collected 14 items
+
+tests/unit/core/github/test_fake_github.py ............                  [ 85%]
+tests/unit/core/github/test_trigger_workflow.py ..                       [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/_pytest/config/__init__.py:1428
+  /home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/_pytest/config/__init__.py:1428: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+.venv/lib/python3.13/site-packages/_pytest/config/__init__.py:1428
+  /home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/_pytest/config/__init__.py:1428: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 14 passed, 2 warnings in 0.07s ========================
+  </tool_result>
+  <assistant>Excellent! Let me create a summary report of the changes and then clean up the refactoring script:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="614" cache_read_input_tokens="85751" cache_creation="{'ephemeral_5m_input_tokens': 614, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016XVfCkt1NgkHHEhK1nYrxx">
+    <param name="command">rm refactor_github_rename.py &amp;&amp; git status</param>
+    <param name="description">Remove the refactoring script</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="614" cache_read_input_tokens="85751" cache_creation="{'ephemeral_5m_input_tokens': 614, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016XVfCkt1NgkHHEhK1nYrxx">
+On branch plnd/O8832-rename-github-to-loc-03-06-1802
+Your branch is up to date with 'origin/plnd/O8832-rename-github-to-loc-03-06-1802'.
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+	new file:   refactor_github_rename.py
+
+Changes not staged for commit:
+  (use "git add/rm &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   packages/erk-shared/src/erk_shared/context/context.py
+	modified:   packages/erk-shared/src/erk_shared/context/factories.py
+	modified:   packages/erk-shared/src/erk_shared/context/helpers.py
+	modified:   packages/erk-shared/src/erk_shared/context/testing.py
+	modified:   packages/erk-shared/src/erk_shared/entity_store/entity.py
+	modified:   packages/erk-shared/src/erk_shared/entity_store/state.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/branch_manager/factory.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/github/abc.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/github/checks.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/github/fake.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/github/label_ops.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/github/printing.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/github/real.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/gt/abc.py
+	modified:   packages/erk-shared/src/erk_shared/gateway/gt/real.py
+	modified:   packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+	modified:   packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+
+... [177 lines omitted] ...
+
+	modified:   tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011JZxK6sL7W3WxGDNGhfAfT">
+    <param name="command">git reset HEAD refactor_github_rename.py</param>
+    <param name="description">Unstage the script</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="4651" cache_read_input_tokens="86365" cache_creation="{'ephemeral_5m_input_tokens': 4651, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011JZxK6sL7W3WxGDNGhfAfT">
+Unstaged changes after reset:
+M	packages/erk-shared/src/erk_shared/context/context.py
+M	packages/erk-shared/src/erk_shared/context/factories.py
+M	packages/erk-shared/src/erk_shared/context/helpers.py
+M	packages/erk-shared/src/erk_shared/context/testing.py
+M	packages/erk-shared/src/erk_shared/entity_store/entity.py
+M	packages/erk-shared/src/erk_shared/entity_store/state.py
+M	packages/erk-shared/src/erk_shared/gateway/branch_manager/factory.py
+M	packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py
+M	packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+M	packages/erk-shared/src/erk_shared/gateway/github/abc.py
+M	packages/erk-shared/src/erk_shared/gateway/github/checks.py
+M	packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+M	packages/erk-shared/src/erk_shared/gateway/github/fake.py
+M	packages/erk-shared/src/erk_shared/gateway/github/label_ops.py
+M	packages/erk-shared/src/erk_shared/gateway/github/printing.py
+M	packages/erk-shared/src/erk_shared/gateway/github/real.py
+M	packages/erk-shared/src/erk_shared/gateway/gt/abc.py
+M	packages/erk-shared/src/erk_shared/gateway/gt/real.py
+M	packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+M	packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+M	packages/erk-shared/tests/unit/branch_manager/test_graphite_branch_manager.py
+M	packages/erk-shared/tests/unit/github/test_plan_issues.py
+M	packages/erk-shared/tests/unit/github/test_pr_review_threads.py
+M	packages/erk-shared/tests/unit/integrations/pr/test_diff_extraction.py
+M	packages/erk-statusline/src/erk_statusline/context.py
+M	packages/erk-statusline/tests/test_statusline.py
+M	src/erk/cli/commands/admin.py
+M	src/erk/cli/commands/doctor.py
+M	src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+
+... [167 lines omitted] ...
+
+M	tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <assistant>Perfect! Now let me create a final summary of the changes. Let me check a few more sample files to verify everything is correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="4191" cache_read_input_tokens="91016" cache_creation="{'ephemeral_5m_input_tokens': 4191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LBTvGZXJM6GEjD8ZjBALBo">
+    <param name="command">git diff packages/erk-shared/src/erk_shared/gateway/github/__init__.py packages/erk-shared/src/erk_shared/context/context.py | head -100</param>
+    <param name="description">Final verification of key files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="4191" cache_read_input_tokens="91016" cache_creation="{'ephemeral_5m_input_tokens': 4191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LBTvGZXJM6GEjD8ZjBALBo">
+diff --git a/packages/erk-shared/src/erk_shared/context/context.py b/packages/erk-shared/src/erk_shared/context/context.py
+index 0a26c65fc..330a36228 100644
+--- a/packages/erk-shared/src/erk_shared/context/context.py
++++ b/packages/erk-shared/src/erk_shared/context/context.py
+@@ -42,7 +42,7 @@ from erk_shared.gateway.completion.abc import Completion
+ from erk_shared.gateway.console.abc import Console
+ from erk_shared.gateway.erk_installation.abc import ErkInstallation
+ from erk_shared.gateway.git.abc import Git
+-from erk_shared.gateway.github.abc import GitHub
++from erk_shared.gateway.github.abc import LocalGitHub
+ from erk_shared.gateway.github.issues.abc import GitHubIssues
+ from erk_shared.gateway.github.types import RepoInfo
+ from erk_shared.gateway.github_admin.abc import GitHubAdmin
+@@ -78,7 +78,7 @@ class ErkContext:
+ 
+     # Gateway integrations (from erk_shared)
+     git: Git  # Note: branch ops accessed via git.branch subgateway
+-    github: GitHub  # Note: issues accessed via github.issues property
++    github: LocalGitHub  # Note: issues accessed via github.issues property
+     github_admin: GitHubAdmin  # GitHub Actions admin operations
+     graphite: Graphite
+     graphite_branch_ops: GraphiteBranchOps | None  # None when Graphite disabled
+@@ -214,7 +214,7 @@ class ErkContext:
+         *,
+         github_issues: GitHubIssues | None = None,
+         git: Git | None = None,
+-        github: GitHub | None = None,
++        github: LocalGitHub | None = None,
+         github_admin: GitHubAdmin | None = None,
+         claude_installation: ClaudeInstallation | None = None,
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! The changes are clean and correct. Now let me check the overall file count and verify our work is complete:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="705" cache_read_input_tokens="95207" cache_creation="{'ephemeral_5m_input_tokens': 705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012t6NtL3Vo7nbav6JkriXEo">
+    <param name="command">echo "=== LibCST Refactoring Results ===" &amp;&amp; echo &amp;&amp; echo "Task: Rename GitHub ABC classes...[truncated 513 chars]...eas)" &amp;&amp; echo "- Imports correctly updated" &amp;&amp; echo "- Type annotations correctly updated"</param>
+    <param name="description">Generate summary report</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="705" cache_read_input_tokens="95207" cache_creation="{'ephemeral_5m_input_tokens': 705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012t6NtL3Vo7nbav6JkriXEo">
+=== LibCST Refactoring Results ===
+
+Task: Rename GitHub ABC classes to LocalGitHub variants
+
+Files modified: 196
+196
+
+Changes:
+- GitHub -&gt; LocalGitHub
+- RealGitHub -&gt; RealLocalGitHub
+- FakeGitHub -&gt; FakeLocalGitHub
+- DryRunGitHub -&gt; DryRunLocalGitHub
+- PrintingGitHub -&gt; PrintingLocalGitHub
+
+Status: Success
+
+Verified:
+- All compound names (GitHubIssues, GitHubAdmin, RemoteGitHub, etc.) preserved
+- Tests pass (222 tests in affected areas)
+- Imports correctly updated
+- Type annotations correctly updated
+  </tool_result>
+  <assistant>Perfect! Let me create one final comprehensive verification by checking a sample of different file types to ensure everything is correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="593" cache_read_input_tokens="95912" cache_creation="{'ephemeral_5m_input_tokens': 593, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016qg6Hc7T8jzFs2LnLBuDoi">
+    <param name="command">git diff --stat | head -10</param>
+    <param name="description">Show first files modified</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="593" cache_read_input_tokens="95912" cache_creation="{'ephemeral_5m_input_tokens': 593, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016qg6Hc7T8jzFs2LnLBuDoi">
+ .../erk-shared/src/erk_shared/context/context.py   |   6 +-
+ .../erk-shared/src/erk_shared/context/factories.py |   4 +-
+ .../erk-shared/src/erk_shared/context/helpers.py   |   4 +-
+ .../erk-shared/src/erk_shared/context/testing.py   |   8 +-
+ .../src/erk_shared/entity_store/entity.py          |   4 +-
+ .../src/erk_shared/entity_store/state.py           |  12 +--
+ .../erk_shared/gateway/branch_manager/factory.py   |   4 +-
+ .../src/erk_shared/gateway/branch_manager/git.py   |   4 +-
+ .../erk_shared/gateway/branch_manager/graphite.py  |   4 +-
+ .../src/erk_shared/gateway/github/abc.py           |   2 +-
+  </tool_result>
+  <assistant>Excellent! All the changes are clean. Let me verify one more critical file to make sure the entire transformation is correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="377" cache_read_input_tokens="96505" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GfWs5xCxsCuNqMF2XtpeDg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">26</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="377" cache_read_input_tokens="96505" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GfWs5xCxsCuNqMF2XtpeDg">
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class LocalGitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! The class has been renamed to `LocalGitHub` and `GitHubIssues` remains unchanged. Let me verify the fake implementation as well:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="395" cache_read_input_tokens="96882" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017PJjydMjfNCgBxj443wmQz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">10</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="395" cache_read_input_tokens="96882" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017PJjydMjfNCgBxj443wmQz">
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+    31→    WorkflowRun,
+    32→)
+    33→from erk_shared.gateway.time.abc import Time
+    34→from erk_shared.gateway.time.fake import FakeTime
+    35→
+    36→
+    37→class FakeLocalGitHub(LocalGitHub):
+    38→    """In-memory fake implementation of GitHub operations.
+    39→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Everything is correctly renamed. The refactoring is complete and successful.
+
+## Summary
+
+I've successfully completed the bulk rename of 5 Python class names across the entire erk codebase using LibCST. Here are the results:
+
+### Renames Performed
+
+| Original Name | New Name |
+|---|---|
+| `GitHub` | `LocalGitHub` |
+| `RealGitHub` | `RealLocalGitHub` |
+| `FakeGitHub` | `FakeLocalGitHub` |
+| `DryRunGitHub` | `DryRunLocalGitHub` |
+| `PrintingGitHub` | `PrintingLocalGitHub` |
+
+### Results
+
+- **Files modified**: 196 files across `src/`, `packages/`, and `tests/`
+- **Changes**: 1,372 insertions, 1,372 deletions (perfectly balanced rename operation)
+- **Scope**: All `.py` files in the specified directories
+
+### What Changed
+
+1. **Class definitions**: `class GitHub(ABC):` → `class LocalGitHub(ABC):`
+2. **Import statements**: `from erk_shared.gateway.github.abc import GitHub` → `from erk_shared.gateway.github.abc import LocalGitHub`
+3. **Type annotations**: `github: GitHub` → `github: LocalGitHub`
+4. **Base classes**: `class FakeGitHub(GitHub):` → `class FakeLocalGitHub(LocalGitHub):`
+5. **All other references** to these 5 class names throughout the codebase
+
+### What Did NOT Change (Verification Confirmed)
+
+- Compound names like `GitHubIssues`, `GitHubAdmin`, `GitHubChecks`, `GitHubRepoId`, `GitHubRepoLocation` remained unchanged
+- `RemoteGitHub` and its variants (`RealRemoteGitHub`, `FakeRemoteGitHub`) remained unchanged
+- Module/directory paths remained unchanged
+- Variable names and context field names (like `github`, `fake_github`, `ctx.github`) remained unchanged
+
+### Testing Verification
+
+- Ran 222 tests in affected areas - all passing
+- Verified imports work correctly
+- Confirmed no compound names were accidentally renamed
+
+The refactoring was performed using a LibCST transformer that:
+1. Matches standalone `Name` nodes with a simple dictionary lookup
+2. Handles `ImportFrom` statements to rename imported names
+3. Handles string literals in places like `__all__` lists
+4. Preserves all whitespace and formatting
+
+The transformation is complete, tested, and ready for commit.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="582" cache_read_input_tokens="97277" cache_creation="{'ephemeral_5m_input_tokens': 582, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
