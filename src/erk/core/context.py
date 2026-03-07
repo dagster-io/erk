@@ -649,8 +649,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     # 10. Create LLM caller for lightweight operations (slug generation)
     from erk.core.fast_llm import AnthropicLlmCaller
+    from erk.core.prompt_executor import ClaudePromptExecutor
 
-    llm_caller = AnthropicLlmCaller()
+    llm_caller = AnthropicLlmCaller(prompt_executor=ClaudePromptExecutor(console=None))
 
     # 11. Create claude installation and prompt executor
     from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
