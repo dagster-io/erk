@@ -38,7 +38,9 @@ def test_setup_derives_name_from_repo_info(tmp_path: Path) -> None:
     """setup command derives codespace name from repo_info if not provided."""
     runner = CliRunner()
 
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry()
     erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
     ctx = context_for_test(
@@ -59,7 +61,9 @@ def test_setup_uses_default_name_without_repo_info(tmp_path: Path) -> None:
     """setup command uses default name when no repo_info available."""
     runner = CliRunner()
 
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry()
     erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
     ctx = context_for_test(
@@ -81,7 +85,9 @@ def test_setup_accepts_explicit_name(tmp_path: Path) -> None:
     """setup command accepts explicit name argument and creates codespace."""
     runner = CliRunner()
 
-    fake_codespace = FakeCodespace(created_codespace_name="gh-custom-abc")
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="gh-custom-abc"
+    )
     codespace_registry = FakeCodespaceRegistry()
     erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
     ctx = context_for_test(
@@ -117,7 +123,9 @@ def test_setup_repo_id_lookup_uses_repo_flag(tmp_path: Path) -> None:
     """setup command uses --repo flag for repo ID lookup."""
     runner = CliRunner()
 
-    fake_codespace = FakeCodespace(repo_id=99999)
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=99999, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry()
     erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
     ctx = context_for_test(
@@ -142,7 +150,9 @@ def test_setup_repo_id_lookup_uses_repo_info(tmp_path: Path) -> None:
     """setup command uses ctx.repo_info for repo ID lookup when --repo not provided."""
     runner = CliRunner()
 
-    fake_codespace = FakeCodespace(repo_id=42)
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=42, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry()
     erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
     ctx = context_for_test(
@@ -167,7 +177,9 @@ def test_setup_creates_codespace_with_correct_params(tmp_path: Path) -> None:
     """setup command passes correct parameters to create_codespace."""
     runner = CliRunner()
 
-    fake_codespace = FakeCodespace(repo_id=12345, created_codespace_name="gh-mybox-abc")
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="gh-mybox-abc"
+    )
     codespace_registry = FakeCodespaceRegistry()
     erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
     ctx = context_for_test(
@@ -197,7 +209,9 @@ def test_setup_calls_ssh_login(tmp_path: Path) -> None:
     """setup command runs SSH login command after creating codespace."""
     runner = CliRunner()
 
-    fake_codespace = FakeCodespace(created_codespace_name="gh-mybox-abc")
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="gh-mybox-abc"
+    )
     codespace_registry = FakeCodespaceRegistry()
     erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
     ctx = context_for_test(
@@ -223,6 +237,7 @@ def test_setup_shows_retry_hint_on_login_failure(tmp_path: Path) -> None:
 
     fake_codespace = FakeCodespace(
         run_exit_code=1,
+        repo_id=12345,
         created_codespace_name="gh-mybox-abc",
     )
     codespace_registry = FakeCodespaceRegistry()

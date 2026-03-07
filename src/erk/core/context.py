@@ -153,7 +153,9 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_graphite = FakeGraphite()
     fake_graphite_branch_ops = FakeGraphiteBranchOps()
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     fake_console = FakeConsole(
         is_interactive=True,
         is_stdout_tty=None,
@@ -349,7 +351,9 @@ def context_for_test(
         shell = FakeShell()
 
     if codespace is None:
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
     if agent_launcher is None:
         agent_launcher = FakeAgentLauncher()

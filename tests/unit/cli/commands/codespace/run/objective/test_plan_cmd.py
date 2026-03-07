@@ -25,7 +25,9 @@ def test_run_plan_starts_codespace_and_runs_command() -> None:
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
     ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
 
@@ -59,7 +61,9 @@ def test_run_plan_with_explicit_codespace() -> None:
 
     cs1 = _make_codespace("box1")
     cs2 = _make_codespace("box2")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs1, cs2], default_codespace="box1")
     ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
 
@@ -98,7 +102,9 @@ def test_run_plan_with_dangerous_flag() -> None:
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
     ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
 
@@ -123,7 +129,9 @@ def test_run_plan_without_dangerous_flag() -> None:
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
     ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
 
@@ -149,7 +157,9 @@ def test_run_plan_with_all_unblocked_flag() -> None:
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
     ctx = context_for_test(codespace=fake_codespace, codespace_registry=codespace_registry)
 
@@ -175,7 +185,9 @@ def test_run_plan_uses_config_codespace_name() -> None:
     runner = CliRunner()
 
     cs = _make_codespace("config-box")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs])
     local_config = LoadedConfig.test(codespace_name="config-box")
     ctx = context_for_test(
@@ -201,7 +213,9 @@ def test_run_plan_with_working_directory() -> None:
     runner = CliRunner()
 
     cs = _make_codespace("mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
     local_config = LoadedConfig.test(codespace_working_directory="/workspaces/dagster-compass")
     ctx = context_for_test(

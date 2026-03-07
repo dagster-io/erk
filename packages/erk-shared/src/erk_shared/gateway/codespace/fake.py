@@ -35,19 +35,16 @@ class FakeCodespace(Codespace):
     def __init__(
         self,
         *,
-        run_exit_code: int = 0,
-        repo_id: int = 12345,
-        created_codespace_name: str = "fake-gh-name",
+        run_exit_code: int,
+        repo_id: int,
+        created_codespace_name: str,
     ) -> None:
         """Create FakeCodespace with configurable behavior.
 
         Args:
             run_exit_code: Exit code to return from run_ssh_command.
-                Defaults to 0 (success) for most tests.
             repo_id: Repository ID to return from get_repo_id.
-                Defaults to 12345 for most tests.
             created_codespace_name: Name to return from create_codespace.
-                Defaults to "fake-gh-name" for most tests.
         """
         self._run_exit_code = run_exit_code
         self._repo_id = repo_id

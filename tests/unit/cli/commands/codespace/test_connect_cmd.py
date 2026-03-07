@@ -75,7 +75,9 @@ def test_connect_outputs_connecting_message_for_valid_codespace() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     result = runner.invoke(cli, ["codespace", "connect"], obj=ctx)
@@ -105,7 +107,9 @@ def test_connect_with_explicit_name() -> None:
         name="box2", gh_name="user-box2-def", created_at=datetime(2026, 1, 20, 9, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs1, cs2], default_codespace="box1")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     # Connect to non-default codespace
@@ -127,7 +131,9 @@ def test_connect_with_shell_flag_drops_to_shell() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     result = runner.invoke(cli, ["codespace", "connect", "--shell"], obj=ctx)
@@ -152,7 +158,9 @@ def test_connect_with_env_injects_export() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     result = runner.invoke(
@@ -173,7 +181,9 @@ def test_connect_with_multiple_env_vars() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     result = runner.invoke(
@@ -196,7 +206,9 @@ def test_connect_env_with_shell_flag() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     result = runner.invoke(cli, ["codespace", "connect", "--shell", "--env", "FOO=bar"], obj=ctx)
@@ -216,7 +228,9 @@ def test_connect_env_invalid_format_errors() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     result = runner.invoke(cli, ["codespace", "connect", "--env", "INVALID"], obj=ctx)
@@ -233,7 +247,9 @@ def test_connect_uses_config_codespace_name() -> None:
         name="config-box", gh_name="user-configbox-abc", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs])
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     local_config = LoadedConfig.test(codespace_name="config-box")
     ctx = context_for_test(
         codespace_registry=codespace_registry,
@@ -257,7 +273,9 @@ def test_connect_with_working_directory_prepends_cd() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     local_config = LoadedConfig.test(codespace_working_directory="/workspaces/dagster-compass")
     ctx = context_for_test(
         codespace_registry=codespace_registry,
@@ -281,7 +299,9 @@ def test_connect_with_working_directory_and_shell_flag() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     local_config = LoadedConfig.test(codespace_working_directory="/workspaces/repo")
     ctx = context_for_test(
         codespace_registry=codespace_registry,
@@ -319,7 +339,9 @@ def test_connect_checks_out_local_branch() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     git = FakeGit(current_branches={repo_root: "feature-x"})
     repo = _make_repo_context(repo_root)
     ctx = context_for_test(
@@ -347,7 +369,9 @@ def test_connect_skips_checkout_when_detached_head() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     git = FakeGit(current_branches={repo_root: None})
     repo = _make_repo_context(repo_root)
     ctx = context_for_test(
@@ -376,7 +400,9 @@ def test_connect_shell_checks_out_local_branch() -> None:
         name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
     )
     codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
-    fake_codespace = FakeCodespace()
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     git = FakeGit(current_branches={repo_root: "feature-x"})
     repo = _make_repo_context(repo_root)
     ctx = context_for_test(
