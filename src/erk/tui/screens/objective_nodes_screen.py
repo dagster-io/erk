@@ -147,6 +147,8 @@ class ObjectiveNodesScreen(ModalScreen):
         Binding("space", "dismiss", "Close"),
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
+        Binding("down", "cursor_down", "Down", show=False, priority=True),
+        Binding("up", "cursor_up", "Up", show=False, priority=True),
         Binding("p", "open_pr", "Open PR", show=False),
         Binding("o", "open_objective", "Objective", show=False),
         Binding("enter", "open_detail", "Detail", show=False),
