@@ -1,15 +1,14 @@
 """Tests for plan validation via pr check command."""
 
 from datetime import UTC, datetime
-from pathlib import Path
 
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -50,11 +49,17 @@ def test_check_valid_plan_passes() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-123",
             issues={42: issue},
-            comments={42: [plan_body_block]},
+            issue_comments={42: [plan_body_block]},
+            pr_references=None,
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
@@ -87,11 +92,17 @@ def test_check_missing_plan_header_fails() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-123",
             issues={42: issue},
-            comments={42: []},
+            issue_comments={42: []},
+            pr_references=None,
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
@@ -128,11 +139,17 @@ def test_check_missing_required_field_fails() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-123",
             issues={42: issue},
-            comments={42: []},
+            issue_comments={42: []},
+            pr_references=None,
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)

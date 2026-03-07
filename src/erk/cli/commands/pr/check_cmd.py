@@ -1,14 +1,12 @@
 """Command to validate PR rules or plan format for the current branch."""
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import NamedTuple
 
 import click
 
 from erk.cli.commands.pr.repo_resolution import (
     get_remote_github,
-    is_remote_mode,
     repo_option,
     resolve_owner_repo,
 )
@@ -16,7 +14,6 @@ from erk.cli.ensure import Ensure
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
@@ -71,8 +68,10 @@ PlanValidationResult = PlanValidationSuccess | PlanValidationError
 
 
 def validate_plan_format(
-    github_issues: GitHubIssues,
-    repo_root: Path,
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo: str,
     plan_number: int,
 ) -> PlanValidationResult:
     """Validate plan format programmatically.
@@ -86,100 +85,14 @@ def validate_plan_format(
     API failures are returned as PlanValidationError.
 
     Args:
-        github_issues: GitHub issues interface
-        repo_root: Repository root path
-        plan_number: GitHub issue number to validate
-
-    Returns:
-        PlanValidationSuccess if validation completed (may have passed or failed checks)
-        PlanValidationError if unable to complete validation (API error, etc.)
-    """
-    # Track validation results
-    checks: list[tuple[bool, str]] = []
-
-    # Fetch issue from GitHub
-    issue = github_issues.get_issue(repo_root, plan_number)
-    if isinstance(issue, IssueNotFound):
-        return PlanValidationError(error=f"Plan #{plan_number} not found")
-
-    issue_body = issue.body if issue.body else ""
-
-    # Check 1: plan-header metadata block exists
-    plan_header_block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if plan_header_block is None:
-        checks.append((False, "plan-header metadata block present"))
-    else:
-        checks.append((True, "plan-header metadata block present"))
-
-        # Check 2: plan-header has required fields and is valid
-        try:
-            schema = PlanHeaderSchema()
-            schema.validate(plan_header_block.data)
-            checks.append((True, "plan-header has required fields"))
-        except ValueError as e:
-            # Extract first error message for cleaner output
-            error_msg = str(e).split("\n")[0]
-            checks.append((False, f"plan-header validation failed: {error_msg}"))
-
-    # Detect format: draft-PR (body has original-plan section)
-    if has_original_plan_section(issue_body):
-        # Draft-PR format: plan content is in the body
-        plan_content = extract_plan_content(issue_body)
-        if plan_content:
-            checks.append((True, "plan content extractable from body"))
-        else:
-            checks.append((False, "plan content extractable from body"))
-    else:
-        # Issue-based format: plan content is in first comment
-        # Check 3: First comment exists
-        try:
-            comments = github_issues.get_issue_comments(repo_root, plan_number)
-        except RuntimeError as e:
-            return PlanValidationError(error=str(e))
-
-        if not comments:
-            checks.append((False, "First comment exists"))
-        else:
-            checks.append((True, "First comment exists"))
-
-            # Check 4: plan-body content extractable
-            first_comment = comments[0]
-            plan_content = extract_plan_from_comment(first_comment)
-            if plan_content is None:
-                checks.append((False, "plan-body content extractable"))
-            else:
-                checks.append((True, "plan-body content extractable"))
-
-    # Determine overall result
-    failed_count = sum(1 for passed, _ in checks if not passed)
-
-    return PlanValidationSuccess(
-        passed=failed_count == 0,
-        checks=checks,
-        failed_count=failed_count,
-    )
-
-
-def validate_plan_format_remote(
-    remote: RemoteGitHub,
-    *,
-    owner: str,
-    repo: str,
-    plan_number: int,
-) -> PlanValidationResult:
-    """Validate plan format via RemoteGitHub (no local repo required).
-
-    Same validation logic as validate_plan_format but uses RemoteGitHub
-    instead of GitHubIssues.
-
-    Args:
         remote: RemoteGitHub instance
         owner: Repository owner
         repo: Repository name
         plan_number: GitHub issue number to validate
 
     Returns:
-        PlanValidationSuccess or PlanValidationError
+        PlanValidationSuccess if validation completed (may have passed or failed checks)
+        PlanValidationError if unable to complete validation (API error, etc.)
     """
     checks: list[tuple[bool, str]] = []
 
@@ -283,12 +196,9 @@ def pr_check(
         erk pr check 456 --repo owner/repo  # Remote plan validation
     """
     if identifier is not None:
-        if is_remote_mode(ctx, target_repo=target_repo):
-            _check_plan_format_remote(ctx, identifier, target_repo=target_repo)
-        else:
-            _check_plan_format(ctx, identifier)
+        _check_plan_format(ctx, identifier, target_repo=target_repo)
     else:
-        if is_remote_mode(ctx, target_repo=target_repo):
+        if target_repo is not None or isinstance(ctx.repo, NoRepoSentinel):
             user_output(
                 click.style("Error: ", fg="red")
                 + "PR body validation requires a local git repository.\n"
@@ -299,50 +209,13 @@ def pr_check(
         _check_pr_body(ctx, stage)
 
 
-def _check_plan_format(ctx: ErkContext, identifier: str) -> None:
-    """Validate a plan's format against Schema v2 requirements."""
-    if isinstance(ctx.repo, NoRepoSentinel):
-        user_output(click.style("Error: ", fg="red") + "Not in a git repository")
-        raise SystemExit(1)
-    repo_root = ctx.repo.root
-
-    plan_number = parse_issue_identifier(identifier)
-
-    user_output(f"Validating plan #{plan_number}...")
-    user_output("")
-
-    result = validate_plan_format(ctx.issues, repo_root, plan_number)
-
-    if isinstance(result, PlanValidationError):
-        user_output(click.style("Error: ", fg="red") + f"Failed to validate plan: {result.error}")
-        raise SystemExit(1)
-
-    for passed, description in result.checks:
-        status = click.style("[PASS]", fg="green") if passed else click.style("[FAIL]", fg="red")
-        user_output(f"{status} {description}")
-
-    user_output("")
-
-    if result.passed:
-        user_output(click.style("Plan validation passed", fg="green"))
-        raise SystemExit(0)
-    else:
-        check_word = "checks" if result.failed_count > 1 else "check"
-        user_output(
-            click.style(
-                f"Plan validation failed ({result.failed_count} {check_word} failed)", fg="red"
-            )
-        )
-        raise SystemExit(1)
-
-
-def _check_plan_format_remote(
+def _check_plan_format(
     ctx: ErkContext,
     identifier: str,
     *,
     target_repo: str | None,
 ) -> None:
-    """Validate a plan's format via RemoteGitHub."""
+    """Validate a plan's format against Schema v2 requirements."""
     owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
 
@@ -351,9 +224,7 @@ def _check_plan_format_remote(
     user_output(f"Validating plan #{plan_number}...")
     user_output("")
 
-    result = validate_plan_format_remote(
-        remote, owner=owner, repo=repo_name, plan_number=plan_number
-    )
+    result = validate_plan_format(remote, owner=owner, repo=repo_name, plan_number=plan_number)
 
     if isinstance(result, PlanValidationError):
         user_output(click.style("Error: ", fg="red") + f"Failed to validate plan: {result.error}")

@@ -72,21 +72,6 @@ def get_remote_github(ctx: ErkContext) -> RemoteGitHub:
     return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
 
 
-def is_remote_mode(ctx: ErkContext, *, target_repo: str | None) -> bool:
-    """Determine if command should use remote path.
-
-    Args:
-        ctx: ErkContext
-        target_repo: Optional --repo flag value
-
-    Returns:
-        True if remote path should be used
-    """
-    if target_repo is not None:
-        return True
-    return isinstance(ctx.repo, NoRepoSentinel)
-
-
 repo_option = click.option(
     "--repo",
     "target_repo",
