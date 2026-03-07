@@ -1,0 +1,701 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>sort this menu. within each group of commands (keep launches togehter, copies together), sort alphabetically.</user>
+  <usage input_tokens="3" cache_creation_input_tokens="16975" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16975}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01A7BqVMMdF8yvqCybtwzJ9B">
+    <param name="query">select:Agent,Grep,Read</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16975" cache_read_input_tokens="0" output_tokens="211" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16975, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A7BqVMMdF8yvqCybtwzJ9B">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4045" cache_read_input_tokens="16975" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4045}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01StXB5fiBL4PYU4PsyGyCwP">
+    <param name="pattern">incremental dispatch</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4045" cache_read_input_tokens="16975" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4045}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01StXB5fiBL4PYU4PsyGyCwP">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MLSAqf3aKRZuCUvCSMdvWg">
+    <param name="pattern">cmux checkout</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4045" cache_read_input_tokens="16975" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4045}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MLSAqf3aKRZuCUvCSMdvWg">
+Found 1 file
+src/erk/tui/commands/registry.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CDT3iZkwijw946fgRfVPq4">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/commands/registry.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="21020" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 338, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CDT3iZkwijw946fgRfVPq4">
+     1→"""Command registry for command palette.
+     2→
+     3→This module defines all available commands and their availability predicates.
+     4→Commands are organized by category: Actions, Opens, Copies.
+     5→Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
+     6→"""
+     7→
+     8→from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+     9→from erk.tui.views.types import ViewMode
+    10→
+    11→CATEGORY_EMOJI: dict[CommandCategory, str] = {
+    12→    CommandCategory.ACTION: "⚡",
+    13→    CommandCategory.OPEN: "🔗",
+    14→    CommandCategory.COPY: "📋",
+    15→}
+    16→
+    17→
+    18→# === View Mode Predicates ===
+    19→
+    20→
+    21→def _is_plan_view(ctx: CommandContext) -&gt; bool:
+    22→    """True when not in Objectives view (i.e., Plans or Learn)."""
+    23→    return ctx.view_mode != ViewMode.OBJECTIVES
+    24→
+    25→
+    26→def _is_objectives_view(ctx: CommandContext) -&gt; bool:
+    27→    """True when in Objectives view."""
+    28→    return ctx.view_mode == ViewMode.OBJECTIVES
+    29→
+    30→
+
+... [567 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9602" cache_read_input_tokens="21358" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9602}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011Hacu26cK62byJbZok12gZ">
+    <param name="pattern">incremental.dispatch</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9602" cache_read_input_tokens="21358" output_tokens="4672" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9602, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011Hacu26cK62byJbZok12gZ">
+No files found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4665" cache_read_input_tokens="30960" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4665}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017PMyki6bSnmhvBg9okwk8R">
+    <param name="pattern">incremental.dispatch</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4665" cache_read_input_tokens="30960" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4665, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017PMyki6bSnmhvBg9okwk8R">
+Found 2 files
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+src/erk/cli/commands/exec/group.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="35625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 236}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BQeA2MU3VeRHjtB4HMen3R">
+    <param name="pattern">incremental</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="35625" output_tokens="258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 236, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BQeA2MU3VeRHjtB4HMen3R">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01S5vvgwXzJn66qZzFH56sCW">
+    <param name="pattern">get_all_commands|get_available_commands</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="35861" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 271, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S5vvgwXzJn66qZzFH56sCW">
+src/erk/tui/screens/launch_screen.py:12:from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands
+src/erk/tui/screens/launch_screen.py:73:        available = get_available_commands(ctx)
+src/erk/tui/commands/provider.py:11:from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands, get_display_name
+src/erk/tui/commands/provider.py:118:        for cmd in get_available_commands(ctx):
+src/erk/tui/commands/provider.py:142:        for cmd in get_available_commands(ctx):
+src/erk/tui/commands/provider.py:224:        for cmd in get_available_commands(ctx):
+src/erk/tui/commands/provider.py:245:        for cmd in get_available_commands(ctx):
+src/erk/tui/commands/provider.py:314:        for cmd in get_available_commands(ctx):
+src/erk/tui/commands/provider.py:340:        for cmd in get_available_commands(ctx):
+src/erk/tui/commands/registry.py:203:def get_all_commands() -&gt; list[CommandDefinition]:
+src/erk/tui/commands/registry.py:549:def get_available_commands(ctx: CommandContext) -&gt; list[CommandDefinition]:
+src/erk/tui/commands/registry.py:558:    return [cmd for cmd in get_all_commands() if cmd.is_available(ctx)]
+src/erk/tui/commands/registry.py:591:    for cmd in get_all_commands():
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="36132" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 551}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NUSJUtjVULyYW5bsK55236">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="36132" output_tokens="2664" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 551, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NUSJUtjVULyYW5bsK55236">
+
+  </tool_result>
+  <assistant>
+
+I've read the code and understand the structure. The changes are straightforward — just reorder items within `get_all_commands()` in `registry.py`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2887" cache_read_input_tokens="36683" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2887}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01E7ePS6pGo5XvFDjNUsmYx7">
+    <param name="file_path">/Users/schrockn/.claude/plans/crispy-wondering-sunset.md</param>
+    <param name="content"># Sort Command Palette Menu Alphabetically
+
+## Context
+
+The command palette in `erk dash` ...[truncated 1746 chars]...al: `erk dash -i`, open command palette, confirm alphabetical order within each sub-group
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2887" cache_read_input_tokens="36683" output_tokens="684" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2887, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E7ePS6pGo5XvFDjNUsmYx7">
+File created successfully at: /Users/schrockn/.claude/plans/crispy-wondering-sunset.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01GHVMT8PDwxk8ULeRazUQwt">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="930" cache_read_input_tokens="39570" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 930, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GHVMT8PDwxk8ULeRazUQwt">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01JCxLsjmTcdvhQNESCj8Esq">
+    <param name="plan"># Sort Command Palette Menu Alphabetically
+
+## Context
+
+The command palette in `erk dash` ...[truncated 1746 chars]...al: `erk dash -i`, open command palette, confirm alphabetical order within each sub-group
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="40500" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JCxLsjmTcdvhQNESCj8Esq">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/crispy-wondering-sunset.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Sort Command Palette Menu Alphabetically
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018QwcdWk5zpqs3bDJ53J4j6">
+    <param name="file_path">/Users/schrockn/.claude/plans/crispy-wondering-sunset.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="675" cache_read_input_tokens="41238" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 675, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018QwcdWk5zpqs3bDJ53J4j6">
+     1→# Sort Command Palette Menu Alphabetically
+     2→
+     3→## Context
+     4→
+     5→The command palette in `erk dash` has commands grouped by type (actions, opens, copies) with sub-groups (direct commands, launch commands, exec commands). Within these sub-groups, items are not sorted alphabetically. The user wants alphabetical sorting within each sub-group while preserving the sub-group structure.
+     6→
+     7→## File
+     8→
+     9→`src/erk/tui/commands/registry.py` — the `get_all_commands()` function (line 203)
+    10→
+    11→## Changes
+    12→
+    13→Reorder `CommandDefinition` entries within `get_all_commands()`. Sort by `description` field within each sub-group:
+    14→
+    15→### PLAN ACTIONS (direct commands)
+    16→Current: close, dispatch, land → **already sorted ✓**
+    17→
+    18→### PLAN ACTIONS (launch commands)
+    19→Current: rebase, address, rewrite → **Sorted: address, rebase, rewrite**
+    20→
+    21→### PLAN ACTIONS (exec commands)
+    22→Current: cmux checkout → **only one ✓**
+    23→
+    24→### OBJECTIVE ACTIONS
+    25→Current: plan (one-shot), check, close → **Sorted: check, close, plan (one-shot)**
+    26→
+    27→### PLAN OPENS
+    28→Current: plan, pr, run → **already sorted ✓**
+    29→
+    30→### OBJECTIVE OPENS
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01SSum7aE4qDXKeuShf6pCYW">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="814" cache_read_input_tokens="41913" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 814, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SSum7aE4qDXKeuShf6pCYW">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01NRpoSwGtCt1N33v35SCLhS">
+    <param name="questions">[{'question': 'Sort Command Palette Menu Alphabetically\nCurrent context: (wt:erk) (br:mas...[truncated 346 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="42727" output_tokens="201" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NRpoSwGtCt1N33v35SCLhS">
+User has answered your questions: "Sort Command Palette Menu Alphabetically
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01NkBMFXvvSp32qjdRTBTtE8">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="44432" cache_read_input_tokens="0" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 44432, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NkBMFXvvSp32qjdRTBTtE8">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Y8Jcmxs8wamDrfEFP3CqTv">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="44432" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y8Jcmxs8wamDrfEFP3CqTv">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2292" cache_read_input_tokens="45000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2292}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01JHXbqVG7o6bESssz2zLATL">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2292" cache_read_input_tokens="45000" output_tokens="230" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JHXbqVG7o6bESssz2zLATL">
+
+  </tool_result>
+  <assistant>
+
+Branch slug: `sort-command-palette-menu`
+
+Plan summary: Sorts the command palette menu items alphabetically within each sub-group (direct commands, launch commands, exec commands) while preserving the group structure. Changes only the ordering in the get_all_commands() function in registry.py.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3375" cache_read_input_tokens="47292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3375}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WndL2FzUbZScsAgSkpG7c6">
+    <param name="command">erk exec plan-save --format json --session-id="8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" --bra...[truncated 177 chars]...p structure. Changes only the ordering in the get_all_commands() function in registry.py."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3375" cache_read_input_tokens="47292" output_tokens="283" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3375, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WndL2FzUbZScsAgSkpG7c6">
+{"success": true, "plan_number": 8890, "plan_url": "https://github.com/dagster-io/erk/pull/8890", "title": "[erk-plan] Sort Command Palette Menu Alphabetically", "branch_name": "plnd/sort-command-palette-menu-03-06-2023", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c/plan_snapshots/000001-d5bbdd08"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8890: https://github.com/dagster-io/erk/pull/8890</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="50667" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 653}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WoaLgbGKNLqXvQutMb1zVc">
+    <param name="command">erk exec upload-impl-session --session-id "8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="50667" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 653, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WoaLgbGKNLqXvQutMb1zVc">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_015MzbVJF4PDDEMwXmyHbukV">
+    <param name="plan"># Sort Command Palette Menu Alphabetically
+
+## Context
+
+The command palette in `erk dash` ...[truncated 1746 chars]...al: `erk dash -i`, open command palette, confirm alphabetical order within each sub-group
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="195" cache_read_input_tokens="51320" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 195, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015MzbVJF4PDDEMwXmyHbukV">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8890 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8890:
+  In current wt:    source "$(erk br co --for-plan 8890 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8890 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8890 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8890 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8890:
+  In current wt:  erk br co --for-plan 8890
+  In new wt:      erk br co --new-slot --for-plan 8890
+
+Dispatch plan #8890:
+  CLI command:    erk pr dispatch 8890
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8890 saved successfully.
+
+**Implement plan #8890:**
+```
+In current wt:    source "$(erk br co --for-plan 8890 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8890 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8890 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8890 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8890:**
+```
+In current wt:  erk br co --for-plan 8890
+In new wt:      erk br co --new-slot --for-plan 8890
+```
+
+**Dispatch plan #8890:**
+```
+CLI command:    erk pr dispatch 8890
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="51515" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 420, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8890. Dispatching it now.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="813" cache_read_input_tokens="51935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 813}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013dqUWzmH9VJN873T7jh7iL">
+    <param name="command">erk pr dispatch 8890</param>
+    <param name="description">Dispatch plan #8890 for remote AI implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="813" cache_read_input_tokens="51935" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 813, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013dqUWzmH9VJN873T7jh7iL">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8890...
+
+✓ All 1 plan(s) validated
+
+  #8890: [erk-plan] Sort Command Palette Menu Alphabetically
+
+Dispatching PR #8890...
+
+Fetching plan content...
+Syncing branch: plnd/sort-command-palette-menu-03-06-2023
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <assistant>Plan #8890 dispatched successfully.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8890
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22792806599</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1651" cache_read_input_tokens="52748" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1651}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ACEHYo1fCDaZ89eCUPTfH5">
+    <param name="command">erk exec marker delete --session-id "8ee09fb4-2b6c-40ac-9b3b-cfdbd367839c" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker so new plans can be created</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1651" cache_read_input_tokens="52748" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1651, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ACEHYo1fCDaZ89eCUPTfH5">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Dispatched and marker cleared. The remote agent will implement the sorting changes now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="54399" output_tokens="20" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 211, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
