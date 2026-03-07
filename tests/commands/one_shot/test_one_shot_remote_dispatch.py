@@ -19,6 +19,9 @@ def test_remote_dispatch_happy_path() -> None:
         default_branch_sha="abc123",
         next_pr_number=42,
         dispatch_run_id="run-99",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     time = FakeTime()
 
@@ -93,6 +96,9 @@ def test_remote_dispatch_dry_run() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     time = FakeTime()
 
@@ -131,6 +137,9 @@ def test_remote_dispatch_with_model() -> None:
         default_branch_sha="abc123",
         next_pr_number=10,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     time = FakeTime()
 
@@ -165,6 +174,9 @@ def test_remote_dispatch_with_explicit_ref() -> None:
         default_branch_sha="abc123",
         next_pr_number=10,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     time = FakeTime()
 
@@ -199,6 +211,9 @@ def test_remote_dispatch_with_plan_only() -> None:
         default_branch_sha="abc123",
         next_pr_number=10,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     time = FakeTime()
 

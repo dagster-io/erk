@@ -11,6 +11,9 @@ def test_get_authenticated_user_returns_configured_value() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     assert fake.get_authenticated_user() == "test-user"
 
@@ -23,6 +26,9 @@ def test_get_authenticated_user_custom() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     assert fake.get_authenticated_user() == "alice"
 
@@ -35,6 +41,9 @@ def test_get_default_branch_name() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     assert fake.get_default_branch_name(owner="o", repo="r") == "master"
 
@@ -47,6 +56,9 @@ def test_get_default_branch_sha() -> None:
         default_branch_sha="deadbeef",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     assert fake.get_default_branch_sha(owner="o", repo="r") == "deadbeef"
 
@@ -59,6 +71,9 @@ def test_create_ref_records_call() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     fake.create_ref(owner="o", repo="r", ref="refs/heads/my-branch", sha="abc123")
 
@@ -78,6 +93,9 @@ def test_create_file_commit_records_call() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     sha = fake.create_file_commit(
         owner="o",
@@ -104,6 +122,9 @@ def test_create_pull_request_records_call() -> None:
         default_branch_sha="abc123",
         next_pr_number=99,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     pr_number = fake.create_pull_request(
         owner="o",
@@ -130,6 +151,9 @@ def test_update_pull_request_body_records_call() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     fake.update_pull_request_body(owner="o", repo="r", pr_number=42, body="new body")
 
@@ -145,6 +169,9 @@ def test_add_labels_records_call() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     fake.add_labels(owner="o", repo="r", issue_number=42, labels=("erk-pr", "erk-plan"))
 
@@ -160,6 +187,9 @@ def test_dispatch_workflow_records_call() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-99",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     run_id = fake.dispatch_workflow(
         owner="o",
@@ -184,6 +214,9 @@ def test_add_issue_comment_records_call() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     fake.add_issue_comment(owner="o", repo="r", issue_number=42, body="comment")
 
@@ -199,6 +232,9 @@ def test_mutation_properties_return_copies() -> None:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
     fake.create_ref(owner="o", repo="r", ref="refs/heads/b", sha="abc")
 

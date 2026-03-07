@@ -7,8 +7,13 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk_shared.context.types import NoRepoSentinel
+from erk_shared.core.fakes import FakePlanListService
+from erk_shared.core.plan_list_service import PlanListData
+from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from erk_shared.plan_store.types import Plan, PlanState
+from tests.fakes.prompt_executor import FakePromptExecutor
 
 
 def _make_fake_remote(
@@ -279,3 +284,156 @@ def test_invalid_repo_format() -> None:
 
     assert result.exit_code != 0
     assert "Invalid --repo format" in result.output
+
+
+# --- pr duplicate-check --repo ---
+
+
+def _make_plan(
+    *,
+    plan_identifier: str,
+    title: str,
+    body: str,
+) -> Plan:
+    return Plan(
+        plan_identifier=plan_identifier,
+        title=title,
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2025, 1, 1, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+
+def _make_plan_list_service(plans: list[Plan]) -> FakePlanListService:
+    return FakePlanListService(
+        data=PlanListData(plans=plans, pr_linkages={}, workflow_runs={}),
+    )
+
+
+def _non_interactive_console() -> FakeConsole:
+    return FakeConsole(
+        is_interactive=False,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=None,
+    )
+
+
+def test_duplicate_check_remote_no_duplicates() -> None:
+    """Test pr duplicate-check --repo with no duplicates returns success."""
+    executor = FakePromptExecutor(
+        simulated_prompt_output='{"duplicates": []}',
+    )
+    existing = _make_plan(
+        plan_identifier="100", title="Refactor auth", body="Restructure auth flow"
+    )
+
+    issue = _make_issue(200, title="New Plan")
+    fake_remote = _make_fake_remote(issues={200: issue})
+
+    ctx = context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+        prompt_executor=executor,
+        console=_non_interactive_console(),
+        plan_list_service=_make_plan_list_service([existing]),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    assert "No duplicates found" in result.output
+
+
+def test_duplicate_check_remote_finds_duplicate() -> None:
+    """Test pr duplicate-check --repo detects duplicates."""
+    llm_output = '{"duplicates": [{"plan_id": "100", "explanation": "Both refactor auth"}]}'
+    executor = FakePromptExecutor(
+        simulated_prompt_output=llm_output,
+    )
+    existing = _make_plan(
+        plan_identifier="100", title="Refactor auth", body="Restructure auth flow"
+    )
+
+    issue = _make_issue(200, title="New Plan")
+    fake_remote = _make_fake_remote(issues={200: issue})
+
+    ctx = context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+        prompt_executor=executor,
+        console=_non_interactive_console(),
+        plan_list_service=_make_plan_list_service([existing]),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1
+    assert "Potential duplicate(s) found" in result.output
+    assert "Both refactor auth" in result.output
+
+
+# --- pr list --repo ---
+
+
+def test_list_remote_shows_plans() -> None:
+    """Test pr list --repo displays plans."""
+    plan1 = _make_plan(plan_identifier="1", title="Plan One", body="body")
+    plan2 = _make_plan(plan_identifier="2", title="Plan Two", body="body")
+
+    fake_remote = _make_fake_remote()
+
+    ctx = context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+        plan_list_service=_make_plan_list_service([plan1, plan2]),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "list", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    assert "Found 2 plan(s)" in result.output
+    assert "#1" in result.output
+    assert "#2" in result.output
+
+
+def test_list_remote_empty() -> None:
+    """Test pr list --repo with no plans."""
+    fake_remote = _make_fake_remote()
+
+    ctx = context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+        plan_list_service=_make_plan_list_service([]),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "list", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    assert "No plans found" in result.output

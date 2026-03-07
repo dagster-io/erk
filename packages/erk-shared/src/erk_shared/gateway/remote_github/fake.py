@@ -117,9 +117,9 @@ class FakeRemoteGitHub(RemoteGitHub):
         default_branch_sha: str,
         next_pr_number: int,
         dispatch_run_id: str,
-        issues: dict[int, IssueInfo] | None = None,
-        issue_comments: dict[int, list[str]] | None = None,
-        pr_references: dict[int, list[PRReference]] | None = None,
+        issues: dict[int, IssueInfo] | None,
+        issue_comments: dict[int, list[str]] | None,
+        pr_references: dict[int, list[PRReference]] | None,
     ) -> None:
         """Create FakeRemoteGitHub with configurable responses.
 

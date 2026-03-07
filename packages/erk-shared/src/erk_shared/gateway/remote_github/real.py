@@ -7,7 +7,7 @@ with no local git repository or gh CLI required.
 import base64
 import secrets
 import string
-from datetime import UTC, datetime
+from datetime import datetime
 
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
 from erk_shared.gateway.http.abc import HttpClient, HttpError
@@ -233,7 +233,7 @@ class RealRemoteGitHub(RemoteGitHub):
                 return IssueNotFound(issue_number=number)
             raise
 
-        return _parse_issue_response(response)
+        return _parse_issue_response(response, time=self._time)
 
     def get_issue_comments(
         self,
@@ -274,7 +274,7 @@ class RealRemoteGitHub(RemoteGitHub):
             # Skip pull requests (GitHub includes PRs in issues endpoint)
             if "pull_request" in item:
                 continue
-            results.append(_parse_issue_response(item))
+            results.append(_parse_issue_response(item, time=self._time))
             if limit is not None and len(results) >= limit:
                 break
         return results
@@ -356,11 +356,12 @@ class RealRemoteGitHub(RemoteGitHub):
             return (False, None, f"Authentication failed: {e}")
 
 
-def _parse_issue_response(data: dict) -> IssueInfo:
+def _parse_issue_response(data: dict, *, time: Time) -> IssueInfo:
     """Parse a GitHub REST API issue response into IssueInfo.
 
     Args:
         data: Raw JSON dict from GitHub API
+        time: Time gateway for fallback timestamps
 
     Returns:
         IssueInfo with parsed fields
@@ -371,12 +372,12 @@ def _parse_issue_response(data: dict) -> IssueInfo:
     created_at = (
         datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
         if created_at_str
-        else datetime.now(UTC)
+        else time.now()
     )
     updated_at = (
         datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
         if updated_at_str
-        else datetime.now(UTC)
+        else time.now()
     )
 
     labels_raw = data.get("labels", [])

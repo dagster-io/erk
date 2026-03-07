@@ -40,6 +40,9 @@ class TestRunSmokeTest:
             default_branch_sha="abc123",
             next_pr_number=1,
             dispatch_run_id="run-99",
+            issues=None,
+            issue_comments=None,
+            pr_references=None,
         )
 
         ctx = ErkContext.for_test(

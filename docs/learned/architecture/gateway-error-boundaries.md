@@ -170,7 +170,7 @@ class FakeLocalGitHub(LocalGitHub):
 
 ```python
 # DON'T DO THIS
-class DryRunLocalGitHub(GitHub):
+class DryRunLocalGitHub(LocalGitHub):
     def merge_pr(...) -> MergeResult | MergeError:
         try:
             self._logger.log(f"Would merge PR #{pr_number}")

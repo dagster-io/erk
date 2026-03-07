@@ -59,11 +59,11 @@ Every tracking list uses a typed tuple with a specific field order. The conventi
 
 Each mutation tracking list follows a three-component pattern. Example: `mark_pr_ready` in `FakeLocalGitHub`:
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:164, FakeGitHub.__init__ -->
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:771-777, FakeGitHub.mark_pr_ready -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeLocalGitHub.__init__ -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeLocalGitHub.mark_pr_ready -->
 
-1. **Private list** (initialized in `__init__` at `fake.py:164`): a typed list, e.g. `self._marked_pr_ready: list[int] = []`
-2. **Recording method** (`fake.py:771-777`): the gateway method appends to the private list and returns `None`
+1. **Private list** (initialized in `__init__`): a typed list, e.g. `self._marked_pr_ready: list[int] = []`
+2. **Recording method**: the gateway method appends to the private list and returns `None`
 3. **Read-only property with defensive copy**: returns `list(self._private_list)` to prevent test mutations from corrupting fake state
 
 The defensive `list()` copy ensures tests that do `fake.marked_ready_prs.pop()` don't corrupt the fake's internal state.

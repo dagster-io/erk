@@ -241,6 +241,9 @@ class TestHandleAllUnblocked:
                 default_branch_sha="abc123",
                 next_pr_number=1,
                 dispatch_run_id="run-1",
+                issues=None,
+                issue_comments=None,
+                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote
@@ -287,6 +290,9 @@ class TestHandleAllUnblocked:
                 default_branch_sha="abc123",
                 next_pr_number=1,
                 dispatch_run_id="run-1",
+                issues=None,
+                issue_comments=None,
+                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote
@@ -334,6 +340,9 @@ class TestHandleAllUnblocked:
                 default_branch_sha="abc123",
                 next_pr_number=1,
                 dispatch_run_id="run-1",
+                issues=None,
+                issue_comments=None,
+                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote

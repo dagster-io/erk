@@ -18,6 +18,9 @@ def _make_remote() -> FakeRemoteGitHub:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
     )
 
 
