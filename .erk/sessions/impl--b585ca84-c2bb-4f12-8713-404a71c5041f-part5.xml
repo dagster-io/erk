@@ -1,0 +1,730 @@
+<session>
+  <meta source="agent-a627209" />
+  <meta branch="plnd/canonicalize-session-stora-03-07-1143" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Perform a mechanical rename across documentation files. Replace ALL occurrences of `async-learn` with `planned-pr-context` in each file listed below. Do NOT change any logic, just string replacements. Use `replace_all=true` on the Edit tool.
+
+Also note: For "trigger_async_learn" and "trigger-async-learn" references — these are references to a DIFFERENT script (trigger_async_learn.py), NOT to the async-learn branch pattern. Do NOT rename those. Only rename occurrences that refer to the branch pattern `async-learn/{plan_id}` or `async-learn/&lt;plan-id&gt;` or `async-learn/` as a branch prefix.
+
+## Files to update (read each first, then replace):
+
+1. `/home/runner/work/erk/erk/docs/learned/glossary.md` — replace `async-learn/{plan_id}` with `planned-pr-context/{plan_id}`
+2. `/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md` — replace `async-learn/` branch pattern with `planned-pr-context/`
+3. `/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md` — replace `async-learn/{plan_id}` branch pattern with `planned-pr-context/{plan_id}`
+4. `/home/runner/work/erk/erk/docs/learned/sessions/index.md` — replace "async-learn branches" with "planned-pr-context branches"
+5. `/home/runner/work/erk/erk/docs/learned/sessions/tripwires.md` — replace `async-learn/&lt;plan-id&gt;` with `planned-pr-context/&lt;plan-id&gt;`
+6. `/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md` — replace `async-learn/{plan_id}` with `planned-pr-context/{plan_id}`
+7. `/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md` — replace `async-learn/{plan_id}` with `planned-pr-context/{plan_id}` and `async-learn/` branches with `planned-pr-context/`
+8. `/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md` — replace `async-learn/{plan_id}` with `planned-pr-context/{plan_id}`
+9. `/home/runner/work/erk/erk/docs/learned/planning/async-learn-local-preprocessing.md` — read to understand full contents, then replace all `async-learn` branch references with `planned-pr-context`
+10. `/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md` — replace `async-learn` branch references with `planned-pr-context`
+11. `/home/runner/work/erk/erk/docs/learned/planning/pr-discovery.md` — replace `async-learn` branch references with `planned-pr-context`
+12. `/home/runner/work/erk/erk/docs/learned/planning/planned-pr-learn-pipeline.md` — replace `async-learn` branch references
+13. `/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md` — replace `async-learn` branch references
+14. `/home/runner/work/erk/erk/docs/learned/planning/tripwires.md` — replace `async-learn` branch references
+15. `/home/runner/work/erk/erk/docs/learned/planning/index.md` — replace `async-learn` branch references
+
+IMPORTANT: Be very careful to distinguish between:
+- `async-learn/{plan_id}` (the BRANCH pattern — RENAME THIS)
+- `trigger-async-learn` or `trigger_async_learn` (a SCRIPT name — DO NOT RENAME)
+
+For each file, read it first. If it contains `async-learn` branch references, use Edit to replace them. If it only contains `trigger_async_learn` script references, skip it.</user>
+  <assistant>I'll help you perform this mechanical rename across the documentation files. Let me start by reading all the files to understand their contents and identify which occurrences need to be replaced.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ExJsSTZqTSmyWmxwUgP83n">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H232L6gMg65g3SjWgaDT4h">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ADg8rKjDL97f1DrCuRATe2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019q29Kqjf6eDpzR5cCGrZkp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019HpkmvP2p7nTjtCnEQd11X">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019BuUXV4yZxx23P9iDDWCRH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014ctF1ukNy8nhzauZvGQZV7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017kj3kAHpzaSDFN9TDsYajL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018rxczh2hUAAHUbsEMc64Fx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/async-learn-local-preprocessing.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lm9yYvhNDrBd4npgJELGcr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0129KQBFmCntdw2CQuGH9nTH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/pr-discovery.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AjwYb5ZfaNDPrtQJQs8k6A">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-learn-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EbVG6yKg1B6D2mtDhkNgLo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011JCHG9Np9AEvPSJKPpWXo7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DkGwNQQsG9DY2qkuCvnRjL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H232L6gMg65g3SjWgaDT4h">
+     1→---
+     2→title: Session Accumulation Architecture
+     3→read_when:
+     4→  - "working with push-session or fetch-sessions exec commands"
+     5→  - "modifying the learn pipeline session discovery"
+     6→  - "debugging session data on async-learn branches"
+     7→tripwires:
+     8→  - action: "modifying manifest format without updating version field"
+     9→    warning: "Manifest includes a version field for forward compatibility. Increment on schema changes."
+    10→  - action: "assuming sessions are stored locally"
+    11→    warning: "Sessions are accumulated on git branches (async-learn/&lt;plan-id&gt;). Use fetch-sessions to download."
+    12→---
+    13→
+    14→# Session Accumulation Architecture
+    15→
+    16→Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.
+    17→
+    18→## Branch Naming
+    19→
+    20→Each plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).
+    21→
+    22→## Manifest Format
+    23→
+    24→```json
+    25→{
+    26→  "version": 1,
+    27→  "plan_id": 2521,
+    28→  "sessions": [
+    29→    {
+    30→      "session_id": "abc-123",
+
+... [52 lines omitted] ...
+
+    66→Push failures return `{"uploaded": false, "reason": "..."}` and never hard-fail. Session upload is a non-critical operation -- implementation continues regardless.
+  </tool_result>
+  <tool_result tool="toolu_01ADg8rKjDL97f1DrCuRATe2">
+     1→---
+     2→title: Session File Lifecycle and Persistence
+     3→read_when:
+     4→  - "working with Claude Code session files across workflows"
+     5→  - "implementing learn or analysis workflows that consume session data"
+     6→  - "debugging missing session files in plan-based workflows"
+     7→tripwires:
+     8→  - action: "accessing a session by ID without checking existence first"
+     9→    warning: "Session files are session-scoped — Claude Code may clean them up at any time. Always use LBYL discovery (ClaudeInstallation.find_session_globally) before reading."
+    10→  - action: "failing a workflow because a session file is missing"
+    11→    warning: "Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → branch → local scan → skip."
+    12→  - action: "constructing session file paths manually"
+    13→    warning: "Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change."
+    14→last_audited: "2026-02-16 14:20 PT"
+    15→audit_result: edited
+    16→---
+    17→
+    18→# Session File Lifecycle and Persistence
+    19→
+    20→This document explains _why_ session file availability is unreliable and the architectural decisions that flow from that constraint. The core problem: erk workflows (learn, analysis) often need session data from _previous_ Claude Code sessions, but Claude Code owns the session storage lifecycle and may clean up files at any time. Erk cannot control this policy.
+    21→
+    22→## The Fundamental Constraint
+    23→
+    24→Session JSONL files are managed by Claude Code, not erk. Their lifetime is tied to the Claude Code session that created them, with no guaranteed persistence beyond that. This means a session ID stored in GitHub issue metadata (plan-header fields, issue comments) may point to a file that no longer exists on disk.
+    25→
+    26→This constraint drives two architectural decisions:
+    27→
+    28→1. **All session access must go through discovery** — never assume an ID maps to a file
+    29→2. **All session-consuming workflows must degrade gracefully** — missing data narrows scope but never causes failure
+    30→
+
+... [85 lines omitted] ...
+
+    91→### Anti-pattern: hard failure on missing session
+    93→Never `exit 1` or raise when a session file is unavailable. The entire hierarchy exists because session availability is _inherently unreliable_. Log a warning and degrade to the next level.
+  </tool_result>
+  <tool_result tool="toolu_019q29Kqjf6eDpzR5cCGrZkp">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Sessions Documentation
+     5→
+     6→- **[agent-session-files.md](agent-session-files.md)** — reading or extracting data from agent session files, working with agent subprocesses in Claude sessions, implementing session log parsing
+     7→- **[agent-type-extraction.md](agent-type-extraction.md)** — extracting agent type from session, finding subagent_type for agent sessions, correlating agent sessions to their Task invocation, displaying agent metadata in session show
+     8→- **[context-analysis.md](context-analysis.md)** — analyzing context consumption, debugging context window blowout, understanding why session ran out of context
+     9→- **[context-optimization.md](context-optimization.md)** — analyzing session efficiency, troubleshooting context limits, reducing context waste
+    10→- **[discovery-fallback.md](discovery-fallback.md)** — implementing session analysis or learn workflows, handling missing or unavailable session files, choosing between session discovery commands
+    11→- **[jsonl-schema-reference.md](jsonl-schema-reference.md)** — parsing Claude Code session files, understanding JSONL entry types, extracting data from session logs, building tools that process session transcripts, debugging session parsing issues
+    12→- **[layout.md](layout.md)** — working with session logs, parsing session logs, understanding ~/.claude/projects/ structure, debugging session lookup issues, implementing features that depend on project directory resolution
+    13→- **[lifecycle.md](lifecycle.md)** — working with Claude Code session files across workflows, implementing learn or analysis workflows that consume session data, debugging missing session files in plan-based workflows
+    14→- **[multi-part-sessions.md](multi-part-sessions.md)** — working with session JSONL files, preprocessing long sessions, session files split across multiple parts, concatenating session data
+    15→- **[parallel-session-awareness.md](parallel-session-awareness.md)** — working with session-specific data, implementing session-scoped features, accessing plans, scratch files, or session metadata
+    16→- **[preprocessing.md](preprocessing.md)** — preprocessing Claude Code session logs for analysis
+    17→- **[raw-session-processing.md](raw-session-processing.md)** — processing issues with erk-raw-session label, extracting documentation from landed PR sessions, understanding raw session issue format
+    18→- **[session-accumulation.md](session-accumulation.md)** — working with push-session or fetch-sessions exec commands, modifying the learn pipeline session discovery, debugging session data on async-learn branches
+    19→- **[session-hierarchy.md](session-hierarchy.md)** — understanding Claude Code session structure, working with parent and agent sessions, finding session files on disk, correlating agent logs to parent sessions, implementing session-scoped file discovery
+    20→- **[tools.md](tools.md)** — finding session logs, inspecting agent execution, debugging session issues
+    21→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_019HpkmvP2p7nTjtCnEQd11X">
+     1→---
+     2→title: Sessions Tripwires
+     3→read_when:
+     4→  - "working on sessions code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from sessions/*.md frontmatter --&gt;
+    10→
+    11→# Sessions Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**accessing a session by ID without checking existence first** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Session files are session-scoped — Claude Code may clean them up at any time. Always use LBYL discovery (ClaudeInstallation.find_session_globally) before reading.
+    16→
+    17→**analyzing large sessions** → Read [Session Preprocessing](preprocessing.md) first. Sessions exceeding 20,000 tokens are automatically chunked into multi-part files. Analysis must detect and handle chunking (.part1.jsonl, .part2.jsonl, etc.). Check for part files when base session file is missing.
+    18→
+    19→**assuming a session ID from metadata corresponds to a file on disk** → Read [Session Discovery and Fallback Patterns](discovery-fallback.md) first. Claude Code manages session lifecycle; old sessions may be cleaned up. Always use LBYL discovery before reading.
+    20→
+    21→**assuming sessions are stored locally** → Read [Session Accumulation Architecture](session-accumulation.md) first. Sessions are accumulated on git branches (async-learn/&lt;plan-id&gt;). Use fetch-sessions to download.
+    22→
+    23→**checking entry['type'] == 'tool_result' in Claude session JSONL** → Read [Claude Code JSONL Schema Reference](jsonl-schema-reference.md) first. tool_results are content blocks INSIDE user entries, NOT top-level entry types. Check message.content[].type == 'tool_result' within user entries instead. Load session-inspector skill for correct schema.
+    24→
+    25→**constructing session file paths manually** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Use ClaudeInstallation ABC methods, not manual path construction. Storage layout is an implementation detail that may change.
+    26→
+    27→**failing a workflow because a session file is missing** → Read [Session File Lifecycle and Persistence](lifecycle.md) first. Missing sessions must never cause hard failure. Degrade through the fallback hierarchy: planning → implementation → branch → local scan → skip.
+    28→
+    29→**looking up session files from metadata** → Read [Session Preprocessing](preprocessing.md) first. Session IDs in metadata may not match available local files. Verify session paths exist before preprocessing. Use LBYL checks and provide clear error messages when sessions are missing.
+    30→
+
+... [13 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019BuUXV4yZxx23P9iDDWCRH">
+     1→---
+     2→title: Session Discovery Architecture
+     3→read_when:
+     4→  - "finding Claude Code sessions for a plan"
+     5→  - "implementing session lookup from GitHub issues"
+     6→  - "understanding dual-source discovery patterns"
+     7→  - "working with branch-based session storage"
+     8→  - "downloading remote sessions for learn workflow"
+     9→last_audited: "2026-02-16 08:00 PT"
+    10→audit_result: clean
+    11→---
+    12→
+    13→# Session Discovery Architecture
+    14→
+    15→Erk discovers Claude Code sessions associated with plans through branch-based storage on `async-learn/{plan_id}` branches, with local filesystem fallback for backwards compatibility.
+    16→
+    17→## Core Data Structure
+    18→
+    19→The `SessionsForPlan` dataclass represents all sessions associated with a plan:
+    20→
+    21→- `planning_session_id` - From `created_from_session` field in plan-header metadata
+    22→- `implementation_session_ids` - From `impl-started`/`impl-ended` issue comments
+    23→- `learn_session_ids` - From `learn-invoked` issue comments
+    24→- `last_session_branch` - Branch containing accumulated session XMLs
+    25→- `last_session_id` - Session ID of latest pushed session
+    26→- `last_session_source` - "local" or "remote" indicating session origin
+    27→
+    28→See `packages/erk-shared/src/erk_shared/sessions/discovery.py` for the canonical implementation.
+    29→
+    30→## Branch-Based Session Storage
+
+... [106 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014ctF1ukNy8nhzauZvGQZV7">
+     1→---
+     2→title: Session Storage Architecture
+     3→read_when:
+     4→  - "proposing changes to session storage mechanism"
+     5→  - "understanding how sessions are pushed and retrieved"
+     6→  - "working with push-session exec script"
+     7→tripwires:
+     8→  - action: "proposing branch-based session storage as a new idea"
+     9→    warning: "Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation."
+    10→---
+    11→
+    12→# Session Storage Architecture
+    13→
+    14→Sessions are stored on dedicated git branches and referenced via plan metadata. This design evolved through a same-day iteration cycle.
+    15→
+    16→## Current Implementation
+    17→
+    18→`push_session.py` preprocesses session JSONL to compressed XML and pushes to an `async-learn/{plan_id}` branch, accumulating multiple sessions across lifecycle stages. Plan metadata is updated with:
+    19→
+    20→| Metadata Field        | Value                   |
+    21→| --------------------- | ----------------------- |
+    22→| `last_session_branch` | `async-learn/{plan_id}` |
+    23→| `last_session_id`     | Claude Code session ID  |
+    24→| `last_session_at`     | ISO timestamp           |
+    25→| `last_session_source` | `"local"` or `"remote"` |
+    26→
+    27→## Historical Context
+    28→
+    29→- **PR #7757**: Migrated sessions from gists to branch-based storage (initial attempt)
+    30→- **PR #7765**: Reverted the migration on the same day due to reliability issues
+
+... [13 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018rxczh2hUAAHUbsEMc64Fx">
+     1→---
+     2→title: Async Learn Local Preprocessing
+     3→read_when:
+     4→  - modifying trigger-async-learn orchestration
+     5→  - debugging why learn materials are missing or malformed in CI
+     6→  - understanding the local-to-branch-to-learn data flow
+     7→tripwires:
+     8→  - action: "adding subprocess calls to trigger-async-learn"
+     9→    warning: "This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below."
+    10→  - action: "assuming remote sessions skip local preprocessing"
+    11→    warning: "Since PR #6974, remote sessions go through the same _preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically."
+    12→last_audited: "2026-02-08 00:00 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# Async Learn Local Preprocessing
+    17→
+    18→## Why Local Preprocessing Exists
+    19→
+    20→Before PR #6460, `trigger-async-learn` uploaded raw session logs and let the GitHub Actions codespace preprocess them. This added ~30s of startup time to every learn run because codespace environments are slow for I/O-heavy preprocessing (reading large JSONL files, deduplicating entries, generating XML).
+    21→
+    22→Moving preprocessing to the developer's local machine eliminates this overhead. The codespace receives already-compressed XML and can start agent analysis immediately. This shifts compute from billed CI time to free local time.
+    23→
+    24→## Direct-Call Architecture
+    25→
+    26→The `trigger-async-learn` command imports functions directly from sibling exec scripts rather than invoking them as subprocesses. This is a deliberate architectural choice:
+    27→
+    28→| Approach                                                             | Trade-off                                                                                                              |
+    29→| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+    30→| Subprocess (`erk exec get-learn-sessions`)                           | Clean isolation but adds process startup overhead per step, requires JSON parsing between steps, and loses type safety |
+
+... [50 lines omitted] ...
+
+    51→PR comments are fetched via gateway calls, not `gh` CLI. This matters because the gateway provides typed results with LBYL error handling (checking `isinstance(result, PRNotFound)` rather than catching exceptions), consistent with erk's error handling patterns.
+  </tool_result>
+  <tool_result tool="toolu_01Lm9yYvhNDrBd4npgJELGcr">
+     1→---
+     2→title: Remote Branch Learn Support
+     3→read_when:
+     4→  - "modifying learn workflow branch checks"
+     5→  - "understanding why learn runs for non-current branches"
+     6→  - "debugging learn status prompts on landing"
+     7→tripwires:
+     8→  - action: "adding redundant branch-location guards to learn status checks"
+     9→    warning: "Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via async-learn branches."
+    10→---
+    11→
+    12→# Remote Branch Learn Support
+    13→
+    14→The learn workflow's `check_learn_status()` in the land pipeline only prompts for learn when the branch is locally accessible: `is_current_branch or worktree_path is not None` (land_pipeline.py:341). Remote plan branches skip the interactive learn prompt.
+    15→
+    16→## Branch-Location Guard Behavior
+    17→
+    18→Remote plan branches (implemented by CI workers) have:
+    19→
+    20→- `is_current_branch = False` (not checked out locally)
+    21→- `worktree_path = None` (no local worktree)
+    22→
+    23→The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. This is intentional — remote sessions are uploaded to `async-learn/{plan_id}` branches by the CI worker and don't need interactive prompting during land.
+    24→
+    25→## Session Discovery for Remote Branches
+    26→
+    27→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, check_learn_status --&gt;
+    28→
+    29→`check_learn_status()` in the land pipeline resolves the plan ID from the branch name. If the branch is locally accessible (current branch or has a worktree), it delegates to `_check_learn_status_and_prompt()` for interactive learn prompting.
+    30→
+
+... [24 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0129KQBFmCntdw2CQuGH9nTH">
+     1→---
+     2→title: PR Discovery Strategies for Plans
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "finding the PR associated with an erk plan issue"
+     7→  - "debugging why get-pr-for-plan returns no-branch-in-plan"
+     8→  - "understanding how erk learn finds PRs"
+     9→  - "working with plan-header branch_name field"
+    10→tripwires:
+    11→  - action: "assuming branch_name is always present in plan-header metadata"
+    12→    warning: "branch_name is null until Phase 2 (pr dispatch). Check the plan metadata field lifecycle in lifecycle.md."
+    13→  - action: "using issue timeline API as the primary PR lookup path"
+    14→    warning: "The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable."
+    15→---
+    16→
+    17→# PR Discovery Strategies for Plans
+    18→
+    19→Finding the PR associated with a plan issue is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `erk pr co`, `erk pr close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
+    20→
+    21→## Why Two Strategies Exist
+    22→
+    23→Plan metadata accumulates progressively through the lifecycle. The `branch_name` field — the simplest path to PR discovery — doesn't exist until Phase 2 (submission). Commands that run before submission, or that process older plans with incomplete metadata, need an alternative path.
+    24→
+    25→| Available Data | Strategy            | Used By                                                  |
+    26→| -------------- | ------------------- | -------------------------------------------------------- |
+    27→| `branch_name`  | Branch → PR lookup  | `get-pr-for-plan`, `trigger-async-learn`, land, dispatch |
+    28→| `issue_number` | Issue timeline → PR | `get-issue-timeline-prs`, `pr checkout`, `pr close`      |
+    29→
+    30→## Strategy 1: Branch-Based Lookup (Primary)
+
+... [46 lines omitted] ...
+
+    36→See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the canonical implementation. This command also includes a **git context fallback**: if `branch_name` is null in metadata but the current branch matches the `P{issue_number}-` naming convention, it infers the branch from git state. This handles cases where `impl-signal` failed to write the metadata.
+    52→The `erk learn` workflow composes both strategies. It uses the branch-based path (via `_get_pr_for_plan_direct()`) but treats PR absence as non-fatal — learn can proceed without review comments if no PR is found.
+    60→**Assuming `get-pr-for-plan` always succeeds**: The command returns structured error codes (`no-branch-in-plan`, `no-pr-for-branch`) that callers must handle. Plans in Phase 1 (created but not submitted) will always return `no-branch-in-plan`.
+  </tool_result>
+  <tool_result tool="toolu_01AjwYb5ZfaNDPrtQJQs8k6A">
+     1→---
+     2→title: Planned PR Learn Pipeline
+     3→read_when:
+     4→  - "debugging why erk learn fails for planned-PR-backed plans"
+     5→  - "understanding how trigger-async-learn discovers plan IDs for planned-PR plans"
+     6→  - "working on the learn pipeline"
+     7→---
+     8→
+     9→# Planned PR Learn Pipeline
+    10→
+    11→The async learn pipeline discovers plan IDs from the PR number. Plans use the `plnd/` prefix and store the plan ID as the PR number.
+    12→
+    13→## Plan ID Discovery
+    14→
+    15→The learn trigger in `trigger_async_learn.py` uses the PR number directly as the plan ID.
+    16→
+    17→&lt;!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py --&gt;
+    18→
+    19→The direct PR lookup logic lives in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
+    20→
+    21→## Metadata Fallback for Learn Materials Branch
+    22→
+    23→For draft-PR plans, the learn materials location (session branch) is stored as a comment on the PR rather than in a metadata block. The land command (`land_cmd.py`) has a comment-based fallback to retrieve this information when the metadata block lookup returns nothing.
+    24→
+    25→## Affected Files
+    26→
+    27→- `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` — short-circuit for draft-PR plan ID discovery
+    28→- `src/erk/cli/commands/land_cmd.py` — comment-based fallback for learn materials retrieval
+    29→- `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` — PR lookup utilities used by the pipeline
+    30→
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EbVG6yKg1B6D2mtDhkNgLo">
+     1→---
+     2→title: Learn Pipeline Workflow
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - debugging why learn materials are missing or malformed
+     7→  - understanding data flow from sessions to documentation plan
+     8→  - choosing between local learn and async learn modes
+     9→  - adding a new stage to the learn pipeline
+    10→tripwires:
+    11→  - action: "adding a new pipeline stage to the async learn pipeline"
+    12→    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
+    13→  - action: "changing how sessions are classified as planning vs impl"
+    14→    warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
+    15→  - action: "modifying how learn materials are committed to a branch"
+    16→    warning: "The CI workflow checks out the learn branch and reads materials from .erk/impl-context/. File names and directory structure must match what learn.yml expects."
+    17→---
+    18→
+    19→# Learn Pipeline Workflow
+    20→
+    21→## Purpose
+    22→
+    23→This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Async Learn Local Preprocessing](async-learn-local-preprocessing.md).
+    24→
+    25→## Pipeline Architecture
+    26→
+    27→The learn pipeline has 7 stages that transform raw session JSONL into a documentation plan issue. The key architectural decision is **where processing happens**: stages 1-5 run locally (fast, free), while stages 6-7 run in GitHub Actions (background, billed).
+    28→
+    29→```
+    30→Local machine                              GitHub Actions
+
+... [131 lines omitted] ...
+
+    82→Tool result pruning (30 line limit, error lines preserved) occurs during XML generation, not as a preprocessing filter step.
+   120→## Failure Modes
+   122→| Stage                | Failure              | Behavior                                                                 |
+   124→| 1 (Discovery)        | No sessions found    | Warning, continues with empty list; local fallback scans recent sessions |
+   128→| 4 (Branch Commit)    | Push failure         | **Pipeline fails** — learn branch is required for async path             |
+   129→| 5 (Workflow Trigger) | Workflow not found   | Fails with error about missing `learn.yml`                               |
+  </tool_result>
+  <tool_result tool="toolu_01DkGwNQQsG9DY2qkuCvnRjL">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Planning Documentation
+     5→
+     6→- **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
+     7→- **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — passing data between agents via files or inline output, designing multi-agent workflows with parallel and sequential tiers, orchestrating subagents that produce markdown, XML, or other large outputs
+     8→- **[agent-orchestration.md](agent-orchestration.md)** — designing agent workflows with parallel and sequential tiers, choosing between parallel and sequential agent execution, adding or modifying agents in the learn pipeline, deciding which model tier to assign an agent
+     9→- **[agent-output-routing-strategies.md](agent-output-routing-strategies.md)** — deciding how agents should receive and produce outputs, designing multi-agent orchestration prompts, choosing between embedded-prompt and agent-file routing
+    10→- **[async-learn-local-preprocessing.md](async-learn-local-preprocessing.md)** — modifying trigger-async-learn orchestration, debugging why learn materials are missing or malformed in CI, understanding the local-to-branch-to-learn data flow
+    11→- **[backend-naming-conventions.md](backend-naming-conventions.md)** — referencing the plan backend by name in code or documentation, confused about draft_pr vs planned_pr vs github-draft-pr naming, adding user-facing output that mentions the backend
+    12→- **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plan issues, implementing PR lookup from plan issues, modifying branch creation or naming conventions
+    13→- **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
+    14→- **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan issue as complete, creating a consolidation plan from multiple PRs
+    15→- **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
+    16→- **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
+    17→- **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
+    18→- **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
+    19→- **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
+    20→- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
+    21→- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
+    22→- **[exploration-strategies.md](exploration-strategies.md)** — deciding when to use Explore agents vs direct searches, planning a two-stage explore-then-plan workflow, gathering codebase context before entering plan mode
+    23→- **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages
+    24→- **[impl-context.md](impl-context.md)** — working with .erk/impl-context/ files, debugging plan content missing from a draft-PR implementation, reviewing a PR that contains .erk/impl-context/ files, understanding how draft-PR plans transfer content to .erk/impl-context/
+    25→- **[label-scheme.md](label-scheme.md)** — understanding how plans and learn issues are labeled, working with erk-planned-pr, erk-plan, or erk-learn labels, debugging label filtering in TUI or CLI views
+    26→- **[learn-pipeline-workflow.md](learn-pipeline-workflow.md)** — debugging why learn materials are missing or malformed, understanding data flow from sessions to documentation plan, choosing between local learn and async learn modes, adding a new stage to the learn pipeline
+    27→- **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
+    28→- **[learn-plan-validation.md](learn-plan-validation.md)** — creating or modifying erk-learn plans, working on the learn workflow pipeline, debugging learn-on-learn cycle errors
+    29→- **[learn-session-embedding.md](learn-session-embedding.md)** — embedding session XML files in learn plan PRs, working with session preprocessing in the land or plan-save pipeline, debugging missing session XML in learn plan diffs
+    30→- **[learn-vs-implementation-plans.md](learn-vs-implementation-plans.md)** — choosing between plan types, creating erk-learn plans, understanding how learn plans relate to implementation plans, debugging learn plan base branch selection
+
+... [52 lines omitted] ...
+
+    31→- **[learn-without-pr-context.md](learn-without-pr-context.md)** — debugging learn workflow failures where PR data is missing, implementing new learn pipeline steps that consume PR context, understanding why learn output lacks review feedback
+    35→- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plans that lack metadata blocks
+    39→- **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
+    41→- **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures, integrating objectives with one-shot dispatch
+    43→- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
+    47→- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
+    50→- **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
+    59→- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs issue number distinction
+    67→- **[session-preprocessing.md](session-preprocessing.md)** — modifying session preprocessing or compression pipeline, understanding why there are two preprocessing implementations, linking sessions to plans for learn workflow, debugging preprocessing failures or empty session output
+    68→- **[stacked-plan-branch-rebase.md](stacked-plan-branch-rebase.md)** — working with stacked plans that have non-trunk parents, debugging gt track failures for plan branches, understanding how plan branches integrate with Graphite stacking
+    69→- **[sub-agent-context-limitations.md](sub-agent-context-limitations.md)** — delegating session-dependent commands to Task tool sub-agents, debugging impl-signal or plan-save failures with empty session IDs, designing workflows that split work between root agent and sub-agents
+  </tool_result>
+  <tool_result tool="toolu_01ExJsSTZqTSmyWmxwUgP83n">
+     1→---
+     2→title: Erk Glossary
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "understanding project terminology"
+     7→  - "confused about domain-specific terms"
+     8→  - "working with worktrees, plans, or stacks"
+     9→  - "working with objectives or turns"
+    10→tripwires:
+    11→  - action: "parsing objective roadmap PR column status"
+    12→    warning: "Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan issue), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated."
+    13→---
+    14→
+    15→# Erk Glossary
+    16→
+    17→Definitive terminology reference for the erk project.
+    18→
+    19→**Purpose**: Eliminate confusion about domain-specific terms. When in doubt about terminology, consult this document.
+    20→
+    21→---
+    22→
+    23→## Core Concepts
+    24→
+    25→### activate.sh
+    26→
+    27→A shell script at `.erk/activate.sh` in each worktree that sets up the development environment when sourced.
+    28→
+    29→**Purpose**: Opt-in shell integration. Users explicitly source this script rather than relying on automatic shell manipulation.
+    30→
+
+... [1038 lines omitted] ...
+
+   543→A sentinel class returned when a PR lookup fails, preserving lookup context (branch name, PR number). Uses `isinstance` check (LBYL) instead of exceptions.
+   585→- `style: Literal["info", "success", "warning", "error"]` - Visual style hint (default: "info")
+   737→- `tripwires`: List of action-triggered warnings
+   748→    warning: "Use .erk/scratch/&lt;session-id&gt;/ instead."
+   775→**Format**: Defined in doc frontmatter with `action` (pattern to detect) and `warning` (guidance message).
+   784→    warning: "AI workflow files belong in .erk/scratch/&lt;session-id&gt;/, NOT /tmp/."
+   862→- `erk land` skips the "not learned from" warning for learn plans (they don't need learning)
+   968→- **EAFP**: Easier to Ask for Forgiveness than Permission (exception-based error handling)
+   969→- **LBYL**: Look Before You Leap (check-before-operation error handling)
+  1033→**Purpose**: Break large, complex goals into reviewable, implementable chunks. Instead of tackling "migrate all errors to Ensure class" in one massive PR, an objective evaluates the codebase, identifies a manageable subset of violations, and creates a plan for that subset.
+  </tool_result>
+  <tool_result tool="toolu_017kj3kAHpzaSDFN9TDsYajL">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+
+... [353 lines omitted] ...
+
+    41→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    61→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    83→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    91→**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+   103→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+   117→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+   119→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+   127→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   133→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   137→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   151→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   165→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   169→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   181→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   217→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   219→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   221→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   223→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   235→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   237→**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+   251→**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+   269→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+   271→**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
+   283→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   285→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   293→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   301→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   305→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   307→**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
+   311→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   313→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   333→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   335→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   339→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   341→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   359→**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+   371→**writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
+   373→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <tool_result tool="toolu_011JCHG9Np9AEvPSJKPpWXo7">
+     1→---
+     2→title: Planning Tripwires
+     3→read_when:
+     4→  - "working on planning code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from planning/*.md frontmatter --&gt;
+    10→
+    11→# Planning Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding &lt;code&gt; inside &lt;summary&gt; elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render &lt;code&gt; inside &lt;summary&gt; — use plain text instead. GitHub renders it but Graphite does not. The correct format is &lt;summary&gt;original-plan&lt;/summary&gt; not &lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;.
+    16→
+    17→**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+    18→
+    19→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+    20→
+    21→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+    22→
+    23→**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md.
+    24→
+    25→**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+    26→
+    27→**adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+    28→
+    29→**adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
+    30→
+
+... [239 lines omitted] ...
+
+    45→**after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier).
+    67→**calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
+    79→**calling update_metadata() on PlannedPRBackend without verifying plan exists** → Read [Planned PR Backend](planned-pr-backend.md) first. PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata.
+    81→**capturing subagent output inline when it may exceed 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents.
+    83→**catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
+    89→**checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture.
+    95→**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+    97→**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+   139→**grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
+   157→**making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
+   159→**making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
+   185→**pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
+   191→**reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
+   203→**renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
+   211→**reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit -m 'Remove leaked impl-context'
+   221→**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
+   227→**treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+   239→**using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
+   261→**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+  </tool_result>
+  <assistant>Now I'll perform the mechanical rename across all these files. I'll be careful to distinguish between `async-learn` branch references (which should be renamed) and `trigger_async_learn` or `trigger-async-learn` script references (which should NOT be renamed).
+
+Let me start with the edits:</assistant>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TWAac2uBwpqbxX7xZiwpkP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and...[truncated 52 chars]...ng
+
+Each plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).</param>
+    <param name="new_string">Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and...[truncated 66 chars]...gets a dedicated branch: `planned-pr-context/&lt;plan-id&gt;` (e.g., `planned-pr-context/2521`).</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CfJfFLcPH6tY6m5vYAeWQa">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">| Tier                | Location                                 | Persistence            ...[truncated 759 chars]...           | Inter-process file passing within a single session (e.g., preprocessed XML) |</param>
+    <param name="new_string">| Tier                | Location                                 | Persistence            ...[truncated 766 chars]...           | Inter-process file passing within a single session (e.g., preprocessed XML) |</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MzXDZDWFtga6P2PaEpmv5v">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">The branch upload tier was added because learn workflows frequently run in a _different_ C...[truncated 599 chars]...t_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.</param>
+    <param name="new_string">The branch upload tier was added because learn workflows frequently run in a _different_ C...[truncated 611 chars]...t_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JYk3WADqY58shFgozkKr31">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md</param>
+    <param name="old_string">  - action: "assuming sessions are stored locally"
+    warning: "Sessions are accumulated on git branches (async-learn/&lt;plan-id&gt;). Use fetch-sessions to download."</param>
+    <param name="new_string">  - action: "assuming sessions are stored locally"
+    warning: "Sessions are accumulated on git branches (planned-pr-context/&lt;plan-id&gt;). Use fetch-sessions to download."</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
