@@ -59,6 +59,27 @@ class HttpClient(ABC):
         ...
 
     @abstractmethod
+    def put(
+        self,
+        endpoint: str,
+        *,
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Send a PUT request to the API.
+
+        Args:
+            endpoint: API endpoint path (e.g., "repos/owner/repo/contents/path")
+            data: JSON body to send
+
+        Returns:
+            Response JSON as a dictionary
+
+        Raises:
+            HttpError: If the request fails
+        """
+        ...
+
+    @abstractmethod
     def get(
         self,
         endpoint: str,

@@ -151,6 +151,23 @@ class FakeHttpClient(HttpClient):
         """
         return self._get_response("POST", endpoint, data)
 
+    def put(
+        self,
+        endpoint: str,
+        *,
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Record PUT request and return configured response.
+
+        Args:
+            endpoint: API endpoint path
+            data: JSON body sent
+
+        Returns:
+            Configured response dictionary
+        """
+        return self._get_response("PUT", endpoint, data)
+
     def get(
         self,
         endpoint: str,

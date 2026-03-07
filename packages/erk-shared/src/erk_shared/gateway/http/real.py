@@ -78,7 +78,8 @@ class RealHttpClient(HttpClient):
         data: dict[str, Any],
     ) -> dict[str, Any]:
         """Send a PATCH request to the API."""
-        return self._make_request("PATCH", endpoint, json_data=data).json()
+        response = self._make_request("PATCH", endpoint, json_data=data)
+        return response.json() if response.content else {}
 
     def post(
         self,
@@ -87,7 +88,18 @@ class RealHttpClient(HttpClient):
         data: dict[str, Any],
     ) -> dict[str, Any]:
         """Send a POST request to the API."""
-        return self._make_request("POST", endpoint, json_data=data).json()
+        response = self._make_request("POST", endpoint, json_data=data)
+        return response.json() if response.content else {}
+
+    def put(
+        self,
+        endpoint: str,
+        *,
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Send a PUT request to the API."""
+        response = self._make_request("PUT", endpoint, json_data=data)
+        return response.json() if response.content else {}
 
     def get(
         self,

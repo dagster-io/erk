@@ -599,11 +599,11 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
             pass
 
     # 6b. Create HTTP client for GitHub API (needs token from gh auth)
+    # No repo guard needed — HttpClient only requires a GitHub token
     http_client: HttpClient | None = None
-    if not isinstance(repo, NoRepoSentinel):
-        token = fetch_github_token_or_none()
-        if token is not None:
-            http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+    token = fetch_github_token_or_none()
+    if token is not None:
+        http_client = RealHttpClient(token=token, base_url="https://api.github.com")
 
     # 7. Load local config (or defaults if no repo)
     # Loaded early so plans_repo can be used for GitHubIssues
