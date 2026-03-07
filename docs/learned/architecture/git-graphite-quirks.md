@@ -32,6 +32,10 @@ tripwires:
   - action: "force-updating a branch that might be currently checked out"
     warning: "Git refuses to force-update the checked-out branch. Use LBYL check: compare target branch with current branch before force-update. See _ensure_local_matches_remote() in graphite.py."
     score: 6
+  - action: "using commit_files_to_branch plumbing without retracking"
+    warning: "After commit_files_to_branch plumbing, always call retrack_branch() to keep Graphite in sync. The branch ref advances but Graphite's tracked SHA becomes stale."
+  - action: "registering a branch with Graphite without handling stacked vs non-stacked"
+    warning: "Both stacked PRs (base != trunk, fetch base first) and non-stacked PRs (base = trunk, skip fetch) need Graphite registration. Don't skip registration for non-stacked PRs."
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -382,6 +386,40 @@ if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name
 **Rule**: Use `get_git_dir()` for per-worktree state (rebase, HEAD, index). Use `get_git_common_dir()` for shared state (objects, refs, config).
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py` — both methods defined on `GitRepoOps` ABC. Added in PR #8838.
+
+## Non-Stacked PR Graphite Registration
+
+**Surprising Behavior**: `erk pr teleport` previously returned early for non-stacked PRs (where base = trunk), skipping Graphite registration entirely. This meant the branch wasn't tracked by Graphite after teleport, causing subsequent stack-aware operations to fail.
+
+**Why It's Surprising**: Non-stacked PRs don't need parent branch fetching (since trunk is always local), leading to an incorrect optimization that skipped all Graphite setup — not just the fetch.
+
+<!-- Source: src/erk/cli/commands/pr/teleport_cmd.py, _register_with_graphite -->
+
+**Solution**: `_register_with_graphite()` in `src/erk/cli/commands/pr/teleport_cmd.py` now handles both paths:
+
+1. **Stacked PRs** (base ≠ trunk): Fetch base branch if not local, create tracking branch, then register with Graphite
+2. **Non-stacked PRs** (base = trunk): Skip base fetch (trunk is always present), but still register/retrack with Graphite
+
+The registration step checks `get_parent_branch()`: if `None`, calls `track_branch()` for initial registration; if already tracked, calls `retrack_branch()` to update the SHA.
+
+**Location in Codebase**: `src/erk/cli/commands/pr/teleport_cmd.py` — `_register_with_graphite()`
+
+## Plumbing Commit Retrack Requirement
+
+**Surprising Behavior**: After `commit_files_to_branch()` plumbing operations (used in dispatch and incremental dispatch), the branch ref advances to a new commit SHA, but Graphite's tracked SHA remains stale. This is distinct from the post-rebase retrack already documented above — rebase changes existing commit SHAs, while plumbing commits add new commits.
+
+**Why It's Surprising**: The plumbing commit creates a valid git commit on the branch, but Graphite doesn't observe raw ref updates — it only tracks changes made through its own commands.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py -->
+
+**Solution**: Always call `retrack_branch()` after `commit_files_to_branch()` plumbing operations:
+
+```python
+branch_manager = require_branch_manager(ctx)
+branch_manager.retrack_branch(repo_root, branch_name)
+```
+
+**Where Applied**: `src/erk/cli/commands/exec/scripts/incremental_dispatch.py` line 133
 
 ## Adding New Quirks
 

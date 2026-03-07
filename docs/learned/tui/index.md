@@ -35,4 +35,5 @@
 - **[title-truncation-edge-cases.md](title-truncation-edge-cases.md)** — implementing title truncation in TUI, troubleshooting truncated titles showing only prefix, working with title display lengths
 - **[tui-command-registration.md](tui-command-registration.md)** — adding a new TUI command to the registry, understanding the 3-place coordination pattern for TUI commands, working with TUI command categories or display formatters
 - **[view-aware-commands.md](view-aware-commands.md)** — registering a new TUI command with view-mode filtering, understanding how commands are filtered by view mode (plans, learn, objectives), adding objective-specific commands to the command palette, implementing streaming commands in the TUI
+- **[view-mode-help.md](view-mode-help.md)** — modifying the TUI help screen, adding view-specific actions to the TUI, understanding ViewMode-conditional rendering
 - **[view-switching.md](view-switching.md)** — adding a new view mode to the TUI, understanding how view switching and caching work, debugging data not appearing in a specific view, working with PlanBodyScreen content type parameterization

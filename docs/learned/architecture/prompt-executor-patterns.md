@@ -107,16 +107,18 @@ Key points from that function:
 ## File Locations
 
 - **ABC**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
-- **Real**: `src/erk/core/prompt_executor.py` (ClaudePromptExecutor)
+- **Claude CLI**: `src/erk/core/prompt_executor.py` (`ClaudeCliPromptExecutor`)
+- **Anthropic API**: `src/erk/core/anthropic_prompt_executor.py` (`AnthropicApiPromptExecutor`)
+- **Fallback Composite**: `src/erk/core/fallback_prompt_executor.py` (`FallbackPromptExecutor`)
 - **Fake**: `tests/fakes/prompt_executor.py` and `packages/erk-shared/src/erk_shared/core/fakes.py`
 
 ## Error Handling: Streaming stderr
 
-ClaudePromptExecutor uses a background thread to accumulate stderr while streaming stdout:
+ClaudeCliPromptExecutor uses a background thread to accumulate stderr while streaming stdout:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ ClaudePromptExecutor.execute_command_streaming()              │
+│ ClaudeCliPromptExecutor.execute_command_streaming()           │
 ├─────────────────────────────────────────────────────────────┤
 │ Main Thread                    │ Background Thread          │
 │ ─────────────────────────────  │ ──────────────────────────│
@@ -136,11 +138,40 @@ This is necessary because:
 
 ## Multi-Backend Design
 
-The `PromptExecutor` ABC is designed to support multiple agent backends. The current sole implementation is `ClaudePromptExecutor`, but the interface is intentionally abstract enough to support others.
+The `PromptExecutor` ABC supports multiple agent backends through a strategy pattern with three implementations.
+
+### Backend Implementations
+
+#### `ClaudeCliPromptExecutor` — CLI Subprocess
+
+<!-- Source: src/erk/core/prompt_executor.py, ClaudeCliPromptExecutor -->
+
+The production implementation using `subprocess.Popen()` for streaming and `subprocess.run()` for prompts. Checks for `claude` binary via `shutil.which()`. Supports all four executor methods.
+
+#### `AnthropicApiPromptExecutor` — SDK Direct
+
+<!-- Source: src/erk/core/anthropic_prompt_executor.py, AnthropicApiPromptExecutor -->
+
+Lightweight executor backed by the Anthropic SDK (`client.messages.create()`). Used for operations where low latency matters (slug generation, commit messages). Only implements `execute_prompt()` — all other methods raise `NotImplementedError`. Available when `ANTHROPIC_API_KEY` environment variable is set.
+
+#### `FallbackPromptExecutor` — API-First Composite
+
+<!-- Source: src/erk/core/fallback_prompt_executor.py, FallbackPromptExecutor -->
+
+Composite executor (frozen dataclass) that routes `execute_prompt()` through `AnthropicApiPromptExecutor` when available, falling back to `ClaudeCliPromptExecutor`. All other methods (streaming, interactive, passthrough) delegate directly to the CLI executor. This gives API-speed prompts with full CLI capabilities for interactive and streaming use cases.
+
+### Executor Selection
+
+The executor wiring happens at context construction time. `FallbackPromptExecutor` wraps both API and CLI executors, providing automatic routing:
+
+- `execute_prompt()` → API if `ANTHROPIC_API_KEY` set, otherwise CLI
+- `execute_command_streaming()` → always CLI
+- `execute_interactive()` → always CLI
+- `execute_prompt_passthrough()` → always CLI
 
 ### Key Abstraction Points
 
-- **`is_available()`** — Each backend checks for its own binary (`claude`, `codex`, etc.)
+- **`is_available()`** — Each backend checks for its own prerequisite (`shutil.which("claude")` for CLI, `ANTHROPIC_API_KEY` env var for API)
 - **`execute_interactive()`** — Uses `os.execvp()` to replace the process. The binary name is determined by the executor implementation, not the caller. Callers should use `os.execvp(cmd_args[0], cmd_args)` rather than hardcoding `os.execvp("claude", ...)`.
 - **`execute_command_streaming()`** — Each backend has its own JSONL format. The executor parses backend-specific events and yields the common `ExecutorEvent` union types.
 - **`execute_prompt()`** — Backend-specific flags (e.g., `--system-prompt` for Claude, which has no Codex equivalent) are handled internally by each executor.

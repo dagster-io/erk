@@ -50,6 +50,16 @@ Action methods follow the pattern `action_<verb>_<noun>`:
 - `action_open_run` -- opens the GitHub Actions run URL
 - `action_view_comments` -- opens the comments modal
 
+## Priority Binding Pattern for Widget Override
+
+<!-- Source: src/erk/tui/screens/objective_nodes_screen.py -->
+
+When a screen contains a `DataTable` widget, arrow keys are consumed by the widget before the screen's bindings fire. To override this, use `priority=True` on the binding:
+
+The `ObjectiveNodesScreen` uses `priority=True` on its `down` and `up` bindings to ensure arrow keys invoke the screen's custom `action_cursor_down`/`action_cursor_up` methods instead of the DataTable's default handlers. The custom actions add separator-skipping behavior (jumping past decorative separator rows) that j/k (vim-style) bindings also implement.
+
+After this change, j/k and arrow keys work identically for navigation.
+
 ## Adding New Bindings
 
 1. Check this table for conflicts

@@ -31,12 +31,13 @@ See `build_codespace_ssh_command()` in `src/erk/core/codespace_run.py` for the i
 
 ## Bootstrap Sequence Design
 
-The wrapper chains four operations with `&&` inside `bash -l -c '...'`:
+The wrapper chains operations with `&&` inside `bash -l -c '...'`. The sequence now supports an optional branch checkout prefix:
 
-1. **`git pull`** — ensures the remote has latest code, since the codespace may have been idle for hours or days
-2. **`uv sync`** — installs any new/changed dependencies from the (potentially updated) `pyproject.toml`
-3. **`source .venv/bin/activate`** — activates the virtualenv so `erk` resolves to the project's entry point
-4. **The actual erk command** — runs only if all three setup steps succeed
+1. **Branch checkout** _(optional)_ — `git fetch origin <branch> && git checkout <branch>` — ensures the codespace is on the same branch as the local machine
+2. **`git pull`** — ensures the remote has latest code, since the codespace may have been idle for hours or days
+3. **`uv sync`** — installs any new/changed dependencies from the (potentially updated) `pyproject.toml`
+4. **`source .venv/bin/activate`** — activates the virtualenv so `erk` resolves to the project's entry point
+5. **The actual erk command** — runs only if all setup steps succeed
 
 ### Why These Design Choices
 
@@ -61,11 +62,23 @@ The `&&`-chain means the actual error appears in terminal output, but knowing _w
 
 **Key strategy**: Use `erk codespace connect --shell` to drop into a bare shell, then run bootstrap steps manually one at a time to isolate the failure.
 
-## When to Use vs When to Bypass
+## Branch Checkout Injection
 
 <!-- Source: src/erk/cli/commands/codespace/connect_cmd.py, connect_codespace -->
 
-Not all codespace commands use `build_codespace_ssh_command()`. The `connect` command (see `connect_codespace()` in `src/erk/cli/commands/codespace/connect_cmd.py`) builds its own command string because its `--shell` mode skips setup entirely (just `bash -l`). This shell escape hatch exists precisely for debugging when the bootstrap itself is broken.
+The `connect` command injects an optional `checkout_prefix` into the bootstrap sequence when a local branch is detected. This ensures the codespace checks out the same branch as the local machine:
+
+The `connect_codespace()` function conditionally builds a `checkout_prefix` string when a local branch is detected: it constructs a `git fetch origin <branch> && git checkout <branch> &&` prefix that ensures the codespace is on the same branch as the local machine.
+
+The prefix is injected into both shell and non-shell modes. In shell mode, the full sequence becomes `{cd_prefix}{checkout_prefix}{export_prefix}exec bash -l`. In non-shell mode: `{cd_prefix}{checkout_prefix}{export_prefix}{setup} && {claude_cmd}`.
+
+A `NoRepoSentinel` guard (lines 61-70) prevents checkout injection when running outside a git repository — `local_branch` is set to `None`, and the prefix is empty.
+
+**Prefix ordering**: CD → Checkout → Export → Command. CD must come first (so the repo is accessible), checkout next (so the correct branch's code is used for subsequent steps), then exports (environment setup).
+
+## When to Use vs When to Bypass
+
+Not all codespace commands use `build_codespace_ssh_command()`. The `connect` command builds its own command string because its `--shell` mode skips setup entirely (just `bash -l`). This shell escape hatch exists precisely for debugging when the bootstrap itself is broken.
 
 **Decision rule**: Use `build_codespace_ssh_command()` for any command running a specific erk CLI remotely. Build the string manually only when the command needs a fundamentally different setup flow (like shell-only mode).
 
