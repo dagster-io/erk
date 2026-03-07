@@ -1,0 +1,1167 @@
+<session>
+  <meta branch="plnd/codespace-connect-checkout-03-07-1151" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8900&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8900` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8900.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11247" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 11247, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WxKCCCm1VDfBEmnwfdxv7r">
+    <param name="command">erk exec setup-impl --issue 8900</param>
+    <param name="description">Set up implementation for plan #8900</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11247" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 11247, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WxKCCCm1VDfBEmnwfdxv7r">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--codespace-connect-checkout-03-07-1151", "plan_number": 8900, "plan_url": "https://github.com/dagster-io/erk/pull/8900", "branch": "plnd/codespace-connect-checkout-03-07-1151", "plan_title": "[erk-plan] Plan: Codespace connect checks out local branch", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8900, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/codespace-connect-checkout-03-07-1151', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="28448" cache_creation="{'ephemeral_5m_input_tokens': 342, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01R6knMqxKR4mZrv9qXXMuHc">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--codespace-connect-checkout-03-07-1151/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="28448" cache_creation="{'ephemeral_5m_input_tokens': 342, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R6knMqxKR4mZrv9qXXMuHc">
+     1→# Plan: Codespace connect checks out local branch
+     2→
+     3→## Context
+     4→
+     5→When running `erk codespace connect`, the remote codespace may be on a different branch than the local machine. The user wants the connect command to automatically check out the same branch that is currently checked out locally, so the codespace is immediately working on the right code.
+     6→
+     7→## Approach
+     8→
+     9→Inject `git fetch origin &lt;branch&gt; &amp;&amp; git checkout &lt;branch&gt;` into the remote command string, before the existing `git pull` step. This keeps it as a single SSH connection.
+    10→
+    11→Use `ctx.git.branch.get_current_branch(ctx.repo_root)` to get the current local branch name. If `None` (detached HEAD), skip the checkout — proceed with existing behavior.
+    12→
+    13→## Files to modify
+    14→
+    15→### 1. `src/erk/cli/commands/codespace/connect_cmd.py`
+    16→
+    17→After resolving the codespace (line 57), get the local branch and build a checkout prefix:
+    18→
+    19→```python
+    20→local_branch = ctx.git.branch.get_current_branch(ctx.repo_root)
+    21→if local_branch is not None:
+    22→    checkout_prefix = f"git fetch origin {shlex.quote(local_branch)} &amp;&amp; git checkout {shlex.quote(local_branch)} &amp;&amp; "
+    23→else:
+    24→    checkout_prefix = ""
+    25→```
+    26→
+    27→Insert `checkout_prefix` into the remote command in both paths:
+    28→
+    29→- **Non-shell** (line 74): Change `setup` to `f"{checkout_prefix}git pull &amp;&amp; uv sync &amp;&amp; source .venv/bin/activate"`
+    30→- **Shell** (lines 69-72): Add `checkout_prefix` alongside `cd_prefix` and `export_prefix` in the `bash -l -c` command. The condition on line 69 becomes `if export_prefix or cd_prefix or checkout_prefix`.
+
+... [33 lines omitted] ...
+
+    42→Existing tests pass `NoRepoSentinel` (the default) — they still work because `get_current_branch` returns `None` for unknown paths in FakeGit, so `checkout_prefix` will be `""`. **Wait** — actually `ctx.repo_root` will raise `RuntimeError` on `NoRepoSentinel`. Need to move the `get_current_branch` call to be guarded:
+  </tool_result>
+  <assistant>Now let me read the current source file and tests to understand what I'm working with.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1257" cache_read_input_tokens="28790" cache_creation="{'ephemeral_5m_input_tokens': 1257, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BWVkhhdt8MpjRh4vNmSYR4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1257" cache_read_input_tokens="28790" cache_creation="{'ephemeral_5m_input_tokens': 1257, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_016FcBvd2rVsRKCeT97ps4ty">
+    <param name="pattern">tests/unit/cli/commands/codespace/test_connect_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1257" cache_read_input_tokens="28790" cache_creation="{'ephemeral_5m_input_tokens': 1257, 'ephemeral_1h_input_tokens': 0}" output_tokens="153" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BWVkhhdt8MpjRh4vNmSYR4">
+     1→"""Connect to a codespace and launch Claude."""
+     2→
+     3→import shlex
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.codespace.resolve import resolve_codespace
+     8→from erk.core.context import ErkContext
+     9→
+    10→
+    11→def _build_export_prefix(env_vars: tuple[str, ...]) -&gt; str:
+    12→    """Parse --env KEY=VALUE args and return an export prefix string.
+    13→
+    14→    Returns empty string if no env vars provided, otherwise returns
+    15→    'export K1=V1 K2=V2 &amp;&amp; ' ready to prepend to a command.
+    16→    """
+    17→    if not env_vars:
+    18→        return ""
+    19→
+    20→    parts: list[str] = []
+    21→    for env_var in env_vars:
+    22→        if "=" not in env_var:
+    23→            click.echo(f"Error: Invalid --env format: {env_var!r} (expected KEY=VALUE)", err=True)
+    24→            raise SystemExit(1)
+    25→        key, value = env_var.split("=", 1)
+    26→        parts.append(f"{key}={shlex.quote(value)}")
+    27→
+    28→    return f"export {' '.join(parts)} &amp;&amp; "
+    29→
+    30→
+
+... [58 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016FcBvd2rVsRKCeT97ps4ty">
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WdEPxSsZtMVRDkGmRQFr1Z">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1592" cache_read_input_tokens="30047" cache_creation="{'ephemeral_5m_input_tokens': 1592, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WdEPxSsZtMVRDkGmRQFr1Z">
+     1→"""Unit tests for codespace connect command."""
+     2→
+     3→from datetime import datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk.core.context import context_for_test
+     9→from erk_shared.context.types import LoadedConfig
+    10→from erk_shared.gateway.codespace.fake import FakeCodespace
+    11→from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+    12→from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+    13→
+    14→
+    15→def test_connect_shows_error_when_no_codespaces() -&gt; None:
+    16→    """connect command shows error when no codespaces are registered."""
+    17→    runner = CliRunner()
+    18→
+    19→    codespace_registry = FakeCodespaceRegistry()
+    20→    ctx = context_for_test(codespace_registry=codespace_registry)
+    21→
+    22→    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx, catch_exceptions=False)
+    23→
+    24→    assert result.exit_code == 1
+    25→    assert "No default codespace set" in result.output
+    26→    assert "erk codespace setup" in result.output
+    27→
+    28→
+    29→def test_connect_shows_error_when_named_codespace_not_found() -&gt; None:
+    30→    """connect command shows error when specified codespace doesn't exist."""
+
+... [271 lines omitted] ...
+
+    37→        cli, ["codespace", "connect", "nonexistent"], obj=ctx, catch_exceptions=False
+    45→def test_connect_shows_error_when_default_not_found() -&gt; None:
+    46→    """connect command shows error when default codespace no longer exists."""
+    61→    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx, catch_exceptions=False)
+   208→def test_connect_env_invalid_format_errors() -&gt; None:
+   209→    """connect --env with invalid format (no =) shows error."""
+  </tool_result>
+  <assistant>Now I need to understand the `context_for_test` function and the `NoRepoSentinel` pattern, plus the FakeGit's branch support.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4805" cache_read_input_tokens="31639" cache_creation="{'ephemeral_5m_input_tokens': 4805, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Psk8qH9SgKGoGXeJtP8TSE">
+    <param name="todos">[{'content': 'Implement branch checkout in connect_cmd.py', 'status': 'pending', 'activeFo...[truncated 282 chars]...ing tests'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4805" cache_read_input_tokens="31639" cache_creation="{'ephemeral_5m_input_tokens': 4805, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Psk8qH9SgKGoGXeJtP8TSE">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01CpsxrLfcrVW65rtGsRc7j2">
+    <param name="description">Explore context_for_test and FakeGit</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 598 chars]...evant function signatures and patterns for creating test contexts with git branch support.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="36444" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CpsxrLfcrVW65rtGsRc7j2">
+Perfect! Now I have all the information needed. Let me create a comprehensive summary:
+
+## Summary: Testing Context Setup with Git Branch Support
+
+I've thoroughly explored the codebase and found comprehensive patterns for creating test contexts with git gateway and repository context. Here are the key findings:
+
+### 1. context_for_test() - Two Implementations
+
+**Important:** There are TWO separate `context_for_test()` functions with different parameter names:
+
+#### src/erk Implementation
+**Location:** `/home/runner/work/erk/erk/src/erk/core/context.py` (lines 202-448)
+
+**Key parameter:** `issues=` (not `github_issues=`)
+
+**Signature:**
+```python
+def context_for_test(
+    *,
+    git: Git | None = None,
+    github: GitHub | None = None,
+    github_admin: GitHubAdmin | None = None,
+    issues: GitHubIssues | None = None,  # &lt;-- KEY: issues= not github_issues=
+    plan_store: PlanBackend | None = None,
+    graphite: Graphite | None = None,
+    console: Console | None = None,
+    shell: Shell | None = None,
+    codespace: Codespace | None = None,
+    agent_launcher: AgentLauncher | None = None,
+    agent_docs: AgentDocs | None = None,
+
+... [282 lines omitted] ...
+
+- **Parameter name difference:** Using `issues=` with erk-shared version or `github_issues=` with src/erk version causes TypeError
+  </tool_result>
+  <assistant>Now I need to check how `ctx.repo_root` and `ctx.repo` work in the ErkContext to know the right guard pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3724" cache_read_input_tokens="36702" cache_creation="{'ephemeral_5m_input_tokens': 3724, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01MH7uFMQsP8xFCAPKH64p3j">
+    <param name="pattern">def repo_root</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context</param>
+    <param name="output_mode">content</param>
+    <param name="-A">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3724" cache_read_input_tokens="36702" cache_creation="{'ephemeral_5m_input_tokens': 3724, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MH7uFMQsP8xFCAPKH64p3j">
+packages/erk-shared/src/erk_shared/context/context.py:131:    def repo_root(self) -&gt; Path:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py-132-        """Convenience property - get repo root from repo.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py-133-
+packages/erk-shared/src/erk_shared/context/context.py-134-        Raises:
+packages/erk-shared/src/erk_shared/context/context.py-135-            RuntimeError: If not in a git repository
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py-136-        """
+packages/erk-shared/src/erk_shared/context/context.py-137-        if isinstance(self.repo, NoRepoSentinel):
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py-138-            raise RuntimeError("Not in a git repository")
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py-139-        return self.repo.root
+  </tool_result>
+  <assistant>Good. Now I have everything I need. Let me implement the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="524" cache_read_input_tokens="40426" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Jy2bxsArxcF5ZHU3aE26Wu">
+    <param name="todos">[{'content': 'Implement branch checkout in connect_cmd.py', 'status': 'in_progress', 'acti...[truncated 286 chars]...ing tests'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="524" cache_read_input_tokens="40426" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jy2bxsArxcF5ZHU3aE26Wu">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0198MMNwnTGEqd7ucQX4GaaY">
+    <param name="command">erk exec impl-signal started --session-id "b4d1af3b-5c84-4503-b0ef-d7367e32e811" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="239" cache_read_input_tokens="40950" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0198MMNwnTGEqd7ucQX4GaaY">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8900
+}
+  </tool_result>
+  <assistant>Now let me implement the branch checkout logic in `connect_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="41189" cache_creation="{'ephemeral_5m_input_tokens': 155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Hk3N2618bDt2Q89nvN9thg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.codespace.resolve import resolve_codespace
+from erk.core.context import ErkContext</param>
+    <param name="new_string">from erk.cli.commands.codespace.resolve import resolve_codespace
+from erk.core.context import ErkContext
+from erk_shared.context.types import NoRepoSentinel</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="41189" cache_creation="{'ephemeral_5m_input_tokens': 155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Hk3N2618bDt2Q89nvN9thg">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Eo9bWB8bHRRDNuFbCsTv7g">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py</param>
+    <param name="old_string">    # Connect via SSH and launch Claude (or shell with --shell flag)
+    # -t: Force pseud...[truncated 444 chars]...ix = f"cd {shlex.quote(working_dir)} &amp;&amp; " if working_dir is not None else ""
+    if shell:</param>
+    <param name="new_string">    # Determine local branch for remote checkout (skip if not in a repo)
+    if isinstance...[truncated 868 chars]...ix = f"cd {shlex.quote(working_dir)} &amp;&amp; " if working_dir is not None else ""
+    if shell:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="41344" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Eo9bWB8bHRRDNuFbCsTv7g">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now inject `checkout_prefix` into both the shell and non-shell paths:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="646" cache_read_input_tokens="41602" cache_creation="{'ephemeral_5m_input_tokens': 646, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SDZyHsNNZn2qqSWkiCRVtR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py</param>
+    <param name="old_string">    if shell:
+        if export_prefix or cd_prefix:
+            remote_command = f"bash -...[truncated 245 chars]...x}{export_prefix}{setup} &amp;&amp; {claude_cmd}"
+        remote_command = f"bash -l -c '{inner}'"</param>
+    <param name="new_string">    if shell:
+        if export_prefix or cd_prefix or checkout_prefix:
+            remote...[truncated 298 chars]...x}{export_prefix}{setup} &amp;&amp; {claude_cmd}"
+        remote_command = f"bash -l -c '{inner}'"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="646" cache_read_input_tokens="41602" cache_creation="{'ephemeral_5m_input_tokens': 646, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SDZyHsNNZn2qqSWkiCRVtR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify the final state of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="42248" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01L7McCL4EEs4jisXjqimqGw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="42248" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L7McCL4EEs4jisXjqimqGw">
+     1→"""Connect to a codespace and launch Claude."""
+     2→
+     3→import shlex
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.codespace.resolve import resolve_codespace
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.context.types import NoRepoSentinel
+    10→
+    11→
+    12→def _build_export_prefix(env_vars: tuple[str, ...]) -&gt; str:
+    13→    """Parse --env KEY=VALUE args and return an export prefix string.
+    14→
+    15→    Returns empty string if no env vars provided, otherwise returns
+    16→    'export K1=V1 K2=V2 &amp;&amp; ' ready to prepend to a command.
+    17→    """
+    18→    if not env_vars:
+    19→        return ""
+    20→
+    21→    parts: list[str] = []
+    22→    for env_var in env_vars:
+    23→        if "=" not in env_var:
+    24→            click.echo(f"Error: Invalid --env format: {env_var!r} (expected KEY=VALUE)", err=True)
+    25→            raise SystemExit(1)
+    26→        key, value = env_var.split("=", 1)
+    27→        parts.append(f"{key}={shlex.quote(value)}")
+    28→
+    29→    return f"export {' '.join(parts)} &amp;&amp; "
+    30→
+
+... [70 lines omitted] ...
+  </tool_result>
+  <assistant>Implementation looks correct. Now let me add the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1544" cache_read_input_tokens="42892" cache_creation="{'ephemeral_5m_input_tokens': 1544, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_011ake1pCmobgLNimbYHaEBj">
+    <param name="todos">[{'content': 'Implement branch checkout in connect_cmd.py', 'status': 'completed', 'active...[truncated 288 chars]...ing tests'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1544" cache_read_input_tokens="42892" cache_creation="{'ephemeral_5m_input_tokens': 1544, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011ake1pCmobgLNimbYHaEBj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>I need to check the exact imports and patterns for `RepoContext` and `FakeGit` in existing test files to follow conventions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="44436" cache_creation="{'ephemeral_5m_input_tokens': 235, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Rw8aAQtoX3zAjRKBdidV8y">
+    <param name="pattern">from erk_shared.gateway.git.fake import FakeGit</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="44436" cache_creation="{'ephemeral_5m_input_tokens': 235, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Rw8aAQtoX3zAjRKBdidV8y">
+Found 5 files limit: 5, offset: 0
+tests/unit/cli/commands/stack/test_list_cmd.py
+tests/unit/cli/commands/test_admin_github_pr_setting.py
+tests/unit/cli/commands/test_admin_test_workflow.py
+tests/unit/cli/commands/test_implement_shared.py
+tests/unit/cli/commands/test_ref_resolution.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SPYDjyULSDYWMvR7YMLffi">
+    <param name="pattern">RepoContext"</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="44671" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SPYDjyULSDYWMvR7YMLffi">
+No matches found
+
+[Showing results with pagination = limit: 5, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Q39zSGqSe2SMFec33SQh3Q">
+    <param name="pattern">RepoContext</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="44961" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q39zSGqSe2SMFec33SQh3Q">
+tests/unit/cli/commands/slot/test_list_cmd.py:6:from erk.core.repo_discovery import RepoContext
+tests/unit/cli/commands/slot/test_list_cmd.py:25:        repo = RepoContext(
+tests/unit/cli/commands/slot/test_list_cmd.py:59:        repo = RepoContext(
+tests/unit/cli/commands/slot/test_list_cmd.py:103:        repo = RepoContext(
+tests/unit/cli/commands/slot/test_list_cmd.py:135:        repo = RepoContext(
+tests/unit/cli/commands/slot/test_list_cmd.py:183:        repo = RepoContext(
+tests/unit/cli/commands/slot/test_list_cmd.py:231:        repo = RepoContext(
+tests/unit/cli/commands/slot/test_list_cmd.py:293:        repo = RepoContext(
+tests/unit/cli/commands/slot/test_assign_cmd.py:8:from erk.core.repo_discovery import RepoContext
+tests/unit/cli/commands/slot/test_assign_cmd.py:31:        repo = RepoContext(
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <assistant>Let me see one example of how RepoContext is constructed in tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="449" cache_read_input_tokens="45123" cache_creation="{'ephemeral_5m_input_tokens': 449, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MosxaWEPJZY4R5cpvV6NjJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/slot/test_list_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="449" cache_read_input_tokens="45123" cache_creation="{'ephemeral_5m_input_tokens': 449, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MosxaWEPJZY4R5cpvV6NjJ">
+     1→"""Unit tests for slot list command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk.core.worktree_pool import PoolState, SlotAssignment, save_pool_state
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from erk_shared.gateway.graphite.fake import FakeGraphite
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_slot_list_empty() -&gt; None:
+    14→    """Test that slot list shows all slots as available when empty."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        repo_dir = env.setup_repo_structure()
+    18→
+    19→        git_ops = FakeGit(
+    20→            worktrees=env.build_worktrees("main"),
+    21→            current_branches={env.cwd: "main"},
+    22→            git_common_dirs={env.cwd: env.git_dir},
+    23→        )
+    24→
+    25→        repo = RepoContext(
+    26→            root=env.cwd,
+    27→            repo_name=env.cwd.name,
+    28→            repo_dir=repo_dir,
+    29→            worktrees_dir=repo_dir / "worktrees",
+    30→            pool_json_path=repo_dir / "pool.json",
+
+... [15 lines omitted] ...
+
+    35→        result = runner.invoke(cli, ["slot", "list"], obj=test_ctx, catch_exceptions=False)
+  </tool_result>
+  <assistant>That uses `erk_isolated_fs_env` which is more complex than needed. Looking at the existing codespace tests, they use a simpler approach with `context_for_test`. Let me find a simpler pattern that works with `FakeGit` and `context_for_test` directly for these tests — I just need a `RepoContext` and a `FakeGit` with `current_branches` configured. The codespace tests don't use `erk_isolated_fs_env`. Let me write the tests following the existing codespace test patterns but adding git + repo:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="45572" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GZ3wQjB9dTBax2yVSmM3Vs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py</param>
+    <param name="offset">67</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="45572" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GZ3wQjB9dTBax2yVSmM3Vs">
+    67→def test_connect_outputs_connecting_message_for_valid_codespace() -&gt; None:
+    68→    """connect command outputs connecting message and calls codespace SSH with correct args."""
+    69→    runner = CliRunner()
+    70→
+    71→    cs = RegisteredCodespace(
+    72→        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    73→    )
+    74→    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    75→    fake_codespace = FakeCodespace()
+    76→    ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
+    77→
+    78→    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx)
+    79→
+    80→    # FakeCodespace.exec_ssh_interactive raises SystemExit(0), which CliRunner catches
+    81→    assert result.exit_code == 0
+    82→
+    83→    # Verify exec_ssh_interactive was called with correct arguments
+    84→    assert fake_codespace.exec_called
+    85→    assert fake_codespace.last_call is not None
+    86→    assert fake_codespace.last_call.gh_name == "user-mybox-abc123"
+    87→    assert fake_codespace.last_call.interactive is True
+    88→    # Verify the command includes Claude setup (no tmux by default)
+    89→    assert "claude" in fake_codespace.last_call.remote_command
+    90→    assert "git pull" in fake_codespace.last_call.remote_command
+    91→    assert "tmux" not in fake_codespace.last_call.remote_command
+    92→
+    93→
+    94→def test_connect_with_explicit_name() -&gt; None:
+    95→    """connect command works with explicit codespace name."""
+    96→    runner = CliRunner()
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check what parameters `context_for_test` in `src/erk/core/context.py` accepts for `repo`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="854" cache_read_input_tokens="46533" cache_creation="{'ephemeral_5m_input_tokens': 854, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01ATc4FSSHE1YmcxQLstoM7c">
+    <param name="pattern">repo: RepoContext</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="854" cache_read_input_tokens="46533" cache_creation="{'ephemeral_5m_input_tokens': 854, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ATc4FSSHE1YmcxQLstoM7c">
+226-    global_config: GlobalConfig | None = None,
+227-    local_config: LoadedConfig | None = None,
+228:    repo: RepoContext | NoRepoSentinel | None = None,
+229-    repo_info: RepoInfo | None = None,
+230-    package_info: ErkPackageInfo | None = None,
+  </tool_result>
+  <assistant>Now I have everything to write the tests. Let me add 3 tests to the existing test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="47387" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Y743dttJ2xpGyFkajYEUHE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py</param>
+    <param name="old_string">"""Unit tests for codespace connect command."""
+
+from datetime import datetime
+
+from click...[truncated 251 chars]...eredCodespace
+from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry</param>
+    <param name="new_string">"""Unit tests for codespace connect command."""
+
+from datetime import datetime
+from pathli...[truncated 372 chars]...registry.fake import FakeCodespaceRegistry
+from erk_shared.gateway.git.fake import FakeGit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="47387" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y743dttJ2xpGyFkajYEUHE">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the 3 new tests at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="47837" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VVjz6eyapoX4q3LdyzptPP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py</param>
+    <param name="old_string">def test_connect_with_working_directory_and_shell_flag() -&gt; None:
+    """connect --shell w...[truncated 779 chars]...assert "cd /workspaces/repo" in remote_command
+    assert "exec bash -l" in remote_command</param>
+    <param name="new_string">def test_connect_with_working_directory_and_shell_flag() -&gt; None:
+    """connect --shell w...[truncated 4264 chars]...x &amp;&amp; git checkout feature-x" in remote_command
+    assert "exec bash -l" in remote_command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="47837" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VVjz6eyapoX4q3LdyzptPP">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GUJuWqcAjyFXGHSnE1VoS2">
+    <param name="todos">[{'content': 'Implement branch checkout in connect_cmd.py', 'status': 'completed', 'active...[truncated 290 chars]...ing tests'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2078" cache_read_input_tokens="48307" cache_creation="{'ephemeral_5m_input_tokens': 2078, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GUJuWqcAjyFXGHSnE1VoS2">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="50385" cache_creation="{'ephemeral_5m_input_tokens': 223, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_015uDRYzsCNb35Zizw95hKWu">
+    <param name="description">Run codespace connect tests</param>
+    <param name="prompt">Run the following command and report all results. Do NOT fix any errors - just report:
+
+uv...[truncated 24 chars]...e/test_connect_cmd.py -v
+
+Report the full output including pass/fail status for each test.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="50385" cache_creation="{'ephemeral_5m_input_tokens': 223, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015uDRYzsCNb35Zizw95hKWu">
+pytest passed: 16 tests passed in 1.67s
+
+All 16 tests in `tests/unit/cli/commands/codespace/test_connect_cmd.py` passed successfully.
+agentId: aea1e26 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 16 tests pass (13 existing + 3 new). Now let me check if there are any CI checks I should run more broadly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="50608" cache_creation="{'ephemeral_5m_input_tokens': 235, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01StcyyPAwvbCSs2yM8kLshp">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="50608" cache_creation="{'ephemeral_5m_input_tokens': 235, 'ephemeral_1h_input_tokens': 0}" output_tokens="101" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01StcyyPAwvbCSs2yM8kLshp">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_013LaCnudaRoF5ZzNckKen1i">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="141" cache_read_input_tokens="50843" cache_creation="{'ephemeral_5m_input_tokens': 141, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013LaCnudaRoF5ZzNckKen1i">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_017BKWLNVxGA952c7Jf11Y3C">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="50984" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017BKWLNVxGA952c7Jf11Y3C">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run `make fast-ci` to check everything:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1856" cache_read_input_tokens="51213" cache_creation="{'ephemeral_5m_input_tokens': 1856, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01E3Lzyh9zsg3NANfACTqub5">
+    <param name="description">Run make fast-ci from repo root</param>
+    <param name="prompt">Run the following command from the repository root /home/runner/work/erk/erk and report al...[truncated 18 chars]...t report:
+
+make fast-ci
+
+Report the full output including pass/fail status for each check.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1856" cache_read_input_tokens="51213" cache_creation="{'ephemeral_5m_input_tokens': 1856, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E3Lzyh9zsg3NANfACTqub5">
+## Results Summary
+
+The `make fast-ci` command **FAILED** with exit code 2. Here are the detailed results:
+
+### Check Results
+
+**Prettier Check:** FAILED
+- 2 files have code style issues:
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+- Error: "Code style issues found in 2 files. Run Prettier with --write to fix."
+
+**AGENTS.md Standard:** PASSED
+
+**CLAUDE.md Pairing:** PASSED
+- 19 files checked
+- 0 violations
+
+**Lint Check:** FAILED
+- 1 error found in `/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py:67:101`
+- Issue: Line too long (121 &gt; 100 characters)
+- Code snippet:
+  ```python
+  67 |         checkout_prefix = f"git fetch origin {shlex.quote(local_branch)} &amp;&amp; git checkout {shlex.quote(local_branch)} &amp;&amp; "
+  ```
+
+**Format Check:** PASSED
+- 1666 files already formatted
+
+**Markdown Check:** PASSED
+
+... [27 lines omitted] ...
+
+The build **failed** due to **2 issues**:
+1. **Linting error**: Line 67 in `/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py` exceeds 100 character limit by 21 characters
+  </tool_result>
+  <assistant>Two issues to fix: a line-too-long lint error in my code, and pre-existing prettier issues. Let me fix the lint error:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="53069" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NMk48yq47QSggCP5xHd3hJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py</param>
+    <param name="old_string">    if local_branch is not None:
+        checkout_prefix = f"git fetch origin {shlex.quote(local_branch)} &amp;&amp; git checkout {shlex.quote(local_branch)} &amp;&amp; "
+    else:</param>
+    <param name="new_string">    if local_branch is not None:
+        quoted = shlex.quote(local_branch)
+        checkout_prefix = f"git fetch origin {quoted} &amp;&amp; git checkout {quoted} &amp;&amp; "
+    else:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="53069" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NMk48yq47QSggCP5xHd3hJ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the prettier issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="53801" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01TYsMCBeH3dTizMGNDto5bJ">
+    <param name="description">Run make prettier to fix formatting</param>
+    <param name="prompt">Run the following command from /home/runner/work/erk/erk and report the results. Do NOT fix any errors - just report:
+
+make prettier
+
+Report the full output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="53801" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TYsMCBeH3dTizMGNDto5bJ">
+prettier passed: All matched files use Prettier code style!
+
+The prettier check completed successfully with exit code 0. All 225+ markdown files checked were already properly formatted (all marked as unchanged). No files needed reformatting.
+agentId: a3b792c (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Good, prettier auto-fixed. Now let me re-run the full CI to confirm everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="54266" cache_creation="{'ephemeral_5m_input_tokens': 221, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Cfym4k9RHzTGdpyYViY18z">
+    <param name="description">Run make fast-ci again</param>
+    <param name="prompt">Run the following command from /home/runner/work/erk/erk and report all results. Do NOT fix any errors - just report:
+
+make fast-ci
+
+Report the full output including pass/fail status for each check.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="54266" cache_creation="{'ephemeral_5m_input_tokens': 221, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Cfym4k9RHzTGdpyYViY18z">
+## Results Summary
+
+**make fast-ci: PASSED**
+
+All checks completed successfully:
+
+1. **Lint** - Passed: All checks passed!
+2. **Format Check** - Passed: 1666 files already formatted
+3. **Prettier Check** - Passed: All matched files use Prettier code style!
+4. **Markdown Check** - Passed
+5. **Exec Reference Check** - Passed: .claude/skills/erk-exec/reference.md is up to date
+6. **ty (Type Checking)** - Passed: All checks passed!
+7. **Unit Tests (erk)** - Passed: 5728 passed in 12.84s
+8. **Tests (erk-dev)** - Passed: 136 passed in 4.52s
+9. **Tests (erk-statusline)** - Passed: 115 passed in 0.79s
+10. **Tests (erk-mcp)** - Passed: 24 tests passed
+11. **CLAUDE.md/AGENTS.md Validation** - Passed: All 19 CLAUDE.md files properly paired with AGENTS.md, 0 violations
+
+**Total test results:**
+- 5,979 tests passed across all test suites
+- No failures or errors detected
+agentId: aaa3355 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+All CI checks pass. Let me proceed with the remaining steps.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="675" cache_read_input_tokens="54487" cache_creation="{'ephemeral_5m_input_tokens': 675, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0147TZnXy2MQD3DemBXe48yW">
+    <param name="todos">[{'content': 'Implement branch checkout in connect_cmd.py', 'status': 'completed', 'active...[truncated 292 chars]...tests'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="675" cache_read_input_tokens="54487" cache_creation="{'ephemeral_5m_input_tokens': 675, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0147TZnXy2MQD3DemBXe48yW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Wqv54QPWZBgGaSYKdrqdoa">
+    <param name="command">erk exec impl-signal ended --session-id "b4d1af3b-5c84-4503-b0ef-d7367e32e811" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="55162" cache_creation="{'ephemeral_5m_input_tokens': 241, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BMBtuqnvGk8cBXYrbftoNj">
+    <param name="command">erk exec upload-impl-session --session-id "b4d1af3b-5c84-4503-b0ef-d7367e32e811" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="55162" cache_creation="{'ephemeral_5m_input_tokens': 241, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Wqv54QPWZBgGaSYKdrqdoa">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8900
+}
+  </tool_result>
+</session>
