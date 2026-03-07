@@ -11,6 +11,7 @@ Usage:
     erk land <branch>     # Land PR for branch
 """
 
+import logging
 import re
 from dataclasses import dataclass, replace
 from enum import Enum, auto
@@ -44,6 +45,7 @@ from erk.cli.commands.slot.common import (
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
+from erk.cli.constants import ERK_RECONCILED_LABEL
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.ensure_ideal import EnsureIdeal
@@ -60,6 +62,8 @@ from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.stack.validation import validate_parent_is_trunk
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -966,6 +970,12 @@ def _execute_land_directly(
         if exc.code != 0:
             raise
         exit_after = exc
+
+    # Stamp reconciled label (fail-open — merge already succeeded)
+    try:
+        ctx.github.add_label_to_pr(main_repo_root, pr_number, ERK_RECONCILED_LABEL)
+    except Exception:
+        logger.warning("Failed to add %s label to PR #%d", ERK_RECONCILED_LABEL, pr_number)
 
     # Objective update (fail-open — merge already succeeded)
     if objective_number is not None:

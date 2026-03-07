@@ -13,6 +13,7 @@ from erk.cli.commands.reconcile_pipeline import (
     ReconcileBranchInfo,
     ReconcileResult,
     detect_merged_branches,
+    detect_unreconciled_prs,
     process_merged_branch,
 )
 from erk.cli.core import discover_repo_context
@@ -51,9 +52,25 @@ def reconcile(ctx: ErkContext, *, force: bool, dry_run: bool, skip_learn: bool) 
         raise click.ClickException("Could not determine main repository root.")
     main_repo_root = repo.main_repo_root
 
-    # Detect merged branches
+    # Detect merged branches (local gone-branch detection)
     click.echo(click.style("Fetching and detecting merged branches...", fg="yellow"))
-    candidates = detect_merged_branches(ctx, repo_root=repo.root, main_repo_root=main_repo_root)
+    local_candidates = detect_merged_branches(
+        ctx, repo_root=repo.root, main_repo_root=main_repo_root
+    )
+
+    # Detect unreconciled PRs (remote sweep detection)
+    click.echo(click.style("Sweeping for unreconciled remote PRs...", fg="yellow"))
+    remote_candidates = detect_unreconciled_prs(ctx, main_repo_root=main_repo_root)
+
+    # Merge both candidate lists, deduplicating by PR number
+    seen_pr_numbers: set[int] = set()
+    candidates: list[ReconcileBranchInfo] = []
+    for info in local_candidates:
+        seen_pr_numbers.add(info.pr_number)
+        candidates.append(info)
+    for info in remote_candidates:
+        if info.pr_number not in seen_pr_numbers:
+            candidates.append(info)
 
     if not candidates:
         click.echo("Nothing to reconcile.")

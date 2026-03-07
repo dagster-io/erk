@@ -14,13 +14,17 @@ Exit Codes:
     1: Error (merge failed, validation error)
 """
 
+import logging
 from pathlib import Path
 
 import click
 
 from erk.cli.commands.land_cmd import _execute_land
 from erk.cli.commands.objective_helpers import run_objective_update_after_land
+from erk.cli.constants import ERK_RECONCILED_LABEL
 from erk_shared.context.helpers import require_context
+
+logger = logging.getLogger(__name__)
 
 
 @click.command(name="land-execute")
@@ -189,6 +193,12 @@ def land_execute(
         if exc.code != 0:
             raise
         exit_after = exc
+
+    # Stamp reconciled label (fail-open — merge already succeeded)
+    try:
+        erk_ctx.github.add_label_to_pr(main_repo_root, pr_number, ERK_RECONCILED_LABEL)
+    except Exception:
+        logger.warning("Failed to add %s label to PR #%d", ERK_RECONCILED_LABEL, pr_number)
 
     # Objective update (fail-open — merge already succeeded)
     if objective_number is not None:
