@@ -82,18 +82,11 @@ When the target branch is currently checked out in a worktree, `update_local_ref
 
 See the branch sync section of `incremental_dispatch()` in `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`. It calls `git.worktree.is_branch_checked_out()` first — if the branch is not checked out anywhere, it uses `create_branch(force=True)` to reset the ref. If the branch is checked out, it falls back to `update_local_ref()` with the remote SHA.
 
-After a plumbing commit to a checked-out branch, the index may contain stale staged changes. Reset with `git checkout HEAD --` on the committed files to sync the index:
+After a plumbing commit to a checked-out branch, the index may contain stale staged changes. Reset with `git checkout HEAD --` on the committed files to sync the index.
 
-```python
-if checked_out_path is not None:
-    run_subprocess_with_context(
-        cmd=["git", "checkout", "HEAD", "--"] + impl_context_paths,
-        operation_context="sync index after plumbing commit",
-        cwd=checked_out_path,
-    )
-```
+<!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, incremental_dispatch (index sync section) -->
 
-<!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, lines 108-144 -->
+See the index sync section of `incremental_dispatch()` in `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`. After committing, if the branch is checked out it runs `git checkout HEAD --` on the committed `impl_context_paths` via `run_subprocess_with_context()` to bring the index back in sync.
 
 ### Implementation
 
