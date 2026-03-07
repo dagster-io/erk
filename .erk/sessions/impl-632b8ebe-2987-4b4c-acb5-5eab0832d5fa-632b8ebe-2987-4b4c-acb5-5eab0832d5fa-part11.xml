@@ -1,0 +1,551 @@
+<session>
+  <meta source="agent-a6200dd" />
+  <meta branch="plnd/O8832-pr-read-no-repo-03-07-2109" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the RemoteGitHub gateway structure. Find and read:
+1. The RemoteGitHub ABC (packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py)
+2. The RemoteGitHub real implementation (real.py)
+3. The RemoteGitHub fake implementation (fake.py)
+4. The types file if it exists
+5. The HttpClient ABC 
+
+Report the full file paths and complete contents of each file.</user>
+  <assistant>I'll help you explore the RemoteGitHub gateway structure. Let me start by checking the documentation, then locate and read the files you need.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15138" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15138, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014ez4Y1sWVN21q3wC9Lq8zW">
+    <param name="pattern">RemoteGitHub</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15138" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15138, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Mt4AXxprQNGUNKNtxmmgCV">
+    <param name="pattern">**/remote_github/**/*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15138" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15138, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mt4AXxprQNGUNKNtxmmgCV">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py
+/home/runner/work/erk/erk/tests/unit/gateways/remote_github/__init__.py
+/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_real_remote_github.py
+/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_fake_remote_github.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py
+  </tool_result>
+  <tool_result tool="toolu_014ez4Y1sWVN21q3wC9Lq8zW">
+No files found
+  </tool_result>
+  <assistant>Now let me search for the types file and HttpClient ABC:</assistant>
+  <usage input_tokens="276" cache_creation_input_tokens="302" cache_read_input_tokens="15138" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RwJhSaT6YM5snmuQpVDa4P">
+    <param name="pattern">**/remote_github/types.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="276" cache_creation_input_tokens="302" cache_read_input_tokens="15138" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01NXTqMg2HLGrbi93eA3XRh3">
+    <param name="pattern">**/gateway/**/http_client*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="276" cache_creation_input_tokens="302" cache_read_input_tokens="15138" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RwJhSaT6YM5snmuQpVDa4P">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01NXTqMg2HLGrbi93eA3XRh3">
+No files found
+  </tool_result>
+  <assistant>Let me check the gateway directory structure and search for HttpClient:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="545" cache_read_input_tokens="15440" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LgcoUwQJFKVtzBrs2SH73p">
+    <param name="command">find /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway -type f -name "*.py" | head -20</param>
+    <param name="description">List gateway Python files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="545" cache_read_input_tokens="15440" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017jZE98PRmxw15Lx14CoVzr">
+    <param name="pattern">HttpClient</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="545" cache_read_input_tokens="15440" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LgcoUwQJFKVtzBrs2SH73p">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/clipboard/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/clipboard/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/clipboard/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/clipboard/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/browser/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/browser/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/browser/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/browser/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+  </tool_result>
+  <tool_result tool="toolu_017jZE98PRmxw15Lx14CoVzr">
+Found 9 files
+packages/erk-shared/src/erk_shared/gateway/remote_github/real.py
+packages/erk-shared/src/erk_shared/gateway/plan_service/real.py
+packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py
+packages/erk-shared/src/erk_shared/gateway/http/abc.py
+packages/erk-shared/src/erk_shared/gateway/http/auth.py
+packages/erk-shared/src/erk_shared/gateway/http/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/http/fake.py
+packages/erk-shared/src/erk_shared/gateway/http/printing.py
+packages/erk-shared/src/erk_shared/gateway/http/real.py
+  </tool_result>
+  <assistant>Perfect! Now let me read all the RemoteGitHub files and the HttpClient ABC:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1373" cache_read_input_tokens="15985" cache_creation="{'ephemeral_5m_input_tokens': 1373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HjCQaZuhAo4NYDw1jpoqKV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1373" cache_read_input_tokens="15985" cache_creation="{'ephemeral_5m_input_tokens': 1373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019SjJhzR4VGhqYxnvEdLqkX">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1373" cache_read_input_tokens="15985" cache_creation="{'ephemeral_5m_input_tokens': 1373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T3PZeLtcZn4ADxsc9ZJJPY">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1373" cache_read_input_tokens="15985" cache_creation="{'ephemeral_5m_input_tokens': 1373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019KFFxSxAtdn14Zu6ixC75w">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1373" cache_read_input_tokens="15985" cache_creation="{'ephemeral_5m_input_tokens': 1373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JRu1pNJ1dGHqFRHU8Hiogz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1373" cache_read_input_tokens="15985" cache_creation="{'ephemeral_5m_input_tokens': 1373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HjCQaZuhAo4NYDw1jpoqKV">
+     1→"""Abstract interface for remote GitHub operations without a local git clone.
+     2→
+     3→This gateway enables GitHub operations (branch creation, file commits, PR management,
+     4→workflow dispatch) using the GitHub REST API directly, without requiring a local
+     5→git repository. All methods take explicit owner/repo parameters.
+     6→"""
+     7→
+     8→from abc import ABC, abstractmethod
+     9→
+    10→
+    11→class RemoteGitHub(ABC):
+    12→    """GitHub operations that don't require a local git clone.
+    13→
+    14→    Every method takes explicit owner/repo parameters instead of repo_root: Path.
+    15→    Uses the GitHub REST API via HttpClient.
+    16→    """
+    17→
+    18→    @abstractmethod
+    19→    def get_authenticated_user(self) -&gt; str:
+    20→        """Get the username of the authenticated GitHub user.
+    21→
+    22→        Returns:
+    23→            GitHub username string
+    24→        """
+    25→        ...
+    26→
+    27→    @abstractmethod
+    28→    def get_default_branch_name(self, *, owner: str, repo: str) -&gt; str:
+    29→        """Get the default branch name for a repository.
+    30→
+
+... [174 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019SjJhzR4VGhqYxnvEdLqkX">
+     1→"""Real implementation of RemoteGitHub using HttpClient.
+     2→
+     3→All GitHub operations are performed via the REST API through HttpClient,
+     4→with no local git repository or gh CLI required.
+     5→"""
+     6→
+     7→import base64
+     8→import secrets
+     9→import string
+    10→
+    11→from erk_shared.gateway.http.abc import HttpClient
+    12→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    13→from erk_shared.gateway.time.abc import Time
+    14→from erk_shared.output.output import user_output
+    15→
+    16→
+    17→class RealRemoteGitHub(RemoteGitHub):
+    18→    """Production implementation using HttpClient for all GitHub API calls."""
+    19→
+    20→    def __init__(self, *, http_client: HttpClient, time: Time) -&gt; None:
+    21→        """Create RealRemoteGitHub.
+    22→
+    23→        Args:
+    24→            http_client: Authenticated HTTP client for GitHub API
+    25→            time: Time gateway for polling delays
+    26→        """
+    27→        self._http = http_client
+    28→        self._time = time
+    29→
+    30→    def get_authenticated_user(self) -&gt; str:
+
+... [201 lines omitted] ...
+
+    35→            raise RuntimeError("GitHub API returned user without login field")
+    43→            raise RuntimeError(
+    54→            raise RuntimeError(
+    88→            raise RuntimeError(
+   117→            raise RuntimeError("GitHub API returned PR without number field")
+   188→                    raise RuntimeError(
+   199→        raise RuntimeError(
+  </tool_result>
+  <tool_result tool="toolu_01T3PZeLtcZn4ADxsc9ZJJPY">
+     1→"""Fake implementation of RemoteGitHub for testing.
+     2→
+     3→Constructor-injected responses for reads, mutation tracking lists for write assertions.
+     4→"""
+     5→
+     6→from dataclasses import dataclass
+     7→
+     8→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class CreatedRef:
+    13→    """Recorded create_ref call."""
+    14→
+    15→    owner: str
+    16→    repo: str
+    17→    ref: str
+    18→    sha: str
+    19→
+    20→
+    21→@dataclass(frozen=True)
+    22→class CreatedFileCommit:
+    23→    """Recorded create_file_commit call."""
+    24→
+    25→    owner: str
+    26→    repo: str
+    27→    path: str
+    28→    content: str
+    29→    message: str
+    30→    branch: str
+
+... [249 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019KFFxSxAtdn14Zu6ixC75w">
+&lt;system-reminder&gt;Warning: the file exists but is shorter than the provided offset (1). The file has 1 lines.&lt;/system-reminder&gt;
+  </tool_result>
+  <tool_result tool="toolu_01JRu1pNJ1dGHqFRHU8Hiogz">
+     1→"""HTTP client abstraction for dependency injection.
+     2→
+     3→This module provides an ABC for HTTP client operations to enable
+     4→testing without actual network calls and to improve TUI responsiveness
+     5→by avoiding subprocess overhead.
+     6→"""
+     7→
+     8→from abc import ABC, abstractmethod
+     9→from typing import Any
+    10→
+    11→
+    12→class HttpClient(ABC):
+    13→    """Abstract HTTP client for dependency injection.
+    14→
+    15→    This is a minimal interface designed for TUI operations that need
+    16→    fast HTTP calls without subprocess overhead. It focuses on JSON APIs.
+    17→    """
+    18→
+    19→    @abstractmethod
+    20→    def patch(
+    21→        self,
+    22→        endpoint: str,
+    23→        *,
+    24→        data: dict[str, Any],
+    25→    ) -&gt; dict[str, Any]:
+    26→        """Send a PATCH request to the API.
+    27→
+    28→        Args:
+    29→            endpoint: API endpoint path (e.g., "repos/owner/repo/issues/123")
+    30→            data: JSON body to send
+
+... [140 lines omitted] ...
+
+    36→            HttpError: If the request fails
+    57→            HttpError: If the request fails
+    78→            HttpError: If the request fails
+    96→            HttpError: If the request fails
+   114→            HttpError: If the request fails
+   135→            HttpError: If the request fails
+   145→class HttpError(Exception):
+   146→    """Exception raised when an HTTP request fails."""
+   155→        """Create an HttpError.
+   159→            message: Error message
+  </tool_result>
+  <assistant>Perfect! Now let me check the __init__.py file to see what's exported:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9894" cache_read_input_tokens="17358" cache_creation="{'ephemeral_5m_input_tokens': 9894, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01B1dVr4oQ9CCf69A5tZtraR">
+    <param name="command">cat /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/__init__.py</param>
+    <param name="description">Show remote_github package exports</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9894" cache_read_input_tokens="17358" cache_creation="{'ephemeral_5m_input_tokens': 9894, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B1dVr4oQ9CCf69A5tZtraR">
+
+  </tool_result>
+  <assistant>The file is empty. Let me also check if there are any related HTTP implementations since RemoteGitHub depends on HttpClient:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="176" cache_read_input_tokens="27252" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Wcmmez1MrKLyCqnHFrr4zW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/real.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="176" cache_read_input_tokens="27252" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015T7WGxALVPjYJTEGVHCyrA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="176" cache_read_input_tokens="27252" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wcmmez1MrKLyCqnHFrr4zW">
+     1→"""Real HTTP client implementation using httpx.
+     2→
+     3→RealHttpClient provides fast, in-process HTTP requests to APIs
+     4→without subprocess overhead. Designed for TUI responsiveness.
+     5→"""
+     6→
+     7→from typing import Any
+     8→
+     9→import httpx
+    10→
+    11→from erk_shared.gateway.http.abc import HttpClient, HttpError
+    12→
+    13→
+    14→class RealHttpClient(HttpClient):
+    15→    """Production HTTP client using httpx for fast API calls."""
+    16→
+    17→    def __init__(
+    18→        self,
+    19→        *,
+    20→        token: str,
+    21→        base_url: str,
+    22→    ) -&gt; None:
+    23→        """Create RealHttpClient with authentication.
+    24→
+    25→        Args:
+    26→            token: Bearer token for authentication
+    27→            base_url: Base URL for API (e.g., "https://api.github.com")
+    28→        """
+    29→        self._token = token
+    30→        self._base_url = base_url.rstrip("/")
+
+... [107 lines omitted] ...
+
+    47→        """Send an HTTP request and raise on error.
+    58→            HttpError: If the response status code is &gt;= 400
+    66→            raise HttpError(
+  </tool_result>
+  <tool_result tool="toolu_015T7WGxALVPjYJTEGVHCyrA">
+     1→"""Fake HTTP client implementation for testing.
+     2→
+     3→FakeHttpClient is an in-memory implementation that tracks requests
+     4→without actual network calls, enabling fast and deterministic tests.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.http.abc import HttpClient, HttpError
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class RecordedRequest:
+    15→    """A recorded HTTP request for test assertions."""
+    16→
+    17→    method: str
+    18→    endpoint: str
+    19→    data: dict[str, Any] | None
+    20→
+    21→
+    22→class FakeHttpClient(HttpClient):
+    23→    """In-memory fake implementation that tracks HTTP requests.
+    24→
+    25→    This class has NO public setup methods except via constructor.
+    26→    All state is configured at construction or captured during execution.
+    27→    """
+    28→
+    29→    def __init__(self) -&gt; None:
+    30→        """Create FakeHttpClient with empty state."""
+
+... [191 lines omitted] ...
+
+    34→        self._errors: dict[str, HttpError] = {}
+    74→    def set_error(
+    81→        """Configure an error for an endpoint.
+    85→            status_code: HTTP status code for the error
+    86→            message: Error message
+    88→        self._errors[endpoint] = HttpError(
+   100→        """Get the configured response or raise configured error.
+   111→            HttpError: If configured to fail
+   115→        if endpoint in self._errors:
+   116→            raise self._errors[endpoint]
+  </tool_result>
+  <assistant>Perfect! Now I have all the information. Let me compile a comprehensive report for you.
+
+---
+
+## RemoteGitHub Gateway Structure - Complete Report
+
+I've located and read all the RemoteGitHub gateway files along with the HttpClient abstraction it depends on. Here's the complete structure:
+
+### File Paths
+
+1. **RemoteGitHub ABC**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py`
+2. **RemoteGitHub Real Implementation**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py`
+3. **RemoteGitHub Fake Implementation**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py`
+4. **HttpClient ABC**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/abc.py`
+5. **HttpClient Real Implementation**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/real.py`
+6. **HttpClient Fake Implementation**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py`
+
+---
+
+## Architecture Summary
+
+### RemoteGitHub ABC
+**Purpose**: Provides an interface for GitHub operations that don't require a local git clone. All operations use the GitHub REST API via HttpClient.
+
+**Key Methods** (11 abstract methods):
+- `get_authenticated_user()` - Get the GitHub username
+- `get_default_branch_name(owner, repo)` - Get default branch (main/master)
+- `get_default_branch_sha(owner, repo)` - Get SHA of default branch HEAD
+- `create_ref(owner, repo, ref, sha)` - Create a git reference (branch)
+- `create_file_commit(owner, repo, path, content, message, branch)` - Create file via Contents API
+- `create_pull_request(owner, repo, head, base, title, body, draft)` - Create a PR
+- `update_pull_request_body(owner, repo, pr_number, body)` - Update PR body
+- `add_labels(owner, repo, issue_number, labels)` - Add labels to issue/PR
+- `dispatch_workflow(owner, repo, workflow, ref, inputs)` - Dispatch GitHub workflow
+- `add_issue_comment(owner, repo, issue_number, body)` - Comment on issue/PR
+
+---
+
+### RealRemoteGitHub
+**Purpose**: Production implementation using HttpClient for all GitHub API calls.
+
+**Dependencies**:
+- `HttpClient` - for HTTP requests
+- `Time` - for sleep delays during polling
+
+**Key Implementation Details**:
+
+1. **Constructor**: Takes `http_client: HttpClient` and `time: Time`
+
+2. **API Endpoints Used**:
+   - `user` - Get authenticated user
+   - `repos/{owner}/{repo}` - Get repo info
+   - `repos/{owner}/{repo}/git/ref/heads/{branch}` - Get ref SHA
+   - `repos/{owner}/{repo}/git/refs` - Create refs
+   - `repos/{owner}/{repo}/contents/{path}` - Create/update files
+   - `repos/{owner}/{repo}/pulls` - Create PRs
+   - `repos/{owner}/{repo}/issues/{issue_number}/labels` - Add labels
+   - `repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches` - Dispatch workflow
+   - `repos/{owner}/{repo}/actions/workflows/{workflow}/runs` - List workflow runs
+   - `repos/{owner}/{repo}/issues/{issue_number}/comments` - Add comments
+
+3. **Notable Implementation - Workflow Dispatch**: Uses a "distinct_id" pattern for correlation:
+   - Generates a random 6-character base36 ID
+   - Includes in dispatch inputs
+   - Polls for the run matching this ID in `display_title`
+   - Implements exponential backoff (1, 2, 4, 8, 8, 8 seconds)
+   - Max 11 attempts before timeout
+
+4. **Error Handling**: Raises RuntimeError for missing fields in API responses
+
+---
+
+### FakeRemoteGitHub
+**Purpose**: In-memory fake for testing with constructor-injected read responses and mutation tracking.
+
+**Constructor Parameters**:
+- `authenticated_user: str` - Username to return
+- `default_branch_name: str` - Default branch name
+- `default_branch_sha: str` - Default branch SHA
+- `next_pr_number: int` - PR number to return
+- `dispatch_run_id: str` - Run ID to return
+
+**Mutation Tracking Properties** (read-only, return copies):
+- `created_refs: list[CreatedRef]`
+- `created_file_commits: list[CreatedFileCommit]`
+- `created_pull_requests: list[CreatedPullRequest]`
+- `updated_pr_bodies: list[UpdatedPullRequestBody]`
+- `added_labels: list[AddedLabels]`
+- `dispatched_workflows: list[DispatchedWorkflow]`
+- `added_issue_comments: list[AddedIssueComment]`
+
+**Tracked Dataclasses**: Each records all parameters passed to the corresponding method for test assertions.
+
+---
+
+### HttpClient ABC
+**Purpose**: Minimal HTTP client interface for dependency injection enabling fast, testable API calls without subprocess overhead.
+
+**Abstract Methods** (6):
+- `get(endpoint)` - GET request returning dict
+- `get_list(endpoint)` - GET request returning list of dicts
+- `post(endpoint, data)` - POST request
+- `patch(endpoint, data)` - PATCH request
+- `put(endpoint, data)` - PUT request
+- `graphql(query, variables)` - GraphQL POST query
+
+**Property**:
+- `supports_direct_api: bool` - Indicates if client can make real API calls (default False)
+
+**Exception**:
+- `HttpError(status_code, message, endpoint)` - Raised on HTTP errors (status &gt;= 400)
+
+---
+
+### RealHttpClient
+**Purpose**: Production HTTP implementation using httpx library.
+
+**Dependencies**:
+- `httpx` library for HTTP requests
+
+**Constructor**:
+- `token: str` - Bearer token for GitHub API authentication
+- `base_url: str` - Base URL (e.g., "https://api.github.com")
+
+**Implementation Details**:
+- Sets GitHub API headers including X-GitHub-Api-Version: "2022-11-28"
+- 30-second timeout on all requests
+- Raises HttpError for status codes &gt;= 400
+- All HTTP methods (GET, POST, PATCH, PUT) use shared `_make_request()` helper
+
+---
+
+### FakeHttpClient
+**Purpose**: In-memory test implementation that records requests without network calls.
+
+**Constructor**: Takes no arguments (empty initialization)
+
+**Setup Methods**:
+- `set_response(endpoint, response)` - Configure dict response
+- `set_list_response(endpoint, response)` - Configure list response
+- `set_error(endpoint, status_code, message)` - Configure error response
+
+**Read Property**:
+- `requests: list[RecordedRequest]` - Returns copy of recorded requests
+
+**Request Tracking**:
+- `RecordedRequest` dataclass captures: method, endpoint, data
+- All requests are recorded before checking for configured errors/responses
+
+---
+
+## Key Design Patterns
+
+1. **ABC Pattern**: Clean separation of interface (abc.py) from implementations (real.py, fake.py)
+2. **Constructor Injection**: Both Real and Fake implementations receive dependencies at construction
+3. **Mutation Tracking**: Fake tracks all mutations for test assertions via read-only properties
+4. **No State Changes in Getters**: All @property methods on Fake return list copies to prevent external mutation
+5. **Error Handling**: Consistent HttpError exception with status code, message, endpoint
+6. **Polling Pattern**: RealRemoteGitHub uses distinct_id correlation + exponential backoff for workflow dispatch</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="4016" cache_read_input_tokens="27428" cache_creation="{'ephemeral_5m_input_tokens': 4016, 'ephemeral_1h_input_tokens': 0}" output_tokens="1969" service_tier="standard" inference_geo="not_available" />
+</session>
