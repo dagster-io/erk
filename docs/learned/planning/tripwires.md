@@ -120,6 +120,8 @@ Rules triggered by matching actions in code.
 
 **detecting plan backend by checking backend type directly** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR).
 
+**dispatching a plan without an existing open PR** → Read [Incremental Dispatch System](incremental-dispatch.md) first. Incremental dispatch requires an OPEN PR (not draft). Unlike regular dispatch, it does not require the erk-plan label.
+
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 
 **entering Plan Mode in replan or consolidation workflow** → Read [Context Preservation in Replan Workflow](context-preservation-in-replan.md) first. Gather investigation context FIRST (Step 6a). Enter plan mode only after collecting file paths, evidence, and discoveries. Sparse plans are destructive to downstream implementation.
@@ -163,6 +165,8 @@ Rules triggered by matching actions in code.
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
 **marking a planned-PR plan as 'implementation complete' and referencing itself as the implementing PR** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Self-referential close prevention: when a planned PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard.
+
+**modifying commit message format in incremental dispatch** → Read [Incremental Dispatch System](incremental-dispatch.md) first. The commit message embeds the full plan content in the body. This is intentional — it provides commit-level plan context in git history.
 
 **modifying how learn materials are committed to a branch** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. The CI workflow checks out the learn branch and reads materials from .erk/impl-context/. File names and directory structure must match what learn.yml expects.
 

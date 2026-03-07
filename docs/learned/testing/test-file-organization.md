@@ -72,6 +72,21 @@ Files named after pipeline stages:
 
 - `test_prepare_state.py`, `test_extract_diff.py`, `test_finalize_pr.py`, etc.
 
+### `tests/unit/cli/commands/exec/scripts/test_preprocess_session/` (from `test_preprocess_session.py`)
+
+8 files organized by feature area (split from 2,182-line monolith):
+
+| File                          | Focus                           |
+| ----------------------------- | ------------------------------- |
+| `test_xml_escaping.py`        | XML escaping                    |
+| `test_deduplication.py`       | Assistant message deduplication |
+| `test_xml_generation.py`      | XML generation                  |
+| `test_log_processing.py`      | Log file processing             |
+| `test_agent_discovery.py`     | Agent discovery                 |
+| `test_session_helpers.py`     | Session analysis and helpers    |
+| `test_preprocess_workflow.py` | CLI and workflow integration    |
+| `test_splitting.py`           | Token estimation and splitting  |
+
 ## Migration Steps
 
 1. Create the directory: `mkdir tests/path/module/`

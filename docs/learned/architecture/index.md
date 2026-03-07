@@ -69,6 +69,7 @@
 - **[github-pr-linkage-api.md](github-pr-linkage-api.md)** — querying PRs linked to an issue, understanding how GitHub tracks issue-PR relationships, debugging why a PR doesn't show as linked to an issue, working with CrossReferencedEvent or closingIssuesReferences
 - **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
+- **[health-check-runner-gateway.md](health-check-runner-gateway.md)** — working with health check infrastructure, modifying doctor command, adding new health checks, working with artifact allowlist
 - **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
 - **[http-accelerated-plan-refresh.md](http-accelerated-plan-refresh.md)** — understanding HTTP-only architecture for plan data fetching, working with HttpClient ABC extensions, optimizing plan list performance, adding CLI commands that need http_client
 - **[impl-context-api.md](impl-context-api.md)** — working with .erk/impl-context/ folder, understanding plan submission staging, creating or removing impl-context directories
@@ -104,6 +105,7 @@
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
 - **[pr-footer-validation.md](pr-footer-validation.md)** — working with PR metadata footer format, modifying PR footer generation or parsing, debugging PR footer extraction errors
 - **[pre-destruction-capture.md](pre-destruction-capture.md)** — implementing operations that destroy or transform data, designing pipelines with data capture requirements, working with git squash, rebase, or other destructive operations
+- **[progress-feedback-threading.md](progress-feedback-threading.md)** — working with progress feedback during LLM calls, modifying commit message generation, adding progress indicators to long-running operations
 - **[prompt-executor-gateway.md](prompt-executor-gateway.md)** — executing LLM prompts from Python code, testing code that uses Claude CLI, implementing single-shot prompt execution, working with PromptExecutor or FakePromptExecutor
 - **[prompt-executor-patterns.md](prompt-executor-patterns.md)** — launching Claude from CLI commands, deciding which PromptExecutor method to use, testing code that executes Claude CLI
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns

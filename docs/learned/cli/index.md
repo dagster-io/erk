@@ -21,7 +21,9 @@
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
 - **[commands/pr-diverge-fix.md](commands/pr-diverge-fix.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
+- **[commands/pr-prepare.md](commands/pr-prepare.md)** — setting up impl-context for an existing PR, preparing a worktree for plan implementation, working with erk pr prepare
 - **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
+- **[commands/reconcile.md](commands/reconcile.md)** — cleaning up branches whose PRs have been merged, reconciling branches merged outside erk land, working with erk reconcile
 - **[commands/update-objective-node.md](commands/update-objective-node.md)** — working with objective roadmap tables, updating step PR references
 - **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
 - **[doctor-workflow.md](doctor-workflow.md)** — modifying doctor command or workflow diagnostics, adding health checks to doctor
