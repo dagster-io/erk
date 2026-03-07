@@ -1,0 +1,1311 @@
+<session>
+  <meta source="agent-ac5cf8d" />
+  <meta branch="plnd/outside-repo-03-06-1630" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand:
+1. How `gh api` commands are constructed and executed - look at RealGitHub methods that call gh api
+2. The `execute_gh_command` and `execute_gh_command_with_retry` functions - where they are and their signatures
+3. How `RealGitHubIssues._build_gh_command` works
+4. The `run_subprocess_with_context` function signature
+5. How the `cwd` parameter is passed to GitHub operations (look at create_pr, trigger_workflow, update_pr_body, add_comment)
+6. ErkContext.issues property and plan_backend property
+
+Report file paths, function signatures, and key patterns.</user>
+  <assistant>I'll help you understand how `gh api` commands are constructed and executed. Let me start by checking the documentation and then explore the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18895" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18895, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Te1kcQP6GBwnqGvwM9USwG">
+    <param name="pattern">execute_gh_command</param>
+    <param name="glob">**/*.md</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18895" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18895, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Te1kcQP6GBwnqGvwM9USwG">
+Found 9 files
+docs/learned/reference/github-actions-api.md
+docs/learned/ci/tripwires.md
+docs/learned/ci/github-commit-indexing-timing.md
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/subprocess-wrappers.md
+docs/learned/architecture/index.md
+docs/learned/architecture/github-api-retry-mechanism.md
+docs/learned/architecture/github-graphql.md
+docs/learned/architecture/gateway-abc-implementation.md
+  </tool_result>
+  <assistant>Let me read the subprocess-wrappers and GitHub API retry documentation:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="311" cache_read_input_tokens="18895" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y3DRK1JXY3LkUgEptra62C">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/subprocess-wrappers.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="311" cache_read_input_tokens="18895" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GhMeKP21kkivzbKMNvnfEf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-api-retry-mechanism.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="311" cache_read_input_tokens="18895" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017q7UNDBK5vGKJWjQZ7Xr2B">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="311" cache_read_input_tokens="18895" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="218" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y3DRK1JXY3LkUgEptra62C">
+     1→---
+     2→title: Subprocess Wrappers
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "using subprocess wrappers"
+     7→  - "executing shell commands"
+     8→  - "understanding subprocess patterns"
+     9→tripwires:
+    10→  - action: "using bare subprocess.run with check=True"
+    11→    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
+    12→    pattern: "subprocess\\.run\\("
+    13→  - action: "adding a Claude subprocess call with --print mode"
+    14→    warning: "Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section."
+    15→  - action: "using sed -i in scripts that run on both macOS and Linux"
+    16→    warning: "macOS sed requires `sed -i ''` (empty string argument) while Linux sed uses `sed -i` (no argument). Scripts that use sed -i without handling this difference will fail silently on one platform."
+    17→    score: 4
+    18→---
+    19→
+    20→# Subprocess Execution Wrappers
+    21→
+    22→**NEVER use bare `subprocess.run(..., check=True)`. ALWAYS use wrapper functions.**
+    23→
+    24→This guide explains the two-layer pattern for subprocess execution in erk: gateway layer and CLI layer wrappers.
+    25→
+    26→## Scope
+    27→
+    28→**These rules apply to production erk code** in `src/erk/` and `packages/erk-shared/`.
+    29→
+    30→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` is acceptable in erk-dev commands since they don't need the testability/dry-run benefits of wrapper functions.
+
+... [348 lines omitted] ...
+
+    34→Erk uses a two-layer design for subprocess execution to provide consistent error handling across different boundaries:
+    36→- **Gateway layer**: `run_subprocess_with_context()` - Raises RuntimeError for business logic
+    37→- **CLI layer**: `run_with_error_reporting()` - Prints user-friendly message and raises SystemExit
+    47→**Behavior**: Raises `RuntimeError` with rich context on failure
+    49→**Usage**: Pass `cmd` (the command list), `operation_context` (human-readable description), and `cwd` (working directory). On failure, raises `RuntimeError` with the operation context, command, exit code, and stderr.
+    57→- **Rich error messages**: Includes operation context, command, exit code, stderr
+    58→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    61→### run_with_error_reporting (CLI Layer)
+    63→**When to use**: In CLI command handlers where you want to immediately exit on failure with a user-friendly message.
+    65→**Import**: `from erk.cli.subprocess_utils import run_with_error_reporting`
+    67→**Behavior**: Prints error message to stderr and raises `SystemExit` on failure
+    72→from erk.cli.subprocess_utils import run_with_error_reporting
+    74→# ✅ CORRECT: User-friendly error messages + SystemExit
+    75→run_with_error_reporting(
+    84→- **User-friendly**: Error messages are clear and actionable
+    86→- **No exception handling needed**: Wrapper handles everything
+    90→- **Rich error messages**: Both wrappers include operation context, command, exit code, and stderr
+    91→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    92→- **Consistent patterns**: Two clear boundaries with appropriate error handling
+    93→- **Debugging support**: Full context available in error messages and logs
+   110→Not all subprocess calls should use `run_with_error_reporting()`. Use explicit exception handling when:
+   112→1. **The operation is optional** - Failure should not stop the main workflow
+   114→3. **Warning vs Error** - You want to show a warning and continue, not exit
+   119→# Pattern: check=True with explicit CalledProcessError handling
+   123→except subprocess.CalledProcessError as e:
+   124→    # Show warning, continue execution
+   125→    user_output(click.style("⚠ ", fg="yellow") + f"Optional operation failed: {e}")
+   126→except FileNotFoundError:
+   135→| CLI command that must succeed  | `run_with_error_reporting()`    | SystemExit on failure is correct |
+   136→| Optional background operation  | Explicit exception handling     | Main operation should continue   |
+   137→| Gateway real.py implementation | `run_subprocess_with_context()` | Consistent error wrapping        |
+   141→For GitHub API commands that may fail due to transient network errors, use `execute_gh_command_with_retry()`:
+   151→- Automatic retry on transient errors (network timeouts, connection failures)
+   157→## Error Accumulation Pattern
+   183→# Use accumulated stderr in error msg
+   190→- Stderr is accumulated as list, joined only when needed for error message
+   259→| **Error handling**        | Returns `None` on any failure          | Raises exception or returns error type |
+   262→| **Caller responsibility** | Check for `None`, decide how to handle | Catch exception or check error type    |
+   270→See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
+   274→- **No exceptions** - Never raises, always returns `None` on failure
+   275→- **No error messages** - Caller decides what to log
+   276→- **Uniform failure** - All failure modes return `None` consistently
+   286→Use when the operation is **critical** and failure should be explicit:
+   288→See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
+   292→- **Explicit errors** - Each failure mode has specific error message
+   294→- **Clear contract** - Caller knows exceptions mean critical failure
+   298→- User-facing commands where failure needs explanation
+   300→- CLI commands that should exit with error message
+   331→The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+   367→- **CLI layer**: Use `run_with_error_reporting()` for command handlers
+  </tool_result>
+  <tool_result tool="toolu_01GhMeKP21kkivzbKMNvnfEf">
+     1→---
+     2→title: GitHub API Retry Mechanism
+     3→read_when:
+     4→  - "implementing GitHub API calls with retry logic"
+     5→  - "handling transient network errors"
+     6→  - "using execute_gh_command_with_retry()"
+     7→  - "injecting Time for testable retry delays"
+     8→tripwires:
+     9→  - action: "calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations"
+    10→    warning: "Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability."
+    11→  - action: "checking isinstance after RetriesExhausted without type narrowing"
+    12→    warning: "After checking `isinstance(result, RetriesExhausted)`, the else branch is type-narrowed to the success type. Use `assert isinstance(result, T)` if needed for clarity."
+    13→last_audited: "2026-02-16 14:05 PT"
+    14→audit_result: clean
+    15→---
+    16→
+    17→# GitHub API Retry Mechanism
+    18→
+    19→Erk includes a retry mechanism for GitHub API calls that handles transient network errors automatically. This document explains the pattern, when to use it, and how to test it.
+    20→
+    21→## The Problem
+    22→
+    23→GitHub API calls can fail due to transient network issues:
+    24→
+    25→- I/O timeouts
+    26→- Connection refused
+    27→- Network unreachable
+    28→- Connection reset
+    29→
+    30→These errors are typically recoverable with a simple retry after a short delay.
+
+... [141 lines omitted] ...
+
+    47→- **Transient errors**: Network timeouts, connection failures, TCP errors
+    49→### Transient Error Detection
+    51→Errors are detected as transient by checking for patterns in the error message:
+    62→See `erk_shared/gateway/github/transient_errors.py` for the canonical pattern list.
+    74→    except RuntimeError as e:
+    75→        if is_transient_error(str(e)):
+    77→        raise  # Non-transient errors bubble up immediately
+    82→    # Handle failure after all retries
+    83→    raise RuntimeError(f"Failed: {result.reason}")
+    93→| `RetryRequested`   | Callback signals "try again" (transient failure)  |
+   100→3. Callback raises exception → Exception bubbles up immediately (permanent failure)
+   105→The retry mechanism handles **transient network errors**, not **rate limits**.
+   107→| Error Type       | Example                    | Retried? |
+   112→| Auth failure     | `401 Unauthorized`         | No       |
+   143→The `poll_for_workflow_run()` method reuses `with_retries` for a different purpose: polling for a workflow run to appear. Unlike transient error retry (where the same call might succeed on retry), polling repeatedly queries the API until the expected data appears.
+   151→**Distinction from transient error retry**: Transient error retry uses exponential backoff (`[0.5, 1.0]`) for network failures. Polling uses uniform intervals for data that hasn't materialized yet. Both use `with_retries` but serve different purposes.
+   159→| `erk_shared/gateway/github/transient_errors.py` | `is_transient_error()`                                 |
+  </tool_result>
+  <tool_result tool="toolu_017q7UNDBK5vGKJWjQZ7Xr2B">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "adding a new method to Git ABC"
+    11→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    12→  - action: "adding a new method to GitHub ABC"
+    13→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    14→  - action: "adding a new method to Graphite ABC"
+    15→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [772 lines omitted] ...
+
+    31→    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+    42→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   136→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   138→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   140→### Decision: Discriminated Union or Exception?
+   144→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   145→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   146→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   150→- [ ] At least one caller branches on the error and continues with different logic
+   151→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   152→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   156→### Checklist: Use Exceptions When
+   158→- [ ] All callers terminate on failure (extract message and stop)
+   159→- [ ] No caller inspects error type or branches on error content
+   160→- [ ] Use `UserFacingCliError` at CLI boundary
+   166→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   181→**Methods using discriminated unions** (callers branch on error):
+   185→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   186→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   187→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   189→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   191→**Methods using exceptions** (all callers terminate):
+   193→| Method              | Exception      | Why                                                         |
+   195→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   196→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   200→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   207→   - [ ] `real.py` - Return appropriate error types for failure cases
+   209→   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+   212→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   217→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   221→- Updated tests to use `isinstance(result, MergeError)`
+   243→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   251→- When error messages from `get_X()` on missing resources are unclear
+   274→    user_output(f"Error: Issue #{issue_number} not found")
+   353→5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   597→The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   686→**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+   704→1. Run type checker (`ty`) to verify no abstract method errors
+   761→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   763→├── fake.py       # Constructor-injected errors, mutation tracking
+   770→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   771→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   772→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   795→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <assistant>Now let me search for the actual implementation of `execute_gh_command` and related functions:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="20270" cache_read_input_tokens="19206" cache_creation="{'ephemeral_5m_input_tokens': 20270, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01AaeE6Ak8Pcbz4qd5h76hPo">
+    <param name="pattern">**/*.py</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20270" cache_read_input_tokens="19206" cache_creation="{'ephemeral_5m_input_tokens': 20270, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AaeE6Ak8Pcbz4qd5h76hPo">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/config/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/config/schema.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/factories.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/debug.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/debug_timing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/plan_list_service.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/typing_utils.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/health_check_runner.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/frontmatter.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/fakes.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/script_writer.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/objective_list_service.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/log.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/entity.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/state.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/env.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/__init__.py
+
+... [71 lines omitted] ...
+  </tool_result>
+  <assistant>Let me search for the subprocess_utils file:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="3899" cache_read_input_tokens="39476" cache_creation="{'ephemeral_5m_input_tokens': 3899, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CqpFuc3jXDAvtMxzZHNTom">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="3899" cache_read_input_tokens="39476" cache_creation="{'ephemeral_5m_input_tokens': 3899, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018hNQqD6gfiMRHUrWizMpSG">
+    <param name="pattern">def execute_gh_command</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="3899" cache_read_input_tokens="39476" cache_creation="{'ephemeral_5m_input_tokens': 3899, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VCW7zzntzxnZBpE5JmB5AU">
+    <param name="pattern">def run_subprocess_with_context</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="3899" cache_read_input_tokens="39476" cache_creation="{'ephemeral_5m_input_tokens': 3899, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CqpFuc3jXDAvtMxzZHNTom">
+     1→"""Simple subprocess utilities for erk-shared.
+     2→
+     3→This module provides basic subprocess execution for GitHub CLI commands.
+     4→It's intentionally minimal to avoid pulling in complex dependencies.
+     5→"""
+     6→
+     7→import logging
+     8→import os
+     9→import subprocess
+    10→import time
+    11→from collections.abc import Sequence
+    12→from pathlib import Path
+    13→from typing import IO, Any
+    14→
+    15→from erk_shared.gateway.github.retry import (
+    16→    RETRY_DELAYS,
+    17→    RetriesExhausted,
+    18→    RetryRequested,
+    19→    with_retries,
+    20→)
+    21→from erk_shared.gateway.github.transient_errors import is_transient_error
+    22→from erk_shared.gateway.time.abc import Time
+    23→
+    24→logger = logging.getLogger(__name__)
+    25→
+    26→
+    27→def copied_env_for_git_subprocess() -&gt; dict[str, str]:
+    28→    """Return a copy of the environment for git subprocess calls.
+    29→
+    30→    Sets GIT_TERMINAL_PROMPT=0 so git commands fail fast with an error
+
+... [225 lines omitted] ...
+
+    87→    """Execute subprocess with enriched error reporting for integration layer.
+    89→    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+   109→        RuntimeError: If command fails or times out, with enriched error context
+   110→        FileNotFoundError: If command binary is not found
+   140→        error_msg = f"Timed out after {timeout}s trying to {operation_context}"
+   141→        error_msg += f"\nCommand: {cmd_str}"
+   142→        raise RuntimeError(error_msg) from e
+   144→    except subprocess.CalledProcessError as e:
+   146→        error_msg = f"Failed to {operation_context}"
+   147→        error_msg += f"\nCommand: {cmd_str}"
+   148→        error_msg += f"\nExit code: {e.returncode}"
+   154→                error_msg += f"\nstdout: {stdout_stripped}"
+   160→                error_msg += f"\nstderr: {stderr_stripped}"
+   162→        raise RuntimeError(error_msg) from e
+   164→    except FileNotFoundError as e:
+   166→        error_msg = f"Command not found while trying to {operation_context}: {cmd[0]}"
+   167→        error_msg += f"\nFull command: {cmd_str}"
+   168→        raise RuntimeError(error_msg) from e
+   173→# transient errors, but each attempt won't hang indefinitely.
+   188→        RuntimeError: If command fails or times out, with enriched error context
+   189→        FileNotFoundError: If gh is not installed
+   210→    """Execute gh command with automatic retry on transient network errors.
+   213→    Transient errors (network timeouts, connection failures) trigger automatic
+   226→        RuntimeError: If command fails after all retries, or with non-transient error
+   227→        FileNotFoundError: If gh is not installed
+   234→        except RuntimeError as e:
+   235→            if is_transient_error(str(e)):
+   243→        msg = f"GitHub command failed after retries: {result.reason}"
+   244→        raise RuntimeError(msg)
+  </tool_result>
+  <tool_result tool="toolu_01VCW7zzntzxnZBpE5JmB5AU">
+Found 1 file
+packages/erk-shared/src/erk_shared/subprocess_utils.py
+  </tool_result>
+  <tool_result tool="toolu_018hNQqD6gfiMRHUrWizMpSG">
+Found 2 files
+packages/erk-shared/src/erk_shared/subprocess_utils.py
+packages/erk-shared/src/erk_shared/gateway/github/parsing.py
+  </tool_result>
+  <assistant>Now let me look at the RealGitHub class and the _build_gh_command method:</assistant>
+  <usage input_tokens="54" cache_creation_input_tokens="3773" cache_read_input_tokens="43375" cache_creation="{'ephemeral_5m_input_tokens': 3773, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UcK1YgrJhEwEqq7trjtYhB">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "*.py" -path "*/gateway/github/*" | grep -E "(real|abc)" | head -20</param>
+    <param name="description">Find GitHub gateway real and abc files</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="3773" cache_read_input_tokens="43375" cache_creation="{'ephemeral_5m_input_tokens': 3773, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ci3AVSeEUHeVJDgPpXUBZZ">
+    <param name="pattern">class RealGitHub</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="3773" cache_read_input_tokens="43375" cache_creation="{'ephemeral_5m_input_tokens': 3773, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UJZDqTWk4t7ZQmRsBcSDxn">
+    <param name="pattern">_build_gh_command</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="3773" cache_read_input_tokens="43375" cache_creation="{'ephemeral_5m_input_tokens': 3773, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ci3AVSeEUHeVJDgPpXUBZZ">
+Found 2 files
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py
+  </tool_result>
+  <tool_result tool="toolu_01UJZDqTWk4t7ZQmRsBcSDxn">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py
+  </tool_result>
+  <tool_result tool="toolu_01UcK1YgrJhEwEqq7trjtYhB">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py
+  </tool_result>
+  <assistant>Let me read the RealGitHub and RealGitHubIssues classes:</assistant>
+  <usage input_tokens="133" cache_creation_input_tokens="680" cache_read_input_tokens="47148" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015Ch8wEWduQ2iBNqH5XMsa1">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="133" cache_creation_input_tokens="680" cache_read_input_tokens="47148" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017WRCA8cF7GTioq3NJnNfAC">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="133" cache_creation_input_tokens="680" cache_read_input_tokens="47148" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Ch8wEWduQ2iBNqH5XMsa1">
+     1→"""Production implementation of GitHub operations.
+     2→
+     3→Error Handling Philosophy:
+     4→    gh CLI invocations should let exceptions bubble by default. Callers are
+     5→    responsible for handling failures appropriately. Don't swallow exceptions
+     6→    and return None/False/default values - this masks real errors and makes
+     7→    debugging difficult.
+     8→
+     9→    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    10→    by checking the response data, not by catching exceptions.
+    11→"""
+    12→
+    13→import json
+    14→import logging
+    15→import secrets
+    16→import string
+    17→from datetime import UTC, datetime, timedelta
+    18→from pathlib import Path
+    19→from typing import Any
+    20→
+    21→from erk_shared.debug import debug_log
+    22→from erk_shared.gateway.github.abc import GitHub
+    23→from erk_shared.gateway.github.graphql_queries import (
+    24→    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    25→    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    26→    GET_PR_CHECK_RUNS_QUERY,
+    27→    GET_PR_REVIEW_THREADS_QUERY,
+    28→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    29→    ISSUE_PR_LINKAGE_FRAGMENT,
+    30→    RESOLVE_REVIEW_THREAD_MUTATION,
+
+... [125 lines omitted] ...
+
+    54→    MergeError,
+    90→# (error: "master already used by worktree"). Instead, we delete the remote
+  </tool_result>
+  <tool_result tool="toolu_017WRCA8cF7GTioq3NJnNfAC">
+     1→"""Production implementation of GitHub issues using gh CLI."""
+     2→
+     3→import json
+     4→from datetime import datetime
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.label_cache import RealLabelCache
+     9→from erk_shared.gateway.github.issues.types import (
+    10→    CreateIssueResult,
+    11→    IssueComment,
+    12→    IssueInfo,
+    13→    IssueNotFound,
+    14→    PRReference,
+    15→)
+    16→from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
+    17→from erk_shared.gateway.time.abc import Time
+    18→from erk_shared.subprocess_utils import (
+    19→    _GH_COMMAND_TIMEOUT,
+    20→    execute_gh_command_with_retry,
+    21→    run_subprocess_with_context,
+    22→)
+    23→
+    24→
+    25→class RealGitHubIssues(GitHubIssues):
+    26→    """Production implementation using gh CLI.
+    27→
+    28→    All GitHub issue operations execute actual gh commands via subprocess.
+    29→    Maintains an internal label cache to avoid redundant API calls.
+    30→    """
+
+... [225 lines omitted] ...
+
+    83→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+    84→        on failures (not installed, not authenticated, etc.).
+   119→        Uses LBYL pattern - checks exit code directly instead of catching exceptions.
+   145→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   146→        on failures (not installed, not authenticated). Returns IssueNotFound
+   158→        except RuntimeError as e:
+   185→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   186→        on failures (not installed, not authenticated, issue not found).
+   213→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   214→        on failures (not installed, not authenticated, issue not found).
+   240→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   241→        on failures (not installed, not authenticated, issue not found).
+  </tool_result>
+  <assistant>Now let me check the ErkContext and relevant classes:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="5997" cache_read_input_tokens="47828" cache_creation="{'ephemeral_5m_input_tokens': 5997, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01938Dv2qwDwRJyJmZG4nofp">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5997" cache_read_input_tokens="47828" cache_creation="{'ephemeral_5m_input_tokens': 5997, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01415ktXmutKrZ3pcLAdSHHx">
+    <param name="pattern">def issues</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5997" cache_read_input_tokens="47828" cache_creation="{'ephemeral_5m_input_tokens': 5997, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LzoDLygAgMya2ZnY56V7qE">
+    <param name="pattern">def plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5997" cache_read_input_tokens="47828" cache_creation="{'ephemeral_5m_input_tokens': 5997, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01938Dv2qwDwRJyJmZG4nofp">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PlanListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk_shared.core.health_check_runner import HealthCheckRunner
+    27→    from erk_shared.core.objective_list_service import ObjectiveListService
+    28→
+    29→from erk_shared.core.llm_caller import LlmCaller
+    30→from erk_shared.core.plan_list_service import PlanListService
+
+... [125 lines omitted] ...
+
+   135→            RuntimeError: If not in a git repository
+   138→            raise RuntimeError("Not in a git repository")
+  </tool_result>
+  <tool_result tool="toolu_01LzoDLygAgMya2ZnY56V7qE">
+Found 1 file
+packages/erk-shared/src/erk_shared/context/context.py
+  </tool_result>
+  <tool_result tool="toolu_01415ktXmutKrZ3pcLAdSHHx">
+Found 1 file
+packages/erk-shared/src/erk_shared/context/context.py
+  </tool_result>
+  <assistant>Let me continue reading the ErkContext and also search for the properties:</assistant>
+  <usage input_tokens="54" cache_creation_input_tokens="2696" cache_read_input_tokens="53825" cache_creation="{'ephemeral_5m_input_tokens': 2696, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Nxu2hKAkybkursAWT6nUFG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="offset">150</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="2696" cache_read_input_tokens="53825" cache_creation="{'ephemeral_5m_input_tokens': 2696, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HKg2tH9EZ5Dp1q3pGcQAKE">
+    <param name="pattern">def issues|@property.*issues</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="2696" cache_read_input_tokens="53825" cache_creation="{'ephemeral_5m_input_tokens': 2696, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Soxajc9XmrQFj7iHaxRC8X">
+    <param name="pattern">plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="54" cache_creation_input_tokens="2696" cache_read_input_tokens="53825" cache_creation="{'ephemeral_5m_input_tokens': 2696, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nxu2hKAkybkursAWT6nUFG">
+   150→
+   151→    @property
+   152→    def issues(self) -&gt; GitHubIssues:
+   153→        """Access to issue operations via the composed GitHub gateway.
+   154→
+   155→        All issue operations should be accessed via ctx.github.issues directly,
+   156→        but this property is provided for backward compatibility.
+   157→        """
+   158→        return self.github.issues
+   159→
+   160→    @property
+   161→    def github_issues(self) -&gt; GitHubIssues:
+   162→        """DotAgentContext compatibility - alias for issues property.
+   163→
+   164→        Deprecated: Use ctx.github.issues instead. This property is provided for
+   165→        backward compatibility with code written for the old DotAgentContext.
+   166→        """
+   167→        return self.github.issues
+   168→
+   169→    @property
+   170→    def plan_backend(self) -&gt; PlanBackend:
+   171→        """Access plan_store as PlanBackend (read/write interface).
+   172→
+   173→        Since plan_store is typed as PlanBackend, this is a direct alias.
+   174→        Retained for call-site compatibility.
+   175→        """
+   176→        return self.plan_store
+   177→
+   178→    @property
+   179→    def branch_manager(self) -&gt; BranchManager:
+
+... [93 lines omitted] ...
+
+   198→            raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
+  </tool_result>
+  <tool_result tool="toolu_01Soxajc9XmrQFj7iHaxRC8X">
+170:    def plan_backend(self) -&gt; PlanBackend:
+  </tool_result>
+  <tool_result tool="toolu_01HKg2tH9EZ5Dp1q3pGcQAKE">
+152:    def issues(self) -&gt; GitHubIssues:
+  </tool_result>
+  <assistant>Now let me look at some real examples of how these are used:</assistant>
+  <usage input_tokens="44" cache_creation_input_tokens="2290" cache_read_input_tokens="56521" cache_creation="{'ephemeral_5m_input_tokens': 2290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KVsPcJMxD4nYDj3V2sriNw">
+    <param name="pattern">create_pr|trigger_workflow|update_pr_body|add_comment</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="44" cache_creation_input_tokens="2290" cache_read_input_tokens="56521" cache_creation="{'ephemeral_5m_input_tokens': 2290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KVsPcJMxD4nYDj3V2sriNw">
+Found 10 files
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py
+packages/erk-shared/src/erk_shared/gateway/github/printing.py
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py
+packages/erk-shared/src/erk_shared/gateway/github/abc.py
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/github/fake.py
+  </tool_result>
+  <assistant>Let me read the GitHub ABC to see the signatures:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="498" cache_read_input_tokens="58811" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ky1svJ1o1y3buuyxiCPa6x">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="498" cache_read_input_tokens="58811" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ky1svJ1o1y3buuyxiCPa6x">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class GitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [225 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+  </tool_result>
+  <assistant>Now let me look at some specific implementations in RealGitHub to see how `cwd` is passed:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3033" cache_read_input_tokens="59309" cache_creation="{'ephemeral_5m_input_tokens': 3033, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DKTcmZuNjgJYZJbnriBn1w">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">150</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3033" cache_read_input_tokens="59309" cache_creation="{'ephemeral_5m_input_tokens': 3033, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DKTcmZuNjgJYZJbnriBn1w">
+   150→        return self._issues
+   151→
+   152→    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+   153→        """Update base branch of a PR on GitHub.
+   154→
+   155→        Uses REST API to preserve GraphQL quota.
+   156→
+   157→        Gracefully handles gh CLI availability issues (not installed, not authenticated).
+   158→        The calling code should validate preconditions (PR exists, is open, new base exists)
+   159→        before calling this method.
+   160→
+   161→        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+   162→        availability. Genuine command failures (invalid PR, invalid base) should be
+   163→        caught by precondition checks in the caller.
+   164→        """
+   165→        try:
+   166→            # GH-API-AUDIT: REST - PATCH pulls/{number}
+   167→            cmd = [
+   168→                "gh",
+   169→                "api",
+   170→                "--method",
+   171→                "PATCH",
+   172→                f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+   173→                "-f",
+   174→                f"base={new_base}",
+   175→            ]
+   176→            execute_gh_command_with_retry(cmd, repo_root, self._time)
+   177→        except (RuntimeError, FileNotFoundError):
+   178→            # gh not installed, not authenticated, or command failed
+   179→            # Graceful degradation - operation skipped
+
+... [275 lines omitted] ...
+
+   192→        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+   193→        availability. Genuine command failures (invalid PR) should be
+   208→        except (RuntimeError, FileNotFoundError):
+   209→            # gh not installed, not authenticated, or command failed
+   239→    ) -&gt; MergeResult | MergeError:
+   294→        except RuntimeError as e:
+   295→            return MergeError(pr_number=pr_number, message=str(e))
+   427→                raise RuntimeError(msg)
+   444→                    raise RuntimeError(
+  </tool_result>
+  <assistant>Now let me look at the `create_pr` method:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4348" cache_read_input_tokens="62342" cache_creation="{'ephemeral_5m_input_tokens': 4348, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CuA3x43VzQtSTi2yEe4Z8K">
+    <param name="command">grep -n "def create_pr" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py | head -5</param>
+    <param name="description">Find create_pr method line</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4348" cache_read_input_tokens="62342" cache_creation="{'ephemeral_5m_input_tokens': 4348, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CuA3x43VzQtSTi2yEe4Z8K">
+498:    def create_pr(
+2213:    def create_pr_review_comment(
+2300:    def create_pr_comment(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LsnUtd13MDDejh68Fefbkg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">498</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="320" cache_read_input_tokens="66690" cache_creation="{'ephemeral_5m_input_tokens': 320, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LsnUtd13MDDejh68Fefbkg">
+   498→    def create_pr(
+   499→        self,
+   500→        repo_root: Path,
+   501→        branch: str,
+   502→        title: str,
+   503→        body: str,
+   504→        base: str | None = None,
+   505→        *,
+   506→        draft: bool = False,
+   507→    ) -&gt; int:
+   508→        """Create a pull request on GitHub.
+   509→
+   510→        Uses REST API to preserve GraphQL quota.
+   511→
+   512→        Args:
+   513→            repo_root: Repository root directory
+   514→            branch: Source branch for the PR
+   515→            title: PR title
+   516→            body: PR body (markdown)
+   517→            base: Target base branch (defaults to repository default branch if None)
+   518→            draft: If True, create as draft PR
+   519→
+   520→        Returns:
+   521→            PR number
+   522→        """
+   523→        # GH-API-AUDIT: REST - POST pulls
+   524→        cmd = [
+   525→            "gh",
+   526→            "api",
+   527→            "--method",
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Let me look at a few more examples to understand the pattern better:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1350" cache_read_input_tokens="67010" cache_creation="{'ephemeral_5m_input_tokens': 1350, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015c7U5QE7qifbARumWNqyta">
+    <param name="command">grep -n "def add_comment\|def create_pr_comment" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py | head -10</param>
+    <param name="description">Find comment methods</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1350" cache_read_input_tokens="67010" cache_creation="{'ephemeral_5m_input_tokens': 1350, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015c7U5QE7qifbARumWNqyta">
+2300:    def create_pr_comment(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DLZ9PVAngjit32KaM38TEd">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">2300</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="302" cache_read_input_tokens="68360" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="121" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DLZ9PVAngjit32KaM38TEd">
+  2300→    def create_pr_comment(
+  2301→        self,
+  2302→        repo_root: Path,
+  2303→        pr_number: int,
+  2304→        body: str,
+  2305→    ) -&gt; int:
+  2306→        """Create a new comment on a PR.
+  2307→
+  2308→        Uses GitHub REST API to create the comment and returns the ID.
+  2309→        PRs are issues in GitHub's data model, so we use the issues endpoint.
+  2310→        """
+  2311→        # GH-API-AUDIT: REST - POST issues/{number}/comments
+  2312→        cmd = [
+  2313→            "gh",
+  2314→            "api",
+  2315→            f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
+  2316→            "-f",
+  2317→            f"body={body}",
+  2318→        ]
+  2319→        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+  2320→        response = json.loads(stdout)
+  2321→        return response["id"]
+  2322→
+  2323→    def delete_remote_branch(self, repo_root: Path, branch: str) -&gt; bool:
+  2324→        """Delete a remote branch via REST API.
+  2325→
+  2326→        Uses DELETE /repos/{owner}/{repo}/git/refs/heads/{branch} endpoint.
+  2327→
+  2328→        Returns True if the branch was deleted or didn't exist.
+  2329→        Returns False if deletion failed (e.g., protected branch).
+
+... [35 lines omitted] ...
+
+  2347→        except RuntimeError as e:
+  2349→            error_str = str(e)
+  2350→            if "404" in error_str or "Reference does not exist" in error_str:
+  2352→            # Log other errors but don't fail - best effort deletion
+  2353→            debug_log(f"delete_remote_branch failed: {e}")
+  </tool_result>
+  <assistant>Perfect! Now let me look at how RealGitHubIssues adds comments to issues:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1066" cache_read_input_tokens="68662" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018kWTgD6abqTEnUbq4Vtvnr">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py</param>
+    <param name="offset">180</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1066" cache_read_input_tokens="68662" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018kWTgD6abqTEnUbq4Vtvnr">
+   180→    def add_comment(self, repo_root: Path, number: int, body: str) -&gt; int:
+   181→        """Add comment to issue using gh CLI.
+   182→
+   183→        Returns the comment ID from the created comment.
+   184→
+   185→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   186→        on failures (not installed, not authenticated, issue not found).
+   187→        """
+   188→        # GH-API-AUDIT: REST - POST issues/{number}/comments
+   189→        base_cmd = [
+   190→            "gh",
+   191→            "api",
+   192→            f"repos/{{owner}}/{{repo}}/issues/{number}/comments",
+   193→            "-X",
+   194→            "POST",
+   195→            "-f",
+   196→            f"body={body}",
+   197→            "--jq",
+   198→            ".id",
+   199→        ]
+   200→        cmd = self._build_gh_command(base_cmd)
+   201→        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+   202→        return int(stdout.strip())
+   203→
+   204→    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -&gt; None:
+   205→        """Update issue body using gh CLI REST API.
+   206→
+   207→        Uses REST API instead of GraphQL (`gh issue edit`) to avoid hitting
+   208→        GraphQL rate limits. GraphQL and REST have separate quotas.
+   209→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now let me create a comprehensive summary report with all the information gathered:
+
+## COMPREHENSIVE REPORT: GH API Command Construction and Execution
+
+Based on my analysis of the erk codebase, here's a complete understanding of how `gh api` commands are constructed and executed:
+
+---
+
+### 1. **FUNCTION SIGNATURES**
+
+#### `execute_gh_command()` 
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` (lines 177-200)
+
+```python
+def execute_gh_command(cmd: list[str], cwd: Path) -&gt; str:
+    """Execute a gh CLI command and return stdout.
+    
+    Args:
+        cmd: Command and arguments to execute
+        cwd: Working directory for command execution
+    
+    Returns:
+        stdout from the command
+    
+    Raises:
+        RuntimeError: If command fails or times out, with enriched error context
+        FileNotFoundError: If gh is not installed
+    """
+```
+
+**Implementation**: Wraps `run_subprocess_with_context()` with a 60-second timeout (`_GH_COMMAND_TIMEOUT = 60`) and returns the stdout.
+
+---
+
+#### `execute_gh_command_with_retry()`
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` (lines 203-249)
+
+```python
+def execute_gh_command_with_retry(
+    cmd: list[str],
+    cwd: Path,
+    time_impl: Time,
+    *,
+    retry_delays: list[float] | None = None,
+) -&gt; str:
+    """Execute gh command with automatic retry on transient network errors.
+    
+    Args:
+        cmd: Command and arguments to execute
+        cwd: Working directory for command execution
+        time_impl: Time abstraction for sleep operations
+        retry_delays: Custom delays between retries. Defaults to RETRY_DELAYS.
+    
+    Returns:
+        stdout from the command
+    
+    Raises:
+        RuntimeError: If command fails after all retries, or with non-transient error
+        FileNotFoundError: If gh is not installed
+    """
+```
+
+**Implementation**: Uses `with_retries()` pattern with exponential backoff (`[0.5, 1.0]` seconds by default). Retries on transient errors detected via `is_transient_error()`.
+
+---
+
+#### `run_subprocess_with_context()`
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` (lines 73-169)
+
+```python
+def run_subprocess_with_context(
+    *,
+    cmd: Sequence[str],
+    operation_context: str,
+    cwd: Path | None = None,
+    timeout: float | None = None,
+    capture_output: bool = True,
+    text: bool = True,
+    encoding: str = "utf-8",
+    check: bool = True,
+    stdout: int | IO[Any] | None = None,
+    stderr: int | IO[Any] | None = None,
+    **kwargs: Any,
+) -&gt; subprocess.CompletedProcess[str]:
+    """Execute subprocess with enriched error reporting for integration layer.
+    
+    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+    with operation context, stderr output, and command details.
+    """
+```
+
+**Key features**:
+- Uses keyword-only parameters (after `*`)
+- Returns `CompletedProcess[str]` with stdout/stderr as text
+- Raises `RuntimeError` on failure with enriched context
+- Logs timing information via debug logger
+
+---
+
+### 2. **`RealGitHubIssues._build_gh_command()` METHOD**
+
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py` (lines 50-73)
+
+```python
+def _build_gh_command(self, base_cmd: list[str]) -&gt; list[str]:
+    """Build gh command with optional -R flag for target repo.
+    
+    If target_repo is set, inserts -R owner/repo after 'gh' in the command.
+    The -R flag must come immediately after 'gh' for most gh subcommands.
+    
+    Note: The -R flag is NOT supported by `gh api` - that subcommand uses
+    {owner}/{repo} placeholders in the endpoint instead. For `gh api`
+    commands, we substitute the placeholders with the target repo value.
+    
+    Args:
+        base_cmd: Base command starting with 'gh'
+    
+    Returns:
+        Command with -R flag inserted if target_repo is set,
+        or with {owner}/{repo} substituted for gh api commands
+    """
+    if self._target_repo is None:
+        return base_cmd
+    # gh api doesn't support -R flag - substitute {owner}/{repo} in endpoint
+    if len(base_cmd) &gt; 1 and base_cmd[1] == "api":
+        return [arg.replace("{owner}/{repo}", self._target_repo) for arg in base_cmd]
+    # Insert -R owner/repo after 'gh' but before subcommand
+    return [base_cmd[0], "-R", self._target_repo, *base_cmd[1:]]
+```
+
+**Key patterns**:
+- Handles **two different modes**: standard gh subcommands with `-R` flag vs `gh api` with `{owner}/{repo}` placeholders
+- For `gh api` commands: Uses string replacement on the endpoint path
+- For other `gh` subcommands: Inserts `-R owner/repo` after `gh` but before the subcommand
+
+---
+
+### 3. **CWD PARAMETER PASSING PATTERNS**
+
+All GitHub operations pass `cwd` (repository root) to subprocess execution:
+
+#### Pattern 1: `execute_gh_command_with_retry()` (Most Common)
+**Used in**: `RealGitHubIssues` methods
+
+```python
+# Example from RealGitHubIssues.create_issue() (line 104)
+cmd = self._build_gh_command(base_cmd)
+stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+```
+
+#### Pattern 2: `run_subprocess_with_context()` (Direct subprocess)
+**Used in**: `RealGitHub` methods for complex operations
+
+```python
+# Example from RealGitHub.create_pr() (line 546-550)
+result = run_subprocess_with_context(
+    cmd=cmd,
+    operation_context=f"create pull request for branch '{branch}'",
+    cwd=repo_root,
+)
+
+# Example from RealGitHub.trigger_workflow() with input (line 363-368)
+run_subprocess_with_context(
+    cmd=cmd,
+    operation_context=f"trigger workflow '{workflow}'",
+    cwd=repo_root,
+    input=payload,
+)
+```
+
+#### Pattern 3: `execute_gh_command()` (No retry)
+**Used in**: Rare cases where retry is not needed
+
+```python
+# Example from RealGitHub._execute_batch_pr_query() (line 227)
+cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
+stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+```
+
+---
+
+### 4. **SPECIFIC GATEWAY METHOD SIGNATURES**
+
+#### `RealGitHub.create_pr()`
+**File**: Line 498-554
+
+```python
+def create_pr(
+    self,
+    repo_root: Path,           # Working directory for subprocess
+    branch: str,               # Source branch
+    title: str,                # PR title
+    body: str,                 # PR body (markdown)
+    base: str | None = None,   # Target base branch (optional)
+    *,
+    draft: bool = False,       # Draft flag
+) -&gt; int:                      # Returns PR number
+```
+
+**Command execution** (line 546-550):
+```python
+result = run_subprocess_with_context(
+    cmd=cmd,
+    operation_context=f"create pull request for branch '{branch}'",
+    cwd=repo_root,
+)
+```
+
+---
+
+#### `RealGitHub.trigger_workflow()`
+**File**: Line 372-474
+
+```python
+def trigger_workflow(
+    self,
+    *,
+    repo_root: Path,                    # Working directory
+    workflow: str,                      # Workflow filename
+    inputs: dict[str, str],            # Workflow inputs
+    ref: str | None,                   # Branch/tag (optional)
+) -&gt; str:                              # Returns run ID
+```
+
+**Subprocess calls**:
+- Line 363-368: Dispatches workflow with JSON input via stdin
+- Line 411-415: Polls for run status
+
+---
+
+#### `RealGitHub.update_pr_body()`
+**File**: Line 183-212
+
+```python
+def update_pr_body(
+    self,
+    repo_root: Path,           # Working directory
+    pr_number: int,            # PR number
+    body: str,                 # New body text
+) -&gt; None:
+```
+
+**Execution** (line 207):
+```python
+execute_gh_command_with_retry(cmd, repo_root, self._time)
+```
+
+---
+
+#### `RealGitHubIssues.add_comment()`
+**File**: Line 180-202
+
+```python
+def add_comment(
+    self,
+    repo_root: Path,           # Working directory
+    number: int,               # Issue number
+    body: str,                 # Comment body
+) -&gt; int:                      # Returns comment ID
+```
+
+**Execution** (line 201):
+```python
+stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+```
+
+---
+
+### 5. **ErkContext PROPERTIES**
+
+#### `ctx.issues` property
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py` (lines 151-158)
+
+```python
+@property
+def issues(self) -&gt; GitHubIssues:
+    """Access to issue operations via the composed GitHub gateway.
+    
+    All issue operations should be accessed via ctx.github.issues directly,
+    but this property is provided for backward compatibility.
+    """
+    return self.github.issues
+```
+
+**Usage**: `ctx.issues` → `ctx.github.issues` (alias)
+
+---
+
+#### `ctx.plan_backend` property
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py` (lines 170-176)
+
+```python
+@property
+def plan_backend(self) -&gt; PlanBackend:
+    """Access plan_store as PlanBackend (read/write interface).
+    
+    Since plan_store is typed as PlanBackend, this is a direct alias.
+    Retained for call-site compatibility.
+    """
+    return self.plan_store
+```
+
+**Usage**: `ctx.plan_backend` → `ctx.plan_store` (alias)
+
+---
+
+### 6. **GH API COMMAND CONSTRUCTION EXAMPLES**
+
+#### REST API - Create Issue
+```python
+base_cmd = [
+    "gh", "api", "repos/{owner}/{repo}/issues",
+    "-X", "POST",
+    "-f", f"title={title}",
+    "-f", f"body={body}",
+    "--jq", r'"\(.number) \(.html_url)"',
+]
+# With target_repo: Becomes ["gh", "api", "repos/owner/repo/issues", ...]
+cmd = self._build_gh_command(base_cmd)
+stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+```
+
+#### REST API - Update PR Body
+```python
+cmd = [
+    "gh", "api",
+    "--method", "PATCH",
+    f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+    "-f", f"body={body}",
+]
+execute_gh_command_with_retry(cmd, repo_root, self._time)
+```
+
+#### GraphQL Query
+```python
+cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
+stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+data = json.loads(stdout)
+```
+
+#### Workflow Dispatch
+```python
+cmd = [
+    "gh", "api",
+    "--method", "POST",
+    f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/dispatches",
+    "--input", "-",
+]
+run_subprocess_with_context(
+    cmd=cmd,
+    operation_context=f"trigger workflow '{workflow}'",
+    cwd=repo_root,
+    input=payload,  # JSON payload via stdin
+)
+```
+
+---
+
+### 7. **KEY ARCHITECTURAL PATTERNS**
+
+1. **Two-tier wrapper system**:
+   - `run_subprocess_with_context()` (base layer) - Rich error context
+   - `execute_gh_command()` &amp; `execute_gh_command_with_retry()` (gh-specific layer)
+
+2. **Retry pattern with Time injection**:
+   - All network-sensitive gh calls use `execute_gh_command_with_retry()`
+   - Time is injected for testability (FakeTime enables instant retries in tests)
+   - Transient error detection via pattern matching in error messages
+
+3. **CWD handling**:
+   - `cwd` is always a `Path` object (repository root)
+   - Passed to every subprocess call for context
+   - Used by gh CLI to detect current repo (unless `-R owner/repo` is specified)
+
+4. **Gateway composition**:
+   - `RealGitHub` composes `RealGitHubIssues`
+   - Both use same Time abstraction for retry logic
+   - Issues gateway has its own `_build_gh_command()` for `-R` flag handling
+
+---
+
+### FILE PATHS SUMMARY
+
+| Component | Location |
+|-----------|----------|
+| `execute_gh_command()` | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` |
+| `execute_gh_command_with_retry()` | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` |
+| `run_subprocess_with_context()` | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` |
+| `RealGitHub` (main methods) | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py` |
+| `RealGitHubIssues` | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py` |
+| `ErkContext` | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py` |
+| GitHub ABC | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py` |
+| GitHubIssues ABC | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py` |</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="768" cache_read_input_tokens="69728" cache_creation="{'ephemeral_5m_input_tokens': 768, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+</session>

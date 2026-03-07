@@ -1,0 +1,1380 @@
+<session>
+  <meta branch="plnd/outside-repo-03-06-1630" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8879&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8879` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8879.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11254" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 11254, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01HsErnMXRK3AKdjxQus46LF">
+    <param name="command">erk exec setup-impl --issue 8879</param>
+    <param name="description">Set up implementation for plan #8879</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11254" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 11254, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HsErnMXRK3AKdjxQus46LF">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--outside-repo-03-06-1630", "plan_number": 8879, "plan_url": "https://github.com/dagster-io/erk/pull/8879", "branch": "plnd/outside-repo-03-06-1630", "plan_title": "[erk-plan] Enable erk one-shot Outside a Git Repository", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8879, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/outside-repo-03-06-1630', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="28455" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012oGZryDqM2x3vo8Ro5etnm">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--outside-repo-03-06-1630/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="28455" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012oGZryDqM2x3vo8Ro5etnm">
+     1→# Enable `erk one-shot` Outside a Git Repository
+     2→
+     3→## Context
+     4→
+     5→Currently, `erk one-shot` requires being inside a git repository because the dispatch flow uses local git operations (create branch, commit files via git plumbing, push) and relies on `repo.root` as the working directory for `gh` CLI commands.
+     6→
+     7→Users may want to run `erk one-shot "fix the import in config.py"` from outside a repo — e.g., from their home directory or a scratch folder. The core operation doesn't conceptually require a local checkout: it creates a branch, commits a prompt file, pushes, creates a PR, and dispatches a workflow. All of these can be done via GitHub's REST API.
+     8→
+     9→## Approach
+    10→
+    11→Add a `--repo owner/name` flag to `erk one-shot`. When provided (or when outside a git repo), use GitHub REST API calls instead of local git operations for the branch-create/commit/push sequence. The existing `gh api` infrastructure handles most of this already.
+    12→
+    13→### Key Design Decision: API-Only Path
+    14→
+    15→Rather than cloning a temporary repo, introduce a pure API-based path for the three git operations that currently require a local checkout:
+    16→
+    17→1. **Create branch** — `POST /repos/{owner}/{repo}/git/refs` (create ref from trunk SHA)
+    18→2. **Commit file** — `PUT /repos/{owner}/{repo}/contents/{path}` (creates file + commit in one call)
+    19→3. **Push** — not needed! API operations write directly to the remote
+    20→
+    21→The remaining operations (create PR, trigger workflow, update PR body, add labels, post comments) already work via `gh api` and only need `{owner}/{repo}` substitution, which is already implemented in `RealGitHubIssues._build_gh_command`.
+    22→
+    23→## Changes
+    24→
+    25→### 1. New module: `src/erk/cli/commands/one_shot_api.py`
+    26→
+    27→Create a new module with API-only implementations of the three git operations needed for one-shot dispatch:
+    28→
+    29→```python
+    30→@dataclass(frozen=True)
+
+... [244 lines omitted] ...
+
+    64→- If outside a repo (`isinstance(ctx.repo, NoRepoSentinel)`) and `--repo` is not provided, show error: "Not in a git repository. Use --repo owner/name to specify the target repository."
+   162→        raise click.UsageError("--ref-current requires being in a git repository")
+   226→1. `test_one_shot_outside_repo_requires_repo_flag` — verify error when outside repo without `--repo`
+   229→4. `test_one_shot_ref_current_disallowed_outside_repo` — verify `--ref-current` error
+   259→3. **Type check**: `ty` — no type errors
+  </tool_result>
+  <assistant>Good, I've read the full plan. Let me now explore the existing code files I'll need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5352" cache_read_input_tokens="28788" cache_creation="{'ephemeral_5m_input_tokens': 5352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013kpGNVXAvtVri2mPD7MSWF">
+    <param name="todos">[{'content': 'Create src/erk/cli/commands/one_shot_api.py with API-only helper functions',...[truncated 1187 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5352" cache_read_input_tokens="28788" cache_creation="{'ephemeral_5m_input_tokens': 5352, 'ephemeral_1h_input_tokens': 0}" output_tokens="473" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013kpGNVXAvtVri2mPD7MSWF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal started and read all the files I need to understand.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="503" cache_read_input_tokens="34140" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01W7fBPzFy7gHZK1wzfuoZDB">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="503" cache_read_input_tokens="34140" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W7fBPzFy7gHZK1wzfuoZDB">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01D9ocncZah7MJnVGQAHDEKU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="34643" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NSWpVYFKu4iK5EwWy9KPES">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="34643" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Wk9fb5LAVB7CXBgean4U3G">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="34643" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UWQ22kPW1ZVMDBSKscDEcz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="34643" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D9ocncZah7MJnVGQAHDEKU">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.implement_shared import normalize_model_name
+    19→from erk.cli.commands.one_shot_dispatch import (
+    20→    OneShotDispatchParams,
+    21→    dispatch_one_shot,
+    22→)
+    23→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    24→from erk.cli.ensure import Ensure
+    25→from erk.core.context import ErkContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→
+    29→@click.command("one-shot")
+    30→@click.argument("prompt", required=False, default=None)
+
+... [111 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NSWpVYFKu4iK5EwWy9KPES">
+     1→"""Shared dispatch logic for one-shot autonomous execution.
+     2→
+     3→Extracts the branch-create/push/PR/workflow-dispatch sequence into reusable
+     4→pieces so both `erk one-shot` and `erk objective plan --one-shot` can
+     5→dispatch tasks through the same CI workflow.
+     6→"""
+     7→
+     8→import logging
+     9→import time
+    10→from dataclasses import dataclass
+    11→from datetime import UTC
+    12→
+    13→import click
+    14→
+    15→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    16→from erk.cli.ensure import Ensure
+    17→from erk.core.branch_slug_generator import (
+    18→    BRANCH_SLUG_SYSTEM_PROMPT,
+    19→    _postprocess_slug,
+    20→    generate_branch_slug,
+    21→)
+    22→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    23→from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
+    24→from erk_shared.core.prompt_executor import PromptExecutor
+    25→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    26→from erk_shared.gateway.git.remote_ops.types import PushError
+    27→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    28→from erk_shared.gateway.github.metadata.core import (
+    29→    create_submission_queued_block,
+    30→    render_erk_issue_event,
+
+... [426 lines omitted] ...
+
+   215→            elif isinstance(result, LlmCallFailed):
+   216→                user_output(click.style("  \u26a0 LLM failed: ", fg="yellow") + result.message)
+   238→                click.style("Error: ", fg="red")
+   249→                click.style("Error: ", fg="red")
+   274→        if isinstance(push_result, PushError):
+   275→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   396→            except Exception as e:
+   398→                    click.style("Warning: ", fg="yellow")
+   399→                    + f"Failed to update dispatch metadata: {e}"
+   423→            except Exception as e:
+   425→                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   430→    except Exception as exc:
+   431→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_01Wk9fb5LAVB7CXBgean4U3G">
+     1→"""Shared helper for resolving dispatch ref across multiple commands.
+     2→
+     3→This module provides a single point for handling --ref and --ref-current flag
+     4→resolution, ensuring consistent validation and error handling across all
+     5→dispatch commands (launch, one-shot, pr dispatch, workflow smoke-test, objective plan).
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.core.context import ErkContext
+    11→
+    12→
+    13→def resolve_dispatch_ref(
+    14→    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+    15→) -&gt; str | None:
+    16→    """Resolve dispatch ref from flags and config.
+    17→
+    18→    Handles mutual exclusivity check and falls back to config default.
+    19→
+    20→    Args:
+    21→        ctx: ErkContext with git and local_config
+    22→        dispatch_ref: Value from --ref flag (None if not provided)
+    23→        ref_current: Value from --ref-current flag
+    24→
+    25→    Returns:
+    26→        The resolved ref (branch name) or None if using default
+    27→
+    28→    Raises:
+    29→        click.UsageError: If both --ref and --ref-current are provided,
+    30→            or if --ref-current is used with detached HEAD
+
+... [17 lines omitted] ...
+
+    33→        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+    38→            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+  </tool_result>
+  <tool_result tool="toolu_01UWQ22kPW1ZVMDBSKscDEcz">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudePromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [716 lines omitted] ...
+
+   501→        tuple[Path | None, str | None]: (path, error_message)
+   503→        - If directory deleted: (None, error_message)
+   512→    except (FileNotFoundError, OSError):
+   530→        debug: If True, enable debug mode for error handling (default False)
+   542→    cwd_result, error_msg = safe_cwd()
+   544→        assert error_msg is not None
+   545→        # Emit clear error and exit
+   546→        user_output(click.style("Error: ", fg="red") + error_msg)
+   597→        except ValueError:
+  </tool_result>
+  <assistant>Now let me look at the existing test files and some key supporting modules to understand patterns better.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="20863" cache_read_input_tokens="34829" cache_creation="{'ephemeral_5m_input_tokens': 20863, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0158A1WFDbAB3VSjn2GRfxu8">
+    <param name="description">Explore one-shot test structure</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 477 chars]... location
+7. Find the NoRepoSentinel class definition
+
+Report file paths and key patterns.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20863" cache_read_input_tokens="34829" cache_creation="{'ephemeral_5m_input_tokens': 20863, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01VrXGw3wscKzBkDEADp1nGq">
+    <param name="description">Explore GitHub gateway patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 539 chars]...perty and plan_backend property
+
+Report file paths, function signatures, and key patterns.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20863" cache_read_input_tokens="34829" cache_creation="{'ephemeral_5m_input_tokens': 20863, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0158A1WFDbAB3VSjn2GRfxu8">
+Perfect! Now let me create a comprehensive report by summarizing all the findings:
+
+## Summary Report: One-Shot Command Test Structure
+
+I've successfully explored the existing test structure for one-shot commands. Here are the findings:
+
+### 1. Test Files Found
+
+**Main one-shot test locations:**
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py` - CLI command tests
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py` - Dispatch function tests
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py` - Registration script tests
+- `/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py` - Objective integration tests
+
+**Additional related tests:**
+- `/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py` - TUI integration
+- `/home/runner/work/erk/erk/tests/tui/screens/test_one_shot_prompt_screen.py` - TUI screens
+
+### 2. Test Pattern Example: `test_one_shot_dispatch.py`
+
+**Key test patterns used:**
+
+```python
+# Setup with fakes
+git = FakeGit(
+    git_common_dirs={env.cwd: env.git_dir},
+    default_branches={env.cwd: "main"},
+    trunk_branches={env.cwd: "main"},
+    current_branches={env.cwd: "main"},
+)
+
+... [160 lines omitted] ...
+
+    click.echo("Error: Not in a git repository", err=True)
+    """Execute subprocess with enriched error reporting for integration layer.
+    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+  </tool_result>
+  <tool_result tool="toolu_01VrXGw3wscKzBkDEADp1nGq">
+Excellent! Now let me create a comprehensive summary report with all the information gathered:
+
+## COMPREHENSIVE REPORT: GH API Command Construction and Execution
+
+Based on my analysis of the erk codebase, here's a complete understanding of how `gh api` commands are constructed and executed:
+
+---
+
+### 1. **FUNCTION SIGNATURES**
+
+#### `execute_gh_command()` 
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` (lines 177-200)
+
+```python
+def execute_gh_command(cmd: list[str], cwd: Path) -&gt; str:
+    """Execute a gh CLI command and return stdout.
+    
+    Args:
+        cmd: Command and arguments to execute
+        cwd: Working directory for command execution
+    
+    Returns:
+        stdout from the command
+    
+    Raises:
+        RuntimeError: If command fails or times out, with enriched error context
+        FileNotFoundError: If gh is not installed
+    """
+```
+
+
+... [364 lines omitted] ...
+
+    """Execute gh command with automatic retry on transient network errors.
+        RuntimeError: If command fails after all retries, or with non-transient error
+        FileNotFoundError: If gh is not installed
+**Implementation**: Uses `with_retries()` pattern with exponential backoff (`[0.5, 1.0]` seconds by default). Retries on transient errors detected via `is_transient_error()`.
+    """Execute subprocess with enriched error reporting for integration layer.
+    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+- Raises `RuntimeError` on failure with enriched context
+   - `run_subprocess_with_context()` (base layer) - Rich error context
+   - Transient error detection via pattern matching in error messages
+  </tool_result>
+  <assistant>
+
+Now let me read the existing test files and a few more key files I need to understand.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6731" cache_read_input_tokens="55692" cache_creation="{'ephemeral_5m_input_tokens': 6731, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CDG2aF43k4FW34CC3uwYqa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6731" cache_read_input_tokens="55692" cache_creation="{'ephemeral_5m_input_tokens': 6731, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Hjv1sSYb8yPnLyw36oxgAs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6731" cache_read_input_tokens="55692" cache_creation="{'ephemeral_5m_input_tokens': 6731, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MtZgdoYDCWKopGUv1tJajX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6731" cache_read_input_tokens="55692" cache_creation="{'ephemeral_5m_input_tokens': 6731, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CDG2aF43k4FW34CC3uwYqa">
+     1→"""Tests for one-shot dispatch shared logic."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.commands.one_shot_dispatch import (
+     7→    OneShotDispatchParams,
+     8→    dispatch_one_shot,
+     9→)
+    10→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.git.remote_ops.types import PushError
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→from tests.test_utils.context_builders import build_workspace_test_context
+    16→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    17→
+    18→
+    19→def test_dispatch_happy_path() -&gt; None:
+    20→    """Test dispatch creates plnd/ branch, PR with metadata, and triggers workflow."""
+    21→    runner = CliRunner()
+    22→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    23→        env.setup_repo_structure()
+    24→
+    25→        git = FakeGit(
+    26→            git_common_dirs={env.cwd: env.git_dir},
+    27→            default_branches={env.cwd: "main"},
+    28→            trunk_branches={env.cwd: "main"},
+    29→            current_branches={env.cwd: "main"},
+    30→        )
+
+... [309 lines omitted] ...
+
+   150→            catch_exceptions=False,
+   164→def test_dispatch_stays_on_current_branch_on_error() -&gt; None:
+   175→            push_to_remote_error=PushError(message="network error"),
+   187→        # Verify command failed
+   269→    """Test dispatch exits with clear error when branch already exists locally."""
+   279→            create_branch_error=BranchAlreadyExists(
+  </tool_result>
+  <tool_result tool="toolu_01Hjv1sSYb8yPnLyw36oxgAs">
+     1→"""Tests for erk one-shot command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.git.remote_ops.types import PushError
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_one_shot_happy_path() -&gt; None:
+    14→    """Test one-shot command creates branch, PR, and triggers workflow."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        env.setup_repo_structure()
+    18→
+    19→        git = FakeGit(
+    20→            git_common_dirs={env.cwd: env.git_dir},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "main"},
+    24→        )
+    25→        github = FakeGitHub(authenticated=True)
+    26→
+    27→        ctx = build_workspace_test_context(env, git=git, github=github)
+    28→
+    29→        result = runner.invoke(
+    30→            cli,
+
+... [376 lines omitted] ...
+
+    33→            catch_exceptions=False,
+    36→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   119→            catch_exceptions=False,
+   122→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   155→            catch_exceptions=False,
+   158→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   186→            catch_exceptions=False,
+   189→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   216→            catch_exceptions=False,
+   219→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   227→def test_one_shot_stays_on_current_branch_on_error() -&gt; None:
+   238→            push_to_remote_error=PushError(message="network error"),
+   250→        # Verify command failed
+   307→            catch_exceptions=False,
+   310→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   367→            catch_exceptions=False,
+   370→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01MtZgdoYDCWKopGUv1tJajX">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import GitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: GitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+
+... [81 lines omitted] ...
+
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <assistant>Now let me look at the `build_workspace_test_context` helper and the `GitHubRepoId`/`RepoInfo` types to understand how repo info is constructed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12014" cache_read_input_tokens="62423" cache_creation="{'ephemeral_5m_input_tokens': 12014, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XBxSUfy1CbHN6YBwwiCsZB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12014" cache_read_input_tokens="62423" cache_creation="{'ephemeral_5m_input_tokens': 12014, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01N9dKAVpkZ2EwSkNjEngLFz">
+    <param name="pattern">class GitHubRepoId</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12014" cache_read_input_tokens="62423" cache_creation="{'ephemeral_5m_input_tokens': 12014, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XBxSUfy1CbHN6YBwwiCsZB">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <tool_result tool="toolu_01N9dKAVpkZ2EwSkNjEngLFz">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/types.py
+  </tool_result>
+  <assistant>Let me look at the RepoContext class for the `github` attribute and the `RepoInfo` type:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2767" cache_read_input_tokens="74437" cache_creation="{'ephemeral_5m_input_tokens': 2767, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016qBM7fUSrMpt9Bt3m7xGA3">
+    <param name="pattern">class RepoContext</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2767" cache_read_input_tokens="74437" cache_creation="{'ephemeral_5m_input_tokens': 2767, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HUgLZzPyYWHZJihUFDMDWN">
+    <param name="pattern">class GitHubRepoId|class RepoInfo</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2767" cache_read_input_tokens="74437" cache_creation="{'ephemeral_5m_input_tokens': 2767, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HUgLZzPyYWHZJihUFDMDWN">
+173:class GitHubRepoId:
+174-    """GitHub repository identity (owner and repo name)."""
+175-
+176-    owner: str
+177-    repo: str
+178-
+179-
+180-@dataclass(frozen=True)
+181:class RepoInfo:
+182-    """Basic repository owner and name information."""
+183-
+184-    owner: str
+185-    name: str
+186-
+187-
+188-@dataclass(frozen=True)
+189-class GitHubRepoLocation:
+190-    """GitHub repository location combining local path with repo identity."""
+191-
+  </tool_result>
+  <tool_result tool="toolu_016qBM7fUSrMpt9Bt3m7xGA3">
+103:class RepoContext:
+104-    """Represents a git repo root and its managed worktrees directory.
+105-
+106-    Attributes:
+107-        root: The actual working tree root (where git commands run).
+108-              For worktrees, this is the worktree directory.
+109-              For main repos, this equals main_repo_root.
+110-        repo_name: Name of the repository (derived from main_repo_root).
+111-        repo_dir: Path to erk metadata directory (~/.erk/repos/&lt;repo-name&gt;).
+112-        worktrees_dir: Path to worktrees directory (~/.erk/repos/&lt;repo-name&gt;/worktrees).
+113-        main_repo_root: The main repository root (for consistent metadata paths).
+114-                       For worktrees, this is the parent repo's root directory.
+115-                       For main repos, this equals root.
+116-                       Defaults to root for backwards compatibility.
+117-        github: GitHub repository identity, if available.
+118-    """
+119-
+120-    root: Path
+121-    repo_name: str
+122-    repo_dir: Path  # ~/.erk/repos/&lt;repo-name&gt;
+123-    worktrees_dir: Path  # ~/.erk/repos/&lt;repo-name&gt;/worktrees
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SH1miAtpVULrZPKArqYgLq">
+    <param name="pattern">github: GitHubRepoId</param>
+    <param name="output_mode">content</param>
+    <param name="-A">3</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="173" cache_creation_input_tokens="931" cache_read_input_tokens="77204" cache_creation="{'ephemeral_5m_input_tokens': 931, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SH1miAtpVULrZPKArqYgLq">
+126:    github: GitHubRepoId | None = None  # None if not a GitHub repo or no remote
+127-
+128-    def __post_init__(self) -&gt; None:
+129-        """Set main_repo_root to root if not provided."""
+  </tool_result>
+  <assistant>Now I have a thorough understanding of the codebase. Let me also check the `Ensure.gh_authenticated` method and the `construct_workflow_run_url` function:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="78135" cache_creation="{'ephemeral_5m_input_tokens': 389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011Wggm4PA7equqhrX2PRA7r">
+    <param name="pattern">def gh_authenticated</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="78135" cache_creation="{'ephemeral_5m_input_tokens': 389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01J4Gqdtr61xWggKEccMALFZ">
+    <param name="pattern">def construct_workflow_run_url</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="78135" cache_creation="{'ephemeral_5m_input_tokens': 389, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J4Gqdtr61xWggKEccMALFZ">
+packages/erk-shared/src/erk_shared/gateway/github/parsing.py:273:def construct_workflow_run_url(owner: str, repo: str, run_id: int | str) -&gt; str:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py-274-    """Construct GitHub Actions workflow run URL.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py-275-
+packages/erk-shared/src/erk_shared/gateway/github/parsing.py-276-    Args:
+packages/erk-shared/src/erk_shared/gateway/github/parsing.py-277-        owner: Repository owner
+packages/erk-shared/src/erk_shared/gateway/github/parsing.py-278-        repo: Repository name
+  </tool_result>
+  <tool_result tool="toolu_011Wggm4PA7equqhrX2PRA7r">
+src/erk/cli/ensure.py:499:    def gh_authenticated(ctx: ErkContext) -&gt; None:
+/home/runner/work/erk/erk/src/erk/cli/ensure.py-500-        """Ensure GitHub CLI (gh) is installed and authenticated.
+/home/runner/work/erk/erk/src/erk/cli/ensure.py-501-
+/home/runner/work/erk/erk/src/erk/cli/ensure.py-502-        Uses LBYL pattern to check gh installation and authentication status
+/home/runner/work/erk/erk/src/erk/cli/ensure.py-503-        before operations that require it. This is the canonical check for
+/home/runner/work/erk/erk/src/erk/cli/ensure.py-504-        GitHub CLI readiness - callers should use this single method rather
+/home/runner/work/erk/erk/src/erk/cli/ensure.py-505-        than calling gh_installed() separately.
+/home/runner/work/erk/erk/src/erk/cli/ensure.py-506-
+src/erk/cli/ensure.py-507-        Args:
+src/erk/cli/ensure.py-508-            ctx: Application context with github integration
+/home/runner/work/erk/erk/src/erk/cli/ensure.py-509-
+  </tool_result>
+  <assistant>I now have a comprehensive understanding of all the code involved. Let me load the required skills and start implementing.</assistant>
+  <usage input_tokens="257" cache_creation_input_tokens="879" cache_read_input_tokens="78524" cache_creation="{'ephemeral_5m_input_tokens': 879, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01P41x7hx4qFgrAujNSEs7fJ">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="257" cache_creation_input_tokens="879" cache_read_input_tokens="78524" cache_creation="{'ephemeral_5m_input_tokens': 879, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P41x7hx4qFgrAujNSEs7fJ">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+I need to detect the Python version for this project first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1154" cache_read_input_tokens="79403" cache_creation="{'ephemeral_5m_input_tokens': 1154, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01PvmceogiZptyGmv1pnojg1">
+    <param name="pattern">requires-python</param>
+    <param name="path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1154" cache_read_input_tokens="79403" cache_creation="{'ephemeral_5m_input_tokens': 1154, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PvmceogiZptyGmv1pnojg1">
+17:requires-python = "&gt;=3.11"
+  </tool_result>
+  <tool_use name="Read" id="toolu_012QsvQibPpPym6pcTjb15gv">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="80557" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017JANH2KhKhttsLpRttqZMp">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.11.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="80557" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012QsvQibPpPym6pcTjb15gv">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_017JANH2KhKhttsLpRttqZMp">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.11
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.11.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.11 builds on 3.10's type syntax with the addition of the `Self` type (PEP 673), making method chaining and builder patterns significantly cleaner. All modern syntax from 3.10 continues to work.
+    11→
+    12→**What's new in 3.11:**
+    13→
+    14→- `Self` type for self-returning methods (PEP 673)
+    15→- Variadic generics with TypeVarTuple (PEP 646)
+    16→- Significantly improved error messages
+    17→
+    18→**Available from 3.10:**
+    19→
+    20→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    21→- Union types with `|` operator (PEP 604)
+    22→- Optional with `X | None`
+    23→
+    24→**What you need from typing module:**
+    25→
+    26→- `Self` for self-returning methods (NEW)
+    27→- `TypeVar` for generic functions/classes
+    28→- `Generic` for generic classes
+    29→- `Protocol` for structural typing (rare - prefer ABC)
+    30→- `TYPE_CHECKING` for conditional imports
+
+... [512 lines omitted] ...
+
+   370→            raise ValueError("FROM table not specified")
+   412→            raise FileNotFoundError(f"Config not found: {path}")
+   473→All code should pass type checking without errors.
+   528→2. **Enjoy improved error messages** (no code changes needed)
+  </tool_result>
+  <assistant>Good, I now have all the context I need. Let me start implementing. I'll begin with the first task - creating the `one_shot_api.py` module.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11555" cache_read_input_tokens="80993" cache_creation="{'ephemeral_5m_input_tokens': 11555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Mu4124kBkRA9Aomvcx4cS8">
+    <param name="todos">[{'content': 'Create src/erk/cli/commands/one_shot_api.py with API-only helper functions',...[truncated 1056 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11555" cache_read_input_tokens="80993" cache_creation="{'ephemeral_5m_input_tokens': 11555, 'ephemeral_1h_input_tokens': 0}" output_tokens="444" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Mu4124kBkRA9Aomvcx4cS8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Va6u8wCYGDtsriJ3YiBsuP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_api.py</param>
+    <param name="content">"""API-only implementations for one-shot dispatch without a local repo.
+
+When running `erk...[truncated 3386 chars]...t file {path} to {branch} in {nwo}",
+        cwd=Path.cwd(),
+        input=payload,
+    )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="92548" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="1179" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Va6u8wCYGDtsriJ3YiBsuP">
+File created successfully at: /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_api.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XR5ihrsopwBXtBLCrW849A">
+    <param name="todos">[{'content': 'Create src/erk/cli/commands/one_shot_api.py with API-only helper functions',...[truncated 1058 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1225" cache_read_input_tokens="93034" cache_creation="{'ephemeral_5m_input_tokens': 1225, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XR5ihrsopwBXtBLCrW849A">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me add `target_repo` to `OneShotDispatchParams` and refactor `dispatch_one_shot` for API-only mode. These are tightly coupled, so I'll do them together:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="94259" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WiBRyhqojL2mZnZZSXVeFu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class OneShotDispatchParams:
+    """Parameters for dispatching a o...[truncated 12 chars]...: str
+    model: str | None
+    extra_workflow_inputs: dict[str, str]
+    slug: str | None</param>
+    <param name="new_string">@dataclass(frozen=True)
+class OneShotDispatchParams:
+    """Parameters for dispatching a o...[truncated 89 chars]...g: str | None
+    target_repo: str | None = None  # "owner/repo" for outside-repo dispatch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="94259" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WiBRyhqojL2mZnZZSXVeFu">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to refactor the `dispatch_one_shot` function to support the API-only path. This is the most complex change. Let me re-read the current function carefully and plan the edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="94707" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Y3UhhoGzYbpqEuDRQV7czn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="94707" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y3UhhoGzYbpqEuDRQV7czn">
+     1→"""Shared dispatch logic for one-shot autonomous execution.
+     2→
+     3→Extracts the branch-create/push/PR/workflow-dispatch sequence into reusable
+     4→pieces so both `erk one-shot` and `erk objective plan --one-shot` can
+     5→dispatch tasks through the same CI workflow.
+     6→"""
+     7→
+     8→import logging
+     9→import time
+    10→from dataclasses import dataclass
+    11→from datetime import UTC
+    12→
+    13→import click
+    14→
+    15→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    16→from erk.cli.ensure import Ensure
+    17→from erk.core.branch_slug_generator import (
+    18→    BRANCH_SLUG_SYSTEM_PROMPT,
+    19→    _postprocess_slug,
+    20→    generate_branch_slug,
+    21→)
+    22→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    23→from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
+    24→from erk_shared.core.prompt_executor import PromptExecutor
+    25→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    26→from erk_shared.gateway.git.remote_ops.types import PushError
+    27→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    28→from erk_shared.gateway.github.metadata.core import (
+    29→    create_submission_queued_block,
+    30→    render_erk_issue_event,
+
+... [427 lines omitted] ...
+
+   216→            elif isinstance(result, LlmCallFailed):
+   217→                user_output(click.style("  \u26a0 LLM failed: ", fg="yellow") + result.message)
+   239→                click.style("Error: ", fg="red")
+   250→                click.style("Error: ", fg="red")
+   275→        if isinstance(push_result, PushError):
+   276→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   397→            except Exception as e:
+   399→                    click.style("Warning: ", fg="yellow")
+   400→                    + f"Failed to update dispatch metadata: {e}"
+   424→            except Exception as e:
+   426→                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   431→    except Exception as exc:
+   432→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <assistant>Now I'll refactor the `dispatch_one_shot` function. The key changes are:
+1. Resolve `nwo` from `params.target_repo` or local repo
+2. Determine `use_api_only` mode
+3. In API-only mode, use API functions instead of git operations
+4. Set `GH_REPO` env var for API-only mode
+5. Use `Path.cwd()` as `repo_root` for GitHub operations when outside a repo</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6755" cache_read_input_tokens="95068" cache_creation="{'ephemeral_5m_input_tokens': 6755, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017rr3MJVb7iZNxHgDwtmMRR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="old_string">import logging
+import time
+from dataclasses import dataclass
+from datetime import UTC
+
+imp...[truncated 1196 chars]..., user_output
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body</param>
+    <param name="new_string">import logging
+import os
+import time
+from dataclasses import dataclass
+from datetime impor...[truncated 1393 chars]..., user_output
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6755" cache_read_input_tokens="95068" cache_creation="{'ephemeral_5m_input_tokens': 6755, 'ephemeral_1h_input_tokens': 0}" output_tokens="1173" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017rr3MJVb7iZNxHgDwtmMRR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the entire `dispatch_one_shot` function body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1504" cache_read_input_tokens="101823" cache_creation="{'ephemeral_5m_input_tokens': 1504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KzGdaDuCBVvnY2nSopHh4X">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="old_string">def dispatch_one_shot(
+    ctx: ErkContext,
+    *,
+    params: OneShotDispatchParams,
+    ...[truncated 13991 chars]...        pr_number=pr_number,
+        run_id=run_id,
+        branch_name=branch_name,
+    )</param>
+    <param name="new_string">def dispatch_one_shot(
+    ctx: ErkContext,
+    *,
+    params: OneShotDispatchParams,
+    ...[truncated 16558 chars]...        pr_number=pr_number,
+        run_id=run_id,
+        branch_name=branch_name,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1504" cache_read_input_tokens="101823" cache_creation="{'ephemeral_5m_input_tokens': 1504, 'ephemeral_1h_input_tokens': 0}" output_tokens="8990" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KzGdaDuCBVvnY2nSopHh4X">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01MzkoqbVRj9qZANQvJ6QCKk">
+    <param name="todos">[{'content': 'Create src/erk/cli/commands/one_shot_api.py with API-only helper functions',...[truncated 1062 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9037" cache_read_input_tokens="103327" cache_creation="{'ephemeral_5m_input_tokens': 9037, 'ephemeral_1h_input_tokens': 0}" output_tokens="406" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MzkoqbVRj9qZANQvJ6QCKk">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now add the `--repo` flag to the `one_shot` command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="112364" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Bd1B69SUbVUc2WZGA6RqdV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+    <param name="old_string">@click.option(
+    "--slug",
+    type=str,
+    default=None,
+    help="Pre-generated branc...[truncated 474 chars]...ool,
+    slug: str | None,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -&gt; None:</param>
+    <param name="new_string">@click.option(
+    "--slug",
+    type=str,
+    default=None,
+    help="Pre-generated branc...[truncated 673 chars]...  target_repo: str | None,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="112364" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bd1B69SUbVUc2WZGA6RqdV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the params construction and dispatch call to pass `target_repo`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="112812" cache_creation="{'ephemeral_5m_input_tokens': 701, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RiCHHsH7qhxWcCDadWQDna">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+    <param name="old_string">    params = OneShotDispatchParams(
+        prompt=prompt,
+        model=model,
+        extra_workflow_inputs=extra,
+        slug=slug,
+    )</param>
+    <param name="new_string">    params = OneShotDispatchParams(
+        prompt=prompt,
+        model=model,
+        extra_workflow_inputs=extra,
+        slug=slug,
+        target_repo=target_repo,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="112812" cache_creation="{'ephemeral_5m_input_tokens': 701, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RiCHHsH7qhxWcCDadWQDna">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01S9QYz1xNmLKHMc9cRgYS1j">
+    <param name="todos">[{'content': 'Create src/erk/cli/commands/one_shot_api.py with API-only helper functions',...[truncated 1064 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="113513" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S9QYz1xNmLKHMc9cRgYS1j">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `ref_resolution.py` to guard against `--ref-current` when outside a repo:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="113781" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DCcgPZbjf9gtHPooec7rm9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py</param>
+    <param name="old_string">import click
+
+from erk.core.context import ErkContext
+
+
+def resolve_dispatch_ref(
+    ctx:...[truncated 945 chars]...ch
+
+    return dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref</param>
+    <param name="new_string">import click
+
+from erk.core.context import ErkContext
+from erk_shared.context.types import...[truncated 1151 chars]...ch
+
+    return dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="113781" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DCcgPZbjf9gtHPooec7rm9">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `context.py` to always attempt token fetch:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="855" cache_read_input_tokens="114229" cache_creation="{'ephemeral_5m_input_tokens': 855, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+</session>
