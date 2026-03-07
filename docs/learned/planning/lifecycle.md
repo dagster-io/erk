@@ -12,7 +12,7 @@ tripwires:
   - action: "saving a plan linked to an objective"
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
   - action: "implementing custom PR/plan relevance assessment logic"
-    warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
+    warning: "Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
   - action: "after plan-implement execution completes"
     warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
   - action: "implementing PR body generation with checkout footers"
@@ -88,17 +88,16 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 ### Plan Relevance Assessment
 
-When evaluating whether a plan should be implemented or closed, use the verdict classification system from `/local:check-relevance`:
+When evaluating whether a plan should be implemented or closed, use the verdict classification system from `/local:check-superceded`:
 
-| Verdict               | Overlap | Meaning                                            |
-| --------------------- | ------- | -------------------------------------------------- |
-| SUPERSEDED            | >80%    | Work is already implemented in master              |
-| PARTIALLY_IMPLEMENTED | 30-80%  | Some work exists, plan may need scoping adjustment |
-| DIFFERENT_APPROACH    | N/A     | Same problem solved with different implementation  |
-| STILL_RELEVANT        | <30%    | Work is not yet implemented, plan remains valid    |
-| NEEDS_REVIEW          | Unclear | Manual review required, evidence inconclusive      |
+| Verdict              | Meaning                                       |
+| -------------------- | --------------------------------------------- |
+| SUPERSEDED           | All key changes are present in master         |
+| PARTIALLY_SUPERSEDED | Some key changes present, others still needed |
+| STILL_RELEVANT       | Most key changes are absent from master       |
+| NEEDS_REVIEW         | Evidence is ambiguous, manual review required |
 
-**Usage:** Run `/local:check-relevance <plan-number>` to assess a plan's current relevance before deciding to implement or close it.
+**Usage:** Run `/local:check-superceded <pr-number>` to assess whether a PR has been superseded before deciding to implement or close it.
 
 ### Session Idempotency
 

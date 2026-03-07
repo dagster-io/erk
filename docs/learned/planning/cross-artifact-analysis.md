@@ -25,7 +25,7 @@ Plans and PRs can have complex relationships:
 
 ## Evidence-Based Analysis Pattern
 
-The `/local:check-relevance` command implements a structured approach to cross-artifact analysis:
+The `/local:check-superceded` command implements a structured approach to cross-artifact analysis:
 
 1. **Parse input** - Identify whether target is PR or plan
 2. **Gather context** - Retrieve GitHub metadata and plan content

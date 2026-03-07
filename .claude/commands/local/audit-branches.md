@@ -182,8 +182,8 @@ git worktree prune
 
 ## Related Commands
 
-For assessing a single PR or plan's relevance:
+For assessing whether a PR has been superseded:
 
 ```bash
-/local:check-relevance <issue-number>
+/local:check-superceded <pr-number>
 ```
