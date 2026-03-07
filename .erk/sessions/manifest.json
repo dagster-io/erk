@@ -5,14 +5,17 @@
     {
       "session_id": "d1502be2-ce5e-485c-b9d4-1bd5143f3a03",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-07T20:57:15.657401+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-07T20:59:33.711674+00:00",
       "files": [
         "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part1.xml",
         "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part2.xml",
         "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part3.xml",
         "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part4.xml",
-        "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part5.xml"
+        "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part5.xml",
+        "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part6.xml",
+        "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part7.xml",
+        "impl-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-d1502be2-ce5e-485c-b9d4-1bd5143f3a03-part8.xml"
       ]
     }
   ]
