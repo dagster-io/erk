@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of ad89cf1df -->
+
+### Added
+
+- Add `erk pr prepare` command to set up impl-context independently from checkout (aa70e4d71)
+- Add `erk reconcile` command to detect and clean up branches merged outside `erk land` (a35700ac4)
+- Add `--from-current-branch` flag to `erk slot assign` (5b3edff2a)
+- Fall back to Claude CLI for LLM calls when `ANTHROPIC_API_KEY` is unavailable (ad89cf1df)
+- Add artifact allowlist to suppress `erk doctor` warnings for intentionally-modified artifacts (b01bd9e5f)
+
+### Changed
+
+- Rename `erk pr reconcile-with-remote` to `erk pr diverge-fix` (a35700ac4)
+
+### Fixed
+
+- Fix `erk pr teleport` not registering branch with Graphite for non-stacked PRs (9f617a62b)
+- Fix Graphite divergence in `erk pr checkout` for stacked PRs by rebasing before Graphite tracking (aa70e4d71)
+- Fix trunk sync leaving index out of date after `erk land`, causing staged reverse changes (13ab95a1e)
+- Fix `erk doctor` hiding warnings behind green checkmarks in condensed mode (b01bd9e5f)
+- Restore progress feedback ("Still waiting...") during PR description generation (e9ebcfe11)
+
 ## [0.9.8] - 2026-03-06 09:51 PT
 
 ### Changed
