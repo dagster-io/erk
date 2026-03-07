@@ -1,15 +1,18 @@
 """Unit tests for codespace connect command."""
 
 from datetime import datetime
+from pathlib import Path
 
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
+from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import LoadedConfig
 from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+from erk_shared.gateway.git.fake import FakeGit
 
 
 def test_connect_shows_error_when_no_codespaces() -> None:
@@ -292,4 +295,101 @@ def test_connect_with_working_directory_and_shell_flag() -> None:
     assert fake_codespace.last_call is not None
     remote_command = fake_codespace.last_call.remote_command
     assert "cd /workspaces/repo" in remote_command
+    assert "exec bash -l" in remote_command
+
+
+def _make_repo_context(root: Path) -> RepoContext:
+    """Create a minimal RepoContext for testing."""
+    repo_dir = root / ".erk"
+    return RepoContext(
+        root=root,
+        repo_name=root.name,
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+
+
+def test_connect_checks_out_local_branch() -> None:
+    """connect injects git fetch + checkout for the local branch into the remote command."""
+    runner = CliRunner()
+    repo_root = Path("/test/repo")
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    git = FakeGit(current_branches={repo_root: "feature-x"})
+    repo = _make_repo_context(repo_root)
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+        git=git,
+        repo=repo,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    assert "git fetch origin feature-x && git checkout feature-x" in remote_command
+    assert "git pull" in remote_command
+
+
+def test_connect_skips_checkout_when_detached_head() -> None:
+    """connect skips branch checkout when local HEAD is detached."""
+    runner = CliRunner()
+    repo_root = Path("/test/repo")
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    git = FakeGit(current_branches={repo_root: None})
+    repo = _make_repo_context(repo_root)
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+        git=git,
+        repo=repo,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    assert "git fetch" not in remote_command
+    assert "git checkout" not in remote_command
+    assert "git pull" in remote_command
+
+
+def test_connect_shell_checks_out_local_branch() -> None:
+    """connect --shell injects branch checkout before dropping into shell."""
+    runner = CliRunner()
+    repo_root = Path("/test/repo")
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    git = FakeGit(current_branches={repo_root: "feature-x"})
+    repo = _make_repo_context(repo_root)
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+        git=git,
+        repo=repo,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect", "--shell"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    assert "git fetch origin feature-x && git checkout feature-x" in remote_command
     assert "exec bash -l" in remote_command
