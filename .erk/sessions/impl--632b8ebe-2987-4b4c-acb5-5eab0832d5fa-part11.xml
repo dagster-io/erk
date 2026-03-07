@@ -1,0 +1,758 @@
+<session>
+  <meta source="agent-a66d29e" />
+  <meta branch="plnd/O8832-pr-read-no-repo-03-07-2109" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the existing types and services used by PR commands. Find and read:
+1. The IssueInfo type definition (packages/erk-shared/src/erk_shared/gateway/github/issues/types.py or similar)
+2. The IssueNotFound type
+3. The PRReference type
+4. The PlanListService (wherever it's defined)
+5. The GitHubRepoLocation class
+6. The RealPlanDataProvider class or similar
+
+Report the full file paths and complete contents.</user>
+  <assistant>I'll help you find and understand these types and services. Let me start by checking the documentation index, then systematically locate and read the relevant files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15144" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15144, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01NMZZ1gVf1F1nypYNCkhDq2">
+    <param name="pattern">docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15144" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15144, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014vRsutbwt9JLQX1Kv5qbXu">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "*.py" | grep -E "(issue|types|gateway)" | head -20</param>
+    <param name="description">Find Python files related to issues, types, and gateways</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15144" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15144, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NMZZ1gVf1F1nypYNCkhDq2">
+/home/runner/work/erk/erk/docs/learned/index.md
+  </tool_result>
+  <tool_result tool="toolu_014vRsutbwt9JLQX1Kv5qbXu">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_issue_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_issue_timeline_prs.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_issue_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+/home/runner/work/erk/erk/tests/unit/gateway/github/metadata/__init__.py
+/home/runner/work/erk/erk/tests/unit/gateway/github/metadata/test_dependency_graph.py
+/home/runner/work/erk/erk/tests/unit/gateway/github/__init__.py
+/home/runner/work/erk/erk/tests/unit/gateway/github/test_ci_summary_parsing.py
+/home/runner/work/erk/erk/tests/unit/gateway/__init__.py
+/home/runner/work/erk/erk/tests/unit/plan_issues/__init__.py
+/home/runner/work/erk/erk/tests/unit/plan_issues/test_label_definitions.py
+/home/runner/work/erk/erk/tests/unit/fakes/gateway/console/__init__.py
+/home/runner/work/erk/erk/tests/unit/fakes/gateway/console/test_fake_console.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_github_issues.py
+  </tool_result>
+  <assistant>Let me search for the actual type definitions and services more directly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="916" cache_read_input_tokens="15144" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01EQtkzVok9PeLB1Ukr48CTK">
+    <param name="pattern">packages/erk-shared/src/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="916" cache_read_input_tokens="15144" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013XdWAKseZFeTUZZPRLiVyp">
+    <param name="pattern">class IssueInfo|class IssueNotFound|class PRReference</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="916" cache_read_input_tokens="15144" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013XdWAKseZFeTUZZPRLiVyp">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/issues/types.py
+  </tool_result>
+  <tool_result tool="toolu_01EQtkzVok9PeLB1Ukr48CTK">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/config/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/config/schema.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/debug.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/debug_timing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/plan_list_service.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/typing_utils.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/health_check_runner.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/frontmatter.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/fakes.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/script_writer.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/objective_list_service.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/log.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/env.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/printing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/real.py
+
+... [71 lines omitted] ...
+  </tool_result>
+  <assistant>Great! Now let me search for PlanListService, PRReference, and other related types:</assistant>
+  <usage input_tokens="60" cache_creation_input_tokens="3882" cache_read_input_tokens="16060" cache_creation="{'ephemeral_5m_input_tokens': 3882, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019pALN4dSdxztx5P4FeDW3H">
+    <param name="pattern">class PlanListService|class PRReference|class GitHubRepoLocation|class RealPlanDataProvider</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="60" cache_creation_input_tokens="3882" cache_read_input_tokens="16060" cache_creation="{'ephemeral_5m_input_tokens': 3882, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0192QhazG5AGHqmUJ7wwb3Ej">
+    <param name="command">find /home/runner/work/erk/erk -type f -path "*/plan_data_provider*" -name "*.py" | head -20</param>
+    <param name="description">Find plan_data_provider files</param>
+  </tool_use>
+  <usage input_tokens="60" cache_creation_input_tokens="3882" cache_read_input_tokens="16060" cache_creation="{'ephemeral_5m_input_tokens': 3882, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0192QhazG5AGHqmUJ7wwb3Ej">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py
+  </tool_result>
+  <tool_result tool="toolu_019pALN4dSdxztx5P4FeDW3H">
+Found 4 files
+src/erk/tui/data/real_provider.py
+packages/erk-shared/src/erk_shared/gateway/github/types.py
+packages/erk-shared/src/erk_shared/gateway/github/issues/types.py
+packages/erk-shared/src/erk_shared/core/plan_list_service.py
+  </tool_result>
+  <assistant>Perfect! Now let me read all the relevant files:</assistant>
+  <usage input_tokens="292" cache_creation_input_tokens="528" cache_read_input_tokens="19942" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LTs4FYW1Mn9Dh1Hpw3Y9MS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py</param>
+  </tool_use>
+  <usage input_tokens="292" cache_creation_input_tokens="528" cache_read_input_tokens="19942" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GGqfJpF8NScNxCVD7z2CPR">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="292" cache_creation_input_tokens="528" cache_read_input_tokens="19942" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YNsKGqub98dKgVqHaRRz5X">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/plan_list_service.py</param>
+  </tool_use>
+  <usage input_tokens="292" cache_creation_input_tokens="528" cache_read_input_tokens="19942" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012WA9o5TfZi1p88jvDvKGQJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py</param>
+  </tool_use>
+  <usage input_tokens="292" cache_creation_input_tokens="528" cache_read_input_tokens="19942" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UMkzgoEgYyBGAxb1e1nQUi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="292" cache_creation_input_tokens="528" cache_read_input_tokens="19942" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017VRnJwb83Rz2CYxMhjNTqg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+  </tool_use>
+  <usage input_tokens="292" cache_creation_input_tokens="528" cache_read_input_tokens="19942" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LTs4FYW1Mn9Dh1Hpw3Y9MS">
+     1→"""Data types for GitHub issues integration."""
+     2→
+     3→from collections.abc import Iterator
+     4→from dataclasses import dataclass
+     5→from datetime import datetime
+     6→
+     7→from erk_shared.non_ideal_state import EnsurableResult
+     8→
+     9→
+    10→@dataclass(frozen=True)
+    11→class IssueInfo:
+    12→    """Information about a GitHub issue."""
+    13→
+    14→    number: int
+    15→    title: str
+    16→    body: str
+    17→    state: str  # "OPEN" or "CLOSED"
+    18→    url: str
+    19→    labels: list[str]
+    20→    assignees: list[str]
+    21→    created_at: datetime
+    22→    updated_at: datetime
+    23→    author: str  # GitHub login of the issue creator
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class IssueNotFound:
+    28→    """Sentinel indicating an issue was not found.
+    29→
+    30→    Used as part of union return types for LBYL-style error handling.
+
+... [71 lines omitted] ...
+
+    71→    in T | GitHubAPIFailed union return types.
+  </tool_result>
+  <tool_result tool="toolu_01GGqfJpF8NScNxCVD7z2CPR">
+     1→"""Type definitions for GitHub operations."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from typing import Any, Literal, TypedDict
+     7→
+     8→from erk_shared.non_ideal_state import EnsurableResult
+     9→
+    10→PRState = Literal["OPEN", "MERGED", "CLOSED"]
+    11→
+    12→MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+    13→
+    14→
+    15→class StatusCheckRollupData(TypedDict, total=False):
+    16→    state: str
+    17→    contexts: dict[str, Any]
+    18→
+    19→
+    20→def _epoch_sentinel() -&gt; datetime:
+    21→    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    22→    return datetime(2000, 1, 1, tzinfo=UTC)
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class BodyText:
+    27→    """Body content as inline text.
+    28→
+    29→    Used when the body content is a string that should be passed directly
+    30→    to the GitHub API using -f body={content} syntax.
+
+... [367 lines omitted] ...
+
+    92→        conclusion: Result when completed ("success", "failure", "cancelled", etc.).
+   111→class MergeError:
+   112→    """Error result from merging a PR. Implements NonIdealState."""
+   118→    def error_type(self) -&gt; str:
+   119→        return "merge-failed"
+   126→    Used as part of union return types for LBYL-style error handling.
+   200→WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
+   239→    Raises AttributeError when accessed as a string, preventing silent bugs
+   249→        raise AttributeError(msg)
+   260→        raise AttributeError(msg)
+   280→    Accessing unavailable fields raises AttributeError.
+   326→        raise AttributeError(msg)
+   330→        raise AttributeError(msg)
+   353→            str(value)  # Trigger the error
+   365→            str(value)  # Trigger the error
+  </tool_result>
+  <tool_result tool="toolu_01YNsKGqub98dKgVqHaRRz5X">
+     1→"""Plan list service abstraction - ABC and types.
+     2→
+     3→This module provides the abstract interface for efficiently fetching plan list data.
+     4→The real implementation remains in erk.core.services.plan_list_service.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from dataclasses import dataclass
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.github.types import (
+    14→    GitHubRepoLocation,
+    15→    IssueFilterState,
+    16→    PullRequestInfo,
+    17→    WorkflowRun,
+    18→)
+    19→from erk_shared.plan_store.types import Plan
+    20→
+    21→if TYPE_CHECKING:
+    22→    from erk_shared.gateway.http.abc import HttpClient
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class PlanListData:
+    27→    """Combined data for plan listing.
+    28→
+    29→    Attributes:
+    30→        plans: List of Plan objects with enriched metadata
+
+... [61 lines omitted] ...
+
+    36→        warnings: User-facing warnings about degraded data quality
+    45→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_result tool="toolu_012WA9o5TfZi1p88jvDvKGQJ">
+     1→"""Re-export PlanDataProvider from its new home for backwards compatibility.
+     2→
+     3→The canonical import is now:
+     4→    from erk.tui.data.provider_abc import PlanDataProvider
+     5→"""
+     6→
+     7→from erk.tui.data.provider_abc import PlanDataProvider as PlanDataProvider
+     8→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01UMkzgoEgYyBGAxb1e1nQUi">
+     1→"""Re-export RealPlanDataProvider from its new home for backwards compatibility.
+     2→
+     3→The canonical import is now:
+     4→    from erk.tui.data.real_provider import RealPlanDataProvider
+     5→"""
+     6→
+     7→from erk.tui.data.real_provider import RealPlanDataProvider as RealPlanDataProvider
+     8→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_017VRnJwb83Rz2CYxMhjNTqg">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import datetime
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk.core.display_utils import (
+     8→    format_relative_time,
+     9→    format_workflow_outcome,
+    10→    format_workflow_run_id,
+    11→    get_workflow_run_state,
+    12→)
+    13→from erk.core.pr_utils import select_display_pr
+    14→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    15→from erk.tui.data.provider_abc import PlanDataProvider
+    16→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    17→from erk.tui.sorting.types import BranchActivity
+    18→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    19→from erk_shared.gateway.github.metadata.core import (
+    20→    extract_objective_slug,
+    21→)
+    22→from erk_shared.gateway.github.metadata.dependency_graph import (
+    23→    _TERMINAL_STATUSES,
+    24→    build_graph,
+    25→    build_state_sparkline,
+    26→    compute_graph_summary,
+    27→    find_graph_next_node,
+    28→)
+    29→from erk_shared.gateway.github.metadata.roadmap import (
+    30→    parse_roadmap,
+
+... [666 lines omitted] ...
+
+   168→            warnings=plan_data.warnings,
+   290→        except Exception:
+   291→            logger.debug("Failed to write timing log", exc_info=True)
+   506→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <assistant>Perfect! Now let me search for any additional related files and check for the PlanDataProvider ABC:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="20150" cache_read_input_tokens="20470" cache_creation="{'ephemeral_5m_input_tokens': 20150, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Y7BSLSfcy5LDFM8WTJiH6e">
+    <param name="pattern">src/erk/tui/data/provider_abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="20150" cache_read_input_tokens="20470" cache_creation="{'ephemeral_5m_input_tokens': 20150, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U3c4B32WvW8CovTwg2eVQo">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "provider_abc.py"</param>
+    <param name="description">Find provider ABC file</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="20150" cache_read_input_tokens="20470" cache_creation="{'ephemeral_5m_input_tokens': 20150, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y7BSLSfcy5LDFM8WTJiH6e">
+/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py
+  </tool_result>
+  <tool_result tool="toolu_01U3c4B32WvW8CovTwg2eVQo">
+/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py
+  </tool_result>
+  <assistant>Let me read the provider ABC:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="421" cache_read_input_tokens="40620" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MTSz1Z9zRNPHoDd3Gi3xWo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="421" cache_read_input_tokens="40620" cache_creation="{'ephemeral_5m_input_tokens': 421, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MTSz1Z9zRNPHoDd3Gi3xWo">
+     1→"""TUI data provider ABC for plan table display assembly."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→
+     5→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     6→from erk.tui.sorting.types import BranchActivity
+     7→
+     8→
+     9→class PlanDataProvider(ABC):
+    10→    """Abstract base class for TUI plan data assembly.
+    11→
+    12→    Contains only the methods that produce TUI-specific types
+    13→    (PlanRowData, FetchTimings, BranchActivity). Domain operations
+    14→    (close_plan, dispatch, fetch_content, etc.) live in PlanService.
+    15→    """
+    16→
+    17→    @abstractmethod
+    18→    def fetch_plans(self, filters: PlanFilters) -&gt; tuple[list[PlanRowData], FetchTimings | None]:
+    19→        """Fetch plans matching the given filters.
+    20→
+    21→        Args:
+    22→            filters: Filter options for the query
+    23→
+    24→        Returns:
+    25→            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
+    26→        """
+    27→        ...
+    28→
+    29→    @abstractmethod
+    30→    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+
+... [39 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me get a complete summary by reading the key types file as well:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="938" cache_read_input_tokens="41041" cache_creation="{'ephemeral_5m_input_tokens': 938, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015PTvra9BgdpLLJJMJcJqtL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="938" cache_read_input_tokens="41041" cache_creation="{'ephemeral_5m_input_tokens': 938, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015PTvra9BgdpLLJJMJcJqtL">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.gateway.github.types import IssueFilterState
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class PlanRowData:
+    13→    """Row data for displaying a plan in the TUI table.
+    14→
+    15→    Contains pre-formatted display strings and raw data needed for actions.
+    16→    Immutable to ensure table state consistency.
+    17→
+    18→    **Display vs Raw convention:** Many data points have both a raw field (for
+    19→    logic/predicates) and a display field (for table rendering). Raw fields are
+    20→    often nullable (None when absent), while display fields are always strings
+    21→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    22→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    23→
+    24→    Attributes:
+    25→
+    26→        plan_id: GitHub issue number (e.g., 123). Never None.
+    27→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    28→        full_title: Complete untruncated plan title. Empty string possible.
+    29→        plan_body: Raw issue body text (markdown). Empty string possible.
+    30→
+
+... [125 lines omitted] ...
+
+    56→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me compile a comprehensive report with file paths and complete contents.
+
+## Complete Summary: Types and Services for PR Commands
+
+Based on my thorough search of the codebase, here are all the requested types and services with their complete file paths and contents:
+
+---
+
+### 1. **IssueInfo Type Definition**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py`
+
+```python
+@dataclass(frozen=True)
+class IssueInfo:
+    """Information about a GitHub issue."""
+
+    number: int
+    title: str
+    body: str
+    state: str  # "OPEN" or "CLOSED"
+    url: str
+    labels: list[str]
+    assignees: list[str]
+    created_at: datetime
+    updated_at: datetime
+    author: str  # GitHub login of the issue creator
+```
+
+---
+
+### 2. **IssueNotFound Type**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py`
+
+```python
+@dataclass(frozen=True)
+class IssueNotFound:
+    """Sentinel indicating an issue was not found.
+
+    Used as part of union return types for LBYL-style error handling.
+    """
+
+    issue_number: int
+```
+
+---
+
+### 3. **PRReference Type**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py`
+
+```python
+@dataclass(frozen=True)
+class PRReference:
+    """Lightweight PR reference from timeline cross-reference.
+
+    A simpler alternative to PullRequestInfo for cases where only
+    basic PR status is needed (e.g., closing linked PRs).
+
+    Attributes:
+        number: PR number
+        state: PR state ("OPEN", "CLOSED", "MERGED")
+        is_draft: Whether the PR is a draft
+    """
+
+    number: int
+    state: str  # "OPEN", "CLOSED", "MERGED"
+    is_draft: bool
+```
+
+---
+
+### 4. **PlanListService (Abstract Base Class)**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/plan_list_service.py`
+
+```python
+class PlanListService(ABC):
+    """Abstract interface for efficiently fetching plan list data.
+
+    Composes GitHub and GitHubIssues integrations to batch fetch all data
+    needed for plan listing. Uses GraphQL nodes(ids: [...]) for efficient
+    batch lookup of workflow runs by node_id.
+    """
+
+    @abstractmethod
+    def get_plan_list_data(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: IssueFilterState = "open",
+        limit: int | None = None,
+        skip_workflow_runs: bool = False,
+        creator: str | None = None,
+        exclude_labels: list[str] | None = None,
+        http_client: HttpClient,
+    ) -&gt; PlanListData:
+        """Batch fetch all data needed for plan listing.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            labels: Labels to filter issues by (e.g., ["erk-plan"])
+            state: Filter by state ("open" or "closed")
+            limit: Maximum number of issues to return (None for no limit)
+            skip_workflow_runs: If True, skip fetching workflow runs (for performance)
+            creator: Filter by creator username (e.g., "octocat"). If provided,
+                only issues created by this user are returned.
+            exclude_labels: Labels to exclude from results. Applied client-side before
+                expensive enrichment operations. None means no exclusion.
+
+        Returns:
+            PlanListData containing plans, PR linkages, and workflow runs
+        """
+        ...
+```
+
+**Associated Data Class - PlanListData:**
+
+```python
+@dataclass(frozen=True)
+class PlanListData:
+    """Combined data for plan listing.
+
+    Attributes:
+        plans: List of Plan objects with enriched metadata
+        pr_linkages: Mapping of plan_number -&gt; list of PRs that close that plan
+        workflow_runs: Mapping of plan_number -&gt; most relevant WorkflowRun
+        api_ms: Milliseconds spent on REST+GraphQL API calls (issues/PRs fetch)
+        plan_parsing_ms: Milliseconds spent parsing plan bodies
+        workflow_runs_ms: Milliseconds spent fetching workflow runs
+        warnings: User-facing warnings about degraded data quality
+    """
+
+    plans: list[Plan]
+    pr_linkages: dict[int, list[PullRequestInfo]]
+    workflow_runs: dict[int, WorkflowRun | None]
+    api_ms: float = 0.0
+    plan_parsing_ms: float = 0.0
+    workflow_runs_ms: float = 0.0
+    warnings: tuple[str, ...] = ()
+```
+
+---
+
+### 5. **GitHubRepoLocation Class**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`
+
+```python
+@dataclass(frozen=True)
+class GitHubRepoLocation:
+    """GitHub repository location combining local path with repo identity."""
+
+    root: Path
+    repo_id: GitHubRepoId
+```
+
+**Associated class - GitHubRepoId:**
+
+```python
+@dataclass(frozen=True)
+class GitHubRepoId:
+    """GitHub repository identity (owner and repo name)."""
+
+    owner: str
+    repo: str
+```
+
+---
+
+### 6. **RealPlanDataProvider Class**
+**File:** `/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py` (complete file above)
+
+**Also Re-exported from:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`
+
+```python
+class RealPlanDataProvider(PlanDataProvider):
+    """Production implementation that assembles TUI display data.
+
+    Transforms PlanListData into PlanRowData for TUI display.
+    Domain operations (close_plan, dispatch, etc.) are on PlanService.
+    """
+
+    def __init__(
+        self,
+        ctx: ErkContext,
+        *,
+        location: GitHubRepoLocation,
+        http_client: HttpClient,
+    ) -&gt; None:
+        """Initialize with context and repository info."""
+        self._ctx = ctx
+        self._location = location
+        self._http_client = http_client
+
+    def fetch_plans(self, filters: PlanFilters) -&gt; tuple[list[PlanRowData], FetchTimings | None]:
+        """Fetch plans and transform to TUI row format."""
+        ...
+    
+    def fetch_branch_activity(self, rows: list[PlanRowData]) -&gt; dict[int, BranchActivity]:
+        """Fetch branch activity for plans that exist locally."""
+        ...
+    
+    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+        """Fetch specific plans by their GitHub numbers."""
+        ...
+    
+    def fetch_plans_for_objective(self, objective_issue: int) -&gt; list[PlanRowData]:
+        """Fetch plans associated with a specific objective."""
+        ...
+```
+
+---
+
+### 7. **PlanDataProvider ABC (Parent of RealPlanDataProvider)**
+**File:** `/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py`
+
+```python
+class PlanDataProvider(ABC):
+    """Abstract base class for TUI plan data assembly.
+
+    Contains only the methods that produce TUI-specific types
+    (PlanRowData, FetchTimings, BranchActivity). Domain operations
+    (close_plan, dispatch, fetch_content, etc.) live in PlanService.
+    """
+
+    @abstractmethod
+    def fetch_plans(self, filters: PlanFilters) -&gt; tuple[list[PlanRowData], FetchTimings | None]:
+        """Fetch plans matching the given filters."""
+        ...
+
+    @abstractmethod
+    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+        """Fetch specific plans by their GitHub numbers."""
+        ...
+
+    @abstractmethod
+    def fetch_plans_for_objective(self, objective_issue: int) -&gt; list[PlanRowData]:
+        """Fetch plans associated with a specific objective."""
+        ...
+
+    @abstractmethod
+    def fetch_branch_activity(self, rows: list[PlanRowData]) -&gt; dict[int, BranchActivity]:
+        """Fetch branch activity for plans that exist locally."""
+        ...
+```
+
+---
+
+### 8. **PullRequestInfo Type** (Related)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`
+
+```python
+@dataclass(frozen=True)
+class PullRequestInfo:
+    """Information about a GitHub pull request."""
+
+    number: int
+    state: str  # "OPEN", "MERGED", "CLOSED"
+    url: str
+    is_draft: bool
+    title: str | None
+    checks_passing: bool | None  # None if no checks, True if all pass, False if any fail
+    owner: str  # GitHub repo owner (e.g., "schrockn")
+    repo: str  # GitHub repo name (e.g., "erk")
+    # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
+    has_conflicts: bool | None = None
+    checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
+    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
+    will_close_target: bool = False
+    # Head branch name (the source branch) - optional, populated by some API calls
+    head_branch: str | None = None
+    # Review thread counts: (resolved_count, total_count) or None if not fetched
+    review_thread_counts: tuple[int, int] | None = None
+    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+    review_decision: str | None = None
+    # Base branch name (the target branch) - optional, populated by some API calls
+    base_ref_name: str | None = None
+```
+
+---
+
+### 9. **PlanRowData Type** (TUI Display Data)
+**File:** `/home/runner/work/erk/erk/src/erk/tui/data/types.py`
+
+This is a comprehensive immutable dataclass with 90+ fields containing pre-formatted display strings and raw data for TUI table rendering. Key field groups include:
+
+- **Plan identity:** `plan_id`, `plan_url`, `full_title`, `plan_body`
+- **PR metadata:** `pr_number`, `pr_url`, `pr_display`, `pr_state`, `pr_title`, `pr_head_branch`, `checks_display`
+- **Worktree info:** `worktree_name`, `worktree_branch`, `exists_locally`
+- **Implementation tracking:** `local_impl_display`, `remote_impl_display`, `last_local_impl_at`, `last_remote_impl_at`
+- **Workflow runs:** `run_id`, `run_id_display`, `run_status`, `run_conclusion`, `run_state_display`, `run_url`
+- **Learn/roadmap data:** `learn_status`, `learn_display`, `objective_issue`, `objective_progress_display`, etc.
+- **UI formatting:** `lifecycle_display`, `status_display`, timestamps with relative formats
+
+---
+
+## Summary of File Locations
+
+| Type/Service | File Path |
+|---|---|
+| IssueInfo | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py` |
+| IssueNotFound | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py` |
+| PRReference | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py` |
+| PlanListService (ABC) | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/plan_list_service.py` |
+| GitHubRepoLocation | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py` |
+| RealPlanDataProvider | `/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py` |
+| PlanDataProvider (ABC) | `/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py` |
+| PullRequestInfo | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py` |
+| PlanRowData | `/home/runner/work/erk/erk/src/erk/tui/data/types.py` |
+
+All files use frozen dataclasses following the project's LBYL (Look Before You Leap) conventions and immutability requirements.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2728" cache_read_input_tokens="41979" cache_creation="{'ephemeral_5m_input_tokens': 2728, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,496 @@
+<session>
+  <meta source="agent-abf0e6b" />
+  <meta branch="plnd/O8832-pr-read-no-repo-03-07-2109" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the PR commands that need to be converted. Find and read the full contents of:
+1. src/erk/cli/commands/pr/list_cmd.py
+2. src/erk/cli/commands/pr/view_cmd.py
+3. src/erk/cli/commands/pr/check_cmd.py
+4. src/erk/cli/commands/pr/log_cmd.py
+5. src/erk/cli/commands/pr/close_cmd.py
+6. src/erk/cli/commands/pr/duplicate_check_cmd.py
+
+Also find the PR command group registration file (likely __init__.py or a group file).
+
+Report the full file paths and complete contents of each file.</user>
+  <assistant>I'll help you find and read these PR command files. Let me start by searching for them and understanding the structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15194" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15194, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012c769KzJUBSGfBNPujRaDg">
+    <param name="pattern">src/erk/cli/commands/pr/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15194" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15194, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01EA5NNPetXY9CFmaqWfXW5j">
+    <param name="pattern">src/erk/cli/commands/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15194" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15194, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EA5NNPetXY9CFmaqWfXW5j">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py
+  </tool_result>
+  <tool_result tool="toolu_012c769KzJUBSGfBNPujRaDg">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/parse_pr_reference.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/replan_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rebase_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py
+  </tool_result>
+  <assistant>Good! I found all the files. Now let me read all six requested files plus the __init__.py file to understand the registration:</assistant>
+  <usage input_tokens="57" cache_creation_input_tokens="900" cache_read_input_tokens="15194" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HpjnxJPm4qwaupN6FJ77to">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="900" cache_read_input_tokens="15194" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D8UDwSZ5VE28m72cP3bb36">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="900" cache_read_input_tokens="15194" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011eTeJD8UfJK7xYHSFRR55g">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="900" cache_read_input_tokens="15194" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qug5jqqzU3aJH8BbpU71r8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="900" cache_read_input_tokens="15194" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ATWjc23nU5egqzGAQGrzXV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="900" cache_read_input_tokens="15194" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LaBTkX3DPgHta9J4BDUYNx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="900" cache_read_input_tokens="15194" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E3Sy1gc6hXK1CqB9F8uwzZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="900" cache_read_input_tokens="15194" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HpjnxJPm4qwaupN6FJ77to">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import ParamSpec, TypeVar
+     5→
+     6→import click
+     7→from rich.console import Console
+     8→from rich.table import Table
+     9→from rich.text import Text
+    10→
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    15→from erk.tui.app import ErkDashApp
+    16→from erk.tui.data.real_provider import RealPlanDataProvider
+    17→from erk.tui.data.types import PlanFilters, PlanRowData
+    18→from erk.tui.sorting.logic import sort_plans
+    19→from erk.tui.sorting.types import SortKey, SortState
+    20→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    21→from erk_shared.gateway.clipboard.real import RealClipboard
+    22→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    23→from erk_shared.gateway.github.types import (
+    24→    GitHubRepoId,
+    25→    GitHubRepoLocation,
+    26→    IssueFilterState,
+    27→    PullRequestInfo,
+    28→)
+    29→from erk_shared.gateway.plan_service.real import RealPlanService
+    30→from erk_shared.output.output import user_output
+
+... [515 lines omitted] ...
+
+    82→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   258→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   278→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   305→    # Display warnings about degraded data quality
+   306→    if timings is not None and timings.warnings:
+   307→        for warning in timings.warnings:
+   308→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   373→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   395→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_result tool="toolu_01D8UDwSZ5VE28m72cP3bb36">
+     1→"""Command to fetch and display a single plan."""
+     2→
+     3→from datetime import datetime
+     4→
+     5→import click
+     6→
+     7→from erk.cli.core import discover_repo_context
+     8→from erk.cli.github_parsing import parse_issue_identifier
+     9→from erk.core.context import ErkContext
+    10→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    11→from erk_shared.core.typing_utils import narrow_to_literal
+    12→from erk_shared.gateway.github.metadata.schemas import (
+    13→    BRANCH_NAME,
+    14→    CREATED_BY,
+    15→    CREATED_FROM_SESSION,
+    16→    LAST_DISPATCHED_AT,
+    17→    LAST_DISPATCHED_RUN_ID,
+    18→    LAST_LEARN_SESSION,
+    19→    LAST_LOCAL_IMPL_AT,
+    20→    LAST_LOCAL_IMPL_EVENT,
+    21→    LAST_LOCAL_IMPL_SESSION,
+    22→    LAST_LOCAL_IMPL_USER,
+    23→    LAST_REMOTE_IMPL_AT,
+    24→    LEARN_PLAN_ISSUE,
+    25→    LEARN_PLAN_PR,
+    26→    LEARN_RUN_ID,
+    27→    LEARN_STATUS,
+    28→    OBJECTIVE_ISSUE,
+    29→    SCHEMA_VERSION,
+    30→    SOURCE_REPO,
+
+... [310 lines omitted] ...
+
+   246→            user_output(click.style("Error: ", fg="red") + f"Invalid identifier: {identifier}")
+   255→                click.style("Error: ", fg="red")
+   265→                click.style("Error: ", fg="red")
+   273→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
+  </tool_result>
+  <tool_result tool="toolu_011eTeJD8UfJK7xYHSFRR55g">
+     1→"""Command to validate PR rules or plan format for the current branch."""
+     2→
+     3→from dataclasses import dataclass
+     4→from pathlib import Path
+     5→from typing import NamedTuple
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.context.types import NoRepoSentinel
+    13→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    14→from erk_shared.gateway.github.issues.types import IssueNotFound
+    15→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    16→from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
+    17→from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
+    18→from erk_shared.gateway.github.metadata.types import BlockKeys
+    19→from erk_shared.gateway.github.pr_footer import (
+    20→    extract_header_from_body,
+    21→    is_header_at_legacy_position,
+    22→)
+    23→from erk_shared.gateway.github.types import PRNotFound
+    24→from erk_shared.gateway.pr.submit import has_checkout_footer_for_pr
+    25→from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+    26→from erk_shared.output.output import user_output
+    27→from erk_shared.plan_store.planned_pr_lifecycle import (
+    28→    extract_plan_content,
+    29→    has_original_plan_section,
+    30→)
+
+... [314 lines omitted] ...
+
+    43→    """Validation completed (may have passed or failed checks).
+    48→        failed_count: Number of failed checks
+    53→    failed_count: int
+    57→class PlanValidationError:
+    58→    """Could not complete validation (API error, network issue, etc.)."""
+    60→    error: str
+    63→PlanValidationResult = PlanValidationSuccess | PlanValidationError
+    78→    It does not produce output or raise SystemExit. It never raises exceptions -
+    79→    API failures are returned as PlanValidationError.
+    87→        PlanValidationSuccess if validation completed (may have passed or failed checks)
+    88→        PlanValidationError if unable to complete validation (API error, etc.)
+    96→        return PlanValidationError(error=f"Plan #{plan_number} not found")
+   112→        except ValueError as e:
+   113→            # Extract first error message for cleaner output
+   114→            error_msg = str(e).split("\n")[0]
+   115→            checks.append((False, f"plan-header validation failed: {error_msg}"))
+   130→        except RuntimeError as e:
+   131→            return PlanValidationError(error=str(e))
+   147→    failed_count = sum(1 for passed, _ in checks if not passed)
+   150→        passed=failed_count == 0,
+   152→        failed_count=failed_count,
+   202→        user_output(click.style("Error: ", fg="red") + "Not in a git repository")
+   213→    if isinstance(result, PlanValidationError):
+   214→        user_output(click.style("Error: ", fg="red") + f"Failed to validate plan: {result.error}")
+   227→        check_word = "checks" if result.failed_count &gt; 1 else "check"
+   230→                f"Plan validation failed ({result.failed_count} {check_word} failed)", fg="red"
+   251→            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch}'"
+   331→    failed_count = sum(1 for c in checks if not c.passed)
+   332→    if failed_count == 0:
+   336→        check_word = "check" if failed_count == 1 else "checks"
+   337→        user_output(click.style(f"{failed_count} {check_word} failed", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_01Qug5jqqzU3aJH8BbpU71r8">
+     1→"""Command to display chronological event log for a plan."""
+     2→
+     3→import json
+     4→from collections.abc import Callable
+     5→from datetime import datetime
+     6→from typing import Literal, TypeAlias, TypedDict
+     7→
+     8→import click
+     9→
+    10→from erk.cli.core import discover_repo_context
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    13→from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
+    14→from erk_shared.gateway.github.metadata.types import BlockKeys
+    15→from erk_shared.output.output import user_output
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→# Event type literals
+    19→EventType: TypeAlias = Literal[
+    20→    "plan-created",
+    21→    "submission-queued",
+    22→    "workflow-started",
+    23→    "implementation-status",
+    24→    "plan-retry",
+    25→    "worktree-created",
+    26→]
+    27→
+    28→
+    29→# Event metadata types
+    30→class PlanCreatedMetadata(TypedDict, total=False):
+
+... [425 lines omitted] ...
+
+   139→            user_output(click.style("Error: ", fg="red") + f"Plan '{identifier}' not found")
+   146→                click.style("Error: ", fg="red")
+   168→    except (RuntimeError, ValueError) as e:
+   169→        user_output(click.style("Error: ", fg="red") + str(e))
+   391→    except (ValueError, AttributeError):
+   433→        if status == "failed":
+   434→            return "Implementation failed"
+  </tool_result>
+  <tool_result tool="toolu_01ATWjc23nU5egqzGAQGrzXV">
+     1→"""Command to close a plan."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.objective_helpers import run_objective_update_after_close
+     8→from erk.cli.core import discover_repo_context
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.core.context import ErkContext
+    11→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    12→from erk_shared.output.output import user_output
+    13→from erk_shared.plan_store.types import PlanNotFound
+    14→
+    15→
+    16→def _close_linked_prs(
+    17→    ctx: ErkContext,
+    18→    repo_root: Path,
+    19→    plan_number: int,
+    20→) -&gt; list[int]:
+    21→    """Close all OPEN PRs linked to a plan.
+    22→
+    23→    Returns list of PR numbers that were closed.
+    24→    """
+    25→    linked_prs = ctx.issues.get_prs_referencing_issue(repo_root, plan_number)
+    26→
+    27→    closed_prs: list[int] = []
+    28→    for pr in linked_prs:
+    29→        # Close all OPEN PRs (both drafts and non-drafts per user requirement)
+    30→        if pr.state == "OPEN":
+
+... [54 lines omitted] ...
+
+    52→    # Parse plan number - errors if invalid
+    55→    # Fetch plan - errors if not found
+    58→        raise click.ClickException(f"Plan #{number} not found")
+  </tool_result>
+  <tool_result tool="toolu_01LaBTkX3DPgHta9J4BDUYNx">
+     1→"""Command to check a plan for duplicates and commit-history relevance."""
+     2→
+     3→import sys
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.core import discover_repo_context
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.core.context import ErkContext
+    12→from erk.core.plan_duplicate_checker import PlanDuplicateChecker
+    13→from erk.core.plan_relevance_checker import PlanRelevanceChecker
+    14→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    15→from erk_shared.output.output import user_output
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→
+    19→@click.command("duplicate-check")
+    20→@click.option(
+    21→    "--file",
+    22→    "-f",
+    23→    type=click.Path(exists=True, path_type=Path),
+    24→    help="Plan file to read",
+    25→)
+    26→@click.option(
+    27→    "--plan",
+    28→    "-p",
+    29→    type=str,
+    30→    help="Existing plan ID to check (fetches body and excludes self from comparison)",
+
+... [164 lines omitted] ...
+
+    53→        1: Duplicates found, already implemented, or error
+    75→            user_output(click.style("Error: ", fg="red") + f"Plan {plan_id} not found.")
+    83→        except OSError as e:
+    84→            user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
+    89→        except OSError as e:
+    90→            user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
+   104→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   112→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   142→        if dup_result.error is not None:
+   143→            user_output(click.style("Error: ", fg="red") + "Duplicate check failed:")
+   144→            user_output(f"  {dup_result.error}")
+   168→        if rel_result.error is not None:
+   170→                click.style("Warning: ", fg="yellow")
+   171→                + f"Relevance check failed: {rel_result.error}"
+   173→            # Relevance check errors don't block — just warn
+  </tool_result>
+  <tool_result tool="toolu_01E3Sy1gc6hXK1CqB9F8uwzZ">
+     1→"""PR management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.pr.address_cmd import address
+     7→from erk.cli.commands.pr.check_cmd import pr_check
+     8→from erk.cli.commands.pr.checkout_cmd import pr_checkout
+     9→from erk.cli.commands.pr.close_cmd import pr_close
+    10→from erk.cli.commands.pr.create_cmd import pr_create
+    11→from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
+    12→from erk.cli.commands.pr.diverge_fix_cmd import pr_diverge_fix
+    13→from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
+    14→from erk.cli.commands.pr.list_cmd import pr_list
+    15→from erk.cli.commands.pr.log_cmd import pr_log
+    16→from erk.cli.commands.pr.prepare_cmd import pr_prepare
+    17→from erk.cli.commands.pr.rebase_cmd import rebase
+    18→from erk.cli.commands.pr.replan_cmd import pr_replan
+    19→from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
+    20→from erk.cli.commands.pr.submit_cmd import pr_submit
+    21→from erk.cli.commands.pr.teleport_cmd import pr_teleport
+    22→from erk.cli.commands.pr.view_cmd import pr_view
+    23→
+    24→
+    25→@click.group("pr")
+    26→def pr_group() -&gt; None:
+    27→    """Manage pull requests."""
+    28→    pass
+    29→
+    30→
+
+... [23 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! I've successfully retrieved all the requested files. Let me provide you with a comprehensive summary:
+
+## Complete File Contents Report
+
+### File 1: list_cmd.py
+**Path:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`
+
+Contains two commands:
+- **`pr_list`** - Lists plans as a static table with filtering options (--label, --state, --run-state, --stage, --limit, --all-users, --sort)
+- **`dash`** - Interactive TUI dashboard for viewing plans with real-time updates
+- **Helper functions:**
+  - `format_pr_cell()` - Formats PR cells with clickable links and status emojis
+  - `pr_filter_options()` - Decorator for shared filter options
+  - `dash_options()` - Decorator for TUI-specific options
+  - `_build_static_table()` - Builds Rich table from PlanRowData
+  - `_pr_list_impl()` - Core implementation for list command
+  - `_run_interactive_mode()` - Core implementation for TUI mode
+
+### File 2: view_cmd.py
+**Path:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py`
+
+Contains:
+- **`pr_view`** - Fetches and displays a single plan by identifier (number or GitHub URL)
+- **Helper functions:**
+  - `_format_value()` - Format values with datetime conversion
+  - `_format_field()` - Format fields with styled labels
+  - `_format_learn_state()` - Format learn status for display
+  - `_format_header_section()` - Format header info with metadata sections (created by, worktree, objective, local/remote implementation, learn status, etc.)
+
+### File 3: check_cmd.py
+**Path:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py`
+
+Contains:
+- **`pr_check`** - Validates PR rules or plan format with optional stage-specific checks
+- **Result types:**
+  - `PlanValidationSuccess` - Validation completed with check results
+  - `PlanValidationError` - Validation API error
+- **Core functions:**
+  - `validate_plan_format()` - Programmatically validate plan format (checks plan-header metadata, plan-body content)
+  - `_check_plan_format()` - CLI implementation for format validation
+  - `_check_pr_body()` - CLI implementation for PR body validation (checkout footer, header position, impl-context cleanup)
+
+### File 4: log_cmd.py
+**Path:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py`
+
+Contains:
+- **`pr_log`** - Display chronological event log for a plan (supports JSON or timeline output)
+- **Event types:** plan-created, submission-queued, workflow-started, implementation-status, plan-retry, worktree-created
+- **Helper functions:**
+  - `_extract_events_from_comments()` - Extract events from GitHub issue comments
+  - `_block_to_event()` - Convert metadata blocks to Event objects
+  - Event extraction functions for each event type
+  - `_output_json()` - Output events as JSON
+  - `_output_timeline()` - Output events as human-readable timeline
+  - `_format_timestamp()` - Format ISO 8601 timestamps
+  - `_format_event_description()` - Format events as readable descriptions
+
+### File 5: close_cmd.py
+**Path:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py`
+
+Contains:
+- **`pr_close`** - Close a plan by plan number or GitHub URL
+- **Core functions:**
+  - `_close_linked_prs()` - Close all OPEN PRs linked to a plan
+
+### File 6: duplicate_check_cmd.py
+**Path:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py`
+
+Contains:
+- **`duplicate_check_plan`** - Check if a plan duplicates existing open plans using LLM inference
+- Supports three input modes: --plan ID, --file PATH, or stdin
+- **Core functions:**
+  - Duplicate checking against existing open plans
+  - Relevance checking against recent trunk commits
+  - Returns exit codes (0 = no duplicates, 1 = duplicates/already implemented)
+
+### File 7: __init__.py (PR Command Group Registration)
+**Path:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py`
+
+Contains:
+- **`pr_group`** - Click group for all PR commands
+- **Registered commands:**
+  - address, check, checkout, close, create, dispatch, duplicate-check, rebase, list, log, prepare, replan, rewrite, submit, teleport, diverge-fix, view
+
+## Key Patterns Observed
+
+All six commands follow these patterns:
+1. **Imports:** Use erk.cli.core for repo context discovery
+2. **Repo access:** Call `discover_repo_context(ctx, ctx.cwd)` and `ensure_erk_metadata_dir(repo)`
+3. **GitHub access:** Use `ctx.github`, `ctx.issues`, `ctx.plan_store`
+4. **Error handling:** Use click.ClickException or raise SystemExit(1)
+5. **Output:** Use `user_output()` from erk_shared.output.output
+6. **Decorators:** @click.command, @click.pass_obj, @click.argument, @click.option
+
+All commands need conversion to `@no_repo_required` format based on the plan mentioned in your working directory context.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="27063" cache_read_input_tokens="16094" cache_creation="{'ephemeral_5m_input_tokens': 27063, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
