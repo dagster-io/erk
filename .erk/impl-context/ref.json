@@ -1,8 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Make RemoteGitHub the Canonical One-Shot Dispatch Path",
-  "objective_id": 8832,
-  "node_ids": [
-    "1.5"
-  ]
-}
