@@ -39,16 +39,24 @@ things form a unit that should be covered by one injectable gateway.
 
 For each mock group, find the right gateway. **Do not stop at the first match.**
 
+> **Rule: `subprocess.run` is never the right gateway boundary.**
+> The gateway should be named after the _tool_ being invoked (e.g., `GhCli`, `CmuxGateway`,
+> `GitGateway`), not after the underlying mechanism (`subprocess`, `shell`). A gateway that
+> just wraps `subprocess.run` is no better than mocking `subprocess.run` directly — it skips
+> the meaningful abstraction layer.
+
 ### Step 2a: Identify the system boundary being tested
 
 Ask: what is the test _actually_ testing? Not "what function is being patched" but
-"what behavior is under test?"
+"what behavior is under test?" Think in terms of the _tool or service_ being interacted
+with, not the Python function being called.
 
 Examples:
 
-- `shutil.which("claude")` -> "is the Claude CLI installed?"
-- `subprocess.run(["claude", "--print", ...])` -> "run a prompt via Claude CLI"
-- Together -> "execute a prompt when no API key is available"
+- `shutil.which("claude")` -> "is the Claude CLI installed?" (tool: Claude CLI)
+- `subprocess.run(["claude", "--print", ...])` -> "run a prompt via Claude CLI" (tool: Claude CLI)
+- Together -> "interact with the Claude CLI" -> gateway is `PromptExecutor` (Claude-specific),
+  not `Shell` (subprocess-generic)
 
 ### Step 2b: Search for existing gateways at the right abstraction level
 
@@ -241,3 +249,15 @@ class is instantiated). The type checker will catch this but only if you run it.
 **Pitfall 4: One test, multiple patch contexts**
 Multiple `patch()` calls in one test is a red flag that something needs to be at a
 higher abstraction level. A single fake should replace all of them.
+
+**Pitfall 5: Creating a subprocess-level gateway**
+If you find yourself designing a gateway called `ShellRunner`, `SubprocessGateway`, or
+`CommandRunner`, stop. That's still mocking at the wrong level. The gateway must be
+specific to the _tool_ being called:
+
+- `subprocess.run(["gh", ...])` → `LocalGitHub` or a `GhCli` gateway
+- `subprocess.run(["cmux", ...])` → `CmuxGateway`
+- `subprocess.run(["claude", ...])` → `PromptExecutor`
+- `subprocess.run(["git", ...])` → `Git` gateway
+
+Name the gateway after what it represents, not how it executes.

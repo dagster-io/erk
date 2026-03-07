@@ -29,6 +29,8 @@ tripwires:
     warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
   - action: "adding a new parameter to a gateway ABC method"
     warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+  - action: "creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or similar mechanism-named gateway"
+    warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
 ---
 
 # Gateway ABC Implementation Checklist
@@ -40,6 +42,12 @@ All gateway ABCs (Git, LocalGitHub, Graphite) follow the same 5-file pattern. Wh
 **These rules apply to production erk code** in `src/erk/` and `packages/erk-shared/`.
 
 **Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+
+## Naming Gateways
+
+Gateways are named after the **tool or service** they wrap, not the **mechanism** used. `subprocess.run` is the mechanism; the gateway is named `Git`, `LocalGitHub`, `CmuxGateway`, etc.
+
+If your gateway name ends in `Runner`, `Shell`, or `Subprocess` — or `Executor` unless it's a specific executor like `PromptExecutor` — reconsider the abstraction level. A gateway that wraps `subprocess.run` generically skips the meaningful abstraction and is no better than mocking `subprocess.run` directly.
 
 | Implementation | Purpose                                              |
 | -------------- | ---------------------------------------------------- |
