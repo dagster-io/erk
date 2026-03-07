@@ -933,7 +933,7 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 
 ### Session Branch Fields
 
-Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `async-learn/{plan_id}` branches.
+Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `planned-pr-context/{plan_id}` branches.
 
 **Fields:**
 

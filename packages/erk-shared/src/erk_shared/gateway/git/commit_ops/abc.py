@@ -154,7 +154,7 @@ class GitCommitOps(ABC):
 
         Args:
             cwd: Repository root directory.
-            ref: Git reference (branch, tag, SHA, e.g. "origin/async-learn/42").
+            ref: Git reference (branch, tag, SHA, e.g. "origin/planned-pr-context/42").
             file_path: Path relative to repository root.
 
         Returns:

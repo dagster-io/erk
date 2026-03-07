@@ -3,12 +3,12 @@ title: Session Accumulation Architecture
 read_when:
   - "working with push-session or fetch-sessions exec commands"
   - "modifying the learn pipeline session discovery"
-  - "debugging session data on async-learn branches"
+  - "debugging session data on planned-pr-context branches"
 tripwires:
   - action: "modifying manifest format without updating version field"
     warning: "Manifest includes a version field for forward compatibility. Increment on schema changes."
   - action: "assuming sessions are stored locally"
-    warning: "Sessions are accumulated on git branches (async-learn/<plan-id>). Use fetch-sessions to download."
+    warning: "Sessions are accumulated on git branches (planned-pr-context/<plan-id>). Use fetch-sessions to download."
 ---
 
 # Session Accumulation Architecture
@@ -17,7 +17,7 @@ Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compre
 
 ## Branch Naming
 
-Each plan gets a dedicated branch: `async-learn/<plan-id>` (e.g., `async-learn/2521`).
+Each plan gets a dedicated branch: `planned-pr-context/<plan-id>` (e.g., `planned-pr-context/2521`).
 
 ## Manifest Format
 
@@ -58,8 +58,8 @@ Duplicate `session_id` entries are replaced, not appended. Re-uploading the same
 
 ## Key Commands
 
-- `erk exec push-session`: Preprocesses and pushes a session to the async-learn branch
-- `erk exec fetch-sessions`: Downloads sessions from an async-learn branch
+- `erk exec push-session`: Preprocesses and pushes a session to the planned-pr-context branch
+- `erk exec fetch-sessions`: Downloads sessions from a planned-pr-context branch
 
 ## Graceful Degradation
 

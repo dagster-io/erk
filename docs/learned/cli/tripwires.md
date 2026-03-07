@@ -52,7 +52,7 @@ Rules triggered by matching actions in code.
 
 **adding sequential yes/no prompts for a single decision** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. Consolidate into one binary choice. Multiple prompts for the same decision create unnecessary cognitive load. See the branch reuse example.
 
-**adding session discovery code before checking for preprocessed materials** → Read [Learn Command Conditional Pipeline](learn-command-conditional-pipeline.md) first. Check gist URL first to avoid misleading output. The learn command checks \_get_learn_materials_gist_url() BEFORE session discovery. If a gist exists, all session discovery is skipped.
+**adding session discovery code before checking for preprocessed materials** → Read [Learn Command Conditional Pipeline](learn-command-conditional-pipeline.md) first. Check learn branch first to avoid misleading output. The learn command checks \_get_learn_materials_branch() BEFORE session discovery. If a learn branch exists, all session discovery is skipped.
 
 **adding user-interactive steps (confirmations, prompts) without CI detection** → Read [CI-Aware Commands](ci-aware-commands.md) first. Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows.
 

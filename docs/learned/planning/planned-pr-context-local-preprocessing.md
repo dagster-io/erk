@@ -1,5 +1,5 @@
 ---
-title: Async Learn Local Preprocessing
+title: Planned PR Context Local Preprocessing
 read_when:
   - modifying trigger-async-learn orchestration
   - debugging why learn materials are missing or malformed in CI
@@ -13,7 +13,7 @@ last_audited: "2026-02-08 00:00 PT"
 audit_result: clean
 ---
 
-# Async Learn Local Preprocessing
+# Planned PR Context Local Preprocessing
 
 ## Why Local Preprocessing Exists
 
@@ -52,7 +52,7 @@ PR comments are fetched via gateway calls, not `gh` CLI. This matters because th
 
 **Graceful degradation**: If no PR exists for the plan issue, comment fetching is skipped entirely. Missing PR comments don't block the learn workflow — sessions alone contain sufficient material for insight extraction.
 
-All files are committed to an `async-learn/{plan_id}` git branch under `.erk/impl-context/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.
+All files are committed to a `planned-pr-context/{plan_id}` git branch under `.erk/sessions/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.
 
 ## Preprocessing Pipeline Internals
 

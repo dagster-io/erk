@@ -16,103 +16,103 @@ Quick reference for all `erk exec` subcommands.
 
 ## Summary
 
-| Command                           | Description                                                                 |
-| --------------------------------- | --------------------------------------------------------------------------- |
-| `add-objective-node`              | Add a new node to an objective's roadmap.                                   |
-| `add-plan-label`                  | Add a label to a plan via the appropriate backend.                          |
-| `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                         |
-| `add-pr-labels`                   | Add labels to a PR with automatic retry on transient failures.              |
-| `add-remote-execution-note`       | Add remote execution tracking note to PR body.                              |
-| `capture-session-info`            | Capture Claude Code session info for CI workflows.                          |
-| `ci-fetch-summaries`              | Fetch CI failure summaries for a PR.                                        |
-| `ci-generate-summaries`           | Generate CI failure summaries using Haiku.                                  |
-| `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                        |
-| `ci-verify-autofix`               | Run full CI verification after autofix push.                                |
-| `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                              |
-| `close-pr`                        | Close a plan with a comment.                                                |
-| `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.                |
-| `cmux-open-pr`                    | Create a cmux workspace to open a PR.                                       |
-| `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                         |
-| `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                |
-| `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
-| `detect-plan-from-branch`         | Detect plan number from the current git branch.                             |
-| `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
-| `discover-reviews`                | Discover code reviews matching PR changed files.                            |
-| `download-remote-session`         | Download a session from a git branch.                                       |
-| `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                  |
-| `extract-latest-plan`             | Extract the latest plan from Claude session files.                          |
-| `fetch-sessions`                  | Fetch preprocessed sessions from an async-learn branch.                     |
-| `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                       |
-| `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                           |
-| `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).          |
-| `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                       |
-| `get-learn-sessions`              | Get session information for a plan.                                         |
-| `get-plan-info`                   | Retrieve plan info from the appropriate backend.                            |
-| `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                   |
-| `get-plans-for-objective`         | Fetch erk-plans linked to an objective.                                     |
-| `get-pr-body-footer`              | Generate PR body footer with teleport command.                              |
-| `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).               |
-| `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.               |
-| `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                   |
-| `get-pr-feedback`                 | Fetch all PR feedback in a single command.                                  |
-| `get-pr-for-plan`                 | Get PR details for a plan.                                                  |
-| `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                       |
-| `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).               |
-| `handle-no-changes`               | Handle no-changes scenario gracefully.                                      |
-| `impl-init`                       | Initialize implementation by validating .erk/impl-context/ folder.          |
-| `impl-signal`                     | Signal implementation events to GitHub.                                     |
-| `impl-verify`                     | Verify .erk/impl-context/ folder still exists after implementation.         |
-| `incremental-dispatch`            | Dispatch a local plan against an existing PR for remote implementation.     |
-| `land-execute`                    | Execute deferred land operations.                                           |
-| `list-sessions`                   | List Claude Code sessions with metadata for the current project.            |
-| `marker create`                   | Create a marker file.                                                       |
-| `marker delete`                   | Delete a marker file.                                                       |
-| `marker exists`                   | Check if a marker file exists.                                              |
-| `marker read`                     | Read content from a marker file.                                            |
-| `migrate-objective-schema`        | Migrate an objective's roadmap YAML to the latest schema (v4).              |
-| `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                  |
-| `objective-apply-landed-update`   | Apply mechanical updates to an objective after landing a PR.                |
-| `objective-fetch-context`         | Fetch all context for objective update in a single call.                    |
-| `objective-link-pr`               | Link PR number to objective roadmap nodes from .erk/impl-context/ metadata. |
-| `objective-plan-setup`            | Fetch, validate, and set up context for objective planning.                 |
-| `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                      |
-| `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                 |
-| `objective-save-to-issue`         | Save plan as objective GitHub issue.                                        |
-| `objective-update-after-land`     | Update objective after landing a PR.                                        |
-| `plan-save`                       | Save plan as a draft PR.                                                    |
-| `plan-update`                     | Update an existing plan's content.                                          |
-| `post-or-update-pr-summary`       | Post or update a PR summary comment.                                        |
-| `post-pr-inline-comment`          | Post an inline review comment on a PR.                                      |
-| `post-workflow-started-comment`   | Post a workflow started comment to a GitHub issue.                          |
-| `pr-sync-commit`                  | Sync PR title and body from the latest git commit.                          |
-| `pre-tool-use-hook`               | PreToolUse hook for dignified-python reminders on .py file edits.           |
-| `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                      |
-| `push-and-create-pr`              | Push branch and create/find PR, outputting JSON.                            |
-| `push-session`                    | Preprocess and push a session to the async-learn branch with accumulation.  |
-| `quick-submit`                    | Quick commit all changes and submit.                                        |
-| `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                |
-| `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                   |
-| `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.             |
-| `resolve-objective-ref`           | Resolve an objective reference to an objective number.                      |
-| `resolve-review-thread`           | Resolve a PR review thread.                                                 |
-| `resolve-review-threads`          | Resolve multiple PR review threads from JSON stdin.                         |
-| `run-review`                      | Run a code review using Claude.                                             |
-| `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                  |
-| `set-local-review-marker`         | Set local review marker on PR to skip CI reviews.                           |
-| `set-pr-description`              | Update PR title and body with agent-provided values.                        |
-| `setup-impl`                      | Consolidated implementation setup.                                          |
-| `setup-impl-from-pr`              | Set up .erk/impl-context/ folder from GitHub PR in current worktree.        |
-| `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan.                  |
-| `track-learn-evaluation`          | Track learn evaluation completion on a plan.                                |
-| `track-learn-result`              | Track learn workflow result on a plan.                                      |
-| `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
-| `update-objective-node`           | Update node fields in an objective's roadmap table.                         |
-| `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
-| `update-pr-description`           | Update PR title and body with AI-generated description.                     |
-| `upload-impl-session`             | Upload current implementation session for async learn.                      |
-| `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.         |
-| `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                               |
-| `validate-plan-content`           | Validate plan content from file or stdin.                                   |
+| Command                           | Description                                                                       |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `add-objective-node`              | Add a new node to an objective's roadmap.                                         |
+| `add-plan-label`                  | Add a label to a plan via the appropriate backend.                                |
+| `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                               |
+| `add-pr-labels`                   | Add labels to a PR with automatic retry on transient failures.                    |
+| `add-remote-execution-note`       | Add remote execution tracking note to PR body.                                    |
+| `capture-session-info`            | Capture Claude Code session info for CI workflows.                                |
+| `ci-fetch-summaries`              | Fetch CI failure summaries for a PR.                                              |
+| `ci-generate-summaries`           | Generate CI failure summaries using Haiku.                                        |
+| `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                              |
+| `ci-verify-autofix`               | Run full CI verification after autofix push.                                      |
+| `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                                    |
+| `close-pr`                        | Close a plan with a comment.                                                      |
+| `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.                      |
+| `cmux-open-pr`                    | Create a cmux workspace to open a PR.                                             |
+| `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                               |
+| `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                      |
+| `dash-data`                       | Serialize plan dashboard data to JSON.                                            |
+| `detect-plan-from-branch`         | Detect plan number from the current git branch.                                   |
+| `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                          |
+| `discover-reviews`                | Discover code reviews matching PR changed files.                                  |
+| `download-remote-session`         | Download a session from a git branch.                                             |
+| `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                        |
+| `extract-latest-plan`             | Extract the latest plan from Claude session files.                                |
+| `fetch-sessions`                  | Fetch preprocessed sessions from a planned-pr-context branch.                     |
+| `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                             |
+| `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                                 |
+| `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).                |
+| `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                             |
+| `get-learn-sessions`              | Get session information for a plan.                                               |
+| `get-plan-info`                   | Retrieve plan info from the appropriate backend.                                  |
+| `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                         |
+| `get-plans-for-objective`         | Fetch erk-plans linked to an objective.                                           |
+| `get-pr-body-footer`              | Generate PR body footer with teleport command.                                    |
+| `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).                     |
+| `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.                     |
+| `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                         |
+| `get-pr-feedback`                 | Fetch all PR feedback in a single command.                                        |
+| `get-pr-for-plan`                 | Get PR details for a plan.                                                        |
+| `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                             |
+| `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).                     |
+| `handle-no-changes`               | Handle no-changes scenario gracefully.                                            |
+| `impl-init`                       | Initialize implementation by validating .erk/impl-context/ folder.                |
+| `impl-signal`                     | Signal implementation events to GitHub.                                           |
+| `impl-verify`                     | Verify .erk/impl-context/ folder still exists after implementation.               |
+| `incremental-dispatch`            | Dispatch a local plan against an existing PR for remote implementation.           |
+| `land-execute`                    | Execute deferred land operations.                                                 |
+| `list-sessions`                   | List Claude Code sessions with metadata for the current project.                  |
+| `marker create`                   | Create a marker file.                                                             |
+| `marker delete`                   | Delete a marker file.                                                             |
+| `marker exists`                   | Check if a marker file exists.                                                    |
+| `marker read`                     | Read content from a marker file.                                                  |
+| `migrate-objective-schema`        | Migrate an objective's roadmap YAML to the latest schema (v4).                    |
+| `normalize-tripwire-candidates`   | Normalize agent-produced tripwire candidate JSON in-place.                        |
+| `objective-apply-landed-update`   | Apply mechanical updates to an objective after landing a PR.                      |
+| `objective-fetch-context`         | Fetch all context for objective update in a single call.                          |
+| `objective-link-pr`               | Link PR number to objective roadmap nodes from .erk/impl-context/ metadata.       |
+| `objective-plan-setup`            | Fetch, validate, and set up context for objective planning.                       |
+| `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                            |
+| `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                       |
+| `objective-save-to-issue`         | Save plan as objective GitHub issue.                                              |
+| `objective-update-after-land`     | Update objective after landing a PR.                                              |
+| `plan-save`                       | Save plan as a draft PR.                                                          |
+| `plan-update`                     | Update an existing plan's content.                                                |
+| `post-or-update-pr-summary`       | Post or update a PR summary comment.                                              |
+| `post-pr-inline-comment`          | Post an inline review comment on a PR.                                            |
+| `post-workflow-started-comment`   | Post a workflow started comment to a GitHub issue.                                |
+| `pr-sync-commit`                  | Sync PR title and body from the latest git commit.                                |
+| `pre-tool-use-hook`               | PreToolUse hook for dignified-python reminders on .py file edits.                 |
+| `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                            |
+| `push-and-create-pr`              | Push branch and create/find PR, outputting JSON.                                  |
+| `push-session`                    | Preprocess and push a session to the planned-pr-context branch with accumulation. |
+| `quick-submit`                    | Quick commit all changes and submit.                                              |
+| `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                      |
+| `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                         |
+| `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.                   |
+| `resolve-objective-ref`           | Resolve an objective reference to an objective number.                            |
+| `resolve-review-thread`           | Resolve a PR review thread.                                                       |
+| `resolve-review-threads`          | Resolve multiple PR review threads from JSON stdin.                               |
+| `run-review`                      | Run a code review using Claude.                                                   |
+| `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                        |
+| `set-local-review-marker`         | Set local review marker on PR to skip CI reviews.                                 |
+| `set-pr-description`              | Update PR title and body with agent-provided values.                              |
+| `setup-impl`                      | Consolidated implementation setup.                                                |
+| `setup-impl-from-pr`              | Set up .erk/impl-context/ folder from GitHub PR in current worktree.              |
+| `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan.                        |
+| `track-learn-evaluation`          | Track learn evaluation completion on a plan.                                      |
+| `track-learn-result`              | Track learn workflow result on a plan.                                            |
+| `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).               |
+| `update-objective-node`           | Update node fields in an objective's roadmap table.                               |
+| `update-plan-header`              | Update plan-header metadata fields on a plan.                                     |
+| `update-pr-description`           | Update PR title and body with AI-generated description.                           |
+| `upload-impl-session`             | Upload current implementation session for async learn.                            |
+| `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.               |
+| `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                                     |
+| `validate-plan-content`           | Validate plan content from file or stdin.                                         |
 
 ## Commands
 
@@ -381,10 +381,10 @@ Download a session from a git branch.
 
 **Options:**
 
-| Flag               | Type | Required | Default        | Description                                               |
-| ------------------ | ---- | -------- | -------------- | --------------------------------------------------------- |
-| `--session-branch` | TEXT | Yes      | Sentinel.UNSET | Git branch containing the session (e.g., async-learn/123) |
-| `--session-id`     | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to locate file on the branch)     |
+| Flag               | Type | Required | Default        | Description                                                      |
+| ------------------ | ---- | -------- | -------------- | ---------------------------------------------------------------- |
+| `--session-branch` | TEXT | Yes      | Sentinel.UNSET | Git branch containing the session (e.g., planned-pr-context/123) |
+| `--session-id`     | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to locate file on the branch)            |
 
 ### exit-plan-mode-hook
 
@@ -406,7 +406,7 @@ Extract the latest plan from Claude session files.
 
 ### fetch-sessions
 
-Fetch preprocessed sessions from an async-learn branch.
+Fetch preprocessed sessions from a planned-pr-context branch.
 
 **Usage:** `erk exec fetch-sessions`
 
@@ -1101,7 +1101,7 @@ Push branch and create/find PR, outputting JSON.
 
 ### push-session
 
-Preprocess and push a session to the async-learn branch with accumulation.
+Preprocess and push a session to the planned-pr-context branch with accumulation.
 
 **Usage:** `erk exec push-session`
 
@@ -1113,7 +1113,7 @@ Preprocess and push a session to the async-learn branch with accumulation.
 | `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                                  |
 | `--stage`        | CHOICE  | Yes      | Sentinel.UNSET | Lifecycle stage: planning, impl, or address             |
 | `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'                     |
-| `--plan-id`      | INTEGER | Yes      | Sentinel.UNSET | Plan identifier for the async-learn branch              |
+| `--plan-id`      | INTEGER | Yes      | Sentinel.UNSET | Plan identifier for the planned-pr-context branch       |
 
 ### quick-submit
 

@@ -44,15 +44,15 @@ if TYPE_CHECKING:
     from erk_shared.gateway.git.abc import Git
 
 
-def _fetch_xmls_from_async_learn_branch(
+def _fetch_xmls_from_context_branch(
     git: Git,
     *,
     repo_root: Path,
     plan_id: str,
 ) -> dict[str, str]:
-    """Fetch preprocessed session XMLs from the async-learn branch.
+    """Fetch preprocessed session XMLs from the planned-pr-context branch.
 
-    Remote implementations upload session data to async-learn/{plan_id} branches.
+    Remote implementations upload session data to planned-pr-context/{plan_id} branches.
     This function fetches the manifest and downloads each XML file, returning
     them as a dict suitable for embedding in a learn plan PR.
 
@@ -65,7 +65,7 @@ def _fetch_xmls_from_async_learn_branch(
         Dict mapping file paths to XML content. Empty if branch not found or
         manifest is missing.
     """
-    session_branch = f"async-learn/{plan_id}"
+    session_branch = f"planned-pr-context/{plan_id}"
 
     if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
         return {}
@@ -102,68 +102,151 @@ def _fetch_xmls_from_async_learn_branch(
     return xml_files
 
 
-def _create_learn_pr_for_merged_branch(
-    ctx: ErkContext,
+def _read_manifest_from_context_branch(
+    git: Git,
     *,
+    repo_root: Path,
     plan_id: str,
-    merged_pr_number: int,
-    main_repo_root: Path,
-    cwd: Path,
-) -> None:
-    """Create learn PR for a branch merged outside erk land.
+) -> dict | None:
+    """Read manifest JSON from the planned-pr-context branch.
 
-    Thin wrapper around the same learn PR internals used by the land pipeline,
-    but constructs the needed state locally without requiring a full LandState.
-
-    Fire-and-forget: raises on error (caller should catch).
-
-    Args:
-        ctx: ErkContext
-        plan_id: Plan identifier string
-        merged_pr_number: The PR number that was merged
-        main_repo_root: Main repository root
-        cwd: Current working directory
+    Returns parsed manifest dict if found, None otherwise.
     """
-    # Check config
-    if not _should_create_learn_pr(ctx):
+    session_branch = f"planned-pr-context/{plan_id}"
+    if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
+        return None
+
+    git.remote.fetch_branch(repo_root, "origin", session_branch)
+
+    raw = git.commit.read_file_from_ref(
+        repo_root,
+        ref=f"origin/{session_branch}",
+        file_path=".erk/sessions/manifest.json",
+    )
+    if raw is None:
+        return None
+    content = raw.decode("utf-8").strip()
+    if not content:
+        return None
+    return json.loads(content)
+
+
+def _extract_session_ids_from_manifest(manifest: dict) -> list[str]:
+    """Extract all session IDs from a manifest."""
+    return [s.get("session_id", "") for s in manifest.get("sessions", []) if s.get("session_id")]
+
+
+def _log_session_summary_from_manifest(manifest: dict) -> None:
+    """Print session summary from manifest metadata (no reprocessing)."""
+    sessions = manifest.get("sessions", [])
+    if not sessions:
         return
 
+    table = Table(
+        show_header=True,
+        show_edge=False,
+        box=None,
+        padding=(0, 1),
+        pad_edge=False,
+    )
+    table.add_column("Stage", no_wrap=True)
+    table.add_column("Session", no_wrap=True)
+    table.add_column("Source", no_wrap=True)
+    table.add_column("Turns", no_wrap=True)
+    table.add_column("Duration", no_wrap=True)
+    table.add_column("Size", no_wrap=True)
+
+    for entry in sessions:
+        stage = entry.get("stage", "?")
+        sid = entry.get("session_id", "?")
+        source = entry.get("source", "?")
+        turns = str(entry.get("user_turns", "?"))
+        duration = entry.get("duration_minutes")
+        duration_str = f"{duration} min" if duration is not None else "-"
+        raw_kb = entry.get("raw_size_kb")
+        xml_kb = entry.get("xml_size_kb")
+        if raw_kb is not None and xml_kb is not None:
+            size_str = f"{raw_kb:,} KB -> {xml_kb:,} KB"
+        else:
+            size_str = "-"
+        table.add_row(stage, f"{sid[:8]}...", source, turns, duration_str, size_str)
+
+    user_output(f"  Manifest: {len(sessions)} session(s)")
+    console = Console(stderr=True, force_terminal=True)
+    console.print(table)
+
+
+def _collect_session_material(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_id: str,
+) -> tuple[list[str], dict[str, str]] | None:
+    """Fetch session material from planned-pr-context branch.
+
+    Returns (all_session_ids, xml_files) or None if no material found.
+    """
+    # Primary path: fetch from planned-pr-context branch
+    xml_files = _fetch_xmls_from_context_branch(ctx.git, repo_root=repo_root, plan_id=plan_id)
+
+    if xml_files:
+        manifest = _read_manifest_from_context_branch(ctx.git, repo_root=repo_root, plan_id=plan_id)
+        if manifest is not None:
+            _log_session_summary_from_manifest(manifest)
+            all_session_ids = _extract_session_ids_from_manifest(manifest)
+        else:
+            all_session_ids = []
+        user_output(
+            click.style("\u2713", fg="green")
+            + f" Fetched {len(xml_files)} file(s) from planned-pr-context/{plan_id}"
+        )
+        return all_session_ids, xml_files
+
+    # Deprecated fallback: try local JSONL reprocessing
+    sessions = ctx.plan_backend.find_sessions_for_plan(repo_root, plan_id)
+    all_session_ids = sessions.all_session_ids()
+    xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+    if xml_files:
+        return all_session_ids, xml_files
+
+    # Nothing found
+    if not all_session_ids:
+        detail = " (no sessions were tracked for this plan)"
+    else:
+        detail = " (sessions found but no XML could be extracted)"
+    user_output(
+        click.style("\u2139", fg="blue")
+        + f" Skipping learn plan for #{plan_id}: no session material found"
+        + detail
+    )
+    return None
+
+
+def _create_learn_pr_core(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_id: str,
+    merged_pr_number: int,
+    cwd: Path,
+) -> None:
+    """Core implementation for creating a learn PR.
+
+    Collects session material, builds plan content, and creates the draft PR.
+    Shared by both the merged-branch and land-pipeline callers.
+    """
     # Fetch plan to check labels — skip learn plans (cycle prevention)
-    plan_result = ctx.plan_store.get_plan(main_repo_root, plan_id)
+    plan_result = ctx.plan_store.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
         return
     if "erk-learn" in plan_result.labels:
         return
 
-    # Discover sessions for the plan
-    sessions = ctx.plan_backend.find_sessions_for_plan(main_repo_root, plan_id)
-    all_session_ids = sessions.all_session_ids()
-
-    # Log session discovery summary and collect XML files for embedding
-    xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
-
-    # Fallback: fetch from async-learn branch (remote implementations)
-    if not xml_files and all_session_ids:
-        xml_files = _fetch_xmls_from_async_learn_branch(
-            ctx.git, repo_root=main_repo_root, plan_id=plan_id
-        )
-        if xml_files:
-            user_output(
-                click.style("✓", fg="green")
-                + f" Fetched {len(xml_files)} file(s) from async-learn/{plan_id}"
-            )
-
-    if not xml_files:
-        if not all_session_ids:
-            detail = " (no sessions were tracked for this plan)"
-        else:
-            detail = " (sessions found but no XML could be extracted)"
-        user_output(
-            click.style("\u2139", fg="blue")
-            + f" Skipping learn plan for #{plan_id}: no session material found"
-            + detail
-        )
+    # Collect session material (context branch first, local fallback)
+    result = _collect_session_material(ctx, repo_root=repo_root, plan_id=plan_id)
+    if result is None:
         return
+    all_session_ids, xml_files = result
 
     # Build learn plan body
     session_lines = [f"- `{sid}`" for sid in all_session_ids]
@@ -187,13 +270,13 @@ def _create_learn_pr_for_merged_branch(
     )
 
     # Create the learn plan as a draft PR
-    result = create_plan_draft_pr(
+    pr_result = create_plan_draft_pr(
         git=ctx.git,
         github=ctx.github,
         github_issues=ctx.issues,
         branch_manager=ctx.branch_manager,
         time=ctx.time,
-        repo_root=main_repo_root,
+        repo_root=repo_root,
         cwd=cwd,
         plan_content=plan_content,
         branch_name=branch_name,
@@ -208,20 +291,47 @@ def _create_learn_pr_for_merged_branch(
         extra_files=xml_files or None,
     )
 
-    if result.success:
+    if pr_result.success:
         user_output(
             click.style("\u2713", fg="green")
-            + f" Created learn plan #{result.plan_number} for plan #{plan_id}"
+            + f" Created learn plan #{pr_result.plan_number} for plan #{plan_id}"
         )
-        if result.plan_url:
-            user_output(f"  {result.plan_url}")
+        if pr_result.plan_url:
+            user_output(f"  {pr_result.plan_url}")
         else:
             user_output("  (no plan URL available)")
         _log_learn_pr_files(plan_content=plan_content, xml_files=xml_files)
-    elif result.error:
+    elif pr_result.error:
         user_output(
-            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {pr_result.error}"
         )
+
+
+def _create_learn_pr_for_merged_branch(
+    ctx: ErkContext,
+    *,
+    plan_id: str,
+    merged_pr_number: int,
+    main_repo_root: Path,
+    cwd: Path,
+) -> None:
+    """Create learn PR for a branch merged outside erk land.
+
+    Thin wrapper around _create_learn_pr_core that extracts params from
+    the caller's context.
+
+    Fire-and-forget: raises on error (caller should catch).
+    """
+    if not _should_create_learn_pr(ctx):
+        return
+
+    _create_learn_pr_core(
+        ctx,
+        repo_root=main_repo_root,
+        plan_id=plan_id,
+        merged_pr_number=merged_pr_number,
+        cwd=cwd,
+    )
 
 
 @dataclass(frozen=True)
@@ -529,106 +639,24 @@ def _create_learn_pr_impl(
     *,
     state: LandState,
 ) -> None:
-    """Inner implementation for learn plan creation (raises on error)."""
+    """Inner implementation for learn plan creation (raises on error).
+
+    Thin wrapper around _create_learn_pr_core that extracts params from LandState.
+    """
     plan_id = state.plan_id
     if plan_id is None:
         return
 
-    # Check config
+    if state.merged_pr_number is None:
+        return
+
     if not _should_create_learn_pr(ctx):
         return
 
-    # Fetch plan to check labels — skip learn plans (cycle prevention)
-    plan_result = ctx.plan_store.get_plan(state.main_repo_root, plan_id)
-    if isinstance(plan_result, PlanNotFound):
-        return
-    if "erk-learn" in plan_result.labels:
-        return
-
-    # Discover sessions for the plan
-    sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
-    all_session_ids = sessions.all_session_ids()
-
-    # Log session discovery summary and collect XML files for embedding
-    xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
-
-    # Fallback: fetch from async-learn branch (remote implementations)
-    if not xml_files and all_session_ids:
-        xml_files = _fetch_xmls_from_async_learn_branch(
-            ctx.git, repo_root=state.main_repo_root, plan_id=plan_id
-        )
-        if xml_files:
-            user_output(
-                click.style("✓", fg="green")
-                + f" Fetched {len(xml_files)} file(s) from async-learn/{plan_id}"
-            )
-
-    if not xml_files:
-        if not all_session_ids:
-            detail = " (no sessions were tracked for this plan)"
-        else:
-            detail = " (sessions found but no XML could be extracted)"
-        user_output(
-            click.style("ℹ", fg="blue")
-            + f" Skipping learn plan for #{plan_id}: no session material found"
-            + detail
-        )
-        return
-
-    # Build learn plan body
-    session_lines = [f"- `{sid}`" for sid in all_session_ids]
-    session_section = "\n".join(session_lines)
-    plan_content = (
-        f"# Learn: {plan_result.title}\n\n"
-        f"Source plan: #{plan_id}\n"
-        f"Merged PR: #{state.merged_pr_number}\n\n"
-        f"## Sessions\n\n{session_section}"
-    )
-
-    # Generate branch name with LLM slug
-    learn_title = f"Learn: {plan_result.title}"
-    slug = generate_branch_slug(ctx.prompt_executor, learn_title)
-    branch_name = generate_planned_pr_branch_name(slug, ctx.time.now(), objective_id=None)
-
-    # Build deterministic summary (no LLM call needed for learn plans)
-    summary = (
-        f'Learn plan for "{plan_result.title}" (PR #{state.merged_pr_number}). '
-        f"Captures implementation insights from {len(all_session_ids)} session(s)."
-    )
-
-    # Create the learn plan as a draft PR
-    result = create_plan_draft_pr(
-        git=ctx.git,
-        github=ctx.github,
-        github_issues=ctx.issues,
-        branch_manager=ctx.branch_manager,
-        time=ctx.time,
+    _create_learn_pr_core(
+        ctx,
         repo_root=state.main_repo_root,
+        plan_id=plan_id,
+        merged_pr_number=state.merged_pr_number,
         cwd=state.cwd,
-        plan_content=plan_content,
-        branch_name=branch_name,
-        title=learn_title,
-        labels=["erk-pr", "erk-learn"],
-        source_repo=None,
-        objective_id=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        learned_from_issue=int(plan_id),
-        summary=summary,
-        extra_files=xml_files or None,
     )
-
-    if result.success:
-        user_output(
-            click.style("✓", fg="green")
-            + f" Created learn plan #{result.plan_number} for plan #{plan_id}"
-        )
-        if result.plan_url:
-            user_output(f"  {result.plan_url}")
-        else:
-            user_output("  (no plan URL available)")
-        _log_learn_pr_files(plan_content=plan_content, xml_files=xml_files)
-    elif result.error:
-        user_output(
-            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
-        )

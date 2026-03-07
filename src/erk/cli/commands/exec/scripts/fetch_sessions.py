@@ -1,6 +1,6 @@
-"""Fetch preprocessed sessions from an async-learn branch.
+"""Fetch preprocessed sessions from a planned-pr-context branch.
 
-Downloads the manifest and XML files from the async-learn/{plan_id} branch
+Downloads the manifest and XML files from the planned-pr-context/{plan_id} branch
 for use by the learn pipeline. Returns JSON with file list and manifest metadata.
 
 Usage:
@@ -106,15 +106,15 @@ def fetch_sessions(
     plan_id: int,
     output_dir: Path,
 ) -> None:
-    """Fetch preprocessed sessions from an async-learn branch.
+    """Fetch preprocessed sessions from a planned-pr-context branch.
 
-    Reads the manifest from the async-learn/{plan_id} branch and downloads
+    Reads the manifest from the planned-pr-context/{plan_id} branch and downloads
     all XML files to the output directory.
     """
     repo_root = require_repo_root(ctx)
     git = require_git(ctx)
 
-    session_branch = f"async-learn/{plan_id}"
+    session_branch = f"planned-pr-context/{plan_id}"
 
     # Check if branch exists on remote
     if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):

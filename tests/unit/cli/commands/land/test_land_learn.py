@@ -11,7 +11,7 @@ from erk.cli.commands.land_learn import (
     _compute_session_stats,
     _create_learn_pr_impl,
     _create_learn_pr_with_sessions,
-    _fetch_xmls_from_async_learn_branch,
+    _fetch_xmls_from_context_branch,
     _log_learn_pr_files,
     _log_session_discovery,
     _should_create_learn_pr,
@@ -261,7 +261,7 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
         plan_store=plan_store,
         cwd=tmp_path,
     )
-    # plan_id "999" has no PR configured in FakeLocalGitHub
+    # plan_id "999" has no PR configured in FakeGitHub
     state = _land_state(tmp_path, plan_id="999", merged_pr_number=99)
 
     _create_learn_pr_impl(ctx, state=state)
@@ -844,15 +844,15 @@ def test_log_learn_pr_files_shows_sizes_in_kb_for_large_files(
 
 
 # ---------------------------------------------------------------------------
-# _fetch_xmls_from_async_learn_branch
+# _fetch_xmls_from_context_branch
 # ---------------------------------------------------------------------------
 
 
 def test_fetch_xmls_returns_empty_when_no_branch(tmp_path: Path) -> None:
-    """Returns empty dict when async-learn branch does not exist on remote."""
+    """Returns empty dict when planned-pr-context branch does not exist on remote."""
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
 
-    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
+    result = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, plan_id="100")
 
     assert result == {}
 
@@ -872,14 +872,14 @@ def test_fetch_xmls_returns_xml_content_from_manifest(tmp_path: Path) -> None:
 
     fake_git = FakeGit(
         trunk_branches={tmp_path: "main"},
-        remote_branches={tmp_path: ["origin/async-learn/100"]},
+        remote_branches={tmp_path: ["origin/planned-pr-context/100"]},
         ref_file_contents={
-            ("origin/async-learn/100", ".erk/sessions/manifest.json"): manifest_bytes,
-            ("origin/async-learn/100", ".erk/sessions/impl-aaaa1111.xml"): xml_content,
+            ("origin/planned-pr-context/100", ".erk/sessions/manifest.json"): manifest_bytes,
+            ("origin/planned-pr-context/100", ".erk/sessions/impl-aaaa1111.xml"): xml_content,
         },
     )
 
-    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
+    result = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, plan_id="100")
 
     assert len(result) == 1
     path = ".erk/impl-context/sessions/impl-aaaa1111.xml"
@@ -891,10 +891,10 @@ def test_fetch_xmls_returns_empty_when_manifest_missing(tmp_path: Path) -> None:
     """Returns empty dict when branch exists but manifest is not found."""
     fake_git = FakeGit(
         trunk_branches={tmp_path: "main"},
-        remote_branches={tmp_path: ["origin/async-learn/100"]},
+        remote_branches={tmp_path: ["origin/planned-pr-context/100"]},
     )
 
-    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
+    result = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, plan_id="100")
 
     assert result == {}
 
@@ -917,16 +917,19 @@ def test_fetch_xmls_handles_multiple_sessions(tmp_path: Path) -> None:
 
     fake_git = FakeGit(
         trunk_branches={tmp_path: "main"},
-        remote_branches={tmp_path: ["origin/async-learn/200"]},
+        remote_branches={tmp_path: ["origin/planned-pr-context/200"]},
         ref_file_contents={
-            ("origin/async-learn/200", ".erk/sessions/manifest.json"): manifest_bytes,
-            ("origin/async-learn/200", ".erk/sessions/impl-aaaa1111.xml"): b"<xml>a</xml>",
-            ("origin/async-learn/200", ".erk/sessions/impl-bbbb2222.xml"): b"<xml>b1</xml>",
-            ("origin/async-learn/200", ".erk/sessions/impl-bbbb2222-part2.xml"): b"<xml>b2</xml>",
+            ("origin/planned-pr-context/200", ".erk/sessions/manifest.json"): manifest_bytes,
+            ("origin/planned-pr-context/200", ".erk/sessions/impl-aaaa1111.xml"): b"<xml>a</xml>",
+            ("origin/planned-pr-context/200", ".erk/sessions/impl-bbbb2222.xml"): b"<xml>b1</xml>",
+            (
+                "origin/planned-pr-context/200",
+                ".erk/sessions/impl-bbbb2222-part2.xml",
+            ): b"<xml>b2</xml>",
         },
     )
 
-    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="200")
+    result = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, plan_id="200")
 
     assert len(result) == 3
     assert ".erk/impl-context/sessions/impl-aaaa1111.xml" in result
@@ -935,11 +938,11 @@ def test_fetch_xmls_handles_multiple_sessions(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _create_learn_pr_impl — async-learn branch fallback
+# _create_learn_pr_impl — planned-pr-context branch fallback
 # ---------------------------------------------------------------------------
 
 
-def test_fetches_from_async_learn_branch_when_local_not_found(
+def test_fetches_from_context_branch_when_local_not_found(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
@@ -957,7 +960,7 @@ def test_fetches_from_async_learn_branch_when_local_not_found(
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
 
-    # Configure FakeGit with async-learn branch data
+    # Configure FakeGit with planned-pr-context branch data
     manifest = {
         "sessions": [
             {
@@ -971,10 +974,10 @@ def test_fetches_from_async_learn_branch_when_local_not_found(
 
     fake_git = FakeGit(
         trunk_branches={tmp_path: "main"},
-        remote_branches={tmp_path: ["origin/async-learn/100"]},
+        remote_branches={tmp_path: ["origin/planned-pr-context/100"]},
         ref_file_contents={
-            ("origin/async-learn/100", ".erk/sessions/manifest.json"): manifest_bytes,
-            ("origin/async-learn/100", ".erk/sessions/impl-aaaa1111.xml"): xml_content,
+            ("origin/planned-pr-context/100", ".erk/sessions/manifest.json"): manifest_bytes,
+            ("origin/planned-pr-context/100", ".erk/sessions/impl-aaaa1111.xml"): xml_content,
         },
     )
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
@@ -1013,18 +1016,18 @@ def test_fetches_from_async_learn_branch_when_local_not_found(
     _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
     assert "Learn: Add widgets" in pr_title
 
-    # Success output should mention fetching from async-learn branch
+    # Success output should mention fetching from planned-pr-context branch
     captured = capsys.readouterr()
-    assert "Fetched 1 file(s) from async-learn/100" in captured.err
+    assert "Fetched 1 file(s) from planned-pr-context/100" in captured.err
     assert "Created learn plan" in captured.err
 
 
-def test_skips_when_async_learn_branch_not_found(
+def test_skips_when_context_branch_not_found(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Still skips when sessions exist but no local XML and no async-learn branch."""
+    """Still skips when sessions exist but no local XML and no planned-pr-context branch."""
     from erk.cli.commands import land_learn as learn_mod
 
     pr = _make_pr_details(
@@ -1036,7 +1039,7 @@ def test_skips_when_async_learn_branch_not_found(
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
-    # No async-learn branch configured
+    # No planned-pr-context branch configured
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
 
