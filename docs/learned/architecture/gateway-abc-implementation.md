@@ -31,6 +31,8 @@ tripwires:
     warning: "All implementations must be updated (3 or 4 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests."
   - action: "creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or similar mechanism-named gateway"
     warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
+  - action: "creating a new gateway directory under packages/erk-shared/src/erk_shared/gateway/"
+    warning: "Must also wire into ErkContext: add field to context.py dataclass, add parameter to for_test(), and wire Real* in production factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section."
 ---
 
 # Gateway ABC Implementation Checklist
@@ -84,6 +86,70 @@ These gateways have dry-run because they participate in erk's `--dry-run` CLI mo
 | AgentDocs   | 4-file  | `packages/erk-shared/src/erk_shared/gateway/agent_docs/` |
 | Cmux        | 3-file  | `packages/erk-shared/src/erk_shared/gateway/cmux/`       |
 | Codespace   | 3-file  | `packages/erk-shared/src/erk_shared/gateway/codespace/`  |
+
+## New Gateway: ErkContext Wiring
+
+After creating the gateway files, wire the new gateway into ErkContext so it's
+available via dependency injection throughout the application.
+
+### 1. Add field to ErkContext
+
+**File**: `packages/erk-shared/src/erk_shared/context/context.py`
+
+Add the gateway field to the `ErkContext` dataclass, grouped with related gateways:
+
+```python
+# Shell/CLI integrations
+shell: Shell
+codespace: Codespace
+cmux: Cmux  # <-- new gateway
+```
+
+### 2. Add to test factory
+
+**File**: `packages/erk-shared/src/erk_shared/context/context.py` (`ErkContext.for_test`)
+
+Add an optional parameter with a default fake:
+
+```python
+@classmethod
+def for_test(
+    cls,
+    *,
+    cmux: Cmux | None = None,  # <-- new parameter
+    ...
+) -> ErkContext:
+```
+
+Resolve the default inside the method:
+
+```python
+resolved_cmux = cmux if cmux is not None else FakeCmux(workspace_ref="fake-ws")
+```
+
+### 3. Wire production implementation
+
+**File**: `src/erk/core/context.py` (production context factory)
+
+Import and instantiate the real implementation near other Real\* gateways:
+
+```python
+from erk_shared.gateway.cmux.real import RealCmux
+...
+ErkContext(
+    ...
+    cmux=RealCmux(),  # next to codespace=RealCodespace()
+    ...
+)
+```
+
+### Reference
+
+See Codespace gateway for a minimal example:
+
+- Field: `codespace: Codespace` in ErkContext
+- Production: `codespace=RealCodespace()` in `src/erk/core/context.py`
+- Test: `FakeCodespace(...)` default in `for_test()`
 
 ## Checklist for New Gateway Methods
 
