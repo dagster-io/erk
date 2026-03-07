@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Unify Local/Remote Codepaths in PR Read Commands"
+}
