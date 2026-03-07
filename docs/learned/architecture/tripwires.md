@@ -168,6 +168,8 @@ Rules triggered by matching actions in code.
 
 **creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
 
+**creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or similar mechanism-named gateway** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction.
+
 **creating a new ABC without deciding gateway vs backend pattern** → Read [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) first. Read gateway-vs-backend.md first. Gateways wrap external tools (5-place: abc, real, fake, dry_run, printing). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support.
 
 **creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
