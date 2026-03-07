@@ -1,77 +1,884 @@
 <session>
-  <meta source="agent-a6d284e" />
+  <meta source="agent-a1f95cf" />
   <meta branch="plnd/O8381-fix-issue-number-doc-03-07-0134" />
-  <meta model="claude-haiku-4-5-20251001" />
-  <user>Run `make fast-ci` in the project root `/home/runner/work/erk/erk` and report the results. Do NOT fix anything, just report.</user>
-  <assistant>I'll run `make fast-ci` in the project root and report the results.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="7428" cache_read_input_tokens="4863" cache_creation="{'ephemeral_5m_input_tokens': 7428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01NuiscV4B8RkuG8W6WmTsvB">
-    <param name="command">make fast-ci</param>
-    <param name="description">Run fast-ci make target</param>
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>You need to fix `issue_number` references in docs/learned/cli/ markdown files. The source code has been renamed: `state.issue_number` → `state.plan_id`, `parse_issue_number_from_url` → `parse_plan_number_from_url`, `PlanContext.issue_number` → `PlanContext.plan_id`. Branch naming changed from `P{issue_number}` to `plnd/` prefix.
+
+**Rules:**
+- Conceptual/prose references to "issue number" meaning "plan number" → update
+- Code examples referencing renamed source fields → update to match current source
+- `update-objective-node` JSON output `issue_number` → KEEP (objective issue number, not plan)
+- Branch naming `P{issue_number}` patterns → update prose to reflect `plnd/` prefix where appropriate, but keep explanation of the pattern if it's describing what the code does
+
+Read each file first, then edit:
+
+### 1. `docs/learned/cli/output-styling.md`
+- Line 232: `"issue_number": 6545` in a JSON example → Check context. If this is a plan list output, update to `"plan_id": "6545"`. Read the surrounding context to decide.
+- Line 304: `#{issue_number}` in format string → `#{plan_id}`
+- Line 318: `not `issue_number`` → `not `plan_number`` (the text says "Uses plan_context.plan_id (not issue_number)")
+- Line 942: "Internal code can use `issue_number`" → update to mention `plan_id`
+- Lines 949-952: Example showing bad vs good output. Line 949 `Issue #{issue_number}` is the bad example, line 952 `Plan #{issue_number}` is the good example. Update 952 to use `plan_id` variable name: `Plan #{plan_id}`
+
+### 2. `docs/learned/cli/pr-submit-pipeline.md`
+- Line 37: `issue_number` in prepare_state() description → `plan_id`
+- Line 41: `issue_number` in DRY explanation → `plan_id`
+- Line 44: `issue_number` in single source of truth → `plan_id`
+- Line 84: `issue_number` in explanation → `plan_id`
+- Line 143: `state.issue_number is not None` → `state.plan_id is not None`
+
+### 3. `docs/learned/cli/ambiguity-resolution.md`
+- Line 57: `plan #{issue_number}` → `plan #{plan_number}` (user-facing message)
+- Line 83: `plan #{issue_number}` → `plan #{plan_number}` (user-facing message)
+- Line 85: `erk implement {issue_number}` → `erk implement {plan_number}` (CLI command)
+
+### 4. `docs/learned/cli/commands/update-objective-node.md`
+- Lines 76, 109, 123: `issue_number` in JSON output — KEEP all (these are objective issue numbers, confirmed still in source)
+
+### 5. `docs/learned/cli/exec-script-patterns.md`
+- Line 137: `issues/{issue_number}` — This is a GitHub URL construction. KEEP if it's constructing a GitHub issues URL.
+
+### 6. `docs/learned/cli/exec-command-patterns.md`
+- Line 48: `Closes #[issue_number]` → `Closes #[plan_number]` (this is a commit message template for closing plan issues)
+
+### 7. `docs/learned/cli/workflow-commands.md`
+- Line 21: `P{issue_number}` naming pattern → update prose to reflect current branch naming (`plnd/` prefix)
+- Line 63: `P{issue_number}-*` pattern description → update to reflect `plnd/` prefix
+
+### 8. `docs/learned/cli/commands/pr-summarize.md`
+- Line 73: `P{issue_number}-{slug}` naming convention → update to `plnd/` prefix convention
+
+### 9. `docs/learned/cli/tripwires.md`
+- Line 181: `P{issue_number}` naming pattern → update to `plnd/` prefix
+
+### 10. `docs/learned/cli/pr-operations.md`
+- Line 58: `P{issue_number}-` prefix → update to `plnd/` prefix
+
+Process each file: Read first, then Edit. Skip files marked KEEP-only (4, 5).</user>
+  <assistant>I'll process each file by reading it first, then making the necessary edits. Let me start by reading all the files to understand the context.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C777jWbKZFscFjfCbFYCXa">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="7428" cache_read_input_tokens="4863" cache_creation="{'ephemeral_5m_input_tokens': 7428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01NuiscV4B8RkuG8W6WmTsvB">
-Exit code 2
-   Building erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
-Downloading babel (9.7MiB)
-Downloading ruff (10.7MiB)
-Downloading aiohttp (1.7MiB)
-Downloading mkdocs (3.7MiB)
-Downloading ty (10.3MiB)
-Downloading libcst (2.2MiB)
-Downloading mkdocs-material (8.9MiB)
- Downloaded aiohttp
- Downloaded mkdocs
-      Built erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
- Downloaded ty
- Downloaded ruff
- Downloaded libcst
- Downloaded babel
- Downloaded mkdocs-material
-Installed 58 packages in 360ms
-[[33mwarn[39m] docs/learned/integrations/github-review-decision.md
-[[33mwarn[39m] docs/learned/tui/status-indicators.md
-[[33mwarn[39m] Code style issues found in 2 files. Run Prettier with --write to fix.
-✓ AGENTS.md standard: PASSED
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ArNtAkHrJGCZwGfTGCGJob">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017YMTM13SpgTDsqmzny1cKC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BarKUKLYhEeLuDR5sfdnRg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/update-objective-node.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012UCzuWQydjGbinmNtubv2x">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/exec-script-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012W5qaevdJtrb5vSfVyGkn3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/exec-command-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cjxf1GacauVJiHMdGJ6Fy8">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GktSBR5aqjc3wWnuSRm3gZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0192VTUdqQqkGNqFBQNAuty6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KvNXQo7HKB1z3ihKzumPvo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-operations.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16989" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16989, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ArNtAkHrJGCZwGfTGCGJob">
+     1→---
+     2→title: PR Submit Pipeline Architecture
+     3→read_when:
+     4→  - "modifying the PR submit workflow"
+     5→  - "adding new steps to the submit pipeline"
+     6→  - "debugging PR submission failures"
+     7→  - "understanding the Graphite-first vs core submit dispatch"
+     8→tripwires:
+     9→  - action: "adding a new step to the submit pipeline"
+    10→    warning: "Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to _submit_pipeline() tuple."
+    11→  - action: "mutating SubmitState fields directly"
+    12→    warning: "SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state."
+    13→  - action: "adding discovery logic outside prepare_state()"
+    14→    warning: "All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
+    15→  - action: "using ctx.invoke() with kwargs that don't match target function parameter names"
+    16→    warning: "Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature."
+    17→  - action: "calling an external tool that overwrites state without capturing it first"
+    18→    warning: "Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it."
+    19→last_audited: "2026-02-16 14:20 PT"
+    20→audit_result: clean
+    21→---
+    22→
+    23→# PR Submit Pipeline Architecture
+    24→
+    25→The PR submit pipeline is erk's reference implementation of the state threading pattern. This document explains **why** the architecture choices matter, not what the code does (read the source for that).
+    26→
+    27→## Why Linear Pipelines: The Dual-Path Problem
+    28→
+    29→Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, issue linkage validation happened in multiple places, and error handling varied between branches.
+    30→
 
-All CLAUDE.md and AGENTS.md files properly paired.
+... [138 lines omitted] ...
 
-CLAUDE.md files checked: 19
-Violations: 0
-make: *** [Makefile:97: fast-ci] Error 1
-
-=== Fast CI ===
-
-... [121 lines omitted] ...
+    31→Linear pipelines solve this by **deferring the dispatch decision**. Discovery happens once in step 1, then step 3 dispatches internally to Graphite or core flow. Both paths share the same state type and error handling.
+    43→3. **Type narrowing** — Later steps assume `branch_name` is `str`, not `str | None`, because step 1 checks and errors if unresolved
+    57→- **Shared error handling** — Both return `SubmitState | SubmitError`, uniform consumption at CLI layer
+    70→**Why not fewer steps?** Merging "extract diff + generate description" would make testing harder (can't test diff extraction without running AI generation). Each step represents a **failure boundary** — a distinct phase where errors need different handling.
+    74→**Decision test:** If the step can fail independently and that failure requires distinct error handling, it deserves to be a separate step.
+    82→**Why auto-repair instead of erroring?** Early erk workflows created `.erk/impl-context/` but not a reference file. Erroring would break existing worktrees. Auto-repair maintains forward compatibility while migrating to the new structure.
+   131→## Why dict[str, str] for SubmitError.details
+   133→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, SubmitError --&gt;
+   135→`SubmitError.details` is `dict[str, str]`, not `dict[str, str] | None` or `dict[str, Any]`.
+   137→**Why always present, never None?** Every error has details, even if empty `{}`. Making it optional adds ceremony (callers must check `if details is not None`) for no benefit.
+   139→**Why `str` values, not `Any`?** Error details are for logging and debugging. String values enable consistent serialization (JSON, log files) without type uncertainty. If you need structured data, that belongs in a dedicated error type, not in `details`.
+   154→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — SubmitError as discriminated union
   </tool_result>
-  <assistant>## make fast-ci Results: FAILED
+  <tool_result tool="toolu_017YMTM13SpgTDsqmzny1cKC">
+     1→---
+     2→title: Ambiguity Resolution Pattern for CLI Commands
+     3→read_when:
+     4→  - "implementing CLI commands that accept identifiers with multiple possible matches"
+     5→  - "designing CLI behavior for ambiguous input"
+     6→  - "displaying tables of options without interactive selection"
+     7→last_audited: "2026-02-17 00:00 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Ambiguity Resolution Pattern
+    12→
+    13→When a CLI command accepts an identifier that may match zero, one, or multiple results, use the "single → table → error" pattern for consistent user experience.
+    14→
+    15→## Pattern Overview
+    16→
+    17→```
+    18→┌─────────────────┐
+    19→│   Parse Input   │──► Validate identifier format
+    20→└────────┬────────┘
+    21→         │
+    22→         ▼
+    23→┌─────────────────┐
+    24→│   Find Matches  │──► Search for matching resources
+    25→└────────┬────────┘
+    26→         │
+    27→    ┌────┴────┬─────────┐
+    28→    │         │         │
+    29→    ▼         ▼         ▼
+    30→ Single    Multiple    Zero
 
-**Exit code:** 2 (recipe failed)
+... [116 lines omitted] ...
 
-**Summary:** The Prettier formatting check failed, blocking the rest of the CI pipeline.
+    35→Immediately  Table     Error
+    73→    raise SystemExit(0)  # Exit code 0: informational, not an error
+    76→### Zero Matches: Display Helpful Error
+    87→    raise SystemExit(1)  # Exit code 1: actual error condition
+   102→| Zero matches (error)           | 1         | Nothing to do, user action required |
+   129→### Don't: Error on Multiple Matches
+   134→    raise SystemExit("Error: ambiguous input")
+  </tool_result>
+  <tool_result tool="toolu_01BarKUKLYhEeLuDR5sfdnRg">
+     1→---
+     2→title: Update Objective Node Command
+     3→last_audited: "2026-02-25 18:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - working with objective roadmap tables, updating step PR references
+     7→tripwires:
+     8→  - action: "parsing roadmap tables to update PR cells"
+     9→    warning: "Use the update-objective-node command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers."
+    10→  - action: "expecting status to auto-update after manual PR edits"
+    11→    warning: "Only the update-objective-node command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse."
+    12→---
+    13→
+    14→# Update Objective Node Command
+    15→
+    16→## Why This Command Exists
+    17→
+    18→The alternative to `erk exec update-objective-node` is inline YAML frontmatter manipulation: fetch body -&gt; parse YAML -&gt; find node -&gt; update fields -&gt; serialize -&gt; update body. That's fragile ad-hoc code duplicated across every caller (skills, hooks, scripts).
+    19→
+    20→**Why encoding this once wins:**
+    21→
+    22→1. **No duplicated YAML parsing** -- frontmatter parsing and node lookup logic live in one place
+    23→2. **Atomic mental model** -- "update step 1.3's PR to X" instead of "parse, find, replace, validate"
+    24→3. **Testable edge cases** -- step not found, no roadmap, clearing PR all have test coverage
+    25→4. **Comment table re-rendering** -- automatically re-renders the comment table from YAML after updates
+    26→5. **Format resilience** -- roadmap structure changes propagate once, not to N call sites
+    27→
+    28→The command is infrastructure for workflow integration, not an interactive tool.
+    29→
+    30→## Status Computation Semantics
 
-### Issues Found
+... [165 lines omitted] ...
 
-**Prettier formatting violations in 2 files:**
-- `docs/learned/integrations/github-review-decision.md`
-- `docs/learned/tui/status-indicators.md`
+    83→The command follows erk's discriminated union pattern for error returns:
+    85→| Exit Code | Scenario                 | JSON `error` Field   |
+    91→| 0         | Regex replacement failed | `replacement_failed` |
+    93→All error paths exit with code 0 but include typed error fields for programmatic handling.
+  </tool_result>
+  <tool_result tool="toolu_012UCzuWQydjGbinmNtubv2x">
+     1→---
+     2→title: Exec Script Patterns
+     3→category: cli
+     4→read_when:
+     5→  - "Creating new exec CLI commands"
+     6→  - "Understanding why exec commands use context injection instead of Path.cwd()"
+     7→  - "Deciding where to import gateway ABCs from"
+     8→tripwires:
+     9→  - action: "importing from erk_shared.gateway.{service}.abc when creating exec commands"
+    10→    warning: "Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`"
+    11→  - action: "using Path.cwd() or Path.home() in exec scripts"
+    12→    warning: "Use context injection via require_cwd(ctx) for testability"
+    13→last_audited: "2026-02-16 00:00 PT"
+    14→audit_result: clean
+    15→---
+    16→
+    17→# Exec Script Patterns
+    18→
+    19→Exec scripts are Click commands in `src/erk/cli/commands/exec/scripts/` that execute specific operations (update GitHub issues, manipulate git state, compute derived data). They differ from top-level erk commands in two ways: (1) they use mandatory context injection for all dependencies, and (2) they always output JSON for programmatic consumption.
+    20→
+    21→## Why Context Injection Is Mandatory
+    22→
+    23→The core design decision: **exec scripts never call `Path.cwd()`, `Path.home()`, or construct gateways directly**. All dependencies come through Click's context object via `require_*` helpers.
+    24→
+    25→### The Testability Problem
+    26→
+    27→Without context injection, testing requires filesystem manipulation:
+    28→
+    29→```python
+    30→# WRONG: Impossible to test without changing directories
 
-These files have code style issues that need to be fixed by running Prettier with the `--write` flag.
+... [149 lines omitted] ...
 
-### Passing Checks
+    67→3. Exits with clear error if missing
+    87→# WRONG: will raise ImportError
+   105→## Error Code Convention
+   107→Use lowercase `snake_case` error codes that are:
+   118→  "error": "missing_erk_plan_label",
+   123→The error code doubles as documentation of the failure mode.
+   135→    return ErrorResult(...)
+   150→Exec commands return frozen dataclasses with discriminated union error handling:
+   159→class ErrorResult:
+   161→    error: str     # Machine-readable code
+   165→The `success` field discriminates the union. Callers check `success` first, then access type-specific fields. This makes error handling explicit without exceptions.
+  </tool_result>
+  <tool_result tool="toolu_012W5qaevdJtrb5vSfVyGkn3">
+     1→---
+     2→title: Exec Command Patterns
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing exec scripts with PR/issue output"
+     7→  - "building diagnostic messages"
+     8→  - "standardizing exec command output"
+     9→tripwires:
+    10→  - action: "writing PR/issue body generation in exec scripts"
+    11→    warning: "Use `_build_pr_body` and `_build_issue_comment` patterns from handle_no_changes.py for consistency and testability."
+    12→---
+    13→
+    14→# Exec Command Patterns
+    15→
+    16→Patterns for writing `erk exec` scripts that produce user-facing output like PR bodies and issue comments.
+    17→
+    18→## Diagnostic PR Body Generation
+    19→
+    20→When exec scripts need to update PR bodies with diagnostic information, follow the `_build_pr_body()` pattern:
+    21→
+    22→**Key principles:**
+    23→
+    24→1. **Structured sections**: Use clear markdown headers (##, ###)
+    25→2. **Actionable guidance**: Include "Next Steps" with numbered actions
+    26→3. **Cross-linking**: Reference related issues/PRs with GitHub links
+    27→4. **Optional context**: Handle optional fields gracefully (workflow URLs, commit lists)
+    28→
+    29→**Section structure:**
+    30→
 
-- Ruff lint: All checks passed
-- Ruff format check: 1654 files already formatted
-- Markdown check: OK
-- Exec reference check: OK
-- ty type checking: All checks passed
-- Unit tests (erk): 5685 passed
-- Unit tests (erk-dev): 136 passed
-- Unit tests (erk-statusline): 115 passed
-- Unit tests (erk-mcp): 24 passed (output truncated)
+... [134 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Cjxf1GacauVJiHMdGJ6Fy8">
+     1→---
+     2→audit_result: clean
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→read_when:
+     5→  - triggering GitHub Actions workflows from CLI
+     6→  - adding a new workflow to erk launch
+     7→  - understanding local vs remote command duality
+     8→title: Workflow Commands
+     9→tripwires:
+    10→  - action: WORKFLOW_COMMAND_MAP maps command names to .yml filenames
+    11→    warning: command names intentionally diverge from filenames (e.g., pr-rebase
+    12→      → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME
+    13→      constant)
+    14→  - action:
+    15→      plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement
+    16→      always raises UsageError
+    17→    warning: use erk pr submit instead
+    18→  - action: using this pattern
+    19→    warning:
+    20→      PR workflows automatically update plan issue dispatch metadata when the
+    21→      branch follows the P{issue_number} naming pattern
+    22→---
+    23→
+    24→# Workflow Commands
+    25→
+    26→## Design Decisions
+    27→
+    28→### Why a Unified Launcher
+    29→
+    30→`erk launch` consolidates all GitHub Actions workflow triggers behind a single command instead of scattering them across subcommand groups (e.g., `erk pr rebase-remote`, `erk workflow launch`). This was a deliberate migration away from the old pattern where each remote operation had its own command in the relevant noun group.
 
-### Root Cause
+... [57 lines omitted] ...
 
-The Prettier formatting check found violations in the two documentation markdown files listed above. The make target exited with error code 1 from the Prettier check step before completing the full test suite output.</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="1396" cache_read_input_tokens="12291" cache_creation="{'ephemeral_5m_input_tokens': 1396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+    45→`plan-implement` exists in `WORKFLOW_COMMAND_MAP` but `erk launch plan-implement` always raises `UsageError` directing users to `erk pr submit`. The plan-implement workflow requires branch creation, PR setup, and metadata initialization that `erk pr submit` handles as a coordinated sequence. Triggering the workflow directly would skip these prerequisites and produce orphaned workflow runs.
+  </tool_result>
+  <tool_result tool="toolu_01GktSBR5aqjc3wWnuSRm3gZ">
+     1→---
+     2→title: erk pr summarize Command (DEPRECATED - replaced by erk pr rewrite)
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "historical reference for pr summarize command"
+     7→  - "understanding pr summarize replacement by pr rewrite"
+     8→deprecated: true
+     9→deprecated_by: "erk pr rewrite"
+    10→deprecated_in: "PR #6935"
+    11→---
+    12→
+    13→# erk pr summarize Command (DEPRECATED)
+    14→
+    15→**Note: This command was replaced by `erk pr rewrite` in PR #6935. See [PR Rewrite Command](../pr-rewrite.md) for the current implementation.**
+    16→
+    17→This document is preserved for historical reference.
+    18→
+    19→---
+    20→
+    21→Generates an AI-powered commit message and amends the current commit. This is the local-only variant of `erk pr submit` - it updates your commit message without creating or updating a PR.
+    22→
+    23→## Why This Command Exists
+    24→
+    25→**Problem**: You've made a commit but the message is generic or doesn't capture the full context. You want an AI-generated message that incorporates plan context, but you're not ready to push yet.
+    26→
+    27→**Solution**: `pr summarize` analyzes your branch's diff against its parent, generates a commit message (with plan context if available), and amends your current commit.
+    28→
+    29→## Usage Pattern
+    30→
+
+... [108 lines omitted] ...
+
+   102→The enforcement in `_execute_pr_summarize()` prevents this anti-pattern. It suggests `gt squash` explicitly in the error message.
+  </tool_result>
+  <tool_result tool="toolu_0192VTUdqQqkGNqFBQNAuty6">
+     1→---
+     2→title: Cli Tripwires
+     3→read_when:
+     4→  - "working on cli code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from cli/*.md frontmatter --&gt;
+    10→
+    11→# Cli Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
+    16→
+    17→**Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
+    18→
+    19→**Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
+    20→
+    21→**Using RuntimeError for expected CLI failures** → Read [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) first. RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message.
+    22→
+    23→**WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-rebase → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
+    24→
+    25→**adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
+    26→
+    27→**adding a new exec script that produces JSON consumed by another exec script** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Define shared TypedDict in packages/erk-shared/ for type-safe schema. Both producer and consumer import from the same schema definition.
+    28→
+    29→**adding a new required gitignore entry** → Read [Upgrade Workflow](upgrade-workflow.md) first. Add to REQUIRED_GITIGNORE_ENTRIES in src/erk/core/init_utils.py:8. The upgrade path in init/main.py automatically syncs these entries.
+    30→
+
+... [165 lines omitted] ...
+
+    33→**adding a new step to the submit pipeline** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to \_submit_pipeline() tuple.
+    35→**adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md.
+    65→**calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
+    67→**choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
+    87→**flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
+   107→**making a separate subprocess call for each item in a batch operation** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Use batch exec commands pattern (batch-exec-commands.md) to process items in a single invocation with per-item error handling.
+   109→**making session discovery failures block the land command** → Read [Land-Learn Integration](land-learn-integration.md) first. Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors.
+   123→**plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
+   153→**testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
+   155→**using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
+   167→**using ctx.invoke() with kwargs that don't match target function parameter names** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature.
+   169→**using dict .get() to access fields from exec script JSON output without a TypedDict schema** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering failures occur when field names are mistyped. Define TypedDict in erk_shared and use cast() in consumers.
+   189→**writing multi-line error messages in Ensure method calls** → Read [CLI Output Styling Guide](output-styling.md) first. Use implicit string concatenation with \n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \n\n (double newline) — Ensure handles spacing.
+  </tool_result>
+  <tool_result tool="toolu_01KvNXQo7HKB1z3ihKzumPvo">
+     1→---
+     2→title: "PR Operations: Duplicate Prevention and Detection"
+     3→read_when:
+     4→  - "creating PRs programmatically"
+     5→  - "implementing PR submission workflows"
+     6→  - "preventing duplicate PR creation"
+     7→tripwires:
+     8→  - action: "running gh pr create"
+     9→    warning: "Query for existing PRs first via `gh pr list --head &lt;branch&gt; --state all`. Prevents duplicate PR creation and workflow breaks."
+    10→last_audited: "2026-02-08 00:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# PR Operations: Duplicate Prevention and Detection
+    15→
+    16→## Why This Matters
+    17→
+    18→Duplicate PRs break workflows in subtle ways. Multiple PRs for the same branch fragment review comments, trigger redundant CI runs, and create ambiguity about which PR is "real". The fix is simple but critical: **always query before creating**.
+    19→
+    20→## The Core Pattern
+    21→
+    22→Before creating a PR, query by branch name including ALL states:
+    23→
+    24→```bash
+    25→gh pr list --head "$BRANCH_NAME" --state all
+    26→```
+    27→
+    28→**Why `--state all`?** Without it, you only check open PRs. A closed or merged PR means "don't recreate this" — the user explicitly closed it or already landed it.
+    29→
+    30→## Decision: Branch Query vs Title Search
+
+... [59 lines omitted] ...
+
+    78→**Anti-pattern:** Catching `gh pr create` errors and retrying. The error happens after you've already created a duplicate. Query first, not after.
+  </tool_result>
+  <tool_result tool="toolu_01C777jWbKZFscFjfCbFYCXa">
+     1→---
+     2→title: CLI Output Styling Guide
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "styling CLI output"
+     7→  - "using colors in CLI"
+     8→  - "formatting terminal output"
+     9→tripwires:
+    10→  - action: "using click.confirm() after user_output()"
+    11→    warning: "Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
+    12→  - action: "displaying user-provided text in Rich CLI tables"
+    13→    warning: "Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear."
+    14→  - action: "writing multi-line error messages in Ensure method calls"
+    15→    warning: "Use implicit string concatenation with \\n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \\n\\n (double newline) — Ensure handles spacing."
+    16→  - action: "using Python format strings with :N width specifiers for CLI output containing emoji"
+    17→    warning: "Use Rich tables instead — emoji have variable terminal widths (typically 2 cells) which break fixed-width alignment. See the Rich Tables for Variable-Width Characters section below."
+    18→---
+    19→
+    20→# CLI Output Styling Guide
+    21→
+    22→This guide defines the standard color scheme, emoji conventions, and output abstraction patterns for erk CLI commands.
+    23→
+    24→## Color Conventions
+    25→
+    26→Use consistent colors and styling for CLI output via `click.style()`:
+    27→
+    28→| Element                  | Color            | Bold | Example                                             |
+    29→| ------------------------ | ---------------- | ---- | --------------------------------------------------- |
+    30→| Branch names             | `yellow`         | No   | `click.style(branch, fg="yellow")`                  |
+
+... [934 lines omitted] ...
+
+    39→| Error states             | `red`            | No   | `click.style("Error", fg="red")`                    |
+   114→- The command is long/complex and manual copying would be error-prone
+   137→- Unsupported terminals silently ignore the sequence (no errors)
+   151→- `❌` - Errors/failures
+   378→| Error messages            | `user_output()`    | User info, goes to stderr   |
+   392→user_output(click.style("Error: ", fg="red") + "Branch not found")
+   409→user_output("Warning: This operation is destructive!")
+   422→user_output("Warning: This operation is destructive!")
+   434→user_output("Warning: This operation is destructive!")
+   444→- `src/erk/cli/commands/stack/consolidate_cmd.py` - Uses user_output() for error messages
+   446→## Error Message Guidelines
+   448→Use the `Ensure` class (from `erk.cli.ensure`) for all CLI validation errors. This provides consistent error styling and messaging.
+   450→### Error Message Format
+   452→All error messages should follow these principles:
+   465→**DO NOT** include "Error: " prefix - the `Ensure` class adds it automatically in red.
+   467→### Multi-line Error Messages
+   469→For errors that need both a primary message and remediation context, use implicit string concatenation with `\n`:
+   481→- Line 1: Primary error description (concise, specific)
+   485→**DO NOT** use `\n\n` (double newline) — the Ensure class already handles spacing in its error output formatting.
+   487→This pattern was established in the admin.py migration (PR #6860) and applies to all Ensure method calls where the error benefits from remediation context.
+   493→| `"Configuration file not found at ~/.erk/config.yml - Run 'erk init' to create it"`              | `"Error: Config missing"` |
+   494→| `"Worktree already exists at path {path} - Use --force to overwrite or choose a different name"` | `"Error: Path exists"`    |
+   496→| `"No child branches found - Already at the top of the stack"`                                    | `"Validation failed"`     |
+   500→| Situation            | Error Message Template                                      |
+   508→### UserFacingCliError for Mid-Function Errors
+   510→For errors that occur mid-function where `Ensure` precondition checks don't fit, use `UserFacingCliError`:
+   513→from erk.cli.ensure import UserFacingCliError
+   517→if isinstance(push_result, PushError):
+   518→    raise UserFacingCliError(push_result.message)
+   523→- **Mid-logic errors**: Errors discovered during execution, not preconditions
+   524→- **Discriminated union errors**: When consuming `Result | Error` types from gateway layer
+   525→- **After operations fail**: When an operation returns an error variant
+   530→- `UserFacingCliError`: For errors during execution (e.g., git push fails)
+   531→- Both produce the same styled output (`Error: ` prefix in red)
+   533→- Ensure uses `UserFacingCliError` internally
+   538→- Mid-function operation errors → Raise `UserFacingCliError`
+   539→- Complex multi-step operations → Mix both (Ensure upfront, UserFacingCliError for failures)
+   575→For multi-step validations, use sequential Ensure calls with specific error messages:
+   578→# Multi-condition validation - each check has specific error
+   591→# Validation with early return - fail fast on first error
+   597→**Design Principle:** Prefer simple sequential checks over complex validation abstractions. Each check should have a specific, actionable error message. This aligns with the LBYL (Look Before You Leap) philosophy and makes code easier to understand and debug.
+   599→**Exit Codes:** All Ensure methods use exit code 1 for validation failures. This is consistent across all CLI commands.
+   607→1. **If error has a boolean condition** → Use `Ensure.invariant()`
+   612→       user_output(click.style("Error: ", fg="red") + "Something is wrong")
+   619→2. **If error returns a value when truthy** → Use `Ensure.truthy()`
+   625→       user_output(click.style("Error: ", fg="red") + "No results found")
+   632→3. **If error checks for None specifically** → Use `Ensure.not_none()`
+   638→       user_output(click.style("Error: ", fg="red") + "Value is required")
+   645→4. **If error has no clear condition or needs custom flow** → Keep as direct pattern
+   649→**Pattern: Fallthrough/catch-all errors with no clear boolean condition**
+   651→Some errors occur as the "else" case after multiple checks have been exhausted. There's no meaningful boolean condition to express - the error state IS the remaining case.
+   664→        click.style("Error: ", fg="red")
+   670→**Why not migrate:** Using `Ensure.invariant(True, ...)` or wrapping with an artificial condition would be misleading. The error isn't about a condition being false - it's about reaching a catch-all state.
+   672→**Pattern: Errors with complex multi-line remediation messages**
+   674→When the error message spans multiple lines with detailed instructions, the `Ensure` API may not accommodate the formatting needs cleanly.
+   676→**Pattern: Errors that need conditional additional output before exit**
+   684→1. **Identify the error condition** - Is there a clear boolean/truthy/None check?
+   686→3. **Write the error message** - Follow the Error Message Guidelines (no "Error: " prefix)
+   687→4. **Test behavior is unchanged** - Error should trigger at the same conditions
+   697→    user_output(click.style("Error: ", fg="red") + "Already at the top...")
+   711→- The error message is a single line
+   755→| Action: Failed   | `[red]Failed[/red]`          | Execution failed       |
+   850→This causes columns to appear misaligned whenever emoji are present. The misalignment is silent — code runs without errors but output looks wrong.
+  </tool_result>
+  <assistant>Now I'll process each file with the necessary edits based on my reading:</assistant>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FDAinFcZS9zjj2GZf65MfT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
+    <param name="old_string">```json
+{
+  "success": true,
+  "issue_number": 6545,
+  "workflow_triggered": true,
+  "run_id": "12345678",
+  "workflow_url": "https://...",
+  "gist_url": "https://..."
+}
+```</param>
+    <param name="new_string">```json
+{
+  "success": true,
+  "plan_id": "6545",
+  "workflow_triggered": true,
+  "run_id": "12345678",
+  "workflow_url": "https://...",
+  "gist_url": "https://..."
+}
+```</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PfCUQmBYV5ZPbqbRqnzrAZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
+    <param name="old_string">1. **Plan incorporation message** (when plan found):
+   - Format: `"   Incorporating plan from issue #{issue_number}"`
+   - Style: Green text (`fg="green"`)</param>
+    <param name="new_string">1. **Plan incorporation message** (when plan found):
+   - Format: `"   Incorporating plan from issue #{plan_id}"`
+   - Style: Green text (`fg="green"`)</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01M2tv8qZN7nB8BtzxJCrJ2L">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
+    <param name="old_string">See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `issue_number`) to display the plan reference.</param>
+    <param name="new_string">See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `plan_number`) to display the plan reference.</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GkDmpZjgZB3nC82gbZH5Yb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
+    <param name="old_string">- **Always use "plan" in user-facing output.** Whether the backing store is a GitHub issue...[truncated 365 chars]... "plan".
+- **Column headers in tables**: Use `plan` not `issue` in headers shown to users.</param>
+    <param name="new_string">- **Always use "plan" in user-facing output.** Whether the backing store is a GitHub issue...[truncated 364 chars]... "plan".
+- **Column headers in tables**: Use `plan` not `issue` in headers shown to users.</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ezig16Pjr3FMBPQH5TSV5N">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
+    <param name="old_string">```python
+# ❌ Wrong: exposes internal storage model
+click.echo(f"Issue #{issue_number} created")
+
+# ✅ Correct: backend-agnostic
+click.echo(f"Plan #{issue_number} created")
+```</param>
+    <param name="new_string">```python
+# ❌ Wrong: exposes internal storage model
+click.echo(f"Issue #{plan_number} created")
+
+# ✅ Correct: backend-agnostic
+click.echo(f"Plan #{plan_id} created")
+```</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019nXsSEKcMpxETvHFzYgZmY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`,...[truncated 33 chars]...impl-context/plan-ref.json` linkage (with legacy `.erk/impl-context/issue.json` fallback).</param>
+    <param name="new_string">Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`,...[truncated 28 chars]...impl-context/plan-ref.json` linkage (with legacy `.erk/impl-context/issue.json` fallback).</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WYhF5fwRhkG6eyvFfZXNYs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">**Why consolidate all discovery in one step?**
+
+1. **DRY** — Before this pattern, `issue_n...[truncated 305 chars]...rce of truth** — Grep for "where does `issue_number` come from?" finds one place, not four</param>
+    <param name="new_string">**Why consolidate all discovery in one step?**
+
+1. **DRY** — Before this pattern, `plan_id...[truncated 295 chars]...e source of truth** — Grep for "where does `plan_id` come from?" finds one place, not four</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KmjeoSoXrhcCQoXm6CfmB6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">**Anti-pattern:** Lazy discovery (re-running `get_repository_root()` in step 5 because "we need it again"). If a field is needed by multiple steps, step 1 populates it. State carries it forward.</param>
+    <param name="new_string">**Anti-pattern:** Lazy discovery (re-running `get_repository_root()` in step 5 because "we need it again"). If a field is needed by multiple steps, step 1 populates it. State carries it forward.</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FW57W6SXF84jwFLaCtSua3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state, auto-repair sectio...[truncated 558 chars]...` (fetched for repair). Preparing and repairing are coupled — no value in separating them.</param>
+    <param name="new_string">&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state, auto-repair sectio...[truncated 548 chars]...` (fetched for repair). Preparing and repairing are coupled — no value in separating them.</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BHrj4ECBLCLz5QEKGK5TeY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">## State-Based Plan Detection
+
+The pipeline detects plan implementations via `state.issue_number is not None`. This drives two auto-behaviors:</param>
+    <param name="new_string">## State-Based Plan Detection
+
+The pipeline detects plan implementations via `state.plan_id is not None`. This drives two auto-behaviors:</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01R8669FVixGSBUxdgQQmLQs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md</param>
+    <param name="old_string">```python
+if len(matches) &gt; 1:
+    user_output(f"Multiple branches found for plan #{issue_...[truncated 364 chars]...ranch-name&gt;"
+    )
+    raise SystemExit(0)  # Exit code 0: informational, not an error
+```</param>
+    <param name="new_string">```python
+if len(matches) &gt; 1:
+    user_output(f"Multiple branches found for plan #{plan_n...[truncated 363 chars]...ranch-name&gt;"
+    )
+    raise SystemExit(0)  # Exit code 0: informational, not an error
+```</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DqF5hWgR8dYYi5x8zDYid8">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md</param>
+    <param name="old_string">```python
+if len(matches) == 0:
+    user_output(
+        f"No local branch or open PR foun...[truncated 112 chars]...t {issue_number}"
+    )
+    raise SystemExit(1)  # Exit code 1: actual error condition
+```</param>
+    <param name="new_string">```python
+if len(matches) == 0:
+    user_output(
+        f"No local branch or open PR foun...[truncated 110 chars]...nt {plan_number}"
+    )
+    raise SystemExit(1)  # Exit code 1: actual error condition
+```</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Y1R2i8atyxkA6PuW19n7LT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/exec-command-patterns.md</param>
+    <param name="old_string">---
+
+Closes #[issue_number]
+
+[Optional: workflow run link]
+```</param>
+    <param name="new_string">---
+
+Closes #[plan_number]
+
+[Optional: workflow run link]
+```</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01315kBrJSLvZWsGy49KMCH7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">  - action:
+      plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implem...[truncated 141 chars]...n issue dispatch metadata when the
+      branch follows the P{issue_number} naming pattern</param>
+    <param name="new_string">  - action:
+      plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implem...[truncated 138 chars]...plan issue dispatch metadata when the
+      branch follows the plnd/ prefix naming pattern</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MQY61HC9usxNYn2jyPsAhF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">## Plan Dispatch Metadata Side Effect
+
+PR-related workflows (`pr-rebase`, `pr-address`) ha...[truncated 176 chars]...tes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.</param>
+    <param name="new_string">## Plan Dispatch Metadata Side Effect
+
+PR-related workflows (`pr-rebase`, `pr-address`) ha...[truncated 157 chars]...tes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GzRX9BGWhY21hvSmkVBcnh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback --&gt;
+
+When a b...[truncated 30 chars]...convention, the command automatically fetches plan context from the linked erk-plan issue.</param>
+    <param name="new_string">&lt;!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback --&gt;
+
+When a b...[truncated 1 chars]...ith a plan, the command automatically fetches plan context from the linked erk-plan issue.</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YQU2NDEigyv594wGZGYrWb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+    <param name="old_string">**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern</param>
+    <param name="new_string">**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the plnd/ prefix naming pattern</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016UBvqM4NBcL7YJGrtkHH8u">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-operations.md</param>
+    <param name="old_string">Erk stores `branch_name` in plan-header metadata when a plan is submitted. This creates a ...[truncated 281 chars]...ing commit messages, checking issue timelines) that may find the wrong PR or no PR at all.</param>
+    <param name="new_string">Erk stores `branch_name` in plan-header metadata when a plan is submitted. This creates a ...[truncated 280 chars]...ing commit messages, checking issue timelines) that may find the wrong PR or no PR at all.</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013gU6CKTapJtdGetPtxY4Fi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-operations.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, lines 88-99 --&gt;
+
+GitHub...[truncated 456 chars]...the current git context if it matches the plan's issue number prefix (`P{issue_number}-`).</param>
+    <param name="new_string">&lt;!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, lines 88-99 --&gt;
+
+GitHub...[truncated 453 chars]...om the current git context if it matches the plan's naming pattern (e.g., `plnd/` prefix).</param>
+  </tool_use>
+  <usage input_tokens="24821" cache_creation_input_tokens="14463" cache_read_input_tokens="16989" cache_creation="{'ephemeral_5m_input_tokens': 14463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FDAinFcZS9zjj2GZf65MfT">
+The file /home/runner/work/erk/erk/docs/learned/cli/output-styling.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PfCUQmBYV5ZPbqbRqnzrAZ">
+The file /home/runner/work/erk/erk/docs/learned/cli/output-styling.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01M2tv8qZN7nB8BtzxJCrJ2L">
+The file /home/runner/work/erk/erk/docs/learned/cli/output-styling.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GkDmpZjgZB3nC82gbZH5Yb">
+The file /home/runner/work/erk/erk/docs/learned/cli/output-styling.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Ezig16Pjr3FMBPQH5TSV5N">
+The file /home/runner/work/erk/erk/docs/learned/cli/output-styling.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019nXsSEKcMpxETvHFzYgZmY">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WYhF5fwRhkG6eyvFfZXNYs">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KmjeoSoXrhcCQoXm6CfmB6">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01FW57W6SXF84jwFLaCtSua3">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BHrj4ECBLCLz5QEKGK5TeY">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01R8669FVixGSBUxdgQQmLQs">
+The file /home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DqF5hWgR8dYYi5x8zDYid8">
+The file /home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Y1R2i8atyxkA6PuW19n7LT">
+The file /home/runner/work/erk/erk/docs/learned/cli/exec-command-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01315kBrJSLvZWsGy49KMCH7">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MQY61HC9usxNYn2jyPsAhF">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GzRX9BGWhY21hvSmkVBcnh">
+The file /home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01YQU2NDEigyv594wGZGYrWb">
+The file /home/runner/work/erk/erk/docs/learned/cli/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016UBvqM4NBcL7YJGrtkHH8u">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-operations.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013gU6CKTapJtdGetPtxY4Fi">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-operations.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully updated all the necessary files. Let me create a summary of the changes made:
+
+## Summary
+
+I've successfully fixed all `issue_number` references in the `docs/learned/cli/` markdown files to align with the source code renaming (`state.issue_number` → `state.plan_id`, `parse_issue_number_from_url` → `parse_plan_number_from_url`, etc.). Here's what was updated:
+
+### Files Updated:
+
+1. **docs/learned/cli/output-styling.md** (5 edits)
+   - Line 232: JSON example `"issue_number": 6545` → `"plan_id": "6545"`
+   - Line 304: Format string `#{issue_number}` → `#{plan_id}` 
+   - Line 318: Reference from `not issue_number` → `not plan_number`
+   - Line 942: Internal variable mention `issue_number` → `plan_id`
+   - Line 952: Example variable `issue_number` → `plan_id`
+
+2. **docs/learned/cli/pr-submit-pipeline.md** (4 edits)
+   - Line 37: `issue_number` in prepare_state() description → `plan_id`
+   - Line 41: DRY explanation `issue_number` → `plan_id`
+   - Line 44: Single source of truth `issue_number` → `plan_id`
+   - Line 84: Auto-repair explanation references → `plan_id`
+   - Line 143: State detection `state.issue_number is not None` → `state.plan_id is not None`
+
+3. **docs/learned/cli/ambiguity-resolution.md** (2 edits)
+   - Line 57: User-facing message `plan #{issue_number}` → `plan #{plan_number}`
+   - Line 83: User-facing message and CLI command `#{issue_number}` → `#{plan_number}`
+
+4. **docs/learned/cli/commands/update-objective-node.md** (KEPT)
+   - All `issue_number` references preserved (these are objective issue numbers, not plan numbers)
+
+5. **docs/learned/cli/exec-script-patterns.md** (KEPT)
+   - Line 137: `issues/{issue_number}` preserved (GitHub URL construction for issues)
+
+6. **docs/learned/cli/exec-command-patterns.md** (1 edit)
+   - Line 48: Commit message template `Closes #[issue_number]` → `Closes #[plan_number]`
+
+7. **docs/learned/cli/workflow-commands.md** (2 edits)
+   - Line 21: Branch naming pattern updated from `P{issue_number}` to `plnd/` prefix
+   - Line 63: Metadata detection pattern updated to reflect current branch naming
+
+8. **docs/learned/cli/commands/pr-summarize.md** (1 edit)
+   - Line 73: Branch naming convention updated from `P{issue_number}-{slug}` to plan association
+
+9. **docs/learned/cli/tripwires.md** (1 edit)
+   - Line 181: Branch naming pattern updated from `P{issue_number}` to `plnd/` prefix
+
+10. **docs/learned/cli/pr-operations.md** (2 edits)
+    - Line 58: PR discovery link updated from `issue → branch → PR` to `plan → branch → PR`
+    - Line 59: Fallback logic updated from `P{issue_number}-` pattern to `plnd/` prefix
+
+### Key Decisions Made:
+
+- **Preserved objective `issue_number` references**: In `/docs/learned/cli/commands/update-objective-node.md`, all `issue_number` fields were correctly kept as they refer to objective issue numbers, not plan IDs
+- **Preserved GitHub URL construction**: In `/docs/learned/cli/exec-script-patterns.md`, the `issues/{issue_number}` reference was kept as it's building a GitHub issues URL
+- **Updated branch naming patterns**: Changed references from `P{issue_number}` pattern to `plnd/` prefix to reflect current branch naming conventions
+- **Maintained conceptual clarity**: Updated prose references to clearly distinguish between plan numbers (user-facing) and internal implementation details
+
+All files have been updated to reflect the current source code naming while preserving the correct semantic meaning of each reference.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="52607" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 52607, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>

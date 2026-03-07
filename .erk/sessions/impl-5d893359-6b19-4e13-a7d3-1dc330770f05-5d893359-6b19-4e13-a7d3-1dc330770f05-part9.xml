@@ -1,0 +1,917 @@
+<session>
+  <meta source="agent-af6ec2b" />
+  <meta branch="plnd/O8381-fix-issue-number-doc-03-07-0134" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>I need to understand the current state of `issue_number` vs `plan_number` in the erk source code to know which doc references should be updated.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+
+Then check these specific things in the source code:
+
+1. In `src/erk/`, does the submit pipeline state still use `issue_number` or has it been renamed to `plan_number`? Look at the state dataclass.
+2. Does `plan-ref-architecture.md` describe `plan_id` or `issue_number` as the current field in plan-ref?
+3. Check `parse_issue_number_from_url` - does this function still exist or has it been renamed?
+4. Check `state.issue_number` usage in source - is it still `issue_number` or renamed?
+5. Check `P{issue_number}` branch naming pattern in source code
+6. Check `update-objective-node` exec script JSON output - does it still use `issue_number` key?
+7. Check the `get_issue_number()` function mentioned in plan-ref-architecture.md - does it still exist?
+
+Report findings concisely for each question.</user>
+  <assistant>I'll systematically check the documentation and then examine the source code to understand the current state of `issue_number` vs `plan_number`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18972" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18972, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016YPj4rmJ9KaLVbozzXgjhz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18972" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18972, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01U27uvcgekJGFy8ohmyhxfz">
+    <param name="pattern">docs/learned/**/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18972" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18972, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016YPj4rmJ9KaLVbozzXgjhz">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01U27uvcgekJGFy8ohmyhxfz">
+/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-execution-modes.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-error-reporting.md
+/home/runner/work/erk/erk/docs/learned/architecture/bash-python-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/at-reference-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-schema-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md
+/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md
+/home/runner/work/erk/erk/docs/learned/architecture/callback-progress-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md
+/home/runner/work/erk/erk/docs/learned/architecture/defense-in-depth-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-binary-ops-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/click-context-di-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-installation-gateway.md
+/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md
+/home/runner/work/erk/erk/docs/learned/architecture/composable-remote-commands.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/convergence-points.md
+/home/runner/work/erk/erk/docs/learned/architecture/direct-condition-vs-derived-output.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-injection-tiers.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-efficiency.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-to-pipeline-boundary.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-progress.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/fake-mutation-tracking.md
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/exception-logging-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md
+  </tool_result>
+  <assistant>Now let me search for plan-ref-architecture.md and check for issue_number references:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4037" cache_read_input_tokens="18972" cache_creation="{'ephemeral_5m_input_tokens': 4037, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MQC67vgsQSvyhVHVW8jgyY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4037" cache_read_input_tokens="18972" cache_creation="{'ephemeral_5m_input_tokens': 4037, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EvNYvCiAGcNok24fV23pc7">
+    <param name="pattern">issue_number|plan_number</param>
+    <param name="glob">src/erk/**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4037" cache_read_input_tokens="18972" cache_creation="{'ephemeral_5m_input_tokens': 4037, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MQC67vgsQSvyhVHVW8jgyY">
+     1→---
+     2→title: PlanRef Architecture
+     3→read_when:
+     4→  - "working with plan-ref.json"
+     5→  - "working with PlanRef dataclass"
+     6→  - "migrating from IssueReference to PlanRef"
+     7→  - "understanding provider-agnostic plan references"
+     8→tripwires:
+     9→  - action: "accessing plan_ref.plan_id as int without checking"
+    10→    warning: "plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'."
+    11→  - action: "calling save_plan_ref with positional arguments"
+    12→    warning: "All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime."
+    13→---
+    14→
+    15→# PlanRef Architecture
+    16→
+    17→PlanRef is the provider-agnostic plan reference abstraction stored in `.erk/impl-context/plan-ref.json`. It replaced the GitHub-specific `IssueReference` to support future plan providers.
+    18→
+    19→## Why PlanRef Replaced IssueReference
+    20→
+    21→The original `IssueReference` was tightly coupled to GitHub:
+    22→
+    23→- Fields: `issue_number` (int), `issue_url` (str)
+    24→- File: `.erk/impl-context/issue.json`
+    25→- Only supported GitHub issues as plan storage
+    26→
+    27→PlanRef generalizes this:
+    28→
+    29→- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
+    30→- File: `.erk/impl-context/plan-ref.json`
+
+... [76 lines omitted] ...
+
+    50→Saves a plan reference to `plan-ref.json`. All parameters after `impl_dir` are keyword-only. Raises `FileNotFoundError` if `impl_dir` doesn't exist.
+  </tool_result>
+  <tool_result tool="toolu_01EvNYvCiAGcNok24fV23pc7">
+Found 75 files
+src/erk/tui/data/real_provider.py
+src/erk/tui/operations/logic.py
+src/erk/tui/operations/workers.py
+src/erk/status/renderers/simple.py
+src/erk/status/collectors/impl.py
+src/erk/status/models/status_data.py
+src/erk/core/services/plan_list_service.py
+src/erk/core/output_filter.py
+src/erk/core/prompt_executor.py
+src/erk/core/codex_output_parser.py
+src/erk/cli/output.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/wt/delete_cmd.py
+src/erk/cli/github_parsing.py
+src/erk/cli/commands/run/list_cmd.py
+src/erk/cli/commands/run/shared.py
+src/erk/cli/commands/pr/view_cmd.py
+src/erk/cli/commands/pr/duplicate_check_cmd.py
+src/erk/cli/commands/pr/log_cmd.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/pr/prepare_cmd.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/objective/check_cmd.py
+src/erk/cli/commands/objective/close_cmd.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/objective/view_cmd.py
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/commands/one_shot.py
+src/erk/cli/commands/pr/check_cmd.py
+
+... [46 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the specific questions by examining key files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3307" cache_read_input_tokens="23009" cache_creation="{'ephemeral_5m_input_tokens': 3307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KFTyJMpBw5HoSnsygNWoNF">
+    <param name="pattern">class.*State|@dataclass.*State</param>
+    <param name="glob">src/erk/**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3307" cache_read_input_tokens="23009" cache_creation="{'ephemeral_5m_input_tokens': 3307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014AaQZvje39LmKYMuQSzaLq">
+    <param name="command">find /home/runner/work/erk/erk/src/erk -name "*state*" -o -name "*submit*" | head -20</param>
+    <param name="description">Find state and submit related files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3307" cache_read_input_tokens="23009" cache_creation="{'ephemeral_5m_input_tokens': 3307, 'ephemeral_1h_input_tokens': 0}" output_tokens="230" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KFTyJMpBw5HoSnsygNWoNF">
+Found 8 files limit: 20, offset: 0
+src/erk/tui/widgets/status_bar.py
+src/erk/tui/sorting/types.py
+src/erk/tui/filtering/types.py
+src/erk/core/worktree_pool.py
+src/erk/core/codex_output_parser.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/artifacts/models.py
+  </tool_result>
+  <tool_result tool="toolu_014AaQZvje39LmKYMuQSzaLq">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__pycache__/submit_pipeline.cpython-312.pyc
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__pycache__/submit_cmd.cpython-312.pyc
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__pycache__/quick_submit.cpython-312.pyc
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/quick_submit.py
+/home/runner/work/erk/erk/src/erk/artifacts/__pycache__/state.cpython-312.pyc
+/home/runner/work/erk/erk/src/erk/artifacts/state.py
+  </tool_result>
+  <assistant>Perfect! Let me examine the key files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="836" cache_read_input_tokens="26316" cache_creation="{'ephemeral_5m_input_tokens': 836, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017nrFZqfEexEZHETUHAhaYV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/state.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="836" cache_read_input_tokens="26316" cache_creation="{'ephemeral_5m_input_tokens': 836, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UDuryXH3u6oeax8XwPxAEA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="836" cache_read_input_tokens="26316" cache_creation="{'ephemeral_5m_input_tokens': 836, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AeFQ9oVs7sa4MeQ62sDstE">
+    <param name="pattern">parse_issue_number_from_url</param>
+    <param name="glob">src/erk/**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="836" cache_read_input_tokens="26316" cache_creation="{'ephemeral_5m_input_tokens': 836, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017nrFZqfEexEZHETUHAhaYV">
+     1→"""Load and save artifact state from .erk/state.toml."""
+     2→
+     3→from pathlib import Path
+     4→from typing import Any
+     5→
+     6→import tomli
+     7→import tomli_w
+     8→
+     9→from erk.artifacts.models import ArtifactFileState, ArtifactState
+    10→
+    11→
+    12→def _state_file_path(project_dir: Path) -&gt; Path:
+    13→    """Return path to state file."""
+    14→    return project_dir / ".erk" / "state.toml"
+    15→
+    16→
+    17→def load_artifact_state(project_dir: Path) -&gt; ArtifactState | None:
+    18→    """Load artifact state from .erk/state.toml.
+    19→
+    20→    Returns None if the state file doesn't exist, has no artifacts section,
+    21→    or is missing the required files section.
+    22→
+    23→    Format:
+    24→        [artifacts]
+    25→        version = "0.3.1"
+    26→
+    27→        [artifacts.files."skills/dignified-python"]
+    28→        version = "0.3.0"
+    29→        hash = "a1b2c3d4e5f6g7h8"
+    30→    """
+
+... [168 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UDuryXH3u6oeax8XwPxAEA">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.core.commit_message_generator import CommitMessageGenerator
+    30→from erk.core.context import ErkContext
+
+... [1055 lines omitted] ...
+
+    32→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   118→class SubmitError:
+   119→    """Error result from a pipeline step."""
+   122→    error_type: str
+   131→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   134→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   147→        return SubmitError(
+   149→            error_type="no_branch",
+   163→        except ValueError as e:
+   164→            return SubmitError(
+   166→                error_type="issue_linkage_mismatch",
+   209→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   229→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   239→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   251→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   268→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   275→    # but the first submit attempt failed before pushing.
+   289→            return SubmitError(
+   291→                error_type="remote_diverged",
+   321→    except RuntimeError as e:
+   322→        error_str = str(e)
+   323→        if "restack" in error_str.lower():
+   324→            return SubmitError(
+   326→                error_type="graphite_restack_required",
+   335→        return SubmitError(
+   337→            error_type="graphite_submit_failed",
+   338→            message=f"Graphite submit failed: {e}",
+   350→        return SubmitError(
+   352→            error_type="pr_not_found",
+   381→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   389→        return SubmitError(
+   391→            error_type="github_auth_failed",
+   401→        return SubmitError(
+   403→            error_type="no_commits",
+   421→        if isinstance(pull_result, PullRebaseError):
+   422→            return SubmitError(
+   424→                error_type="rebase_failed",
+   426→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   427→                    f"Error: {pull_result.message}\n\n"
+   437→        return SubmitError(
+   439→            error_type="branch_diverged",
+   458→    if isinstance(push_result, PushError):
+   460→            return SubmitError(
+   462→                error_type="branch_diverged",
+   471→        raise UserFacingCliError(push_result.message)
+   481→                return SubmitError(
+   483→                    error_type="parent_branch_no_pr",
+   555→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   561→        return SubmitError(
+   563→            error_type="no_base_branch",
+   591→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   611→) -&gt; SubmitState | SubmitError:
+   624→    if isinstance(diff_result, SubmitError):
+   626→    if isinstance(plan_result, SubmitError):
+   638→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   645→        return SubmitError(
+   647→            error_type="no_diff_file",
+   648→            message="Failed to extract diff for AI analysis",
+   669→        return SubmitError(
+   671→            error_type="ai_generation_failed",
+   672→            message=f"Failed to generate message: {msg_result.error_message}",
+   685→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   727→    except RuntimeError as e:
+   728→        error_msg = str(e).lower()
+   729→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   733→        return SubmitError(
+   735→            error_type="graphite_enhance_failed",
+   736→            message=f"Graphite enhancement failed: {e}",
+   753→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   760→        return SubmitError(
+   762→            error_type="no_pr_number",
+   835→        except OSError as e:
+   837→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   865→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   891→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   929→            except ValueError:
+   983→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   988→        except Exception as e:
+   990→            return SubmitError(
+   992→                error_type="unhandled_exception",
+   993→                message=f"Unexpected error in {step_name}: {e}",
+   997→        if isinstance(result, SubmitError):
+  1019→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1020→    """Run the submit pipeline, returning final state or first error."""
+  1024→        except Exception as e:
+  1026→            return SubmitError(
+  1028→                error_type="unhandled_exception",
+  1029→                message=f"Unexpected error in {step_name}: {e}",
+  1033→        if isinstance(result, SubmitError):
+  </tool_result>
+  <tool_result tool="toolu_01AeFQ9oVs7sa4MeQ62sDstE">
+No files found
+  </tool_result>
+  <assistant>Now let me check the remaining questions:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="17424" cache_read_input_tokens="27152" cache_creation="{'ephemeral_5m_input_tokens': 17424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Du1Ewe9BgkXxMv726uuKzW">
+    <param name="pattern">P\{.*issue_number.*\}|branch.*startswith.*P\{</param>
+    <param name="glob">src/erk/**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17424" cache_read_input_tokens="27152" cache_creation="{'ephemeral_5m_input_tokens': 17424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HPxvgQyjx1RHvASLzN1oFp">
+    <param name="pattern">issue_number.*json|json.*issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17424" cache_read_input_tokens="27152" cache_creation="{'ephemeral_5m_input_tokens': 17424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AyuvhH9ZfkrWrq1MefP2Ps">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17424" cache_read_input_tokens="27152" cache_creation="{'ephemeral_5m_input_tokens': 17424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AyuvhH9ZfkrWrq1MefP2Ps">
+     1→"""Update node PR cells in an objective's roadmap table.
+     2→
+     3→Why this command exists (instead of using update-issue-body directly):
+     4→
+     5→    The alternative is "fetch body -&gt; parse markdown table -&gt; find node row -&gt;
+     6→    surgically edit the PR cell -&gt; write entire body back". That's ~15
+     7→    lines of fragile ad-hoc Python that every caller (skills, hooks, scripts)
+     8→    must duplicate. The roadmap table has a specific structure
+     9→    (| node_id | description | status | pr |) and the update has
+    10→    specific semantics:
+    11→
+    12→    1. Find the row by node ID across all phases
+    13→    2. Compute display status from the PR value
+    14→    3. Write status and PR cells atomically so the table is
+    15→       always human-readable without requiring a parse pass
+    16→
+    17→    Encoding this once in a tested CLI command means:
+    18→    - No duplicated table-parsing logic across callers
+    19→    - Testable edge cases (node not found, no roadmap, clearing PR)
+    20→    - Atomic mental model: "update node 1.3's PR to X"
+    21→    - Resilient to roadmap format changes (one command updates, not N sites)
+    22→
+    23→Usage:
+    24→    # Single node -- landed PR
+    25→    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
+    26→
+    27→    # Clear PR
+    28→    erk exec update-objective-node 6423 --node 1.3 --pr ""
+    29→
+    30→    # Status-only update (preserve existing PR)
+
+... [344 lines omitted] ...
+
+    41→        Each node result: {node_id, success, previous_pr, error}
+    70→def _node_error_message(node_id: str, issue_number: int, error: object) -&gt; str:
+    71→    if error == "node_not_found":
+    73→    return f"Failed to replace cells for node '{node_id}'"
+   105→            "error": single_result["error"],
+   106→            "message": _node_error_message(node[0], issue_number, single_result["error"]),
+   183→    except ValueError:
+   230→                    "error": "no_update",
+   247→                    "error": "issue_not_found",
+   261→                    "error": "no_roadmap",
+   273→            {"node_id": n, "success": False, "error": "node_not_found"} for n in missing_nodes
+   290→    any_failure = False
+   299→                    "error": "node_not_found",
+   302→            any_failure = True
+   316→                    "error": "replacement_failed",
+   319→            any_failure = True
+   331→    # Exit early if all nodes failed
+   332→    if any_failure and not any(r["success"] for r in results):
+  </tool_result>
+  <tool_result tool="toolu_01HPxvgQyjx1RHvASLzN1oFp">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01Du1Ewe9BgkXxMv726uuKzW">
+No files found
+  </tool_result>
+  <assistant>Now let me check for `get_issue_number()` in erk-statusline and check branch naming patterns:</assistant>
+  <usage input_tokens="4642" cache_creation_input_tokens="1239" cache_read_input_tokens="44576" cache_creation="{'ephemeral_5m_input_tokens': 1239, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Ahwvy75k6o595on7i2XAxZ">
+    <param name="command">find /home/runner/work/erk/erk -name "*statusline*" -type d</param>
+    <param name="description">Find erk-statusline package</param>
+  </tool_use>
+  <usage input_tokens="4642" cache_creation_input_tokens="1239" cache_read_input_tokens="44576" cache_creation="{'ephemeral_5m_input_tokens': 1239, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012dfNjpUcYMgejpCjJbKMy6">
+    <param name="pattern">def get_issue_number</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="4642" cache_creation_input_tokens="1239" cache_read_input_tokens="44576" cache_creation="{'ephemeral_5m_input_tokens': 1239, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LmAZ2x27QAtNiByeKLAFfd">
+    <param name="pattern">plnd/.*issue_number|P\{</param>
+    <param name="glob">src/erk/**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="4642" cache_creation_input_tokens="1239" cache_read_input_tokens="44576" cache_creation="{'ephemeral_5m_input_tokens': 1239, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LmAZ2x27QAtNiByeKLAFfd">
+src/erk/cli/commands/pr/metadata_helpers.py:4:when triggering remote workflows on branches that follow the P{plan}-pattern.
+src/erk/cli/commands/pr/metadata_helpers.py:66:    """Update plan dispatch metadata if branch follows P{plan}-pattern.
+src/erk/cli/commands/pr/metadata_helpers.py:76:    - Branch doesn't match P{plan_number} pattern
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <tool_result tool="toolu_012dfNjpUcYMgejpCjJbKMy6">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01Ahwvy75k6o595on7i2XAxZ">
+/home/runner/work/erk/erk/packages/erk-statusline
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline
+  </tool_result>
+  <assistant>Let me look at the metadata_helpers file and check the statusline functions:</assistant>
+  <usage input_tokens="179" cache_creation_input_tokens="5189" cache_read_input_tokens="45815" cache_creation="{'ephemeral_5m_input_tokens': 5189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019sWgfwJ6jo9xZb83rfrbMy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="179" cache_creation_input_tokens="5189" cache_read_input_tokens="45815" cache_creation="{'ephemeral_5m_input_tokens': 5189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NC1X65cLTqZkCyEC6RncrG">
+    <param name="command">find /home/runner/work/erk/erk/packages/erk-statusline -name "*.py" -type f | head -20</param>
+    <param name="description">List Python files in erk-statusline</param>
+  </tool_use>
+  <usage input_tokens="179" cache_creation_input_tokens="5189" cache_read_input_tokens="45815" cache_creation="{'ephemeral_5m_input_tokens': 5189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019sWgfwJ6jo9xZb83rfrbMy">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import GitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: GitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+
+... [81 lines omitted] ...
+
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <tool_result tool="toolu_01NC1X65cLTqZkCyEC6RncrG">
+/home/runner/work/erk/erk/packages/erk-statusline/tests/test_context.py
+/home/runner/work/erk/erk/packages/erk-statusline/tests/test_statusline.py
+/home/runner/work/erk/erk/packages/erk-statusline/tests/test_colored_tokens.py
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/colored_tokens.py
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/__init__.py
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/context.py
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/__main__.py
+  </tool_result>
+  <assistant>Let me check the statusline context file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2196" cache_read_input_tokens="51004" cache_creation="{'ephemeral_5m_input_tokens': 2196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016fHL8j9yiX44bf1Rbx7RZ7">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/context.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2196" cache_read_input_tokens="51004" cache_creation="{'ephemeral_5m_input_tokens': 2196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QjFzJTnbyyqsuVMVg7m5VZ">
+    <param name="pattern">get_issue_number|issue_number</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2196" cache_read_input_tokens="51004" cache_creation="{'ephemeral_5m_input_tokens': 2196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016fHL8j9yiX44bf1Rbx7RZ7">
+     1→"""StatuslineContext - dependency injection container for statusline operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import shutil
+     6→import subprocess
+     7→from dataclasses import dataclass
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.branch_manager.abc import BranchManager
+    11→from erk_shared.gateway.branch_manager.factory import create_branch_manager
+    12→from erk_shared.gateway.erk_installation.abc import ErkInstallation
+    13→from erk_shared.gateway.erk_installation.real import RealErkInstallation
+    14→from erk_shared.gateway.git.abc import Git
+    15→from erk_shared.gateway.git.real import RealGit
+    16→from erk_shared.gateway.github.abc import GitHub
+    17→from erk_shared.gateway.github.issues.real import RealGitHubIssues
+    18→from erk_shared.gateway.github.parsing import parse_git_remote_url
+    19→from erk_shared.gateway.github.real import RealGitHub
+    20→from erk_shared.gateway.github.types import RepoInfo
+    21→from erk_shared.gateway.graphite.abc import Graphite
+    22→from erk_shared.gateway.graphite.branch_ops.real import RealGraphiteBranchOps
+    23→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+    24→from erk_shared.gateway.graphite.real import RealGraphite
+    25→from erk_shared.gateway.time.real import RealTime
+    26→
+    27→
+    28→@dataclass(frozen=True)
+    29→class StatuslineContext:
+    30→    """Context container for statusline operations.
+
+... [99 lines omitted] ...
+
+    98→    except (ValueError, subprocess.CalledProcessError):
+  </tool_result>
+  <tool_result tool="toolu_01QjFzJTnbyyqsuVMVg7m5VZ">
+No files found
+  </tool_result>
+  <assistant>Let me check the statusline file itself:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2135" cache_read_input_tokens="53200" cache_creation="{'ephemeral_5m_input_tokens': 2135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0137yvBevTK6jTQLT5nYAFPt">
+    <param name="command">grep -r "get_issue_number\|_load_impl_data\|get_objective_issue" /home/runner/work/erk/erk/packages/erk-statusline/src --include="*.py"</param>
+    <param name="description">Search for issue_number functions in statusline</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2135" cache_read_input_tokens="53200" cache_creation="{'ephemeral_5m_input_tokens': 2135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NJApDy1YpBrsz5rmSoQUhb">
+    <param name="command">grep -r "plan.*number\|issue.*number" /home/runner/work/erk/erk/src/erk/cli/github_parsing.py</param>
+    <param name="description">Check github_parsing for branch patterns</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2135" cache_read_input_tokens="53200" cache_creation="{'ephemeral_5m_input_tokens': 2135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0137yvBevTK6jTQLT5nYAFPt">
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py:def _load_impl_data(impl_dir: Path) -&gt; dict | None:
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py:    data = _load_impl_data(Path(git_root) / ".impl")
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py:def get_objective_issue(git_root: str) -&gt; int | None:
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py:    data = _load_impl_data(Path(git_root) / ".impl")
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py:                    objective_issue = get_objective_issue(git_root)
+  </tool_result>
+  <tool_result tool="toolu_01NJApDy1YpBrsz5rmSoQUhb">
+    parse_plan_number_from_url,
+    """Parse issue number from plain number, P-prefixed ID, or GitHub issue URL.
+    issue_number = parse_plan_number_from_url(identifier)
+    if issue_number is not None:
+        return issue_number
+        + f"Invalid plan number or URL: {identifier}\n\n"
+  </tool_result>
+  <assistant>Good! Now let me read those files more carefully:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="782" cache_read_input_tokens="55335" cache_creation="{'ephemeral_5m_input_tokens': 782, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lbkk2gfyN3er4iJNi6wYom">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="782" cache_read_input_tokens="55335" cache_creation="{'ephemeral_5m_input_tokens': 782, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WmzwmS6ZAzQLPPuPwP8iJg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/github_parsing.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="782" cache_read_input_tokens="55335" cache_creation="{'ephemeral_5m_input_tokens': 782, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lbkk2gfyN3er4iJNi6wYom">
+     1→#!/usr/bin/env python3
+     2→"""
+     3→Claude Code status line - robbyrussell theme style.
+     4→
+     5→Matches the robbyrussell Oh My Zsh theme format:
+     6→➜  directory (git:branch) ✗
+     7→
+     8→With added Claude-specific info on the right.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import hashlib
+    14→import json
+    15→import logging
+    16→import os
+    17→import subprocess
+    18→import sys
+    19→import time
+    20→from concurrent.futures import ThreadPoolExecutor
+    21→from pathlib import Path
+    22→from typing import NamedTuple
+    23→
+    24→from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
+    25→from erk_statusline.context import StatuslineContext
+    26→
+    27→# Cache configuration
+    28→CACHE_DIR = Path("/tmp/erk-statusline-cache")
+    29→CACHE_TTL_SECONDS = 30
+    30→
+
+... [125 lines omitted] ...
+
+    96→    except (json.JSONDecodeError, OSError, KeyError):
+    97→        _logger.debug("Cache miss: %s/%s branch=%s (parse error)", owner, repo, branch)
+  </tool_result>
+  <tool_result tool="toolu_01WmzwmS6ZAzQLPPuPwP8iJg">
+     1→"""CLI-level wrappers for GitHub URL parsing with error handling.
+     2→
+     3→This module provides CLI-friendly wrappers around the shared parsing functions
+     4→in erk_shared.gateway.github.parsing. These wrappers handle user input (not just URLs)
+     5→and raise SystemExit(1) with appropriate error messages for invalid input.
+     6→
+     7→Two-layer architecture:
+     8→- erk_shared.gateway.github.parsing: Pure parsing functions, return None on failure (LBYL-friendly)
+     9→- src/erk/cli/github_parsing.py: CLI wrappers that raise SystemExit(1)
+    10→"""
+    11→
+    12→import click
+    13→
+    14→from erk_shared.gateway.github.parsing import (
+    15→    parse_plan_number_from_url,
+    16→    parse_pr_number_from_url,
+    17→)
+    18→from erk_shared.output.output import user_output
+    19→
+    20→
+    21→def parse_issue_identifier(identifier: str) -&gt; int:
+    22→    """Parse issue number from plain number, P-prefixed ID, or GitHub issue URL.
+    23→
+    24→    This is a CLI-level function that handles user input.
+    25→
+    26→    Args:
+    27→        identifier: Plain number ("42"), P-prefixed ("P42"), or GitHub issue URL
+    28→
+    29→    Returns:
+    30→        Issue number as int
+
+... [81 lines omitted] ...
+
+    59→        click.style("Error: ", fg="red")
+    99→        click.style("Error: ", fg="red")
+  </tool_result>
+  <assistant>Perfect! Now let me check for the actual `_load_impl_data` and other functions in statusline more carefully:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3816" cache_read_input_tokens="56117" cache_creation="{'ephemeral_5m_input_tokens': 3816, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012jmnT59xcqCQVyeSPyZS5s">
+    <param name="command">grep -A 20 "def _load_impl_data" /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="description">Check _load_impl_data function</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3816" cache_read_input_tokens="56117" cache_creation="{'ephemeral_5m_input_tokens': 3816, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GwZe38F9boJEQ24B3S8wvY">
+    <param name="command">grep -A 10 "def get_objective_issue" /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="description">Check get_objective_issue function</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3816" cache_read_input_tokens="56117" cache_creation="{'ephemeral_5m_input_tokens': 3816, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E41zKzCT3AYzaAHB4UDv1K">
+    <param name="command">grep "plnd/" /home/runner/work/erk/erk/src/erk -r --include="*.py" | head -5</param>
+    <param name="description">Check for plnd/ pattern usage</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3816" cache_read_input_tokens="56117" cache_creation="{'ephemeral_5m_input_tokens': 3816, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GwZe38F9boJEQ24B3S8wvY">
+def get_objective_issue(git_root: str) -&gt; int | None:
+    """Load objective issue number from .impl/plan-ref.json file.
+
+    Args:
+        git_root: Absolute path to git repository root
+
+    Returns:
+        Objective issue number if file exists and has objective_id field, None otherwise.
+    """
+    if not git_root:
+        return None
+  </tool_result>
+  <tool_result tool="toolu_01E41zKzCT3AYzaAHB4UDv1K">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py:    """Prepend 'plnd/' prefix to PR title (idempotent).
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py:        The title with 'plnd/' prefix, skipping if already prefixed
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py:    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py:        # planned_pr: plnd/ prefix (no issue number needed)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py:Uses github.get_pr_for_branch() to look up the associated PR for plnd/ branches.
+  </tool_result>
+  <tool_result tool="toolu_012jmnT59xcqCQVyeSPyZS5s">
+def _load_impl_data(impl_dir: Path) -&gt; dict | None:
+    """Load JSON data from .impl/plan-ref.json.
+
+    Args:
+        impl_dir: Path to .impl/ directory
+
+    Returns:
+        Parsed JSON data, or None if file doesn't exist or is invalid.
+    """
+    plan_ref_file = impl_dir / "plan-ref.json"
+    if plan_ref_file.is_file():
+        try:
+            with open(plan_ref_file, encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            pass
+
+    return None
+
+
+def get_plan_number(git_root: str) -&gt; int | None:
+  </tool_result>
+  <assistant>Excellent! Now let me compile my findings. Let me do one more check to see if there are any remaining `parse_issue_number_from_url` or similar functions in source:</assistant>
+  <usage input_tokens="409" cache_creation_input_tokens="698" cache_read_input_tokens="59933" cache_creation="{'ephemeral_5m_input_tokens': 698, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019srhRKRrm3UwwTV6448Hrp">
+    <param name="command">grep -r "parse_plan_number_from_url\|parse_issue_number" /home/runner/work/erk/erk/src --include="*.py" | head -10</param>
+    <param name="description">Check parse function names in source</param>
+  </tool_use>
+  <usage input_tokens="409" cache_creation_input_tokens="698" cache_read_input_tokens="59933" cache_creation="{'ephemeral_5m_input_tokens': 698, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PWBJiED9VhQcMdRHR97k2N">
+    <param name="command">grep -r "parse_plan_number_from_url\|parse_issue_number" /home/runner/work/erk/erk/packages --include="*.py" | head -10</param>
+    <param name="description">Check parse function names in packages</param>
+  </tool_use>
+  <usage input_tokens="409" cache_creation_input_tokens="698" cache_read_input_tokens="59933" cache_creation="{'ephemeral_5m_input_tokens': 698, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PWBJiED9VhQcMdRHR97k2N">
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:    parse_plan_number_from_url,
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:# Tests for parse_plan_number_from_url
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:    assert parse_plan_number_from_url(url) == 123
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:def test_parse_plan_number_from_url_with_fragment() -&gt; None:
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:    assert parse_plan_number_from_url(url) == 456
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:def test_parse_plan_number_from_url_with_query_string() -&gt; None:
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:    assert parse_plan_number_from_url(url) == 789
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:    assert parse_plan_number_from_url("https://github.com/owner/repo") is None
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:    assert parse_plan_number_from_url("https://github.com/owner/repo/pull/123") is None
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py:    assert parse_plan_number_from_url("not-a-url") is None
+  </tool_result>
+  <tool_result tool="toolu_019srhRKRrm3UwwTV6448Hrp">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py:    parse_plan_number_from_url,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py:    plan_number = parse_plan_number_from_url(reference)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py:from erk_shared.gateway.github.parsing import parse_plan_number_from_url
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py:        number = parse_plan_number_from_url(ref)
+/home/runner/work/erk/erk/src/erk/cli/github_parsing.py:    parse_plan_number_from_url,
+/home/runner/work/erk/erk/src/erk/cli/github_parsing.py:    issue_number = parse_plan_number_from_url(identifier)
+  </tool_result>
+  <assistant>Perfect! Now I have comprehensive data. Let me create a concise summary report:
+
+## Summary: Current State of `issue_number` vs `plan_number` in Erk
+
+Based on systematic code inspection, here are the findings for each question:
+
+### 1. Submit Pipeline State Dataclass
+**Current state: Uses `plan_id` (string), NOT `issue_number`**
+
+In `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py`, the `SubmitState` dataclass (lines 87-115) contains:
+```python
+plan_id: str | None
+pr_number: int | None
+```
+
+The field is `plan_id` (string), not `issue_number`. This was renamed from the previous naming scheme.
+
+### 2. plan-ref-architecture.md Field Names
+**Current state: Uses `plan_id` (string)**
+
+The doc at `/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md` describes:
+- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`
+- File location: `.erk/impl-context/plan-ref.json`
+- Legacy fallback maps: `issue_number` -&gt; `plan_id` (converted to string)
+
+The doc explicitly notes (lines 42-44) that `plan_id` is deliberately a string, not int, to support non-numeric providers.
+
+### 3. Parse Function Naming
+**Current state: Function renamed to `parse_plan_number_from_url()`**
+
+The function `parse_issue_number_from_url()` **does NOT exist**. It has been renamed to `parse_plan_number_from_url()`.
+
+Found in `/home/runner/work/erk/erk/src/erk/cli/github_parsing.py` (line 15):
+```python
+from erk_shared.gateway.github.parsing import (
+    parse_plan_number_from_url,
+    ...
+)
+```
+
+Usage example (line 54):
+```python
+issue_number = parse_plan_number_from_url(identifier)
+```
+
+### 4. Source Code Usage: `state.issue_number`
+**Current state: Field is `plan_id`, not `issue_number`**
+
+In submit_pipeline.py, references use `state.plan_id` (not `state.issue_number`). Example at lines 172-183:
+```python
+plan_id = validate_plan_linkage(impl_dir, branch_name)
+...
+save_plan_ref(
+    impl_dir,
+    provider="github",
+    plan_id=plan_id,
+    ...
+)
+```
+
+### 5. Branch Naming Pattern
+**Current state: Uses `plnd/` prefix, not `P{issue_number}` pattern**
+
+In submit_pipeline.py (line 276):
+```python
+is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+```
+
+The pattern is `plnd/` (lowercase prefix for planned PRs), not `P{plan_number}` encoding.
+
+### 6. Update-Objective-Node JSON Output
+**Current state: Still uses `issue_number` key in JSON**
+
+In `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py`:
+- Lines 93, 110, 114: Output dict includes `"issue_number": issue_number`
+- Function signature (line 217): Takes `issue_number: int` parameter
+
+This is the **only place** where `issue_number` is still used in output. This is intentional - it's the GitHub issue number for the objective, not a plan reference.
+
+### 7. Get_issue_number() Function
+**Current state: Renamed to `get_plan_number()`**
+
+In `/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py`:
+- The doc mentioned `get_issue_number()` but it's now `get_plan_number()`
+- There IS a `get_objective_issue()` function that reads from `plan-ref.json`
+- Both read from the new `.impl/plan-ref.json` format
+
+### Recommendations for Documentation Updates
+1. Remove references to `issue_number` as a plan identifier
+2. Replace `parse_issue_number_from_url()` with `parse_plan_number_from_url()` 
+3. Document that `plan_id` is string (not int)
+4. Update branch naming from `P{issue_number}` to `plnd/` prefix
+5. Note that `update-objective-node.py` uses `issue_number` for **objective issue numbers**, not plan references (this is correct and should be kept)
+6. Document the separate `get_plan_number()` and `get_objective_issue()` functions in statusline</assistant>
+  <usage input_tokens="547" cache_creation_input_tokens="1114" cache_read_input_tokens="60631" cache_creation="{'ephemeral_5m_input_tokens': 1114, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
