@@ -216,6 +216,18 @@ yield Static(json_content, markup=False)
 - `escape_markup()` + `markup=True` (default): When you want Rich styling but need to escape user text (e.g., links with display text)
 - `markup=False`: When displaying raw code, JSON, file contents, or any structured data that may contain brackets
 
+### StatusBar Must Use markup=False
+
+**Problem**: The StatusBar widget displays subprocess error messages that may contain brackets (e.g., `[error details]`). With default `markup=True`, these brackets are parsed as Rich markup tags, causing `MarkupError` at render time.
+
+**Solution**: Set `markup=False` in the StatusBar `__init__` by passing it to `super().__init__()`.
+
+<!-- Source: src/erk/tui/widgets/status_bar.py, StatusBar.__init__ -->
+
+See `StatusBar.__init__()` in `src/erk/tui/widgets/status_bar.py` for the implementation.
+
+**Key insight**: Any widget that displays external/subprocess output should default to `markup=False`. Rich markup parsing should only be enabled on widgets where you control the content and intentionally use markup.
+
 ## General Recommendations
 
 1. **Use type annotations** - Textual uses Reactives heavily; proper types catch issues early

@@ -45,6 +45,16 @@ Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `paren
 
 **Anti-pattern:** Lazy discovery (re-running `get_repository_root()` in step 5 because "we need it again"). If a field is needed by multiple steps, step 1 populates it. State carries it forward.
 
+## Graphite Status Caching in prepare_state()
+
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state, graphite-status-caching -->
+
+`prepare_state()` caches two nullable fields on SubmitState: `graphite_is_authed: bool | None` and `graphite_branch_tracked: bool | None`. These are populated once during discovery and consumed by both `push_and_create_pr` (to decide Graphite-first vs core flow) and `enhance_with_graphite` (to skip enhancement if not applicable).
+
+**Why cache instead of re-checking?** Graphite auth involves running `gt auth` and parsing output. Branch tracking requires `gt branch list` which fetches all Graphite branches. Both are expensive. Caching in `prepare_state()` avoids running these checks twice (once for push dispatch, once for enhancement).
+
+**Why nullable?** The fields are `bool | None` because they're only populated when `use_graphite` is True. `None` means "not checked" (Graphite disabled), `True`/`False` means "checked and determined."
+
 ## Graphite-First Dispatch: Why Not a Separate Pipeline
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr, _graphite_first_flow, _core_submit_flow -->

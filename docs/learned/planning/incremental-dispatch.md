@@ -1,59 +1,51 @@
 ---
-title: Incremental Dispatch System
+title: Incremental Dispatch Workflow
 read_when:
-  - "dispatching a local plan against an existing PR"
-  - "working with incremental dispatch workflow"
-  - "understanding commit-level vs PR-level plan embedding"
+  - "dispatching implementation against an existing PR"
+  - "adding a local plan to an existing PR for remote implementation"
+  - "working with incremental-dispatch exec script or slash command"
 tripwires:
-  - action: "dispatching a plan without an existing open PR"
-    warning: "Incremental dispatch requires an OPEN PR (not draft). Unlike regular dispatch, it does not require the erk-plan label."
-  - action: "modifying commit message format in incremental dispatch"
-    warning: "The commit message embeds the full plan content in the body. This is intentional — it provides commit-level plan context in git history."
+  - action: "dispatching implementation against an existing PR"
+    warning: "Use incremental-dispatch, not regular dispatch. Incremental dispatch does NOT require the erk-plan label — just an OPEN PR. It uses provider='incremental-dispatch' vs 'github-draft-pr'. See incremental-dispatch.md."
 ---
 
-# Incremental Dispatch System
+# Incremental Dispatch Workflow
 
-Dispatches a local plan against an existing PR for remote implementation, without requiring the erk-plan label.
+Dispatch a local plan against an existing PR for remote implementation, without requiring the `erk-plan` label.
 
-## Implementation
+## What vs Regular Dispatch
 
-**Source:** `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+| Aspect         | Regular Dispatch               | Incremental Dispatch              |
+| -------------- | ------------------------------ | --------------------------------- |
+| Input          | Plan number (draft PR)         | Local plan file + PR number       |
+| Label required | `erk-plan`                     | None (just OPEN)                  |
+| Provider       | `github-draft-pr`              | `incremental-dispatch`            |
+| Use case       | New plan -> new implementation | Additional changes to existing PR |
 
-## Two-Part Plan Embedding
+## Workflow
 
-Incremental dispatch embeds the plan at two levels:
+1. **Slash command** (`/erk:pr-incremental-dispatch`) prompts user for plan content and target PR
+2. **Exec script** (`erk exec incremental-dispatch`) receives `--plan-file` and `--pr` arguments
+3. Script validates PR is OPEN, syncs branch, commits `.erk/impl-context/` files with `provider="incremental-dispatch"`
+4. Triggers `plan-implement.yml` workflow via GitHub Actions dispatch
 
-1. **Commit-level** (local git history): The full plan content is embedded in the commit message body:
+## CI Workflow Support
 
-   ```
-   Incremental dispatch for PR #<number>
+<!-- Source: .github/workflows/plan-implement.yml:138-171, "Checkout implementation branch" step -->
 
-   <full plan content>
-   ```
+The `plan-implement.yml` workflow's "Checkout implementation branch" step (line 138) detects pre-committed `.erk/impl-context/` on the branch by checking if `plan.md` exists, and conditionally skips plan recreation. This is the key difference: regular dispatch creates impl-context during the workflow, while incremental dispatch pre-commits it.
 
-   This preserves plan context in the git log for future reference.
+## Key Files
 
-2. **PR-level** (reviewer context): The plan is written to `.erk/impl-context/` files via `build_impl_context_files()`, making it available to the remote implementation agent.
+- **Exec script:** `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+- **Slash command:** `.claude/commands/erk/pr-incremental-dispatch.md`
+- **CI workflow:** `.github/workflows/plan-implement.yml`
 
-## Worktree Index Sync
+## Branch Handling
 
-When the target branch is checked out in a worktree, incremental dispatch must keep the working tree in sync after the plumbing commit:
+Uses the same [checked-out branch handling pattern](../architecture/checked-out-branch-handling.md) as regular dispatch — detects whether the target branch is checked out in a worktree and uses `update_local_ref()` instead of `create_branch()` when needed.
 
-1. Detects if the branch is checked out via `git.worktree.is_branch_checked_out()`
-2. Writes impl-context files to disk in the worktree
-3. Stages files with `git.commit.stage_files(force=True)`
+## Related Topics
 
-This ensures `git status` is clean after the plumbing commit advances the branch.
-
-## Workflow Trigger
-
-The dispatch triggers the plan-implement workflow with:
-
-- `dispatch_type`: `"incremental"` (distinguishes from full dispatch)
-- `plan_backend`: `"planned_pr"` (specifies the plan backend type)
-- Additional inputs: `plan_id`, `submitted_by`, `plan_title`, `branch_name`, `pr_number`, `base_branch`
-
-## Related Documentation
-
-- [Impl-Context Staging Directory](impl-context.md) — how impl-context files are managed
-- [PR Submission Patterns](pr-submission-patterns.md) — PR lifecycle context
+- [Checked-Out Branch Handling](../architecture/checked-out-branch-handling.md) — shared branch sync pattern
+- [Planned PR Lifecycle](planned-pr-lifecycle.md) — full plan lifecycle documentation

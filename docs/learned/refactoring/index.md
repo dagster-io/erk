@@ -3,6 +3,7 @@
 
 # Refactoring Documentation
 
+- **[coordinated-rename.md](coordinated-rename.md)** — renaming a command or concept across the codebase, performing a systematic rename across CLI, TUI, tests, and docs, coordinating renames that touch 10+ files
 - **[feature-removal-checklist.md](feature-removal-checklist.md)** — removing a feature from the codebase, deleting deprecated functionality, cleaning up after feature removal
 - **[libcst-systematic-imports.md](libcst-systematic-imports.md)** — refactoring imports across many files, renaming modules or packages, deciding between manual edits and automated refactoring
 - **[post-refactor-documentation-audit.md](post-refactor-documentation-audit.md)** — completing a refactoring that renames or removes commands, classes, or functions, reviewing a PR that deletes or renames code, cleaning up after a large rename or deletion

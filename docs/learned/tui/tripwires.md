@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **adding a field to PlanRowData without updating make_plan_row** → Read [TUI Data Contract](data-contract.md) first. The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break.
 
+**adding a filter toggle to the TUI dashboard** → Read [TUI Filter Toggle Pattern](filter-toggle-pattern.md) first. Server-side filters (like author) must clear \_data_cache on toggle. Client-side filters (like stack, objective) only re-filter cached rows. Follow the 6-component pattern in filter-toggle-pattern.md.
+
 **adding a new TUI command without updating all 3 places** → Read [TUI Command Registration](tui-command-registration.md) first. TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md.
 
 **adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.

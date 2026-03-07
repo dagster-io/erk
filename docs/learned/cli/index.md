@@ -19,6 +19,7 @@
 - **[command-deletion-patterns.md](command-deletion-patterns.md)** — deleting a CLI command or command group, removing dead code after a feature deletion, identifying vestigial features for removal
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
+- **[command-promotion.md](command-promotion.md)** — promoting a nested CLI command to top-level, moving a command from a group to the root CLI, reorganizing CLI command hierarchy
 - **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
 - **[commands/pr-diverge-fix.md](commands/pr-diverge-fix.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
 - **[commands/pr-prepare.md](commands/pr-prepare.md)** — setting up impl-context for an existing PR, preparing a worktree for plan implementation, working with erk pr prepare
@@ -60,6 +61,7 @@
 - **[pr-submission.md](pr-submission.md)** — choosing between git-pr-push and pr-submit commands, understanding PR submission workflows, deciding whether to use Graphite or plain git
 - **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding the Graphite-first vs core submit dispatch
 - **[prompt-consolidation-pattern.md](prompt-consolidation-pattern.md)** — implementing interactive prompts, consolidating multiple yes/no prompts, working with ctx.console.confirm, testing commands with user prompts
+- **[rich-table-output.md](rich-table-output.md)** — building CLI tables with color or formatting, adding Rich output to a Click command, creating sparklines or colored status indicators in CLI
 - **[session-management.md](session-management.md)** — adding session ID to a new exec script or hook, debugging 'session ID required' errors, deciding whether a command should require or optionally accept session ID, understanding how session ID flows from Claude Code to erk
 - **[shell-activation-pattern.md](shell-activation-pattern.md)** — generating commands that switch to a different worktree, debugging why erk br co doesn't change directory, building CLI commands that need shell-level directory changes, understanding why plan checkout commands use source
 - **[slash-command-exec-migration.md](slash-command-exec-migration.md)** — adding business logic to a slash command, deciding whether to call gh/git directly from a slash command or extract to exec, creating a new slash command that needs to interact with GitHub or git
