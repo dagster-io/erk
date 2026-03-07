@@ -72,7 +72,21 @@ See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_
 
 ### How It Works
 
-`update_local_ref()` uses `git update-ref` to move a local branch pointer to a new commit SHA without checking out the branch. This is safe when the branch is NOT currently checked out in any worktree.
+`update_local_ref()` uses `git update-ref` to move a local branch pointer to a new commit SHA without checking out the branch.
+
+### Checked-Out Branch Handling
+
+When the target branch is currently checked out in a worktree, `update_local_ref` is used instead of `create_branch(force=True)` because git refuses to force-update a checked-out branch. The incremental dispatch script uses an LBYL check:
+
+<!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, incremental_dispatch (branch sync section) -->
+
+See the branch sync section of `incremental_dispatch()` in `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`. It calls `git.worktree.is_branch_checked_out()` first — if the branch is not checked out anywhere, it uses `create_branch(force=True)` to reset the ref. If the branch is checked out, it falls back to `update_local_ref()` with the remote SHA.
+
+After a plumbing commit to a checked-out branch, the index may contain stale staged changes. Reset with `git checkout HEAD --` on the committed files to sync the index.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, incremental_dispatch (index sync section) -->
+
+See the index sync section of `incremental_dispatch()` in `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`. After committing, if the branch is checked out it runs `git checkout HEAD --` on the committed `impl_context_paths` via `run_subprocess_with_context()` to bring the index back in sync.
 
 ### Implementation
 
@@ -99,6 +113,7 @@ See `update_local_ref()` in `packages/erk-shared/src/erk_shared/gateway/git/bran
 - PR #7783 replaced checkout with git plumbing to eliminate race conditions
 - PR #8578 applied `commit_files_to_branch` pattern to dispatch workflow
 - PR #8582 applied `update_local_ref` pattern to trunk sync in dispatch helpers
+- PR #8789 added checked-out branch handling and index sync to incremental dispatch
 
 ## Testing
 

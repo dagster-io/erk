@@ -23,8 +23,8 @@ Plan content arrives at the PR through a multi-system chain:
 
 1. **Branch name** → `PlanContextProvider` extracts the issue number from the `P{number}-{slug}` convention
 2. **GitHub API** → fetches the plan issue body, then the plan comment containing the actual plan markdown
-3. **Phase 3** of the submit pipeline populates `state.plan_context` (a `PlanContext` with issue number, plan markdown, and optional objective summary)
-4. **Phase 6** (`finalize_pr`) conditionally appends the plan HTML to the GitHub-only body string
+3. **Phase 2** of the submit pipeline populates `state.plan_context` (a `PlanContext` with issue number, plan markdown, and optional objective summary) — runs concurrently with diff extraction
+4. **Phase 5** (`finalize_pr`) conditionally appends the plan HTML to the GitHub-only body string
 
 <!-- Source: src/erk/core/plan_context_provider.py, PlanContextProvider.get_plan_context -->
 
@@ -48,5 +48,5 @@ This separation is verified by a dedicated test that asserts `<details>` appears
 ## Related Documentation
 
 - [PR Body Formatting](../architecture/pr-body-formatting.md) — The two-target pattern this feature depends on
-- [PR Submit Phases](pr-submit-phases.md) — Phase 3 (plan fetch) and Phase 6 (embedding) context
+- [PR Submit Phases](pr-submit-phases.md) — Phase 2 (plan fetch) and Phase 5 (embedding) context
 - [Plan Implementation Workflow](../planning/workflow.md) — When `.erk/impl-context/` context is available

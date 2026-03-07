@@ -119,8 +119,8 @@ These tests in the test suite catch missing registrations:
 | `test_codex_portable_and_claude_only_cover_all_skills` | `tests/unit/artifacts/test_codex_compatibility.py` | Skill missing from BOTH portable and claude-only lists     |
 | `test_bundled_and_unbundled_cover_all_skills`          | `tests/unit/artifacts/test_codex_compatibility.py` | Skill missing from BOTH bundled and unbundled lists        |
 | `test_codex_portable_skills_match_force_include`       | `tests/unit/artifacts/test_codex_compatibility.py` | Portable skill missing from pyproject.toml force-include   |
-| `test_all_codex_portable_skills_have_capability`       | `tests/unit/core/test_capabilities.py`             | Portable skill not registered as a capability              |
-| `test_all_skill_capabilities_registered`               | `tests/unit/core/test_capabilities.py`             | Bundled skill not in capability registry                   |
+| `test_all_codex_portable_skills_have_capability`       | `tests/unit/core/capabilities/test_skills.py`      | Portable skill not registered as a capability              |
+| `test_all_skill_capabilities_registered`               | `tests/unit/core/capabilities/test_skills.py`      | Bundled skill not in capability registry                   |
 
 If `make fast-ci` fails after adding a skill, check these tests first.
 

@@ -15,6 +15,8 @@ tripwires:
     warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
   - action: "moving @on decorated event handlers to a mixin"
     warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+  - action: "adding CI check formatting to TUI screens"
+    warning: "Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."
 last_audited: "2026-02-17 18:30 PT"
 audit_result: clean
 ---

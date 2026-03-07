@@ -366,6 +366,23 @@ if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` — `_ensure_local_matches_remote()` method
 
+## `get_git_dir()` vs `get_git_common_dir()` Distinction
+
+**Surprising Behavior**: Rebase state files (`.git/rebase-merge/`, `.git/rebase-apply/`) live in the **per-worktree** git directory, not the common (shared) directory. Using `get_git_common_dir()` to check for rebase state in a linked worktree returns the wrong path, causing `is_rebase_in_progress()` to report false negatives.
+
+**Why It's Surprising**: Many git state files (objects, refs, config) live in the common directory shared across worktrees. Rebase state is an exception — it's per-worktree because each worktree can have its own independent rebase in progress.
+
+**Key Methods**:
+
+| Method                            | Git Command                      | Returns                                                 |
+| --------------------------------- | -------------------------------- | ------------------------------------------------------- |
+| `GitRepoOps.get_git_dir()`        | `git rev-parse --git-dir`        | Per-worktree directory (e.g., `.git/worktrees/slot-05`) |
+| `GitRepoOps.get_git_common_dir()` | `git rev-parse --git-common-dir` | Shared directory (e.g., `.git`)                         |
+
+**Rule**: Use `get_git_dir()` for per-worktree state (rebase, HEAD, index). Use `get_git_common_dir()` for shared state (objects, refs, config).
+
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py` — both methods defined on `GitRepoOps` ABC. Added in PR #8838.
+
 ## Adding New Quirks
 
 When you discover a new edge case, add it to this document with:
