@@ -1,0 +1,974 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>➜  erk-slot-03 git:(plnd/flat-prompt-executors-03-06-1518) erk pr rebase
+Restacking with Graphite...
+Restack hit conflicts. Launching Claude...
+Launching Claude...
+
+ ▐▛███▜▌   Claude Code v2.1.71
+▝▜█████▛▘  Opus 4.6 with high effort · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-03
+
+❯ /erk:rebase
+  ⎿  UserPromptSubmit hook error
+
+⏺ Let me check the current git status to understand the state of things.
+
+⏺ Bash(git status)
+  ⎿  interactive rebase in progress; onto e94dabcf4
+     Last command done (1 command done):
+        pick dabb0e438 # Add plan: Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable
+     … +38 lines (ctrl+o to expand)
+
+⏺ Bash(git branch --show-current 2&gt;/dev/null || echo "detached HEAD")
+  ⎿  (No output)
+
+⏺ Rebase in progress on plnd/flat-prompt-executors-03-06-1518 onto e94dabcf4. Three conflicted files:
+
+  1. src/erk/core/context.py — both modified
+  2. src/erk/core/fast_llm.py — deleted by them
+  3. tests/core/test_fast_llm.py — deleted by them
+
+  Let me examine the conflicts.
+
+⏺ Reading 1 file… (ctrl+o to expand)
+
+✢ Ruminating… (thinking with high effort)
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪ ─
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (wt:root) | (gh:no-pr) │ (O)
+
+in this case we should
+
+* print out the state of the conflicts to the user
+* have a confirm step as to whether to launch claude or not to interactively resolve conflicts</user>
+  <usage input_tokens="3" cache_creation_input_tokens="16046" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16046}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NC15ZX1vnbugvfdThB3Mug">
+    <param name="query">select:Agent,Read,Grep,Glob</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16046" cache_read_input_tokens="0" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16046, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NC15ZX1vnbugvfdThB3Mug">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4302" cache_read_input_tokens="16046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4302}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the `erk pr rebase` implementation.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4302" cache_read_input_tokens="16046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4302}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019tFhVz5iKniLGn8zML8LGw">
+    <param name="pattern">pr rebase|pr_rebase|def rebase</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4302" cache_read_input_tokens="16046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4302}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019tFhVz5iKniLGn8zML8LGw">
+Found 4 files
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/pr/rebase_cmd.py
+src/erk/core/capabilities/registry.py
+src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014mDybKWWr3JMjkuyDSzfNB">
+    <param name="pattern">rebase</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4302" cache_read_input_tokens="16046" output_tokens="311" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4302, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014mDybKWWr3JMjkuyDSzfNB">
+Found 16 files
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py
+src/erk/cli/commands/pr/__init__.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/output.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/ensure.py
+src/erk/cli/commands/pr/diverge_fix_cmd.py
+src/erk/cli/commands/pr/rebase_cmd.py
+src/erk/cli/commands/run/shared.py
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/admin.py
+src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py
+src/erk/cli/constants.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WH8KVdtZWrPLTJA9FYpHZk">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/rebase_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="711" cache_read_input_tokens="20348" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 711}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WH8KVdtZWrPLTJA9FYpHZk">
+     1→"""Rebase PR onto base branch with mechanical rebase and Claude TUI fallback.
+     2→
+     3→Phase 1: Attempt mechanical rebase via gt restack (Graphite) or git rebase (non-Graphite).
+     4→Phase 2: If conflicts arise, launch Claude TUI interactively with /erk:rebase.
+     5→"""
+     6→
+     7→import subprocess
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import Ensure
+    12→from erk.core.context import ErkContext
+    13→from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+    14→from erk_shared.gateway.graphite.dry_run import DryRunGraphite
+    15→
+    16→
+    17→def _is_graphite_enabled(ctx: ErkContext) -&gt; bool:
+    18→    graphite = ctx.graphite
+    19→    if isinstance(graphite, DryRunGraphite):
+    20→        graphite = graphite._wrapped
+    21→    return not isinstance(graphite, GraphiteDisabled)
+    22→
+    23→
+    24→@click.command("rebase")
+    25→@click.option(
+    26→    "-d",
+    27→    "--dangerous",
+    28→    is_flag=True,
+    29→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    30→)
+
+... [101 lines omitted] ...
+
+   103→            raise click.ClickException(f"gt restack failed:\n{result.stderr}")
+   108→                raise click.ClickException(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GL4WU2Q66nXqK2A9SRbsns">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="711" cache_read_input_tokens="20348" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 711, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GL4WU2Q66nXqK2A9SRbsns">
+     1→#!/usr/bin/env python3
+     2→"""Rebase onto target branch and resolve conflicts with Claude.
+     3→
+     4→This command handles merge conflicts during CI workflows by:
+     5→1. Fetching the target branch (trunk or parent branch for stacked PRs)
+     6→2. Checking if the current branch is behind
+     7→3. Starting a rebase
+     8→4. Using Claude to resolve any conflicts
+     9→5. Force pushing after successful rebase
+    10→6. Generating an intelligent summary of the rebase operation
+    11→
+    12→Usage:
+    13→    erk exec rebase-with-conflict-resolution \
+    14→        --target-branch master \
+    15→        --branch-name feature-branch \
+    16→        --model claude-sonnet-4-5
+    17→
+    18→Output:
+    19→    Natural language summary suitable for PR comments.
+    20→
+    21→Exit Codes:
+    22→    0: Success (rebase completed and pushed, or already up-to-date)
+    23→    1: Error (conflict resolution failed after max attempts)
+    24→
+    25→Examples:
+    26→    $ erk exec rebase-with-conflict-resolution --target-branch main --branch-name my-feature
+    27→    Rebased `my-feature` onto `main`, resolving 3 commits behind.
+    28→    Resolved merge conflicts in 2 files:
+    29→    - src/config.py: Merged new logging settings with updated timeout values
+    30→    - tests/test_api.py: Combined new test cases with fixture updates
+
+... [318 lines omitted] ...
+
+    46→from erk_shared.gateway.git.remote_ops.types import PushError
+    59→class RebaseError:
+    60→    """Error result when rebase fails."""
+    62→    error: Literal["fetch-failed", "rebase-failed", "push-failed"]
+   194→) -&gt; RebaseSuccess | RebaseError:
+   207→        RebaseSuccess on success, RebaseError on failure
+   212→    except Exception as e:
+   213→        return RebaseError(
+   214→            error="fetch-failed",
+   215→            message=f"Failed to fetch origin/{target_branch}: {e}",
+   248→        # Abort rebase and return error
+   250→        return RebaseError(
+   251→            error="rebase-failed",
+   252→            message=f"Failed to resolve conflicts after {max_attempts} attempts",
+   259→    if isinstance(push_result, PushError):
+   260→        return RebaseError(
+   261→            error="push-failed",
+   262→            message=f"Failed to force push: {push_result.message}",
+   328→    if isinstance(result, RebaseError):
+   329→        click.echo(f"Error: {result.message}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6903" cache_read_input_tokens="21059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6903}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check how to get conflicted files from the git gateway.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6903" cache_read_input_tokens="21059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6903}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015YLUHTPCGvbTQ2A14WmXoD">
+    <param name="pattern">get_conflicted_files|conflict_files</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">content</param>
+    <param name="type">py</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6903" cache_read_input_tokens="21059" output_tokens="317" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6903, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015YLUHTPCGvbTQ2A14WmXoD">
+packages/erk-shared/src/erk_shared/gateway/git/abc.py:73:        conflict_files: Tuple of file paths with conflicts (empty if success=True)
+packages/erk-shared/src/erk_shared/gateway/git/abc.py:77:    conflict_files: tuple[str, ...]
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/printing.py:48:    def get_conflicted_files(self, cwd: Path) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/printing.py:50:        return self._wrapped.get_conflicted_files(cwd)
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py:74:    def get_conflicted_files(self, cwd: Path) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py:84:    def get_conflicted_files(self, cwd: Path) -&gt; list[str]:
+tests/commands/pr/test_checkout.py:496:                conflict_files=("file1.py", "file2.py"),
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py:65:    def get_conflicted_files(self, cwd: Path) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py:54:    def get_conflicted_files(self, cwd: Path) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py:56:        return self._wrapped.get_conflicted_files(cwd)
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py:16:    def __init__(self, get_git_dir: Callable, get_conflicted_files: Callable) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py:21:            get_conflicted_files: Function to get list of conflicted files
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py:24:        self._get_conflicted_files = get_conflicted_files
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py:38:            return RebaseResult(success=True, conflict_files=())
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py:41:        conflict_files = self._get_conflicted_files(cwd)
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py:42:        return RebaseResult(success=False, conflict_files=tuple(conflict_files))
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py:85:        return RebaseResult(success=True, conflict_files=())
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/dry_run.py:35:        return RebaseResult(success=True, conflict_files=())
+packages/erk-shared/src/erk_shared/gateway/git/real.py:58:            get_conflicted_files=self._status.get_conflicted_files,
+tests/commands/pr/test_rebase.py:48:            rebase_onto_result=RebaseResult(success=False, conflict_files=("file.py",)),
+src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py:230:        all_conflicted_files.update(rebase_result.conflict_files)
+src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py:237:        conflicted = git.status.get_conflicted_files(cwd)
+tests/integration/test_real_git.py:887:    assert result.conflict_files == ()
+tests/integration/test_real_git.py:925:    assert "file.txt" in result.conflict_files
+tests/unit/fakes/test_fake_git_status_ops.py:72:        assert ops.get_conflicted_files(Path("/cwd")) == []
+tests/unit/fakes/test_fake_git_status_ops.py:76:        assert ops.get_conflicted_files(Path("/cwd")) == ["file1.py", "file2.py"]
+tests/unit/fakes/test_fake_git_status_ops.py:111:        assert ops.get_conflicted_files(cwd) == ["conflict.py"]
+tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py:88:        rebase_onto_result=RebaseResult(success=True, conflict_files=()),
+tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py:131:        rebase_onto_result=RebaseResult(success=False, conflict_files=("src/config.py",)),
+tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py:159:        rebase_onto_result=RebaseResult(success=False, conflict_files=("src/config.py",)),
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UNvemDW1bdfJFEZFdobqUW">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_rebase.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1709" cache_read_input_tokens="27962" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1709, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UNvemDW1bdfJFEZFdobqUW">
+     1→"""Tests for erk pr rebase command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.abc import RebaseResult
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from tests.fakes.prompt_executor import FakePromptExecutor
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_pr_rebase_non_graphite_success() -&gt; None:
+    15→    """Test successful rebase via git rebase (Graphite disabled)."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git = FakeGit(
+    19→            git_common_dirs={env.cwd: env.git_dir},
+    20→            local_branches={env.cwd: ["main", "feature-branch"]},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "feature-branch"},
+    24→        )
+    25→
+    26→        executor = FakePromptExecutor(available=True)
+    27→
+    28→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    29→
+    30→        result = runner.invoke(pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx)
+
+... [159 lines omitted] ...
+
+    65→def test_pr_rebase_non_graphite_no_target_error() -&gt; None:
+    66→    """Test error when --target not provided with Graphite disabled."""
+   167→    """Test error when Claude is not installed."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7712" cache_read_input_tokens="29671" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7712}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check for existing confirm/prompt patterns in the CLI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7712" cache_read_input_tokens="29671" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7712}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01StWtVzV7KvQZ3vwRGYdpdu">
+    <param name="pattern">click.confirm|click.prompt|--yes|--no-confirm|--auto-confirm</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7712" cache_read_input_tokens="29671" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7712}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01StWtVzV7KvQZ3vwRGYdpdu">
+src/erk/cli/commands/codespace/remove_cmd.py:31:        if not click.confirm(msg):
+src/erk/cli/commands/admin.py:278:            secret_value = click.prompt(
+src/erk/cli/commands/init/main.py:172:    if not click.confirm(prompt_message, default=True):
+src/erk/cli/commands/init/main.py:319:    if click.confirm("Delete backup?", default=True):
+src/erk/cli/commands/init/main.py:501:        erk_root = click.prompt("  .erk folder", type=Path, default=str(default_erk_root))
+src/erk/cli/commands/init/main.py:578:                if click.confirm("  Add missing entries to .gitignore?", default=True):
+src/erk/cli/commands/artifact/sync_cmd.py:70:        elif click.confirm(
+src/erk/cli/commands/artifact/sync_cmd.py:83:        if click.confirm("Add missing entries to .gitignore?", default=True):
+src/erk/cli/commands/pr/teleport_cmd.py:261:    if not click.confirm("Overwrite local branch with remote state?"):
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RzJAbTcGZv72XAMkahcPfm">
+    <param name="file_path">/Users/schrockn/code/erk/tests/fakes/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7712" cache_read_input_tokens="29671" output_tokens="330" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7712, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RzJAbTcGZv72XAMkahcPfm">
+     1→"""Fake implementation of PromptExecutor for testing.
+     2→
+     3→This fake enables testing prompt execution without
+     4→requiring the actual Claude CLI or using subprocess mocks.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Iterator
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.context.types import PermissionMode
+    15→
+    16→from erk_shared.core.prompt_executor import (
+    17→    CommandResult,
+    18→    ErrorEvent,
+    19→    ExecutorEvent,
+    20→    NoOutputEvent,
+    21→    NoTurnsEvent,
+    22→    PlanNumberEvent,
+    23→    PrNumberEvent,
+    24→    ProcessErrorEvent,
+    25→    PromptExecutor,
+    26→    PromptResult,
+    27→    PrTitleEvent,
+    28→    PrUrlEvent,
+    29→    SpinnerUpdateEvent,
+    30→    TextEvent,
+
+... [405 lines omitted] ...
+
+    57→        # Test command failure
+    61→        ... except RuntimeError:
+    62→        ...     print("Command failed as expected")
+    82→        simulated_process_error: str | None = None,
+    85→        simulated_prompt_error: str | None = None,
+    93→            command_should_fail: Whether execute_command should raise RuntimeError
+   102→            simulated_process_error: Error message to simulate process startup failure
+   109→            simulated_prompt_error: Error message to return from execute_prompt() on failure.
+   110→                If set, execute_prompt() will return a failure result.
+   113→                tests the "empty response" failure mode where Claude produces JSON
+   127→        self._simulated_process_error = simulated_process_error
+   133→        self._simulated_prompt_error = simulated_prompt_error
+   176→            RuntimeError: If command_should_fail was set to True
+   180→        # Process error takes precedence (simulates Popen failure)
+   181→        if self._simulated_process_error is not None:
+   182→            yield ProcessErrorEvent(message=self._simulated_process_error)
+   196→            diag += "\n  Run 'claude' directly to see hook error messages"
+   202→            yield ErrorEvent(message=f"Claude command {command} failed (simulated failure)")
+   260→            RuntimeError: If command_should_fail was set to True
+   272→                error_message=f"Claude command {command} failed (simulated failure)",
+   283→            error_message=None,
+   304→            RuntimeError: If Claude CLI is not available
+   307→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   361→            PromptResult with simulated output or error
+   365→        if self._simulated_prompt_error is not None:
+   369→                error=self._simulated_prompt_error,
+   386→            error=None,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6525" cache_read_input_tokens="37383" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6525}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the FakeGit status ops for conflicted files setup.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6525" cache_read_input_tokens="37383" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6525}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NH7VSFatyvVvt5gRALuxX3">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6525" cache_read_input_tokens="37383" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6525, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NH7VSFatyvVvt5gRALuxX3">
+     1→"""Fake implementation of Git status operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+     8→
+     9→
+    10→class FakeGitStatusOps(GitStatusOps):
+    11→    """In-memory fake implementation of Git status operations.
+    12→
+    13→    This fake accepts pre-configured state in its constructor.
+    14→    All operations are read-only queries, so no mutation tracking is needed.
+    15→
+    16→    Constructor Injection:
+    17→    ---------------------
+    18→    - staged_repos: Set of repo roots that have staged changes
+    19→    - file_statuses: Mapping of cwd -&gt; (staged, modified, untracked) files
+    20→    - merge_conflicts: Mapping of (base_branch, head_branch) -&gt; has conflicts
+    21→    - conflicted_files: List of files with merge conflicts
+    22→    """
+    23→
+    24→    def __init__(
+    25→        self,
+    26→        *,
+    27→        staged_repos: set[Path] | None = None,
+    28→        file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] | None = None,
+    29→        merge_conflicts: dict[tuple[str, str], bool] | None = None,
+    30→        conflicted_files: list[str] | None = None,
+
+... [74 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check FakeGit to see how `conflicted_files` is passed through.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1722" cache_read_input_tokens="43908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1722}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EAoFGdojWS88HqySBtu4cf">
+    <param name="pattern">conflicted_files</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1722" cache_read_input_tokens="43908" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1722, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EAoFGdojWS88HqySBtu4cf">
+149-        fetch_branch_raises: Exception | None = None,
+150-        pull_branch_raises: Exception | None = None,
+151:        conflicted_files: list[str] | None = None,
+152-        rebase_in_progress: bool | Callable[[Path], bool] = False,
+153-        rebase_continue_raises: Exception | None = None,
+--
+211-            fetch_branch_raises: Exception to raise when fetch_branch() is called
+212-            pull_branch_raises: Exception to raise when pull_branch() is called
+213:            conflicted_files: List of file paths with merge conflicts
+214-            rebase_in_progress: Whether a rebase is currently in progress.
+215-                Can be a bool or a callable(cwd) -&gt; bool for dynamic behavior.
+--
+269-        self._fetch_branch_raises = fetch_branch_raises
+270-        self._pull_branch_raises = pull_branch_raises
+271:        self._conflicted_files = conflicted_files or []
+272-        self._rebase_in_progress = rebase_in_progress
+273-        self._rebase_continue_raises = rebase_continue_raises
+--
+426-            file_statuses=self._file_statuses,
+427-            merge_conflicts=self._merge_conflicts,
+428:            conflicted_files=self._conflicted_files,
+429-            tracked_paths=self._tracked_paths,
+430-        )
+--
+434-            file_statuses=self._file_statuses,
+435-            merge_conflicts=self._merge_conflicts,
+436:            conflicted_files=self._conflicted_files,
+437-            tracked_paths=self._tracked_paths,
+438-        )
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_0119EA9SXoUT7ReWeDS1g6Bm">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="45630" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 589, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0119EA9SXoUT7ReWeDS1g6Bm">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="469" cache_read_input_tokens="46219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 469}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the real git status implementation to see if we can get conflict types.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="469" cache_read_input_tokens="46219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 469}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GpJyV5tNJLs4AgA1Bui2B6">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="469" cache_read_input_tokens="46219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 469}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GpJyV5tNJLs4AgA1Bui2B6">
+     1→"""Production implementation of Git status operations using subprocess."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+     7→from erk_shared.subprocess_utils import run_subprocess_with_context
+     8→
+     9→
+    10→class RealGitStatusOps(GitStatusOps):
+    11→    """Real implementation of Git status operations using subprocess."""
+    12→
+    13→    def has_staged_changes(self, repo_root: Path) -&gt; bool:
+    14→        """Check if the repository has staged changes."""
+    15→        result = subprocess.run(
+    16→            ["git", "diff", "--cached", "--quiet"],
+    17→            cwd=repo_root,
+    18→            capture_output=True,
+    19→            text=True,
+    20→            check=False,
+    21→        )
+    22→        if result.returncode in (0, 1):
+    23→            return result.returncode == 1
+    24→        result.check_returncode()
+    25→        return False
+    26→
+    27→    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+    28→        """Check if a worktree has uncommitted changes."""
+    29→        result = subprocess.run(
+    30→            ["git", "status", "--porcelain"],
+
+... [89 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ViYuZhvr2WuHy9BFzRbKry">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="469" cache_read_input_tokens="46219" output_tokens="1251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 469, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ViYuZhvr2WuHy9BFzRbKry">
+     1→"""Abstract base class for Git status operations.
+     2→
+     3→This sub-gateway extracts status query operations from the main Git gateway,
+     4→including staged changes, uncommitted changes, file status, and conflict detection.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→
+    13→class GitStatusOps(ABC):
+    14→    """Abstract interface for Git status operations.
+    15→
+    16→    This interface contains ONLY query operations (no mutations).
+    17→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    18→    """
+    19→
+    20→    @abstractmethod
+    21→    def has_staged_changes(self, repo_root: Path) -&gt; bool:
+    22→        """Check if the repository has staged changes.
+    23→
+    24→        Args:
+    25→            repo_root: Path to the git repository root
+    26→
+    27→        Returns:
+    28→            True if there are staged changes, False otherwise
+    29→        """
+    30→        ...
+
+... [69 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3767" cache_read_input_tokens="46688" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3767}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a clear picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3767" cache_read_input_tokens="46688" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3767}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01RQ4Y8NjprMYxgZArBCoYNz">
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-dancing-parasol.md</param>
+    <param name="content"># Plan: Show conflict state and confirm before launching Claude in `erk pr rebase`
+
+## Con...[truncated 2932 chars]...fication
+
+Run scoped tests:
+```bash
+uv run pytest tests/commands/pr/test_rebase.py -v
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3767" cache_read_input_tokens="46688" output_tokens="1329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3767, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RQ4Y8NjprMYxgZArBCoYNz">
+File created successfully at: /Users/schrockn/.claude/plans/jolly-dancing-parasol.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01UaCBpKbpNtLATnAMb3vK7u">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1567" cache_read_input_tokens="50455" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1567, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UaCBpKbpNtLATnAMb3vK7u">
+
+  </tool_result>
+  <assistant>
+
+Straightforward change — two files, adding conflict display + `click.confirm` before the Claude TUI launch, plus test updates.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="52022" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_017gNbEMWCqLZtc3oqvkc3Bh">
+    <param name="plan"># Plan: Show conflict state and confirm before launching Claude in `erk pr rebase`
+
+## Con...[truncated 2932 chars]...fication
+
+Run scoped tests:
+```bash
+uv run pytest tests/commands/pr/test_rebase.py -v
+```
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="52022" output_tokens="68" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017gNbEMWCqLZtc3oqvkc3Bh">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/jolly-dancing-parasol.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Show conflict state and confirm before launching Claude in `erk pr rebase`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 43eed150-9ccb-4acb-b19b-54cfcdb27ac8 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BTKPBx4RnMJFhfMyuP92GK">
+    <param name="file_path">/Users/schrockn/.claude/plans/jolly-dancing-parasol.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="718" cache_read_input_tokens="52760" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 718, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BTKPBx4RnMJFhfMyuP92GK">
+     1→# Plan: Show conflict state and confirm before launching Claude in `erk pr rebase`
+     2→
+     3→## Context
+     4→
+     5→When `erk pr rebase` hits conflicts (via `gt restack` or `git rebase`), it currently prints a brief message like "Restack hit conflicts. Launching Claude..." and immediately launches Claude TUI. The user wants two changes:
+     6→
+     7→1. **Show conflicted files** before launching Claude, so the user understands the scope
+     8→2. **Confirm step** asking whether to launch Claude for interactive resolution
+     9→
+    10→## Files to Modify
+    11→
+    12→- `src/erk/cli/commands/pr/rebase_cmd.py` — main change
+    13→- `tests/commands/pr/test_rebase.py` — update tests
+    14→
+    15→## Implementation
+    16→
+    17→### 1. Add `_display_conflicts_and_confirm` helper in `rebase_cmd.py`
+    18→
+    19→Extract a helper that:
+    20→- Calls `ctx.git.status.get_conflicted_files(cwd)` to get the list of conflicted files
+    21→- Displays the list with `click.echo`
+    22→- Calls `click.confirm("Launch Claude to resolve conflicts?", default=True)`
+    23→- Returns the boolean result
+    24→
+    25→### 2. Call the helper before launching Claude TUI
+    26→
+    27→Three code paths converge before the Claude TUI launch (line 121):
+    28→- Graphite restack hit conflicts (line 104)
+    29→- Git rebase hit conflicts (line 116)
+    30→- Rebase already in progress (line 118)
+
+... [53 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+### Plan: Show conflict state and confirm before launching Claude in `erk pr rebase`
+
+**Context:** When `erk pr rebase` hits conflicts, it currently immediately launches Claude TUI. We want to first show the conflicted files and ask for confirmation.
+
+**Files to modify:**
+- `src/erk/cli/commands/pr/rebase_cmd.py` — add conflict display + `click.confirm` before Claude launch
+- `tests/commands/pr/test_rebase.py` — update existing tests, add decline + edge case tests
+
+**Key change:** After the three conflict paths converge (Graphite conflicts, git conflicts, rebase-in-progress), show conflicted files via `ctx.git.status.get_conflicted_files(cwd)` and prompt with `click.confirm("Launch Claude to resolve conflicts?")`. If declined, exit cleanly.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1281" cache_read_input_tokens="53478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1281}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01BtxbWprJdLFD6wuExRbKPq">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1281" cache_read_input_tokens="53478" output_tokens="285" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1281, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BtxbWprJdLFD6wuExRbKPq">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01NeSN4iZm1xd2aPjktp9k1e">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 288 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2738" cache_read_input_tokens="54759" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NeSN4iZm1xd2aPjktp9k1e">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01BECZAp6NDqKhVdLBq8ovGA">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="57497" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 226, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BECZAp6NDqKhVdLBq8ovGA">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01JCCqCzixfRoGf5KZyqHkd6">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="57723" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JCCqCzixfRoGf5KZyqHkd6">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="43eed150-9ccb-4acb-b19b-54cfcdb27ac8" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="43eed150-9ccb-4acb-b19b-54cfcdb27ac8" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "43eed150-9ccb-4acb-b19b-54cfcdb27ac8" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "43eed150-9ccb-4acb-b19b-54cfcdb27ac8" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "43eed150-9ccb-4acb-b19b-54cfcdb27ac8" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "43eed150-9ccb-4acb-b19b-54cfcdb27ac8" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Branch slug:** `rebase-conflict-confirm`
+
+**Plan summary:** Adds conflict state display and user confirmation prompt before launching Claude TUI in erk pr rebase. Shows conflicted file list and asks the user whether to proceed with Claude-assisted resolution.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="58291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2286}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01KTgvraLVCq14jHqUDn5Gtz">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="58291" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KTgvraLVCq14jHqUDn5Gtz">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011oiYFpAjiQeY9MEXgN7Vj8">
+    <param name="command">erk exec plan-save --format json --session-id="43eed150-9ccb-4acb-b19b-54cfcdb27ac8" --bra...[truncated 136 chars]...onflicted file list and asks the user whether to proceed with Claude-assisted resolution."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3497" cache_read_input_tokens="60577" output_tokens="205" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011oiYFpAjiQeY9MEXgN7Vj8">
+{"success": true, "plan_number": 8898, "plan_url": "https://github.com/dagster-io/erk/pull/8898", "title": "[erk-plan] Plan: Show conflict state and confirm before launching Claude in `erk pr rebase`", "branch_name": "plnd/rebase-conflict-confirm-03-07-1032", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/43eed150-9ccb-4acb-b19b-54cfcdb27ac8/plan_snapshots/000001-8957149a"}
+  </tool_result>
+  <assistant>Plan saved. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="375" cache_read_input_tokens="64074" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 375}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FQ7JWKvFQXN4ReEx1QH8xH">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="375" cache_read_input_tokens="64074" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 375, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FQ7JWKvFQXN4ReEx1QH8xH">
+SESSION_ID=43eed150-9ccb-4acb-b19b-54cfcdb27ac8
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/43eed150-9ccb-4acb-b19b-54cfcdb27ac8.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GDgijrjmo911cMQnuy1VbF">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4acb-b19b-54cfcdb27ac8" --stage planning --source local --plan-id 8898 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="214" cache_read_input_tokens="64449" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 214, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
