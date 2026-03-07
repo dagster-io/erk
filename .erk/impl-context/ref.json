@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Rename cmux-checkout-workspace to cmux-open-pr and add --mode flag for checkout/teleport"
+}
