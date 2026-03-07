@@ -1,0 +1,381 @@
+<session>
+  <meta source="agent-a812a72" />
+  <meta branch="plnd/consolidate-learn-docs-03-07-2145" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Read these source files and report key patterns:
+
+1. `src/erk/cli/commands/pr/rebase_cmd.py` - Look at lines 120-140 for conflicted files display and click.confirm() pattern. Also look at the three convergence paths (Graphite restack, git rebase, in-progress rebase)
+2. `src/erk/cli/commands/one_shot.py` - Look at lines 32-55 for `@no_repo_required` decorator, and lines 175-210 for `_get_remote_github()` context injection pattern and `--repo` validation
+3. `packages/erk-shared/src/erk_shared/core/health_check_runner.py` - Look at the ABC location and structure
+4. `src/erk/core/health_checks/runner.py` or `src/erk/core/health_checks/__init__.py` - Look at lines 32-37 for RealHealthCheckRunner
+
+Report exact function names, line numbers, and key logic.</user>
+  <assistant>I'll help you find these source files and extract the key patterns. Let me search for them in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15282" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01TvvQod9qTtTHMsRxBzpat2">
+    <param name="pattern">src/erk/cli/commands/pr/rebase_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15282" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_0158whGD13FeH3yeCdt627XF">
+    <param name="pattern">src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15282" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01AbSDT6ZsNW5e5kTnxSM5Xd">
+    <param name="pattern">packages/erk-shared/src/erk_shared/core/health_check_runner.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15282" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01LrRuJXmP8JYaPQNrGf8hc4">
+    <param name="pattern">src/erk/core/health_checks/runner.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15282" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_013vd5pe19bYGN2zPaCdveD2">
+    <param name="pattern">src/erk/core/health_checks/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15282" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013vd5pe19bYGN2zPaCdveD2">
+/home/runner/work/erk/erk/src/erk/core/health_checks/__init__.py
+  </tool_result>
+  <tool_result tool="toolu_01TvvQod9qTtTHMsRxBzpat2">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rebase_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01AbSDT6ZsNW5e5kTnxSM5Xd">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/health_check_runner.py
+  </tool_result>
+  <tool_result tool="toolu_01LrRuJXmP8JYaPQNrGf8hc4">
+/home/runner/work/erk/erk/src/erk/core/health_checks/runner.py
+  </tool_result>
+  <tool_result tool="toolu_0158whGD13FeH3yeCdt627XF">
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py
+  </tool_result>
+  <assistant>Great! All files exist. Now let me read them to extract the key patterns:</assistant>
+  <usage input_tokens="166" cache_creation_input_tokens="439" cache_read_input_tokens="15282" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LDekbeWC6KG6q1bb3HHoMZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/rebase_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="166" cache_creation_input_tokens="439" cache_read_input_tokens="15282" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NGMy5hVWZowayec2y6t9qN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="166" cache_creation_input_tokens="439" cache_read_input_tokens="15282" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XouC9SwXeHCFCgLCRcSziT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/health_check_runner.py</param>
+  </tool_use>
+  <usage input_tokens="166" cache_creation_input_tokens="439" cache_read_input_tokens="15282" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DXkMqqYU9Bzbah6hN8MxXd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/health_checks/runner.py</param>
+  </tool_use>
+  <usage input_tokens="166" cache_creation_input_tokens="439" cache_read_input_tokens="15282" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SLH9Mr8eqA48ww75Aojphn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/health_checks/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="166" cache_creation_input_tokens="439" cache_read_input_tokens="15282" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LDekbeWC6KG6q1bb3HHoMZ">
+     1→"""Rebase PR onto base branch with mechanical rebase and Claude TUI fallback.
+     2→
+     3→Phase 1: Attempt mechanical rebase via gt restack (Graphite) or git rebase (non-Graphite).
+     4→Phase 2: If conflicts arise, launch Claude TUI interactively with /erk:rebase.
+     5→"""
+     6→
+     7→import subprocess
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import Ensure
+    12→from erk.core.context import ErkContext
+    13→from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+    14→from erk_shared.gateway.graphite.dry_run import DryRunGraphite
+    15→
+    16→
+    17→def _is_graphite_enabled(ctx: ErkContext) -&gt; bool:
+    18→    graphite = ctx.graphite
+    19→    if isinstance(graphite, DryRunGraphite):
+    20→        graphite = graphite._wrapped
+    21→    return not isinstance(graphite, GraphiteDisabled)
+    22→
+    23→
+    24→@click.command("rebase")
+    25→@click.option(
+    26→    "-d",
+    27→    "--dangerous",
+    28→    is_flag=True,
+    29→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    30→)
+
+... [117 lines omitted] ...
+
+   103→            raise click.ClickException(f"gt restack failed:\n{result.stderr}")
+   108→                raise click.ClickException(
+  </tool_result>
+  <tool_result tool="toolu_01NGMy5hVWZowayec2y6t9qN">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.implement_shared import normalize_model_name
+    20→from erk.cli.commands.one_shot_remote_dispatch import (
+    21→    OneShotDispatchParams,
+    22→    dispatch_one_shot_remote,
+    23→)
+    24→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    25→from erk.cli.ensure import Ensure, UserFacingCliError
+    26→from erk.core.context import ErkContext, NoRepoSentinel
+    27→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    28→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    29→from erk_shared.output.output import user_output
+    30→
+
+... [186 lines omitted] ...
+
+    45→        UserFacingCliError: If no http_client is available
+    51→        raise UserFacingCliError(
+   178→            raise UserFacingCliError(
+   185→            raise UserFacingCliError(
+   193→        raise click.UsageError("--repo and --ref-current are mutually exclusive")
+  </tool_result>
+  <tool_result tool="toolu_01XouC9SwXeHCFCgLCRcSziT">
+     1→"""Health check runner abstraction for dependency injection.
+     2→
+     3→Provides an ABC for running health checks, enabling tests to inject
+     4→fake results without monkeypatching.
+     5→
+     6→The real implementation (RealHealthCheckRunner) remains in
+     7→erk.core.health_checks.runner.
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from typing import TYPE_CHECKING
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk.core.health_checks.models import CheckResult
+    17→    from erk_shared.context.context import ErkContext
+    18→
+    19→
+    20→class HealthCheckRunner(ABC):
+    21→    """Abstract interface for running health checks."""
+    22→
+    23→    @abstractmethod
+    24→    def run_all(self, ctx: ErkContext, *, check_hooks: bool) -&gt; list[CheckResult]: ...
+    25→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01DXkMqqYU9Bzbah6hN8MxXd">
+     1→"""Health check runner - real implementation.
+     2→
+     3→The HealthCheckRunner ABC is defined in erk_shared.core.health_check_runner
+     4→to avoid circular imports. This module provides the real implementation.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from typing import TYPE_CHECKING
+    10→
+    11→from erk_shared.core.health_check_runner import HealthCheckRunner
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk.core.health_checks.models import CheckResult
+    15→    from erk_shared.context.context import ErkContext
+    16→
+    17→
+    18→class RealHealthCheckRunner(HealthCheckRunner):
+    19→    """Production implementation that delegates to run_all_checks."""
+    20→
+    21→    def run_all(self, ctx: ErkContext, *, check_hooks: bool) -&gt; list[CheckResult]:
+    22→        from erk.core.health_checks import run_all_checks
+    23→
+    24→        return run_all_checks(ctx, check_hooks=check_hooks)
+    25→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01SLH9Mr8eqA48ww75Aojphn">
+     1→"""Health check implementations for erk doctor command.
+     2→
+     3→This module provides diagnostic checks for erk setup, including
+     4→CLI availability, repository configuration, and Claude settings.
+     5→
+     6→Submodules:
+     7→    models                    - CheckResult dataclass
+     8→    erk_version               - check_erk_version
+     9→    required_tool_version     - check_required_tool_version
+    10→    claude_cli                - check_claude_cli
+    11→    graphite_cli              - check_graphite_cli
+    12→    github_cli                - check_github_cli
+    13→    github_auth               - check_github_auth
+    14→    workflow_permissions       - check_workflow_permissions
+    15→    erk_queue_pat_secret      - check_erk_queue_pat_secret
+    16→    anthropic_api_secret      - check_anthropic_api_secret
+    17→    uv_version                - check_uv_version
+    18→    hooks_disabled            - check_hooks_disabled
+    19→    statusline_configured     - check_statusline_configured
+    20→    gitignore_entries         - check_gitignore_entries
+    21→    post_plan_implement_ci_hook - check_post_plan_implement_ci_hook
+    22→    post_init_hook            - check_post_init_hook
+    23→    legacy_prompt_hooks       - check_legacy_prompt_hooks
+    24→    claude_erk_permission     - check_claude_erk_permission
+    25→    plans_repo_labels         - check_plans_repo_labels
+    26→    repository                - check_repository
+    27→    claude_settings           - check_claude_settings
+    28→    user_prompt_hook          - check_user_prompt_hook
+    29→    exit_plan_hook            - check_exit_plan_hook
+    30→    hook_health               - check_hook_health
+
+... [137 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! I've extracted all the key patterns you requested. Here's my detailed report:
+
+## Source File Analysis Report
+
+### 1. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/rebase_cmd.py` - Lines 120-140 Pattern
+
+**Conflicted Files Display with `click.confirm()` Pattern:**
+- **Lines 121-126**: Display conflicted files before user confirmation
+  - `ctx.git.status.get_conflicted_files(cwd)` retrieves list of files with merge conflicts
+  - Uses `click.echo()` with styling to display each conflicted file with indentation
+  - Uses `click.style(..., fg="red", bold=True)` for "Conflicted files:" header
+
+- **Line 128**: Confirmation pattern using `click.confirm()`
+  - `click.confirm("Launch Claude to resolve conflicts?", default=True)`
+  - Returns boolean; user presses 'y'/'n' with 'y' as default
+  - Allows graceful exit if user declines (lines 129-130)
+
+**Three Convergence Paths to Conflict Resolution (lines 85-119):**
+
+1. **Graphite Path (lines 85-104)**
+   - Check: `_is_graphite_enabled(ctx)` 
+   - Get current branch with `ctx.git.branch.get_current_branch(cwd)`
+   - Ensure Graphite tracking: `ctx.graphite.is_branch_tracked(ctx.repo_root, branch)`
+   - Execute: `subprocess.run(["gt", "restack", "--no-interactive"], ...)`
+   - Success return at line 101, or convergence to conflicts (line 104)
+
+2. **Git Rebase Non-Graphite Path (lines 106-116)**
+   - Check: `not ctx.git.rebase.is_rebase_in_progress(cwd)` - only start if not already rebasing
+   - Require `--target` flag: `if target is None: raise click.ClickException(...)`
+   - Execute: `ctx.git.rebase.rebase_onto(cwd, target)`
+   - Check `rebase_result.success` for completion
+
+3. **In-Progress Rebase Path (lines 117-118)**
+   - Detect: `ctx.git.rebase.is_rebase_in_progress(cwd)`
+   - Displays "Rebase in progress" message
+   - Both paths converge at line 120
+
+**Claude TUI Invocation (lines 132-140):**
+- Function: `executor.execute_interactive()`
+- Parameters:
+  - `worktree_path=cwd`
+  - `dangerous=dangerous` (explicit flag requirement)
+  - `command="/erk:rebase"` (slash command)
+  - `target_subpath=None`
+  - `model=None`
+  - `permission_mode="edits"`
+- Comment: "Never returns — process replaced by os.execvp"
+
+---
+
+### 2. `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py` - Lines 32-55 &amp; 175-210 Patterns
+
+**`_get_remote_github()` Context Injection Pattern (lines 32-55):**
+- **Purpose**: Provide factory function for constructing RemoteGitHub with dependency injection
+- **Logic**:
+  - Line 47-48: Return `ctx.remote_github` if already provided (test injection point)
+  - Line 50-53: Raise error if no `ctx.http_client` available (requires GitHub auth)
+  - Line 55: Construct `RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)` as default
+- **Type signature**: `def _get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub`
+- **Error class**: Raises `UserFacingCliError` (custom exception)
+
+**`@no_repo_required` Pattern (implied from docstring context):**
+- Not explicitly shown in provided lines, but command handles both repo and remote scenarios
+- Lines 175-189 show **`--repo` validation logic** replacing repo requirement:
+  - Line 176-181: Validate `target_repo` format: `"owner/repo"` (requires exact single slash)
+  - Line 182: Parse into `owner, repo_name = target_repo.split("/")`
+  - Lines 184-189: Fall back to local repo if `--repo` not provided
+  - Line 184: Check `isinstance(ctx.repo, NoRepoSentinel)` - sentinel pattern for missing repo
+
+**Remote Dispatch Context Injection (lines 199-210):**
+- Line 199: Call `_get_remote_github(ctx)` to get RemoteGitHub instance
+- Line 201-210: Pass `remote` to `dispatch_one_shot_remote()` with:
+  - `owner`, `repo_name` (from local or remote resolution)
+  - `params` (OneShotDispatchParams object)
+  - `dry_run` flag
+  - `ref` (dispatch reference)
+  - `time_gateway=ctx.time` (time injection)
+  - `prompt_executor=ctx.prompt_executor` (executor injection)
+
+---
+
+### 3. `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/health_check_runner.py` - ABC Location
+
+**ABC Location and Structure:**
+- **File path**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/health_check_runner.py`
+- **Class name**: `HealthCheckRunner` (lines 20-24)
+- **Inheritance**: `ABC` (Abstract Base Class)
+- **Abstract method**: `run_all(self, ctx: ErkContext, *, check_hooks: bool) -&gt; list[CheckResult]`
+- **Design purpose**: Enables dependency injection for tests (lines 3-4 docstring)
+- **Type hints**: Uses `TYPE_CHECKING` guard (lines 15-17) to avoid circular imports
+
+---
+
+### 4. `/home/runner/work/erk/erk/src/erk/core/health_checks/runner.py` - Real Implementation
+
+**RealHealthCheckRunner (lines 18-24):**
+- **Class name**: `RealHealthCheckRunner`
+- **Inheritance**: `HealthCheckRunner` (ABC implementation)
+- **Single method**: `run_all(self, ctx: ErkContext, *, check_hooks: bool) -&gt; list[CheckResult]`
+- **Implementation strategy** (lines 21-24):
+  - Import `run_all_checks` function from `erk.core.health_checks` (lazy import at line 22)
+  - Delegate directly: `return run_all_checks(ctx, check_hooks=check_hooks)`
+- **Pattern**: Thin wrapper that enables ABC injection while delegating to module-level function
+
+---
+
+### 5. `/home/runner/work/erk/erk/src/erk/core/health_checks/__init__.py` - Run Function
+
+**`run_all_checks()` Function (lines 73-161):**
+- **Signature**: `def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -&gt; list[CheckResult]`
+- **Returns**: `list[CheckResult]` - collection of diagnostic results
+
+**Execution Pattern (lines 83-97):**
+- Extract gateways from context: `shell`, `admin`, `claude_installation`
+- Build initial results list with unconditional checks (8 checks, lines 88-97)
+- All health check functions follow pattern: `check_NAME(gateway) -&gt; CheckResult`
+
+**Repository-Conditional Checks (lines 104-159):**
+- Precondition: `git_dir = ctx.git.repo.get_git_common_dir(ctx.cwd)` 
+- Only execute if `git_dir is not None` (lines 105-159)
+- Pattern: 27 additional repository-specific checks added conditionally
+- Early checks (lines 107-118): Claude settings, hooks, gitignore
+- Late checks (lines 119-159): Secrets, managed artifacts, plans repo labels, legacy checks
+
+**Key Logic Branch (lines 127-136):**
+- Conditional: `if not package.in_erk_repo` (line 128)
+- If external repo: load installed capabilities before check_managed_artifacts
+- Demonstrates lazy loading pattern for context-dependent checks
+
+This report captures the exact function names, line numbers, and key patterns as requested.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8887" cache_read_input_tokens="15721" cache_creation="{'ephemeral_5m_input_tokens': 8887, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

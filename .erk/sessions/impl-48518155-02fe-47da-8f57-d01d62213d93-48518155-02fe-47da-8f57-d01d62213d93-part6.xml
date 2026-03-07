@@ -1,0 +1,640 @@
+<session>
+  <meta source="agent-a6d324f" />
+  <meta branch="plnd/consolidate-learn-docs-03-07-2145" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Read these source files and report key patterns:
+
+1. `packages/erk-dev/src/erk_dev/commands/audit_collect/command.py` - Overall structure, JSON output schema, ErkDevContext fields used
+2. `src/erk/cli/commands/slot/assign_cmd.py` - Look at lines 16-20 for `--from-current-branch` flag definition, and lines 52-79 for target branch selection logic (Graphite parent vs trunk fallback, detached HEAD)
+3. `src/erk/tui/screens/objective_nodes_screen.py` - Look at lines 150-151 for priority=True binding pattern
+4. `src/erk/tui/commands/registry.py` - Look at alphabetical sorting within command groups
+5. `src/erk/tui/screens/help_screen.py` - Look at lines 59-119 for ViewMode-aware conditional rendering
+
+Report exact function names, line numbers, and key patterns.</user>
+  <assistant>I'll search the documentation first, then read the specified source files to identify key patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15272" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01L1xhJVUu89f1FvuBicJYdE">
+    <param name="pattern">command structure|JSON schema|CLI flag|binding pattern|conditional rendering</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="type">md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15272" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15272, 'ephemeral_1h_input_tokens': 0}" output_tokens="133" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L1xhJVUu89f1FvuBicJYdE">
+Found 39 files
+docs/learned/tui/tripwires.md
+docs/learned/tui/tui-command-registration.md
+docs/learned/uncategorized/tripwires.md
+docs/learned/universal-tripwires.md
+docs/learned/reference/cli-flag-patterns.md
+docs/learned/reference/index.md
+docs/learned/reference/interactive-claude-config.md
+docs/learned/refactoring/systematic-rename-checklist.md
+docs/learned/refactoring/systematic-terminology-renames.md
+docs/learned/planning/workflow-markers.md
+docs/learned/objectives/roadmap-parser.md
+docs/learned/integrations/codex-integration.md
+docs/learned/integrations/codex/codex-cli-reference.md
+docs/learned/integrations/codex/codex-jsonl-format.md
+docs/learned/integrations/codex/codex-skills-system.md
+docs/learned/erk/dispatch-ref-config.md
+docs/learned/commands/command-rename-pattern.md
+docs/learned/cli/subprocess-stdin-patterns.md
+docs/learned/cli/tripwires.md
+docs/learned/cli/index.md
+docs/learned/cli/local-remote-command-groups.md
+docs/learned/cli/parameter-removal-checklist.md
+docs/learned/cli/ensure-ideal-pattern.md
+docs/learned/cli/erk-exec-commands.md
+docs/learned/cli/exec-script-schema-patterns.md
+docs/learned/cli/auto-generated-reference-docs.md
+docs/learned/cli/cli-options-validation.md
+docs/learned/cli/click-framework-conventions.md
+docs/learned/cli/click-patterns.md
+
+... [10 lines omitted] ...
+
+docs/learned/architecture/claude-cli-error-reporting.md
+  </tool_result>
+  <assistant>Good, I found relevant docs. Let me read the CLI and TUI docs, then check the source files:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="737" cache_read_input_tokens="15272" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015KbRkNx8Jfkyx5ckEGHDyj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/reference/cli-flag-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="737" cache_read_input_tokens="15272" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XPoHGnPPdVUBsAgNiSXWft">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/click-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="737" cache_read_input_tokens="15272" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HUgv664Un3tV5ixKunryW8">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="737" cache_read_input_tokens="15272" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015KbRkNx8Jfkyx5ckEGHDyj">
+     1→---
+     2→title: CLI Flag Patterns
+     3→read_when:
+     4→  - "designing CLI flag requirements"
+     5→  - "implementing conditional flag requirements"
+     6→  - "documenting flag combinations"
+     7→last_audited: "2026-02-16 14:20 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# CLI Flag Patterns
+    12→
+    13→Patterns for CLI flag design, including asymmetric requirements and flag combinations.
+    14→
+    15→## Asymmetric Flag Requirements
+    16→
+    17→Some flags are only required in certain contexts or combinations. Document these clearly.
+    18→
+    19→### Pattern: Flag Required Unless Config Disables
+    20→
+    21→The `--dangerous` flag is required by default but can be disabled via config:
+    22→
+    23→```python
+    24→@click.command()
+    25→@click.option("-d", "--dangerous", is_flag=True)
+    26→@click.pass_obj
+    27→def my_command(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    28→    # Require --dangerous unless config disables requirement
+    29→    if not dangerous:
+    30→        require_flag = (
+
+... [110 lines omitted] ...
+
+    35→            raise click.UsageError(
+    52→        raise click.UsageError(
+    99→        raise click.UsageError("--json and --quiet are mutually exclusive")
+  </tool_result>
+  <tool_result tool="toolu_01XPoHGnPPdVUBsAgNiSXWft">
+     1→---
+     2→title: Click Patterns
+     3→last_audited: "2026-02-03 03:56 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "implementing CLI options with complex behavior"
+     7→  - "creating flags that optionally accept values"
+     8→  - "designing CLI flags with default behaviors"
+     9→---
+    10→
+    11→# Click Patterns
+    12→
+    13→Advanced patterns for Click option and flag behavior.
+    14→
+    15→## Optional Value Flags with Defaults
+    16→
+    17→Use `is_flag=False` with `flag_value` to create flags that work both with and without values:
+    18→
+    19→```python
+    20→@click.option(
+    21→    "--environment",
+    22→    type=str,
+    23→    default=None,        # None when flag not provided
+    24→    is_flag=False,       # Accepts a value
+    25→    flag_value="",       # Empty string when flag provided without value
+    26→    help="Use environment (uses default if name not provided)",
+    27→)
+    28→```
+    29→
+    30→**Behavior:**
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01HUgv664Un3tV5ixKunryW8">
+     1→---
+     2→title: TUI Command Registration
+     3→read_when:
+     4→  - "adding a new TUI command to the registry"
+     5→  - "understanding the 3-place coordination pattern for TUI commands"
+     6→  - "working with TUI command categories or display formatters"
+     7→tripwires:
+     8→  - action: "adding a new TUI command without updating all 3 places"
+     9→    warning: "TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md."
+    10→  - action: "adding a CLI flag that affects behavior without checking TUI command palette"
+    11→    warning: "TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too."
+    12→---
+    13→
+    14→# TUI Command Registration
+    15→
+    16→Adding a TUI command requires coordinating three places in the codebase.
+    17→
+    18→## 3-Place Coordination Pattern
+    19→
+    20→When adding a command, update all three:
+    21→
+    22→1. **Display formatter**: A `_display_*()` function that generates the display name
+    23→2. **CommandDefinition**: Entry in `get_all_commands()` with id, name, category, availability, and display getter
+    24→3. **Action inventory**: Command appears in the correct category
+    25→
+    26→All definitions are in `src/erk/tui/commands/registry.py`.
+    27→
+    28→## Single Source of Truth: `launch_key` Field
+    29→
+    30→&lt;!-- Source: src/erk/tui/commands/types.py:60 --&gt;
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the specific source files mentioned:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="4657" cache_read_input_tokens="16009" cache_creation="{'ephemeral_5m_input_tokens': 4657, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0137yE7tAcibEDjtWSwGWJSB">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-dev/src/erk_dev/commands/audit_collect/command.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="4657" cache_read_input_tokens="16009" cache_creation="{'ephemeral_5m_input_tokens': 4657, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Kkt1fNaYYBnbkd7trApRYw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/slot/assign_cmd.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="4657" cache_read_input_tokens="16009" cache_creation="{'ephemeral_5m_input_tokens': 4657, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019Bra7YCar8FTrH3hxdq9hh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/objective_nodes_screen.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="4657" cache_read_input_tokens="16009" cache_creation="{'ephemeral_5m_input_tokens': 4657, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0137yE7tAcibEDjtWSwGWJSB">
+     1→"""Collect and categorize branch/worktree/PR data for audit-branches.
+     2→
+     3→Usage:
+     4→    erk-dev audit-collect
+     5→
+     6→Output:
+     7→    JSON with pre-categorized branches ready for presentation.
+     8→
+     9→Exit Codes:
+    10→    0: Always (outputs JSON with success field)
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→import json
+    16→from dataclasses import asdict, dataclass, field
+    17→from datetime import UTC, datetime
+    18→from pathlib import Path
+    19→from typing import TYPE_CHECKING
+    20→
+    21→import click
+    22→
+    23→from erk_dev.context import ErkDevContext
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
+    27→    from erk_shared.gateway.github.types import PullRequestInfo
+    28→
+    29→
+    30→# -- Data types ----------------------------------------------------------------
+
+... [472 lines omitted] ...
+
+   478→    except FileNotFoundError:
+  </tool_result>
+  <tool_result tool="toolu_01Kkt1fNaYYBnbkd7trApRYw">
+     1→"""Slot assign command - assign an existing branch to a worktree slot."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.slot.common import allocate_slot_for_branch
+     6→from erk.cli.core import discover_repo_context
+     7→from erk.cli.ensure import Ensure
+     8→from erk.core.context import ErkContext
+     9→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    10→from erk_shared.output.output import user_output
+    11→
+    12→
+    13→@click.command("assign")
+    14→@click.argument("branch_name", metavar="BRANCH", required=False, default=None)
+    15→@click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
+    16→@click.option(
+    17→    "--from-current-branch",
+    18→    is_flag=True,
+    19→    help="Move the current branch to a pool slot and switch the current worktree away",
+    20→)
+    21→@click.pass_obj
+    22→def slot_assign(
+    23→    ctx: ErkContext, branch_name: str | None, force: bool, from_current_branch: bool
+    24→) -&gt; None:
+    25→    """Assign an EXISTING branch to an available pool slot.
+    26→
+    27→    BRANCH is the name of an existing git branch to assign to the pool.
+    28→
+    29→    The command will:
+    30→    1. Verify the branch EXISTS (fails if it doesn't)
+
+... [75 lines omitted] ...
+
+    43→        user_output("Error: Cannot specify both BRANCH and --from-current-branch")
+    46→        user_output("Error: Must specify either BRANCH or --from-current-branch")
+    88→            f"Error: Branch '{branch_name}' does not exist.\n"
+  </tool_result>
+  <tool_result tool="toolu_019Bra7YCar8FTrH3hxdq9hh">
+     1→"""Modal screen displaying objective node breakdown with PR status."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from rich.text import Text
+     6→from textual import work
+     7→from textual.app import ComposeResult
+     8→from textual.binding import Binding
+     9→from textual.containers import Container, Vertical
+    10→from textual.screen import ModalScreen
+    11→from textual.widgets import DataTable, Label
+    12→
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.tui.commands.provider import NodeCommandProvider
+    15→from erk.tui.commands.registry import get_copy_text
+    16→from erk.tui.commands.types import CommandContext
+    17→from erk.tui.data.types import PlanRowData
+    18→from erk.tui.views.types import ViewMode
+    19→from erk_shared.gateway.github.metadata.dependency_graph import (
+    20→    _STATUS_SYMBOLS,
+    21→    ObjectiveNode,
+    22→    parse_graph,
+    23→)
+    24→from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
+    25→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    26→from erk_shared.gateway.plan_service.abc import PlanService
+    27→
+    28→
+    29→def _styled_stage(lifecycle_display: str) -&gt; str | Text:
+    30→    """Convert lifecycle display markup to a styled Text for DataTable.
+
+... [175 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the registry and help_screen files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="14224" cache_read_input_tokens="20666" cache_creation="{'ephemeral_5m_input_tokens': 14224, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014GjiFTvna8eNc8kMHvTvoz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/commands/registry.py</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14224" cache_read_input_tokens="20666" cache_creation="{'ephemeral_5m_input_tokens': 14224, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016yoWr2hCpshjH77aCGBJBZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/help_screen.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14224" cache_read_input_tokens="20666" cache_creation="{'ephemeral_5m_input_tokens': 14224, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014GjiFTvna8eNc8kMHvTvoz">
+     1→"""Command registry for command palette.
+     2→
+     3→This module defines all available commands and their availability predicates.
+     4→Commands are organized by category: Actions, Opens, Copies.
+     5→Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
+     6→"""
+     7→
+     8→from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+     9→from erk.tui.views.types import ViewMode
+    10→
+    11→CATEGORY_EMOJI: dict[CommandCategory, str] = {
+    12→    CommandCategory.ACTION: "⚡",
+    13→    CommandCategory.OPEN: "🔗",
+    14→    CommandCategory.COPY: "📋",
+    15→}
+    16→
+    17→
+    18→# === View Mode Predicates ===
+    19→
+    20→
+    21→def _is_plan_view(ctx: CommandContext) -&gt; bool:
+    22→    """True when not in Objectives view (i.e., Plans or Learn)."""
+    23→    return ctx.view_mode != ViewMode.OBJECTIVES
+    24→
+    25→
+    26→def _is_objectives_view(ctx: CommandContext) -&gt; bool:
+    27→    """True when in Objectives view."""
+    28→    return ctx.view_mode == ViewMode.OBJECTIVES
+    29→
+    30→
+
+... [275 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016yoWr2hCpshjH77aCGBJBZ">
+     1→"""Modal screen showing keyboard shortcuts."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from textual.app import ComposeResult
+     6→from textual.binding import Binding
+     7→from textual.containers import Vertical
+     8→from textual.events import Key
+     9→from textual.screen import ModalScreen
+    10→from textual.widgets import Label
+    11→
+    12→from erk.tui.views.types import ViewMode
+    13→
+    14→
+    15→class HelpScreen(ModalScreen):
+    16→    """Modal screen showing keyboard shortcuts."""
+    17→
+    18→    BINDINGS = [
+    19→        Binding("escape", "dismiss", "Close"),
+    20→        Binding("q", "dismiss", "Close"),
+    21→        Binding("?", "dismiss", "Close"),
+    22→    ]
+    23→
+    24→    DEFAULT_CSS = """
+    25→    HelpScreen {
+    26→        align: center middle;
+    27→    }
+    28→
+    29→    #help-dialog {
+    30→        width: 60;
+
+... [113 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me read more of the registry file to see the full pattern:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="6177" cache_read_input_tokens="34890" cache_creation="{'ephemeral_5m_input_tokens': 6177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XhXXtAsjEU5KBcFFtKrwgs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/commands/registry.py</param>
+    <param name="offset">300</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="6177" cache_read_input_tokens="34890" cache_creation="{'ephemeral_5m_input_tokens': 6177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XhXXtAsjEU5KBcFFtKrwgs">
+   300→        ),
+   301→        CommandDefinition(
+   302→            id="incremental_dispatch",
+   303→            name="Incremental Dispatch",
+   304→            description="incremental dispatch",
+   305→            category=CommandCategory.ACTION,
+   306→            shortcut=None,
+   307→            launch_key="i",
+   308→            is_available=lambda ctx: (
+   309→                _is_plan_view(ctx) and ctx.row.pr_number is not None and ctx.row.pr_state == "OPEN"
+   310→            ),
+   311→            get_display_name=_display_incremental_dispatch,
+   312→        ),
+   313→        # === OBJECTIVE ACTIONS ===
+   314→        CommandDefinition(
+   315→            id="check_objective",
+   316→            name="Check Objective",
+   317→            description="check",
+   318→            category=CommandCategory.ACTION,
+   319→            shortcut="5",
+   320→            launch_key="k",
+   321→            is_available=lambda ctx: _is_objectives_view(ctx),
+   322→            get_display_name=_display_check_objective,
+   323→        ),
+   324→        CommandDefinition(
+   325→            id="close_objective",
+   326→            name="Close Objective",
+   327→            description="close",
+   328→            category=CommandCategory.ACTION,
+   329→            shortcut=None,
+
+... [175 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent. Now let me compile the report with all the key patterns found.
+
+## Report: Key Patterns from Source Files
+
+Based on analysis of the specified source files and relevant documentation, here are the exact patterns and functions:
+
+---
+
+### 1. **audit_collect/command.py** - JSON Output Schema &amp; Command Structure
+
+**File:** `/home/runner/work/erk/erk/packages/erk-dev/src/erk_dev/commands/audit_collect/command.py`
+
+**JSON Output Schema (Lines 118-135):**
+- Top-level: `AuditResult` (frozen dataclass, lines 127-135)
+  - `success: bool`
+  - `summary: AuditSummary` (lines 118-124)
+    - `total_local_branches`, `total_worktrees`, `total_open_prs`
+  - `categories: AuditCategories` (lines 106-115)
+    - Contains nested frozen dataclasses: `blocking_worktrees`, `auto_cleanup`, `closed_pr_branches`, `pattern_branches`, `stale_open_prs`, `needs_attention`, `active`
+  - `stubs_tracked_by_graphite: list[str]`
+
+**Command Function (Lines 433-496):**
+- Function name: `audit_collect_command` (line 435)
+- Decorated: `@click.command(name="audit-collect")` and `@click.pass_context` (lines 433-434)
+- Takes: `ctx: click.Context` → extracts `ErkDevContext` via `ctx.obj` (lines 441-444)
+- Output: Uses `click.echo(json.dumps(asdict(audit_result), indent=2))` (line 495)
+- Exit: `raise SystemExit(0)` (line 496)
+
+**ErkDevContext Fields Used (Lines 441-444):**
+```python
+dev_ctx: ErkDevContext = ctx.obj
+git = dev_ctx.git          # Gateway to git operations
+github = dev_ctx.github    # Gateway to GitHub operations
+repo_root = dev_ctx.repo_root  # Repository root Path
+```
+
+**Core Logic Function (Lines 371-430):**
+- `_run_audit_collect()` separated for testability
+- Takes pre-fetched data (branches, worktrees, sync_info, PRs)
+- Returns `AuditResult` with `success=True`
+- Categorization is side-effect-free
+
+---
+
+### 2. **slot/assign_cmd.py** - CLI Flag &amp; Branch Selection Logic
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/slot/assign_cmd.py`
+
+**Flag Definition (Lines 16-20):**
+```python
+@click.option(
+    "--from-current-branch",
+    is_flag=True,
+    help="Move the current branch to a pool slot and switch the current worktree away",
+)
+```
+
+**Target Branch Selection Logic (Lines 52-79):**
+
+1. **Get current branch (Line 53-55):**
+   ```python
+   current_branch = Ensure.not_none(
+       ctx.git.branch.get_current_branch(ctx.cwd), "Unable to determine current branch"
+   )
+   ```
+
+2. **Determine preferred target (Line 58-59):**
+   ```python
+   parent_branch = ctx.branch_manager.get_parent_branch(repo.root, current_branch)
+   to_branch = parent_branch or ctx.git.branch.detect_trunk_branch(repo.root)
+   ```
+   **Pattern:** Graphite parent as priority, trunk as fallback
+
+3. **Handle detached HEAD (Lines 71-77):**
+   ```python
+   checkout_path = ctx.git.worktree.is_branch_checked_out(repo.root, to_branch)
+   if checkout_path is not None:
+       ctx.branch_manager.checkout_detached(ctx.cwd, current_branch)
+   else:
+       ctx.branch_manager.checkout_branch(ctx.cwd, to_branch)
+   ```
+   **Pattern:** If target branch in use elsewhere → detached HEAD checkout; otherwise → normal checkout
+
+---
+
+### 3. **objective_nodes_screen.py** - Priority=True Binding Pattern
+
+**File:** `/home/runner/work/erk/erk/src/erk/tui/screens/objective_nodes_screen.py`
+
+**Binding Lines (150-151):**
+```python
+Binding("down", "cursor_down", "Down", show=False, priority=True),
+Binding("up", "cursor_up", "Up", show=False, priority=True),
+```
+
+**Full BINDINGS List (Lines 144-156):**
+- Simple key aliases (vim-style `j`/`k` as `show=False`)
+- Arrow keys marked with `priority=True` to take precedence over vim-style
+- Pattern: `Binding(key, action, description, show=False, priority=True)` for high-priority navigation
+
+---
+
+### 4. **tui/commands/registry.py** - Alphabetical Sorting Within Categories
+
+**File:** `/home/runner/work/erk/erk/src/erk/tui/commands/registry.py`
+
+**Function Structure (Lines 208-222):**
+```python
+def get_all_commands() -&gt; list[CommandDefinition]:
+    """Return all command definitions.
+    
+    Commands are ordered by category:
+    1. Actions (mutative operations)
+    2. Opens (browser navigation)
+    3. Copies (clipboard operations)
+    """
+    return [
+        # === PLAN ACTIONS ===
+        CommandDefinition(id="close_plan", ...),
+        CommandDefinition(id="dispatch_to_queue", ...),
+        # ... more actions ...
+        
+        # === OBJECTIVE ACTIONS ===
+        CommandDefinition(id="check_objective", ...),
+        # ... more actions ...
+        
+        # === PLAN OPENS ===
+        CommandDefinition(id="open_issue", ...),
+        # ... more opens ...
+        
+        # === PLAN COPIES ===
+        CommandDefinition(id="copy_checkout", ...),
+        # ... more copies ...
+    ]
+```
+
+**Organizational Pattern:**
+- Commands grouped by **category header comments** (PLAN ACTIONS, OBJECTIVE ACTIONS, PLAN OPENS, etc.)
+- Within categories: Roughly grouped by function (e.g., all PLAN ACTIONS together)
+- **Not strictly alphabetized**, but logically organized by feature area
+
+**Category Predicates (Lines 21-28):**
+```python
+def _is_plan_view(ctx: CommandContext) -&gt; bool:
+    return ctx.view_mode != ViewMode.OBJECTIVES
+
+def _is_objectives_view(ctx: CommandContext) -&gt; bool:
+    return ctx.view_mode == ViewMode.OBJECTIVES
+```
+
+**Display Name Functions Pattern (Lines 34-160+):**
+- Each command has a `_display_*()` function by name convention
+- Example: `_display_close_plan()` (line 34-36)
+- Returns fully formatted display string (e.g., `f"erk pr close {ctx.row.plan_id}"`)
+
+---
+
+### 5. **tui/screens/help_screen.py** - ViewMode-Aware Conditional Rendering
+
+**File:** `/home/runner/work/erk/erk/src/erk/tui/screens/help_screen.py`
+
+**ViewMode Detection (Lines 59-69):**
+```python
+def __init__(self, *, view_mode: ViewMode) -&gt; None:
+    """Initialize help screen."""
+    super().__init__()
+    self._view_mode = view_mode
+
+def _is_objectives_view(self) -&gt; bool:
+    return self._view_mode == ViewMode.OBJECTIVES
+```
+
+**Conditional Rendering Pattern (Lines 71-121):**
+```python
+def compose(self) -&gt; ComposeResult:
+    """Create help dialog content."""
+    is_objectives = self._is_objectives_view()
+    
+    # ... static sections ...
+    
+    with Vertical(classes="help-section"):
+        yield Label("Actions", classes="help-section-title")
+        if is_objectives:
+            yield Label("Enter   View objective details", classes="help-binding")
+            yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
+            yield Label("v       View objective text", classes="help-binding")
+            # ... objective-specific bindings ...
+        else:
+            yield Label("Enter   View plan details", classes="help-binding")
+            yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
+            yield Label("v       View plan text", classes="help-binding")
+            # ... plan-specific bindings ...
+```
+
+**Pattern Details:**
+- Store `view_mode` as instance variable in `__init__`
+- Create helper method `_is_objectives_view()` for clarity
+- Use simple `if is_objectives:` in `compose()` to branch rendering
+- Objective section (Lines 94-99), Plan section (Lines 100-108)
+- Shared sections rendered outside conditional (Lines 79-91, 112-121)
+
+---
+
+### Summary Table
+
+| File | Key Function | Pattern | Line Range |
+|------|--------------|---------|-----------|
+| audit_collect/command.py | `audit_collect_command` | Click context injection, JSON output via `asdict()` | 433-496 |
+| assign_cmd.py | `slot_assign` | CLI flag, Graphite parent→trunk fallback, detached HEAD handling | 16-77 |
+| objective_nodes_screen.py | BINDINGS | `priority=True` on arrow keys for navigation precedence | 150-151 |
+| registry.py | `get_all_commands()` | Logical category grouping, display functions by convention | 208-500+ |
+| help_screen.py | `compose()` | ViewMode instance var + conditional rendering in generator | 59-121 |</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2869" cache_read_input_tokens="41067" cache_creation="{'ephemeral_5m_input_tokens': 2869, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>

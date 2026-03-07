@@ -1,0 +1,1323 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-07-2145" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8920&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8920` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8920.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28551" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28551, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FRLE9Pmjr9JQWfv5zz5QK1">
+    <param name="command">erk exec setup-impl --issue 8920</param>
+    <param name="description">Set up implementation for plan #8920</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28551" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28551, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FRLE9Pmjr9JQWfv5zz5QK1">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-07-2145", "plan_number": 8920, "plan_url": "https://github.com/dagster-io/erk/pull/8920", "branch": "plnd/consolidate-learn-docs-03-07-2145", "plan_title": "[erk-learn] Plan: Consolidate documentation from 21 erk-learn plans", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8920, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/consolidate-learn-docs-03-07-2145', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="28551" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BESbZvXKc7A2NNLfXRirJE">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-07-2145/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="28551" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BESbZvXKc7A2NNLfXRirJE">
+     1→# Plan: Consolidate documentation from 21 erk-learn plans
+     2→
+     3→&gt; **Consolidates:** #8918, #8911, #8910, #8909, #8908, #8907, #8906, #8905, #8904, #8903, #8901, #8894, #8889, #8881, #8876, #8873, #8871, #8870, #8868, #8867, #8866
+     4→
+     5→## Source Plans
+     6→
+     7→| # | Title | Items Merged |
+     8→| --- | --- | --- |
+     9→| #8918 | Update CHANGELOG.md with 15 commits + refresh erk exec reference docs | 0 (already complete) |
+    10→| #8911 | Add refac-mock-to-fake skill | 0 (already complete) |
+    11→| #8910 | Land learn pipeline: fetch remote sessions from async-learn branch | 1 item |
+    12→| #8909 | Flat prompt executor namespace + kill LlmCaller | 2 items |
+    13→| #8908 | Implement erk-dev audit-collect command | 1 item |
+    14→| #8907 | Codespace connect auto-checks out local branch | 1 item |
+    15→| #8906 | Show conflicted files and confirm before launching Claude in erk pr rebase | 1 item |
+    16→| #8905 | Make TUI help screen view-mode-aware | 1 item |
+    17→| #8904 | Add objective node management improvements | 1 item |
+    18→| #8903 | Consolidate one-shot dispatch to RemoteGitHub REST API | 1 item |
+    19→| #8901 | Add no-repo infrastructure: sentinels and remote dispatch foundation | 1 item |
+    20→| #8894 | Sort command palette menu items alphabetically | 1 item |
+    21→| #8889 | Add arrow key navigation to ObjectiveNodesScreen | 1 item |
+    22→| #8881 | Update CHANGELOG and remove bundled refactoring skills | 1 item |
+    23→| #8876 | Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable | 0 (superseded by #8909) |
+    24→| #8873 | Rename refactoring skills with refac- prefix + --from-current-branch | 2 items |
+    25→| #8871 | Add --from-current-branch flag to erk slot assign | 0 (merged into #8873) |
+    26→| #8870 | Fix HealthCheckRunner circular dependency by moving ABC to erk_shared | 1 item |
+    27→| #8868 | Fix Graphite divergence in incremental-dispatch after plumbing commit | 2 items |
+    28→| #8867 | Fix: erk pr teleport doesn't register branch with Graphite for non-stacked PRs | 1 item |
+    29→| #8866 | Fix ensure_trunk_synced to use pull instead of update_local_ref when trunk is checked out | 1 item |
+    30→
+
+... [278 lines omitted] ...
+
+   166→1. NoRepoSentinel pattern — sentinel gateways that raise NoRepoError with user guidance
+   171→6. Error handling: `--repo` format validation, mutual exclusivity with `--ref-current`
+  </tool_result>
+  <assistant>This is a large documentation consolidation plan with 16 steps. Let me create the todo list and start working through the phases. First, let me load the necessary context and understand what files already exist.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5943" cache_read_input_tokens="28898" cache_creation="{'ephemeral_5m_input_tokens': 5943, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NjujZ7kTVNXsQ7WZMLzij2">
+    <param name="todos">[{'content': 'Step 1: Update prompt-executor-patterns.md (from #8909, #8876)', 'status': '...[truncated 2312 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5943" cache_read_input_tokens="28898" cache_creation="{'ephemeral_5m_input_tokens': 5943, 'ephemeral_1h_input_tokens': 0}" output_tokens="895" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NjujZ7kTVNXsQ7WZMLzij2">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal GitHub started and begin reading the source files I need.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="34841" cache_creation="{'ephemeral_5m_input_tokens': 917, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011kL2VTS4fFR4q6VR7rJHgZ">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="34841" cache_creation="{'ephemeral_5m_input_tokens': 917, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_013PQ6E4PU242kSf8eBYAev8">
+    <param name="skill">learned-docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="34841" cache_creation="{'ephemeral_5m_input_tokens': 917, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011kL2VTS4fFR4q6VR7rJHgZ">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_013PQ6E4PU242kSf8eBYAev8">
+Launching skill: learned-docs
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/learned-docs
+
+# Learned Documentation Guide
+
+Overview: `docs/learned/` contains agent-focused documentation with:
+
+- YAML frontmatter for routing and discovery
+- Hierarchical category organization (categories listed in index below)
+- Index files for category navigation
+- Routing tables in AGENTS.md
+
+## Core Knowledge (ALWAYS Loaded)
+
+@learned-docs-core.md
+
+## Document Registry (Auto-Generated)
+
+@docs/learned/index.md
+
+## Frontmatter Requirements
+
+Every markdown file (except index.md) MUST have:
+
+```yaml
+---
+title: Document Title
+read_when:
+  - "first condition"
+  - "second condition"
+---
+```
+
+### Required Fields
+
+| Field       | Type         | Purpose                                    |
+| ----------- | ------------ | ------------------------------------------ |
+| `title`     | string       | Human-readable title for index tables      |
+| `read_when` | list[string] | Conditions when agent should read this doc |
+
+### Writing Effective read_when Values
+
+- Use gerund phrases: "creating a plan", "styling CLI output"
+- Be specific: "fixing merge conflicts in tests" not "tests"
+- Include 2-4 conditions covering primary use cases
+- Think: "An agent should read this when they are..."
+
+Good:
+
+```yaml
+read_when:
+  - "creating or closing plans"
+  - "understanding plan states"
+  - "working with .erk/impl-context/ directories"
+```
+
+Bad:
+
+```yaml
+read_when:
+  - "plans" # Too vague
+  - "the user asks" # Not descriptive
+```
+
+## Documentation Structure
+
+**Read the master index for current categories and documents:**
+
+`docs/learned/index.md`
+
+The index contains:
+
+- All category paths and descriptions
+- Root-level documents
+- Document listings with "Read when..." conditions
+
+## Category Placement Guidelines
+
+1. **Match by topic** - Does the doc clearly fit one category? (see index above for categories)
+2. **Match by related docs** - Are similar docs already in a category?
+3. **When unclear** - Place at root level; categorize later when patterns emerge
+4. **Create new category** - When 3+ related docs exist at root level
+
+### Distinguishing cli/ vs architecture/
+
+This is the most common confusion:
+
+- **cli/**: Patterns for **building CLI commands** - how users interact with the tool
+  - Fast-path patterns (skipping expensive ops)
+  - Output formatting and styling
+  - Script mode behavior
+  - Command organization
+
+- **architecture/**: **Internal implementation patterns** - how the code works
+  - Gateway ABCs and dependency injection
+  - Dry-run via wrapper classes
+  - Shell integration constraints
+  - Protocol vs ABC decisions
+
+## Document Structure Template
+
+```markdown
+---
+title: [Clear Document Title]
+read_when:
+  - "[first condition]"
+  - "[second condition]"
+---
+
+# [Title Matching Frontmatter]
+
+[1-2 sentence overview]
+
+## [Main Content Sections]
+
+[Organized content with clear headers]
+
+## Related Topics
+
+- [Link to related docs](../category/doc.md) - Brief description
+```
+
+## Index File Template
+
+Each category has an `index.md` following this pattern:
+
+```markdown
+---
+title: [Category] Documentation
+read_when:
+  - "[when to browse this category]"
+---
+
+# [Category] Documentation
+
+[Brief category description]
+
+## Quick Navigation
+
+| When you need to... | Read this        |
+| ------------------- | ---------------- |
+| [specific task]     | [doc.md](doc.md) |
+
+## Documents in This Category
+
+### [Document Title]
+
+**File:** [doc.md](doc.md)
+
+[1-2 sentence description]
+
+## Related Topics
+
+- [Other Category](../other/) - Brief relevance
+```
+
+## Reorganizing Documentation
+
+When moving files between categories:
+
+### Step 1: Move Files with git mv
+
+```bash
+cd docs/learned
+git mv old-location/doc.md new-category/doc.md
+```
+
+### Step 2: Update Cross-References
+
+Find all references to moved files:
+
+```bash
+grep -r "old-filename.md" docs/learned/
+```
+
+Update relative links:
+
+- Same category: `[doc.md](doc.md)`
+- Different category: `[doc.md](../category/doc.md)`
+- To category index: `[Category](../category/)`
+
+### Step 3: Update Index Files
+
+Update Quick Navigation tables in affected index files.
+
+### Step 4: Update AGENTS.md
+
+If the doc was in the routing table, update the path.
+
+### Step 5: Validate
+
+Run `make fast-ci` to catch broken links and formatting issues.
+
+## Updating Routing Tables
+
+AGENTS.md contains the Quick Routing Table for agent navigation.
+
+### When to Add Entries
+
+- New category additions
+- High-frequency tasks
+- Tasks where wrong approach is common
+
+### Entry Format
+
+```markdown
+| [Task description] | → [Link or skill] |
+```
+
+Examples:
+
+- `| Understand project architecture | → [Architecture](docs/learned/architecture/) |`
+- `| Write Python code | → Load \`dignified-python\` skill FIRST |`
+
+## Validation
+
+Run before committing:
+
+```bash
+make fast-ci
+```
+
+This validates:
+
+- YAML frontmatter syntax
+- Required fields present
+- Markdown formatting (prettier)
+
+## ⚠️ Generated Files - Do Not Edit Directly
+
+The following files are **auto-generated** from frontmatter metadata:
+
+| File                                   | Source                                |
+| -------------------------------------- | ------------------------------------- |
+| `docs/learned/index.md`                | Frontmatter from all docs             |
+| `docs/learned/&lt;category&gt;/index.md`     | Frontmatter from category             |
+| `docs/learned/&lt;category&gt;/tripwires.md` | `tripwires:` field in category docs   |
+| `docs/learned/tripwires-index.md`      | Category tripwires with routing hints |
+
+**Never edit these files directly.** Changes will be overwritten.
+
+### Workflow for Changes
+
+1. **Edit the source frontmatter** in the relevant documentation file(s)
+2. **Run sync**: `erk docs sync`
+3. **Verify changes** in the generated files
+4. **Commit both** the source and generated files
+
+### Adding a New Tripwire
+
+To add a tripwire rule:
+
+1. Add to the `tripwires:` field in the relevant doc's frontmatter:
+   ```yaml
+   tripwires:
+     - action: "doing something dangerous"
+       warning: "Do this instead."
+   ```
+2. Run `erk docs sync` to regenerate `tripwires.md`
+
+## Quick Reference
+
+- Full navigation: [docs/learned/guide.md](docs/learned/guide.md)
+- Category index: [docs/learned/index.md](docs/learned/index.md)
+- Regenerate indexes: `erk docs sync`
+- Run validation: `make fast-ci`
+</user>
+  <assistant>
+
+Now let me read all the existing documentation files that need to be updated, and the source code files referenced in the plan, in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3124" cache_read_input_tokens="35758" cache_creation="{'ephemeral_5m_input_tokens': 3124, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NYjXM6LkNkKvsPmC684pLq">
+    <param name="todos">[{'content': 'Step 1: Update prompt-executor-patterns.md (from #8909, #8876)', 'status': '...[truncated 2318 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3124" cache_read_input_tokens="35758" cache_creation="{'ephemeral_5m_input_tokens': 3124, 'ephemeral_1h_input_tokens': 0}" output_tokens="864" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NYjXM6LkNkKvsPmC684pLq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read all the existing docs and source files needed in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01J5s2zYs7DF2Fz3ozGBHUHK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/prompt-executor-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0156ogdPK2oq9mBBVoJP2Q8s">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/git-plumbing-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ELW6H6nGHqcBxEimuPGAp6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/git-graphite-quirks.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013znKShVNXQDoEPCjj1S4Za">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FtBx7UTACjqGmgwhKh4wiZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/roadmap-parser-api.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HgVvuj3PppzQkrn6wy6mrH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/codespace-remote-execution.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HafpzeXjssioWhXTnKx43c">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NwrAUcTKUHeow2Q6VL7Mad">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-palette.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="38882" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J5s2zYs7DF2Fz3ozGBHUHK">
+     1→---
+     2→title: PromptExecutor Pattern Documentation
+     3→last_audited: "2026-02-16 14:10 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "launching Claude from CLI commands"
+     7→  - "deciding which PromptExecutor method to use"
+     8→  - "testing code that executes Claude CLI"
+     9→---
+    10→
+    11→# PromptExecutor Pattern Documentation
+    12→
+    13→The `PromptExecutor` abstraction provides multiple methods for launching Claude CLI. Understanding when to use each is critical.
+    14→
+    15→## Method Comparison
+    16→
+    17→| Method                        | Mechanism                         | Returns?                  | Use Case                           |
+    18→| ----------------------------- | --------------------------------- | ------------------------- | ---------------------------------- |
+    19→| `execute_interactive()`       | `os.execvp()`                     | Never (replaces process)  | Final action in a workflow         |
+    20→| `execute_prompt()`            | `subprocess.run()` with `--print` | `PromptResult`            | Non-interactive prompt execution   |
+    21→| `execute_command()`           | `subprocess.run()`                | `CommandResult`           | Programmatic command with metadata |
+    22→| `execute_command_streaming()` | `subprocess.Popen()`              | `Iterator[ExecutorEvent]` | Real-time progress tracking        |
+    23→
+    24→## When to Use Each
+    25→
+    26→### `execute_interactive()` - Process Replacement
+    27→
+    28→&lt;!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PromptExecutor.execute_interactive --&gt;
+    29→
+    30→Use when Claude should take over completely and the current command has no more work to do. Uses `os.execvp()` internally — **code after this NEVER executes**.
+
+... [141 lines omitted] ...
+
+    81→# Command failure
+   104→- Handle both success and failure gracefully
+   105→- Provide fallback command for manual retry on failure
+   113→## Error Handling: Streaming stderr
+   135→3. The thread accumulates stderr parts for the final error message
+   148→### Leaky Abstraction Warning
+  </tool_result>
+  <tool_result tool="toolu_0156ogdPK2oq9mBBVoJP2Q8s">
+     1→---
+     2→title: Git Plumbing Patterns
+     3→read_when:
+     4→  - "modifying plan_save.py branch commit behavior"
+     5→  - "understanding git plumbing patterns in erk"
+     6→  - "working with commit_files_to_branch"
+     7→  - "eliminating git checkouts"
+     8→  - "dispatch without checkout"
+     9→tripwires:
+    10→  - action: "checking out a branch in plan_save to commit files"
+    11→    warning: "Plan save uses git plumbing (commit_files_to_branch) to commit without checkout. Do NOT add checkout_branch calls. See git-plumbing-patterns.md."
+    12→  - action: "adding new git operations that require a branch checkout"
+    13→    warning: "When adding new git operations, prefer plumbing (update-ref, commit-tree) over checkout-based workflows. See git-plumbing-patterns.md."
+    14→---
+    15→
+    16→# Git Plumbing Patterns
+    17→
+    18→Erk uses git plumbing commands to manipulate branches without checkout. This avoids race conditions in multi-session worktrees and eliminates the need to restore branch state after operations.
+    19→
+    20→## When to Use Which Pattern
+    21→
+    22→| Pattern                     | Use When                                               | Gateway Method                        | Example                           |
+    23→| --------------------------- | ------------------------------------------------------ | ------------------------------------- | --------------------------------- |
+    24→| `update_local_ref`          | Advancing a local branch pointer to match a remote SHA | `git.branch.update_local_ref()`       | Syncing trunk without checkout    |
+    25→| `commit_files_to_branch`    | Creating a commit on a branch from in-memory files     | `git.commit.commit_files_to_branch()` | Plan save, dispatch impl-context  |
+    26→| `create_branch(force=True)` | Resetting a local branch to match a remote ref         | `git.branch.create_branch()`          | Syncing dispatch branch to origin |
+    27→
+    28→## Pattern 1: `commit_files_to_branch` (Create Commit Without Checkout)
+    29→
+    30→### How It Works
+
+... [85 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01ELW6H6nGHqcBxEimuPGAp6">
+     1→---
+     2→title: Git and Graphite Edge Cases Catalog
+     3→last_audited: "2026-02-13 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "debugging unexpected git/gt behavior"
+     7→  - "handling rebase/restack edge cases"
+     8→  - "writing conflict detection logic"
+     9→  - "troubleshooting detached HEAD states"
+    10→  - "handling concurrent worktree operations"
+    11→  - "understanding worktree lock files"
+    12→tripwires:
+    13→  - action: "calling gt commands without --no-interactive flag"
+    14→    warning: "Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately."
+    15→    pattern: "\\bgt\\s+(sync|submit|restack|create|modify)"
+    16→  - action: "calling graphite.track_branch() with a remote ref like origin/main"
+    17→    warning: "Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch()."
+    18→  - action: "using `gt restack` to resolve branch divergence errors"
+    19→    warning: "gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first."
+    20→    pattern: "gt\\s+restack"
+    21→  - action: "using git pull or git pull --rebase on a Graphite-managed branch"
+    22→    warning: "Use /erk:diverge-fix instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
+    23→    pattern: "git\\s+pull"
+    24→  - action: "comparing git SHA to Graphite's tracked SHA for divergence detection"
+    25→    warning: "Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches."
+    26→  - action: "amending a commit when Graphite is enabled"
+    27→    warning: "After amending commits or running gt restack, Graphite's cache may not update, leaving branches diverged. Call retrack_branch() to fix tracking. The auto-fix is already implemented in checkout_cmd, rewrite_cmd, submit_pipeline, and branch_manager."
+    28→  - action: "using --force-with-lease in multi-step workflows where earlier steps push"
+    29→    warning: "Force-push silently overwrites intermediate commits from earlier workflow steps. Always `git pull --rebase` before pushing in multi-step workflows."
+    30→  - action: "using git merge on a Graphite-managed branch"
+
+... [356 lines omitted] ...
+
+    31→    warning: "Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking."
+    33→    warning: "Git refuses to force-update the checked-out branch. Use LBYL check: compare target branch with current branch before force-update. See _ensure_local_matches_remote() in graphite.py."
+    86→        # Now it's actually dirty - handle error
+   186→**Why It's Surprising**: The command appears to be doing nothing - no output, no error, just silence. The underlying cause is that gt is waiting for user input at a prompt that isn't visible.
+   218→**Why It's Surprising**: Git and Graphite are often used together, and Git's flexibility with branch references creates an expectation that Graphite would also accept remote refs. The error messages from Graphite don't clearly indicate that the issue is the `origin/` prefix.
+   267→## graphite_restack_required Error
+   269→The `graphite_restack_required` error type is set in `SubmitError.error_type` when `gt submit` fails because the remote has diverged. It is detected by keyword matching on the RuntimeError message from `gt submit`. See `_graphite_first_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
+   277→**Why It's Surprising**: Users expect Graphite to stay synchronized with git operations, but Graphite's cache can fall behind, causing submission failures or incorrect stack relationships.
+   316→- `gt track` on child branches fails with "parent branch is diverged" errors
+   343→   - Auto-fixes diverged parent before `gt track` to prevent creation failures
+  </tool_result>
+  <tool_result tool="toolu_013znKShVNXQDoEPCjj1S4Za">
+     1→---
+     2→title: Land-Learn Integration
+     3→read_when:
+     4→  - "modifying the erk land command's learn workflow"
+     5→  - "debugging session discovery during land"
+     6→  - "working with session reporting in the land pipeline"
+     7→  - "learn plan creation"
+     8→  - "session discovery"
+     9→  - "empty learn plan"
+    10→tripwires:
+    11→  - action: "making session discovery failures block the land command"
+    12→    warning: "Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors."
+    13→    score: 6
+    14→  - action: "modifying learn plan skip guards in land_learn.py"
+    15→    warning: "Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards."
+    16→---
+    17→
+    18→# Land-Learn Integration
+    19→
+    20→After landing a PR, `erk land` optionally creates a learn plan to capture implementation insights. The session discovery step reports what sessions are available for the learn workflow.
+    21→
+    22→## Skip Guards
+    23→
+    24→Learn plan creation skips in two scenarios:
+    25→
+    26→1. **No sessions tracked at all** — e.g., manual CHANGELOG PRs or PRs without implementation sessions. The `all_session_ids` list is empty because no planning, implementation, or learn sessions were recorded.
+    27→
+    28→2. **Sessions exist but XML extraction produces no content** — Sessions were tracked in GitHub metadata but preprocessing produced no usable XML (warmup sessions, empty sessions, or sessions that fail to parse).
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/land_learn.py, _create_learn_pr_impl --&gt;
+
+... [113 lines omitted] ...
+
+   116→## Fire-and-Forget Error Resilience
+   120→See `_create_learn_pr_with_sessions()` in `src/erk/cli/commands/land_learn.py` for the fire-and-forget wrapper. The entire learn workflow is wrapped in a try/except that catches all exceptions and emits a warning instead of raising. This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+  </tool_result>
+  <tool_result tool="toolu_01FtBx7UTACjqGmgwhKh4wiZ">
+     1→---
+     2→title: Roadmap Shared Parser Architecture
+     3→read_when:
+     4→  - "adding a new consumer of roadmap.py in erk_shared"
+     5→  - "extending the roadmap data model with new fields"
+     6→  - "understanding why the shared parser exists separately from its consumers"
+     7→tripwires:
+     8→  - action: "creating a new roadmap data type without using frozen dataclass"
+     9→    warning: "RoadmapNode and RoadmapPhase are frozen dataclasses. New roadmap types must follow this pattern."
+    10→  - action: "accessing node_id on a RoadmapNode"
+    11→    warning: "The field is named 'id', not 'node_id'. This is a common mistake — check the actual dataclass definition."
+    12→  - action: "importing parse_roadmap into a new consumer"
+    13→    warning: "The shared module lives in erk_shared.gateway.github.metadata.roadmap and is consumed by both exec scripts and CLI commands. Import from this shared location."
+    14→  - action: "using parse_roadmap() when strict v2 validation is needed"
+    15→    warning: "Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content."
+    16→last_audited: "2026-02-08 10:24 PT"
+    17→audit_result: edited
+    18→---
+    19→
+    20→# Roadmap Shared Parser Architecture
+    21→
+    22→The roadmap parser is a shared module consumed by two commands with fundamentally different usage patterns. This document explains **why** the shared module exists, how its consumers differ, and the non-obvious design choices in the data model.
+    23→
+    24→## Why a Shared Module?
+    25→
+    26→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py --&gt;
+    27→
+    28→The `roadmap.py` module in `erk_shared.gateway.github.metadata` exists because two commands need the same parsing logic but use different subsets of it. Both `check_cmd.py` (erk objective check) and `update_objective_node.py` consume the shared parser, but differ in scope: `check_cmd` imports 2 functions (`parse_roadmap`, `serialize_phases`) for validation workflow, while `update_objective_node` imports 3 functions and 1 type (`RoadmapNodeStatus`, `parse_roadmap`, `rerender_comment_roadmap`, `update_node_in_frontmatter`) for surgical node updates.
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective --&gt;
+
+... [72 lines omitted] ...
+
+    45→### Parser returns warnings, not errors
+    47→`parse_roadmap` returns `(phases, validation_errors)` where validation_errors are warning strings, not exceptions. The parser extracts whatever it can and reports problems alongside results. This matters because a partially-parsed roadmap is more useful than a crashed parse — `check_cmd` displays both the parsed phases and the warnings.
+    83→Returns `(phases, validation_errors)`. Always returns a tuple. For v2 YAML frontmatter, parses and returns phases. For non-v2 content, returns `([], [legacy_format_error])`. This is the standard parser used by most consumers.
+    87→Returns `(phases, validation_errors) | None`. Returns `None` when the body is not in v2+ format (no metadata block, no `&lt;details&gt;` wrapper, or schema version not in v2/v3/v4). Use this when the caller needs to distinguish "not v2+ format" from "v2+ format with errors" — for example, commands that should reject legacy format explicitly rather than receiving an error string.
+  </tool_result>
+  <tool_result tool="toolu_01HgVvuj3PppzQkrn6wy6mrH">
+     1→---
+     2→title: Codespace Remote Execution Pattern
+     3→read_when:
+     4→  - modifying the codespace environment bootstrap sequence
+     5→  - debugging why a remote erk command fails before reaching the actual command
+     6→  - deciding whether a new remote command needs build_codespace_ssh_command
+     7→tripwires:
+     8→  - action: "duplicating git pull / uv sync / venv activation in a codespace command"
+     9→    warning: "Use build_codespace_ssh_command() — bootstrap logic is centralized there. See composable-remote-commands.md for the five-step pattern."
+    10→  - action: "adding a new step to the bootstrap sequence"
+    11→    warning: "This affects ALL remote commands. The bootstrap runs on every SSH invocation, so added steps must be idempotent and fast."
+    12→  - action: "embedding single quotes in a remote erk command argument"
+    13→    warning: "The bootstrap wraps the entire command in single quotes. Single quotes in arguments will break the shell string."
+    14→last_audited: "2026-02-08 00:00 PT"
+    15→audit_result: clean
+    16→---
+    17→
+    18→# Codespace Remote Execution Pattern
+    19→
+    20→This document covers the **centralized environment bootstrap** for remote codespace commands — why it exists, how it fails, and when to bypass it. For the five-step composition pattern (resolve → start → build → execute → report), see [Composable Remote Commands](../architecture/composable-remote-commands.md). For choosing between `exec_ssh_interactive()` and `run_ssh_command()`, see [SSH Command Execution](../architecture/ssh-command-execution.md).
+    21→
+    22→## Why a Centralized Bootstrap Wrapper
+    23→
+    24→Remote erk commands can't assume the codespace environment is ready. Between SSH connections, the codespace may have stale code, missing dependencies, or a deactivated virtualenv. Rather than making each remote command handle its own setup, erk centralizes the bootstrap in a single function.
+    25→
+    26→&lt;!-- Source: src/erk/core/codespace_run.py, build_codespace_ssh_command --&gt;
+    27→
+    28→See `build_codespace_ssh_command()` in `src/erk/core/codespace_run.py` for the implementation.
+    29→
+    30→**The core design decision**: Bootstrap is a cross-cutting concern. If each command inlined its own setup steps, adding a new bootstrap step (e.g., a health check) would require touching every remote command file. Centralization means bootstrap changes propagate automatically.
+
+... [63 lines omitted] ...
+
+    43→**Fail-fast chaining (`&amp;&amp;`)**: If `git pull` fails (merge conflict, network issue), the erk command never runs against stale code. This prevents subtly wrong results that are harder to debug than a visible bootstrap failure.
+    51→## Debugging Bootstrap Failures
+    53→The `&amp;&amp;`-chain means the actual error appears in terminal output, but knowing _which_ step failed requires interpreting the output:
+    55→| Symptom                     | Likely failed step            | Recovery                                              |
+    58→| Package resolution errors   | `uv sync`                     | Run `uv sync` interactively to see full error details |
+    62→**Key strategy**: Use `erk codespace connect --shell` to drop into a bare shell, then run bootstrap steps manually one at a time to isolate the failure.
+  </tool_result>
+  <tool_result tool="toolu_01HafpzeXjssioWhXTnKx43c">
+     1→---
+     2→title: TUI Keyboard Shortcuts Inventory
+     3→read_when:
+     4→  - "adding a new keyboard shortcut to the TUI"
+     5→  - "checking for shortcut conflicts before binding a new key"
+     6→  - "understanding what keys are available in the TUI"
+     7→tripwires:
+     8→  - action: "adding a new key binding without checking existing bindings"
+     9→    warning: "Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active."
+    10→    score: 4
+    11→---
+    12→
+    13→# TUI Keyboard Shortcuts Inventory
+    14→
+    15→Complete binding inventory from `ErkDashApp.BINDINGS` in `src/erk/tui/app.py`.
+    16→
+    17→## All Bindings
+    18→
+    19→&lt;!-- Source: src/erk/tui/app.py, ErkDashApp.BINDINGS --&gt;
+    20→
+    21→The complete binding inventory is defined in `ErkDashApp.BINDINGS`. The bindings include both visible shortcuts (shown in help) and hidden power-user shortcuts.
+    22→
+    23→## Key Groups
+    24→
+    25→**Navigation:** j/k (vim-style), escape (quit)
+    26→
+    27→**View Switching:** 1/2/3 (direct), left/right (cycle)
+    28→
+    29→**Filters:** o (objective), t (stack), / (text filter), s (sort)
+    30→
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NwrAUcTKUHeow2Q6VL7Mad">
+     1→---
+     2→title: Textual CommandPalette Guide
+     3→read_when:
+     4→  - "implementing command palette in Textual TUI"
+     5→  - "hiding system commands from command palette"
+     6→  - "get_system_commands method"
+     7→  - "removing Keys Quit Screenshot Theme from palette"
+     8→  - "adding emoji prefixes to command palette entries"
+     9→  - "using CommandCategory for command categorization"
+    10→last_audited: "2026-02-05 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Textual CommandPalette Guide
+    15→
+    16→For standard Textual CommandPalette patterns (Providers, Hit/DiscoveryHit, Matcher, async generators, Screen.COMMANDS), consult the [Textual documentation](https://textual.textualize.io/). This doc focuses on erk-specific patterns and a critical Textual pitfall.
+    17→
+    18→## System Commands Pitfall
+    19→
+    20→**CRITICAL:** `get_system_commands` must be overridden on the **App class**, not the Screen class. Textual calls `app.get_system_commands(screen)` when opening the palette — it never calls this method on screens.
+    21→
+    22→```python
+    23→# WRONG — This method is never called by Textual
+    24→class MyModalScreen(ModalScreen):
+    25→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+    26→        return iter(())  # Has no effect!
+    27→
+    28→# CORRECT — Override on App class
+    29→class MyApp(App):
+    30→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+
+... [39 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I've read all existing docs. Now let me read the source code files referenced in the plan to verify the documentation I'll write. Let me launch parallel agents to investigate the source code for each step.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="21590" cache_read_input_tokens="39791" cache_creation="{'ephemeral_5m_input_tokens': 21590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01DE9F6aYqRaDnCch1grkrJ2">
+    <param name="description">Read prompt executor sources</param>
+    <param name="prompt">Read the following source files and report back the key class names, their file locations,...[truncated 357 chars]...What is the ABC class named?
+
+Report the exact class names, line numbers, and key methods.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21590" cache_read_input_tokens="39791" cache_creation="{'ephemeral_5m_input_tokens': 21590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01UCPFtUvfgjda9xmnBrCRQR">
+    <param name="description">Read git plumbing and dispatch sources</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 557 chars]...tacked PR handling
+
+Report the exact function names, line numbers, and key logic patterns.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21590" cache_read_input_tokens="39791" cache_creation="{'ephemeral_5m_input_tokens': 21590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01WXrDKSyaF86UfKMqT5ZqNK">
+    <param name="description">Read land_learn, roadmap, codespace</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 693 chars]... both shell and non-shell modes
+
+Report exact function names, line numbers, and key logic.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21590" cache_read_input_tokens="39791" cache_creation="{'ephemeral_5m_input_tokens': 21590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_014NjcXjCkkEpznUrzMVffN7">
+    <param name="description">Read rebase, one-shot, health check</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 718 chars]...32-37 for RealHealthCheckRunner
+
+Report exact function names, line numbers, and key logic.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21590" cache_read_input_tokens="39791" cache_creation="{'ephemeral_5m_input_tokens': 21590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01YK29YwPGqU8U311cXJjFhT">
+    <param name="description">Read audit-collect, slot assign, TUI</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 723 chars]...-aware conditional rendering
+
+Report exact function names, line numbers, and key patterns.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21590" cache_read_input_tokens="39791" cache_creation="{'ephemeral_5m_input_tokens': 21590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Lzm2EVhi8AxGy5ouJ5zyVn">
+    <param name="description">Check stale refs and tripwires</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 399 chars]... 24-25 for the status of removed skills mentioned in #8881
+
+Report findings for each item.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21590" cache_read_input_tokens="39791" cache_creation="{'ephemeral_5m_input_tokens': 21590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DE9F6aYqRaDnCch1grkrJ2">
+Async agent launched successfully.
+agentId: a9cac39 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01UCPFtUvfgjda9xmnBrCRQR">
+Async agent launched successfully.
+agentId: ad75d92 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01WXrDKSyaF86UfKMqT5ZqNK">
+Async agent launched successfully.
+agentId: a2538a8 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_014NjcXjCkkEpznUrzMVffN7">
+Async agent launched successfully.
+agentId: a812a72 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01YK29YwPGqU8U311cXJjFhT">
+Async agent launched successfully.
+agentId: a6d324f (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01Lzm2EVhi8AxGy5ouJ5zyVn">
+Async agent launched successfully.
+agentId: a368333 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Let me wait for all the exploration agents to complete so I can write accurate documentation.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3725" cache_read_input_tokens="61381" cache_creation="{'ephemeral_5m_input_tokens': 3725, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01DtNmF2j1eEF8jozZ7nv9LN">
+    <param name="task_id">a9cac39</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3725" cache_read_input_tokens="61381" cache_creation="{'ephemeral_5m_input_tokens': 3725, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01BMXTCcrkwUTyYMVUUkDSzW">
+    <param name="task_id">ad75d92</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3725" cache_read_input_tokens="61381" cache_creation="{'ephemeral_5m_input_tokens': 3725, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_015GN6o86fQzE2fpGTVHTRsR">
+    <param name="task_id">a2538a8</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3725" cache_read_input_tokens="61381" cache_creation="{'ephemeral_5m_input_tokens': 3725, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_0149SWaui41ZchutT3ccEcWE">
+    <param name="task_id">a812a72</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3725" cache_read_input_tokens="61381" cache_creation="{'ephemeral_5m_input_tokens': 3725, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01E3EaAqCkUHxSi8sxZSCotg">
+    <param name="task_id">a6d324f</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3725" cache_read_input_tokens="61381" cache_creation="{'ephemeral_5m_input_tokens': 3725, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01JYaXweZ5c8imcaawREoeJq">
+    <param name="task_id">a368333</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3725" cache_read_input_tokens="61381" cache_creation="{'ephemeral_5m_input_tokens': 3725, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DtNmF2j1eEF8jozZ7nv9LN">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a9cac39&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/prompt_executor.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/anthropic_prompt_executor.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/fallback_prompt_executor.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py"}
+
+--- RESULT ---
+Perfect! I have all the information needed. Here's my report on the prompt executor classes:
+
+## Prompt Executor Classes Report
+
+### 1. **ABC Class** - `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+
+**Class Name:** `PromptExecutor` (Abstract Base Class)  
+**Location:** Line 157  
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+
+**Key Abstract Methods:**
+- `is_available()` (line 165) - Check if executor backend is available
+- `execute_command_streaming()` (line 179) - Execute command and yield typed events in real-time
+- `execute_interactive()` (line 317) - Execute in interactive mode by replacing current process
+
+... [93 lines omitted] ...
+
+- `ErrorEvent`, `NoOutputEvent`, `NoTurnsEvent`, `ProcessErrorEvent` (lines 74-99)
+- `execute_command_streaming()` (line 113) - Raises `NotImplementedError` (not supported for API executor)
+- `execute_interactive()` (line 128) - Raises `NotImplementedError` (not supported for API executor)
+- `execute_prompt_passthrough()` (line 141) - Raises `NotImplementedError` (not supported for API executor)
+  </tool_result>
+  <tool_result tool="toolu_01BMXTCcrkwUTyYMVUUkDSzW">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ad75d92&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/incremental_dispatch.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py"}
+[Tool: Glob] {"pattern":"**/incremental_dispatch.py"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk -name \"incremental_dispatch.py\" -type f 2&gt;/dev/null","description":"Find incremental_dispatch.py file location"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk -name \"incremental_dispatch.py\" -type f 2&gt;/dev/null","description":"Find incremental_dispatch.py file location"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py"}
+
+--- RESULT ---
+Perfect! Now I have all the source files. Let me compile the findings in a comprehensive report.
+
+## FINDINGS REPORT
+
+I have successfully located and analyzed the three source files you requested. Here are the key functions, line numbers, and logic patterns:
+
+---
+
+### 1. **incremental_dispatch.py** (Correct location: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py`)
+
+... [108 lines omitted] ...
+
+  - **Lines 70-78:** Local is ahead of remote → error (user has unpushed commits)
+  - **Lines 79-88:** Diverged → error (both have unique commits)
+| dispatch_helpers.py | Merge analysis | 53-88 | Three-way: behind (fast-forward), ahead (error), diverged (error) |
+  </tool_result>
+  <tool_result tool="toolu_0149SWaui41ZchutT3ccEcWE">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a812a72&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Glob] {"pattern":"src/erk/cli/commands/pr/rebase_cmd.py"}
+[Tool: Glob] {"pattern":"src/erk/cli/commands/one_shot.py"}
+[Tool: Glob] {"pattern":"packages/erk-shared/src/erk_shared/core/health_check_runner.py"}
+[Tool: Glob] {"pattern":"src/erk/core/health_checks/runner.py"}
+[Tool: Glob] {"pattern":"src/erk/core/health_checks/__init__.py"}
+[Tool: Glob] {"pattern":"src/erk/core/health_checks/__init__.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/rebase_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/health_check_runner.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/health_checks/runner.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/health_checks/__init__.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/health_checks/__init__.py"}
+
+--- RESULT ---
+Perfect! I've extracted all the key patterns you requested. Here's my detailed report:
+
+## Source File Analysis Report
+
+### 1. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/rebase_cmd.py` - Lines 120-140 Pattern
+
+**Conflicted Files Display with `click.confirm()` Pattern:**
+
+... [124 lines omitted] ...
+
+   - Require `--target` flag: `if target is None: raise click.ClickException(...)`
+  - Line 50-53: Raise error if no `ctx.http_client` available (requires GitHub auth)
+- **Error class**: Raises `UserFacingCliError` (custom exception)
+  </tool_result>
+  <tool_result tool="toolu_015GN6o86fQzE2fpGTVHTRsR">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a2538a8&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Grep] {"pattern":"fetch_xmls|land_learn|learn branch","path":"/home/runner/work/erk/erk/docs/learned","glob":"*.md","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"RoadmapNode|reason field","path":"/home/runner/work/erk/erk/docs/learned","glob":"*.md","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"checkout_prefix|connect codespace","path":"/home/runner/work/erk/erk/docs/learned","glob":"*.md","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"checkout_prefix|connect codespace","path":"/home/runner/work/erk/erk/docs/learned","glob":"*.md","output_mode":"files_with_matches"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/roadmap-format-versioning.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/roadmap-format-versioning.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py","limit":150}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py","limit":150}
+
+--- RESULT ---
+Perfect! Now I have all the source code. Let me compile a comprehensive report with the exact patterns you requested.
+
+## Key Patterns Report
+
+### 1. `land_learn.py` - Learn PR Creation Pattern
+
+#### `_fetch_xmls_from_async_learn_branch()` (lines 47-102)
+
+... [196 lines omitted] ...
+
+- Empty dict return on any step failure (lenient fallback pattern)
+**Purpose:** Inner implementation (raises on error) for learn plan creation called from `_create_learn_pr_with_sessions()`.
+  </tool_result>
+  <tool_result tool="toolu_01JYaXweZ5c8imcaawREoeJq">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a368333&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Glob] {"pattern":"docs/developer/agentic-engineering-patterns/cli-push-down.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/bundled.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/bundled.py"}
+[Tool: Glob] {"pattern":"**/bundled.py"}
+[Tool: Glob] {"pattern":"**/bundled.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/cli-push-down.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/cli-push-down.md"}
+[Tool: Glob] {"pattern":".claude/skills/cli-push-down/SKILL.md"}
+[Tool: Glob] {"pattern":".claude/skills/refac-cli-push-down/**"}
+[Tool: Grep] {"pattern":"cli-push-down|refac-cli-push-down","glob":"**/*.md","output_mode":"files_with_matches","head_limit":20}
+[Tool: Grep] {"pattern":"cli-push-down|refac-cli-push-down","glob":"**/*.md","output_mode":"files_with_matches","head_limit":20}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md"}
+[Tool: Grep] {"pattern":"8881","output_mode":"files_with_matches"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/README.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/developer/agentic-engineering-patterns/README.md"}
+[Tool: Bash] {"command":"git log --all --oneline --grep=\"8881\" | head -20","description":"Search for commits related to issue #8881"}
+[Tool: Bash] {"command":"git log --all --oneline --grep=\"8881\" | head -20","description":"Search for commits related to issue #8881"}
+[Tool: Glob] {"pattern":".claude/skills/ci-iteration/**"}
+[Tool: Glob] {"pattern":".claude/skills/cli-skill-creator/**"}
+
+... [79 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01E3EaAqCkUHxSi8sxZSCotg">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a6d324f&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Grep] {"pattern":"command structure|JSON schema|CLI flag|binding pattern|conditional rendering","path":"/home/runner/work/erk/erk/docs/learned","type":"md"}
+[Tool: Grep] {"pattern":"command structure|JSON schema|CLI flag|binding pattern|conditional rendering","path":"/home/runner/work/erk/erk/docs/learned","type":"md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/reference/cli-flag-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/click-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-dev/src/erk_dev/commands/audit_collect/command.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/slot/assign_cmd.py","limit":100}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/screens/objective_nodes_screen.py","limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/screens/objective_nodes_screen.py","limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/commands/registry.py","limit":300}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/screens/help_screen.py","limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/screens/help_screen.py","limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/commands/registry.py","offset":300,"limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/commands/registry.py","offset":300,"limit":200}
+
+--- RESULT ---
+Excellent. Now let me compile the report with all the key patterns found.
+
+## Report: Key Patterns from Source Files
+
+
+... [209 lines omitted] ...
+  </tool_result>
+  <assistant>All exploration agents are complete. I now have comprehensive source verification for all 16 steps. Let me start implementing the documentation changes. I'll work through them systematically, doing multiple file edits in parallel where possible.
+
+**Step 1: Update prompt-executor-patterns.md**</assistant>
+  <usage input_tokens="2376" cache_creation_input_tokens="14124" cache_read_input_tokens="65106" cache_creation="{'ephemeral_5m_input_tokens': 14124, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LpGB4icmdiox7pAaQTN89a">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/prompt-executor-patterns.md</param>
+    <param name="old_string">## File Locations
+
+- **ABC**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`...[truncated 188 chars]...ClaudePromptExecutor uses a background thread to accumulate stderr while streaming stdout:</param>
+    <param name="new_string">## File Locations
+
+- **ABC**: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`...[truncated 394 chars]...udeCliPromptExecutor uses a background thread to accumulate stderr while streaming stdout:</param>
+  </tool_use>
+  <usage input_tokens="2376" cache_creation_input_tokens="14124" cache_read_input_tokens="65106" cache_creation="{'ephemeral_5m_input_tokens': 14124, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LpGB4icmdiox7pAaQTN89a">
+The file /home/runner/work/erk/erk/docs/learned/architecture/prompt-executor-patterns.md has been updated successfully.
+  </tool_result>
+</session>

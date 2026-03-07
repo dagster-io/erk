@@ -1,0 +1,340 @@
+<session>
+  <meta source="agent-a9cac39" />
+  <meta branch="plnd/consolidate-learn-docs-03-07-2145" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read the following source files and report back the key class names, their file locations, and any important patterns:
+
+1. `src/erk/core/prompt_executor.py` - What is the class named? (plan says ClaudeCliPromptExecutor)
+2. `src/erk/core/anthropic_prompt_executor.py` - What is the class named? What does it do?
+3. `src/erk/core/fallback_prompt_executor.py` - What is the class named? What does it do?
+4. `packages/erk-shared/src/erk_shared/core/prompt_executor.py` - What is the ABC class named?
+
+Report the exact class names, line numbers, and key methods.</user>
+  <assistant>I'll search for these prompt executor classes and report their details.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AK2NATpyg1fGkX33sRUjm7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N79HjPLnLQAqFFJ6TmcHC1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/anthropic_prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01818ihUvXmuQvUYtizijxr8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/fallback_prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ShQveNnbmuQ5TMgWHYxP8T">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6001" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6001, 'ephemeral_1h_input_tokens': 0}" output_tokens="286" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N79HjPLnLQAqFFJ6TmcHC1">
+     1→"""Anthropic API prompt execution implementation.
+     2→
+     3→This module provides the AnthropicApiPromptExecutor that calls the
+     4→Anthropic SDK directly, bypassing the CLI subprocess overhead. Used
+     5→for lightweight operations (slug generation, commit messages) where
+     6→low latency matters.
+     7→"""
+     8→
+     9→from __future__ import annotations
+    10→
+    11→import logging
+    12→import os
+    13→from collections.abc import Iterator
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING, Any
+    16→
+    17→from anthropic import Anthropic, APIError
+    18→from anthropic.types import TextBlock
+    19→
+    20→from erk_shared.core.prompt_executor import (
+    21→    ExecutorEvent,
+    22→    PromptExecutor,
+    23→    PromptResult,
+    24→)
+    25→
+    26→if TYPE_CHECKING:
+    27→    from erk_shared.context.types import PermissionMode
+    28→
+    29→logger = logging.getLogger(__name__)
+    30→
+
+... [127 lines omitted] ...
+
+    77→                error="ANTHROPIC_API_KEY not set",
+    91→        except APIError as exc:
+    92→            logger.warning("Anthropic API call failed: %s", exc)
+    96→                error=str(exc),
+   104→                error="Unexpected response type from Anthropic API",
+   110→            error=None,
+   126→        raise NotImplementedError("AnthropicApiPromptExecutor does not support streaming commands")
+   139→        raise NotImplementedError("AnthropicApiPromptExecutor does not support interactive mode")
+   151→        raise NotImplementedError("AnthropicApiPromptExecutor does not support passthrough mode")
+  </tool_result>
+  <tool_result tool="toolu_01818ihUvXmuQvUYtizijxr8">
+     1→"""Fallback prompt executor that tries API first, then CLI.
+     2→
+     3→This module provides a composite PromptExecutor that routes
+     4→execute_prompt() through the Anthropic API when available, falling
+     5→back to the CLI executor. All other methods (streaming, interactive,
+     6→passthrough) delegate directly to the CLI executor.
+     7→"""
+     8→
+     9→from __future__ import annotations
+    10→
+    11→from collections.abc import Iterator
+    12→from dataclasses import dataclass
+    13→from pathlib import Path
+    14→from typing import TYPE_CHECKING
+    15→
+    16→from erk_shared.core.prompt_executor import (
+    17→    ExecutorEvent,
+    18→    PromptExecutor,
+    19→    PromptResult,
+    20→)
+    21→
+    22→if TYPE_CHECKING:
+    23→    from erk_shared.context.types import PermissionMode
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class FallbackPromptExecutor(PromptExecutor):
+    28→    """Composite executor: API-first for prompts, CLI for everything else.
+    29→
+    30→    Attributes:
+
+... [108 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AK2NATpyg1fGkX33sRUjm7">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudeCliPromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    NoOutputEvent,
+    29→    NoTurnsEvent,
+    30→    PlanNumberEvent,
+
+... [629 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+    53→def format_prompt_error(
+    59→    """Format error message for failed prompt execution.
+    61→    Constructs a structured error message from subprocess failure details.
+    65→        stderr: Standard error output
+    69→        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    71→    error_parts = [f"Exit code {returncode}"]
+    73→        error_parts.append(f"stderr: {stderr.strip()}")
+    76→        error_parts.append(f"stdout: {stdout_preview}")
+    77→    return " | ".join(error_parts)
+   153→                error_msg = f"Claude command {command} failed with exit code {result.returncode}"
+   154→                yield ErrorEvent(message=error_msg)
+   163→        # Handle Popen errors (e.g., claude not found, permission denied)
+   174→        except OSError as e:
+   175→            yield ProcessErrorEvent(
+   176→                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   282→                    diag += "\n  Run 'claude' directly to see hook error messages"
+   300→            yield ProcessErrorEvent(
+   318→                yield ErrorEvent(message=f"Exit code {returncode}")
+   321→        # Enhanced error messages for non-zero exit codes
+   323→            error_msg = f"Claude command {command} failed"
+   324→            error_msg += f"\n  Exit code: {returncode}"
+   325→            error_msg += f"\n  Lines processed: {line_count}"
+   327→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   328→            yield ErrorEvent(message=error_msg)
+   364→        # Parse JSON safely - JSON parsing requires exception handling
+   371→            except json.JSONDecodeError:
+   386→            "is_error": None,
+   456→            result["is_error"] = data.get("is_error", False)
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <tool_result tool="toolu_01ShQveNnbmuQ5TMgWHYxP8T">
+     1→"""Prompt execution abstraction - ABC and types.
+     2→
+     3→This module provides the abstract interface and typed events for prompt execution.
+     4→The real implementation (ClaudeCliPromptExecutor) remains in erk.core.prompt_executor.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import time
+    10→from abc import ABC, abstractmethod
+    11→from collections.abc import Iterator
+    12→from dataclasses import dataclass, field
+    13→from pathlib import Path
+    14→from typing import TYPE_CHECKING
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk_shared.context.types import PermissionMode
+    18→
+    19→# =============================================================================
+    20→# Typed Executor Events
+    21→# =============================================================================
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class TextEvent:
+    26→    """Text content from Claude."""
+    27→
+    28→    content: str
+    29→
+    30→
+
+... [418 lines omitted] ...
+
+    74→class ErrorEvent:
+    75→    """Error with non-zero exit code."""
+    95→class ProcessErrorEvent:
+    96→    """Failed to start or timeout."""
+   110→    | ErrorEvent
+   113→    | ProcessErrorEvent
+   124→        error: Error message if command failed, None otherwise
+   129→    error: str | None
+   143→        error_message: Error description if command failed, None otherwise
+   153→    error_message: str | None
+   264→        error_message: str | None = None
+   289→                case ErrorEvent(message=msg):
+   290→                    error_message = msg
+   293→                    error_message = diag
+   296→                    error_message = diag
+   298→                case ProcessErrorEvent(message=msg):
+   299→                    error_message = msg
+   312→            error_message=error_message,
+   341→            RuntimeError: If the executor is not available
+  </tool_result>
+  <assistant>Perfect! I have all the information needed. Here's my report on the prompt executor classes:
+
+## Prompt Executor Classes Report
+
+### 1. **ABC Class** - `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+
+**Class Name:** `PromptExecutor` (Abstract Base Class)  
+**Location:** Line 157  
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+
+**Key Abstract Methods:**
+- `is_available()` (line 165) - Check if executor backend is available
+- `execute_command_streaming()` (line 179) - Execute command and yield typed events in real-time
+- `execute_interactive()` (line 317) - Execute in interactive mode by replacing current process
+- `execute_prompt()` (line 360) - Execute a single prompt and return the result
+- `execute_prompt_passthrough()` (line 404) - Execute prompt with output streaming directly to terminal
+
+**Concrete Method:**
+- `execute_command()` (line 219) - Non-streaming convenience method that collects streaming events
+
+**Related Types Defined:**
+- `TextEvent`, `ToolEvent`, `SpinnerUpdateEvent`, `PrUrlEvent`, `PrNumberEvent`, `PrTitleEvent`, `PlanNumberEvent` (lines 24-71)
+- `ErrorEvent`, `NoOutputEvent`, `NoTurnsEvent`, `ProcessErrorEvent` (lines 74-99)
+- `ExecutorEvent` - Union type of all events (lines 102-114)
+- `PromptResult` - Result dataclass (lines 117-130)
+- `CommandResult` - Command execution result dataclass (lines 132-154)
+
+---
+
+### 2. **Production Implementation** - `src/erk/core/prompt_executor.py`
+
+**Class Name:** `ClaudeCliPromptExecutor`  
+**Location:** Line 80  
+**File:** `/home/runner/work/erk/erk/src/erk/core/prompt_executor.py`
+
+**What it does:** Production implementation using subprocess and Claude CLI
+
+**Key Methods:**
+- `__init__(console: Console | None)` (line 83) - Initialize with Console dependency
+- `is_available()` (line 92) - Check if Claude CLI is in PATH using `shutil.which()`
+- `execute_command_streaming()` (line 101) - Execute Claude CLI command and yield typed events in real-time using `subprocess.Popen()` with line-buffered streaming
+- `execute_interactive()` (line 463) - Execute Claude CLI in interactive mode by replacing current process via `os.execvp()`
+- `execute_prompt()` (line 542) - Execute single prompt using `subprocess.run()` with `--output-format text`
+- `execute_prompt_passthrough()` (line 612) - Execute prompt with output streaming directly to terminal
+
+**Private Methods:**
+- `_subprocess_env()` (line 97) - Build environment for claude subprocess
+- `_parse_stream_json_line()` (line 339) - Parse a single stream-json line and extract metadata (PR URL, PR number, PR title, plan number, tool summaries, spinner updates, num_turns)
+
+**Key Constants:**
+- `PROCESS_TIMEOUT_SECONDS = 600` (10 minutes) - Line 46
+- `PROMPT_TIMEOUT_SECONDS = 120` (2 minutes) - Line 47
+- `STDERR_JOIN_TIMEOUT = 5.0` - Line 48
+
+---
+
+### 3. **Anthropic API Implementation** - `src/erk/core/anthropic_prompt_executor.py`
+
+**Class Name:** `AnthropicApiPromptExecutor`  
+**Location:** Line 42  
+**File:** `/home/runner/work/erk/erk/src/erk/core/anthropic_prompt_executor.py`
+
+**What it does:** PromptExecutor backed by the Anthropic SDK (no CLI subprocess). Used for lightweight operations (slug generation, commit messages) where low latency matters.
+
+**Key Methods:**
+- `is_available()` (line 45) - Check if `ANTHROPIC_API_KEY` environment variable is set
+- `execute_prompt()` (line 49) - Execute single prompt via Anthropic SDK using `client.messages.create()` with max_tokens=8192
+- `execute_command_streaming()` (line 113) - Raises `NotImplementedError` (not supported for API executor)
+- `execute_interactive()` (line 128) - Raises `NotImplementedError` (not supported for API executor)
+- `execute_prompt_passthrough()` (line 141) - Raises `NotImplementedError` (not supported for API executor)
+
+**Model Aliases:**
+- "haiku" → "claude-haiku-4-5-20251001"
+- "sonnet" → "claude-sonnet-4-6"
+- "opus" → "claude-opus-4-6"
+
+---
+
+### 4. **Composite Fallback Implementation** - `src/erk/core/fallback_prompt_executor.py`
+
+**Class Name:** `FallbackPromptExecutor`  
+**Location:** Line 27  
+**File:** `/home/runner/work/erk/erk/src/erk/core/fallback_prompt_executor.py`
+
+**What it does:** Composite executor that routes `execute_prompt()` through the Anthropic API when available, falling back to the CLI executor. All other methods (streaming, interactive, passthrough) delegate directly to the CLI executor.
+
+**Frozen Dataclass Attributes:**
+- `api_executor: PromptExecutor` - Anthropic API executor
+- `cli_executor: PromptExecutor` - CLI executor (Claude or Codex)
+
+**Key Methods:**
+- `is_available()` (line 39) - Available if either executor is available
+- `execute_prompt()` (line 43) - Routes through API if available, otherwise CLI (lines 54-70)
+- `execute_command_streaming()` (line 72) - Always delegates to CLI executor (line 85)
+- `execute_interactive()` (line 96) - Always delegates to CLI executor (line 107)
+- `execute_prompt_passthrough()` (line 116) - Always delegates to CLI executor (line 126)
+
+---
+
+## Summary
+
+The architecture implements a **strategy pattern** with three implementations:
+1. **ABC** (`PromptExecutor`) - Defines the interface
+2. **Concrete A** (`ClaudeCliPromptExecutor`) - Production subprocess-based implementation
+3. **Concrete B** (`AnthropicApiPromptExecutor`) - SDK-based lightweight implementation (limited feature set)
+4. **Composite** (`FallbackPromptExecutor`) - Routes prompts through API for speed, everything else through CLI</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="16993" cache_read_input_tokens="15175" cache_creation="{'ephemeral_5m_input_tokens': 16993, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
