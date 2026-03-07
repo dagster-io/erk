@@ -17,7 +17,7 @@ GraphQL reviewDecision field
     ↓
 PullRequestInfo.review_decision: str | None
     ↓
-real.py: selected_pr.review_decision → pr_review_decision
+real_provider.py: selected_pr.review_decision → pr_review_decision
     ↓
 compute_status_indicators(review_decision=pr_review_decision)
     ↓
@@ -50,16 +50,16 @@ The `review_decision: str | None` field on `PullRequestInfo` in `packages/erk-sh
 
 | `review_decision` value | Indicator added |
 | ----------------------- | --------------- |
-| `"APPROVED"`            | `✔` suffix     |
+| `"APPROVED"`            | `✔` suffix      |
 | `"CHANGES_REQUESTED"`   | `❌` suffix     |
 | `"REVIEW_REQUIRED"`     | No indicator    |
 | `None`                  | No indicator    |
 
 Review decision indicators only appear on plans in the `review` lifecycle stage. They are suppressed for `planned` and `implementing` stages even if the PR has a review decision.
 
-## Wiring in `real.py`
+## Wiring in `real_provider.py`
 
-**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py`
+**Location:** `src/erk/tui/data/real_provider.py`
 
 - `pr_review_decision: str | None = None` — default before PR is found (search for `pr_review_decision` declaration)
 - `pr_review_decision = selected_pr.review_decision` — extracted from matched PR (search for `selected_pr.review_decision`)

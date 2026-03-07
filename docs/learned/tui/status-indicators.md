@@ -63,17 +63,15 @@ Both public functions delegate to a shared helper that returns a list of emoji s
 | 🚧    | Draft PR          | Active stages (planned, implementing, review) when `is_draft=True`       |
 | 👀    | Published PR      | Active stages when `is_draft=False`                                      |
 | 💥    | Merge conflicts   | Implementing, implemented, or review when `has_conflicts=True`           |
-| ✔    | Approved          | Review stage when `review_decision="APPROVED"`                           |
+| ✔     | Approved          | Review stage when `review_decision="APPROVED"`                           |
 | ❌    | Changes requested | Review stage when `review_decision="CHANGES_REQUESTED"`                  |
 | 🚀    | Ready to merge    | Implemented stage when checks pass, no unresolved comments, no conflicts |
 
 ### Stage Detection
 
-Stages are detected from the content of `lifecycle_display` using substring matching (not color markup):
+<!-- Source: _build_indicators() in packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py -->
 
-- `"planned" in lifecycle_display` → planned stage
-- `"impl" in lifecycle_display` → implementing or implemented stage (matches "impl", "implementing", "implemented")
-- `"review" in lifecycle_display` → review stage
+Stages are detected from the content of `lifecycle_display` using substring matching (not color markup). See `_build_indicators()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` for the current detection logic.
 
 ## The "sts" Column
 
