@@ -1,0 +1,870 @@
+<session>
+  <meta branch="plnd/add-check-superceded-03-07-2048" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8913&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8913` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8913.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11300" cache_read_input_tokens="17252" cache_creation="{'ephemeral_5m_input_tokens': 11300, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018E3dBffMNJ23Co7esHsCh7">
+    <param name="command">erk exec setup-impl --issue 8913</param>
+    <param name="description">Set up implementation for plan #8913</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11300" cache_read_input_tokens="17252" cache_creation="{'ephemeral_5m_input_tokens': 11300, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018E3dBffMNJ23Co7esHsCh7">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--add-check-superceded-03-07-2048", "plan_number": 8913, "plan_url": "https://github.com/dagster-io/erk/pull/8913", "branch": "plnd/add-check-superceded-03-07-2048", "plan_title": "[erk-plan] Plan: Create `local:check-superceded` command", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8913, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/add-check-superceded-03-07-2048', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="28552" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01VM5mDWJQGJUeRqPWLVPgUr">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--add-check-superceded-03-07-2048/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="28552" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VM5mDWJQGJUeRqPWLVPgUr">
+     1→# Plan: Create `local:check-superceded` command
+     2→
+     3→## Context
+     4→
+     5→The existing `/local:check-relevance` command determines if a PR has been superseded by work in master, but it relies too heavily on metadata signals: commit SHAs, PR titles, file existence, and function name grep hits. It doesn't deeply compare the *actual code changes* from the PR against what's currently in master. This leads to shallow assessments — a file existing doesn't mean the PR's specific changes are present.
+     6→
+     7→We just demonstrated this gap manually with PR #8879: the `--repo`/`target_repo` feature existed in master but was implemented with a completely different architecture (no `one_shot_api.py`, logic pushed into CLI layer instead of dispatch layer). The current check-relevance would have found the file and function names but might not have caught the architectural difference.
+     8→
+     9→**Goal:** Create a new command `/local:check-superceded` that performs deep code-level analysis — reading PR diffs, comparing against actual master file contents, and examining implementation approach, not just artifact existence.
+    10→
+    11→## Approach
+    12→
+    13→### Step 1: Create new command file
+    14→
+    15→**File to create:** `.claude/commands/local/check-superceded.md`
+    16→
+    17→This is a new command, not a modification of `check-relevance`. The new command is focused specifically on the "has this PR been superseded?" question with deep code analysis.
+    18→
+    19→### Step 2: Command structure (phases)
+    20→
+    21→#### Phase 1: Parse Input
+    22→- Accept `$ARGUMENTS` as a PR number
+    23→- Fetch PR metadata: `gh pr view &lt;NUMBER&gt; --json title,body,state,headRefName,files`
+    24→
+    25→#### Phase 2: Fetch PR Code Changes
+    26→- Get the full PR diff: `gh pr diff &lt;NUMBER&gt;`
+    27→- Get changed files list: `gh pr view &lt;NUMBER&gt; --json files --jq '.files[].path'`
+    28→- This is the primary evidence source — actual code, not metadata
+    29→
+    30→#### Phase 3: Understand PR Intent
+
+... [81 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. Let me read the existing `check-relevance` command for reference, and load the commands tripwires.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1793" cache_read_input_tokens="28900" cache_creation="{'ephemeral_5m_input_tokens': 1793, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Cg9uz6eBL9pbRpm6YzJ6UD">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/local/check-relevance.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1793" cache_read_input_tokens="28900" cache_creation="{'ephemeral_5m_input_tokens': 1793, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011zAJhbcP3mrXU3Gr4h2QYv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/commands/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1793" cache_read_input_tokens="28900" cache_creation="{'ephemeral_5m_input_tokens': 1793, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Cg9uz6eBL9pbRpm6YzJ6UD">
+     1→---
+     2→description: Assess whether a PR or plan's work is already in master
+     3→---
+     4→
+     5→# /local:check-relevance
+     6→
+     7→Assesses whether a PR or plan's intended work is already represented in master, helping decide whether to close it.
+     8→
+     9→## Usage
+    10→
+    11→```bash
+    12→/local:check-relevance 2521              # Auto-detect PR or plan by number
+    13→/local:check-relevance --pr 2521         # Explicitly check a PR
+    14→/local:check-relevance --plan 2521       # Explicitly check a plan
+    15→```
+    16→
+    17→---
+    18→
+    19→## Agent Instructions
+    20→
+    21→### Phase 1: Parse Input and Identify Type
+    22→
+    23→Parse `$ARGUMENTS` to determine input:
+    24→
+    25→**Step 1.1: Extract number and type**
+    26→
+    27→- `--pr &lt;number&gt;`: Treat as PR
+    28→- `--plan &lt;number&gt;`: Treat as plan
+    29→- `&lt;number&gt;` only: Auto-detect (check for `erk-plan` label)
+    30→
+
+... [264 lines omitted] ...
+
+   277→## Error Handling
+   279→- If issue/PR not found, report error and stop
+  </tool_result>
+  <tool_result tool="toolu_011zAJhbcP3mrXU3Gr4h2QYv">
+     1→---
+     2→title: Commands Tripwires
+     3→read_when:
+     4→  - "working on commands code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from commands/*.md frontmatter --&gt;
+    10→
+    11→# Commands Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding allowed-tools to a command or agent frontmatter** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. ALWAYS apply the minimal-set principle — only allow tools the command actually needs
+    16→
+    17→**creating a destructive slash command without a preview variant** → Read [Preview Command Pattern](preview-command-pattern.md) first. Consider pairing with a preview command (e.g., pr-address + pr-preview-address). Preview commands show planned actions without executing, reducing costly mistakes.
+    18→
+    19→**creating commands that delegate to subagents** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. NEVER omit Task from allowed-tools if the command delegates to subagents
+    20→
+    21→**modifying collateral finding categories or auto-apply behavior in audit-doc** → Read [Audit-Doc Design Decisions](audit-doc.md) first. CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction
+    22→
+    23→**renaming any file in .claude/commands/ or .claude/skills/** → Read [Command Rename Pattern](command-rename-pattern.md) first. Read this doc — renames require a full reference sweep, not just a file move
+    24→
+    25→**using CLAUDE_SESSION_ID in hooks or Python code** → Read [Session ID Substitution](session-id-substitution.md) first. CLAUDE_SESSION_ID is NOT an environment variable — it is a string substitution performed by Claude Code's skill/command loader. Treating it as an env var in hooks or Python code will silently produce an empty string.
+    26→
+    27→**writing allowed-tools frontmatter** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. Commands and agents use DIFFERENT allowed-tools syntax — check the format section
+    28→
+
+&lt;system-reminder&gt;
+
+... [3 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me set up todos and signal GitHub started.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4167" cache_read_input_tokens="30693" cache_creation="{'ephemeral_5m_input_tokens': 4167, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01XWKMP2rd2xQMsDW1LanGaR">
+    <param name="todos">[{'content': 'Create `.claude/commands/local/check-superceded.md` command', 'status': 'in_...[truncated 218 chars]...ded and clean up', 'status': 'pending', 'activeForm': 'Signaling GitHub and cleaning up'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4167" cache_read_input_tokens="30693" cache_creation="{'ephemeral_5m_input_tokens': 4167, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DoP9oRhc927snzTWexPohg">
+    <param name="command">erk exec impl-signal started --session-id="b3444176-a7a7-40a5-8a31-a8d95cb22558" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4167" cache_read_input_tokens="30693" cache_creation="{'ephemeral_5m_input_tokens': 4167, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XWKMP2rd2xQMsDW1LanGaR">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01DoP9oRhc927snzTWexPohg">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8913
+}
+  </tool_result>
+  <assistant>Now let me look at a few other check-related command files to understand the pattern, then create the new command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="34860" cache_creation="{'ephemeral_5m_input_tokens': 399, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_015KtBQ5AXcMNGZ3S5994mWq">
+    <param name="pattern">.claude/commands/local/*.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="399" cache_read_input_tokens="34860" cache_creation="{'ephemeral_5m_input_tokens': 399, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015KtBQ5AXcMNGZ3S5994mWq">
+/home/runner/work/erk/erk/.claude/commands/local/all-ci.md
+/home/runner/work/erk/erk/.claude/commands/local/audit-scan.md
+/home/runner/work/erk/erk/.claude/commands/local/code-review.md
+/home/runner/work/erk/erk/.claude/commands/local/audit-doc.md
+/home/runner/work/erk/erk/.claude/commands/local/check-relevance.md
+/home/runner/work/erk/erk/.claude/commands/local/audit-plans.md
+/home/runner/work/erk/erk/.claude/commands/local/fast-ci.md
+/home/runner/work/erk/erk/.claude/commands/local/audit-skill.md
+/home/runner/work/erk/erk/.claude/commands/local/cmux-workspace-rename.md
+/home/runner/work/erk/erk/.claude/commands/local/analyze-context.md
+/home/runner/work/erk/erk/.claude/commands/local/changelog-release.md
+/home/runner/work/erk/erk/.claude/commands/local/changelog-update.md
+/home/runner/work/erk/erk/.claude/commands/local/debug-ci.md
+/home/runner/work/erk/erk/.claude/commands/local/audit-branches.md
+/home/runner/work/erk/erk/.claude/commands/local/code-stats.md
+/home/runner/work/erk/erk/.claude/commands/local/objective-reevaluate.md
+/home/runner/work/erk/erk/.claude/commands/local/tasks-clear.md
+/home/runner/work/erk/erk/.claude/commands/local/quick-submit.md
+/home/runner/work/erk/erk/.claude/commands/local/objective-view.md
+/home/runner/work/erk/erk/.claude/commands/local/pr-sync-commit.md
+/home/runner/work/erk/erk/.claude/commands/local/review.md
+/home/runner/work/erk/erk/.claude/commands/local/pr-triage.md
+/home/runner/work/erk/erk/.claude/commands/local/statusline-refresh.md
+/home/runner/work/erk/erk/.claude/commands/local/tdd.md
+/home/runner/work/erk/erk/.claude/commands/local/interview.md
+/home/runner/work/erk/erk/.claude/commands/local/incremental-plan-mode.md
+/home/runner/work/erk/erk/.claude/commands/local/plan-update.md
+/home/runner/work/erk/erk/.claude/commands/local/replan-learn-plans.md
+/home/runner/work/erk/erk/.claude/commands/local/sessions-list.md
+/home/runner/work/erk/erk/.claude/commands/local/py-fast-ci.md
+  </tool_result>
+  <assistant>Now let me read the `gh pr diff` size limits doc referenced in universal tripwires, since we'll be fetching PR diffs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="859" cache_read_input_tokens="35259" cache_creation="{'ephemeral_5m_input_tokens': 859, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EbtZ7vDA3DnUxqY4pGHZDc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-cli-limits.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="859" cache_read_input_tokens="35259" cache_creation="{'ephemeral_5m_input_tokens': 859, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EbtZ7vDA3DnUxqY4pGHZDc">
+     1→---
+     2→title: GitHub CLI Limits
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "using gh pr diff in production code"
+     7→  - "working with large pull requests (300+ files)"
+     8→  - "encountering HTTP 406 errors from gh CLI"
+     9→  - "implementing PR file discovery"
+    10→  - "working with GitHub codespaces in code"
+    11→  - "implementing codespace operations"
+    12→tripwires:
+    13→  - action: "using gh pr diff --name-only in production code"
+    14→    warning: "For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead."
+    15→    pattern: "gh\\s+pr\\s+diff\\s+--name-only"
+    16→  - action: "using gh codespace start"
+    17→    warning: "gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead."
+    18→    pattern: "gh\\s+codespace\\s+start"
+    19→---
+    20→
+    21→# GitHub CLI Limits
+    22→
+    23→The GitHub CLI wraps both REST and GraphQL APIs with command-line convenience. This abstraction occasionally conceals critical limitations — size thresholds, missing commands, and API quotas — that only surface under production load.
+    24→
+    25→## Why gh pr diff Fails on Large PRs
+    26→
+    27→`gh pr diff` fetches the entire diff in a single unbounded API request. GitHub's API rejects oversized diffs with HTTP 406, typically around 300+ changed files. The gh CLI provides no pagination option for this command.
+    28→
+    29→This is a **test-vs-production tripwire**: small PRs work perfectly in development, large refactors fail silently in CI or production tooling.
+    30→
+
+... [130 lines omitted] ...
+
+    31→### Failure Example
+    35→# Error: HTTP 406: Not Acceptable (https://api.github.com/...)
+    51→| Method                             | Pagination         | Size Limit | Failure Mode   |
+    53→| `gh pr diff --name-only`           | No                 | ~300 files | HTTP 406 error |
+    71→**Decision context**: PR #6119 fixed this after `erk exec discover-reviews` failed on large PRs. The original implementation worked in all manual testing (small PRs) but broke on the first large refactor.
+    79→### Failure Example
+    83→# Error: unknown command "start" for "gh codespace"
+   151→- [GitHub API Diagnostics](github-api-diagnostics.md) — Repository-specific diagnostic methodology for GitHub API failures
+  </tool_result>
+  <assistant>Good - I need to be aware that `gh pr diff` can fail on large PRs. I should include a note about this in the command. Now let me create the new command file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2785" cache_read_input_tokens="36118" cache_creation="{'ephemeral_5m_input_tokens': 2785, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_016H97FJa3fgqapoeQvwrgzf">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/local/check-superceded.md</param>
+    <param name="content">---
+description: Assess whether a PR or plan's work is already in master
+---
+
+# /local:che...[truncated 5625 chars]...TTP 406: fall back to REST API file listing
+- If GitHub API rate limited: report and stop
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2785" cache_read_input_tokens="36118" cache_creation="{'ephemeral_5m_input_tokens': 2785, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016H97FJa3fgqapoeQvwrgzf">
+File created successfully at: /home/runner/work/erk/erk/.claude/commands/local/check-superceded.md
+  </tool_result>
+  <assistant>Good. Now let me delete the old `check-relevance` command and update the todos.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1885" cache_read_input_tokens="38903" cache_creation="{'ephemeral_5m_input_tokens': 1885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Gm2ZDwJ2t5YwEdew7LDnYF">
+    <param name="todos">[{'content': 'Create `.claude/commands/local/check-superceded.md` command', 'status': 'com...[truncated 212 chars]...ded and clean up', 'status': 'pending', 'activeForm': 'Signaling GitHub and cleaning up'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1885" cache_read_input_tokens="38903" cache_creation="{'ephemeral_5m_input_tokens': 1885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UeD7y22aaySpnTAYFtP1ye">
+    <param name="command">git rm .claude/commands/local/check-relevance.md</param>
+    <param name="description">Delete check-relevance command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1885" cache_read_input_tokens="38903" cache_creation="{'ephemeral_5m_input_tokens': 1885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gm2ZDwJ2t5YwEdew7LDnYF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01UeD7y22aaySpnTAYFtP1ye">
+rm '.claude/commands/local/check-relevance.md'
+  </tool_result>
+  <assistant>Now let me check if `check-relevance` is referenced anywhere else that needs updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="40788" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KWxru1hprLChLQZGCZkFk3">
+    <param name="pattern">check-relevance</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="40788" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KWxru1hprLChLQZGCZkFk3">
+docs/learned/cli/local-commands.md:41:| `/check-relevance` | Issue number     | Assess if PR/plan work is already implemented   |
+docs/learned/planning/tripwires.md:145:**implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
+docs/learned/planning/lifecycle.md:15:    warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
+docs/learned/planning/lifecycle.md:91:When evaluating whether a plan should be implemented or closed, use the verdict classification system from `/local:check-relevance`:
+docs/learned/planning/lifecycle.md:101:**Usage:** Run `/local:check-relevance &lt;plan-number&gt;` to assess a plan's current relevance before deciding to implement or close it.
+docs/learned/planning/cross-artifact-analysis.md:28:The `/local:check-relevance` command implements a structured approach to cross-artifact analysis:
+.claude/commands/local/audit-plans.md:216:/local:check-relevance &lt;plan-number&gt;
+.claude/commands/local/audit-branches.md:188:/local:check-relevance &lt;issue-number&gt;
+  </tool_result>
+  <assistant>There are references to `check-relevance` in several places. Let me update them all to reference `check-superceded` instead.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="41154" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QnVYipYR5cKcrdekSam25k">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/local-commands.md</param>
+    <param name="offset">35</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="41154" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016bnVKQDtMwLeN1cTMb5WK3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="offset">140</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="41154" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0141gTyZwVfpy2wjqyguwSX6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="offset">10</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="41154" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015JZWRcUPc8adpFyjwijU78">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="offset">86</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="41154" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GuoKmoHKjT6DFSKtEj7ZHo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md</param>
+    <param name="offset">23</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="41154" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ADNTPgQb9wtB9bhugJrQCJ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/local/audit-plans.md</param>
+    <param name="offset">210</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="41154" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ABdAgWLz99V4EdYhkSwuww">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/local/audit-branches.md</param>
+    <param name="offset">183</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="41154" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QnVYipYR5cKcrdekSam25k">
+    35→### Single-Item Assessment Commands
+    36→
+    37→Single-item assessment commands analyze one specific item in detail:
+    38→
+    39→| Command            | Input            | Purpose                                         |
+    40→| ------------------ | ---------------- | ----------------------------------------------- |
+    41→| `/check-relevance` | Issue number     | Assess if PR/plan work is already implemented   |
+    42→| `/objective-view`  | Objective number | View progress and associations for an objective |
+    43→
+    44→**Characteristics:**
+    45→
+    46→- Focused, inline during development workflow
+    47→- Evidence-based verdict with classification
+    48→- Lower context cost (single item analysis)
+    49→- Immediate actionability
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_016bnVKQDtMwLeN1cTMb5WK3">
+   140→
+   141→**hardcoding next-steps command strings instead of using the dataclass properties** → Read [Next Steps Output Formatting](next-steps-output.md) first. Use PlanNextSteps dataclass from erk_shared.output.next_steps. It is the single source of truth for command formatting.
+   142→
+   143→**implementing PR body generation with checkout footers** → Read [Plan Lifecycle](lifecycle.md) first. HTML `&lt;details&gt;` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout &lt;number&gt;` ``
+   144→
+   145→**implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
+   146→
+   147→**implementing planned-PR plan without teleporting from remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Before implementing a planned-PR plan, always teleport from remote: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase
+   148→
+   149→**importing functions directly from plan_header.py** → Read [Plan Header Privatization](plan-header-privatization.md) first. plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_0141gTyZwVfpy2wjqyguwSX6">
+    10→  - action: "manually creating an erk-plan with gh issue create"
+    11→    warning: "Use `erk exec plan-save --plan-file &lt;path&gt;` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
+    12→  - action: "saving a plan linked to an objective"
+    13→    warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives."
+    14→  - action: "implementing custom PR/plan relevance assessment logic"
+    15→    warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
+    16→  - action: "after plan-implement execution completes"
+    17→    warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
+    18→  - action: "implementing PR body generation with checkout footers"
+    19→    warning: "HTML `&lt;details&gt;` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout &lt;number&gt;` ``"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_015JZWRcUPc8adpFyjwijU78">
+    86→
+    87→**Note:** The `lifecycle_stage` field in plan-header metadata provides a machine-readable equivalent of these observable states. See [Lifecycle Stage Tracking](#lifecycle-stage-tracking) for details.
+    88→
+    89→### Plan Relevance Assessment
+    90→
+    91→When evaluating whether a plan should be implemented or closed, use the verdict classification system from `/local:check-relevance`:
+    92→
+    93→| Verdict               | Overlap | Meaning                                            |
+    94→| --------------------- | ------- | -------------------------------------------------- |
+    95→| SUPERSEDED            | &gt;80%    | Work is already implemented in master              |
+    96→| PARTIALLY_IMPLEMENTED | 30-80%  | Some work exists, plan may need scoping adjustment |
+    97→| DIFFERENT_APPROACH    | N/A     | Same problem solved with different implementation  |
+    98→| STILL_RELEVANT        | &lt;30%    | Work is not yet implemented, plan remains valid    |
+    99→| NEEDS_REVIEW          | Unclear | Manual review required, evidence inconclusive      |
+   100→
+   101→**Usage:** Run `/local:check-relevance &lt;plan-number&gt;` to assess a plan's current relevance before deciding to implement or close it.
+   102→
+   103→### Session Idempotency
+   104→
+   105→Plan save operations are idempotent within a session. The `plan-save` command:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01GuoKmoHKjT6DFSKtEj7ZHo">
+    23→| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |
+    24→| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |
+    25→
+    26→## Evidence-Based Analysis Pattern
+    27→
+    28→The `/local:check-relevance` command implements a structured approach to cross-artifact analysis:
+    29→
+    30→1. **Parse input** - Identify whether target is PR or plan
+    31→2. **Gather context** - Retrieve GitHub metadata and plan content
+    32→3. **Understand intent** - Extract what changes were planned
+    33→4. **Search for evidence** - Check master branch for matching implementations
+    34→5. **Create evidence table** - Document findings with specific file/function matches
+    35→6. **Determine verdict** - Apply classification thresholds
+    36→
+    37→This pattern can be adapted for future commands that need to assess relationships between artifacts.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01ADNTPgQb9wtB9bhugJrQCJ">
+   210→
+   211→## Related Commands
+   212→
+   213→For assessing a single plan's relevance without running a full audit, use:
+   214→
+   215→```bash
+   216→/local:check-relevance &lt;plan-number&gt;
+   217→```
+   218→
+   219→This provides focused, evidence-based assessment inline when reviewing or creating plans.
+   220→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01ABdAgWLz99V4EdYhkSwuww">
+   183→## Related Commands
+   184→
+   185→For assessing a single PR or plan's relevance:
+   186→
+   187→```bash
+   188→/local:check-relevance &lt;issue-number&gt;
+   189→```
+   190→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me update all references. I'll do them in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3223" cache_read_input_tokens="41659" cache_creation="{'ephemeral_5m_input_tokens': 3223, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RT7Zymw72JKDBueL3HrGAk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/local-commands.md</param>
+    <param name="old_string">| `/check-relevance` | Issue number     | Assess if PR/plan work is already implemented   |</param>
+    <param name="new_string">| `/check-superceded` | PR number       | Assess if PR's work has been superseded in master |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3223" cache_read_input_tokens="41659" cache_creation="{'ephemeral_5m_input_tokens': 3223, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NfoMQL5rJYU5bN4g3Dr34q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecyc...[truncated 123 chars]...80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.</param>
+    <param name="new_string">**implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecyc...[truncated 91 chars]...Y_SUPERSEDED, DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3223" cache_read_input_tokens="41659" cache_creation="{'ephemeral_5m_input_tokens': 3223, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Fy6d7NLNtdLkoYraDFrcqM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">    warning: "Reference `/local:check-relevance` verdict classification system first. Use ...[truncated 34 chars]...0% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."</param>
+    <param name="new_string">    warning: "Reference `/local:check-superceded` verdict classification system first. Use...[truncated 2 chars]..._SUPERSEDED, DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3223" cache_read_input_tokens="41659" cache_creation="{'ephemeral_5m_input_tokens': 3223, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0117fcLi7GyFdRBFpEUdZBBf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">When evaluating whether a plan should be implemented or closed, use the verdict classifica...[truncated 690 chars]...an-number&gt;` to assess a plan's current relevance before deciding to implement or close it.</param>
+    <param name="new_string">When evaluating whether a plan should be implemented or closed, use the verdict classifica...[truncated 553 chars]...ber&gt;` to assess whether a PR has been superseded before deciding to implement or close it.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3223" cache_read_input_tokens="41659" cache_creation="{'ephemeral_5m_input_tokens': 3223, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012CF8Jf5YxhiR3f6MTsyx76">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md</param>
+    <param name="old_string">The `/local:check-relevance` command implements a structured approach to cross-artifact analysis:</param>
+    <param name="new_string">The `/local:check-superceded` command implements a structured approach to cross-artifact analysis:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3223" cache_read_input_tokens="41659" cache_creation="{'ephemeral_5m_input_tokens': 3223, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NE4sX9j9bAjQaqoNRXDVVt">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/local/audit-plans.md</param>
+    <param name="old_string">```bash
+/local:check-relevance &lt;plan-number&gt;
+```
+
+This provides focused, evidence-based assessment inline when reviewing or creating plans.</param>
+    <param name="new_string">```bash
+/local:check-superceded &lt;pr-number&gt;
+```
+
+This provides focused, evidence-based assessment with deep code comparison when reviewing PRs.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3223" cache_read_input_tokens="41659" cache_creation="{'ephemeral_5m_input_tokens': 3223, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WqjJnTgByoZyFZHqEuQtAB">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/local/audit-branches.md</param>
+    <param name="old_string">For assessing a single PR or plan's relevance:
+
+```bash
+/local:check-relevance &lt;issue-number&gt;
+```</param>
+    <param name="new_string">For assessing whether a PR has been superseded:
+
+```bash
+/local:check-superceded &lt;pr-number&gt;
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3223" cache_read_input_tokens="41659" cache_creation="{'ephemeral_5m_input_tokens': 3223, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RT7Zymw72JKDBueL3HrGAk">
+The file /home/runner/work/erk/erk/docs/learned/cli/local-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01NfoMQL5rJYU5bN4g3Dr34q">
+The file /home/runner/work/erk/erk/docs/learned/planning/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Fy6d7NLNtdLkoYraDFrcqM">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0117fcLi7GyFdRBFpEUdZBBf">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012CF8Jf5YxhiR3f6MTsyx76">
+The file /home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01NE4sX9j9bAjQaqoNRXDVVt">
+The file /home/runner/work/erk/erk/.claude/commands/local/audit-plans.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WqjJnTgByoZyFZHqEuQtAB">
+The file /home/runner/work/erk/erk/.claude/commands/local/audit-branches.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me also update the tripwires frontmatter in the lifecycle.md to match:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2091" cache_read_input_tokens="44882" cache_creation="{'ephemeral_5m_input_tokens': 2091, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NR7RkLcEG4gxj4UBfd738o">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2091" cache_read_input_tokens="44882" cache_creation="{'ephemeral_5m_input_tokens': 2091, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NR7RkLcEG4gxj4UBfd738o">
+     1→---
+     2→title: Plan Lifecycle
+     3→last_audited: "2026-02-11 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "creating a plan"
+     7→  - "closing a plan"
+     8→  - "understanding plan states"
+     9→tripwires:
+    10→  - action: "manually creating an erk-plan with gh issue create"
+    11→    warning: "Use `erk exec plan-save --plan-file &lt;path&gt;` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
+    12→  - action: "saving a plan linked to an objective"
+    13→    warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives."
+    14→  - action: "implementing custom PR/plan relevance assessment logic"
+    15→    warning: "Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
+    16→  - action: "after plan-implement execution completes"
+    17→    warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
+    18→  - action: "implementing PR body generation with checkout footers"
+    19→    warning: "HTML `&lt;details&gt;` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout &lt;number&gt;` ``"
+    20→  - action: "calling commands that depend on `.erk/impl-context/plan-ref.json` metadata"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good, the tripwire in the frontmatter was already updated by my edit. Let me verify no remaining references to `check-relevance`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="46973" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UvL5bv8DjsW7dEE3Z9ozfv">
+    <param name="pattern">check-relevance</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="46973" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UvL5bv8DjsW7dEE3Z9ozfv">
+No matches found
+  </tool_result>
+  <assistant>All references cleaned up. Now let me finalize — signal ended, upload session, clean up impl context, and submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="47651" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01DsprBsuxQ2UqcmUmrnsgsB">
+    <param name="todos">[{'content': 'Create `.claude/commands/local/check-superceded.md` command', 'status': 'com...[truncated 214 chars]...and clean up', 'status': 'in_progress', 'activeForm': 'Signaling GitHub and cleaning up'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="47651" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01THvSYiqt77TvUbTcth9jAY">
+    <param name="command">erk exec impl-signal ended --session-id="b3444176-a7a7-40a5-8a31-a8d95cb22558" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="47651" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01T88soo3oa7QM7jDrvpH3PP">
+    <param name="command">erk exec upload-impl-session --session-id="b3444176-a7a7-40a5-8a31-a8d95cb22558" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="47651" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DsprBsuxQ2UqcmUmrnsgsB">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01THvSYiqt77TvUbTcth9jAY">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8913
+}
+  </tool_result>
+</session>
