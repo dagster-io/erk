@@ -9,8 +9,8 @@ read_when:
 tripwires:
   - action: "removing the VIRTUAL_ENV guard from activation scripts"
     warning: "Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate venv activation and .env loading. Moving uv sync OUTSIDE the guard is correct — guard only protects venv activation, .env loading, and shell completion."
-  - action: "moving uv sync or uv pip install inside the VIRTUAL_ENV guard"
-    warning: "uv sync and uv pip install run OUTSIDE the guard (always execute, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard."
+  - action: "moving uv sync inside the VIRTUAL_ENV guard"
+    warning: "uv sync runs OUTSIDE the guard (always executes, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard."
 ---
 
 # Activation Scripts
@@ -95,12 +95,11 @@ When `erk pr checkout --script` generates an activation script and direnv is act
 
 ### Solution
 
-Dependency sync always runs unconditionally (outside the guard). The `VIRTUAL_ENV` guard only protects idempotent side effects:
+Dependency sync (`uv sync`) always runs unconditionally (outside the guard). The `VIRTUAL_ENV` guard only protects idempotent side effects:
 
 ```bash
 # Always sync deps (outside guard — handles branch switches in reused slots)
 uv sync --quiet
-uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
 
 # Guard only protects venv activation, .env loading, shell completion
 if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
@@ -118,7 +117,6 @@ fi
 **OUTSIDE guard** (always runs):
 
 - Dependency sync (`uv sync --quiet`) — ensures deps are current after branch switches in reused slots
-- Package refresh (`uv pip install --no-deps --quiet`)
 - Post-activation commands (e.g., `gt submit --no-interactive`)
 - Final status message
 
@@ -132,7 +130,7 @@ fi
 
 <!-- Source: src/erk/cli/activation.py, render_activation_script -->
 
-`render_activation_script()` in `src/erk/cli/activation.py` generates the guard. `uv sync` and `uv pip install` run unconditionally before the guard, while venv activation, `.env` loading, and shell completion are inside the `VIRTUAL_ENV` guard. The guard checks if `$VIRTUAL_ENV` already points to this worktree's `.venv` directory, and if so, skips activation entirely.
+`render_activation_script()` in `src/erk/cli/activation.py` generates the guard. `uv sync` runs unconditionally before the guard, while venv activation, `.env` loading, and shell completion are inside the `VIRTUAL_ENV` guard. The guard checks if `$VIRTUAL_ENV` already points to this worktree's `.venv` directory, and if so, skips activation entirely.
 
 ## Related Topics
 

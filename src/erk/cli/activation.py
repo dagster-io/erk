@@ -209,7 +209,6 @@ if [ ! -d {venv_dir} ]; then
   __erk_log "->" "Creating virtual environment..."
 fi
 uv sync --quiet
-uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
 # Skip activation if VIRTUAL_ENV already points to this worktree's .venv
 # (guards against double activation when direnv triggers on cd)
 if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
