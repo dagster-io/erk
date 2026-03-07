@@ -74,7 +74,7 @@ class NavigationActionsMixin:
 
     def action_help(self: ErkDashApp) -> None:
         """Show help screen."""
-        self.push_screen(HelpScreen())
+        self.push_screen(HelpScreen(view_mode=self._view_mode))
 
     def action_launch(self: ErkDashApp) -> None:
         """Open the launch screen for quick ACTION command execution."""

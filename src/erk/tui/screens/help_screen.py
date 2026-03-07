@@ -9,6 +9,8 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Label
 
+from erk.tui.views.types import ViewMode
+
 
 class HelpScreen(ModalScreen):
     """Modal screen showing keyboard shortcuts."""
@@ -54,8 +56,22 @@ class HelpScreen(ModalScreen):
     }
     """
 
+    def __init__(self, *, view_mode: ViewMode) -> None:
+        """Initialize help screen.
+
+        Args:
+            view_mode: Current view mode, controls which shortcuts are shown
+        """
+        super().__init__()
+        self._view_mode = view_mode
+
+    def _is_objectives_view(self) -> bool:
+        return self._view_mode == ViewMode.OBJECTIVES
+
     def compose(self) -> ComposeResult:
         """Create help dialog content."""
+        is_objectives = self._is_objectives_view()
+
         with Vertical(id="help-dialog"):
             yield Label("erk dash - Keyboard Shortcuts", id="help-title")
 
@@ -64,6 +80,7 @@ class HelpScreen(ModalScreen):
                 yield Label("1       Plans view", classes="help-binding")
                 yield Label("2       Learn view", classes="help-binding")
                 yield Label("3       Objectives view", classes="help-binding")
+                yield Label("←/→     Switch views", classes="help-binding")
 
             with Vertical(classes="help-section"):
                 yield Label("Navigation", classes="help-section-title")
@@ -74,23 +91,31 @@ class HelpScreen(ModalScreen):
 
             with Vertical(classes="help-section"):
                 yield Label("Actions", classes="help-section-title")
-                yield Label("Enter   View plan details", classes="help-binding")
-                yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
-                yield Label("v       View plan text", classes="help-binding")
-                yield Label("p       Open PR in browser", classes="help-binding")
-                yield Label("i       Show implement command", classes="help-binding")
-                yield Label("c       View unresolved comments", classes="help-binding")
-                yield Label("h       View failing checks", classes="help-binding")
+                if is_objectives:
+                    yield Label("Enter   View objective details", classes="help-binding")
+                    yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
+                    yield Label("v       View objective text", classes="help-binding")
+                    yield Label("p       Open objective in browser", classes="help-binding")
+                    yield Label("b       View objective nodes", classes="help-binding")
+                else:
+                    yield Label("Enter   View plan details", classes="help-binding")
+                    yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
+                    yield Label("v       View plan text", classes="help-binding")
+                    yield Label("p       Open PR in browser", classes="help-binding")
+                    yield Label("n       Open CI run in browser", classes="help-binding")
+                    yield Label("i       Show implement command", classes="help-binding")
+                    yield Label("c       View unresolved comments", classes="help-binding")
+                    yield Label("h       View failing checks", classes="help-binding")
                 yield Label("l       Launch actions menu", classes="help-binding")
-                yield Label("b       View objective nodes", classes="help-binding")
                 yield Label("x       Dispatch one-shot prompt", classes="help-binding")
 
             with Vertical(classes="help-section"):
                 yield Label("Filter & Sort", classes="help-section-title")
                 yield Label("/       Start filter mode", classes="help-binding")
                 yield Label("a       Toggle all users / my plans", classes="help-binding")
-                yield Label("t       Filter to Graphite stack", classes="help-binding")
-                yield Label("o       Filter to objective plans", classes="help-binding")
+                if not is_objectives:
+                    yield Label("t       Filter to Graphite stack", classes="help-binding")
+                    yield Label("o       Filter to objective plans", classes="help-binding")
                 yield Label("Esc     Clear filter / exit filter", classes="help-binding")
                 yield Label("Enter   Return focus to table", classes="help-binding")
                 yield Label("s       Toggle sort mode", classes="help-binding")
