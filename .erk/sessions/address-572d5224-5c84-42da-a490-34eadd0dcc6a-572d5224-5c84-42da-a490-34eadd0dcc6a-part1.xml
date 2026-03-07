@@ -1,0 +1,1287 @@
+<session>
+  <meta branch="plnd/O8470-tui-incremental-disp-03-07-0151" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-address is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;
+&lt;command-args&gt;--pr 8887&lt;/command-args&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal — these are read-only. Then write the execution plan to the plan file and call ExitPlanMode. Do NOT execute Phases 3-6 (edits, commits, resolution) until plan mode is exited and the user approves. In Plan File Mode, the same applies: run PF-1 and PF-2, then write the plan and call ExitPlanMode before executing PF-3 through PF-6.
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Mode Detection
+
+Determine the execution mode before any work begins:
+
+1. **Check for `erk-plan-review` label**:
+
+   ```bash
+   gh pr view --json labels -q '.labels[].name' | grep -q '^erk-plan-review$'
+   ```
+
+   If found → **Plan Review Mode** (existing behavior, see Plan Review Mode section in pr-address-workflows docs)
+
+2. **Check if `.erk/impl-context/plan.md` is git-tracked**:
+
+   ```bash
+   git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1
+   ```
+
+   If found → **Plan File Mode** (see below — skip Phases 1-6 entirely)
+
+3. **Neither** → **Code Review Mode** (continue to Phase 1)
+
+---
+
+### Plan File Mode
+
+&gt; **CRITICAL**: In Plan File Mode, you are editing a _document_ — the plan. When a reviewer says "make the language about X more emphatic" or "add a step for Y", you modify the plan _text_. You do NOT make changes to any files described in the plan.
+
+This mode activates when `.erk/impl-context/plan.md` is git-tracked (plan-only PRs). It is a **complete alternative flow** — Phases 1-6 are skipped entirely.
+
+#### PF-1: Classify Feedback
+
+Use the same Task-based classifier as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Handle errors and empty comments the same way as Phase 1.
+
+#### PF-2: Display Plan
+
+Show the batched execution plan from the classifier output, same format as Phase 2.
+
+#### PF-3: Execute by Batch
+
+For each batch, follow the same structure as Phase 3 with these constraints:
+
+- **ONLY edit `.erk/impl-context/plan.md`** (and `ref.json` if feedback targets it)
+- **Interpret all feedback as "modify the plan text"** — NEVER execute changes the plan describes
+- If a reviewer says "add a step to do X", add text to the plan describing step X. Do NOT actually do X.
+- Use `git add -f .erk/impl-context/plan.md` for commits (directory is gitignored)
+
+Commit messages follow the same batch format:
+
+```bash
+git add -f .erk/impl-context/plan.md
+git commit -m "Address plan review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;"
+```
+
+#### PF-4: Resolve Threads
+
+Same as Phase 4 — resolve all threads via `erk exec resolve-review-threads`.
+
+#### PF-5: Push
+
+Push directly — plan PRs don't use graphite submit:
+
+```bash
+git push
+```
+
+#### PF-6: Done
+
+Skip `update-pr-description` and `upload-impl-session` — plan PRs have their own formatting and lifecycle.
+
+Report the final summary in the same format as Phase 4's final summary, then stop.
+
+---
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Pre-Existing Batch (Special Handling)
+
+If the batch has `complexity: "pre_existing"`, handle it differently — no code changes, no CI, no commit:
+
+1. Resolve all threads in the batch via `erk exec resolve-review-threads` with a standard comment:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Pre-existing issue — this code was moved/restructured, not newly introduced."}, ...]' | erk exec resolve-review-threads
+```
+
+2. Report progress:
+
+```
+## Batch 0: Pre-Existing (Auto-Resolve)
+
+Auto-resolved N pre-existing threads (bot comments on moved/restructured code).
+No code changes needed.
+```
+
+3. Continue to the next batch. Skip Steps 1-5 below for this batch.
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+**Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Pre-existing (auto-resolved): 3
+Actionable (code changes): 5
+Batches: 4
+Commits: 3
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:diverge-fix` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "${CLAUDE_SESSION_ID}"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Phase 6: Upload Address Session
+
+After addressing review comments, upload the session for cross-machine learning.
+Resolve the plan_id from the current branch, then push the session:
+
+```bash
+erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This is non-critical — if it fails (no plan tracking, no session found), addressing was still successful.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+
+ARGUMENTS: --pr 8887</user>
+  <assistant>
+
+I'll start by loading the `pr-operations` skill as required, then proceed with the phases.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13282" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 13282, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01W5kRUiSH23VMsVhCnNzQ6h">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13282" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 13282, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W5kRUiSH23VMsVhCnNzQ6h">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <assistant>
+
+Now let me proceed with Phase 0: Mode Detection.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1512" cache_read_input_tokens="30483" cache_creation="{'ephemeral_5m_input_tokens': 1512, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NNMREhWKVziBbFSHMr6efg">
+    <param name="command">gh pr view 8887 --json labels -q '.labels[].name' 2&gt;&amp;1 | grep -q '^erk-plan-review$' &amp;&amp; echo "PLAN_REVIEW" || echo "NOT_PLAN_REVIEW"</param>
+    <param name="description">Check for erk-plan-review label</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1512" cache_read_input_tokens="30483" cache_creation="{'ephemeral_5m_input_tokens': 1512, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DBQhZSScRgStABTQcoKfwf">
+    <param name="command">git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1 &amp;&amp; echo "PLAN_FILE_MODE" || echo "NOT_PLAN_FILE_MODE"</param>
+    <param name="description">Check for tracked plan.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1512" cache_read_input_tokens="30483" cache_creation="{'ephemeral_5m_input_tokens': 1512, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NNMREhWKVziBbFSHMr6efg">
+NOT_PLAN_REVIEW
+  </tool_result>
+  <tool_result tool="toolu_01DBQhZSScRgStABTQcoKfwf">
+NOT_PLAN_FILE_MODE
+  </tool_result>
+  <assistant>No plan review label, no tracked plan file — this is **Code Review Mode**. Proceeding to Phase 1.
+
+### Phase 1: Classify Feedback</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="31995" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01QZfcCdqeh6fBR5q6DmhboB">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 8887
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="31995" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QZfcCdqeh6fBR5q6DmhboB">
+Now I'll classify the PR feedback based on the criteria in the skill:
+
+Based on the PR feedback data from `erk exec get-pr-feedback --pr 8887`, here is the complete JSON classification output:
+
+```json
+{
+  "success": true,
+  "pr_number": 8887,
+  "pr_title": "Wire incremental dispatch into TUI (Objective #8470, Phase 2)",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8887",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5yuHTO",
+      "type": "review",
+      "path": "src/erk/tui/operations/workers.py",
+      "line": 430,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Using tempfile for AI workflow file - should use .erk/scratch storage instead",
+      "complexity": "local",
+      "original_comment": "Tripwires Review: Using tempfile for AI workflow file - should use .erk/scratch storage"
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 5,
+  "batches": [
+    {
+      "name": "Pre-Existing (Auto-Resolve)",
+      "complexity": "pre_existing",
+
+... [38 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>
+
+The classifier found 1 actionable thread. Let me set up tracking and display the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="923" cache_read_input_tokens="32328" cache_creation="{'ephemeral_5m_input_tokens': 923, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01E8unGtsDpmQRDqB17fZS1M">
+    <param name="todos">[{'content': 'Phase 2: Display batched execution plan', 'status': 'completed', 'activeForm...[truncated 430 chars]... Upload address session', 'status': 'pending', 'activeForm': 'Uploading address session'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="923" cache_read_input_tokens="32328" cache_creation="{'ephemeral_5m_input_tokens': 923, 'ephemeral_1h_input_tokens': 0}" output_tokens="254" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E8unGtsDpmQRDqB17fZS1M">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>## Execution Plan
+
+### Batch 1: Local Fixes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | `src/erk/tui/operations/workers.py:430` | Using tempfile for AI workflow file — should use `.erk/scratch` storage instead |
+
+Auto-proceeding (simple local fix).
+
+### Phase 3: Execute Batch 1
+
+Let me read the relevant code first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="33251" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JipHyawJXs6oJP3GmtKLoP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="offset">410</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="33251" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Y5EEn18erGUAsuZrVq6nv6">
+    <param name="command">erk exec get-pr-review-comments --pr 8887 2&gt;&amp;1 | head -100</param>
+    <param name="description">Get full review comment details</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="33251" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JipHyawJXs6oJP3GmtKLoP">
+   410→            self.call_from_thread(self.notify, "One-shot dispatched", timeout=3)
+   411→            self.call_from_thread(self.action_refresh)
+   412→        else:
+   413→            error_msg = last_output_line(result)
+   414→            self.call_from_thread(
+   415→                self.notify,
+   416→                f"One-shot dispatch failed: {error_msg}",
+   417→                severity="error",
+   418→                timeout=5,
+   419→            )
+   420→
+   421→    @work(thread=True)
+   422→    def _incremental_dispatch_async(
+   423→        self: ErkDashApp, op_id: str, pr_number: int, plan_content: str
+   424→    ) -&gt; None:
+   425→        """Dispatch incremental plan in background thread with toast.
+   426→
+   427→        Writes plan_content to a temp file, invokes erk exec incremental-dispatch,
+   428→        then cleans up the temp file.
+   429→
+   430→        Args:
+   431→            op_id: Operation identifier for status bar tracking
+   432→            pr_number: The PR number to dispatch against
+   433→            plan_content: The plan markdown content
+   434→        """
+   435→        temp_path: str | None = None
+   436→        try:
+   437→            with tempfile.NamedTemporaryFile(
+   438→                suffix=".md", delete=False, mode="w", encoding="utf-8"
+   439→            ) as tmp:
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Y5EEn18erGUAsuZrVq6nv6">
+{
+  "success": true,
+  "pr_number": 8887,
+  "pr_url": "https://github.com/dagster-io/erk/pull/8887",
+  "pr_title": "Wire incremental dispatch into TUI (Objective #8470, Phase 2)",
+  "threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5yuHTO",
+      "path": "src/erk/tui/operations/workers.py",
+      "line": 430,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Tripwires Review**: Using tempfile for AI workflow file - should use .erk/scratch storage\n\nThis code uses `tempfile.NamedTemporaryFile` to create a temp file in `/tmp/`, but according to **docs/learned/planning/scratch-storage.md**, AI workflow files should use `.erk/scratch/sessions/&lt;session-id&gt;/` storage instead.\n\nThe plan markdown file is an AI workflow intermediate file. Use the scratch storage API:\n\n```python\nfrom erk_shared.scratch.scratch import write_scratch_file\n\nfile_path = write_scratch_file(\n    content=plan_content,\n    session_id=session_id,  # Need to pass session_id parameter\n    suffix=\".md\",\n    prefix=\"incremental-plan-\",\n)\n```\n\nSee: docs/learned/planning/scratch-storage.md tripwire \"writing to /tmp/\" and \"creating temp files for AI workflows\"",
+          "created_at": "2026-03-07T02:06:21Z"
+        }
+      ]
+    }
+  ]
+}
+  </tool_result>
+  <assistant>Let me read the scratch storage docs and check what's available:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1490" cache_read_input_tokens="33551" cache_creation="{'ephemeral_5m_input_tokens': 1490, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0183RSF3JueCo6wwEX1iemrh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/scratch-storage.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1490" cache_read_input_tokens="33551" cache_creation="{'ephemeral_5m_input_tokens': 1490, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Uf6SpjfuFiWWuuKHsBPB3Q">
+    <param name="pattern">write_scratch_file</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1490" cache_read_input_tokens="33551" cache_creation="{'ephemeral_5m_input_tokens': 1490, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0183RSF3JueCo6wwEX1iemrh">
+     1→---
+     2→title: Scratch Storage
+     3→read_when:
+     4→  - "writing temp files for AI workflows"
+     5→  - "passing files between processes"
+     6→  - "understanding scratch directory location"
+     7→tripwires:
+     8→  - action: "writing to /tmp/"
+     9→    warning: "AI workflow files belong in .erk/scratch/&lt;session-id&gt;/, NOT /tmp/."
+    10→  - action: "creating temp files for AI workflows"
+    11→    warning: "Use worktree-scoped scratch storage for session-specific data."
+    12→  - action: "analyzing sessions larger than 100k characters"
+    13→    warning: "Use `erk exec preprocess-session` first. Achieves ~99% token reduction (e.g., 6.2M -&gt; 67k chars). Critical for fitting large sessions in agent context windows."
+    14→last_audited: "2026-02-16 14:20 PT"
+    15→audit_result: clean
+    16→---
+    17→
+    18→# Scratch Storage
+    19→
+    20→Erk provides a worktree-local scratch directory for inter-process file passing during AI workflows.
+    21→
+    22→## Location
+    23→
+    24→```
+    25→{repo_root}/.erk/scratch/sessions/&lt;session-id&gt;/
+    26→```
+    27→
+    28→Each Claude session gets its own subdirectory under `sessions/`, making debugging and auditing easier.
+    29→
+    30→### Directory Structure
+
+... [87 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Uf6SpjfuFiWWuuKHsBPB3Q">
+Found 7 files
+src/erk/cli/commands/pr/submit_pipeline.py
+packages/erk-shared/tests/unit/scratch/test_scratch.py
+packages/erk-shared/tests/unit/learn/extraction/test_llm_distillation.py
+packages/erk-shared/src/erk_shared/scratch/__init__.py
+packages/erk-shared/src/erk_shared/scratch/scratch.py
+packages/erk-shared/src/erk_shared/learn/extraction/llm_distillation.py
+packages/erk-shared/src/erk_shared/gateway/pr/diff_extraction.py
+  </tool_result>
+  <assistant>Let me check the `write_scratch_file` signature and the existing imports in the workers file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2028" cache_read_input_tokens="35041" cache_creation="{'ephemeral_5m_input_tokens': 2028, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ko9Gx6zH1eEAtDnVR8CrLo">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/scratch/scratch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2028" cache_read_input_tokens="35041" cache_creation="{'ephemeral_5m_input_tokens': 2028, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013ZzTWAiDtQTKYpAN5jhdXv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2028" cache_read_input_tokens="35041" cache_creation="{'ephemeral_5m_input_tokens': 2028, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012kNV1eZhygLTdWGQLWBRdL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="offset">430</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2028" cache_read_input_tokens="35041" cache_creation="{'ephemeral_5m_input_tokens': 2028, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ko9Gx6zH1eEAtDnVR8CrLo">
+     1→"""Scratch space utilities for inter-process file passing.
+     2→
+     3→Provides functions for writing temp files to `.erk/scratch/sessions/&lt;session-id&gt;/` in the repo root.
+     4→Each Claude session gets its own subdirectory, making debugging and auditing easier.
+     5→
+     6→Directory structure:
+     7→    .erk/scratch/
+     8→        sessions/&lt;session-id&gt;/     # Session-scoped files (isolated per Claude session)
+     9→        &lt;worktree-scoped files&gt;    # Top-level for worktree-scoped scratch files
+    10→"""
+    11→
+    12→import subprocess
+    13→import time
+    14→import uuid
+    15→from pathlib import Path
+    16→
+    17→
+    18→def _get_repo_root() -&gt; Path:
+    19→    """Get the repository root via git rev-parse.
+    20→
+    21→    Returns:
+    22→        Path to the git repository root.
+    23→
+    24→    Raises:
+    25→        RuntimeError: If not in a git repository or git is not available.
+    26→    """
+    27→    result = subprocess.run(
+    28→        ["git", "rev-parse", "--show-toplevel"],
+    29→        capture_output=True,
+    30→        text=True,
+
+... [107 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013ZzTWAiDtQTKYpAN5jhdXv">
+     1→"""Background worker methods for TUI operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import subprocess
+     7→import tempfile
+     8→from pathlib import Path
+     9→from typing import TYPE_CHECKING
+    10→
+    11→from textual import work
+    12→
+    13→from erk.tui.operations.logic import extract_learn_plan_number, last_output_line
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk.tui.app import ErkDashApp
+    17→
+    18→
+    19→class BackgroundWorkersMixin:
+    20→    """Mixin providing all @work(thread=True) background worker methods.
+    21→
+    22→    Methods access self._provider, self._run_streaming_operation,
+    23→    self._start_operation, self._finish_operation, self._update_operation,
+    24→    self.call_from_thread, self.notify, and self.action_refresh
+    25→    which are provided by ErkDashApp at runtime through inheritance.
+    26→    """
+    27→
+    28→    @work(thread=True)
+    29→    def _close_plan_async(self: ErkDashApp, op_id: str, plan_id: int, plan_url: str) -&gt; None:
+    30→        """Close plan in background thread with toast notifications.
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012kNV1eZhygLTdWGQLWBRdL">
+   430→        Args:
+   431→            op_id: Operation identifier for status bar tracking
+   432→            pr_number: The PR number to dispatch against
+   433→            plan_content: The plan markdown content
+   434→        """
+   435→        temp_path: str | None = None
+   436→        try:
+   437→            with tempfile.NamedTemporaryFile(
+   438→                suffix=".md", delete=False, mode="w", encoding="utf-8"
+   439→            ) as tmp:
+   440→                tmp.write(plan_content)
+   441→                temp_path = tmp.name
+   442→
+   443→            result = self._run_streaming_operation(
+   444→                op_id=op_id,
+   445→                command=[
+   446→                    "erk",
+   447→                    "exec",
+   448→                    "incremental-dispatch",
+   449→                    "--plan-file",
+   450→                    temp_path,
+   451→                    "--pr",
+   452→                    str(pr_number),
+   453→                    "--format",
+   454→                    "json",
+   455→                ],
+   456→            )
+   457→            self.call_from_thread(self._finish_operation, op_id=op_id)
+   458→            if result.success:
+   459→                self.call_from_thread(
+
+... [35 lines omitted] ...
+
+   466→                error_msg = last_output_line(result)
+   469→                    f"Incremental dispatch failed for PR #{pr_number}: {error_msg}",
+   470→                    severity="error",
+  </tool_result>
+  <assistant>Now I understand the full picture. The method `_incremental_dispatch_async` needs a `session_id` parameter to use `write_scratch_file`. Let me check how this method is called to understand the session_id flow:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3384" cache_read_input_tokens="37069" cache_creation="{'ephemeral_5m_input_tokens': 3384, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TR2VhRTQjrrmcPghjPktCd">
+    <param name="pattern">_incremental_dispatch_async</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3384" cache_read_input_tokens="37069" cache_creation="{'ephemeral_5m_input_tokens': 3384, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TR2VhRTQjrrmcPghjPktCd">
+src/erk/tui/actions/palette.py:296:        self._incremental_dispatch_async(op_id, pr_number, plan_markdown)
+src/erk/tui/operations/workers.py:422:    def _incremental_dispatch_async(
+  </tool_result>
+  <tool_use name="Read" id="toolu_015wewprSuVdMAtCr7vFzV3P">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/palette.py</param>
+    <param name="offset">275</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="40453" cache_creation="{'ephemeral_5m_input_tokens': 241, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015wewprSuVdMAtCr7vFzV3P">
+   275→            return
+   276→        op_id = f"dispatch-one-shot-{time.monotonic_ns()}"
+   277→        self._start_operation(op_id=op_id, label="Dispatching one-shot prompt...")
+   278→        self._one_shot_dispatch_async(op_id, prompt_text)
+   279→
+   280→    def _on_incremental_dispatch_result(self: ErkDashApp, plan_markdown: str | None) -&gt; None:
+   281→        """Handle result from the incremental dispatch plan input screen.
+   282→
+   283→        Args:
+   284→            plan_markdown: The user's plan markdown, or None if cancelled/empty
+   285→        """
+   286→        if plan_markdown is None:
+   287→            return
+   288→        pr_number = getattr(self, "_pending_dispatch_pr", None)
+   289→        if pr_number is None:
+   290→            return
+   291→        op_id = f"incremental-dispatch-pr-{pr_number}"
+   292→        self._start_operation(
+   293→            op_id=op_id,
+   294→            label=f"Dispatching incremental plan to PR #{pr_number}...",
+   295→        )
+   296→        self._incremental_dispatch_async(op_id, pr_number, plan_markdown)
+   297→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I need to understand how the TUI gets a session_id. This is a TUI app, not a Claude session — it won't have a Claude session ID. Let me check how other scratch usage works in TUI context, or if there's a simpler approach:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="741" cache_read_input_tokens="40694" cache_creation="{'ephemeral_5m_input_tokens': 741, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_012wptZq7LSkYZs67aXjHxjQ">
+    <param name="pattern">write_scratch_file|get_scratch_dir</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="741" cache_read_input_tokens="40694" cache_creation="{'ephemeral_5m_input_tokens': 741, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01DzKimpoDcLMhkRbmRptjHe">
+    <param name="pattern">session_id</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="741" cache_read_input_tokens="40694" cache_creation="{'ephemeral_5m_input_tokens': 741, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DzKimpoDcLMhkRbmRptjHe">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_012wptZq7LSkYZs67aXjHxjQ">
+src/erk/cli/commands/pr/submit_pipeline.py:61:from erk_shared.scratch.scratch import write_scratch_file
+src/erk/cli/commands/pr/submit_pipeline.py:580:    diff_file = write_scratch_file(
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:43:from erk_shared.scratch.scratch import get_scratch_dir
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:60:    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:78:    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:165:        scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:64:from erk_shared.scratch.scratch import get_scratch_dir
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:570:    scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:587:    scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:605:    return get_scratch_dir(session_id, repo_root=repo_root) / "incremental-plan.marker"
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:622:    return get_scratch_dir(session_id, repo_root=repo_root) / "objective-context.marker"
+src/erk/cli/commands/exec/scripts/objective_plan_setup.py:32:from erk_shared.scratch.scratch import get_scratch_dir
+src/erk/cli/commands/exec/scripts/objective_plan_setup.py:76:    scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/marker.py:26:from erk_shared.scratch.scratch import get_scratch_dir
+src/erk/cli/commands/exec/scripts/marker.py:92:    scratch_dir = get_scratch_dir(resolved_session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/marker.py:125:    scratch_dir = get_scratch_dir(resolved_session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/marker.py:156:    scratch_dir = get_scratch_dir(resolved_session_id, repo_root=repo_root)
+src/erk/cli/commands/exec/scripts/marker.py:187:    scratch_dir = get_scratch_dir(resolved_session_id, repo_root=repo_root)
+src/erk/hooks/decorators.py:32:from erk_shared.scratch.scratch import get_scratch_dir
+src/erk/hooks/decorators.py:100:        scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+  </tool_result>
+  <assistant>The TUI doesn't have a session_id anywhere. Let me check how the `write_scratch_file` works in `submit_pipeline.py` to see the pattern used by CLI commands:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="1398" cache_read_input_tokens="41435" cache_creation="{'ephemeral_5m_input_tokens': 1398, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Y3hJ4PhVC6h9xV8x6kwK8A">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">575</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="1398" cache_read_input_tokens="41435" cache_creation="{'ephemeral_5m_input_tokens': 1398, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y3hJ4PhVC6h9xV8x6kwK8A">
+   575→    diff_content, was_truncated = truncate_diff(pr_diff)
+   576→    if was_truncated and state.debug:
+   577→        click.echo(click.style("   Diff truncated for size", dim=True))
+   578→
+   579→    # Write scratch file
+   580→    diff_file = write_scratch_file(
+   581→        diff_content,
+   582→        session_id=state.session_id,
+   583→        suffix=".diff",
+   584→        prefix="pr-diff-",
+   585→        repo_root=state.repo_root,
+   586→    )
+   587→
+   588→    return dataclasses.replace(state, diff_file=diff_file)
+   589→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The TUI doesn't have a Claude session ID since it's a standalone app, not running in a Claude session. For the TUI context, I need to generate a unique session-like ID. Let me look at the `get_scratch_dir` to understand what it really needs — it just uses session_id as a subdirectory name. I can generate a TUI-specific session ID.
+
+Let me check if the TUI app has any kind of run/instance identifier:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="42833" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Bn6VuyJRrqSMfJH289R6Qn">
+    <param name="pattern">class ErkDashApp</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="42833" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bn6VuyJRrqSMfJH289R6Qn">
+Found 1 file
+src/erk/tui/app.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017jAAWEyj18TiUpc7Dtapoz">
+    <param name="pattern">uuid|session|_id.*=</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/app.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="43303" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017jAAWEyj18TiUpc7Dtapoz">
+517:                    run_id = row.run_url.rsplit("/", 1)[-1]
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <assistant>The TUI has no session concept. The simplest approach: generate a `tui-&lt;uuid&gt;` session ID for scratch storage. This gives us a unique directory per TUI invocation of this worker, matching the scratch storage pattern.
+
+Now let me make the fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="43747" cache_creation="{'ephemeral_5m_input_tokens': 209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01B9TG7vGMhPdmboS9Lt6P8G">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="old_string">import json
+import subprocess
+import tempfile
+from pathlib import Path
+from typing import TYPE_CHECKING</param>
+    <param name="new_string">import json
+import subprocess
+import uuid
+from pathlib import Path
+from typing import TYPE_CHECKING</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="43747" cache_creation="{'ephemeral_5m_input_tokens': 209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B9TG7vGMhPdmboS9Lt6P8G">
+The file /home/runner/work/erk/erk/src/erk/tui/operations/workers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check if `tempfile` is used elsewhere in this file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="43956" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01EoeEdkbWGZQdh9eX7yyfAo">
+    <param name="pattern">tempfile</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="43956" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EoeEdkbWGZQdh9eX7yyfAo">
+437:            with tempfile.NamedTemporaryFile(
+  </tool_result>
+  <assistant>Good — only one usage. Now replace the method body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="44415" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0171vbVR41ZMSfjD1z1Tz1Zm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="old_string">        """Dispatch incremental plan in background thread with toast.
+
+        Writes plan...[truncated 1732 chars]...h(temp_path)
+                if temp_file.exists():
+                    temp_file.unlink()</param>
+    <param name="new_string">        """Dispatch incremental plan in background thread with toast.
+
+        Writes plan...[truncated 1713 chars]...      finally:
+            if scratch_path.exists():
+                scratch_path.unlink()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="44415" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0171vbVR41ZMSfjD1z1Tz1Zm">
+The file /home/runner/work/erk/erk/src/erk/tui/operations/workers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run CI checks on the changed file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1306" cache_read_input_tokens="44591" cache_creation="{'ephemeral_5m_input_tokens': 1306, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01881Ksp9FST71JJks5aqT6t">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run ruff and ty checks</param>
+    <param name="prompt">Run ruff check and ruff format check on src/erk/tui/operations/workers.py, then run ty check on the same file. Report all results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1306" cache_read_input_tokens="44591" cache_creation="{'ephemeral_5m_input_tokens': 1306, 'ephemeral_1h_input_tokens': 0}" output_tokens="142" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01881Ksp9FST71JJks5aqT6t">
+## Results Summary
+
+**ruff check: FAILED** - 1 linting issue found
+- **F401 [*] `pathlib.Path` imported but unused** at `/home/runner/work/erk/erk/src/erk/tui/operations/workers.py:8:21`
+  - The import is fixable with `--fix` option
+
+**ruff format check: PASSED** - File is already properly formatted
+
+**ty check: PASSED** - All type checks passed
+
+The only issue is the unused import of `pathlib.Path` on line 8 of the workers.py file, which is a fixable violation.
+agentId: af2c856 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Need to check if `Path` is used elsewhere in the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="45897" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015cd1GrGL9W9oSsz7bR9Fuv">
+    <param name="pattern">\bPath\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="45897" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015cd1GrGL9W9oSsz7bR9Fuv">
+8:from pathlib import Path
+  </tool_result>
+  <assistant>`Path` is no longer used (we removed the `Path(temp_path)` usage). Remove it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="46220" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013HbzW7H9kSycMtmST6gFW5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="old_string">import json
+import subprocess
+import uuid
+from pathlib import Path
+from typing import TYPE_CHECKING</param>
+    <param name="new_string">import json
+import subprocess
+import uuid
+from typing import TYPE_CHECKING</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="46220" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013HbzW7H9kSycMtmST6gFW5">
+The file /home/runner/work/erk/erk/src/erk/tui/operations/workers.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01U5fimwEfQzoW7fqkWZvSQm">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Verify ruff and ty pass</param>
+    <param name="prompt">Run ruff check and ty check on src/erk/tui/operations/workers.py. Report results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="46585" cache_creation="{'ephemeral_5m_input_tokens': 221, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U5fimwEfQzoW7fqkWZvSQm">
+**Results:**
+
+Both tools passed successfully on `/home/runner/work/erk/erk/src/erk/tui/operations/workers.py`:
+
+- **ruff check**: All checks passed!
+- **ty check**: All checks passed!
+
+No linting violations or type errors detected in this file.
+agentId: ac91005 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+All checks pass. Now commit and resolve the thread.
+
+#### Step 3: Commit the Batch</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="420" cache_read_input_tokens="46806" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01QDBoGFYnrWzTHA6y5ByCxo">
+    <param name="command">git add src/erk/tui/operations/workers.py &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+Address PR revie...[truncated 19 chars]...ile.NamedTemporaryFile with .erk/scratch storage for incremental dispatch plan file
+EOF
+)"</param>
+    <param name="description">Commit batch 1 changes</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="420" cache_read_input_tokens="46806" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QDBoGFYnrWzTHA6y5ByCxo">
+[plnd/O8470-tui-incremental-disp-03-07-0151 c948309f5] Address PR review comments (batch 1/1)
+ 1 file changed, 15 insertions(+), 16 deletions(-)
+  </tool_result>
+  <assistant>#### Step 4: Resolve Thread</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="47226" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_014DTwM4EaKLeBLzdmxwri7C">
+    <param name="todos">[{'content': 'Phase 2: Display batched execution plan', 'status': 'completed', 'activeForm...[truncated 432 chars]... Upload address session', 'status': 'pending', 'activeForm': 'Uploading address session'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="47226" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014DTwM4EaKLeBLzdmxwri7C">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01J6CRkvkTkvsjNdqrxGbewT">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5yuHTO", "comment": "Fixed in c948309 — replaced temp...[truncated 81 chars]... ID (tui-&lt;uuid&gt;) for .erk/scratch/sessions/ storage."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Resolve review thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="47469" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="173" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J6CRkvkTkvsjNdqrxGbewT">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5yuHTO",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>## Batch 1 Complete
+
+Addressed:
+- `src/erk/tui/operations/workers.py:430` — Replaced `tempfile.NamedTemporaryFile` with `.erk/scratch` storage via `write_scratch_file`
+
+Committed: `c948309` "Address PR review comments (batch 1/1)"
+
+Resolved threads: 1
+Remaining batches: 0
+
+### Phase 4: Final Verification</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="47753" cache_creation="{'ephemeral_5m_input_tokens': 249, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01MKtjiX6g7SGA5aqVTGsYTu">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Verify PR feedback resolved</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 8887
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="47753" cache_creation="{'ephemeral_5m_input_tokens': 249, 'ephemeral_1h_input_tokens': 0}" output_tokens="259" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MKtjiX6g7SGA5aqVTGsYTu">
+Perfect. Now I'll classify all the PR feedback according to the Comment Classification Model:
+
+```json
+{
+  "success": true,
+  "pr_number": 8887,
+  "pr_title": "Wire incremental dispatch into TUI (Objective #8470, Phase 2)",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8887",
+  "actionable_threads": [
+    {
+      "thread_id": "4015237089",
+      "type": "discussion",
+      "path": "src/erk/tui/operations/workers.py",
+      "line": 422,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Add Layer 4 business logic tests for _incremental_dispatch_async method (64 lines)",
+      "complexity": "cross_cutting",
+      "original_comment": "New async method `_incremental_dispatch_async` (64 lines) lacks Layer 4 business logic tests. Erk requires Layer 4 tests for all feature code. This method implements the core incremental dispatch flow including tempfile I/O, subprocess invocation, error handling, and thread-safe notifications."
+    },
+    {
+      "thread_id": "4015238066",
+      "type": "discussion",
+      "path": "src/erk/tui/operations/workers.py",
+      "line": 430,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Move tempfile usage from /tmp to .erk/scratch for AI workflow files",
+
+... [30 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>The verification classifier is picking up discussion comments (not review threads) — it shows 2 items but one is the already-resolved tempfile thread (appearing as a discussion comment artifact), and one is a request for tests. Let me check the actual unresolved review threads directly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="916" cache_read_input_tokens="48002" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RthxcwVJUhN1WH6Wyeu67b">
+    <param name="command">erk exec get-pr-review-comments --pr 8887 2&gt;&amp;1</param>
+    <param name="description">Check unresolved review threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="916" cache_read_input_tokens="48002" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01KwgHaKg2bXuWtGW3jofGHr">
+    <param name="command">erk exec get-pr-discussion-comments --pr 8887 2&gt;&amp;1</param>
+    <param name="description">Check discussion comments</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="916" cache_read_input_tokens="48002" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RthxcwVJUhN1WH6Wyeu67b">
+{
+  "success": true,
+  "pr_number": 8887,
+  "pr_url": "https://github.com/dagster-io/erk/pull/8887",
+  "pr_title": "Wire incremental dispatch into TUI (Objective #8470, Phase 2)",
+  "threads": []
+}
+  </tool_result>
+</session>
