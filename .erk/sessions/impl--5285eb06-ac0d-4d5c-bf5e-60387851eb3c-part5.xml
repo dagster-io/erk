@@ -1,0 +1,1100 @@
+<session>
+  <meta source="agent-a766e3d" />
+  <meta branch="plnd/refac-cmux-mock-to-fake-03-07-1844" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the test context creation patterns:
+1. Read `packages/erk-shared/src/erk_shared/context/testing.py` - this is the `context_for_test` function referenced in ErkContext.for_test()
+2. Read `tests/test_utils/plan_helpers.py` to see how PRDetails are constructed (especially around line 65)
+3. Look for how `require_github` and `require_context` are imported in exec scripts - grep for these patterns
+4. Check how FakeLocalGitHub is used with pr_details parameter in tests
+
+Return all the relevant code.</user>
+  <assistant>I'll help you understand the test context creation patterns. Let me start by checking the documentation, then explore the relevant code files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RnZNkrAScwshXtK2rQPvnm">
+    <param name="pattern">context_for_test|test context|testing patterns</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Nt1JaKEjvJgEJKSFPc6Qsq">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TktUhd4ukQEUMkD9zS6bpT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nt1JaKEjvJgEJKSFPc6Qsq">
+     1→"""Test factories for creating ErkContext instances.
+     2→
+     3→This module provides factory functions for creating test contexts with
+     4→fake implementations. These are used by both erk and erk-kits tests.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→from erk_shared.context.context import ErkContext
+    13→from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk.artifacts.paths import ErkPackageInfo
+    17→from erk_shared.core.fakes import (
+    18→    FakeCodespaceRegistry,
+    19→    FakeObjectiveListService,
+    20→    FakePlanListService,
+    21→    FakePromptExecutor,
+    22→    FakeScriptWriter,
+    23→)
+    24→from erk_shared.core.prompt_executor import PromptExecutor
+    25→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    26→from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+    27→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    28→from erk_shared.gateway.codespace.abc import Codespace
+    29→from erk_shared.gateway.git.abc import Git
+    30→from erk_shared.gateway.github.abc import LocalGitHub
+
+... [198 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01TktUhd4ukQEUMkD9zS6bpT">
+     1→"""Helpers for creating plan stores with Plan objects in tests.
+     2→
+     3→This module provides utilities for tests that need to set up plan state.
+     4→It converts Plan objects to PlannedPRBackend backed by FakeLocalGitHub.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     8→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    11→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    12→from erk_shared.gateway.time.fake import FakeTime
+    13→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    14→from erk_shared.plan_store.planned_pr_lifecycle import (
+    15→    DETAILS_CLOSE,
+    16→    DETAILS_OPEN,
+    17→)
+    18→from erk_shared.plan_store.types import Plan, PlanState
+    19→
+    20→_PLAN_HEADER_END_MARKER = "&lt;!-- /erk:metadata-block:plan-header --&gt;"
+    21→
+    22→
+    23→def _plan_to_pr_details(plan: Plan) -&gt; PRDetails:
+    24→    """Convert a Plan to PRDetails for FakeLocalGitHub.
+    25→
+    26→    Handles two body formats:
+    27→    1. Body with plan-header metadata block: reformats into PR body format
+    28→       (metadata block + separator + plan content)
+    29→    2. Plain body without metadata: uses body directly as PR body
+    30→
+
+... [240 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RnZNkrAScwshXtK2rQPvnm">
+Found 27 files
+docs/learned/tui/architecture.md
+docs/learned/textual/quirks.md
+docs/learned/testing/testing.md
+docs/learned/testing/time-injection-patterns.md
+docs/learned/testing/tripwires.md
+docs/learned/textual/background-workers.md
+docs/learned/testing/hook-testing.md
+docs/learned/testing/index.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/rebase-conflicts.md
+docs/learned/testing/subprocess-testing.md
+docs/learned/testing/backend-testing-composition.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/context-builder-signatures.md
+docs/learned/testing/dual-backend-testing.md
+docs/learned/testing/env-overrides-pattern.md
+docs/learned/testing/environment-variable-isolation.md
+docs/learned/testing/exec-script-batch-testing.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/testing/fake-git-divergence.md
+docs/learned/testing/fake-github-api-reference.md
+docs/learned/planning/planned-pr-backend.md
+docs/learned/index.md
+docs/learned/glossary.md
+docs/learned/erk-dev/testing.md
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/test-context-composition.md
+  </tool_result>
+  <assistant>Now let me search for patterns of how `require_github` and `require_context` are used, and how FakeLocalGitHub is used with pr_details:</assistant>
+  <usage input_tokens="7820" cache_creation_input_tokens="3475" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 3475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013skJSB97uSD7JLdPu1BdBq">
+    <param name="pattern">require_github|require_context</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="7820" cache_creation_input_tokens="3475" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 3475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018azh9xN1o2EqjNWdc5Pa2Q">
+    <param name="pattern">FakeLocalGitHub\(.*pr_details</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="7820" cache_creation_input_tokens="3475" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 3475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01174n4AvqUr7QEbAThTab9d">
+    <param name="pattern">from.*require_github|from.*require_context|import.*require_github|import.*require_context</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="7820" cache_creation_input_tokens="3475" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 3475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013skJSB97uSD7JLdPu1BdBq">
+Found 20 files limit: 20, offset: 0
+tests/unit/context/test_require_context.py
+src/erk/cli/commands/exec/scripts/set_local_review_marker.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py
+src/erk/cli/commands/exec/scripts/setup_impl.py
+src/erk/cli/commands/exec/scripts/update_issue_body.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py
+src/erk/cli/commands/exec/scripts/register_one_shot_plan.py
+src/erk/cli/commands/exec/scripts/reply_to_discussion_comment.py
+src/erk/cli/commands/exec/scripts/resolve_review_thread.py
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+src/erk/cli/commands/exec/scripts/objective_update_after_land.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py
+src/erk/cli/commands/exec/scripts/post_pr_inline_comment.py
+  </tool_result>
+  <tool_result tool="toolu_018azh9xN1o2EqjNWdc5Pa2Q">
+tests/test_utils/plan_helpers.py:262:    fake_github = FakeLocalGitHub(pr_details=pr_details, issues_gateway=fake_issues)
+tests/commands/pr/test_teleport.py:47:        github = FakeLocalGitHub(pr_details={})
+tests/commands/pr/test_teleport.py:64:        github = FakeLocalGitHub(pr_details={123: pr})
+tests/commands/pr/test_teleport.py:81:        github = FakeLocalGitHub(pr_details={123: pr})
+tests/commands/pr/test_teleport.py:102:        github = FakeLocalGitHub(pr_details={123: pr})
+tests/commands/pr/test_teleport.py:126:        github = FakeLocalGitHub(pr_details={123: pr})
+tests/commands/pr/test_teleport.py:147:        github = FakeLocalGitHub(pr_details={123: pr})
+tests/commands/pr/test_teleport.py:172:        github = FakeLocalGitHub(pr_details={123: pr})
+tests/commands/pr/test_teleport.py:219:        github = FakeLocalGitHub(pr_details={123: pr})
+tests/commands/pr/test_teleport.py:249:        github = FakeLocalGitHub(pr_details={123: pr})
+tests/commands/pr/test_teleport.py:311:        github = FakeLocalGitHub(pr_details={200: pr})
+tests/commands/pr/test_teleport.py:343:        github = FakeLocalGitHub(pr_details={201: pr})
+tests/commands/pr/test_teleport.py:369:        github = FakeLocalGitHub(pr_details={202: pr})
+tests/commands/pr/test_prepare.py:70:        github = FakeLocalGitHub(pr_details={300: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:67:        github = FakeLocalGitHub(pr_details={100: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:114:        github = FakeLocalGitHub(pr_details={101: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:156:        github = FakeLocalGitHub(pr_details={102: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:212:        github = FakeLocalGitHub(pr_details={103: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:248:        github = FakeLocalGitHub(pr_details={105: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:309:        github = FakeLocalGitHub(pr_details={110: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:340:        github = FakeLocalGitHub(pr_details={111: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:378:        github = FakeLocalGitHub(pr_details={112: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:413:        github = FakeLocalGitHub(pr_details={104: pr_details})
+tests/commands/pr/test_checkout_graphite_linking.py:457:        github = FakeLocalGitHub(pr_details={120: pr_details})
+tests/commands/pr/test_checkout.py:69:        github = FakeLocalGitHub(pr_details={123: pr_details})
+tests/commands/pr/test_checkout.py:108:        github = FakeLocalGitHub(pr_details={456: pr_details})
+tests/commands/pr/test_checkout.py:144:        github = FakeLocalGitHub(pr_details={789: pr_details})
+tests/commands/pr/test_checkout.py:179:        github = FakeLocalGitHub(pr_details={111: pr_details})
+tests/commands/pr/test_checkout.py:211:        github = FakeLocalGitHub(pr_details={})  # Empty - PR 999 not found
+tests/commands/pr/test_checkout.py:235:        github = FakeLocalGitHub(pr_details={222: pr_details})
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01174n4AvqUr7QEbAThTab9d">
+Found 20 files limit: 20, offset: 0
+tests/unit/context/test_require_context.py
+src/erk/cli/commands/exec/scripts/set_local_review_marker.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py
+src/erk/cli/commands/exec/scripts/resolve_review_thread.py
+src/erk/cli/commands/exec/scripts/resolve_review_threads.py
+src/erk/cli/commands/exec/scripts/objective_update_after_land.py
+src/erk/cli/commands/exec/scripts/post_or_update_pr_summary.py
+src/erk/cli/commands/exec/scripts/post_pr_inline_comment.py
+src/erk/cli/commands/exec/scripts/get_pr_context.py
+src/erk/cli/commands/exec/scripts/get_pr_review_comments.py
+src/erk/cli/commands/exec/scripts/handle_no_changes.py
+src/erk/cli/commands/exec/scripts/land_execute.py
+src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py
+src/erk/cli/commands/exec/scripts/add_remote_execution_note.py
+src/erk/cli/commands/exec/scripts/ci_fetch_summaries.py
+src/erk/cli/commands/exec/scripts/ci_verify_autofix.py
+src/erk/cli/commands/exec/scripts/dash_data.py
+  </tool_result>
+  <assistant>Let me read some of the exec scripts to see how `require_github` and `require_context` are used:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10412" cache_read_input_tokens="18659" cache_creation="{'ephemeral_5m_input_tokens': 10412, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015HP9tBvzbJRDpGBMuHqy5N">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/set_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10412" cache_read_input_tokens="18659" cache_creation="{'ephemeral_5m_input_tokens': 10412, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SUEv6CTsmZSaT72vaHvbzr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10412" cache_read_input_tokens="18659" cache_creation="{'ephemeral_5m_input_tokens': 10412, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AHoQfiQsGCnDdY67e37eTr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/context/test_require_context.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10412" cache_read_input_tokens="18659" cache_creation="{'ephemeral_5m_input_tokens': 10412, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015HP9tBvzbJRDpGBMuHqy5N">
+     1→"""Set PR title and body from agent-provided values.
+     2→
+     3→Takes --title and --body (or --body-file) and updates the PR on GitHub,
+     4→preserving existing header, footer, and metadata. This command does NOT
+     5→call Claude — it applies values already generated by the calling agent.
+     6→
+     7→Usage:
+     8→    erk exec set-pr-description --title "Fix auth bug" --body "Fixes the auth issue..."
+     9→    erk exec set-pr-description --title "Fix auth bug" --body-file /tmp/body.md
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (no PR, linkage mismatch)
+    14→"""
+    15→
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    discover_branch_context,
+    23→)
+    24→from erk.core.plan_context_provider import PlanContextProvider
+    25→from erk_shared.context.helpers import require_context
+    26→from erk_shared.gateway.github.types import BodyText, PRNotFound
+    27→
+    28→
+    29→@click.command(name="set-pr-description")
+    30→@click.option("--title", required=True, help="PR title")
+
+... [72 lines omitted] ...
+
+    63→        raise click.ClickException(
+  </tool_result>
+  <tool_result tool="toolu_01SUEv6CTsmZSaT72vaHvbzr">
+     1→"""Push branch and create/find PR, outputting JSON.
+     2→
+     3→Runs the first three steps of the submit pipeline (prepare_state,
+     4→commit_wip, push_and_create_pr) with quiet=True so no progress output
+     5→pollutes stdout. On success, outputs structured JSON with branch, PR,
+     6→and Graphite info for agent consumption.
+     7→
+     8→Usage:
+     9→    erk exec push-and-create-pr
+    10→    erk exec push-and-create-pr --force
+    11→    erk exec push-and-create-pr --no-graphite
+    12→
+    13→Exit Codes:
+    14→    0: Success (JSON output on stdout)
+    15→    1: Error (JSON error output on stdout)
+    16→"""
+    17→
+    18→import json
+    19→import sys
+    20→
+    21→import click
+    22→
+    23→from erk.cli.commands.pr.submit_pipeline import (
+    24→    SubmitError,
+    25→    SubmitState,
+    26→    make_initial_state,
+    27→    run_push_and_create_pipeline,
+    28→)
+    29→from erk_shared.context.helpers import require_context
+    30→
+
+... [66 lines omitted] ...
+
+    65→    if isinstance(result, SubmitError):
+    66→        error_output = {
+    68→            "error": {
+    70→                "error_type": result.error_type,
+    74→        click.echo(json.dumps(error_output, indent=2))
+  </tool_result>
+  <tool_result tool="toolu_01AHoQfiQsGCnDdY67e37eTr">
+     1→"""Tests for require_context helper function."""
+     2→
+     3→from typing import Any
+     4→
+     5→import click
+     6→import pytest
+     7→
+     8→from erk_shared.context.helpers import require_context
+     9→from erk_shared.context.testing import context_for_test
+    10→
+    11→
+    12→def test_require_context_returns_context_when_valid() -&gt; None:
+    13→    """Test require_context returns ErkContext when ctx.obj is valid."""
+    14→    # Arrange: Create valid ErkContext and Click context
+    15→    erk_ctx = context_for_test()
+    16→    click_ctx = click.Context(click.Command("test"))
+    17→    click_ctx.obj = erk_ctx
+    18→
+    19→    # Act
+    20→    result = require_context(click_ctx)
+    21→
+    22→    # Assert
+    23→    assert result is erk_ctx
+    24→
+    25→
+    26→def test_require_context_exits_when_ctx_obj_is_none(capsys: Any) -&gt; None:
+    27→    """Test require_context exits with code 1 when ctx.obj is None."""
+    28→    # Arrange: Create Click context with obj = None
+    29→    click_ctx = click.Context(click.Command("test"))
+    30→    click_ctx.obj = None
+
+... [33 lines omitted] ...
+
+    38→    # Verify error message was printed to stderr
+    40→    assert "Error: Context not initialized" in captured.err
+    55→    # Verify error message was printed to stderr
+    57→    assert "Error: Context must be ErkContext" in captured.err
+  </tool_result>
+  <assistant>Now let me check for more examples of how `require_github` is used and look at the helper definitions:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5837" cache_read_input_tokens="29071" cache_creation="{'ephemeral_5m_input_tokens': 5837, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CmyUzkb97tFrhv4zzg45da">
+    <param name="pattern">def require_github|def require_context|def require_cwd</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5837" cache_read_input_tokens="29071" cache_creation="{'ephemeral_5m_input_tokens': 5837, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XfTfzkmK4Edgk9vZ3Q7R72">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5837" cache_read_input_tokens="29071" cache_creation="{'ephemeral_5m_input_tokens': 5837, 'ephemeral_1h_input_tokens': 0}" output_tokens="197" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XfTfzkmK4Edgk9vZ3Q7R72">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import LocalGitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.plan_store.backend import PlanBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get PlanBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <tool_result tool="toolu_01CmyUzkb97tFrhv4zzg45da">
+Found 1 file
+packages/erk-shared/src/erk_shared/context/helpers.py
+  </tool_result>
+  <assistant>Perfect! Now let me look at a couple of test examples to show how these patterns are used together:</assistant>
+  <usage input_tokens="5689" cache_creation_input_tokens="398" cache_read_input_tokens="34908" cache_creation="{'ephemeral_5m_input_tokens': 398, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017AAuQx5eY5gRMa5RG7Yiu7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="5689" cache_creation_input_tokens="398" cache_read_input_tokens="34908" cache_creation="{'ephemeral_5m_input_tokens': 398, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J5VXk2Pqgd8L4H8Qt3M8MG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="5689" cache_creation_input_tokens="398" cache_read_input_tokens="34908" cache_creation="{'ephemeral_5m_input_tokens': 398, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017AAuQx5eY5gRMa5RG7Yiu7">
+     1→"""Tests for erk pr checkout command."""
+     2→
+     3→import os
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.pr import pr_group
+    10→from erk_shared.gateway.git.abc import RebaseResult, WorktreeInfo
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    13→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→
+    17→
+    18→def _make_pr_details(
+    19→    number: int,
+    20→    head_ref_name: str,
+    21→    is_cross_repository: bool,
+    22→    state: str,
+    23→    base_ref_name: str = "main",
+    24→) -&gt; PRDetails:
+    25→    """Create a PRDetails for testing."""
+    26→    return PRDetails(
+    27→        number=number,
+    28→        url=f"https://github.com/owner/repo/pull/{number}",
+    29→        title=f"PR #{number}",
+    30→        body="",
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01J5VXk2Pqgd8L4H8Qt3M8MG">
+     1→"""Tests for erk pr teleport command."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.commands.pr import pr_group
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→from erk_shared.gateway.github.types import PRDetails
+    12→from erk_shared.gateway.graphite.fake import FakeGraphite
+    13→from erk_shared.gateway.graphite.types import BranchMetadata
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→
+    17→
+    18→def _make_pr_details(
+    19→    number: int,
+    20→    head_ref_name: str,
+    21→    *,
+    22→    is_cross_repository: bool = False,
+    23→    state: str = "OPEN",
+    24→    base_ref_name: str = "main",
+    25→) -&gt; PRDetails:
+    26→    return PRDetails(
+    27→        number=number,
+    28→        url=f"https://github.com/owner/repo/pull/{number}",
+    29→        title=f"PR #{number}",
+    30→        body="",
+
+... [75 lines omitted] ...
+
+    44→    """Teleport errors when PR doesn't exist."""
+    59→def test_teleport_cross_repo_errors() -&gt; None:
+  </tool_result>
+  <assistant>Now let me look at the context builder helper that's referenced:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11233" cache_read_input_tokens="35306" cache_creation="{'ephemeral_5m_input_tokens': 11233, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WFeWEf15ewSFVPFhuboPmj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11233" cache_read_input_tokens="35306" cache_creation="{'ephemeral_5m_input_tokens': 11233, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R1dne1dyTWBzSznBUJ36gw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/env_helpers.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11233" cache_read_input_tokens="35306" cache_creation="{'ephemeral_5m_input_tokens': 11233, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WFeWEf15ewSFVPFhuboPmj">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <tool_result tool="toolu_01R1dne1dyTWBzSznBUJ36gw">
+     1→"""Centralized test environment helpers for simulating erk scenarios.
+     2→
+     3→This module provides helpers for setting up realistic erk test environments
+     4→with Click's CliRunner. It provides two patterns:
+     5→
+     6→1. erk_isolated_fs_env(): Filesystem-based (uses isolated_filesystem(),
+     7→   creates real directories)
+     8→2. erk_inmem_env(): In-memory (uses fakes only, no filesystem I/O)
+     9→
+    10→Key Components:
+    11→    - ErkIsolatedFsEnv: Helper class for filesystem-based testing
+    12→    - ErkInMemEnv: Helper class for in-memory testing
+    13→    - erk_isolated_fs_env(): Context manager for filesystem-based tests
+    14→    - erk_inmem_env(): Context manager for in-memory tests
+    15→
+    16→Usage Pattern:
+    17→
+    18→    Before (raw isolated_filesystem pattern - 20-30 lines per test):
+    19→    ```python
+    20→    def test_something() -&gt; None:
+    21→        runner = CliRunner()
+    22→        with runner.isolated_filesystem():
+    23→            cwd = Path.cwd()
+    24→            git_dir = cwd / ".git"
+    25→            git_dir.mkdir()
+    26→            erk_root = cwd / "erks"
+    27→            erk_root.mkdir()
+    28→
+    29→            git = FakeGit(git_common_dirs={cwd: git_dir})
+    30→            global_config = GlobalConfig.test(...)
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me compile the comprehensive report.
+
+## Test Context Creation Patterns - Complete Reference
+
+I've gathered all the relevant code showing test context creation patterns. Here's the complete picture:
+
+---
+
+### 1. Core Context Factory: `context_for_test()`
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py` (lines 42-222)
+
+This is the foundational factory function that creates `ErkContext` instances with fake implementations:
+
+```python
+def context_for_test(
+    *,
+    github_issues: GitHubIssues | None = None,
+    git: Git | None = None,
+    github: LocalGitHub | None = None,
+    github_admin: GitHubAdmin | None = None,
+    graphite: Graphite | None = None,
+    claude_installation: ClaudeInstallation | None = None,
+    agent_launcher: AgentLauncher | None = None,
+    agent_docs: AgentDocs | None = None,
+    prompt_executor: PromptExecutor | None = None,
+    codespace: Codespace | None = None,
+    plan_store: PlanBackend | None = None,
+    local_config: LoadedConfig | None = None,
+    remote_github: RemoteGitHub | None = None,
+    debug: bool = False,
+    repo_root: Path | None = None,
+    cwd: Path | None = None,
+    repo_info: RepoInfo | None = None,
+    package_info: ErkPackageInfo | None = None,
+) -&gt; ErkContext:
+```
+
+**Key features:**
+- All parameters are keyword-only
+- Sensible defaults: if `github_issues` is None, creates `FakeGitHubIssues()`
+- Creates default fakes for: `FakeGit`, `FakeLocalGitHub`, `FakeGraphite`, `FakeClaudeInstallation`, `FakePromptExecutor`, `FakeAgentLauncher`, `FakeAgentDocs`, `FakeCodespace`
+- Plan store defaults to `PlannedPRBackend` with fake implementations
+- Returns fully initialized `ErkContext`
+
+**Default paths:**
+- `repo_root`: defaults to `Path("/fake/repo")`
+- `cwd`: defaults to `Path("/fake/worktree")`
+
+---
+
+### 2. Plan Context Creation: `plan_helpers.py`
+
+**Location:** `/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py` (lines 1-265)
+
+This helper converts test `Plan` objects to `PRDetails` for use with `FakeLocalGitHub`:
+
+#### `_plan_to_pr_details()` (lines 23-80)
+Converts a `Plan` to `PRDetails`:
+
+```python
+def _plan_to_pr_details(plan: Plan) -&gt; PRDetails:
+    """Convert a Plan to PRDetails for FakeLocalGitHub.
+    
+    Handles two body formats:
+    1. Body with plan-header metadata block: reformats into PR body format
+    2. Plain body without metadata: uses body directly as PR body
+    """
+    state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
+    branch_name = f"plan-{plan.plan_identifier}"
+    
+    # Build PR body with metadata and plan content
+    body = plan.body
+    end_marker_idx = body.find(_PLAN_HEADER_END_MARKER)
+    if end_marker_idx != -1:
+        # Has metadata block - split and reformat
+        metadata_part = body[: end_marker_idx + len(_PLAN_HEADER_END_MARKER)]
+        content_part = body[end_marker_idx + len(_PLAN_HEADER_END_MARKER) :].strip()
+        details_section = DETAILS_OPEN + content_part + DETAILS_CLOSE
+        pr_body = details_section + "\n\n" + metadata_part
+    else:
+        # Plain body - synthesize metadata header
+        metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
+        details_section = DETAILS_OPEN + body + DETAILS_CLOSE
+        pr_body = details_section + "\n\n" + metadata_body
+
+    return PRDetails(
+        number=int(plan.plan_identifier),
+        url=plan.url,
+        title=plan.title,
+        body=pr_body,
+        state=state,
+        is_draft=True,
+        base_ref_name=base_ref if isinstance(raw_base_ref, str) else "main",
+        head_ref_name=branch_name,
+        is_cross_repository=False,
+        mergeable="UNKNOWN",
+        merge_state_status="UNKNOWN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=labels,
+    )
+```
+
+#### `create_plan_store_with_plans()` (lines 83-131)
+Creates `PlannedPRBackend` backed by `FakeLocalGitHub`:
+
+```python
+def create_plan_store_with_plans(
+    plans: dict[str, Plan],
+) -&gt; tuple[PlannedPRBackend, FakeLocalGitHub]:
+    """Create PlannedPRBackend backed by FakeLocalGitHub."""
+    pr_details: dict[int, PRDetails] = {}
+    prs: dict[str, PullRequestInfo] = {}
+    pr_labels: dict[int, set[str]] = {}
+
+    for plan_id, plan in plans.items():
+        details = _plan_to_pr_details(plan)
+        pr_number = int(plan_id)
+        branch_name = details.head_ref_name
+
+        pr_details[pr_number] = details
+        prs[branch_name] = PullRequestInfo(
+            number=pr_number,
+            state=details.state,
+            url=details.url,
+            is_draft=True,
+            title=details.title,
+            checks_passing=None,
+            owner=details.owner,
+            repo=details.repo,
+            head_branch=branch_name,
+        )
+        pr_labels[pr_number] = set(details.labels)
+
+    fake_github = FakeLocalGitHub(
+        pr_details=pr_details,
+        prs=prs,
+    )
+    # Set labels after construction (not a constructor param)
+    for pr_number, labels in pr_labels.items():
+        fake_github.set_pr_labels(pr_number, labels)
+
+    return PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
+```
+
+#### `format_plan_header_body_for_test()` (lines 134-191)
+Creates plan header metadata with sensible defaults:
+
+```python
+def format_plan_header_body_for_test(
+    *,
+    created_at: str = "2024-01-15T10:30:00Z",
+    created_by: str = "test-user",
+    worktree_name: str | None = None,
+    branch_name: str | None = None,
+    # ... 15+ other optional fields with defaults
+) -&gt; str:
+    """Create plan header body for testing with sensible defaults."""
+```
+
+---
+
+### 3. Context Helper Functions
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py` (lines 1-479)
+
+These functions provide LBYL (Look Before You Leap) access to context dependencies:
+
+#### `require_context()` (lines 31-61)
+```python
+def require_context(ctx: click.Context) -&gt; ErkContext:
+    """Get the full ErkContext, exiting with error if not initialized.
+    
+    Uses LBYL pattern to check context before accessing.
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    if not isinstance(ctx.obj, ErkContext):
+        click.echo("Error: Context must be ErkContext", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj
+```
+
+#### `require_github()` (lines 189-215)
+```python
+def require_github(ctx: click.Context) -&gt; LocalGitHub:
+    """Get GitHub from context, exiting with error if not initialized.
+    
+    Uses LBYL pattern to check context before accessing.
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.github
+```
+
+**Other available helpers:**
+- `require_cwd(ctx)` → `Path` (current working directory)
+- `require_repo_root(ctx)` → `Path` (repository root)
+- `require_git(ctx)` → `Git` (Git operations)
+- `require_issues(ctx)` → `GitHubIssues`
+- `require_claude_installation(ctx)` → `ClaudeInstallation`
+- `require_plan_backend(ctx)` → `PlanBackend`
+- `require_time(ctx)` → `Time`
+- `get_current_branch(ctx)` → `str | None` (convenience wrapper)
+
+---
+
+### 4. Exec Script Pattern
+
+**Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/set_pr_description.py` (lines 1-97)
+
+All exec scripts follow this pattern:
+
+```python
+from erk_shared.context.helpers import require_context
+
+@click.command(name="set-pr-description")
+@click.option("--title", required=True, help="PR title")
+@click.pass_context
+def set_pr_description(
+    ctx: click.Context,
+    *,
+    title: str,
+    body_text: str | None,
+    body_file: str | None,
+) -&gt; None:
+    """Update PR title and body with agent-provided values."""
+    # Get full context using require_context
+    erk_ctx = require_context(ctx)
+    cwd = erk_ctx.cwd
+
+    # Or use specific helpers:
+    # github = require_github(ctx)
+    # repo_root = require_repo_root(ctx)
+```
+
+**Example with multiple helpers:** (`push_and_create_pr.py`, lines 1-91)
+
+```python
+@click.command(name="push-and-create-pr")
+@click.option("-f", "--force", is_flag=True, help="Force push")
+@click.pass_context
+def push_and_create_pr(
+    ctx: click.Context,
+    *,
+    force: bool,
+    no_graphite: bool,
+    session_id: str | None,
+) -&gt; None:
+    """Push branch and create/find PR, outputting JSON."""
+    erk_ctx = require_context(ctx)  # Get full context
+    cwd = erk_ctx.cwd
+    # ... use erk_ctx to access all dependencies
+```
+
+---
+
+### 5. Test Usage Patterns
+
+**Location:** `/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py` (lines 1-100+)
+
+#### Creating PRDetails for FakeLocalGitHub:
+
+```python
+def _make_pr_details(
+    number: int,
+    head_ref_name: str,
+    is_cross_repository: bool,
+    state: str,
+    base_ref_name: str = "main",
+) -&gt; PRDetails:
+    """Create a PRDetails for testing."""
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        title=f"PR #{number}",
+        body="",
+        state=state,
+        is_draft=False,
+        base_ref_name=base_ref_name,
+        head_ref_name=head_ref_name,
+        is_cross_repository=is_cross_repository,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+    )
+```
+
+#### Using FakeLocalGitHub with pr_details:
+
+```python
+def test_pr_checkout_same_repo_branch_exists_on_remote() -&gt; None:
+    """Test checking out a same-repo PR where branch exists on remote."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+        
+        # Create PR details
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        
+        # Create FakeLocalGitHub with pr_details dictionary
+        github = FakeLocalGitHub(pr_details={123: pr_details})
+        
+        # Create Git fake
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        
+        # Build context
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        # Test the command
+        result = runner.invoke(pr_group, ["checkout", "123"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Created worktree for PR #123" in result.output
+```
+
+#### In test_teleport.py (similar pattern):
+
+```python
+def test_teleport_cross_repo_errors() -&gt; None:
+    """Teleport rejects cross-repository (fork) PRs."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        # Create PRDetails with cross_repository=True
+        pr = _make_pr_details(123, "feature", is_cross_repository=True)
+        
+        # Pass to FakeLocalGitHub via pr_details parameter
+        github = FakeLocalGitHub(pr_details={123: pr})
+        
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(pr_group, ["teleport", "123"], obj=ctx)
+        
+        assert result.exit_code == 1
+        assert "cross-repository" in result.output
+```
+
+---
+
+### 6. Context Builder Helpers
+
+**Location:** `/home/runner/work/erk/erk/tests/test_utils/context_builders.py` (lines 1-148)
+
+High-level builders that encapsulate common setup patterns:
+
+#### `build_workspace_test_context()` (lines 20-81)
+```python
+def build_workspace_test_context(
+    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    *,
+    dry_run: bool = False,
+    use_graphite: bool = False,
+    current_branch: str | None = None,
+    **kwargs,
+) -&gt; ErkContext:
+    """Build ErkContext for workspace command tests.
+    
+    Automatically creates default FakeGit if not provided, configures
+    remote URLs, and delegates to env.build_context() for final setup.
+    
+    Can be customized with:
+    - git=custom_git
+    - github=custom_github
+    - graphite=custom_graphite
+    """
+    # Only create default git if not provided
+    if "git" not in kwargs:
+        current_branches_dict = {env.cwd: current_branch} if current_branch else None
+        git_ops = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+            current_branches=current_branches_dict,
+        )
+        if dry_run:
+            git_ops = DryRunGit(git_ops)
+        kwargs["git"] = git_ops
+    
+    if "github" not in kwargs:
+        kwargs["github"] = FakeLocalGitHub()
+    
+    if "shell" not in kwargs:
+        kwargs["shell"] = FakeShell()
+
+    return env.build_context(
+        use_graphite=use_graphite,
+        dry_run=dry_run,
+        **kwargs,
+    )
+```
+
+#### `build_graphite_test_context()` (lines 84-105)
+Convenience wrapper that enables Graphite by default.
+
+#### `build_fake_plan_list_service()` (lines 132-147)
+Creates a `FakePlanListService` with pre-configured plan data.
+
+---
+
+### 7. Environment Test Helpers
+
+**Location:** `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py` (lines 1-100+)
+
+Provides context managers for setting up test environments:
+
+```python
+# For filesystem-based testing (uses isolated_filesystem())
+with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    env.cwd                  # Current working directory
+    env.git_dir              # .git directory path
+    env.repo                 # RepoContext with worktrees_dir, pool.json, etc.
+    env.build_context()      # Helper to build ErkContext
+    env.setup_repo_structure()  # Create repo directory structure
+```
+
+---
+
+### 8. Test Example: test_require_context
+
+**Location:** `/home/runner/work/erk/erk/tests/unit/context/test_require_context.py` (lines 1-58)
+
+Shows how context injection works in tests:
+
+```python
+def test_require_context_returns_context_when_valid() -&gt; None:
+    """Test require_context returns ErkContext when ctx.obj is valid."""
+    # Create valid ErkContext using context_for_test()
+    erk_ctx = context_for_test()
+    
+    # Create Click context and inject ErkContext
+    click_ctx = click.Context(click.Command("test"))
+    click_ctx.obj = erk_ctx
+
+    # Use the helper
+    result = require_context(click_ctx)
+
+    # Assert it returns the same context
+    assert result is erk_ctx
+
+
+def test_require_context_exits_when_ctx_obj_is_none(capsys: Any) -&gt; None:
+    """Test require_context exits with code 1 when ctx.obj is None."""
+    click_ctx = click.Context(click.Command("test"))
+    click_ctx.obj = None
+
+    with pytest.raises(SystemExit) as exc_info:
+        require_context(click_ctx)
+
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error: Context not initialized" in captured.err
+```
+
+---
+
+## Summary of Key Patterns
+
+1. **Core factory**: `context_for_test()` - creates ErkContext with fake defaults
+2. **Plan conversion**: `_plan_to_pr_details()` - converts Plan → PRDetails for FakeLocalGitHub
+3. **Context injection**: Pass `ErkContext` via Click's `obj=ctx` parameter
+4. **Helper functions**: `require_context()`, `require_github()`, etc. - safe context access
+5. **Exec scripts**: All follow `@click.pass_context` + `require_context(ctx)` pattern
+6. **Test setup**: Use `build_workspace_test_context()` for clean boilerplate
+7. **PR simulation**: Create `PRDetails` dict, pass to `FakeLocalGitHub(pr_details={number: details})`
+
+All code snippets come from the actual codebase at the paths listed above.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4095" cache_read_input_tokens="46539" cache_creation="{'ephemeral_5m_input_tokens': 4095, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

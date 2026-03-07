@@ -1,0 +1,1852 @@
+<session>
+  <meta source="agent-ad9d655" />
+  <meta branch="plnd/refac-cmux-mock-to-fake-03-07-1844" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the gateway ABC pattern used in erk. Specifically:
+1. Look at an existing gateway package like `packages/erk-shared/src/erk_shared/gateway/codespace/` - read the abc.py, real.py, and fake.py files to see the pattern
+2. Also check `packages/erk-shared/src/erk_shared/gateway/shell/` for another example
+3. Look at `docs/learned/architecture/gateway-abc-implementation.md` if it exists
+4. Check how `require_context` is used in exec scripts - look at a few examples in `src/erk/cli/commands/exec/scripts/` that use `@click.pass_context`
+
+Return all the code content so I can use it as reference.</user>
+  <assistant>I'll help you understand the gateway ABC pattern in erk. Let me start by checking the documentation and then examining the actual implementations.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15221" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15221, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T2jHDia1w4o5wz9RpCUAVU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15221" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15221, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Pf3HrvZoYhX8Q6mFBHdVe7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15221" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15221, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GzWjp7E11T2VjV3d4pBP3k">
+    <param name="command">find /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway -type d -name codespace -o -name shell | head -5</param>
+    <param name="description">Locate gateway subdirectories</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15221" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15221, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T2jHDia1w4o5wz9RpCUAVU">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Pf3HrvZoYhX8Q6mFBHdVe7">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "adding a new method to Git ABC"
+    11→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    12→  - action: "adding a new method to LocalGitHub ABC"
+    13→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    14→  - action: "adding a new method to Graphite ABC"
+    15→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [780 lines omitted] ...
+
+    31→    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+    33→    warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
+    44→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   144→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   146→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   148→### Decision: Discriminated Union or Exception?
+   152→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   153→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   154→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   158→- [ ] At least one caller branches on the error and continues with different logic
+   159→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   160→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   164→### Checklist: Use Exceptions When
+   166→- [ ] All callers terminate on failure (extract message and stop)
+   167→- [ ] No caller inspects error type or branches on error content
+   168→- [ ] Use `UserFacingCliError` at CLI boundary
+   174→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   189→**Methods using discriminated unions** (callers branch on error):
+   193→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   194→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   195→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   197→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   199→**Methods using exceptions** (all callers terminate):
+   201→| Method              | Exception      | Why                                                         |
+   203→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   204→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   208→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   215→   - [ ] `real.py` - Return appropriate error types for failure cases
+   217→   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+   220→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   225→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   229→- Updated tests to use `isinstance(result, MergeError)`
+   251→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   259→- When error messages from `get_X()` on missing resources are unclear
+   282→    user_output(f"Error: Issue #{issue_number} not found")
+   361→5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   605→The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   694→**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+   712→1. Run type checker (`ty`) to verify no abstract method errors
+   769→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   771→├── fake.py       # Constructor-injected errors, mutation tracking
+   778→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   779→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   780→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   803→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <tool_result tool="toolu_01GzWjp7E11T2VjV3d4pBP3k">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell
+  </tool_result>
+  <assistant>Now let me examine the gateway implementations:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="13795" cache_read_input_tokens="15221" cache_creation="{'ephemeral_5m_input_tokens': 13795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YX9eRukWV93mJDjPG1iM5Q">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13795" cache_read_input_tokens="15221" cache_creation="{'ephemeral_5m_input_tokens': 13795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PqaZ8fayGbiB5qShKf4Qya">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13795" cache_read_input_tokens="15221" cache_creation="{'ephemeral_5m_input_tokens': 13795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012ezwMeXb6TPMGV4MrsRoeF">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13795" cache_read_input_tokens="15221" cache_creation="{'ephemeral_5m_input_tokens': 13795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CykEFrfkQWFtpdwvztHt6u">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13795" cache_read_input_tokens="15221" cache_creation="{'ephemeral_5m_input_tokens': 13795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0199EZVWjER6GE6ZAcXPAEF8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13795" cache_read_input_tokens="15221" cache_creation="{'ephemeral_5m_input_tokens': 13795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011X65e9gyntH38Q7U6AFjGJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13795" cache_read_input_tokens="15221" cache_creation="{'ephemeral_5m_input_tokens': 13795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YX9eRukWV93mJDjPG1iM5Q">
+     1→"""Codespace execution abstraction for testing.
+     2→
+     3→This module provides an ABC for codespace SSH operations to enable
+     4→testing without actually executing remote commands.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from typing import NoReturn
+     9→
+    10→
+    11→class Codespace(ABC):
+    12→    """Abstract codespace SSH executor for dependency injection."""
+    13→
+    14→    @abstractmethod
+    15→    def exec_ssh_interactive(self, gh_name: str, remote_command: str) -&gt; NoReturn:
+    16→        """Replace current process with SSH session to codespace.
+    17→
+    18→        Uses os.execvp() to replace the current process, so this
+    19→        method never returns.
+    20→
+    21→        Args:
+    22→            gh_name: GitHub codespace name (from gh codespace list)
+    23→            remote_command: Command to execute in the codespace
+    24→
+    25→        Note:
+    26→            This method never returns - the process is replaced.
+    27→        """
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [71 lines omitted] ...
+
+    68→            RuntimeError: If the API call fails.
+    93→            RuntimeError: If the API call fails or response is malformed.
+  </tool_result>
+  <tool_result tool="toolu_01PqaZ8fayGbiB5qShKf4Qya">
+     1→"""Real Codespace implementation using gh codespace ssh.
+     2→
+     3→RealCodespace provides SSH execution to GitHub Codespaces using
+     4→the gh CLI tool.
+     5→"""
+     6→
+     7→import json
+     8→import os
+     9→import subprocess
+    10→from typing import NoReturn
+    11→
+    12→from erk_shared.gateway.codespace.abc import Codespace
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealCodespace(Codespace):
+    17→    """Production implementation using gh codespace ssh for remote execution."""
+    18→
+    19→    def start_codespace(self, gh_name: str) -&gt; None:
+    20→        """Start a stopped codespace.
+    21→
+    22→        Uses GitHub REST API POST /user/codespaces/{name}/start to ensure
+    23→        the codespace is running.
+    24→
+    25→        Args:
+    26→            gh_name: GitHub codespace name (from gh codespace list)
+    27→        """
+    28→        # GH-API-AUDIT: REST - codespace start
+    29→        run_subprocess_with_context(
+    30→            cmd=["gh", "api", "--method", "POST", f"/user/codespaces/{gh_name}/start"],
+
+... [137 lines omitted] ...
+
+   100→            RuntimeError: If the API call fails.
+   129→            RuntimeError: If the API call fails or response is malformed.
+   158→            raise RuntimeError(
+  </tool_result>
+  <tool_result tool="toolu_012ezwMeXb6TPMGV4MrsRoeF">
+     1→"""Fake Codespace implementation for testing.
+     2→
+     3→FakeCodespace is an in-memory implementation that tracks SSH calls
+     4→without actually executing remote commands, enabling fast and deterministic tests.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from typing import NoReturn
+     9→
+    10→from erk_shared.gateway.codespace.abc import Codespace
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class SSHCall:
+    15→    """Record of an SSH call for test assertions.
+    16→
+    17→    Attributes:
+    18→        gh_name: GitHub codespace name that was targeted
+    19→        remote_command: Command that was executed
+    20→        interactive: Whether this was an interactive (exec) or non-interactive (run) call
+    21→    """
+    22→
+    23→    gh_name: str
+    24→    remote_command: str
+    25→    interactive: bool
+    26→
+    27→
+    28→class FakeCodespace(Codespace):
+    29→    """In-memory fake implementation that tracks SSH calls.
+    30→
+
+... [170 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CykEFrfkQWFtpdwvztHt6u">
+     1→"""Shell detection and tool availability operations.
+     2→
+     3→This module provides abstraction over shell-specific operations like detecting
+     4→the current shell and checking if command-line tools are installed. This abstraction
+     5→enables dependency injection for testing without mock.patch.
+     6→"""
+     7→
+     8→from abc import ABC, abstractmethod
+     9→from pathlib import Path
+    10→
+    11→
+    12→def detect_shell_from_env(shell_env: str) -&gt; tuple[str, Path] | None:
+    13→    """Detect shell type and config file from SHELL environment value.
+    14→
+    15→    Args:
+    16→        shell_env: Value of SHELL environment variable (e.g., "/bin/zsh")
+    17→
+    18→    Returns:
+    19→        Tuple of (shell_name, rc_file_path) or None if unsupported shell
+    20→    """
+    21→    if not shell_env:
+    22→        return None
+    23→
+    24→    shell_name = Path(shell_env).name
+    25→
+    26→    if shell_name == "bash":
+    27→        return ("bash", Path.home() / ".bashrc")
+    28→    if shell_name == "zsh":
+    29→        return ("zsh", Path.home() / ".zshrc")
+    30→    if shell_name == "fish":
+
+... [111 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0199EZVWjER6GE6ZAcXPAEF8">
+     1→"""Real implementation of Shell using system environment."""
+     2→
+     3→import json
+     4→import os
+     5→import shutil
+     6→import subprocess
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.shell.abc import Shell, detect_shell_from_env
+    10→from erk_shared.subprocess_utils import (
+    11→    build_claude_subprocess_env,
+    12→    run_subprocess_with_context,
+    13→)
+    14→
+    15→
+    16→class RealShell(Shell):
+    17→    """Production implementation using system environment and PATH."""
+    18→
+    19→    def detect_shell(self) -&gt; tuple[str, Path] | None:
+    20→        """Detect current shell from SHELL environment variable.
+    21→
+    22→        Implementation details:
+    23→        - Reads $SHELL environment variable
+    24→        - Extracts shell name from path (e.g., /bin/bash -&gt; bash)
+    25→        - Maps to appropriate RC file location
+    26→        """
+    27→        shell_env = os.environ.get("SHELL", "")
+    28→        return detect_shell_from_env(shell_env)
+    29→
+    30→    def get_installed_tool_path(self, tool_name: str) -&gt; str | None:
+
+... [138 lines omitted] ...
+
+    50→        except (subprocess.TimeoutExpired, OSError):
+   159→        except json.JSONDecodeError:
+  </tool_result>
+  <tool_result tool="toolu_011X65e9gyntH38Q7U6AFjGJ">
+     1→"""Fake implementation of Shell for testing.
+     2→
+     3→This fake enables testing shell-dependent functionality without
+     4→requiring specific shell configurations or installed tools.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.shell.abc import Shell
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class SpawnSubshellCall:
+    15→    """Record of a spawn_subshell call for test assertions."""
+    16→
+    17→    cwd: Path
+    18→    shell_path: str
+    19→    command: str
+    20→    env: dict[str, str]
+    21→
+    22→
+    23→class FakeShell(Shell):
+    24→    """In-memory fake implementation of shell operations.
+    25→
+    26→    Constructor Injection:
+    27→    - All state is provided via constructor parameters
+    28→    - No mutations occur (immutable after construction)
+    29→
+    30→    When to Use:
+
+... [131 lines omitted] ...
+
+    76→                RuntimeError
+   105→        Raises RuntimeError if configured to do so (matching real
+   111→            raise RuntimeError("Simulated extraction failure")
+  </tool_result>
+  <assistant>Now let me look for examples of exec scripts that use `require_context` and `@click.pass_context`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11514" cache_read_input_tokens="29016" cache_creation="{'ephemeral_5m_input_tokens': 11514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VXVzLrNx4Yj58gLRQY9epN">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts -name "*.py" | head -5</param>
+    <param name="description">List exec scripts directory</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11514" cache_read_input_tokens="29016" cache_creation="{'ephemeral_5m_input_tokens': 11514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VXVzLrNx4Yj58gLRQY9epN">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/run_review.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Mpv37DGgTERDFZCzpMaG2N">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="346" cache_read_input_tokens="40530" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LAjwVFqF9Mw4M5xbzATmnp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="346" cache_read_input_tokens="40530" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WZmbLeM5sbaAGtFxXtG1Nc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/run_review.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="346" cache_read_input_tokens="40530" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mpv37DGgTERDFZCzpMaG2N">
+     1→"""Download a Claude Code session from a git branch.
+     2→
+     3→This exec command downloads a session and stores it in the
+     4→.erk/scratch/remote-sessions/ directory for learn workflow processing.
+     5→
+     6→Usage:
+     7→    erk exec download-remote-session --session-branch async-learn/123 --session-id abc-123
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and session file path
+    11→
+    12→Exit Codes:
+    13→    0: Success (session file downloaded and located)
+    14→    1: Error (download failed)
+    15→
+    16→Examples:
+    17→    $ erk exec download-remote-session --session-branch async-learn/123 --session-id abc-123
+    18→    {
+    19→      "success": true,
+    20→      "session_id": "abc-123",
+    21→      "path": "...",
+    22→      "source": "branch"
+    23→    }
+    24→"""
+    25→
+    26→import json
+    27→import shutil
+    28→from pathlib import Path
+    29→
+    30→import click
+
+... [149 lines omitted] ...
+
+    72→        Path to the downloaded session file on success, error message string on failure.
+    83→        return "Failed to extract session from branch: file not found at ref"
+   125→        return 1, {"success": False, "error": result}
+  </tool_result>
+  <tool_result tool="toolu_01LAjwVFqF9Mw4M5xbzATmnp">
+     1→"""Push a preprocessed session to the async-learn branch with accumulation.
+     2→
+     3→Preprocesses session JSONL to compressed XML and accumulates multiple sessions
+     4→on the same branch across lifecycle stages.
+     5→
+     6→Usage:
+     7→    erk exec push-session \\
+     8→        --session-file /path/to/session.jsonl \\
+     9→        --session-id abc-123 \\
+    10→        --stage planning \\
+    11→        --source local \\
+    12→        --plan-id 2521
+    13→
+    14→Output:
+    15→    Structured JSON output with upload status:
+    16→    {"uploaded": true, "plan_id": 2521, "session_branch": "async-learn/2521", "files": [...]}
+    17→    {"uploaded": false, "reason": "preprocessing_failed"}
+    18→
+    19→Exit Codes:
+    20→    0: Always (non-critical operation, graceful degradation)
+    21→"""
+    22→
+    23→import json
+    24→import subprocess
+    25→import tempfile
+    26→from datetime import UTC
+    27→from pathlib import Path
+    28→from typing import Literal
+    29→
+    30→import click
+
+... [300 lines omitted] ...
+
+    58→        List of XML file paths on success, None on failure.
+   234→        click.echo(json.dumps({"uploaded": False, "reason": "preprocessing_failed"}))
+   306→        except RuntimeError:
+  </tool_result>
+  <tool_result tool="toolu_01WZmbLeM5sbaAGtFxXtG1Nc">
+     1→"""Run a code review using Claude.
+     2→
+     3→This exec command loads a review definition file, assembles the prompt
+     4→with boilerplate, and either runs Claude or prints the assembled prompt.
+     5→
+     6→Supports two modes:
+     7→- PR mode (--pr-number): Reviews an existing PR, posts comments to GitHub
+     8→- Local mode (--local): Reviews local changes vs base branch, outputs to stdout
+     9→
+    10→Usage:
+    11→    # CI mode (has PR number)
+    12→    erk exec run-review --name tripwires --pr-number 123
+    13→
+    14→    # Local mode (before PR exists)
+    15→    erk exec run-review --name tripwires --local
+    16→
+    17→    # Local mode with specific base branch
+    18→    erk exec run-review --name tripwires --local --base develop
+    19→
+    20→    # Print assembled prompt without running Claude
+    21→    erk exec run-review --name tripwires --pr-number 123 --dry-run
+    22→
+    23→Output:
+    24→    In dry-run mode: prints the assembled prompt
+    25→    In run mode: invokes Claude CLI with the assembled prompt
+    26→
+    27→Exit Codes:
+    28→    0: Success
+    29→    1: Review file not found or validation failed
+    30→    2: Invalid flag combination
+
+... [177 lines omitted] ...
+
+    60→class RunReviewError:
+    61→    """Error response for run-review command."""
+    64→    error_type: str
+   110→        error = RunReviewError(
+   112→            error_type="invalid_flags",
+   115→        click.echo(json.dumps(error.__dict__, indent=2), err=True)
+   119→        error = RunReviewError(
+   121→            error_type="invalid_flags",
+   124→        click.echo(json.dumps(error.__dict__, indent=2), err=True)
+   128→        error = RunReviewError(
+   130→            error_type="invalid_flags",
+   133→        click.echo(json.dumps(error.__dict__, indent=2), err=True)
+   152→        error = RunReviewError(
+   154→            error_type="validation_failed",
+   155→            message=f"Review file validation failed: {', '.join(result.errors)}",
+   157→        click.echo(json.dumps(error.__dict__, indent=2), err=True)
+  </tool_result>
+  <assistant>Perfect! Now let me check the `erk_shared.context.helpers` module to see how `require_context` works:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="9605" cache_read_input_tokens="40876" cache_creation="{'ephemeral_5m_input_tokens': 9605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H7ffUA3tSkcJb2uHV5HoB1">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="9605" cache_read_input_tokens="40876" cache_creation="{'ephemeral_5m_input_tokens': 9605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YCBAipW8Eaw6VzJcXbkbd7">
+    <param name="command">find /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context -type f -name "*.py" | head -10</param>
+    <param name="description">List context module files</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="9605" cache_read_input_tokens="40876" cache_creation="{'ephemeral_5m_input_tokens': 9605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H7ffUA3tSkcJb2uHV5HoB1">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import LocalGitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.plan_store.backend import PlanBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get PlanBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <tool_result tool="toolu_01YCBAipW8Eaw6VzJcXbkbd7">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/factories.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me create a comprehensive summary with all the code content.
+
+## Gateway ABC Pattern Reference
+
+I've gathered comprehensive reference material on erk's gateway ABC pattern. Here's everything you need:
+
+---
+
+## 1. DOCUMENTATION: Gateway ABC Implementation Checklist
+
+**Location:** `/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md`
+
+Key highlights from the documentation:
+
+- **5-file pattern** (full gateways): abc.py, real.py, fake.py, dry_run.py, printing.py
+- **3-file pattern** (simplified): abc.py, real.py, fake.py (used for process replacement like Codespace and AgentLauncher)
+- **When to use 3-file:** Process replacement operations (os.execvp), external SSH/remote execution, inherently all-or-nothing operations
+- **Gateway naming rule:** Name after the TOOL wrapped, not the MECHANISM (e.g., Git, LocalGitHub, CmuxGateway - NOT ShellRunner, CommandRunner)
+
+---
+
+## 2. CODESPACE GATEWAY (3-File Simplified Pattern Example)
+
+### abc.py
+```python
+"""Codespace execution abstraction for testing.
+
+This module provides an ABC for codespace SSH operations to enable
+testing without actually executing remote commands.
+"""
+
+from abc import ABC, abstractmethod
+from typing import NoReturn
+
+
+class Codespace(ABC):
+    """Abstract codespace SSH executor for dependency injection."""
+
+    @abstractmethod
+    def exec_ssh_interactive(self, gh_name: str, remote_command: str) -&gt; NoReturn:
+        """Replace current process with SSH session to codespace.
+
+        Uses os.execvp() to replace the current process, so this
+        method never returns.
+
+        Args:
+            gh_name: GitHub codespace name (from gh codespace list)
+            remote_command: Command to execute in the codespace
+
+        Note:
+            This method never returns - the process is replaced.
+        """
+        ...
+
+    @abstractmethod
+    def start_codespace(self, gh_name: str) -&gt; None:
+        """Start a stopped codespace.
+
+        Ensures the codespace is running before attempting SSH connections.
+        No-op if the codespace is already running.
+
+        Args:
+            gh_name: GitHub codespace name (from gh codespace list)
+        """
+        ...
+
+    @abstractmethod
+    def run_ssh_command(self, gh_name: str, remote_command: str) -&gt; int:
+        """Run SSH command in codespace and return exit code.
+
+        Uses subprocess.run() to execute the command and wait for completion.
+
+        Args:
+            gh_name: GitHub codespace name (from gh codespace list)
+            remote_command: Command to execute in the codespace
+
+        Returns:
+            Exit code from the remote command (0 for success)
+        """
+        ...
+
+    @abstractmethod
+    def get_repo_id(self, owner_repo: str) -&gt; int:
+        """Get GitHub repository database ID via REST API.
+
+        Args:
+            owner_repo: Repository in "owner/repo" format.
+
+        Returns:
+            The numeric repository ID.
+
+        Raises:
+            RuntimeError: If the API call fails.
+        """
+        ...
+
+    @abstractmethod
+    def create_codespace(
+        self,
+        *,
+        repo_id: int,
+        machine: str,
+        display_name: str,
+        branch: str | None,
+    ) -&gt; str:
+        """Create a codespace via REST API.
+
+        Args:
+            repo_id: GitHub repository database ID.
+            machine: Machine type for the codespace.
+            display_name: Human-readable display name.
+            branch: Branch to create codespace from, or None for default.
+
+        Returns:
+            The gh_name of the created codespace.
+
+        Raises:
+            RuntimeError: If the API call fails or response is malformed.
+        """
+        ...
+```
+
+### real.py
+```python
+"""Real Codespace implementation using gh codespace ssh.
+
+RealCodespace provides SSH execution to GitHub Codespaces using
+the gh CLI tool.
+"""
+
+import json
+import os
+import subprocess
+from typing import NoReturn
+
+from erk_shared.gateway.codespace.abc import Codespace
+from erk_shared.subprocess_utils import run_subprocess_with_context
+
+
+class RealCodespace(Codespace):
+    """Production implementation using gh codespace ssh for remote execution."""
+
+    def start_codespace(self, gh_name: str) -&gt; None:
+        """Start a stopped codespace.
+
+        Uses GitHub REST API POST /user/codespaces/{name}/start to ensure
+        the codespace is running.
+
+        Args:
+            gh_name: GitHub codespace name (from gh codespace list)
+        """
+        # GH-API-AUDIT: REST - codespace start
+        run_subprocess_with_context(
+            cmd=["gh", "api", "--method", "POST", f"/user/codespaces/{gh_name}/start"],
+            operation_context=f"start codespace '{gh_name}'",
+        )
+
+    def exec_ssh_interactive(self, gh_name: str, remote_command: str) -&gt; NoReturn:
+        """Replace current process with SSH session to codespace.
+
+        Uses os.execvp() to replace the current process with gh codespace ssh.
+
+        Args:
+            gh_name: GitHub codespace name (from gh codespace list)
+            remote_command: Command to execute in the codespace
+
+        Note:
+            This method never returns - the process is replaced.
+        """
+        # GH-API-AUDIT: REST - codespace SSH connection
+        # -t: Force pseudo-terminal allocation (required for interactive TUI)
+        os.execvp(
+            "gh",
+            [
+                "gh",
+                "codespace",
+                "ssh",
+                "-c",
+                gh_name,
+                "--",
+                "-t",
+                remote_command,
+            ],
+        )
+
+    def run_ssh_command(self, gh_name: str, remote_command: str) -&gt; int:
+        """Run SSH command in codespace and return exit code.
+
+        Uses subprocess.run() to execute the command and wait for completion.
+
+        Args:
+            gh_name: GitHub codespace name (from gh codespace list)
+            remote_command: Command to execute in the codespace
+
+        Returns:
+            Exit code from the remote command (0 for success)
+        """
+        # GH-API-AUDIT: REST - codespace SSH connection
+        # Note: No -t flag for non-interactive (no TTY allocation)
+        result = subprocess.run(
+            [
+                "gh",
+                "codespace",
+                "ssh",
+                "-c",
+                gh_name,
+                "--",
+                remote_command,
+            ],
+            check=False,
+        )
+        return result.returncode
+
+    def get_repo_id(self, owner_repo: str) -&gt; int:
+        """Get GitHub repository database ID via REST API.
+
+        Args:
+            owner_repo: Repository in "owner/repo" format.
+
+        Returns:
+            The numeric repository ID.
+
+        Raises:
+            RuntimeError: If the API call fails.
+        """
+        # GH-API-AUDIT: REST - get repository ID
+        result = run_subprocess_with_context(
+            cmd=["gh", "api", f"repos/{owner_repo}", "--jq", ".id"],
+            operation_context=f"get repository ID for '{owner_repo}'",
+        )
+        return int(result.stdout.strip())
+
+    def create_codespace(
+        self,
+        *,
+        repo_id: int,
+        machine: str,
+        display_name: str,
+        branch: str | None,
+    ) -&gt; str:
+        """Create a codespace via REST API.
+
+        Args:
+            repo_id: GitHub repository database ID.
+            machine: Machine type for the codespace.
+            display_name: Human-readable display name.
+            branch: Branch to create codespace from, or None for default.
+
+        Returns:
+            The gh_name of the created codespace.
+
+        Raises:
+            RuntimeError: If the API call fails or response is malformed.
+        """
+        # GH-API-AUDIT: REST - POST user/codespaces
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            "/user/codespaces",
+            "-F",
+            f"repository_id={repo_id}",
+            "-f",
+            f"machine={machine}",
+            "-f",
+            f"display_name={display_name}",
+            "-f",
+            "devcontainer_path=.devcontainer/devcontainer.json",
+        ]
+
+        if branch is not None:
+            cmd.extend(["-f", f"ref={branch}"])
+
+        result = run_subprocess_with_context(
+            cmd=cmd,
+            operation_context="create codespace",
+        )
+
+        response = json.loads(result.stdout)
+        if "name" not in response:
+            raise RuntimeError(
+                f"API response missing 'name' field. Response: {result.stdout.strip()}"
+            )
+        return response["name"]
+```
+
+### fake.py
+```python
+"""Fake Codespace implementation for testing.
+
+FakeCodespace is an in-memory implementation that tracks SSH calls
+without actually executing remote commands, enabling fast and deterministic tests.
+"""
+
+from dataclasses import dataclass
+from typing import NoReturn
+
+from erk_shared.gateway.codespace.abc import Codespace
+
+
+@dataclass(frozen=True)
+class SSHCall:
+    """Record of an SSH call for test assertions.
+
+    Attributes:
+        gh_name: GitHub codespace name that was targeted
+        remote_command: Command that was executed
+        interactive: Whether this was an interactive (exec) or non-interactive (run) call
+    """
+
+    gh_name: str
+    remote_command: str
+    interactive: bool
+
+
+class FakeCodespace(Codespace):
+    """In-memory fake implementation that tracks SSH calls.
+
+    This class has NO public setup methods. All state is provided via constructor
+    or captured during execution.
+    """
+
+    def __init__(
+        self,
+        *,
+        run_exit_code: int,
+        repo_id: int,
+        created_codespace_name: str,
+    ) -&gt; None:
+        """Create FakeCodespace with configurable behavior.
+
+        Args:
+            run_exit_code: Exit code to return from run_ssh_command.
+            repo_id: Repository ID to return from get_repo_id.
+            created_codespace_name: Name to return from create_codespace.
+        """
+        self._run_exit_code = run_exit_code
+        self._repo_id = repo_id
+        self._created_codespace_name = created_codespace_name
+        self._ssh_calls: list[SSHCall] = []
+        self._started_codespaces: list[str] = []
+        self._exec_called = False
+        self._get_repo_id_calls: list[str] = []
+        self._create_codespace_calls: list[dict[str, object]] = []
+
+    @property
+    def ssh_calls(self) -&gt; list[SSHCall]:
+        """Get the list of SSH calls that were made.
+
+        Returns a copy of the list to prevent external mutation.
+
+        This property is for test assertions only.
+        """
+        return list(self._ssh_calls)
+
+    @property
+    def started_codespaces(self) -&gt; list[str]:
+        """Get the list of codespace gh_names that were started.
+
+        Returns a copy of the list to prevent external mutation.
+
+        This property is for test assertions only.
+        """
+        return list(self._started_codespaces)
+
+    @property
+    def exec_called(self) -&gt; bool:
+        """Check if exec_ssh_interactive was called.
+
+        This property is for test assertions only.
+        """
+        return self._exec_called
+
+    @property
+    def last_call(self) -&gt; SSHCall | None:
+        """Get the last SSH call, or None if no calls were made.
+
+        This property is for test assertions only.
+        """
+        if not self._ssh_calls:
+            return None
+        return self._ssh_calls[-1]
+
+    def start_codespace(self, gh_name: str) -&gt; None:
+        """Track codespace start call.
+
+        Args:
+            gh_name: GitHub codespace name
+        """
+        self._started_codespaces.append(gh_name)
+
+    def exec_ssh_interactive(self, gh_name: str, remote_command: str) -&gt; NoReturn:
+        """Track interactive SSH call.
+
+        In production, this replaces the process. In tests, we record the call
+        and raise SystemExit to simulate the process ending.
+
+        Args:
+            gh_name: GitHub codespace name
+            remote_command: Command to execute
+
+        Raises:
+            SystemExit: Always raised to simulate process replacement
+        """
+        self._exec_called = True
+        self._ssh_calls.append(
+            SSHCall(gh_name=gh_name, remote_command=remote_command, interactive=True)
+        )
+        # Simulate process replacement by exiting
+        raise SystemExit(0)
+
+    def run_ssh_command(self, gh_name: str, remote_command: str) -&gt; int:
+        """Track non-interactive SSH call and return configured exit code.
+
+        Args:
+            gh_name: GitHub codespace name
+            remote_command: Command to execute
+
+        Returns:
+            The configured run_exit_code value
+        """
+        self._ssh_calls.append(
+            SSHCall(gh_name=gh_name, remote_command=remote_command, interactive=False)
+        )
+        return self._run_exit_code
+
+    def get_repo_id(self, owner_repo: str) -&gt; int:
+        """Return configured repo ID and track the call.
+
+        Args:
+            owner_repo: Repository in "owner/repo" format.
+
+        Returns:
+            The configured repo_id value.
+        """
+        self._get_repo_id_calls.append(owner_repo)
+        return self._repo_id
+
+    def create_codespace(
+        self,
+        *,
+        repo_id: int,
+        machine: str,
+        display_name: str,
+        branch: str | None,
+    ) -&gt; str:
+        """Return configured codespace name and track the call.
+
+        Args:
+            repo_id: GitHub repository database ID.
+            machine: Machine type for the codespace.
+            display_name: Human-readable display name.
+            branch: Branch to create codespace from, or None for default.
+
+        Returns:
+            The configured created_codespace_name value.
+        """
+        self._create_codespace_calls.append(
+            {
+                "repo_id": repo_id,
+                "machine": machine,
+                "display_name": display_name,
+                "branch": branch,
+            }
+        )
+        return self._created_codespace_name
+
+    @property
+    def get_repo_id_calls(self) -&gt; list[str]:
+        """Get the list of owner_repo values passed to get_repo_id.
+
+        Returns a copy to prevent external mutation.
+        """
+        return list(self._get_repo_id_calls)
+
+    @property
+    def create_codespace_calls(self) -&gt; list[dict[str, object]]:
+        """Get the list of create_codespace call parameters.
+
+        Returns a copy to prevent external mutation.
+        """
+        return list(self._create_codespace_calls)
+```
+
+---
+
+## 3. SHELL GATEWAY (3-File Pattern with Non-NoReturn Methods)
+
+### abc.py
+```python
+"""Shell detection and tool availability operations.
+
+This module provides abstraction over shell-specific operations like detecting
+the current shell and checking if command-line tools are installed. This abstraction
+enables dependency injection for testing without mock.patch.
+"""
+
+from abc import ABC, abstractmethod
+from pathlib import Path
+
+
+def detect_shell_from_env(shell_env: str) -&gt; tuple[str, Path] | None:
+    """Detect shell type and config file from SHELL environment value.
+
+    Args:
+        shell_env: Value of SHELL environment variable (e.g., "/bin/zsh")
+
+    Returns:
+        Tuple of (shell_name, rc_file_path) or None if unsupported shell
+    """
+    if not shell_env:
+        return None
+
+    shell_name = Path(shell_env).name
+
+    if shell_name == "bash":
+        return ("bash", Path.home() / ".bashrc")
+    if shell_name == "zsh":
+        return ("zsh", Path.home() / ".zshrc")
+    if shell_name == "fish":
+        return ("fish", Path.home() / ".config" / "fish" / "config.fish")
+
+    return None
+
+
+class Shell(ABC):
+    """Abstract interface for shell detection and tool availability checks.
+
+    This abstraction enables testing without mock.patch by making shell
+    operations injectable dependencies.
+    """
+
+    @abstractmethod
+    def detect_shell(self) -&gt; tuple[str, Path] | None:
+        """Detect current shell and return configuration file path.
+
+        Returns:
+            Tuple of (shell_name, rc_file_path) or None if shell cannot be detected.
+
+            Supported shells:
+            - bash: returns ("bash", ~/.bashrc)
+            - zsh: returns ("zsh", ~/.zshrc)
+            - fish: returns ("fish", ~/.config/fish/config.fish)
+
+        Example:
+            &gt;&gt;&gt; shell_ops = RealShell()
+            &gt;&gt;&gt; result = shell_ops.detect_shell()
+            &gt;&gt;&gt; if result:
+            ...     shell_name, rc_file = result
+            ...     print(f"Detected {shell_name} with rc file at {rc_file}")
+        """
+        ...
+
+    @abstractmethod
+    def get_installed_tool_path(self, tool_name: str) -&gt; str | None:
+        """Check if a command-line tool is installed and available in PATH.
+
+        Args:
+            tool_name: Name of the tool to check (e.g., "gt", "git", "python")
+
+        Returns:
+            Absolute path to the tool executable if found, None otherwise.
+
+        Example:
+            &gt;&gt;&gt; shell_ops = RealShell()
+            &gt;&gt;&gt; gt_path = shell_ops.get_installed_tool_path("gt")
+            &gt;&gt;&gt; if gt_path:
+            ...     print(f"Graphite found at {gt_path}")
+        """
+        ...
+
+    @abstractmethod
+    def get_tool_version(self, tool_name: str) -&gt; str | None:
+        """Get the version string of an installed CLI tool.
+
+        Runs the tool with --version flag and returns the output.
+
+        Args:
+            tool_name: Name of the tool to check (e.g., "gt", "gh", "claude")
+
+        Returns:
+            Version output string if successful, None if tool not found or version
+            check fails.
+
+        Example:
+            &gt;&gt;&gt; shell_ops = RealShell()
+            &gt;&gt;&gt; version = shell_ops.get_tool_version("gt")
+            &gt;&gt;&gt; if version:
+            ...     print(f"Graphite version: {version}")
+        """
+        ...
+
+    @abstractmethod
+    def spawn_subshell(
+        self,
+        *,
+        cwd: Path,
+        shell_path: str,
+        command: str,
+        env: dict[str, str],
+    ) -&gt; int:
+        """Spawn an interactive subshell that executes a command then remains open.
+
+        Used by erk implement to spawn a subshell in a worktree directory that
+        auto-launches Claude and then remains interactive for the user.
+
+        Args:
+            cwd: Working directory for the subshell
+            shell_path: Path to shell executable (e.g., "/bin/bash", "/bin/zsh")
+            command: Shell command string to execute before staying interactive
+            env: Environment variables to pass to the subshell
+
+        Returns:
+            Exit code from the subshell when user exits
+
+        Example:
+            &gt;&gt;&gt; shell_ops = RealShell()
+            &gt;&gt;&gt; exit_code = shell_ops.spawn_subshell(
+            ...     cwd=Path("/worktree"),
+            ...     shell_path="/bin/bash",
+            ...     command="claude --print '/erk:plan-implement'",
+            ...     env={"ERK_SUBSHELL": "1"},
+            ... )
+        """
+        ...
+```
+
+### real.py
+```python
+"""Real implementation of Shell using system environment."""
+
+import json
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+from erk_shared.gateway.shell.abc import Shell, detect_shell_from_env
+from erk_shared.subprocess_utils import (
+    build_claude_subprocess_env,
+    run_subprocess_with_context,
+)
+
+
+class RealShell(Shell):
+    """Production implementation using system environment and PATH."""
+
+    def detect_shell(self) -&gt; tuple[str, Path] | None:
+        """Detect current shell from SHELL environment variable.
+
+        Implementation details:
+        - Reads $SHELL environment variable
+        - Extracts shell name from path (e.g., /bin/bash -&gt; bash)
+        - Maps to appropriate RC file location
+        """
+        shell_env = os.environ.get("SHELL", "")
+        return detect_shell_from_env(shell_env)
+
+    def get_installed_tool_path(self, tool_name: str) -&gt; str | None:
+        """Check if tool is in PATH using shutil.which."""
+        return shutil.which(tool_name)
+
+    def get_tool_version(self, tool_name: str) -&gt; str | None:
+        """Get version string by running tool with --version flag."""
+        tool_path = shutil.which(tool_name)
+        if tool_path is None:
+            return None
+
+        try:
+            result = subprocess.run(
+                [tool_name, "--version"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            version_output = result.stdout.strip() or result.stderr.strip()
+            return version_output if version_output else None
+        except (subprocess.TimeoutExpired, OSError):
+            return None
+
+    def run_claude_extraction_plan(self, cwd: Path) -&gt; str | None:
+        """Run Claude CLI to create an extraction plan from session logs.
+
+        Spawns Claude in non-interactive mode with permission bypass to
+        automatically create an extraction plan. Returns the issue URL
+        if present in the JSON output.
+
+        Note: Claude CLI with --print mode may output conversation/thinking text
+        before the final JSON. We search from the end of stdout to find the JSON
+        line containing issue_url.
+        """
+        cmd = [
+            "claude",
+            "--print",
+            "--no-session-persistence",
+            "--permission-mode",
+            "bypassPermissions",
+            "/erk:create-raw-extraction-plan",
+        ]
+
+        result = run_subprocess_with_context(
+            cmd=cmd,
+            operation_context="create extraction plan via Claude CLI",
+            cwd=cwd,
+            env=build_claude_subprocess_env(),
+        )
+
+        # Parse JSON output to extract issue_url
+        # Claude may output non-JSON text before the JSON result,
+        # so we search from the end of stdout to find the JSON line
+        return _extract_issue_url_from_output(result.stdout)
+
+    def spawn_subshell(
+        self,
+        *,
+        cwd: Path,
+        shell_path: str,
+        command: str,
+        env: dict[str, str],
+    ) -&gt; int:
+        """Spawn an interactive subshell using subprocess.run.
+
+        Implementation details:
+        - Uses shell -c to execute the command, then exec back to interactive shell
+        - Merges provided env with current environment
+        - Returns the subprocess exit code
+        """
+        shell_name = Path(shell_path).name
+
+        # For bash/zsh/sh, use -i for interactive and -c to run initial command
+        # After command exits, exec back to interactive shell
+        if shell_name in ("bash", "zsh", "sh"):
+            shell_args = [
+                shell_path,
+                "-c",
+                f"{command}; exec {shell_path} -i",
+            ]
+        else:
+            # For other shells, just run command then start interactive shell
+            shell_args = [
+                shell_path,
+                "-c",
+                f"{command}; exec {shell_path}",
+            ]
+
+        # Merge environments - provided env takes precedence
+        merged_env = os.environ.copy()
+        merged_env.update(env)
+
+        # Intentionally omit check=True to capture and return exit code
+        result = subprocess.run(
+            shell_args,
+            cwd=cwd,
+            env=merged_env,
+        )
+
+        return result.returncode
+
+
+def _extract_issue_url_from_output(output: str) -&gt; str | None:
+    """Extract issue_url from Claude CLI output that may contain mixed content.
+
+    Claude CLI with --print mode can output conversation/thinking text before
+    the final JSON. This function searches from the end of the output to find
+    a JSON object containing issue_url.
+
+    Args:
+        output: The stdout from Claude CLI (may contain non-JSON text)
+
+    Returns:
+        The issue_url string if found, None otherwise.
+    """
+    if not output:
+        return None
+
+    # Search from the end of output to find JSON with issue_url
+    for line in reversed(output.strip().split("\n")):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            data = json.loads(line)
+            if isinstance(data, dict):
+                issue_url = data.get("issue_url")
+                if isinstance(issue_url, str):
+                    return issue_url
+        except json.JSONDecodeError:
+            continue
+
+    return None
+```
+
+### fake.py
+```python
+"""Fake implementation of Shell for testing.
+
+This fake enables testing shell-dependent functionality without
+requiring specific shell configurations or installed tools.
+"""
+
+from dataclasses import dataclass
+from pathlib import Path
+
+from erk_shared.gateway.shell.abc import Shell
+
+
+@dataclass(frozen=True)
+class SpawnSubshellCall:
+    """Record of a spawn_subshell call for test assertions."""
+
+    cwd: Path
+    shell_path: str
+    command: str
+    env: dict[str, str]
+
+
+class FakeShell(Shell):
+    """In-memory fake implementation of shell operations.
+
+    Constructor Injection:
+    - All state is provided via constructor parameters
+    - No mutations occur (immutable after construction)
+
+    When to Use:
+    - Testing shell-dependent commands (e.g., init, shell setup)
+    - Simulating different shell environments (bash, zsh, fish)
+    - Testing behavior when tools are/aren't installed
+
+    Examples:
+        # Test with bash shell detected
+        &gt;&gt;&gt; shell_ops = FakeShell(
+        ...     detected_shell=("bash", Path.home() / ".bashrc")
+        ... )
+        &gt;&gt;&gt; result = shell_ops.detect_shell()
+        &gt;&gt;&gt; assert result == ("bash", Path.home() / ".bashrc")
+
+        # Test with tool installed
+        &gt;&gt;&gt; shell_ops = FakeShell(
+        ...     installed_tools={"gt": "/usr/local/bin/gt"}
+        ... )
+        &gt;&gt;&gt; gt_path = shell_ops.get_installed_tool_path("gt")
+        &gt;&gt;&gt; assert gt_path == "/usr/local/bin/gt"
+
+        # Test with no shell detected
+        &gt;&gt;&gt; shell_ops = FakeShell(detected_shell=None)
+        &gt;&gt;&gt; result = shell_ops.detect_shell()
+        &gt;&gt;&gt; assert result is None
+    """
+
+    def __init__(
+        self,
+        *,
+        detected_shell: tuple[str, Path] | None = None,
+        installed_tools: dict[str, str] | None = None,
+        tool_versions: dict[str, str] | None = None,
+        claude_extraction_raises: bool = False,
+        extraction_plan_url: str | None = None,
+        subshell_exit_code: int = 0,
+    ) -&gt; None:
+        """Initialize fake with predetermined shell and tool availability.
+
+        Args:
+            detected_shell: Shell to return from detect_shell(), or None if no shell
+                should be detected. Format: (shell_name, rc_file_path)
+            installed_tools: Mapping of tool name to executable path. Tools not in
+                this mapping will return None from get_installed_tool_path()
+            tool_versions: Mapping of tool name to version string. Tools not in
+                this mapping will return None from get_tool_version()
+            claude_extraction_raises: If True, run_claude_extraction_plan will raise
+                RuntimeError
+            extraction_plan_url: URL to return from run_claude_extraction_plan on success
+            subshell_exit_code: Exit code to return from spawn_subshell()
+        """
+        self._detected_shell = detected_shell
+        self._installed_tools = installed_tools or {}
+        self._tool_versions = tool_versions or {}
+        self._extraction_calls: list[Path] = []
+        self._claude_extraction_raises = claude_extraction_raises
+        self._extraction_plan_url = extraction_plan_url
+        self._subshell_exit_code = subshell_exit_code
+        self._subshell_calls: list[SpawnSubshellCall] = []
+
+    def detect_shell(self) -&gt; tuple[str, Path] | None:
+        """Return the shell configured at construction time."""
+        return self._detected_shell
+
+    def get_installed_tool_path(self, tool_name: str) -&gt; str | None:
+        """Return the tool path if configured, None otherwise."""
+        return self._installed_tools.get(tool_name)
+
+    def get_tool_version(self, tool_name: str) -&gt; str | None:
+        """Return the tool version if configured, None otherwise."""
+        return self._tool_versions.get(tool_name)
+
+    def run_claude_extraction_plan(self, cwd: Path) -&gt; str | None:
+        """Track call to run_claude_extraction_plan without executing anything.
+
+        This method records the call parameters for test assertions.
+        Raises RuntimeError if configured to do so (matching real
+        implementation's run_subprocess_with_context behavior).
+        Returns the configured extraction_plan_url on success.
+        """
+        self._extraction_calls.append(cwd)
+        if self._claude_extraction_raises:
+            raise RuntimeError("Simulated extraction failure")
+        return self._extraction_plan_url
+
+    @property
+    def extraction_calls(self) -&gt; list[Path]:
+        """Get the list of run_claude_extraction_plan() calls that were made.
+
+        Returns list of cwd paths where extraction was invoked.
+
+        This property is for test assertions only.
+        """
+        return self._extraction_calls.copy()
+
+    def spawn_subshell(
+        self,
+        *,
+        cwd: Path,
+        shell_path: str,
+        command: str,
+        env: dict[str, str],
+    ) -&gt; int:
+        """Record spawn_subshell call and return configured exit code.
+
+        This method records the call parameters for test assertions.
+        Returns the exit code configured at construction time.
+        """
+        self._subshell_calls.append(
+            SpawnSubshellCall(
+                cwd=cwd,
+                shell_path=shell_path,
+                command=command,
+                env=env.copy(),
+            )
+        )
+        return self._subshell_exit_code
+
+    @property
+    def subshell_calls(self) -&gt; list[SpawnSubshellCall]:
+        """Get the list of spawn_subshell() calls that were made.
+
+        Returns list of SpawnSubshellCall records with call parameters.
+
+        This property is for test assertions only.
+        """
+        return self._subshell_calls.copy()
+```
+
+---
+
+## 4. CONTEXT DEPENDENCY INJECTION - require_context Pattern
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py`
+
+Key pattern from `require_context`:
+
+```python
+def require_context(ctx: click.Context) -&gt; ErkContext:
+    """Get the full ErkContext, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing. If context is not
+    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        ErkContext instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        &gt;&gt;&gt; @click.command()
+        &gt;&gt;&gt; @click.pass_context
+        &gt;&gt;&gt; def my_command(ctx: click.Context) -&gt; None:
+        ...     erk_ctx = require_context(ctx)
+        ...     # Access any attribute from erk_ctx
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    if not isinstance(ctx.obj, ErkContext):
+        click.echo("Error: Context must be ErkContext", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj
+```
+
+All helper functions follow this LBYL pattern with LBYL checks:
+- `require_cwd(ctx)` -&gt; Path
+- `require_repo_root(ctx)` -&gt; Path
+- `require_git(ctx)` -&gt; Git
+- `require_github(ctx)` -&gt; LocalGitHub
+- `require_issues(ctx)` -&gt; GitHubIssues
+- `require_prompt_executor(ctx)` -&gt; PromptExecutor
+- `require_plan_backend(ctx)` -&gt; PlanBackend
+- `require_time(ctx)` -&gt; Time
+- `require_branch_manager(ctx)` -&gt; BranchManager
+- And many more...
+
+---
+
+## 5. EXEC SCRIPT PATTERN - Using @click.pass_context
+
+### Example 1: download_remote_session.py
+```python
+"""Download a Claude Code session from a git branch."""
+
+import json
+import shutil
+from pathlib import Path
+
+import click
+
+from erk_shared.context.helpers import require_git, require_repo_root
+
+
+@click.command(name="download-remote-session")
+@click.option(
+    "--session-branch",
+    required=True,
+    help="Git branch containing the session (e.g., async-learn/123)",
+)
+@click.option(
+    "--session-id",
+    required=True,
+    help="Claude session ID (used to locate file on the branch)",
+)
+@click.pass_context
+def download_remote_session(
+    ctx: click.Context,
+    session_branch: str,
+    session_id: str,
+) -&gt; None:
+    """Download a session from a git branch.
+
+    Fetches the session JSONL from the provided branch and stores it
+    in .erk/scratch/remote-sessions/{session_id}/.
+
+    The command:
+    1. Cleans up existing directory if present (idempotent)
+    2. Fetches the branch from origin
+    3. Extracts the session JSONL via git show
+    4. Returns path to the session file
+    """
+    repo_root = require_repo_root(ctx)
+    git = require_git(ctx)
+    # ... implementation uses repo_root and git ...
+```
+
+### Example 2: push_session.py
+```python
+"""Push a preprocessed session to the async-learn branch with accumulation."""
+
+import json
+import subprocess
+import tempfile
+from datetime import UTC
+from pathlib import Path
+from typing import Literal
+
+import click
+
+from erk_shared.context.helpers import (
+    require_git,
+    require_plan_backend,
+    require_repo_root,
+    require_time,
+)
+
+
+@click.command(name="push-session")
+@click.option(
+    "--session-file",
+    required=True,
+    type=click.Path(exists=True, path_type=Path),
+    help="Path to the session JSONL file to preprocess and upload",
+)
+@click.option(
+    "--session-id",
+    required=True,
+    help="Claude Code session ID",
+)
+@click.option(
+    "--stage",
+    required=True,
+    type=click.Choice(["planning", "impl", "address"]),
+    help="Lifecycle stage: planning, impl, or address",
+)
+@click.option(
+    "--source",
+    required=True,
+    type=click.Choice(["local", "remote"]),
+    help="Session source: 'local' or 'remote'",
+)
+@click.option(
+    "--plan-id",
+    required=True,
+    type=int,
+    help="Plan identifier for the async-learn branch",
+)
+@click.pass_context
+def push_session(
+    ctx: click.Context,
+    session_file: Path,
+    session_id: str,
+    stage: Literal["planning", "impl", "address"],
+    source: Literal["local", "remote"],
+    plan_id: int,
+) -&gt; None:
+    """Preprocess and push a session to the async-learn branch with accumulation.
+
+    Preprocesses the session JSONL to compressed XML, then pushes the XML files
+    to the async-learn/{plan_id} branch, accumulating across lifecycle stages.
+    Updates the manifest and plan metadata.
+
+    Always exits with code 0 (non-critical operation).
+    """
+    repo_root = require_repo_root(ctx)
+    git = require_git(ctx)
+    time = require_time(ctx)
+    # ... implementation uses repo_root, git, and time ...
+```
+
+### Example 3: run_review.py
+```python
+"""Run a code review using Claude."""
+
+import json
+from dataclasses import dataclass
+
+import click
+
+from erk.review.config import read_review_exclude_patterns
+from erk.review.parsing import parse_review_file
+from erk.review.prompt_assembly import assemble_review_prompt
+from erk_shared.context.helpers import (
+    get_repo_identifier,
+    require_cwd,
+    require_git,
+    require_prompt_executor,
+)
+
+
+@click.command(name="run-review")
+@click.option("--name", "review_name", required=True, help="Review filename (without .md)")
+@click.option("--pr-number", type=int, help="PR number to review (PR mode)")
+@click.option("--local", "local_mode", is_flag=True, help="Review local changes (local mode)")
+@click.option("--base", "base_branch", help="Base branch for local mode (default: auto-detect)")
+@click.option(
+    "--reviews-dir",
+    default=".erk/reviews",
+    help="Directory containing review definitions (default: .erk/reviews)",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Print assembled prompt without running Claude",
+)
+@click.pass_context
+def run_review(
+    ctx: click.Context,
+    *,
+    review_name: str,
+    pr_number: int | None,
+    local_mode: bool,
+    base_branch: str | None,
+    reviews_dir: str,
+    dry_run: bool,
+) -&gt; None:
+    """Run a code review using Claude."""
+    cwd = require_cwd(ctx)
+
+    # ... validation logic ...
+
+    # For local mode, auto-detect base branch if not specified
+    resolved_base_branch: str | None = None
+    if local_mode:
+        resolved_base_branch = (
+            base_branch if base_branch else require_git(ctx).branch.detect_trunk_branch(cwd)
+        )
+
+    # ... rest of implementation ...
+    
+    executor = require_prompt_executor(ctx)
+    exit_code = executor.execute_prompt_passthrough(...)
+    raise SystemExit(exit_code)
+```
+
+---
+
+## Summary of Key Patterns
+
+**Gateway ABC Pattern:**
+- **5-file pattern** (full): abc.py, real.py, fake.py, dry_run.py, printing.py
+- **3-file pattern** (simplified): abc.py, real.py, fake.py (for process replacement or all-or-nothing operations)
+
+**Fake Gateway Pattern:**
+- Constructor-injected test data (no setup methods)
+- Mutation tracking via private lists/sets
+- Read-only properties for test assertions
+- Frozen dataclasses for call records
+
+**Context Dependency Injection:**
+- `@click.pass_context` decorator on all exec CLI commands
+- Use `require_*` helper functions (LBYL pattern)
+- Exit with code 1 on missing context
+- Tests inject via `obj=ErkContext.for_test(cwd=tmp_path)`
+
+All files are located at:
+- **Gateway examples:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/` and `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/`
+- **Context helpers:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py`
+- **Exec scripts:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/`</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="6263" cache_read_input_tokens="50481" cache_creation="{'ephemeral_5m_input_tokens': 6263, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
