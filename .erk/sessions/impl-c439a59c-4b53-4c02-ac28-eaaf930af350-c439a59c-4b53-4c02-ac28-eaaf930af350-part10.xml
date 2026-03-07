@@ -1,0 +1,1043 @@
+<session>
+  <meta source="agent-adea812" />
+  <meta branch="plnd/push-down-audit-collect-03-06-2116" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the available gateway interfaces for building an `erk exec audit-collect` command. Specifically:
+
+1. Read `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py` - what methods are available for branch operations?
+2. Read `packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py` - what methods are available for worktree operations?
+3. Read `src/erk/cli/commands/branch/list_cmd.py` - how does it collect branch+PR data?
+4. Read `packages/erk-shared/src/erk_shared/context/helpers.py` - what context helpers are available?
+5. Read `packages/erk-shared/src/erk_shared/context/__init__.py` or similar to understand ErkContext.for_test() pattern
+6. Look at an existing test in `tests/unit/cli/commands/exec/scripts/` for the testing pattern
+
+Return the full content of all these files so I can understand the patterns.</user>
+  <assistant>I'll help you understand the gateway interfaces and existing patterns. Let me start by checking the documentation index, then read the specific files you need.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15255" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15255, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XuYzhs9u5K32cToEisxdC5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15255" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15255, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Sm5k4KuiNb71tQ2QJSM5Yu">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15255" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15255, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YKYQKASTwkB1FA8TZyCXeS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15255" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15255, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SQuZLJydFt4Lxo4qgezwhm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15255" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15255, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XuYzhs9u5K32cToEisxdC5">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Sm5k4KuiNb71tQ2QJSM5Yu">
+     1→"""Abstract base class for Git branch operations.
+     2→
+     3→This sub-gateway extracts branch operations from the main Git gateway,
+     4→including both mutation and query operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+    17→
+    18→
+    19→class GitBranchOps(ABC):
+    20→    """Abstract interface for Git branch operations.
+    21→
+    22→    This interface contains both mutation and query operations for branches.
+    23→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def create_branch(
+    28→        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    29→    ) -&gt; BranchCreated | BranchAlreadyExists:
+    30→        """Create a new branch without checking it out.
+
+... [293 lines omitted] ...
+
+    84→            subprocess.CalledProcessError: If git command fails
+   184→            RuntimeError: If the specified branch doesn't exist
+  </tool_result>
+  <tool_result tool="toolu_01YKYQKASTwkB1FA8TZyCXeS">
+     1→"""Abstract interface for git worktree operations.
+     2→
+     3→This module provides a clean abstraction over git worktree subprocess calls,
+     4→making the codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Worktree: Abstract base class defining the interface
+     8→- RealWorktree: Production implementation using subprocess
+     9→- FakeWorktree: In-memory implementation for testing
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from pathlib import Path
+    14→
+    15→# Re-export WorktreeInfo from the main git.abc module for backwards compatibility
+    16→from erk_shared.gateway.git.abc import WorktreeInfo
+    17→
+    18→
+    19→class Worktree(ABC):
+    20→    """Abstract interface for git worktree operations.
+    21→
+    22→    All implementations (real and fake) must implement this interface.
+    23→    """
+    24→
+    25→    @abstractmethod
+    26→    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+    27→        """List all worktrees in the repository."""
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [141 lines omitted] ...
+
+    50→            RuntimeError: If the worktree add operation fails.
+    69→            RuntimeError: If the worktree remove operation fails.
+  </tool_result>
+  <tool_result tool="toolu_01SQuZLJydFt4Lxo4qgezwhm">
+     1→"""List active branches - those with worktrees or open PRs."""
+     2→
+     3→import click
+     4→from rich.console import Console
+     5→from rich.table import Table
+     6→
+     7→from erk.cli.alias import alias
+     8→from erk.cli.core import discover_repo_context
+     9→from erk.core.context import ErkContext
+    10→from erk.core.display_utils import format_relative_time, get_pr_status_emoji
+    11→from erk_shared.gateway.github.types import PullRequestInfo
+    12→
+    13→
+    14→@alias("ls")
+    15→@click.command("list")
+    16→@click.pass_obj
+    17→def branch_list(ctx: ErkContext) -&gt; None:
+    18→    """List active branches with their worktrees and PR status.
+    19→
+    20→    Active branches are those that have:
+    21→    - A worktree checked out, OR
+    22→    - An open pull request
+    23→
+    24→    Example:
+    25→        erk br ls
+    26→    """
+    27→    repo = discover_repo_context(ctx, ctx.cwd)
+    28→
+    29→    # Detect trunk branch for last commit calculation
+    30→    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+
+... [58 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the remaining files you requested:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8194" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 8194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013k1UZXLohCwkuPqH9S9EjB">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8194" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 8194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ec6DRLVx72WKSpTHLirRyZ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8194" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 8194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01VtMwbvGPTRopYyEF49hoEH">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8194" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 8194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013k1UZXLohCwkuPqH9S9EjB">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import GitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.plan_store.backend import PlanBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get PlanBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <tool_result tool="toolu_01Ec6DRLVx72WKSpTHLirRyZ">
+     1→"""Unified context for erk and erk-kits.
+     2→
+     3→This module provides the canonical ErkContext that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→Import from submodules:
+     7→- erk_shared.context.context: ErkContext
+     8→- erk_shared.context.helpers: context helper functions
+     9→- erk_shared.context.types: GlobalConfig, LoadedConfig, etc.
+    10→"""
+    11→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01VtMwbvGPTRopYyEF49hoEH">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_label.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_capture_session_info.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_pr_labels_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_fetch_summaries.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_remote_execution_note.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_generate_summaries.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cmux_checkout_workspace.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_discover_reviews.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_trunk_branch.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_plan_from_branch.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_embedded_prompt.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_issue_timeline_prs.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_issue_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_generate_pr_address_summary.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_feedback.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+
+... [57 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read a couple of test examples to understand the testing pattern:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9357" cache_read_input_tokens="23449" cache_creation="{'ephemeral_5m_input_tokens': 9357, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R71Xs9HWa4S719gVNTRMvt">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9357" cache_read_input_tokens="23449" cache_creation="{'ephemeral_5m_input_tokens': 9357, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VZFw2BAgT2UJ8YnSgwYcZo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_trunk_branch.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9357" cache_read_input_tokens="23449" cache_creation="{'ephemeral_5m_input_tokens': 9357, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N2L7KLYgJUDJ2HQJAVbdrm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9357" cache_read_input_tokens="23449" cache_creation="{'ephemeral_5m_input_tokens': 9357, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R71Xs9HWa4S719gVNTRMvt">
+     1→"""Unit tests for dash-data exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def test_serialize_plan_row_basic() -&gt; None:
+    12→    """Test basic serialization of PlanRowData to dict."""
+    13→    row = make_plan_row(123, "Test Plan")
+    14→    result = _serialize_plan_row(row)
+    15→
+    16→    assert result["plan_id"] == 123
+    17→    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
+    18→    assert result["pr_number"] is None
+    19→    assert result["exists_locally"] is False
+    20→    assert result["last_local_impl_at"] is None
+    21→    assert result["last_remote_impl_at"] is None
+    22→
+    23→
+    24→def test_serialize_plan_row_datetime_fields() -&gt; None:
+    25→    """Test that datetime fields are converted to ISO 8601 strings."""
+    26→    now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
+    27→    row = PlanRowData(
+    28→        plan_id=456,
+    29→        plan_url="https://github.com/test/repo/issues/456",
+    30→        pr_number=None,
+
+... [294 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01VZFw2BAgT2UJ8YnSgwYcZo">
+     1→"""Unit tests for detect_trunk_branch kit CLI command.
+     2→
+     3→Tests detection of trunk branch (main or master) by querying remote.
+     4→Uses FakeGit for dependency injection instead of mocking subprocess.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.detect_trunk_branch import (
+    13→    DetectedTrunk,
+    14→    DetectionError,
+    15→    _detect_trunk_branch_impl,
+    16→)
+    17→from erk.cli.commands.exec.scripts.detect_trunk_branch import (
+    18→    detect_trunk_branch as detect_trunk_branch_command,
+    19→)
+    20→from erk_shared.context.context import ErkContext
+    21→from erk_shared.gateway.git.fake import FakeGit
+    22→
+    23→# ============================================================================
+    24→# 1. Implementation Logic Tests (4 tests)
+    25→# ============================================================================
+    26→
+    27→
+    28→def test_detect_impl_main_found(tmp_path: Path) -&gt; None:
+    29→    """Test detection when main branch exists on remote."""
+    30→    git = FakeGit(remote_branches={tmp_path: ["origin/main"]})
+
+... [114 lines omitted] ...
+
+    62→    """Test error when neither main nor master exists on remote."""
+    67→    assert isinstance(result, DetectionError)
+    69→    assert result.error == "trunk-not-found"
+   107→def test_cli_error_exit_code(tmp_path: Path) -&gt; None:
+   108→    """Test CLI command exits with error code when no trunk found."""
+   118→    assert output["error"] == "trunk-not-found"
+  </tool_result>
+  <tool_result tool="toolu_01N2L7KLYgJUDJ2HQJAVbdrm">
+     1→"""Test fixtures for session log preprocessing tests.
+     2→
+     3→Contains real JSONL entry samples extracted from actual Claude Code session logs.
+     4→"""
+     5→
+     6→# File history snapshot entry (should be filtered out)
+     7→JSONL_FILE_HISTORY_SNAPSHOT = """{
+     8→  "type": "file-history-snapshot",
+     9→  "messageId": "msg_123",
+    10→  "parentUuid": "parent_456",
+    11→  "sessionId": "session_789",
+    12→  "snapshot": {"trackedFileBackups": {}, "timestamp": "2025-11-20T00:00:00Z"},
+    13→  "isSnapshotUpdate": false,
+    14→  "timestamp": "2025-11-20T00:00:00.000Z",
+    15→  "gitBranch": "test-branch",
+    16→  "cwd": "/test/dir",
+    17→  "userType": "user",
+    18→  "isSidechain": false
+    19→}"""
+    20→
+    21→# User message with string content
+    22→JSONL_USER_MESSAGE_STRING = """{
+    23→  "type": "user",
+    24→  "message": {"role": "user", "content": "Hello, how are you?"},
+    25→  "parentUuid": "parent_123",
+    26→  "sessionId": "session_456",
+    27→  "gitBranch": "test-branch",
+    28→  "cwd": "/test/dir",
+    29→  "timestamp": "2025-11-20T00:00:00.000Z",
+    30→  "userType": "user",
+
+... [276 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at the ErkContext.for_test() pattern more closely:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="14597" cache_read_input_tokens="32806" cache_creation="{'ephemeral_5m_input_tokens': 14597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GG9ZUgnsHwLX2ZzawABGkB">
+    <param name="pattern">def for_test</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14597" cache_read_input_tokens="32806" cache_creation="{'ephemeral_5m_input_tokens': 14597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UPpRnsAoetM8BmGnuTrbhK">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14597" cache_read_input_tokens="32806" cache_creation="{'ephemeral_5m_input_tokens': 14597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UPpRnsAoetM8BmGnuTrbhK">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PlanListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk_shared.core.health_check_runner import HealthCheckRunner
+    27→    from erk_shared.core.objective_list_service import ObjectiveListService
+    28→
+    29→from erk_shared.core.llm_caller import LlmCaller
+    30→from erk_shared.core.plan_list_service import PlanListService
+
+... [125 lines omitted] ...
+
+   135→            RuntimeError: If not in a git repository
+   138→            raise RuntimeError("Not in a git repository")
+  </tool_result>
+  <tool_result tool="toolu_01GG9ZUgnsHwLX2ZzawABGkB">
+Found 1 file
+packages/erk-shared/src/erk_shared/context/context.py
+  </tool_result>
+  <assistant>Let me continue reading the for_test method:</assistant>
+  <usage input_tokens="2226" cache_creation_input_tokens="403" cache_read_input_tokens="47403" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012oXAHpafLSAnCoEcQu1pv4">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="offset">150</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="2226" cache_creation_input_tokens="403" cache_read_input_tokens="47403" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012oXAHpafLSAnCoEcQu1pv4">
+   150→
+   151→    @property
+   152→    def issues(self) -&gt; GitHubIssues:
+   153→        """Access to issue operations via the composed GitHub gateway.
+   154→
+   155→        All issue operations should be accessed via ctx.github.issues directly,
+   156→        but this property is provided for backward compatibility.
+   157→        """
+   158→        return self.github.issues
+   159→
+   160→    @property
+   161→    def github_issues(self) -&gt; GitHubIssues:
+   162→        """DotAgentContext compatibility - alias for issues property.
+   163→
+   164→        Deprecated: Use ctx.github.issues instead. This property is provided for
+   165→        backward compatibility with code written for the old DotAgentContext.
+   166→        """
+   167→        return self.github.issues
+   168→
+   169→    @property
+   170→    def plan_backend(self) -&gt; PlanBackend:
+   171→        """Access plan_store as PlanBackend (read/write interface).
+   172→
+   173→        Since plan_store is typed as PlanBackend, this is a direct alias.
+   174→        Retained for call-site compatibility.
+   175→        """
+   176→        return self.plan_store
+   177→
+   178→    @property
+   179→    def branch_manager(self) -&gt; BranchManager:
+
+... [93 lines omitted] ...
+
+   198→            raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
+  </tool_result>
+  <assistant>Perfect! Now let me look at an existing audit-related command to understand the pattern:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="4092" cache_read_input_tokens="47806" cache_creation="{'ephemeral_5m_input_tokens': 4092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01XCiQsrAjoWWMqU6V4sByLo">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/*audit*.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="4092" cache_read_input_tokens="47806" cache_creation="{'ephemeral_5m_input_tokens': 4092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01YJDbviDbb7RaxXEttAwr3Q">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/*collect*.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="4092" cache_read_input_tokens="47806" cache_creation="{'ephemeral_5m_input_tokens': 4092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XCiQsrAjoWWMqU6V4sByLo">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01YJDbviDbb7RaxXEttAwr3Q">
+No files found
+  </tool_result>
+  <assistant>Let me look at the plan documentation to understand the context better:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="341" cache_read_input_tokens="51898" cache_creation="{'ephemeral_5m_input_tokens': 341, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TcvNsmYLMJnCYFRPW6MJ2Z">
+    <param name="command">find /home/runner/work/erk/erk/.erk -name "*.md" -type f | head -20</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="341" cache_read_input_tokens="51898" cache_creation="{'ephemeral_5m_input_tokens': 341, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TcvNsmYLMJnCYFRPW6MJ2Z">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+/home/runner/work/erk/erk/.erk/reviews/tripwires.md
+/home/runner/work/erk/erk/.erk/reviews/dignified-code-simplifier.md
+/home/runner/work/erk/erk/.erk/reviews/audit-pr-docs.md
+/home/runner/work/erk/erk/.erk/reviews/dignified-python.md
+/home/runner/work/erk/erk/.erk/reviews/test-coverage.md
+/home/runner/work/erk/erk/.erk/impl-context/plan.md
+/home/runner/work/erk/erk/.erk/impl-context/plnd--push-down-audit-collect-03-06-2116/plan.md
+  </tool_result>
+  <assistant>Perfect! Let me read the plan for the audit-collect work:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="364" cache_read_input_tokens="52239" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BLNtNP5PJ4GF2isb99m5iL">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--push-down-audit-collect-03-06-2116/plan.md</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="364" cache_read_input_tokens="52239" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BLNtNP5PJ4GF2isb99m5iL">
+     1→# Plan: Push down audit-branches data collection into `erk exec audit-collect`
+     2→
+     3→## Context
+     4→
+     5→The `/local:audit-branches` slash command is a 620-line markdown file that instructs the LLM to write bash scripts on the fly across 11 phases. In the session that just ran, this caused:
+     6→
+     7→1. **~15 sequential bash calls** because each step revealed new categories (async-learn/*, non-Graphite branches with closed PRs)
+     8→2. **Shell fragility** — zsh `!=` syntax error, complex heredoc workarounds needed for every script
+     9→3. **Missing categories** — 71 `async-learn/*` branches and 40 non-Graphite branches with closed PRs weren't anticipated by the command
+    10→4. **Wrong phase ordering** — blocking worktree detection was Phase 6 but should have been first
+    11→5. **Redundant API calls** — PRs fetched 3 times (`--state all`, `--state closed`, individual `gh pr view`)
+    12→6. **gt repo sync blind spot** — command assumed gt sync cleans everything, but it only cleans Graphite-tracked branches
+    13→
+    14→This is a textbook case for the **refac-cli-push-down** pattern: the data collection and categorization are purely mechanical, while only the presentation and user interaction require LLM judgment.
+    15→
+    16→## Approach
+    17→
+    18→Create `erk exec audit-collect` — a Python exec script that outputs comprehensive, pre-categorized JSON. Then rewrite the slash command to consume that JSON, shrinking it from ~620 lines to ~150 lines.
+    19→
+    20→## Step 1: Create `erk exec audit-collect` exec script
+    21→
+    22→**File:** `src/erk/cli/commands/exec/scripts/audit_collect.py`
+    23→
+    24→The script collects ALL data in a single pass and outputs structured JSON with pre-categorized branches.
+    25→
+    26→**Input:** No arguments needed (uses repo context from Click).
+    27→
+    28→**Output JSON schema:**
+    29→
+    30→```json
+
+... [169 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now let me look at a similar exec script to understand the pattern better:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3158" cache_read_input_tokens="52603" cache_creation="{'ephemeral_5m_input_tokens': 3158, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XXNV9gAUShYXF9prnUDYzc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3158" cache_read_input_tokens="52603" cache_creation="{'ephemeral_5m_input_tokens': 3158, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XXNV9gAUShYXF9prnUDYzc">
+     1→"""Batch close multiple plan PRs with comments.
+     2→
+     3→Usage:
+     4→    echo '[{"plan_number": 42, "comment": "Superseded"}]' | erk exec close-prs
+     5→
+     6→Input:
+     7→    JSON array from stdin, each item: {"plan_number": int, "comment": str}
+     8→
+     9→Output:
+    10→    JSON with batch results
+    11→
+    12→Exit Codes:
+    13→    0: Always (even on error, to support batch contract)
+    14→    1: Context not initialized
+    15→"""
+    16→
+    17→from __future__ import annotations
+    18→
+    19→import json
+    20→from dataclasses import asdict, dataclass
+    21→from typing import TYPE_CHECKING, TypedDict, cast
+    22→
+    23→import click
+    24→
+    25→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    26→
+    27→if TYPE_CHECKING:
+    28→    from typing import Any
+    29→
+    30→
+
+... [75 lines omitted] ...
+
+    47→class BatchCloseError:
+    48→    """Error response for batch close."""
+    51→    error_type: str
+    55→def _validate_batch_input(data: object) -&gt; list[PlanCloseItem] | BatchCloseError:
+    62→        List of validated items, or BatchCloseError on validation failure
+    65→        return BatchCloseError(
+    67→            error_type="invalid-input",
+    74→            return BatchCloseError(
+    76→                error_type="invalid-input",
+    83→            return BatchCloseError(
+    85→                error_type="invalid-input",
+    91→            return BatchCloseError(
+    93→                error_type="invalid-input",
+    98→            return BatchCloseError(
+   100→                error_type="invalid-input",
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me create a comprehensive summary document for you:
+
+## Comprehensive Gateway Interfaces and Testing Patterns Report
+
+I've reviewed all the requested files and the plan documentation. Here's a complete summary of the gateway interfaces, existing patterns, and context helpers available for building `erk exec audit-collect`:
+
+---
+
+### 1. **Branch Operations Gateway** (`GitBranchOps`)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py`
+
+**Available Methods for Data Collection:**
+
+**Query Operations:**
+- `list_local_branches(repo_root: Path) -&gt; list[str]` — Get all local branch names
+- `list_remote_branches(repo_root: Path) -&gt; list[str]` — Get remote branches (format: `origin/branch-name`)
+- `get_branch_head(repo_root: Path, branch: str) -&gt; str | None` — Get commit SHA for a branch
+- `get_all_branch_heads(repo_root: Path) -&gt; dict[str, str]` — Get SHAs for ALL local branches in single call
+- `get_all_branch_sync_info(repo_root: Path) -&gt; dict[str, BranchSyncInfo]` — Get sync status (ahead/behind) for all branches
+- `get_branch_last_commit_time(repo_root: Path, branch: str, trunk: str) -&gt; str | None` — Get ISO 8601 timestamp of most recent unique commit on branch
+- `get_branch_commits_with_authors(repo_root: Path, branch: str, trunk: str, *, limit: int) -&gt; list[dict[str, str]]` — Get commits unique to branch with author and timestamp info
+- `get_ahead_behind(cwd: Path, branch: str) -&gt; tuple[int, int]` — Get (ahead, behind) counts
+- `get_behind_commit_authors(cwd: Path, branch: str) -&gt; list[str]` — Get authors of commits on remote but not local
+- `is_branch_diverged_from_remote(cwd: Path, branch: str, remote: str) -&gt; BranchDivergence` — Check divergence status
+- `branch_exists_on_remote(repo_root: Path, remote: str, branch: str) -&gt; bool` — Check if branch exists on remote
+- `detect_trunk_branch(repo_root: Path) -&gt; str` — Auto-detect trunk branch (main/master)
+
+---
+
+### 2. **Worktree Operations Gateway** (`Worktree`)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py`
+
+**Available Methods:**
+- `list_worktrees(repo_root: Path) -&gt; list[WorktreeInfo]` — List all worktrees with metadata
+  - Returns: `WorktreeInfo` objects containing:
+    - `path: Path` — Worktree path
+    - `branch: str | None` — Checked out branch
+    - `is_root: bool` — Whether this is the root worktree
+    - `is_detached: bool` — Detached HEAD state
+- `is_branch_checked_out(repo_root: Path, branch: str) -&gt; Path | None` — Find worktree path for branch or None
+- `is_worktree_clean(worktree_path: Path) -&gt; bool` — Check if no uncommitted changes
+- `path_exists(path: Path) -&gt; bool` — Check if path exists on filesystem
+- `is_dir(path: Path) -&gt; bool` — Check if path is directory (vs .git file in worktree)
+
+---
+
+### 3. **Context Helpers**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py`
+
+All helpers follow the LBYL pattern (Look Before You Leap) — check conditions first, exit with error message if not met:
+
+```python
+# Usage pattern:
+@click.command()
+@click.pass_context
+def my_command(ctx: click.Context) -&gt; None:
+    repo_root = require_repo_root(ctx)  # Exits if not initialized
+    git = require_git(ctx)
+    github = require_github(ctx)
+```
+
+**Key helpers for audit-collect:**
+- `require_repo_root(ctx: click.Context) -&gt; Path` — Get repo root, exit if not initialized
+- `require_git(ctx: click.Context) -&gt; Git` — Get Git gateway
+- `require_github(ctx: click.Context) -&gt; GitHub` — Get GitHub gateway
+- `require_context(ctx: click.Context) -&gt; ErkContext` — Get full context
+- `require_cwd(ctx: click.Context) -&gt; Path` — Get current working directory
+
+---
+
+### 4. **Test Pattern Using `ErkContext.for_test()`**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py`
+
+**Factory Method Signature:**
+```python
+@staticmethod
+def for_test(
+    *,
+    github_issues: GitHubIssues | None = None,
+    git: Git | None = None,
+    github: GitHub | None = None,
+    github_admin: GitHubAdmin | None = None,
+    claude_installation: ClaudeInstallation | None = None,
+    prompt_executor: PromptExecutor | None = None,
+    llm_caller: LlmCaller | None = None,
+    plan_store: PlanBackend | None = None,
+    debug: bool = False,
+    repo_root: Path | None = None,
+    cwd: Path | None = None,
+    repo_info: RepoInfo | None = None,
+    package_info: ErkPackageInfo | None = None,
+) -&gt; ErkContext
+```
+
+**How it works:**
+- All parameters optional — missing values get sensible test defaults
+- Uses `FakeGit`, `FakeGitHub`, `FakeGitHubIssues` by default
+- Default paths: `repo_root=/fake/repo`, `cwd=/fake/worktree`
+- Returns fully configured `ErkContext` ready for testing
+
+**Example from tests:**
+```python
+from click.testing import CliRunner
+from erk_shared.context.context import ErkContext
+from erk_shared.gateway.git.fake import FakeGit
+
+def test_detect_trunk_branch(tmp_path: Path) -&gt; None:
+    """Test trunk branch detection."""
+    runner = CliRunner()
+    git = FakeGit(remote_branches={tmp_path: ["origin/main"]})
+    ctx = ErkContext.for_test(git=git, repo_root=tmp_path)
+    
+    result = runner.invoke(detect_trunk_branch_command, [], obj=ctx)
+    
+    assert result.exit_code == 0
+```
+
+---
+
+### 5. **Example: How `branch list` Collects Branch+PR Data**
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/branch/list_cmd.py`
+
+Pattern used in the existing `branch list` command (which you should reference for audit-collect):
+
+```python
+@click.command("list")
+@click.pass_obj
+def branch_list(ctx: ErkContext) -&gt; None:
+    """List active branches with their worktrees and PR status."""
+    # 1. Discover repo context
+    repo = discover_repo_context(ctx, ctx.cwd)
+    
+    # 2. Get trunk branch for comparisons
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    
+    # 3. Get worktrees (yields branch names, is_root flag, paths)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
+    
+    # 4. Get PRs from Graphite (maps branch → PullRequestInfo)
+    prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo.root)
+    
+    # 5. Build active branches map: branch -&gt; (worktree_name, pr_info)
+    active_branches: dict[str, tuple[str | None, PullRequestInfo | None]] = {}
+    
+    for wt in worktrees:
+        if wt.branch is not None and wt.branch != ctx.trunk_branch:
+            wt_name = "root" if wt.is_root else wt.path.name
+            pr = prs.get(wt.branch)
+            active_branches[wt.branch] = (wt_name, pr)
+    
+    # 6. Add branches with open PRs not already listed
+    for branch, pr in prs.items():
+        if branch not in active_branches and pr.state == "OPEN":
+            active_branches[branch] = (None, pr)
+    
+    # 7. Query additional data for each branch
+    for branch in sorted(active_branches.keys()):
+        timestamp = ctx.git.branch.get_branch_last_commit_time(
+            repo.root, branch, trunk
+        )
+        # ... format and display
+```
+
+**Key takeaway:** Use the gateway methods efficiently — batch operations where possible (`get_all_branch_heads()`, `get_all_branch_sync_info()`) to avoid N+1 queries.
+
+---
+
+### 6. **Exec Script Pattern**
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py`
+
+**Required pattern for exec scripts:**
+
+```python
+import click
+import json
+from dataclasses import dataclass, asdict
+from erk_shared.context.helpers import require_repo_root, require_git
+
+@dataclass(frozen=True)  # Always frozen (immutable)
+class AuditCollectResult:
+    """Result dataclass."""
+    success: bool
+    summary: dict[str, object]
+    categories: dict[str, object]
+
+@click.command(name="audit-collect")
+@click.option("--json", "output_json", is_flag=True, help="Output as JSON")
+@click.pass_context
+def audit_collect(ctx: click.Context, output_json: bool) -&gt; None:
+    """Collect audit data on branches, worktrees, and PRs.
+    
+    Usage:
+        erk exec audit-collect --json
+    
+    Output:
+        JSON with pre-categorized branches, worktrees, and PRs.
+    
+    Exit Codes:
+        0: Success
+        1: Context not initialized
+    """
+    # Use context helpers - they exit if context missing
+    repo_root = require_repo_root(ctx)
+    git = require_git(ctx)
+    github = require_github(ctx)
+    
+    # Collect data
+    result = _audit_collect_impl(git, github, repo_root)
+    
+    # Output as JSON
+    click.echo(json.dumps(asdict(result)))
+```
+
+**Key requirements:**
+- Use `@click.pass_context` for dependency injection
+- Use context helpers (`require_*`) for all dependencies
+- Output JSON using `json.dumps(asdict(result))`
+- Use frozen dataclasses with `asdict()` for serialization
+- Include docstring with Usage, Output, and Exit Codes sections
+
+---
+
+### 7. **Test Pattern for Exec Scripts**
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_detect_trunk_branch.py`
+
+**Standard test organization (4 layers):**
+
+```python
+# Layer 1: Implementation logic tests (test core functions)
+def test_detect_impl_main_found(tmp_path: Path) -&gt; None:
+    """Test detection when main branch exists on remote."""
+    git = FakeGit(remote_branches={tmp_path: ["origin/main"]})
+    result = _detect_trunk_branch_impl(git, tmp_path)
+    assert isinstance(result, DetectedTrunk)
+    assert result.trunk_branch == "main"
+
+# Layer 2: CLI command tests (test Click integration)
+def test_cli_success_main(tmp_path: Path) -&gt; None:
+    """Test CLI command when main branch detected."""
+    runner = CliRunner()
+    git = FakeGit(remote_branches={tmp_path: ["origin/main"]})
+    ctx = ErkContext.for_test(git=git, repo_root=tmp_path)
+    
+    result = runner.invoke(detect_trunk_branch_command, [], obj=ctx)
+    
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["trunk_branch"] == "main"
+
+# Layer 3: JSON schema validation tests
+def test_cli_json_output_structure(tmp_path: Path) -&gt; None:
+    """Test that JSON output has expected structure on success."""
+    # ...
+
+# Layer 4: Error handling tests
+def test_cli_error_exit_code(tmp_path: Path) -&gt; None:
+    """Test CLI command exits with error code when no trunk found."""
+    # ...
+```
+
+**Pattern:**
+1. Separate implementation logic (`_audit_collect_impl()`) from Click command
+2. Test implementation with unit tests (no Click involved)
+3. Test CLI integration with CliRunner + context injection
+4. Test JSON schema validity
+5. Test error cases
+
+---
+
+### 8. **Test Fixtures Pattern**
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py`
+
+For audit-collect tests, you would create fixtures like:
+```python
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+
+# Pre-configured fake gateways
+def make_fake_git_with_branches():
+    return FakeGit(
+        local_branches=["main", "feature-1", "async-learn/8646"],
+        remote_branches={"origin/main", "origin/feature-1"},
+        # ...
+    )
+
+def make_fake_github_with_prs():
+    return FakeGitHub(
+        prs=[
+            {"number": 100, "state": "OPEN", "branch": "feature-1"},
+            {"number": 101, "state": "CLOSED", "branch": "old-branch"},
+        ]
+    )
+```
+
+---
+
+### 9. **Dashboard/Serialization Pattern**
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py`
+
+For audit-collect JSON output, follow this serialization pattern:
+```python
+import json
+from dataclasses import dataclass, asdict
+from datetime import datetime
+
+@dataclass(frozen=True)
+class BranchData:
+    branch: str
+    pr_number: int | None
+    last_commit_at: datetime | None  # Store as datetime
+    
+    def to_dict(self) -&gt; dict:
+        """Convert to JSON-serializable dict."""
+        data = asdict(self)
+        # Convert datetime objects to ISO 8601 strings
+        if self.last_commit_at:
+            data["last_commit_at"] = self.last_commit_at.isoformat()
+        # Convert tuples to lists for JSON
+        if isinstance(data.get("some_tuple"), tuple):
+            data["some_tuple"] = list(data["some_tuple"])
+        return data
+
+# Test JSON roundtrip
+def test_json_roundtrip():
+    row = BranchData(...)
+    json_str = json.dumps(row.to_dict())
+    parsed = json.loads(json_str)
+    assert isinstance(parsed, dict)
+```
+
+---
+
+### 10. **Plan Output Schema** (for reference)
+From the plan documentation, the audit-collect JSON output structure:
+
+```json
+{
+  "success": true,
+  "summary": {
+    "total_local_branches": 185,
+    "total_worktrees": 64,
+    "total_open_prs": 45
+  },
+  "categories": {
+    "blocking_worktrees": [{worktree_path, slot_name, is_slot, branch, pr_number, pr_state}],
+    "auto_cleanup": [{branch, reason, ahead_of_master, has_remote}],
+    "closed_pr_branches": [{branch, pr_number, pr_state, in_worktree, tracked_by_graphite}],
+    "pattern_branches": {
+      "async_learn": {count, branches, parent_pr_states}
+    },
+    "stale_open_prs": [{pr_number, title, reason, details, mergeable}],
+    "needs_attention": [{pr_number, title, mergeable, updated_at, branch}],
+    "active": {count, note}
+  }
+}
+```
+
+---
+
+## Summary for Building `audit-collect`
+
+1. **Use `ctx.git.branch` for branch operations:**
+   - `list_local_branches()` → all local branches
+   - `get_all_branch_sync_info()` → single batch call for ahead/behind all branches
+   - `get_branch_last_commit_time()` → timestamp of last unique commit
+
+2. **Use `ctx.git.worktree.list_worktrees()` for worktree enumeration**
+
+3. **Use `ctx.github` or subprocess for PR data** (per plan, use `gh pr list` subprocess)
+
+4. **Organize tests in 4 layers:**
+   - Implementation logic tests (core categorization functions)
+   - CLI command tests (Click integration)
+   - JSON schema validation tests
+   - Error handling tests
+
+5. **Use `ErkContext.for_test()` for dependency injection** with `FakeGit` and `FakeGitHub`
+
+6. **Follow the exec script pattern:** `@click.pass_context`, `require_*` helpers, frozen dataclasses, JSON output
+
+All absolute file paths provided above.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2033" cache_read_input_tokens="55761" cache_creation="{'ephemeral_5m_input_tokens': 2033, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
