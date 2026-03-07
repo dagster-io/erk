@@ -54,7 +54,7 @@ When multiple resources match, show a table and exit. Do NOT prompt for selectio
 
 ```python
 if len(matches) > 1:
-    user_output(f"Multiple branches found for plan #{issue_number}:\n")
+    user_output(f"Multiple branches found for plan #{plan_number}:\n")
 
     table = Table(show_header=True, header_style="bold")
     table.add_column("branch", style="yellow", no_wrap=True)
@@ -80,9 +80,9 @@ When no resources match, explain what was searched and suggest alternatives:
 ```python
 if len(matches) == 0:
     user_output(
-        f"No local branch or open PR found for plan #{issue_number}\n\n"
+        f"No local branch or open PR found for plan #{plan_number}\n\n"
         "This plan has not been implemented yet. To implement it:\n"
-        f"  • Run: erk implement {issue_number}"
+        f"  • Run: erk implement {plan_number}"
     )
     raise SystemExit(1)  # Exit code 1: actual error condition
 ```

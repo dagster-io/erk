@@ -10,7 +10,7 @@ audit_result: edited
 category: architecture
 tripwires:
   - action: "tracking selection by array index when the array can be mutated"
-    warning: "Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
+    warning: "Track selection by unique identifier (plan_id, row key), not array position. Array indices become unstable when rows are added, removed, or reordered."
   - action: "assuming cursor position will persist across DataTable.clear() calls"
     warning: "Save cursor position by row key before clear(), restore after repopulating. See textual/quirks.md for pattern."
   - action: "skipping fallback strategies when the selected item might disappear"
@@ -52,9 +52,9 @@ Position-based tracking fails in all three cases. Value-based tracking only fail
 
 See `PlanDataTable.populate()` in `src/erk/tui/widgets/plan_table.py` (lines 149-185). The pattern:
 
-- Save `selected_key` (stringified `issue_number`) before `clear()`
+- Save `selected_key` (stringified `plan_id`) before `clear()`
 - Also save `saved_cursor_row` as secondary fallback
-- Loop through new rows to find matching `issue_number`
+- Loop through new rows to find matching `plan_id`
 - If found, move cursor to that row
 - If not found, clamp saved index to valid range
 

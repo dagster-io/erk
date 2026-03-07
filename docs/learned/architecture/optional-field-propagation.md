@@ -62,7 +62,7 @@ The type system doesn't help: `field: int | None` accepts `None`, so this compil
 ```python
 # WRONG: Selective field copying
 new_plan = Plan(
-    issue_number=plan.issue_number,
+    plan_id=plan.plan_id,
     title=plan.title,
     # Missing: learn_status, learn_plan_issue, objective_issue, pr_number, ...
 )

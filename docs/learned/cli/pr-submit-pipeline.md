@@ -34,14 +34,14 @@ Linear pipelines solve this by **deferring the dispatch decision**. Discovery ha
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state -->
 
-Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and validates `.erk/impl-context/plan-ref.json` linkage (with legacy `.erk/impl-context/issue.json` fallback).
+Step 1 (`prepare_state()`) resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `plan_id`, and validates `.erk/impl-context/plan-ref.json` linkage (with legacy `.erk/impl-context/issue.json` fallback).
 
 **Why consolidate all discovery in one step?**
 
-1. **DRY** — Before this pattern, `issue_number` was derived independently in 3+ places with subtly different logic
+1. **DRY** — Before this pattern, `plan_id` was derived independently in 3+ places with subtly different logic
 2. **Fail fast** — If branch detection or `.impl` validation fails, no later steps run (no wasted work)
 3. **Type narrowing** — Later steps assume `branch_name` is `str`, not `str | None`, because step 1 checks and errors if unresolved
-4. **Single source of truth** — Grep for "where does `issue_number` come from?" finds one place, not four
+4. **Single source of truth** — Grep for "where does `plan_id` come from?" finds one place, not four
 
 **Anti-pattern:** Lazy discovery (re-running `get_repository_root()` in step 5 because "we need it again"). If a field is needed by multiple steps, step 1 populates it. State carries it forward.
 
@@ -77,11 +77,11 @@ The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+P
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state, auto-repair section -->
 
-`prepare_state()` auto-creates the `.erk/impl-context/` reference file if the issue number is inferred from the branch name but the file is missing.
+`prepare_state()` auto-creates the `.erk/impl-context/` reference file if the plan ID is inferred from the branch name but the file is missing.
 
 **Why auto-repair instead of erroring?** Early erk workflows created `.erk/impl-context/` but not a reference file. Erroring would break existing worktrees. Auto-repair maintains forward compatibility while migrating to the new structure.
 
-**Why in prepare_state() instead of a separate "repair" step?** Because the repair needs `issue_number` (discovered in prepare), `repo_root` (discovered in prepare), and `remote_url` (fetched for repair). Preparing and repairing are coupled — no value in separating them.
+**Why in prepare_state() instead of a separate "repair" step?** Because the repair needs `plan_id` (discovered in prepare), `repo_root` (discovered in prepare), and `remote_url` (fetched for repair). Preparing and repairing are coupled — no value in separating them.
 
 **When to remove this:** When no worktrees exist with `.erk/impl-context/` but missing a reference file, grep for `.erk/impl-context` directories and check for `plan-ref.json` or `issue.json` presence. If all have one, the auto-repair is dead code.
 
@@ -140,7 +140,7 @@ Step 4 (`extract_diff`) truncates diffs to fit AI context limits **before** writ
 
 ## State-Based Plan Detection
 
-The pipeline detects plan implementations via `state.issue_number is not None`. This drives two auto-behaviors:
+The pipeline detects plan implementations via `state.plan_id is not None or state.branch_name.startswith("plnd/")`. The branch-prefix fallback handles the case where `.erk/impl-context/` cleanup occurred before a failed push attempt, leaving `plan_id` as `None` but the branch name still indicating a plan implementation. This drives two auto-behaviors:
 
 1. **Auto-force push:** Plan branches always diverge from remote (scaffolding vs implementation commits). The pipeline derives `effective_force = state.force or is_plan_impl` to auto-enable force-push. See [Derived Flags Pattern](../architecture/derived-flags.md).
 

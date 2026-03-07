@@ -55,11 +55,11 @@ The command layer uses `gh pr list` because simplicity matters more than quota o
 
 GitHub's PR query matches the **exact branch name** including owner prefix (`owner:branch`). If your branch naming changes (e.g., different timestamp suffixes for the same feature), each branch can have its own PR. This is intentional — erk branches are immutable once created.
 
-The `erk exec get-pr-for-plan` script (see `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`) demonstrates fallback logic when `branch_name` is missing from plan metadata: it infers the branch from the current git context if it matches the plan's issue number prefix (`P{issue_number}-`).
+The `erk exec get-pr-for-plan` script (see `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`) demonstrates fallback logic when `branch_name` is missing from plan metadata: it infers the branch from the current git context if it matches the plan's naming pattern (e.g., `plnd/` prefix).
 
 ## Integration: Plan Metadata and PR Discovery
 
-Erk stores `branch_name` in plan-header metadata when a plan is submitted. This creates a durable link: issue → branch → PR. The full discovery strategy (including fallbacks when metadata is missing) is documented in `docs/learned/planning/pr-discovery.md`.
+Erk stores `branch_name` in plan-header metadata when a plan is submitted. This creates a durable link: plan → branch → PR. The full discovery strategy (including fallbacks when metadata is missing) is documented in `docs/learned/planning/pr-discovery.md`.
 
 **Why store branch_name?** PR discovery is deterministic when you have the branch name. Without it, you resort to heuristics (searching commit messages, checking issue timelines) that may find the wrong PR or no PR at all.
 

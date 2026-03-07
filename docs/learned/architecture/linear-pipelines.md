@@ -73,7 +73,7 @@ Two factory functions create initial state for each pipeline. See `make_initial_
 The validation pipeline takes CLI arguments directly. The execution pipeline reconstructs state from shell script arguments. They have different invariants:
 
 - **Validation state**: `force=False` (user can cancel), `dry_run=True|False` (CLI flag), `repo_root` pre-discovered
-- **Execution state**: `force=True` (user already confirmed by sourcing script), `dry_run=False` (always mutates), `plan_issue_number` re-derived from branch name
+- **Execution state**: `force=True` (user already confirmed by sourcing script), `dry_run=False` (always mutates), `plan_id` set to `None` (execution pipeline doesn't encode plan numbers)
 
 **Intentional recomputation**: Some fields are **not** serialized through the shell script and are recomputed fresh during execution:
 

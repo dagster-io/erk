@@ -54,7 +54,7 @@ This table maps the deleted gateway parameters to their current equivalents. The
 
 Capabilities added in consolidation with no gateway predecessor:
 
-- PR metadata: `simulated_pr_url`, `simulated_pr_number`, `simulated_pr_title`, `simulated_issue_number`
+- PR metadata: `simulated_pr_url`, `simulated_pr_number`, `simulated_pr_title`, `simulated_plan_number`
 - Hook blocking: `simulated_zero_turns`
 - Streaming: `simulated_tool_events`, `simulated_no_output`, `simulated_no_work_events`
 - Process errors: `simulated_process_error`

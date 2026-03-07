@@ -45,7 +45,7 @@ When exec scripts need to update PR bodies with diagnostic information, follow t
 
 ---
 
-Closes #[issue_number]
+Closes #[plan_number]
 
 [Optional: workflow run link]
 ```

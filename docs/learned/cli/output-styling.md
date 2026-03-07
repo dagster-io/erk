@@ -229,7 +229,7 @@ For session processing, choose emoji based on session type. See `trigger_async_l
 ```json
 {
   "success": true,
-  "issue_number": 6545,
+  "plan_id": "6545",
   "workflow_triggered": true,
   "run_id": "12345678",
   "workflow_url": "https://...",
@@ -301,7 +301,7 @@ When displaying plan context information in CLI commands, use this standardized 
 The pattern consists of three elements:
 
 1. **Plan incorporation message** (when plan found):
-   - Format: `"   Incorporating plan from issue #{issue_number}"`
+   - Format: `"   Incorporating plan from issue #{plan_id}"`
    - Style: Green text (`fg="green"`)
 2. **Objective link message** (when objective available):
    - Format: `"   Linked to {objective_summary}"`
@@ -315,7 +315,7 @@ The pattern consists of three elements:
 
 <!-- Source: src/erk/cli/commands/pr/shared.py, echo_plan_context_status -->
 
-See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `issue_number`) to display the plan reference.
+See `echo_plan_context_status()` in `src/erk/cli/commands/pr/shared.py` for the canonical implementation. Uses `plan_context.plan_id` (not `plan_number`) to display the plan reference.
 
 ### Usage Examples
 
@@ -939,17 +939,17 @@ This terminology was standardized in PR #7732 (replacing "issue" with "plan" thr
 
 - **Always use "plan" in user-facing output.** Whether the backing store is a GitHub issue or draft PR, the user sees "plan". Example: `"Plan #123 not found"` not `"Issue #123 not found"`.
 - **Use "PR" only for pull requests.** When output specifically refers to a GitHub PR (not a plan), use "PR".
-- **Internal variable names may differ.** Internal code can use `issue_number`, `plan_id`, or similar — these are implementation details. Only the user-visible strings must say "plan".
+- **Internal variable names may differ.** Internal code can use `plan_id`, `plan_number`, or similar — these are implementation details. Only the user-visible strings must say "plan".
 - **Column headers in tables**: Use `plan` not `issue` in headers shown to users.
 
 ### Anti-Pattern
 
 ```python
 # ❌ Wrong: exposes internal storage model
-click.echo(f"Issue #{issue_number} created")
+click.echo(f"Issue #{plan_number} created")
 
 # ✅ Correct: backend-agnostic
-click.echo(f"Plan #{issue_number} created")
+click.echo(f"Plan #{plan_id} created")
 ```
 
 ## See Also

@@ -21,13 +21,9 @@ effective_flag = user_flag or auto_detected_condition
 
 ## Canonical Example: Auto-Force Push
 
-In `src/erk/cli/commands/pr/submit_pipeline.py`:
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _run_phase1_graphite_submit -->
 
-```python
-# Auto-force for plan implementations (branches always diverge from remote)
-is_plan_impl = state.issue_number is not None
-effective_force = state.force or is_plan_impl
-```
+See `_run_phase1_graphite_submit()` in `src/erk/cli/commands/pr/submit_pipeline.py`. The plan detection condition combines `state.plan_id is not None` (normal case) with `state.branch_name.startswith("plnd/")` (fallback when impl-context was deleted before push). The effective force flag is then `state.force or is_plan_impl`.
 
 **Why:** Plan implementation branches always diverge from remote because the draft PR scaffolding commits differ from the worker's implementation commits. Requiring `--force` every time would be a UX burden with no safety benefit.
 

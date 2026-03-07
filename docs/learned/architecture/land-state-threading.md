@@ -46,7 +46,7 @@ The `LandState` dataclass has 21 fields organized into three lifecycle stages (m
 
 **Resolved target** (9 fields, populated by `resolve_target()`): `repo_root`, `main_repo_root`, `branch`, `pr_number`, `pr_details`, `worktree_path`, `is_current_branch`, `use_graphite`, `target_child_branch`
 
-**Derived** (4 fields, populated by later pipeline steps): `objective_number`, `plan_issue_number`, `cleanup_confirmed`, `merged_pr_number`
+**Derived** (4 fields, populated by later pipeline steps): `objective_number`, `plan_id`, `cleanup_confirmed`, `merged_pr_number`
 
 **Why frozen dataclasses work**: Each validation step populates the fields it discovers using `dataclasses.replace()`, leaving others unchanged. The pattern scales to any number of discovery stages without complex initialization logic.
 

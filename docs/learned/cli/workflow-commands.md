@@ -18,7 +18,7 @@ tripwires:
   - action: using this pattern
     warning:
       PR workflows automatically update plan issue dispatch metadata when the
-      branch follows the P{issue_number} naming pattern
+      branch follows the plnd/ prefix naming pattern
 ---
 
 # Workflow Commands
@@ -60,7 +60,7 @@ The handler functions follow a consistent pattern: validate inputs → fetch con
 
 ## Plan Dispatch Metadata Side Effect
 
-PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch name follows the `P{issue_number}-*` pattern. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.
+PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.
 
 <!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata -->
 

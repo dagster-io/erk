@@ -35,7 +35,7 @@ This document describes the two-layer architecture for parsing GitHub URLs and e
 
 ## Layer 1: Pure Parsing (`erk_shared.gateway.github.parsing`)
 
-See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_issue_number_from_url`.
+See `packages/erk-shared/src/erk_shared/gateway/github/parsing.py:222-265` for `parse_pr_number_from_url` and `parse_plan_number_from_url`.
 
 **Characteristics:**
 

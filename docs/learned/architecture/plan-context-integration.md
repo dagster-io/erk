@@ -75,15 +75,9 @@ else:
 
 ## PlanContext Data Structure
 
-When extraction succeeds, the provider returns:
+<!-- Source: src/erk/core/plan_context_provider.py, PlanContext -->
 
-```python
-@dataclass(frozen=True)
-class PlanContext:
-    issue_number: int       # The erk-plan issue number
-    plan_content: str       # Full plan markdown
-    objective_summary: str | None  # "Objective #123: Title" if linked
-```
+When extraction succeeds, the provider returns a `PlanContext` frozen dataclass. See `PlanContext` in `src/erk/core/plan_context_provider.py`. Key fields: `plan_id` (str), `plan_content` (str), `objective_summary` (str | None).
 
 ## Usage in PR Generation
 
