@@ -110,6 +110,44 @@ EOF
 
 After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
 
+### Updating Node Details
+
+Update node description, slug, or reason using `update-objective-node`:
+
+```bash
+# Update description
+erk exec update-objective-node 8470 --node 1.3 --description "Revised description"
+
+# Set slug
+erk exec update-objective-node 8470 --node 1.3 --slug "revised-slug"
+
+# Skip with reason
+erk exec update-objective-node 8470 --node 1.3 --status skipped --reason "Superseded by new approach"
+
+# Combine multiple updates
+erk exec update-objective-node 8470 --node 2.1 --description "New desc" --slug "new-slug" --status planning
+```
+
+### Adding Nodes
+
+Add new nodes to an existing objective's roadmap:
+
+```bash
+# Add to existing phase (auto-assigns next ID, e.g., 1.4)
+erk exec add-objective-node 8470 --phase 1 --description "Clean up dead code"
+
+# With explicit slug and dependencies
+erk exec add-objective-node 8470 --phase 2 \
+  --description "Integration tests" \
+  --slug integration-tests \
+  --depends-on 2.1 --depends-on 2.2
+
+# With reason for adding
+erk exec add-objective-node 8470 --phase 1 \
+  --description "Handle edge case" \
+  --reason "Discovered during re-evaluation"
+```
+
 ### Viewing an Objective
 
 View an objective's dependency graph, dependencies, and next node:

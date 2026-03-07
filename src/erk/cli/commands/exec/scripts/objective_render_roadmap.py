@@ -179,6 +179,7 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
                     pr=None,
                     depends_on=depends_on,
                     slug=slug,
+                    reason=None,
                 )
             )
 
