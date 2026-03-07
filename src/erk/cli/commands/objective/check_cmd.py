@@ -25,6 +25,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
+    rerender_comment_roadmap,
     serialize_phases,
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys
@@ -201,6 +202,24 @@ def validate_objective(
         checks.append((True, "PR references use '#' prefix"))
     else:
         checks.append((False, f"Invalid reference format: {invalid_refs[0]}"))
+
+    # Check 8: Roadmap table in comment matches YAML source of truth
+    if header_block is not None:
+        comment_id = header_block.data.get("objective_comment_id")
+        if comment_id is not None:
+            try:
+                comment_body = github_issues.get_comment_by_id(repo_root, comment_id)
+            except RuntimeError:
+                comment_body = None
+            if comment_body is not None:
+                rerendered = rerender_comment_roadmap(issue.body, comment_body)
+                if rerendered is not None:
+                    if rerendered == comment_body:
+                        checks.append((True, "Roadmap table in sync with YAML"))
+                    else:
+                        checks.append(
+                            (False, "Roadmap table out of sync with YAML source of truth")
+                        )
 
     summary = compute_graph_summary(graph)
     next_node = find_graph_next_node(graph, phases)

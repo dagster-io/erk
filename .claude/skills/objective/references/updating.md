@@ -25,3 +25,20 @@ The two-step pattern applies to ALL objective changes, not just completions:
 - Body = source of truth (current complete state)
 
 Comment first (captures the moment), then body (reflects new state).
+
+## Programmatic Updates (Required)
+
+**Always use `erk exec update-objective-node` to mutate node status/PR.** Never manually edit the YAML or prose table — the exec command updates both atomically.
+
+```bash
+erk exec update-objective-node <issue> --node <id> --status skipped
+erk exec update-objective-node <issue> --node <id> --pr '#1234'
+```
+
+**After any objective mutation, validate:**
+
+```bash
+erk objective check <issue-number>
+```
+
+This catches drift between the YAML source of truth and the rendered roadmap table.
