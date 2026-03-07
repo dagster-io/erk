@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
-import tempfile
-from pathlib import Path
+import uuid
 from typing import TYPE_CHECKING
 
 from textual import work
@@ -424,22 +423,24 @@ class BackgroundWorkersMixin:
     ) -> None:
         """Dispatch incremental plan in background thread with toast.
 
-        Writes plan_content to a temp file, invokes erk exec incremental-dispatch,
-        then cleans up the temp file.
+        Writes plan_content to .erk/scratch storage, invokes erk exec
+        incremental-dispatch, then cleans up the scratch file.
 
         Args:
             op_id: Operation identifier for status bar tracking
             pr_number: The PR number to dispatch against
             plan_content: The plan markdown content
         """
-        temp_path: str | None = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                suffix=".md", delete=False, mode="w", encoding="utf-8"
-            ) as tmp:
-                tmp.write(plan_content)
-                temp_path = tmp.name
+        from erk_shared.scratch.scratch import write_scratch_file
 
+        session_id = f"tui-{uuid.uuid4().hex[:12]}"
+        scratch_path = write_scratch_file(
+            plan_content,
+            session_id=session_id,
+            suffix=".md",
+            prefix="incremental-plan-",
+        )
+        try:
             result = self._run_streaming_operation(
                 op_id=op_id,
                 command=[
@@ -447,7 +448,7 @@ class BackgroundWorkersMixin:
                     "exec",
                     "incremental-dispatch",
                     "--plan-file",
-                    temp_path,
+                    str(scratch_path),
                     "--pr",
                     str(pr_number),
                     "--format",
@@ -471,10 +472,8 @@ class BackgroundWorkersMixin:
                     timeout=5,
                 )
         finally:
-            if temp_path is not None:
-                temp_file = Path(temp_path)
-                if temp_file.exists():
-                    temp_file.unlink()
+            if scratch_path.exists():
+                scratch_path.unlink()
 
     @work(thread=True)
     def _load_activity_and_resort(self: ErkDashApp) -> None:
