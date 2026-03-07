@@ -599,7 +599,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
             pass
 
     # 6b. Create HTTP client for GitHub API (needs token from gh auth)
-    # No repo guard needed — HttpClient only requires a GitHub token
+    # Always attempt token fetch — needed for API-only mode (outside-repo dispatch)
     http_client: HttpClient | None = None
     token = fetch_github_token_or_none()
     if token is not None:

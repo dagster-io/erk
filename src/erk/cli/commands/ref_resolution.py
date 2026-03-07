@@ -8,6 +8,7 @@ dispatch commands (launch, one-shot, pr dispatch, workflow smoke-test, objective
 import click
 
 from erk.core.context import ErkContext
+from erk_shared.context.types import NoRepoSentinel
 
 
 def resolve_dispatch_ref(
@@ -27,12 +28,14 @@ def resolve_dispatch_ref(
 
     Raises:
         click.UsageError: If both --ref and --ref-current are provided,
-            or if --ref-current is used with detached HEAD
+            or if --ref-current is used with detached HEAD or outside a repo
     """
     if ref_current and dispatch_ref is not None:
         raise click.UsageError("--ref and --ref-current are mutually exclusive")
 
     if ref_current:
+        if isinstance(ctx.repo, NoRepoSentinel):
+            raise click.UsageError("--ref-current requires being in a git repository")
         branch = ctx.git.branch.get_current_branch(ctx.cwd)
         if branch is None:
             raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")

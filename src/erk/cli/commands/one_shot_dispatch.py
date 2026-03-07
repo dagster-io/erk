@@ -6,12 +6,20 @@ dispatch tasks through the same CI workflow.
 """
 
 import logging
+import os
 import time
 from dataclasses import dataclass
 from datetime import UTC
+from pathlib import Path
 
 import click
 
+from erk.cli.commands.one_shot_api import (
+    api_commit_file,
+    api_create_branch,
+    api_get_branch_sha,
+    api_get_default_branch,
+)
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.ensure import Ensure
 from erk.core.branch_slug_generator import (
@@ -54,6 +62,7 @@ class OneShotDispatchParams:
     model: str | None
     extra_workflow_inputs: dict[str, str]
     slug: str | None
+    target_repo: str | None = None  # "owner/repo" for outside-repo dispatch
 
 
 @dataclass(frozen=True)
@@ -119,22 +128,48 @@ def dispatch_one_shot(
     pushes, creates draft PR, and dispatches workflow. In dry-run mode,
     prints what would happen without executing.
 
+    Supports two modes:
+    - **Local mode**: When inside a git repo, uses local git operations
+    - **API-only mode**: When outside a repo (with --repo), uses GitHub REST API
+
     Args:
         ctx: Erk context with git/github gateways
-        params: Dispatch parameters
+        params: Dispatch parameters (including optional target_repo)
         dry_run: If True, print preview without executing
+        ref: Optional branch ref for workflow dispatch
 
     Returns:
         OneShotDispatchResult with pr_number, run_id, branch_name,
         or None in dry-run mode
     """
-    # Validate we're in a git repo
-    Ensure.invariant(
-        not isinstance(ctx.repo, NoRepoSentinel),
-        "Not in a git repository",
-    )
-    assert not isinstance(ctx.repo, NoRepoSentinel)
-    repo: RepoContext = ctx.repo
+    # Resolve target repository
+    nwo: str | None = params.target_repo
+    use_api_only = isinstance(ctx.repo, NoRepoSentinel)
+
+    if nwo is None:
+        # Derive from current repo
+        Ensure.invariant(
+            not isinstance(ctx.repo, NoRepoSentinel),
+            "Not in a git repository. Use --repo owner/name to specify the target repository.",
+        )
+        assert not isinstance(ctx.repo, NoRepoSentinel)
+        repo: RepoContext = ctx.repo
+        if repo.github is not None:
+            nwo = f"{repo.github.owner}/{repo.github.repo}"
+        else:
+            Ensure.invariant(False, "Repository has no GitHub remote configured")
+    else:
+        # Validate --repo format
+        Ensure.invariant("/" in nwo, "--repo must be in owner/repo format")
+
+    assert nwo is not None  # type narrowing
+
+    # When in API-only mode, set GH_REPO so all gh commands resolve the repo
+    if use_api_only:
+        os.environ["GH_REPO"] = nwo
+
+    # Determine repo_root for gateway calls (cwd when outside a repo)
+    repo_root = Path.cwd() if use_api_only else ctx.repo.root  # type: ignore[union-attr]
 
     # Validate GitHub authentication
     current_step = "Validating GitHub authentication"
@@ -147,7 +182,11 @@ def dispatch_one_shot(
     user_output(click.style(f"  \u2713 Authenticated as {submitted_by}", dim=True))
 
     # Detect trunk branch
-    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    if use_api_only:
+        trunk = api_get_default_branch(nwo)
+    else:
+        assert not isinstance(ctx.repo, NoRepoSentinel)
+        trunk = ctx.git.branch.detect_trunk_branch(ctx.repo.root)
 
     # Build PR title
     max_title_len = 60
@@ -170,6 +209,8 @@ def dispatch_one_shot(
         user_output(f"PR title: {pr_title}")
         user_output(f"Base branch: {trunk}")
         user_output(f"Submitted by: {submitted_by}")
+        if nwo is not None:
+            user_output(f"Repository: {nwo}")
         if params.model is not None:
             user_output(f"Model: {params.model}")
         user_output(f"Workflow: {ONE_SHOT_WORKFLOW}")
@@ -186,6 +227,8 @@ def dispatch_one_shot(
     user_output(click.style(f"  Prompt: {prompt_preview}", dim=True))
     if params.model is not None:
         user_output(click.style(f"  Model: {params.model}", dim=True))
+    if use_api_only:
+        user_output(click.style(f"  Repository: {nwo} (API-only mode)", dim=True))
     backend_name = ctx.plan_backend.get_provider_name()
     user_output(click.style(f"  Backend: {backend_name}", dim=True))
     user_output("")
@@ -231,50 +274,76 @@ def dispatch_one_shot(
         )
         user_output(click.style(f"  \u2192 Branch: {branch_name}", dim=True))
 
-        # Guard against detached HEAD state
-        current_branch = ctx.git.branch.get_current_branch(repo.root)
-        if current_branch is None:
-            user_output(
-                click.style("Error: ", fg="red")
-                + "Not on a branch (detached HEAD state). Cannot submit from here."
+        if use_api_only:
+            # API-only path: create branch and commit via GitHub REST API
+            current_step = "Creating branch (API)"
+            user_output("Creating branch via API...")
+            trunk_sha = api_get_branch_sha(nwo, trunk)
+            api_create_branch(nwo, branch_name, trunk_sha)
+            user_output(click.style("  \u2713 Branch created (API)", dim=True))
+
+            current_step = "Committing prompt file (API)"
+            user_output("Committing prompt file via API...")
+            api_commit_file(
+                nwo,
+                branch=branch_name,
+                path=".erk/impl-context/prompt.md",
+                content=params.prompt + "\n",
+                message=f"One-shot: {params.prompt[:60]}",
             )
-            raise SystemExit(1)
+            user_output(click.style("  \u2713 Committed (API)", dim=True))
+            # No push needed — API commits write directly to remote
+        else:
+            # Local path: use git operations
+            assert not isinstance(ctx.repo, NoRepoSentinel)
+            local_repo: RepoContext = ctx.repo
 
-        # Create branch from trunk
-        current_step = "Creating branch"
-        user_output("Creating branch...")
-        branch_result = ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
-        if isinstance(branch_result, BranchAlreadyExists):
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"Branch '{branch_name}' already exists locally. "
-                + "Run 'erk delete <branch>' to clean up, then retry."
+            # Guard against detached HEAD state
+            current_branch = ctx.git.branch.get_current_branch(local_repo.root)
+            if current_branch is None:
+                user_output(
+                    click.style("Error: ", fg="red")
+                    + "Not on a branch (detached HEAD state). Cannot submit from here."
+                )
+                raise SystemExit(1)
+
+            # Create branch from trunk
+            current_step = "Creating branch"
+            user_output("Creating branch...")
+            branch_result = ctx.git.branch.create_branch(
+                local_repo.root, branch_name, trunk, force=False
             )
-            raise SystemExit(1)
-        user_output(click.style("  \u2713 Branch created", dim=True))
+            if isinstance(branch_result, BranchAlreadyExists):
+                user_output(
+                    click.style("Error: ", fg="red")
+                    + f"Branch '{branch_name}' already exists locally. "
+                    + "Run 'erk delete <branch>' to clean up, then retry."
+                )
+                raise SystemExit(1)
+            user_output(click.style("  \u2713 Branch created", dim=True))
 
-        # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout)
-        current_step = "Committing prompt file"
-        user_output("Committing prompt file...")
-        ctx.git.commit.commit_files_to_branch(
-            repo.root,
-            branch=branch_name,
-            files={".erk/impl-context/prompt.md": params.prompt + "\n"},
-            message=f"One-shot: {params.prompt[:60]}",
-        )
-        user_output(click.style("  \u2713 Committed", dim=True))
+            # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout)
+            current_step = "Committing prompt file"
+            user_output("Committing prompt file...")
+            ctx.git.commit.commit_files_to_branch(
+                local_repo.root,
+                branch=branch_name,
+                files={".erk/impl-context/prompt.md": params.prompt + "\n"},
+                message=f"One-shot: {params.prompt[:60]}",
+            )
+            user_output(click.style("  \u2713 Committed", dim=True))
 
-        # Push to remote
-        current_step = "Pushing to remote"
-        user_output("Pushing to remote...")
-        push_start = time.monotonic()
-        push_result = ctx.git.remote.push_to_remote(
-            repo.root, "origin", branch_name, set_upstream=True, force=False
-        )
-        if isinstance(push_result, PushError):
-            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
-        push_elapsed = time.monotonic() - push_start
-        user_output(click.style(f"  \u2713 Pushed ({format_duration(push_elapsed)})", dim=True))
+            # Push to remote
+            current_step = "Pushing to remote"
+            user_output("Pushing to remote...")
+            push_start = time.monotonic()
+            push_result = ctx.git.remote.push_to_remote(
+                local_repo.root, "origin", branch_name, set_upstream=True, force=False
+            )
+            if isinstance(push_result, PushError):
+                Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+            push_elapsed = time.monotonic() - push_start
+            user_output(click.style(f"  \u2713 Pushed ({format_duration(push_elapsed)})", dim=True))
 
         # --- Create draft PR ---
         current_step = "Creating draft PR"
@@ -316,7 +385,7 @@ def dispatch_one_shot(
         )
         pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content, summary="")
         pr_number = ctx.github.create_pr(
-            repo.root,
+            repo_root,
             branch_name,
             pr_title,
             pr_body_initial,
@@ -325,12 +394,12 @@ def dispatch_one_shot(
         )
         # Add footer now that we have the PR number.
         footer = build_pr_body_footer(pr_number)
-        ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
+        ctx.github.update_pr_body(repo_root, pr_number, pr_body_initial + footer)
         # Add plan labels
         add_labels_resilient(
             ctx.github,
             time=ctx.time,
-            repo_root=repo.root,
+            repo_root=repo_root,
             pr_number=pr_number,
             labels=("erk-pr", "erk-plan"),
         )
@@ -366,17 +435,16 @@ def dispatch_one_shot(
         current_step = "Dispatching one-shot workflow"
         user_output("Dispatching one-shot workflow...")
         run_id = ctx.github.trigger_workflow(
-            repo_root=repo.root,
+            repo_root=repo_root,
             workflow=ONE_SHOT_WORKFLOW,
             inputs=inputs,
             ref=ref,
         )
         user_output(click.style(f"  \u2192 Run ID: {run_id}", dim=True))
 
-        # Compute run_url and queued_at for use in PR body update, metadata, and comment
-        run_url: str | None = None
-        if repo.github is not None:
-            run_url = construct_workflow_run_url(repo.github.owner, repo.github.repo, run_id)
+        # Compute run_url and queued_at
+        owner, repo_name = nwo.split("/", 1)
+        run_url: str | None = construct_workflow_run_url(owner, repo_name, run_id)
         queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
 
         # Write dispatch metadata and post queued comment (best-effort)
@@ -387,7 +455,7 @@ def dispatch_one_shot(
                 write_dispatch_metadata(
                     plan_backend=ctx.plan_backend,
                     github=ctx.github,
-                    repo_root=repo.root,
+                    repo_root=repo_root,
                     plan_number=plan_number,
                     run_id=run_id,
                     dispatched_at=queued_at,
@@ -418,7 +486,7 @@ def dispatch_one_shot(
                         f"**Prompt:** {params.prompt}"
                     ),
                 )
-                ctx.issues.add_comment(repo.root, plan_number, comment_body)
+                ctx.issues.add_comment(repo_root, plan_number, comment_body)
                 user_output(click.style("\u2713", fg="green") + " Queued event comment posted")
             except Exception as e:
                 user_output(
@@ -436,12 +504,10 @@ def dispatch_one_shot(
     duration_str = format_duration(elapsed)
     user_output("")
     user_output(click.style(f"Done! ({duration_str})", fg="green", bold=True))
-    if repo.github is not None and run_url is not None:
-        pr_url = f"https://github.com/{repo.github.owner}/{repo.github.repo}/pull/{pr_number}"
-        user_output(f"PR: {click.style(pr_url, fg='cyan')}")
+    pr_url = f"https://github.com/{owner}/{repo_name}/pull/{pr_number}"
+    user_output(f"PR: {click.style(pr_url, fg='cyan')}")
+    if run_url is not None:
         user_output(f"Run: {click.style(run_url, fg='cyan')}")
-    else:
-        user_output(f"PR #{pr_number} created, workflow run {run_id} dispatched")
 
     return OneShotDispatchResult(
         pr_number=pr_number,

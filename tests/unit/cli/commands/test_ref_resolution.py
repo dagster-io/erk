@@ -6,9 +6,21 @@ import click
 import pytest
 
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
-from erk_shared.context.types import LoadedConfig
+from erk_shared.context.types import LoadedConfig, RepoContext
 from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.context import create_test_context
+
+
+def _fake_repo(cwd: Path) -> RepoContext:
+    """Create a minimal RepoContext for ref resolution tests."""
+    repo_dir = cwd / ".erk"
+    return RepoContext(
+        root=cwd,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
 
 
 def test_mutual_exclusion_error() -> None:
@@ -23,7 +35,7 @@ def test_ref_current_returns_branch() -> None:
     """--ref-current calls get_current_branch and returns it."""
     cwd = Path("/fake/repo")
     git = FakeGit(current_branches={cwd: "feature/my-branch"})
-    ctx = create_test_context(git=git, cwd=cwd)
+    ctx = create_test_context(git=git, cwd=cwd, repo=_fake_repo(cwd))
 
     result = resolve_dispatch_ref(ctx, dispatch_ref=None, ref_current=True)
 
@@ -34,7 +46,7 @@ def test_ref_current_detached_head_error() -> None:
     """--ref-current with detached HEAD raises UsageError."""
     cwd = Path("/fake/repo")
     git = FakeGit()  # No current branch configured → returns None
-    ctx = create_test_context(git=git, cwd=cwd)
+    ctx = create_test_context(git=git, cwd=cwd, repo=_fake_repo(cwd))
 
     with pytest.raises(click.UsageError, match="not detached HEAD"):
         resolve_dispatch_ref(ctx, dispatch_ref=None, ref_current=True)

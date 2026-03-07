@@ -61,6 +61,14 @@ from erk_shared.output.output import user_output
     help="Pre-generated branch slug (skips LLM slug generation)",
 )
 @click.option(
+    "-r",
+    "--repo",
+    "target_repo",
+    type=str,
+    default=None,
+    help="Target repository (owner/repo). Required when outside a git repo.",
+)
+@click.option(
     "--ref",
     "dispatch_ref",
     type=str,
@@ -90,6 +98,7 @@ def one_shot(
     dry_run: bool,
     plan_only: bool,
     slug: str | None,
+    target_repo: str | None,
     dispatch_ref: str | None,
     ref_current: bool,
     target_repo: str | None,
@@ -142,6 +151,7 @@ def one_shot(
         model=model,
         extra_workflow_inputs=extra,
         slug=slug,
+        target_repo=target_repo,
     )
 
     if target_repo is not None:
