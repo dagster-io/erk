@@ -80,7 +80,7 @@ When extraction succeeds, the provider returns:
 ```python
 @dataclass(frozen=True)
 class PlanContext:
-    issue_number: int       # The erk-plan issue number
+    plan_id: str            # The plan identifier
     plan_content: str       # Full plan markdown
     objective_summary: str | None  # "Objective #123: Title" if linked
 ```

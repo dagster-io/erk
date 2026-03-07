@@ -25,14 +25,14 @@ Traditional imperative code mutates local variables as operations progress:
 # WRONG: Mutable state pattern (anti-pattern)
 branch_name = None
 pr_number = None
-issue_number = None
+plan_id = None
 
 # Step 1
 branch_name = get_current_branch()
 # Step 2
 pr_number = create_pr(branch_name)
 # Step 3
-issue_number = extract_issue(branch_name)
+plan_id = extract_plan_id(branch_name)
 ```
 
 **Why this is wrong:**
@@ -99,14 +99,14 @@ Submit and land both use factory functions to construct initial state. See `make
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state -->
 
-The submit pipeline's `prepare_state()` step resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `issue_number`, and validates `.erk/impl-context/plan-ref.json` linkage (with legacy fallback).
+The submit pipeline's `prepare_state()` step resolves 6 fields: `repo_root`, `branch_name`, `parent_branch`, `trunk_branch`, `plan_id`, and validates `.erk/impl-context/plan-ref.json` linkage (with legacy fallback).
 
 **Why consolidate discovery in step 1 instead of spreading it across steps?**
 
-1. **DRY** — before this pattern, `issue_number` was derived independently in 3+ places
+1. **DRY** — before this pattern, `plan_id` was derived independently in 3+ places
 2. **Fail fast** — if branch name can't be resolved or `.impl` validation fails, no later steps run
 3. **Explicit preconditions** — later steps assume these fields are populated and never `None`
-4. **Single lookup location** — easier to audit "where does `issue_number` come from?"
+4. **Single lookup location** — easier to audit "where does `plan_id` come from?"
 
 **Anti-pattern:** Don't add "lazy discovery" steps that re-derive values later. If step 3 needs `repo_root`, it should already be in state from step 1, not re-run `get_repository_root()`.
 

@@ -56,7 +56,7 @@ When transforming data structures (e.g., `Plan` → `PlanRowData`), ensure all f
 ```python
 # WRONG: Hand-constructing with missing fields
 row_data = PlanRowData(
-    issue_number=plan.issue_number,
+    plan_id=plan.plan_id,
     title=plan.title,
     # Missing: learn_status, learn_plan_issue, etc.
 )
@@ -77,7 +77,7 @@ Use frozen dataclasses throughout pipelines:
 ```python
 @dataclass(frozen=True)
 class Plan:
-    issue_number: int
+    plan_id: int
     title: str
     learn_status: str | None
 ```

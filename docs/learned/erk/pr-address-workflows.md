@@ -151,7 +151,7 @@ erk launch pr-address --pr 123 --model claude-opus-4
 
 ### Plan Dispatch Metadata Tracking
 
-When the branch name follows the `P{issue_number}-*` pattern (e.g., `P5819-add-feature`), the command automatically updates the plan issue with dispatch metadata:
+When the branch name follows the `plnd/` prefix pattern (e.g., `plnd/add-feature-03-07-1234`), the command automatically updates the plan issue with dispatch metadata:
 
 - `last_dispatch_run_id` - The workflow run ID
 - `last_dispatch_node_id` - The workflow run node ID (for GraphQL)

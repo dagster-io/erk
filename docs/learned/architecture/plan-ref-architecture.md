@@ -92,7 +92,7 @@ This pattern appears at several callsites across the codebase.
 
 ## erk-statusline's Duplicate Reader
 
-The `erk-statusline` package has its own plan-ref reading logic via `_load_impl_data()`, `get_issue_number()`, and `get_objective_issue()` because it cannot import from `erk_shared` (separate package with no dependency). This duplication is intentional and must be kept in sync manually.
+The `erk-statusline` package has its own plan-ref reading logic via `_load_impl_data()`, `get_plan_number()`, and `get_objective_issue()` because it cannot import from `erk_shared` (separate package with no dependency). This duplication is intentional and must be kept in sync manually.
 
 ## Related Documentation
 

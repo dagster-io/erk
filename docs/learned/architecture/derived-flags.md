@@ -25,7 +25,7 @@ In `src/erk/cli/commands/pr/submit_pipeline.py`:
 
 ```python
 # Auto-force for plan implementations (branches always diverge from remote)
-is_plan_impl = state.issue_number is not None
+is_plan_impl = state.plan_id is not None
 effective_force = state.force or is_plan_impl
 ```
 

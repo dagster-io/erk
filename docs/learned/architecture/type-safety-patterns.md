@@ -63,7 +63,7 @@ def handle_validated_row(row: PlanRowData | None) -> None:
     # We know row is not None after validation
     assert row is not None
     # Type checker now sees row as PlanRowData
-    print(row.issue_number)
+    print(row.plan_id)
 ```
 
 ## Duck Typing Alternative

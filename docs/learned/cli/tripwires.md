@@ -178,7 +178,7 @@ Rules triggered by matching actions in code.
 
 **using this pattern** → Read [Local/Remote Command Group Pattern (Deprecated)](local-remote-command-groups.md) first. BEFORE: Using invoke_without_command=True to unify local/remote variants → READ: Why this pattern was abandoned
 
-**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the P{issue_number} naming pattern
+**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the plnd/ prefix naming pattern
 
 **validating PRs in workflows** → Read [PR Submission Decision Framework](pr-submission.md) first. PR validation rules apply to both workflows
 

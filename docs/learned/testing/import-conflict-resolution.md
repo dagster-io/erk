@@ -34,10 +34,10 @@ Conflict markers typically look like:
 
 ```python
 <<<<<<< HEAD
-from erk_shared.gateway.github.parsing import parse_pr_number, parse_issue_number
+from erk_shared.gateway.github.parsing import parse_pr_number, parse_plan_number
 =======
 from .github_helpers import parse_pr_number
-from .issue_helpers import parse_issue_number
+from .plan_helpers import parse_plan_number
 >>>>>>> feature-branch
 ```
 
@@ -55,7 +55,7 @@ If the shared module exists and has the functions, use HEAD's version:
 
 ```python
 # Resolution: use the consolidated import
-from erk_shared.gateway.github.parsing import parse_pr_number, parse_issue_number
+from erk_shared.gateway.github.parsing import parse_pr_number, parse_plan_number
 ```
 
 ### Step 4: Remove Obsolete Local Helpers
@@ -91,12 +91,12 @@ Starting conflict:
 <<<<<<< HEAD
 from erk_shared.gateway.github.parsing import (
     parse_pr_number,
-    parse_issue_number,
+    parse_plan_number,
     parse_repo_from_url,
 )
 =======
 from .github_url_parser import parse_pr_number
-from .issue_parser import parse_issue_number
+from .plan_parser import parse_plan_number
 >>>>>>> add-repo-parsing
 ```
 
@@ -105,7 +105,7 @@ Resolution:
 ```python
 from erk_shared.gateway.github.parsing import (
     parse_pr_number,
-    parse_issue_number,
+    parse_plan_number,
     parse_repo_from_url,
 )
 ```
@@ -114,7 +114,7 @@ Then verify no references to deleted modules remain:
 
 ```bash
 grep -r "from .github_url_parser" src/
-grep -r "from .issue_parser" src/
+grep -r "from .plan_parser" src/
 ```
 
 ## Common Pitfalls

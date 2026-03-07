@@ -12,7 +12,7 @@ read_when:
 
 ## Detection
 
-Auto-force is triggered when `state.issue_number is not None`, which is set when `.erk/impl-context/` is valid and contains issue tracking metadata.
+Auto-force is triggered when `state.plan_id is not None`, which is set when `.erk/impl-context/` is valid and contains issue tracking metadata.
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _run_phase1_graphite_submit -->
 
@@ -38,4 +38,4 @@ This message appears only when the branch has diverged from remote AND `--force`
 
 ## When It Does Not Apply
 
-Regular feature branches (no `.erk/impl-context/` folder, or `.erk/impl-context/` without issue tracking) are **not** auto-forced. Only branches where `state.issue_number is not None` receive this treatment.
+Regular feature branches (no `.erk/impl-context/` folder, or `.erk/impl-context/` without issue tracking) are **not** auto-forced. Only branches where `state.plan_id is not None` receive this treatment.

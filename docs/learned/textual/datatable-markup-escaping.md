@@ -71,7 +71,7 @@ from rich.text import Text
 def populate(self, plans: list[PlanRowData]) -> None:
     for plan in plans:
         self.add_row(
-            plan.issue_number,
+            plan.plan_id,
             Text(plan.title),  # Wrap to prevent [prefix] interpretation
             plan.pr_display,
             # ...

@@ -70,7 +70,7 @@ Combines title and body into a single commit message and amends the current comm
 
 <!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback -->
 
-When a branch follows the `P{issue_number}-{slug}` naming convention, the command automatically fetches plan context from the linked erk-plan issue.
+When a branch is associated with a plan, the command automatically fetches plan context from the linked erk-plan issue.
 
 **Feedback styling:**
 

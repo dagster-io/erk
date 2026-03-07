@@ -286,7 +286,7 @@ Rules triggered by matching actions in code.
 
 **threading state through pipeline steps with mutable dataclasses** → Read [Land State Threading Pattern](land-state-threading.md) first. Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay.
 
-**tracking selection by array index when the array can be mutated** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Track selection by unique identifier (issue_number, row key), not array position. Array indices become unstable when rows are added, removed, or reordered.
+**tracking selection by array index when the array can be mutated** → Read [Selection Preservation by Value](selection-preservation-by-value.md) first. Track selection by unique identifier (plan_id, row key), not array position. Array indices become unstable when rows are added, removed, or reordered.
 
 **trusting agent-produced JSON without normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Agents drift from expected schemas over time. Always normalize at the boundary before validation. See normalize_tripwire_candidates.py for the pattern.
 

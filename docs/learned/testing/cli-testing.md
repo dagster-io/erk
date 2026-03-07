@@ -230,7 +230,7 @@ This is a comprehensive feature plan that includes all the necessary details.
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["issue_number"] == 1
+    assert output["plan_id"] == 1
     assert output["title"] == "My Feature"
 ```
 
