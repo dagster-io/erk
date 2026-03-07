@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Show conflict state and confirm before launching Claude in `erk pr rebase`"
+}
