@@ -471,4 +471,128 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8887
 }
   </tool_result>
+  <tool_result tool="toolu_01J7fx5yRhuNnhvpZ8Qxrk44">
+{"uploaded": true, "plan_id": 8887}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BHw9Lzre4WTvXjJrMwigQr">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="118470" cache_creation="{'ephemeral_5m_input_tokens': 336, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BHw9Lzre4WTvXjJrMwigQr">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <assistant>Impl context wasn't tracked. Let me check if there's anything to clean:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="118806" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01MdxP6iDnUSnZM6YAYGvUDS">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;/dev/null || echo "no impl-context dir"</param>
+    <param name="description">Check impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="118806" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MdxP6iDnUSnZM6YAYGvUDS">
+total 28
+drwxr-xr-x 3 runner runner 4096 Mar  7 01:54 .
+drwxr-xr-x 6 runner runner 4096 Mar  7 01:54 ..
+-rw-r--r-- 1 runner runner 6381 Mar  7 01:54 plan.md
+drwxr-xr-x 2 runner runner 4096 Mar  7 01:55 plnd--O8470-tui-incremental-disp-03-07-0151
+-rw-r--r-- 1 runner runner  263 Mar  7 01:54 ref.json
+-rw-r--r-- 1 runner runner  105 Mar  7 01:54 run-info.json
+  </tool_result>
+  <assistant>The impl-context isn't git tracked, so it won't be committed. Now let me submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="118929" cache_creation="{'ephemeral_5m_input_tokens': 628, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Sga2RESf9QiGGpxUSPvYzE">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="118929" cache_creation="{'ephemeral_5m_input_tokens': 628, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Sga2RESf9QiGGpxUSPvYzE">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8887 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8887
+   Linked to Objective #8470: Objective: One-Shot Modification of Existing PRs
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (17,710 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TeABBSwyH1NqWr4kL8Dy64">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="455" cache_read_input_tokens="119557" cache_creation="{'ephemeral_5m_input_tokens': 455, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TeABBSwyH1NqWr4kL8Dy64">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8887
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014CqDMWt5reMrRAygWzWATK">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="120012" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014CqDMWt5reMrRAygWzWATK">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GFMUtVKRg1bEzDv4WzPTuG">
+    <param name="todos">[{'content': 'Create PlanInputScreen modal (Node 2.1)', 'status': 'completed', 'activeForm...[truncated 1210 chars]...and submit PR', 'status': 'completed', 'activeForm': 'Signaling ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="113" cache_read_input_tokens="120429" cache_creation="{'ephemeral_5m_input_tokens': 113, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GFMUtVKRg1bEzDv4WzPTuG">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of changes:
+
+## Summary
+
+PR #8887 submitted: https://github.com/dagster-io/erk/pull/8887
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/erk/tui/screens/plan_input_screen.py` | **New** — `PlanInputScreen` modal with TextArea, Ctrl+S submit, Escape cancel |
+| `src/erk/tui/commands/registry.py` | Added `incremental_dispatch` CommandDefinition (launch_key=`i`, requires OPEN PR) |
+| `src/erk/tui/operations/workers.py` | Added `_incremental_dispatch_async` worker (temp file + `erk exec incremental-dispatch`) |
+| `src/erk/tui/actions/palette.py` | Added handler + `_on_incremental_dispatch_result` callback using Option A (`_pending_dispatch_pr`) |
+| `src/erk/tui/screens/plan_detail_screen.py` | Added `incremental_dispatch` case that dismisses and delegates to app |
+| `src/erk/cli/commands/launch_cmd.py` | Removed dead `"modify_existing": "true"` from one-shot inputs |
+| `tests/tui/screens/test_plan_input_screen.py` | **New** — 4 unit tests for PlanInputScreen |
+| `tests/tui/commands/test_registry.py` | 6 new tests + updated 2 existing tests for incremental_dispatch |
+| `tests/tui/app/test_incremental_dispatch.py` | **New** — 2 integration tests for dispatch callback |
+| `tests/commands/launch/test_launch_cmd.py` | Updated to match `modify_existing` removal |
+
+### CI Results
+
+- All 5685 unit tests pass
+- Lint, format, and type checks all pass
+- Only pre-existing Prettier markdown issues remain (unrelated files)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="120542" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
