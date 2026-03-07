@@ -1,0 +1,807 @@
+<session>
+  <meta source="agent-a836bf8" />
+  <meta branch="plnd/O8832-pr-read-no-repo-03-07-2109" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for how ErkContext is constructed in tests and how NoRepoSentinel is used in test code:
+
+1. Grep for "NoRepoSentinel" across the tests/ directory to find patterns for testing no-repo mode
+2. Grep for "ErkContext" in tests/ to find how test contexts are built - especially look for any test fixture or factory
+3. Grep for "is_remote_mode\|repo_option\|target_repo" in tests/ to see if there are any existing tests for remote mode
+4. Look at how Click commands are invoked in tests - search for "CliRunner" or "click.testing" patterns
+5. Read the file at `src/erk/core/context.py` to understand ErkContext fields, particularly `remote_github` and `http_client`
+
+Report all file paths found and key patterns.</user>
+  <assistant>I'll search for how ErkContext is constructed in tests and how NoRepoSentinel is used. Let me start with multiple parallel searches.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Dfb7JfxB1mwPy2TxDhztts">
+    <param name="pattern">NoRepoSentinel</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WbEj1yomjRrmNv1xJzW8NV">
+    <param name="pattern">ErkContext</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Avvkk67AXAqx2wXhXFwNmE">
+    <param name="pattern">is_remote_mode|repo_option|target_repo</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Jn9TxeshrUESJaXmUfvMH2">
+    <param name="pattern">CliRunner|click\.testing</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LE2aFioocn7w4WxQe8SRkG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LE2aFioocn7w4WxQe8SRkG">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [714 lines omitted] ...
+
+   497→        tuple[Path | None, str | None]: (path, error_message)
+   499→        - If directory deleted: (None, error_message)
+   508→    except (FileNotFoundError, OSError):
+   526→        debug: If True, enable debug mode for error handling (default False)
+   538→    cwd_result, error_msg = safe_cwd()
+   540→        assert error_msg is not None
+   541→        # Emit clear error and exit
+   542→        user_output(click.style("Error: ", fg="red") + error_msg)
+   593→        except ValueError:
+  </tool_result>
+  <tool_result tool="toolu_01Avvkk67AXAqx2wXhXFwNmE">
+Found 15 files
+tests/integration/real_github_issues/conftest.py
+tests/integration/real_github_issues/test_add_comment.py
+tests/integration/real_github_issues/test_close_issue.py
+tests/integration/real_github_issues/test_create_issue.py
+tests/integration/real_github_issues/test_ensure_label.py
+tests/integration/real_github_issues/test_get_comment.py
+tests/integration/real_github_issues/test_get_current_username.py
+tests/integration/real_github_issues/test_get_issue_comments.py
+tests/integration/real_github_issues/test_get_issue.py
+tests/integration/real_github_issues/test_get_prs_referencing.py
+tests/integration/real_github_issues/test_issue_exists.py
+tests/integration/real_github_issues/test_list_issues.py
+tests/integration/real_github_issues/test_remove_label.py
+tests/integration/real_github_issues/test_target_repo.py
+tests/integration/real_github_issues/test_update_issue_body.py
+  </tool_result>
+  <tool_result tool="toolu_01Dfb7JfxB1mwPy2TxDhztts">
+Found 2 files
+tests/unit/core/test_workflow_smoke_test.py
+tests/fakes/context.py
+  </tool_result>
+  <tool_result tool="toolu_01Jn9TxeshrUESJaXmUfvMH2">
+Found 259 files
+tests/unit/erk_dev/test_audit_collect.py
+tests/unit/cli/commands/slot/test_repair_cmd.py
+tests/unit/cli/commands/test_admin_test_workflow.py
+tests/unit/cli/commands/test_implement_shared.py
+tests/unit/cli/commands/objective/test_plan_cmd.py
+tests/unit/cli/commands/objective/test_check_cmd.py
+tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+tests/unit/cli/commands/exec/scripts/test_update_plan_header.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+tests/unit/cli/commands/exec/scripts/test_reply_to_discussion_comment.py
+tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py
+tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py
+tests/unit/cli/commands/exec/scripts/test_set_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+tests/unit/cli/commands/exec/scripts/test_update_issue_body.py
+tests/unit/cli/commands/exec/scripts/test_objective_post_action_comment.py
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+tests/unit/cli/commands/exec/scripts/test_plan_save.py
+tests/unit/cli/commands/exec/scripts/test_plan_update.py
+tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py
+tests/unit/cli/commands/exec/scripts/test_pr_discussion_comments.py
+tests/unit/cli/commands/exec/scripts/test_pr_review_comments.py
+tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py
+tests/unit/cli/commands/exec/scripts/test_push_and_create_pr.py
+
+... [230 lines omitted] ...
+
+tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <tool_result tool="toolu_01WbEj1yomjRrmNv1xJzW8NV">
+Found 94 files
+tests/unit/core/test_workflow_smoke_test.py
+tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+tests/unit/cli/commands/objective/test_check_cmd.py
+tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+tests/unit/cli/commands/exec/scripts/test_update_plan_header.py
+tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+tests/unit/cli/commands/exec/scripts/test_reply_to_discussion_comment.py
+tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py
+tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_store_tripwire_candidates.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+tests/unit/cli/commands/exec/scripts/test_update_issue_body.py
+tests/unit/cli/commands/exec/scripts/test_objective_post_action_comment.py
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+tests/unit/cli/commands/exec/scripts/test_plan_save.py
+tests/unit/cli/commands/exec/scripts/test_plan_update.py
+tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py
+tests/unit/cli/commands/exec/scripts/test_pr_discussion_comments.py
+tests/unit/cli/commands/exec/scripts/test_pr_review_comments.py
+tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_view.py
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py
+tests/unit/cli/commands/exec/scripts/test_impl_signal.py
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+tests/unit/cli/commands/exec/scripts/test_migrate_objective_schema.py
+tests/unit/cli/commands/exec/scripts/test_objective_plan_setup.py
+
+... [65 lines omitted] ...
+
+tests/unit/cli/test_checkout_helpers_error.py
+  </tool_result>
+  <assistant>Now let me search for more specific patterns on test fixtures and how no-repo mode is tested:</assistant>
+  <usage input_tokens="16189" cache_creation_input_tokens="2443" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 2443, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Pm4d2W5dzFQy8Nr2CanZD2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/context.py</param>
+  </tool_use>
+  <usage input_tokens="16189" cache_creation_input_tokens="2443" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 2443, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T9pMonTaNR8yfMecf5nwpo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="16189" cache_creation_input_tokens="2443" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 2443, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LtRCibjd9vLVnBctf6szCK">
+    <param name="pattern">NoRepoSentinel</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">50</param>
+  </tool_use>
+  <usage input_tokens="16189" cache_creation_input_tokens="2443" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 2443, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pm4d2W5dzFQy8Nr2CanZD2">
+     1→"""Factory functions for creating test contexts."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.context import (
+     6→    ErkContext,
+     7→    GlobalConfig,
+     8→    LoadedConfig,
+     9→    NoRepoSentinel,
+    10→    RepoContext,
+    11→    context_for_test,
+    12→)
+    13→from erk.core.prompt_executor import PromptExecutor
+    14→from erk.core.script_writer import ScriptWriter
+    15→from erk_shared.gateway.completion.fake import FakeCompletion
+    16→from erk_shared.gateway.git.fake import FakeGit
+    17→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    18→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    19→from erk_shared.gateway.graphite.fake import FakeGraphite
+    20→from erk_shared.gateway.shell.fake import FakeShell
+    21→
+    22→
+    23→def create_test_context(
+    24→    git: FakeGit | None = None,
+    25→    github: FakeLocalGitHub | None = None,
+    26→    issues: GitHubIssues | None = None,
+    27→    graphite: FakeGraphite | None = None,
+    28→    shell: FakeShell | None = None,
+    29→    prompt_executor: PromptExecutor | None = None,
+    30→    completion: FakeCompletion | None = None,
+
+... [76 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01T9pMonTaNR8yfMecf5nwpo">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <tool_result tool="toolu_01LtRCibjd9vLVnBctf6szCK">
+16:from erk_shared.context.types import NoRepoSentinel
+89:        """Smoke test returns error for NoRepoSentinel."""
+90:        ctx = create_test_context(repo=NoRepoSentinel())
+181:        """Cleanup returns empty for NoRepoSentinel."""
+182:        ctx = create_test_context(repo=NoRepoSentinel())
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <assistant>Now let me search for how Click commands are invoked in tests and look for any existing tests with remote_mode or target_repo patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="23254" cache_read_input_tokens="17627" cache_creation="{'ephemeral_5m_input_tokens': 23254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BNwEKFkC8vQ8c9SSmT7Jsh">
+    <param name="pattern">CliRunner|invoke\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/integration/real_github_issues/test_target_repo.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23254" cache_read_input_tokens="17627" cache_creation="{'ephemeral_5m_input_tokens': 23254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S3atov5h9nsuWKLETnhnEA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/real_github_issues/test_target_repo.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23254" cache_read_input_tokens="17627" cache_creation="{'ephemeral_5m_input_tokens': 23254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011CK1SW7VMiBbzqgaAxQgXw">
+    <param name="pattern">is_remote_mode</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="23254" cache_read_input_tokens="17627" cache_creation="{'ephemeral_5m_input_tokens': 23254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S3atov5h9nsuWKLETnhnEA">
+     1→"""Tests for RealGitHubIssues cross-repo target_repo functionality."""
+     2→
+     3→import json
+     4→import subprocess
+     5→from pathlib import Path
+     6→
+     7→from pytest import MonkeyPatch
+     8→
+     9→from erk_shared.gateway.github.issues.real import RealGitHubIssues
+    10→from erk_shared.gateway.time.real import RealTime
+    11→from tests.integration.test_helpers import mock_subprocess_run
+    12→
+    13→
+    14→def test_target_repo_property_returns_configured_value() -&gt; None:
+    15→    """Test target_repo property returns the configured value."""
+    16→    issues = RealGitHubIssues(target_repo="owner/plans-repo", time=RealTime())
+    17→    assert issues.target_repo == "owner/plans-repo"
+    18→
+    19→    issues_none = RealGitHubIssues(target_repo=None, time=RealTime())
+    20→    assert issues_none.target_repo is None
+    21→
+    22→
+    23→def test_create_issue_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyPatch) -&gt; None:
+    24→    """Test create_issue substitutes {owner}/{repo} in endpoint when target_repo is set.
+    25→
+    26→    Note: gh api doesn't support -R flag - it uses {owner}/{repo} placeholders instead.
+    27→    """
+    28→    created_commands: list[list[str]] = []
+    29→
+    30→    def mock_run(cmd: list[str], **kwargs) -&gt; subprocess.CompletedProcess:
+
+... [102 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011CK1SW7VMiBbzqgaAxQgXw">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01BNwEKFkC8vQ8c9SSmT7Jsh">
+No matches found
+
+[Showing results with pagination = limit: 100, offset: 0]
+  </tool_result>
+  <assistant>Let me search for more patterns on how tests are structured with Click CliRunner:</assistant>
+  <usage input_tokens="1988" cache_creation_input_tokens="1242" cache_read_input_tokens="40881" cache_creation="{'ephemeral_5m_input_tokens': 1242, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012Z3St5DR1MSQ7GHi3poSq5">
+    <param name="command">grep -r "CliRunner\|click.testing" /home/runner/work/erk/erk/tests --include="*.py" | head -20</param>
+    <param name="description">Find CliRunner usage patterns in tests</param>
+  </tool_use>
+  <usage input_tokens="1988" cache_creation_input_tokens="1242" cache_read_input_tokens="40881" cache_creation="{'ephemeral_5m_input_tokens': 1242, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XR7a7cixzF3XLk8v3SgrDC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/cli_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1988" cache_creation_input_tokens="1242" cache_read_input_tokens="40881" cache_creation="{'ephemeral_5m_input_tokens': 1242, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XR7a7cixzF3XLk8v3SgrDC">
+     1→"""Helpers for CLI testing with REAL git operations and CLI assertions.
+     2→
+     3→This module provides utilities for setting up isolated test environments
+     4→for CLI command tests that require REAL git operations (not fakes), plus
+     5→reusable assertion helpers to reduce CLI test boilerplate.
+     6→
+     7→IMPORTANT: For 95% of CLI tests, use `erk_isolated_fs_env()` from
+     8→`tests.test_utils.env_helpers` instead. That helper uses FakeGit and
+     9→is faster, better isolated, and easier to use.
+    10→
+    11→Only use `cli_test_repo()` when you specifically need:
+    12→- Real git operations (hooks, worktree edge cases)
+    13→- Actual filesystem permissions testing
+    14→- Real subprocess interactions
+    15→- Integration tests requiring actual git behavior
+    16→
+    17→See: tests.test_utils.env_helpers.erk_isolated_fs_env() for the recommended pattern.
+    18→"""
+    19→
+    20→import subprocess
+    21→from collections.abc import Generator
+    22→from contextlib import contextmanager
+    23→from dataclasses import dataclass
+    24→from pathlib import Path
+    25→
+    26→from click.testing import Result
+    27→
+    28→
+    29→@dataclass
+    30→class CLITestRepo:
+
+... [237 lines omitted] ...
+
+    48→    ⚠️ WARNING: Only use this helper when you NEED real git operations!
+   146→    verification in a single assertion that provides clear error messages.
+   153→        AssertionError: If command failed or expected messages not found
+   164→            # Before (3 lines with generic error messages):
+   169→            # After (1 line with clear error message):
+   174→        msg = f"Command failed with exit code {result.exit_code}\nOutput:\n{result.output}"
+   175→        raise AssertionError(msg)
+   180→            raise AssertionError(msg)
+   183→def assert_cli_error(
+   188→    """Assert CLI command failed with specific error.
+   190→    Reduces boilerplate in CLI error handling tests by combining exit code
+   191→    check with error message verification.
+   196→        *expected_messages: Error messages that should appear in output
+   199→        AssertionError: If exit code is wrong or messages not found
+   204→        from tests.test_utils.cli_helpers import assert_cli_error
+   216→            assert_cli_error(result, 1, "invalid", "branch")
+   221→        raise AssertionError(msg)
+   226→                f"Expected error message '{message}' not found in output\nOutput:\n{result.output}"
+   228→            raise AssertionError(msg)
+   234→    Useful for checking intermediate output regardless of success/failure.
+   236→    succeeded or failed.
+   243→        AssertionError: If any pattern not found
+   261→            raise AssertionError(msg)
+  </tool_result>
+  <tool_result tool="toolu_012Z3St5DR1MSQ7GHi3poSq5">
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py:from click.testing import CliRunner
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:from click.testing import CliRunner
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py:    runner = CliRunner()
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_backend_utils.py:from click.testing import CliRunner
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_backend_utils.py:    runner = CliRunner()
+  </tool_result>
+  <assistant>Now let me check how env_helpers works and look for any examples of testing with ErkContext:</assistant>
+  <usage input_tokens="3498" cache_creation_input_tokens="3119" cache_read_input_tokens="42123" cache_creation="{'ephemeral_5m_input_tokens': 3119, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FeVgsox9DoHn8cvrrRZze6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/env_helpers.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="3498" cache_creation_input_tokens="3119" cache_read_input_tokens="42123" cache_creation="{'ephemeral_5m_input_tokens': 3119, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FeVgsox9DoHn8cvrrRZze6">
+     1→"""Centralized test environment helpers for simulating erk scenarios.
+     2→
+     3→This module provides helpers for setting up realistic erk test environments
+     4→with Click's CliRunner. It provides two patterns:
+     5→
+     6→1. erk_isolated_fs_env(): Filesystem-based (uses isolated_filesystem(),
+     7→   creates real directories)
+     8→2. erk_inmem_env(): In-memory (uses fakes only, no filesystem I/O)
+     9→
+    10→Key Components:
+    11→    - ErkIsolatedFsEnv: Helper class for filesystem-based testing
+    12→    - ErkInMemEnv: Helper class for in-memory testing
+    13→    - erk_isolated_fs_env(): Context manager for filesystem-based tests
+    14→    - erk_inmem_env(): Context manager for in-memory tests
+    15→
+    16→Usage Pattern:
+    17→
+    18→    Before (raw isolated_filesystem pattern - 20-30 lines per test):
+    19→    ```python
+    20→    def test_something() -&gt; None:
+    21→        runner = CliRunner()
+    22→        with runner.isolated_filesystem():
+    23→            cwd = Path.cwd()
+    24→            git_dir = cwd / ".git"
+    25→            git_dir.mkdir()
+    26→            erk_root = cwd / "erks"
+    27→            erk_root.mkdir()
+    28→
+    29→            git = FakeGit(git_common_dirs={cwd: git_dir})
+    30→            global_config = GlobalConfig.test(...)
+
+... [125 lines omitted] ...
+  </tool_result>
+  <assistant>Let me get the rest of env_helpers and look at a concrete example test:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="7236" cache_read_input_tokens="45242" cache_creation="{'ephemeral_5m_input_tokens': 7236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BRSJ4pdx9AfGyNYNh2akTg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/env_helpers.py</param>
+    <param name="offset">150</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="7236" cache_read_input_tokens="45242" cache_creation="{'ephemeral_5m_input_tokens': 7236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MzRC1YxcFd5pZzzf4iXhiH">
+    <param name="pattern">def build_context|remote_github|http_client</param>
+    <param name="path">/home/runner/work/erk/erk/tests/test_utils/env_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">50</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="7236" cache_read_input_tokens="45242" cache_creation="{'ephemeral_5m_input_tokens': 7236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BRSJ4pdx9AfGyNYNh2akTg">
+   150→        """Path to .git directory (convenience property)."""
+   151→        return self.root_worktree / ".git"
+   152→
+   153→    @property
+   154→    def repo(self) -&gt; RepoContext:
+   155→        """RepoContext constructed from root worktree paths."""
+   156→        return self._repo
+   157→
+   158→    def setup_repo_structure(self, create_config: bool = True) -&gt; Path:
+   159→        """Create standard erk repo directory structure with worktrees folder.
+   160→
+   161→        Creates:
+   162→            {erk_root}/repos/{cwd.name}/
+   163→            {erk_root}/repos/{cwd.name}/worktrees/
+   164→            {erk_root}/repos/{cwd.name}/config.toml (if create_config=True)
+   165→
+   166→        Args:
+   167→            create_config: Whether to create empty config.toml file
+   168→
+   169→        Returns:
+   170→            Path to repo directory ({erk_root}/repos/{cwd.name})
+   171→
+   172→        Example:
+   173→            &gt;&gt;&gt; with erk_isolated_fs_env(runner) as env:
+   174→            ...     repo_dir = env.setup_repo_structure()
+   175→            ...     # repo_dir = env.erk_root / "repos" / env.cwd.name
+   176→            ...     # Already has worktrees/ subdirectory created
+   177→        """
+   178→        repo_dir = self.erk_root / "repos" / self.cwd.name
+   179→        repo_dir.mkdir(parents=True, exist_ok=True)
+
+... [175 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MzRC1YxcFd5pZzzf4iXhiH">
+380:    def build_context(
+825:    def build_context(
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <assistant>Let me get the build_context method from env_helpers:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3304" cache_read_input_tokens="52478" cache_creation="{'ephemeral_5m_input_tokens': 3304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V4TALtUFaCsR7pHDdMFLSW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/env_helpers.py</param>
+    <param name="offset">380</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3304" cache_read_input_tokens="52478" cache_creation="{'ephemeral_5m_input_tokens': 3304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V2jXmtyXCeKtc1hC6cSo5C">
+    <param name="command">grep -A 30 "def build_context" /home/runner/work/erk/erk/tests/test_utils/env_helpers.py | head -60</param>
+    <param name="description">Show build_context method signature and beginning</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3304" cache_read_input_tokens="52478" cache_creation="{'ephemeral_5m_input_tokens': 3304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V4TALtUFaCsR7pHDdMFLSW">
+   380→    def build_context(
+   381→        self,
+   382→        *,
+   383→        current_branch: str | None = None,
+   384→        trunk_branch: str = "main",
+   385→        use_graphite: bool = False,
+   386→        git: Git | None = None,
+   387→        graphite: FakeGraphite | None = None,
+   388→        github: FakeLocalGitHub | None = None,
+   389→        shell: FakeShell | None = None,
+   390→        repo: RepoContext | None = None,
+   391→        dry_run: bool = False,
+   392→        confirm_responses: list[bool] | None = None,
+   393→        console: FakeConsole | None = None,
+   394→        **kwargs,
+   395→    ) -&gt; ErkContext:
+   396→        """Build ErkContext with smart defaults for test scenarios.
+   397→
+   398→        This helper eliminates boilerplate by providing default ops and config
+   399→        for tests that don't need custom setup. Custom values can be provided
+   400→        via keyword arguments.
+   401→
+   402→        Args:
+   403→            current_branch: If provided, auto-configures FakeGit.current_branches
+   404→            trunk_branch: Default branch name (default: "main")
+   405→            use_graphite: Enable Graphite integration (default: False)
+   406→            git: Custom FakeGit instance (overrides smart defaults)
+   407→            graphite: Custom FakeGraphite instance
+   408→            github: Custom FakeLocalGitHub instance
+   409→            shell: Custom FakeShell instance
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01V2jXmtyXCeKtc1hC6cSo5C">
+    def build_context(
+        self,
+        *,
+        current_branch: str | None = None,
+        trunk_branch: str = "main",
+        use_graphite: bool = False,
+        git: Git | None = None,
+        graphite: FakeGraphite | None = None,
+        github: FakeLocalGitHub | None = None,
+        shell: FakeShell | None = None,
+        repo: RepoContext | None = None,
+        dry_run: bool = False,
+        confirm_responses: list[bool] | None = None,
+        console: FakeConsole | None = None,
+        **kwargs,
+    ) -&gt; ErkContext:
+        """Build ErkContext with smart defaults for test scenarios.
+
+        This helper eliminates boilerplate by providing default ops and config
+        for tests that don't need custom setup. Custom values can be provided
+        via keyword arguments.
+
+        Args:
+            current_branch: If provided, auto-configures FakeGit.current_branches
+            trunk_branch: Default branch name (default: "main")
+            use_graphite: Enable Graphite integration (default: False)
+            git: Custom FakeGit instance (overrides smart defaults)
+            graphite: Custom FakeGraphite instance
+            github: Custom FakeLocalGitHub instance
+            shell: Custom FakeShell instance
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at a concrete command test to see how it's structured:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3195" cache_read_input_tokens="55782" cache_creation="{'ephemeral_5m_input_tokens': 3195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Sj7WMeeCFcf7h7Mq2eGwG4">
+    <param name="command">find /home/runner/work/erk/erk/tests/commands -name "test_*.py" -type f | head -5</param>
+    <param name="description">Find example command test files</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3195" cache_read_input_tokens="55782" cache_creation="{'ephemeral_5m_input_tokens': 3195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XiViFSK9QDidVKNCboyidv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_create.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3195" cache_read_input_tokens="55782" cache_creation="{'ephemeral_5m_input_tokens': 3195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XiViFSK9QDidVKNCboyidv">
+     1→"""Tests for pr create command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.console.fake import FakeConsole
+     7→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     8→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+     9→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_inmem_env
+    12→
+    13→
+    14→def test_create_from_file(tmp_path) -&gt; None:
+    15→    """Test creating a plan from a file."""
+    16→    # Arrange
+    17→    plan_file = tmp_path / "test-plan.md"
+    18→    plan_content = "# Test Feature\n\nImplementation details here"
+    19→    plan_file.write_text(plan_content, encoding="utf-8")
+    20→
+    21→    runner = CliRunner()
+    22→    with erk_inmem_env(runner) as env:
+    23→        issues = FakeGitHubIssues()
+    24→        fake_github = FakeLocalGitHub(issues_gateway=issues)
+    25→        ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
+    26→
+    27→        # Act
+    28→        result = runner.invoke(cli, ["pr", "create", "--file", str(plan_file)], obj=ctx)
+    29→
+    30→        # Assert
+
+... [75 lines omitted] ...
+
+    31→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    73→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01Sj7WMeeCFcf7h7Mq2eGwG4">
+/home/runner/work/erk/erk/tests/commands/test_reconcile.py
+/home/runner/work/erk/erk/tests/commands/test_create.py
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py
+/home/runner/work/erk/erk/tests/commands/cc/test_session_list.py
+/home/runner/work/erk/erk/tests/commands/cc/test_session_show.py
+  </tool_result>
+  <assistant>Perfect! Now let me compile the final report with all the findings:
+
+## Summary of ErkContext Construction and Test Patterns
+
+Based on my thorough search of the erk codebase, here are the key findings about how ErkContext is constructed in tests and how NoRepoSentinel is used:
+
+### Key Files Found
+
+**Core context files:**
+- `/home/runner/work/erk/erk/src/erk/core/context.py` - Main context factory with `context_for_test()` and `minimal_context()` functions
+- `/home/runner/work/erk/erk/tests/fakes/context.py` - Convenience wrapper `create_test_context()`
+- `/home/runner/work/erk/erk/tests/test_utils/context_builders.py` - High-level builders for specific test scenarios
+- `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py` - Environment helpers with `build_context()` method
+
+**Test helper files:**
+- `/home/runner/work/erk/erk/tests/test_utils/cli_helpers.py` - CLI testing utilities with `assert_cli_success()`, `assert_cli_error()`
+- `/home/runner/work/erk/erk/tests/test_utils/paths.py` - Path utilities
+
+### NoRepoSentinel Usage Pattern
+
+NoRepoSentinel is used to represent "no repository found" state:
+
+1. **Definition**: Imported from `erk_shared.context.types`
+2. **Test patterns** (found 2 instances):
+   - `/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py:90` - Tests that code handles NoRepoSentinel gracefully
+   - `/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py:182` - Cleanup returns empty for NoRepoSentinel
+
+3. **Construction pattern**:
+```python
+repo = NoRepoSentinel()
+# or in context_for_test()
+ctx = context_for_test(repo=NoRepoSentinel())
+```
+
+### ErkContext Construction Patterns
+
+**Pattern 1: `context_for_test()` - Full Control (in `/home/runner/work/erk/erk/src/erk/core/context.py`)**
+
+```python
+ctx = context_for_test(
+    git=optional_fake_git,
+    github=optional_fake_github,
+    graphite=optional_fake_graphite,
+    shell=optional_fake_shell,
+    repo=NoRepoSentinel(),  # or RepoContext()
+    cwd=Path("/test/cwd"),
+    global_config=GlobalConfig(...),
+    local_config=LoadedConfig.test(),
+    dry_run=False,
+)
+```
+
+**Pattern 2: `minimal_context()` - Quick Setup (in `/home/runner/work/erk/erk/src/erk/core/context.py`)**
+
+```python
+ctx = minimal_context(git=fake_git, cwd=Path("/test"), dry_run=False)
+# Creates context with git configured, everything else uses test defaults
+```
+
+**Pattern 3: `create_test_context()` - Backward Compatibility (in `/home/runner/work/erk/erk/tests/fakes/context.py`)**
+
+```python
+ctx = create_test_context(
+    git=optional_fake_git,
+    repo=NoRepoSentinel(),
+    cwd=optional_path,
+    dry_run=False,
+)
+# Wrapper around context_for_test() with backward compat
+```
+
+**Pattern 4: `env.build_context()` - Recommended for CLI Tests (in `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py`)**
+
+```python
+runner = CliRunner()
+with erk_inmem_env(runner) as env:
+    ctx = env.build_context(
+        current_branch="feature-1",
+        use_graphite=False,
+        git=optional_custom_git,
+        dry_run=False,
+    )
+    result = runner.invoke(cli, ["command"], obj=ctx)
+```
+
+### ErkContext Fields (Key for Remote/NoRepo Testing)
+
+From `/home/runner/work/erk/erk/src/erk/core/context.py`, critical fields:
+
+- `repo: RepoContext | NoRepoSentinel` - Repository context or sentinel
+- `repo_info: RepoInfo | None` - GitHub repo info (owner/name)
+- `http_client: HttpClient | None` - HTTP client for GitHub API
+- `remote_github: RemoteGitHub | None` - For remote operations
+- `github: LocalGitHub` - GitHub gateway
+- `global_config: GlobalConfig | None` - Global configuration
+
+### Click CliRunner Test Pattern
+
+Standard pattern (in `/home/runner/work/erk/erk/tests/commands/pr/test_create.py`):
+
+```python
+from click.testing import CliRunner
+from erk.cli.cli import cli
+
+runner = CliRunner()
+with erk_inmem_env(runner) as env:
+    ctx = env.build_context(...)
+    result = runner.invoke(cli, ["pr", "create", "--file", path], obj=ctx)
+    
+    assert result.exit_code == 0
+    assert "expected message" in result.output
+```
+
+### Integration Test Files for Remote Mode Patterns
+
+- `/home/runner/work/erk/erk/tests/integration/real_github_issues/test_target_repo.py` - Shows how `target_repo` is used with `RealGitHubIssues` to substitute repo in API endpoints (lines 14-127)
+- `/home/runner/work/erk/erk/tests/integration/real_github_issues/conftest.py` - Integration test setup
+- 15 integration test files in `tests/integration/real_github_issues/` that test cross-repo functionality
+
+### Key Testing Infrastructure
+
+1. **Fake implementations** in `/home/runner/work/erk/erk/tests/` and `erk_shared`:
+   - FakeGit, FakeLocalGitHub, FakeGraphite, FakeShell, FakeConsole, FakeHttpClient
+
+2. **Assertion helpers** in `/home/runner/work/erk/erk/tests/test_utils/cli_helpers.py`:
+   - `assert_cli_success(result, *expected_messages)`
+   - `assert_cli_error(result, exit_code=1, *expected_messages)`
+   - `assert_cli_output_contains(result, *patterns)`
+
+3. **Environment builders**:
+   - `erk_inmem_env(runner)` - In-memory environment (no filesystem)
+   - `erk_isolated_fs_env(runner)` - Isolated filesystem with CliRunner.isolated_filesystem()
+
+### No Existing Tests for Remote/NoRepo Mode
+
+Notably, the search found **NO existing tests** for:
+- `is_remote_mode` parameter
+- Commands with `@no_repo_required` decorator
+- PR read commands in no-repo mode
+
+This confirms that test patterns for this functionality need to be created new.</assistant>
+  <usage input_tokens="1602" cache_creation_input_tokens="2588" cache_read_input_tokens="58977" cache_creation="{'ephemeral_5m_input_tokens': 2588, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

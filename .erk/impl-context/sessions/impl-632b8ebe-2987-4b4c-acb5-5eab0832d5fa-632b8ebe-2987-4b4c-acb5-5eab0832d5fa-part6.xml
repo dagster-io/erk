@@ -1,0 +1,698 @@
+<session>
+  <meta source="agent-a026947" />
+  <meta branch="plnd/O8832-pr-read-no-repo-03-07-2109" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for existing test files for PR commands and the FakeRemoteGitHub. I need to understand:
+
+1. Find test files for PR commands: glob for `tests/**/test_*pr*` and `tests/**/test_*close*` and `tests/**/test_*view*` and `tests/**/test_*list*` and `tests/**/test_*log*` and `tests/**/test_*check*` and `tests/**/test_*duplicate*` in the context of CLI commands
+2. Find test files for RemoteGitHub: glob for `tests/**/test_*remote_github*` or `tests/**/test_*remote*`
+3. Read the FakeRemoteGitHub file at `packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py`
+4. Find how existing tests use FakeRemoteGitHub - grep for "FakeRemoteGitHub" across the test directory
+5. Look at one or two existing PR command test files to understand the pattern used for testing Click commands
+
+Report ALL file paths found, the key patterns used, and read any relevant test files that show how PR commands are tested.</user>
+  <assistant>I'll help you search for test files for PR commands and understand how FakeRemoteGitHub is used. Let me start with parallel searches.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01R7YEKJSFeq5pBMa4cwgJmA">
+    <param name="pattern">tests/**/test_*pr*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012xy5YcHKYLRBJdWz29hYhM">
+    <param name="pattern">tests/**/test_*remote*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_015pJLMDZQznihYGiSR73Zap">
+    <param name="pattern">tests/**/test_*close*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_013N9j9YjjCLB8JvAW1zBjzv">
+    <param name="pattern">tests/**/test_*view*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017hPY5dX6XawdEnCrRwZ1Ws">
+    <param name="pattern">tests/**/test_*list*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01QvtunP19DZGzgjMyfZfprp">
+    <param name="pattern">tests/**/test_*log*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Ln62d7eW81avoW9ZJYBA9V">
+    <param name="pattern">tests/**/test_*check*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019rAkJCcmrhnS1k4BSudbxg">
+    <param name="pattern">tests/**/test_*duplicate*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15262" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15262, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R7YEKJSFeq5pBMa4cwgJmA">
+/home/runner/work/erk/erk/tests/commands/admin/test_github_pr_setting.py
+/home/runner/work/erk/erk/tests/commands/doctor/dogfooder/test_deprecated_dot_agent_config.py
+/home/runner/work/erk/erk/tests/commands/pr/test_parse_pr_reference.py
+/home/runner/work/erk/erk/tests/commands/setup/init/test_project_setup.py
+/home/runner/work/erk/erk/tests/commands/shell/test_prepare_cwd_recovery.py
+/home/runner/work/erk/erk/tests/core/test_anthropic_prompt_executor.py
+/home/runner/work/erk/erk/tests/core/test_fallback_prompt_executor.py
+/home/runner/work/erk/erk/tests/core/test_pr_data_parsing.py
+/home/runner/work/erk/erk/tests/core/test_prompt_executor.py
+/home/runner/work/erk/erk/tests/integration/cli/commands/exec/scripts/test_preprocess_session_integration.py
+/home/runner/work/erk/erk/tests/integration/real_github_issues/test_get_prs_referencing.py
+/home/runner/work/erk/erk/tests/real/test_subprocess.py
+/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py
+/home/runner/work/erk/erk/tests/tui/commands/test_node_command_provider.py
+/home/runner/work/erk/erk/tests/tui/screens/test_one_shot_prompt_screen.py
+/home/runner/work/erk/erk/tests/tui/screens/test_objective_plans_fake_provider.py
+/home/runner/work/erk/erk/tests/unit/agent_docs/test_resolve_docs_project_root.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_embedded_prompt.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_generate_pr_address_summary.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_commits.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_link_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_pre_tool_use_hook.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_log_processing.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_user_prompt_hook.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_github_pr_setting.py
+/home/runner/work/erk/erk/tests/unit/cli/test_project_config.py
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015pJLMDZQznihYGiSR73Zap">
+/home/runner/work/erk/erk/tests/commands/objective/test_close_objective.py
+/home/runner/work/erk/erk/tests/integration/real_github_issues/test_close_issue.py
+/home/runner/work/erk/erk/tests/commands/pr/test_close.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_prs.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py
+  </tool_result>
+  <tool_result tool="toolu_01Ln62d7eW81avoW9ZJYBA9V">
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py
+/home/runner/work/erk/erk/tests/commands/navigation/test_checkout.py
+/home/runner/work/erk/erk/tests/commands/navigation/test_checkout_graphite_disabled.py
+/home/runner/work/erk/erk/tests/commands/navigation/test_checkout_messages.py
+/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py
+/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py
+/home/runner/work/erk/erk/tests/commands/test_wt_checkout.py
+/home/runner/work/erk/erk/tests/core/test_plan_relevance_checker.py
+/home/runner/work/erk/erk/tests/core/test_plan_duplicate_checker.py
+/home/runner/work/erk/erk/tests/core/test_health_checks.py
+/home/runner/work/erk/erk/tests/integration/test_cli_version_check.py
+/home/runner/work/erk/erk/tests/integration/test_docs_check.py
+/home/runner/work/erk/erk/tests/tui/formatting/test_ci_checks.py
+/home/runner/work/erk/erk/tests/tui/screens/test_check_runs_screen.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_cmux_checkout_workspace.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/test_capability_check.py
+/home/runner/work/erk/erk/tests/unit/cli/test_checkout_helpers_error.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_statusline.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_required_version.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_exit_plan_hook.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_erk_queue_pat_secret.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_anthropic_api_secret.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_hooks.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_user_prompt_hook.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_plans_repo_labels.py
+/home/runner/work/erk/erk/tests/unit/core/test_health_checks_claude_permission.py
+/home/runner/work/erk/erk/tests/unit/core/test_version_check.py
+/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019rAkJCcmrhnS1k4BSudbxg">
+/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py
+/home/runner/work/erk/erk/tests/core/test_plan_duplicate_checker.py
+  </tool_result>
+  <tool_result tool="toolu_013N9j9YjjCLB8JvAW1zBjzv">
+/home/runner/work/erk/erk/tests/commands/pr/test_view.py
+/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py
+/home/runner/work/erk/erk/tests/tui/test_view_bar.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_run_review.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_review_capability.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_code_reviews_system.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_discover_reviews.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_view.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_pr_review_comments.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_resolve_review_threads.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py
+  </tool_result>
+  <tool_result tool="toolu_01QvtunP19DZGzgjMyfZfprp">
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_branch_switching_logic.py
+/home/runner/work/erk/erk/tests/tui/filtering/test_logic.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_log_processing.py
+/home/runner/work/erk/erk/tests/unit/cli/test_log_cmd.py
+/home/runner/work/erk/erk/tests/unit/core/test_command_log.py
+/home/runner/work/erk/erk/tests/unit/entity_store/test_entity_log.py
+/home/runner/work/erk/erk/tests/unit/hooks/test_hook_logging.py
+/home/runner/work/erk/erk/tests/commands/pr/test_log.py
+/home/runner/work/erk/erk/tests/commands/run/test_logs.py
+  </tool_result>
+  <tool_result tool="toolu_012xy5YcHKYLRBJdWz29hYhM">
+/home/runner/work/erk/erk/tests/commands/pr/test_address_remote_cmd.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rebase_remote.py
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_remote_validation.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git_remote_ops.py
+/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_real_remote_github.py
+/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_fake_remote_github.py
+/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_remote_execution_note.py
+  </tool_result>
+  <tool_result tool="toolu_017hPY5dX6XawdEnCrRwZ1Ws">
+/home/runner/work/erk/erk/tests/commands/cc/test_session_list.py
+/home/runner/work/erk/erk/tests/commands/stack/test_list_cmd.py
+/home/runner/work/erk/erk/tests/commands/workspace/test_list_graphite_disabled.py
+/home/runner/work/erk/erk/tests/commands/wt/test_list_filter_empty_slots.py
+/home/runner/work/erk/erk/tests/integration/real_github_issues/test_list_issues.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_list_sessions.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_list_cmd_helpers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/slot/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/stack/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/commands/wt/test_list_helpers.py
+/home/runner/work/erk/erk/tests/commands/pr/test_list.py
+/home/runner/work/erk/erk/tests/commands/run/test_list.py
+/home/runner/work/erk/erk/tests/unit/services/test_objective_list_service.py
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service_http.py
+  </tool_result>
+  <assistant>Now let me look at the FakeRemoteGitHub implementation and search for its usage:</assistant>
+  <usage input_tokens="1407" cache_creation_input_tokens="4309" cache_read_input_tokens="15262" cache_creation="{'ephemeral_5m_input_tokens': 4309, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UtfECR2BfQ6bKhc3qFNboG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1407" cache_creation_input_tokens="4309" cache_read_input_tokens="15262" cache_creation="{'ephemeral_5m_input_tokens': 4309, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014Y45HQ6QsQXa7gKxXBtDqe">
+    <param name="pattern">FakeRemoteGitHub</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1407" cache_creation_input_tokens="4309" cache_read_input_tokens="15262" cache_creation="{'ephemeral_5m_input_tokens': 4309, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UtfECR2BfQ6bKhc3qFNboG">
+     1→"""Fake implementation of RemoteGitHub for testing.
+     2→
+     3→Constructor-injected responses for reads, mutation tracking lists for write assertions.
+     4→"""
+     5→
+     6→from dataclasses import dataclass
+     7→
+     8→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+     9→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    10→
+    11→
+    12→@dataclass(frozen=True)
+    13→class CreatedRef:
+    14→    """Recorded create_ref call."""
+    15→
+    16→    owner: str
+    17→    repo: str
+    18→    ref: str
+    19→    sha: str
+    20→
+    21→
+    22→@dataclass(frozen=True)
+    23→class CreatedFileCommit:
+    24→    """Recorded create_file_commit call."""
+    25→
+    26→    owner: str
+    27→    repo: str
+    28→    path: str
+    29→    content: str
+    30→    message: str
+
+... [370 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014Y45HQ6QsQXa7gKxXBtDqe">
+Found 7 files
+tests/unit/core/test_workflow_smoke_test.py
+tests/unit/cli/commands/objective/test_plan_cmd.py
+tests/commands/objective/test_plan_one_shot.py
+tests/commands/one_shot/test_one_shot_remote_dispatch.py
+tests/commands/one_shot/test_one_shot.py
+tests/unit/gateways/remote_github/test_fake_remote_github.py
+tests/commands/one_shot/test_one_shot_dispatch.py
+  </tool_result>
+  <assistant>Now let me read some of the key PR command test files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6345" cache_read_input_tokens="19571" cache_creation="{'ephemeral_5m_input_tokens': 6345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017PFfQ2LQdo6XD77njrB4V2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_close.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6345" cache_read_input_tokens="19571" cache_creation="{'ephemeral_5m_input_tokens': 6345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011ZdX1TuRRE1Jc7ZrmDf5Zc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_view.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6345" cache_read_input_tokens="19571" cache_creation="{'ephemeral_5m_input_tokens': 6345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HtR6crU49yrR3qADTzfNun">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_list.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6345" cache_read_input_tokens="19571" cache_creation="{'ephemeral_5m_input_tokens': 6345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ATfzuEWvyucKTMU3gTXdnK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_log.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6345" cache_read_input_tokens="19571" cache_creation="{'ephemeral_5m_input_tokens': 6345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013XmTvYA6SjqaLZQ5QZ2KDb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_fake_remote_github.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6345" cache_read_input_tokens="19571" cache_creation="{'ephemeral_5m_input_tokens': 6345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017PFfQ2LQdo6XD77njrB4V2">
+     1→"""Tests for plan close command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+    11→from erk_shared.gateway.time.fake import FakeTime
+    12→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    13→from erk_shared.plan_store.types import Plan, PlanState
+    14→from tests.fakes.prompt_executor import FakePromptExecutor
+    15→from tests.test_utils.context_builders import build_workspace_test_context
+    16→from tests.test_utils.env_helpers import erk_inmem_env
+    17→from tests.test_utils.plan_helpers import (
+    18→    create_plan_store_with_plans,
+    19→    format_plan_header_body_for_test,
+    20→    issue_info_to_pr_details,
+    21→)
+    22→
+    23→
+    24→def test_close_plan_with_plan_number() -&gt; None:
+    25→    """Test closing a plan with plan number."""
+    26→    # Arrange
+    27→    plan_issue = Plan(
+    28→        plan_identifier="42",
+    29→        title="Test Issue",
+    30→        body="This is a test issue",
+
+... [402 lines omitted] ...
+
+    70→        assert "Error" in result.output
+   193→    """Test closing a plan with no linked PRs works without error."""
+   236→    """Test closing a plan with invalid identifier fails with helpful error."""
+   253→    """Test closing a plan with invalid URL format gives specific error."""
+   393→def test_close_plan_objective_update_failure_does_not_break_close() -&gt; None:
+   423→        # Assert - close still succeeds even though objective update failed
+   426→        assert "Objective update failed" in result.output
+  </tool_result>
+  <tool_result tool="toolu_011ZdX1TuRRE1Jc7ZrmDf5Zc">
+     1→"""Tests for plan view command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.plan_store.types import Plan, PlanState
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_inmem_env
+    11→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    12→
+    13→
+    14→def test_view_plan_displays_issue() -&gt; None:
+    15→    """Test fetching and displaying a plan issue."""
+    16→    # Arrange
+    17→    plan_issue = Plan(
+    18→        plan_identifier="42",
+    19→        title="Test Issue",
+    20→        body="This is a test issue description",
+    21→        state=PlanState.OPEN,
+    22→        url="https://github.com/owner/repo/issues/42",
+    23→        labels=["erk-plan", "bug"],
+    24→        assignees=["alice"],
+    25→        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+    26→        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+    27→        metadata={},
+    28→        objective_id=None,
+    29→    )
+    30→
+
+... [710 lines omitted] ...
+
+    87→def test_view_plan_error_when_cannot_infer_from_branch() -&gt; None:
+    88→    """Test error message when on non-plan branch without identifier."""
+   100→        assert "Error" in result.output
+   182→        assert "Error" in result.output
+   250→    """Test error handling for invalid identifier format."""
+   262→        assert "Error" in result.output
+   274→    issue_body = """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <tool_result tool="toolu_01ATfzuEWvyucKTMU3gTXdnK">
+     1→"""Tests for plan log command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.cli import cli
+     9→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    10→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    11→from erk_shared.gateway.github.issues.types import IssueInfo
+    12→from erk_shared.gateway.github.metadata.core import (
+    13→    create_implementation_status_block,
+    14→    create_plan_block,
+    15→    create_submission_queued_block,
+    16→    create_workflow_started_block,
+    17→    render_metadata_block,
+    18→)
+    19→from erk_shared.gateway.time.fake import FakeTime
+    20→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    21→from erk_shared.plan_store.types import Plan, PlanState
+    22→from tests.test_utils.context_builders import build_workspace_test_context
+    23→from tests.test_utils.env_helpers import erk_inmem_env
+    24→from tests.test_utils.plan_helpers import (
+    25→    create_plan_store_with_plans,
+    26→    issue_info_to_pr_details,
+    27→)
+    28→
+    29→
+    30→def _make_issue_info(plan: Plan) -&gt; IssueInfo:
+
+... [423 lines omitted] ...
+
+   317→        assert "Error" in result.output
+  </tool_result>
+  <tool_result tool="toolu_013XmTvYA6SjqaLZQ5QZ2KDb">
+     1→"""Tests for FakeRemoteGitHub gateway."""
+     2→
+     3→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+     4→
+     5→
+     6→def test_get_authenticated_user_returns_configured_value() -&gt; None:
+     7→    """Default authenticated user is returned."""
+     8→    fake = FakeRemoteGitHub(
+     9→        authenticated_user="test-user",
+    10→        default_branch_name="main",
+    11→        default_branch_sha="abc123",
+    12→        next_pr_number=1,
+    13→        dispatch_run_id="run-1",
+    14→    )
+    15→    assert fake.get_authenticated_user() == "test-user"
+    16→
+    17→
+    18→def test_get_authenticated_user_custom() -&gt; None:
+    19→    """Custom authenticated user is returned."""
+    20→    fake = FakeRemoteGitHub(
+    21→        authenticated_user="alice",
+    22→        default_branch_name="main",
+    23→        default_branch_sha="abc123",
+    24→        next_pr_number=1,
+    25→        dispatch_run_id="run-1",
+    26→    )
+    27→    assert fake.get_authenticated_user() == "alice"
+    28→
+    29→
+    30→def test_get_default_branch_name() -&gt; None:
+
+... [184 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01HtR6crU49yrR3qADTzfNun">
+     1→"""Tests for erk pr list command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo
+    11→from erk_shared.plan_store.types import Plan, PlanState
+    12→from tests.test_utils.context_builders import (
+    13→    build_fake_plan_list_service,
+    14→    build_workspace_test_context,
+    15→)
+    16→from tests.test_utils.env_helpers import erk_inmem_env
+    17→
+    18→
+    19→def plan_to_issue(plan: Plan) -&gt; IssueInfo:
+    20→    """Convert Plan to IssueInfo for test setup."""
+    21→    return IssueInfo(
+    22→        number=int(plan.plan_identifier),
+    23→        title=plan.title,
+    24→        body=plan.body,
+    25→        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
+    26→        url=plan.url,
+    27→        labels=plan.labels,
+    28→        assignees=plan.assignees,
+    29→        created_at=plan.created_at,
+    30→        updated_at=plan.updated_at,
+
+... [711 lines omitted] ...
+
+   669→def test_pr_list_displays_enrichment_warnings() -&gt; None:
+   670→    """Test that enrichment warnings from PlanListData are displayed to the user."""
+   691→            warnings=(
+   692→                "GraphQL enrichment failed for 2/5 PRs "
+   703→        assert "Warning:" in result.output
+   704→        assert "GraphQL enrichment failed for 2/5 PRs" in result.output
+   707→def test_pr_list_no_warnings_when_enrichment_succeeds() -&gt; None:
+   708→    """Test that no warnings are displayed when enrichment succeeds fully."""
+   735→        assert "Warning:" not in result.output
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me compile a comprehensive report.
+
+## Summary Report: PR Command Tests and FakeRemoteGitHub
+
+### 1. Test Files Found for PR Commands
+
+**Complete list of PR command test files:**
+
+- `/home/runner/work/erk/erk/tests/commands/pr/test_close.py` - Tests for `pr close` command
+- `/home/runner/work/erk/erk/tests/commands/pr/test_view.py` - Tests for `pr view` command
+- `/home/runner/work/erk/erk/tests/commands/pr/test_list.py` - Tests for `pr list` command
+- `/home/runner/work/erk/erk/tests/commands/pr/test_log.py` - Tests for `pr log` command
+- `/home/runner/work/erk/erk/tests/commands/pr/test_check.py` - Tests for `pr check` command
+- `/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py` - Tests for `pr checkout` command
+- `/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py` - Tests for plan checking
+- `/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py` - Tests for duplicate detection
+- `/home/runner/work/erk/erk/tests/commands/pr/test_parse_pr_reference.py` - Tests for PR reference parsing
+- `/home/runner/work/erk/erk/tests/commands/pr/test_prepare.py` - Tests for PR preparation
+
+### 2. FakeRemoteGitHub Location and Interface
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py`
+
+**Key Characteristics:**
+
+**Constructor Parameters (Read Configuration):**
+- `authenticated_user: str` - Username for `get_authenticated_user()`
+- `default_branch_name: str` - Branch name for `get_default_branch_name()`
+- `default_branch_sha: str` - SHA for `get_default_branch_sha()`
+- `next_pr_number: int` - PR number to return from `create_pull_request()`
+- `dispatch_run_id: str` - Run ID to return from `dispatch_workflow()`
+- `issues: dict[int, IssueInfo] | None` - Pre-configured issues by number
+- `issue_comments: dict[int, list[str]] | None` - Pre-configured comments by issue number
+- `pr_references: dict[int, list[PRReference]] | None` - Pre-configured PR references by issue number
+
+**Read Methods:**
+- `get_authenticated_user() -&gt; str`
+- `get_default_branch_name(*, owner: str, repo: str) -&gt; str`
+- `get_default_branch_sha(*, owner: str, repo: str) -&gt; str`
+- `get_issue(*, owner: str, repo: str, number: int) -&gt; IssueInfo | IssueNotFound`
+- `get_issue_comments(*, owner: str, repo: str, number: int) -&gt; list[str]`
+- `list_issues(*, owner: str, repo: str, labels: tuple[str, ...], state: str, limit: int | None, creator: str | None) -&gt; list[IssueInfo]`
+- `get_prs_referencing_issue(*, owner: str, repo: str, number: int) -&gt; list[PRReference]`
+- `check_auth_status() -&gt; tuple[bool, str | None, str | None]`
+
+**Write Methods (Mutation Tracking):**
+- `create_ref(*, owner: str, repo: str, ref: str, sha: str) -&gt; None`
+- `create_file_commit(...) -&gt; str` - Returns "fake-commit-sha"
+- `create_pull_request(...) -&gt; int` - Returns `next_pr_number`
+- `update_pull_request_body(...) -&gt; None`
+- `add_labels(...) -&gt; None`
+- `dispatch_workflow(...) -&gt; str` - Returns `dispatch_run_id`
+- `add_issue_comment(...) -&gt; None`
+- `close_issue(...) -&gt; None`
+- `close_pr(...) -&gt; None`
+
+**Assertion Properties (Read-Only, Return Copies):**
+- `created_refs: list[CreatedRef]`
+- `created_file_commits: list[CreatedFileCommit]`
+- `created_pull_requests: list[CreatedPullRequest]`
+- `updated_pr_bodies: list[UpdatedPullRequestBody]`
+- `added_labels: list[AddedLabels]`
+- `dispatched_workflows: list[DispatchedWorkflow]`
+- `added_issue_comments: list[AddedIssueComment]`
+- `closed_issues: list[ClosedIssue]`
+- `closed_prs: list[ClosedPR]`
+
+### 3. Test Files Using FakeRemoteGitHub
+
+**Files that use FakeRemoteGitHub:**
+- `/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_fake_remote_github.py` - Direct tests of FakeRemoteGitHub
+- `/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py`
+- `/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py`
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py`
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py`
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py`
+
+### 4. Key Testing Patterns from PR Command Tests
+
+#### Pattern 1: CLI Command Testing with CliRunner
+
+From `test_close.py`:
+```python
+from click.testing import CliRunner
+from erk.cli.cli import cli
+
+def test_close_plan_with_plan_number() -&gt; None:
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_github.issues)
+        
+        result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
+        
+        assert result.exit_code == 0
+        assert "Closed plan #42" in result.output
+```
+
+**Key Points:**
+- Use `CliRunner()` from Click's testing module
+- Use `erk_inmem_env(runner)` context manager for test environment
+- Use `build_workspace_test_context()` helper for dependency injection
+- Invoke CLI commands via `runner.invoke(cli, [args], obj=ctx)`
+- Assert on `exit_code` and `output`
+
+#### Pattern 2: Fake GitHub Integration
+
+From `test_close.py`:
+```python
+fake_issues = FakeGitHubIssues(
+    issues={42: issue},
+    pr_references={42: [open_draft_pr, open_non_draft_pr]},
+)
+fake_github = FakeLocalGitHub(
+    pr_details={42: issue_info_to_pr_details(issue)},
+    issues_gateway=fake_issues,
+)
+store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+ctx = build_workspace_test_context(
+    env, plan_store=store, github=fake_github, issues=fake_issues
+)
+```
+
+**Key Points:**
+- Use `FakeGitHubIssues` for GitHub issues data
+- Use `FakeLocalGitHub` for local GitHub operations
+- Use `PlannedPRBackend` as the plan store
+- Wire everything through `build_workspace_test_context()`
+
+#### Pattern 3: Assertion on Mutations
+
+From `test_close.py`:
+```python
+# Verify PRs were closed
+assert 100 in fake_github.closed_prs
+assert 101 in fake_github.closed_prs
+
+# Verify comments were added
+assert any(num == 42 and "completed" in body for num, body in fake_github.pr_comments)
+```
+
+#### Pattern 4: Plan Creation Helpers
+
+From multiple files:
+```python
+plan_issue = Plan(
+    plan_identifier="42",
+    title="Test Issue",
+    body="This is a test issue",
+    state=PlanState.OPEN,
+    url="https://github.com/owner/repo/issues/42",
+    labels=["erk-pr", "erk-plan"],
+    assignees=[],
+    created_at=datetime(2024, 1, 1, tzinfo=UTC),
+    updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+    metadata={},
+    objective_id=None,
+)
+```
+
+### 5. FakeRemoteGitHub Test Patterns
+
+From `/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_fake_remote_github.py`:
+
+**Pattern 1: Simple Constructor Configuration**
+```python
+fake = FakeRemoteGitHub(
+    authenticated_user="test-user",
+    default_branch_name="main",
+    default_branch_sha="abc123",
+    next_pr_number=1,
+    dispatch_run_id="run-1",
+)
+assert fake.get_authenticated_user() == "test-user"
+```
+
+**Pattern 2: Mutation Tracking**
+```python
+fake.create_ref(owner="o", repo="r", ref="refs/heads/my-branch", sha="abc123")
+
+assert len(fake.created_refs) == 1
+ref = fake.created_refs[0]
+assert ref.owner == "o"
+assert ref.repo == "r"
+assert ref.ref == "refs/heads/my-branch"
+assert ref.sha == "abc123"
+```
+
+**Pattern 3: Return Values**
+```python
+pr_number = fake.create_pull_request(
+    owner="o",
+    repo="r",
+    head="my-branch",
+    base="main",
+    title="One-shot: fix bug",
+    body="body text",
+    draft=True,
+)
+assert pr_number == 99  # Returns configured next_pr_number
+```
+
+**Pattern 4: Assertion Properties Return Copies (Immutability)**
+```python
+refs1 = fake.created_refs
+refs2 = fake.created_refs
+assert refs1 == refs2
+assert refs1 is not refs2  # Different list objects each time
+```
+
+### 6. Summary of Key Patterns
+
+**For PR Command Tests:**
+
+1. **Context Builders**: Use `build_workspace_test_context()` to inject fakes
+2. **CLI Testing**: Use `CliRunner().invoke(cli, args, obj=ctx)`
+3. **Environment**: Use `erk_inmem_env(runner)` context manager
+4. **Plan Helpers**: Use `create_plan_store_with_plans()` and `plan_to_issue()` converters
+5. **Assertion**: Check `exit_code`, `output`, and fake mutation properties
+
+**For FakeRemoteGitHub Usage:**
+
+1. **Constructor-Injected Reads**: Configure response values at construction time
+2. **Mutation Tracking**: Mutations recorded in internal lists
+3. **Property-Based Assertions**: Access mutations via read-only properties
+4. **Copy Safety**: Properties return defensive copies, not mutable references
+5. **Minimal Fake**: Only records calls; doesn't implement business logic
+
+### 7. Files with Relevant Implementation Details
+
+These files show how PR commands use the underlying gateways:
+
+- `/home/runner/work/erk/erk/tests/commands/pr/test_view.py` (lines 14-135) - Shows handling of plan headers and metadata extraction
+- `/home/runner/work/erk/erk/tests/commands/pr/test_list.py` (lines 19-251) - Shows filtering, sorting, and enrichment patterns
+- `/home/runner/work/erk/erk/tests/commands/pr/test_close.py` (lines 24-427) - Shows closing logic with linked PRs and objective updates
+- `/home/runner/work/erk/erk/tests/commands/pr/test_log.py` (lines 47-448) - Shows metadata block parsing and event timeline</assistant>
+  <usage input_tokens="8771" cache_creation_input_tokens="33496" cache_read_input_tokens="25916" cache_creation="{'ephemeral_5m_input_tokens': 33496, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
