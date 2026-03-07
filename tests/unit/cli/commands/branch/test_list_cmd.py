@@ -382,6 +382,110 @@ def test_branch_list_shows_last_commit_column() -> None:
         assert "1h ago" in output
 
 
+def test_branch_list_hides_stub_branches_by_default() -> None:
+    """Test that placeholder stub branches are hidden by default."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.erk_root / env.cwd.name
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=repo_dir / "feat-1", branch="feat-1", is_root=False),
+                    WorktreeInfo(
+                        path=repo_dir / "erk-slot-02",
+                        branch="__erk-slot-02-br-stub__",
+                        is_root=False,
+                    ),
+                ],
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite = FakeGraphite()
+        test_ctx = env.build_context(git=git, graphite=graphite)
+
+        result = runner.invoke(cli, ["branch", "list"], obj=test_ctx)
+        assert result.exit_code == 0, result.output
+
+        output = strip_ansi(result.output)
+
+        # Feature branch should be shown
+        assert "feat-1" in output
+        # Stub branch should be hidden
+        assert "__erk-slot-02-br-stub__" not in output
+
+
+def test_branch_list_all_flag_shows_stub_branches() -> None:
+    """Test that --all flag shows stub branches."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.erk_root / env.cwd.name
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=repo_dir / "feat-1", branch="feat-1", is_root=False),
+                    WorktreeInfo(
+                        path=repo_dir / "erk-slot-02",
+                        branch="__erk-slot-02-br-stub__",
+                        is_root=False,
+                    ),
+                ],
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite = FakeGraphite()
+        test_ctx = env.build_context(git=git, graphite=graphite)
+
+        result = runner.invoke(cli, ["branch", "list", "--all"], obj=test_ctx)
+        assert result.exit_code == 0, result.output
+
+        output = strip_ansi(result.output)
+
+        # Both branches should be shown
+        assert "feat-1" in output
+        assert "__erk-slot-02-br-stub__" in output
+
+
+def test_branch_list_short_all_flag() -> None:
+    """Test that -a short flag works for showing stub branches."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.erk_root / env.cwd.name
+
+        git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=repo_dir / "erk-slot-02",
+                        branch="__erk-slot-02-br-stub__",
+                        is_root=False,
+                    ),
+                ],
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        graphite = FakeGraphite()
+        test_ctx = env.build_context(git=git, graphite=graphite)
+
+        result = runner.invoke(cli, ["branch", "list", "-a"], obj=test_ctx)
+        assert result.exit_code == 0, result.output
+
+        output = strip_ansi(result.output)
+
+        # Stub branch should be visible with -a flag
+        assert "__erk-slot-02-br-stub__" in output
+
+
 def test_branch_list_shows_dash_for_no_unique_commits() -> None:
     """Test that branches with no unique commits show '-' in last column."""
     runner = CliRunner()

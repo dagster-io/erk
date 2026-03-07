@@ -5,6 +5,7 @@ from rich.console import Console
 from rich.table import Table
 
 from erk.cli.alias import alias
+from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time, get_pr_status_emoji
@@ -13,13 +14,23 @@ from erk_shared.gateway.github.types import PullRequestInfo
 
 @alias("ls")
 @click.command("list")
+@click.option(
+    "-a",
+    "--all",
+    "show_all",
+    is_flag=True,
+    help="Show all branches including empty slot stubs",
+)
 @click.pass_obj
-def branch_list(ctx: ErkContext) -> None:
+def branch_list(ctx: ErkContext, *, show_all: bool) -> None:
     """List active branches with their worktrees and PR status.
 
     Active branches are those that have:
     - A worktree checked out, OR
     - An open pull request
+
+    By default, placeholder branches (empty slot stubs) are hidden.
+    Use --all/-a to show them.
 
     Example:
         erk br ls
@@ -47,6 +58,14 @@ def branch_list(ctx: ErkContext) -> None:
     for branch, pr in prs.items():
         if branch not in active_branches and pr.state == "OPEN":
             active_branches[branch] = (None, pr)
+
+    # Filter out placeholder branches (empty slot stubs) unless --all is specified
+    if not show_all:
+        active_branches = {
+            branch: info
+            for branch, info in active_branches.items()
+            if not is_placeholder_branch(branch)
+        }
 
     # Display table
     console = Console(stderr=True, force_terminal=True)
