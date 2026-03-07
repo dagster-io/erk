@@ -12,6 +12,15 @@
         "planning-4eb4862b-92c2-4b59-a519-0b92ca4623f7-4eb4862b-92c2-4b59-a519-0b92ca4623f7-part2.xml",
         "planning-4eb4862b-92c2-4b59-a519-0b92ca4623f7-4eb4862b-92c2-4b59-a519-0b92ca4623f7-part3.xml"
       ]
+    },
+    {
+      "session_id": "f589253a-d6cb-4fb0-8be1-d48bc6a1c022",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-07T16:24:20.639729+00:00",
+      "files": [
+        "impl-f589253a-d6cb-4fb0-8be1-d48bc6a1c022-f589253a-d6cb-4fb0-8be1-d48bc6a1c022.xml"
+      ]
     }
   ]
 }
