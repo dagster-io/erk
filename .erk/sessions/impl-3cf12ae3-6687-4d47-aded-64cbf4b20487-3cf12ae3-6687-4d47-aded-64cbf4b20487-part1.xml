@@ -1,0 +1,1103 @@
+<session>
+  <meta branch="plnd/fix-slow-unit-tests-03-07-1647" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8922&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8922` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8922.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28550" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28550, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0147GjPbxa6o3aAdEKcGFQ94">
+    <param name="command">erk exec setup-impl --issue 8922</param>
+    <param name="description">Set up implementation for plan #8922</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28550" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28550, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0147GjPbxa6o3aAdEKcGFQ94">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-slow-unit-tests-03-07-1647", "plan_number": 8922, "plan_url": "https://github.com/dagster-io/erk/pull/8922", "branch": "plnd/fix-slow-unit-tests-03-07-1647", "plan_title": "[erk-plan] Fix Slow Unit Tests: Move to Integration + Fake Gateway for setup_cmd", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8922, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-slow-unit-tests-03-07-1647', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="28550" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Xv3395PbX4uJUKv7sPW3qw">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-slow-unit-tests-03-07-1647/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="28550" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="105" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xv3395PbX4uJUKv7sPW3qw">
+     1→# Fix Slow Unit Tests: Move to Integration + Fake Gateway for setup_cmd
+     2→
+     3→## Context
+     4→
+     5→Performance analysis identified several unit tests that are slow because they hit real I/O:
+     6→- `test_forward_references.py` (0.34s) — scans entire source tree
+     7→- `test_context.py` tests calling real `create_context()` (0.07–0.11s) — real git/config I/O
+     8→- `test_setup_cmd.py` (0.17–0.21s) — hits real `gh api` subprocess via `run_with_error_reporting`
+     9→
+    10→The first two should be integration tests. The third needs the `gh api` and `subprocess.run` calls routed through the Codespace gateway so fakes can be injected.
+    11→
+    12→## Part 1: Move `test_forward_references.py` to Integration
+    13→
+    14→**Move** `tests/unit/test_forward_references.py` → `tests/integration/test_forward_references.py`
+    15→
+    16→No code changes needed, just a file move. This test walks the entire `src/erk/` tree and reads every `.py` file — clearly integration-level I/O.
+    17→
+    18→## Part 2: Move Real `create_context()` Tests to Integration
+    19→
+    20→**From** `tests/unit/core/test_context.py`, move these 3 tests to `tests/integration/test_context.py`:
+    21→- `test_regenerate_context_updates_cwd` (calls real `create_context()`)
+    22→- `test_create_context_detects_deleted_directory` (calls real `create_context()`)
+    23→- `test_regenerate_context_detects_deleted_directory` (calls real `create_context()`)
+    24→
+    25→**Keep** in `tests/unit/core/test_context.py` (already use `context_for_test()`):
+    26→- `test_regenerate_context_preserves_dry_run`
+    27→- `test_create_prompt_executor_selects_codex_when_backend_is_codex`
+    28→- `test_create_prompt_executor_selects_claude_when_backend_is_claude`
+    29→- `test_create_prompt_executor_defaults_to_claude_when_config_is_none`
+    30→
+
+... [91 lines omitted] ...
+
+    57→- These methods raise `RuntimeError` on failure (integration-layer pattern per `docs/learned/architecture/subprocess-wrappers.md`)
+    80→1. Replace `_get_repo_id()` with `ctx.codespace.get_repo_id(owner_repo)` (wrap errors at CLI layer)
+    81→2. Replace `run_with_error_reporting(["gh", "api", "--method", "POST", ...])` with `ctx.codespace.create_codespace(...)`
+    83→4. CLI-layer error handling wraps gateway `RuntimeError` into `click.echo` + `SystemExit(1)`
+  </tool_result>
+  <assistant>Good, I have the plan. Now let me set up todos, load relevant skills, and read the key files I'll need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2315" cache_read_input_tokens="28902" cache_creation="{'ephemeral_5m_input_tokens': 2315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01PfZeCpYC6dgnnMVviex9mX">
+    <param name="todos">[{'content': 'Part 1: Move test_forward_references.py to integration tests', 'status': 'pe...[truncated 1040 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2315" cache_read_input_tokens="28902" cache_creation="{'ephemeral_5m_input_tokens': 2315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PfZeCpYC6dgnnMVviex9mX">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal GitHub started and load the relevant skills and files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017oYhgLV5UziskKwH5ufj2k">
+    <param name="command">erk exec impl-signal started --session-id "3cf12ae3-6687-4d47-aded-64cbf4b20487" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01Q254rXhSjLbK1ycvc62fbj">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Fwp2i8jAPs2Ba3dC4vTwEg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/test_forward_references.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SkPwzyergm3yKfMAt8toj6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01J2uJGXZfxdrVrDS6iLsU54">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CFkrwYeDztutvMBawEjvsH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018rBdg3supUi31ZdijuM3JY">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NAUEq6Vs9McHKLMyTjxv3b">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/codespace/setup_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ne3wm411d32nkqbwHSrJGU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_setup_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="31217" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017oYhgLV5UziskKwH5ufj2k">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8922
+}
+  </tool_result>
+  <tool_result tool="toolu_01Q254rXhSjLbK1ycvc62fbj">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <tool_result tool="toolu_01Fwp2i8jAPs2Ba3dC4vTwEg">
+     1→"""Tests to prevent forward reference errors from TYPE_CHECKING imports.
+     2→
+     3→This module provides two layers of protection:
+     4→
+     5→1. Runtime import test: Catches actual NameError failures when modules are imported
+     6→2. Static analysis test: Detects the risky pattern proactively before it causes errors
+     7→
+     8→The pattern we're preventing:
+     9→- Types imported under `if TYPE_CHECKING:` (only available at type-check time)
+    10→- Those types used in annotations with `|` union syntax
+    11→- File lacks `from __future__ import annotations`
+    12→
+    13→Without the future import, Python evaluates annotations at runtime, causing
+    14→NameError for TYPE_CHECKING-only imports.
+    15→
+    16→## Due Diligence: Why Custom Tests?
+    17→
+    18→We investigated ruff and ty for existing rules - they don't cover this case.
+    19→See `erk_dev.forward_refs` module docstring for full rationale.
+    20→
+    21→## Testing the Tests
+    22→
+    23→The detection logic is tested separately in `test_forward_reference_detection.py`
+    24→with known good/bad inputs. This file uses those utilities to scan the actual
+    25→erk codebase.
+    26→"""
+    27→
+    28→from __future__ import annotations
+    29→
+    30→from pathlib import Path
+
+... [134 lines omitted] ...
+
+    41→# Minimum expected counts to guard against silent discovery failures
+    68→    """Verify file discovery actually finds files (guards against silent failures)."""
+    80→    """Verify module discovery actually finds modules (guards against silent failures)."""
+    94→    """Runtime test: Verify all modules can be imported without NameError.
+    96→    This catches forward reference errors that manifest at import time,
+   100→    import_errors: list[str] = []
+   107→            success, error_message = import_module_safely(module_name)
+   108→            if not success and error_message is not None:
+   109→                import_errors.append(error_message)
+   117→    if import_errors:
+   119→            "Forward reference errors detected during import:\n"
+   120→            + "\n".join(f"  - {err}" for err in import_errors)
+   125→    """Static analysis: Detect risky pattern before it causes runtime errors.
+   128→    to prevent forward reference errors. This test catches the pattern proactively.
+  </tool_result>
+  <tool_result tool="toolu_01SkPwzyergm3yKfMAt8toj6">
+     1→"""Tests for context creation and regeneration."""
+     2→
+     3→import os
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+     8→from erk.core.context import (
+     9→    context_for_test,
+    10→    create_context,
+    11→    create_prompt_executor,
+    12→    regenerate_context,
+    13→)
+    14→from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    15→from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
+    16→from erk_shared.gateway.console.fake import FakeConsole
+    17→from erk_shared.gateway.git.fake import FakeGit
+    18→
+    19→
+    20→def test_regenerate_context_updates_cwd(tmp_path: Path) -&gt; None:
+    21→    """Test that regenerate_context captures new cwd."""
+    22→    original_cwd = Path.cwd()
+    23→
+    24→    try:
+    25→        # Create context in original directory
+    26→        ctx1 = create_context(dry_run=False)
+    27→        assert ctx1.cwd == original_cwd
+    28→
+    29→        # Change directory
+    30→        os.chdir(tmp_path)
+
+... [144 lines omitted] ...
+
+    58→    """Test that create_context exits with clear error when CWD has been deleted."""
+    75→            # If we get here, the test failed - should have raised SystemExit
+    76→            raise AssertionError("Expected SystemExit but context creation succeeded")
+    78→            # Verify exit code is 1 (error)
+   141→    """Test that regenerate_context exits with clear error when CWD has been deleted."""
+   160→            # If we get here, the test failed - should have raised SystemExit
+   161→            raise AssertionError("Expected SystemExit but context regeneration succeeded")
+   163→            # Verify exit code is 1 (error)
+  </tool_result>
+  <tool_result tool="toolu_01J2uJGXZfxdrVrDS6iLsU54">
+     1→"""Codespace execution abstraction for testing.
+     2→
+     3→This module provides an ABC for codespace SSH operations to enable
+     4→testing without actually executing remote commands.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from typing import NoReturn
+     9→
+    10→
+    11→class Codespace(ABC):
+    12→    """Abstract codespace SSH executor for dependency injection."""
+    13→
+    14→    @abstractmethod
+    15→    def exec_ssh_interactive(self, gh_name: str, remote_command: str) -&gt; NoReturn:
+    16→        """Replace current process with SSH session to codespace.
+    17→
+    18→        Uses os.execvp() to replace the current process, so this
+    19→        method never returns.
+    20→
+    21→        Args:
+    22→            gh_name: GitHub codespace name (from gh codespace list)
+    23→            remote_command: Command to execute in the codespace
+    24→
+    25→        Note:
+    26→            This method never returns - the process is replaced.
+    27→        """
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CFkrwYeDztutvMBawEjvsH">
+     1→"""Real Codespace implementation using gh codespace ssh.
+     2→
+     3→RealCodespace provides SSH execution to GitHub Codespaces using
+     4→the gh CLI tool.
+     5→"""
+     6→
+     7→import os
+     8→import subprocess
+     9→from typing import NoReturn
+    10→
+    11→from erk_shared.gateway.codespace.abc import Codespace
+    12→from erk_shared.subprocess_utils import run_subprocess_with_context
+    13→
+    14→
+    15→class RealCodespace(Codespace):
+    16→    """Production implementation using gh codespace ssh for remote execution."""
+    17→
+    18→    def start_codespace(self, gh_name: str) -&gt; None:
+    19→        """Start a stopped codespace.
+    20→
+    21→        Uses GitHub REST API POST /user/codespaces/{name}/start to ensure
+    22→        the codespace is running.
+    23→
+    24→        Args:
+    25→            gh_name: GitHub codespace name (from gh codespace list)
+    26→        """
+    27→        # GH-API-AUDIT: REST - codespace start
+    28→        run_subprocess_with_context(
+    29→            cmd=["gh", "api", "--method", "POST", f"/user/codespaces/{gh_name}/start"],
+    30→            operation_context=f"start codespace '{gh_name}'",
+
+... [63 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018rBdg3supUi31ZdijuM3JY">
+     1→"""Fake Codespace implementation for testing.
+     2→
+     3→FakeCodespace is an in-memory implementation that tracks SSH calls
+     4→without actually executing remote commands, enabling fast and deterministic tests.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from typing import NoReturn
+     9→
+    10→from erk_shared.gateway.codespace.abc import Codespace
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class SSHCall:
+    15→    """Record of an SSH call for test assertions.
+    16→
+    17→    Attributes:
+    18→        gh_name: GitHub codespace name that was targeted
+    19→        remote_command: Command that was executed
+    20→        interactive: Whether this was an interactive (exec) or non-interactive (run) call
+    21→    """
+    22→
+    23→    gh_name: str
+    24→    remote_command: str
+    25→    interactive: bool
+    26→
+    27→
+    28→class FakeCodespace(Codespace):
+    29→    """In-memory fake implementation that tracks SSH calls.
+    30→
+
+... [106 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NAUEq6Vs9McHKLMyTjxv3b">
+     1→"""Set up a new codespace for remote Claude execution."""
+     2→
+     3→import json
+     4→import subprocess
+     5→
+     6→import click
+     7→
+     8→from erk.cli.subprocess_utils import run_with_error_reporting
+     9→from erk.core.context import ErkContext
+    10→from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+    11→from erk_shared.gateway.codespace_registry.real import register_codespace, set_default_codespace
+    12→
+    13→DEFAULT_MACHINE_TYPE = "premiumLinux"
+    14→
+    15→
+    16→def _get_repo_id(*, repo: str | None, ctx: ErkContext) -&gt; int:
+    17→    """Get the GitHub repository database ID.
+    18→
+    19→    Uses the --repo flag if provided, otherwise derives from ctx.repo_info.
+    20→    """
+    21→    if repo is not None:
+    22→        owner_repo = repo
+    23→    elif ctx.repo_info is not None:
+    24→        owner_repo = f"{ctx.repo_info.owner}/{ctx.repo_info.name}"
+    25→    else:
+    26→        click.echo("Error: No repository specified and no repo info available.", err=True)
+    27→        click.echo("Use --repo owner/repo to specify the repository.", err=True)
+    28→        raise SystemExit(1)
+    29→
+    30→    result = run_with_error_reporting(
+
+... [156 lines omitted] ...
+
+    32→        error_prefix=f"Failed to get repository ID for '{owner_repo}'",
+    88→        click.echo(f"Error: A codespace named '{name}' already exists.", err=True)
+   121→    result = run_with_error_reporting(
+   123→        error_prefix="Codespace creation failed",
+   133→        click.echo("Error: API response missing 'name' field.", err=True)
+   175→        click.echo("Note: Claude login may have failed or was cancelled.", err=True)
+  </tool_result>
+  <tool_result tool="toolu_01Ne3wm411d32nkqbwHSrJGU">
+     1→"""Unit tests for codespace setup command."""
+     2→
+     3→from datetime import datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk.cli.commands.codespace.setup_cmd import DEFAULT_MACHINE_TYPE
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
+    11→from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+    12→from erk_shared.gateway.github.types import RepoInfo
+    13→
+    14→TEST_REPO_INFO = RepoInfo(owner="testorg", name="testrepo")
+    15→
+    16→
+    17→def test_setup_shows_error_when_name_exists() -&gt; None:
+    18→    """setup command shows error if codespace with same name exists."""
+    19→    runner = CliRunner()
+    20→
+    21→    cs = RegisteredCodespace(
+    22→        name="mybox", gh_name="user-mybox-abc", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    23→    )
+    24→    codespace_registry = FakeCodespaceRegistry(codespaces=[cs])
+    25→    ctx = context_for_test(codespace_registry=codespace_registry)
+    26→
+    27→    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=False)
+    28→
+    29→    assert result.exit_code == 1
+    30→    assert "A codespace named 'mybox' already exists" in result.output
+
+... [116 lines omitted] ...
+
+    49→    result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=True)
+    62→    result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=True)
+    77→        cli, ["codespace", "setup", "custom-name"], obj=ctx, catch_exceptions=True
+    84→def test_setup_errors_without_repo_info_or_repo_flag() -&gt; None:
+    85→    """setup command errors when no repo_info and no --repo flag provided."""
+    91→    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=True)
+   100→    The gh api call will fail in tests, but we can verify the error output
+   112→        catch_exceptions=True,
+   115→    # The error from run_with_error_reporting includes the command that failed
+   123→    The gh api call will fail in tests, but we can verify the error output
+   131→    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=True)
+   133→    # The error from run_with_error_reporting includes the command that failed
+  </tool_result>
+  <assistant>
+
+Now let me load the core dignified-python standards and check the Python version, plus read the testing and architecture tripwires since this task involves both.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13930" cache_read_input_tokens="31683" cache_creation="{'ephemeral_5m_input_tokens': 13930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01G8rCjtqheHwSGnZYvAZ9pr">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13930" cache_read_input_tokens="31683" cache_creation="{'ephemeral_5m_input_tokens': 13930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015Qp3x3E7M4SYNnjsgtJ9AX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13930" cache_read_input_tokens="31683" cache_creation="{'ephemeral_5m_input_tokens': 13930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JVCfkscpPJKdXvM1AoyRAm">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13930" cache_read_input_tokens="31683" cache_creation="{'ephemeral_5m_input_tokens': 13930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MUAEpYXCvaX213TDargF4B">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13930" cache_read_input_tokens="31683" cache_creation="{'ephemeral_5m_input_tokens': 13930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PjLfWiAnr8LFEycmHvaXE1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/subprocess-wrappers.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13930" cache_read_input_tokens="31683" cache_creation="{'ephemeral_5m_input_tokens': 13930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G8rCjtqheHwSGnZYvAZ9pr">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_015Qp3x3E7M4SYNnjsgtJ9AX">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+    22→
+    23→**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+    24→
+    25→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    26→
+    27→**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    28→
+    29→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    30→
+
+... [121 lines omitted] ...
+
+    33→**allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules.
+    35→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    59→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    67→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    69→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    77→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    95→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   105→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   115→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   125→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   127→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   137→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   139→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <tool_result tool="toolu_01PjLfWiAnr8LFEycmHvaXE1">
+     1→---
+     2→title: Subprocess Wrappers
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "using subprocess wrappers"
+     7→  - "executing shell commands"
+     8→  - "understanding subprocess patterns"
+     9→tripwires:
+    10→  - action: "using bare subprocess.run with check=True"
+    11→    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
+    12→    pattern: "subprocess\\.run\\("
+    13→  - action: "adding a Claude subprocess call with --print mode"
+    14→    warning: "Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section."
+    15→  - action: "using sed -i in scripts that run on both macOS and Linux"
+    16→    warning: "macOS sed requires `sed -i ''` (empty string argument) while Linux sed uses `sed -i` (no argument). Scripts that use sed -i without handling this difference will fail silently on one platform."
+    17→    score: 4
+    18→---
+    19→
+    20→# Subprocess Execution Wrappers
+    21→
+    22→**NEVER use bare `subprocess.run(..., check=True)`. ALWAYS use wrapper functions.**
+    23→
+    24→This guide explains the two-layer pattern for subprocess execution in erk: gateway layer and CLI layer wrappers.
+    25→
+    26→## Scope
+    27→
+    28→**These rules apply to production erk code** in `src/erk/` and `packages/erk-shared/`.
+    29→
+    30→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` is acceptable in erk-dev commands since they don't need the testability/dry-run benefits of wrapper functions.
+
+... [348 lines omitted] ...
+
+    34→Erk uses a two-layer design for subprocess execution to provide consistent error handling across different boundaries:
+    36→- **Gateway layer**: `run_subprocess_with_context()` - Raises RuntimeError for business logic
+    37→- **CLI layer**: `run_with_error_reporting()` - Prints user-friendly message and raises SystemExit
+    47→**Behavior**: Raises `RuntimeError` with rich context on failure
+    49→**Usage**: Pass `cmd` (the command list), `operation_context` (human-readable description), and `cwd` (working directory). On failure, raises `RuntimeError` with the operation context, command, exit code, and stderr.
+    57→- **Rich error messages**: Includes operation context, command, exit code, stderr
+    58→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    61→### run_with_error_reporting (CLI Layer)
+    63→**When to use**: In CLI command handlers where you want to immediately exit on failure with a user-friendly message.
+    65→**Import**: `from erk.cli.subprocess_utils import run_with_error_reporting`
+    67→**Behavior**: Prints error message to stderr and raises `SystemExit` on failure
+    72→from erk.cli.subprocess_utils import run_with_error_reporting
+    74→# ✅ CORRECT: User-friendly error messages + SystemExit
+    75→run_with_error_reporting(
+    84→- **User-friendly**: Error messages are clear and actionable
+    86→- **No exception handling needed**: Wrapper handles everything
+    90→- **Rich error messages**: Both wrappers include operation context, command, exit code, and stderr
+    91→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    92→- **Consistent patterns**: Two clear boundaries with appropriate error handling
+    93→- **Debugging support**: Full context available in error messages and logs
+   110→Not all subprocess calls should use `run_with_error_reporting()`. Use explicit exception handling when:
+   112→1. **The operation is optional** - Failure should not stop the main workflow
+   114→3. **Warning vs Error** - You want to show a warning and continue, not exit
+   119→# Pattern: check=True with explicit CalledProcessError handling
+   123→except subprocess.CalledProcessError as e:
+   124→    # Show warning, continue execution
+   125→    user_output(click.style("⚠ ", fg="yellow") + f"Optional operation failed: {e}")
+   126→except FileNotFoundError:
+   135→| CLI command that must succeed  | `run_with_error_reporting()`    | SystemExit on failure is correct |
+   136→| Optional background operation  | Explicit exception handling     | Main operation should continue   |
+   137→| Gateway real.py implementation | `run_subprocess_with_context()` | Consistent error wrapping        |
+   141→For GitHub API commands that may fail due to transient network errors, use `execute_gh_command_with_retry()`:
+   151→- Automatic retry on transient errors (network timeouts, connection failures)
+   157→## Error Accumulation Pattern
+   183→# Use accumulated stderr in error msg
+   190→- Stderr is accumulated as list, joined only when needed for error message
+   259→| **Error handling**        | Returns `None` on any failure          | Raises exception or returns error type |
+   262→| **Caller responsibility** | Check for `None`, decide how to handle | Catch exception or check error type    |
+   270→See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
+   274→- **No exceptions** - Never raises, always returns `None` on failure
+   275→- **No error messages** - Caller decides what to log
+   276→- **Uniform failure** - All failure modes return `None` consistently
+   286→Use when the operation is **critical** and failure should be explicit:
+   288→See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
+   292→- **Explicit errors** - Each failure mode has specific error message
+   294→- **Clear contract** - Caller knows exceptions mean critical failure
+   298→- User-facing commands where failure needs explanation
+   300→- CLI commands that should exit with error message
+   331→The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+   367→- **CLI layer**: Use `run_with_error_reporting()` for command handlers
+  </tool_result>
+  <tool_result tool="toolu_01MUAEpYXCvaX213TDargF4B">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "adding a new method to Git ABC"
+    11→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    12→  - action: "adding a new method to LocalGitHub ABC"
+    13→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    14→  - action: "adding a new method to Graphite ABC"
+    15→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [772 lines omitted] ...
+
+    31→    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+    42→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   136→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   138→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   140→### Decision: Discriminated Union or Exception?
+   144→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   145→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   146→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   150→- [ ] At least one caller branches on the error and continues with different logic
+   151→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   152→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   156→### Checklist: Use Exceptions When
+   158→- [ ] All callers terminate on failure (extract message and stop)
+   159→- [ ] No caller inspects error type or branches on error content
+   160→- [ ] Use `UserFacingCliError` at CLI boundary
+   166→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   181→**Methods using discriminated unions** (callers branch on error):
+   185→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   186→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   187→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   189→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   191→**Methods using exceptions** (all callers terminate):
+   193→| Method              | Exception      | Why                                                         |
+   195→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   196→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   200→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   207→   - [ ] `real.py` - Return appropriate error types for failure cases
+   209→   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+   212→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   217→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   221→- Updated tests to use `isinstance(result, MergeError)`
+   243→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   251→- When error messages from `get_X()` on missing resources are unclear
+   274→    user_output(f"Error: Issue #{issue_number} not found")
+   353→5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   597→The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   686→**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+   704→1. Run type checker (`ty`) to verify no abstract method errors
+   761→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   763→├── fake.py       # Constructor-injected errors, mutation tracking
+   770→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   771→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   772→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   795→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <tool_result tool="toolu_01JVCfkscpPJKdXvM1AoyRAm">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+
+... [353 lines omitted] ...
+
+    41→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    61→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    83→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    91→**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+   103→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+   117→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+   119→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+   127→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   133→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   137→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   151→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   165→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   169→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   181→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   217→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   219→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   221→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   223→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   235→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   237→**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+   251→**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+   269→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+   271→**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
+   283→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   285→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   293→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   301→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   305→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   307→**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
+   311→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   313→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   333→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   335→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   339→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   341→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   359→**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+   371→**writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
+   373→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+</session>
