@@ -69,7 +69,11 @@ def pr_teleport(
         raise SystemExit(1)
     repo: RepoContext = ctx.repo
 
-    with script_error_handler(ctx) if script else nullcontext():
+    if script:
+        ctx_manager = script_error_handler(ctx)
+    else:
+        ctx_manager = nullcontext()
+    with ctx_manager:
         # Ensure PR exists
         ctx.console.info(f"Fetching PR #{pr_number}...")
         pr = ctx.github.get_pr(repo.root, pr_number)
