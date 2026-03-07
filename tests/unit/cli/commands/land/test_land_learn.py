@@ -852,9 +852,7 @@ def test_fetch_xmls_returns_empty_when_no_branch(tmp_path: Path) -> None:
     """Returns empty dict when async-learn branch does not exist on remote."""
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
 
-    result = _fetch_xmls_from_async_learn_branch(
-        fake_git, repo_root=tmp_path, plan_id="100"
-    )
+    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
 
     assert result == {}
 
@@ -881,9 +879,7 @@ def test_fetch_xmls_returns_xml_content_from_manifest(tmp_path: Path) -> None:
         },
     )
 
-    result = _fetch_xmls_from_async_learn_branch(
-        fake_git, repo_root=tmp_path, plan_id="100"
-    )
+    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
 
     assert len(result) == 1
     path = ".erk/impl-context/sessions/impl-aaaa1111.xml"
@@ -898,9 +894,7 @@ def test_fetch_xmls_returns_empty_when_manifest_missing(tmp_path: Path) -> None:
         remote_branches={tmp_path: ["origin/async-learn/100"]},
     )
 
-    result = _fetch_xmls_from_async_learn_branch(
-        fake_git, repo_root=tmp_path, plan_id="100"
-    )
+    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
 
     assert result == {}
 
@@ -932,9 +926,7 @@ def test_fetch_xmls_handles_multiple_sessions(tmp_path: Path) -> None:
         },
     )
 
-    result = _fetch_xmls_from_async_learn_branch(
-        fake_git, repo_root=tmp_path, plan_id="200"
-    )
+    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="200")
 
     assert len(result) == 3
     assert ".erk/impl-context/sessions/impl-aaaa1111.xml" in result
