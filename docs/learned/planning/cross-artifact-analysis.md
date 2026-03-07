@@ -27,9 +27,9 @@ Plans and PRs can have complex relationships:
 
 The `/local:check-superceded` command implements a structured approach to cross-artifact analysis:
 
-1. **Parse input** - Identify whether target is PR or plan
-2. **Gather context** - Retrieve GitHub metadata and plan content
-3. **Understand intent** - Extract what changes were planned
+1. **Parse input** - Extract PR number to analyze
+2. **Gather context** - Retrieve PR metadata, diff, and changed files
+3. **Understand intent** - Extract what changes the PR introduces
 4. **Search for evidence** - Check master branch for matching implementations
 5. **Create evidence table** - Document findings with specific file/function matches
 6. **Determine verdict** - Apply classification thresholds

@@ -12,7 +12,7 @@ tripwires:
   - action: "saving a plan linked to an objective"
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
   - action: "implementing custom PR/plan relevance assessment logic"
-    warning: "Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
+    warning: "Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, STILL_RELEVANT, NEEDS_REVIEW verdict categories for consistency. Note: DIFFERENT_APPROACH is a match type in the evidence table, not a verdict."
   - action: "after plan-implement execution completes"
     warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
   - action: "implementing PR body generation with checkout footers"

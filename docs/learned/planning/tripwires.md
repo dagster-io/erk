@@ -142,7 +142,7 @@ Rules triggered by matching actions in code.
 
 **implementing PR body generation with checkout footers** → Read [Plan Lifecycle](lifecycle.md) first. HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``
 
-**implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
+**implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, STILL_RELEVANT, NEEDS_REVIEW verdict categories for consistency. Note: DIFFERENT_APPROACH is a match type in the evidence table, not a verdict.
 
 **implementing planned-PR plan without teleporting from remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Before implementing a planned-PR plan, always teleport from remote: fetch_branch -> checkout/create_tracking -> pull_rebase
 
