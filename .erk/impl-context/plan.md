@@ -11,7 +11,7 @@ PR #8916 got 3 false positive review comments flagging default parameter values 
 
 Add a new bullet to the exceptions list (after the import alias exception):
 ```
-- **No default parameters rule**: Does NOT apply to test helper functions (private `_` prefixed functions in test files like `test_*.py`) or Fake classes used for testing. These exist to reduce test boilerplate and defaults are their intended purpose.
+- **No default parameters rule**: Does NOT apply to functions in test files (`test_*.py`, `conftest.py`) or Fake classes used for testing. These exist to reduce test boilerplate and defaults are their intended purpose.
 ```
 
 ### 2. `.claude/skills/dignified-python/references/api-design.md` — Broaden exemption wording (line 61)
@@ -20,9 +20,9 @@ Change from:
 > Functions in `tests/test_utils/` that exist to reduce test boilerplate are explicitly exempt.
 
 To:
-> Test helper functions (private `_`-prefixed functions in test files, and functions in `tests/test_utils/`) that exist to reduce test boilerplate are explicitly exempt.
+> Functions in test files and test utilities that exist to reduce test boilerplate are explicitly exempt.
 
-This covers both `tests/test_utils/` utility functions AND private helpers within individual test files.
+This broadens the exemption to cover any function in test files, not just a specific directory.
 
 ## Verification
 - Run `/local:review` or `/local:code-review` on a branch with test helper defaults to confirm no false positives
