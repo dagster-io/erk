@@ -6,6 +6,7 @@ Extracted to avoid circular imports between land_cmd and land_pipeline.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -40,6 +41,65 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from erk.cli.commands.land_pipeline import LandState
+    from erk_shared.gateway.git.abc import Git
+
+
+def _fetch_xmls_from_async_learn_branch(
+    git: Git,
+    *,
+    repo_root: Path,
+    plan_id: str,
+) -> dict[str, str]:
+    """Fetch preprocessed session XMLs from the async-learn branch.
+
+    Remote implementations upload session data to async-learn/{plan_id} branches.
+    This function fetches the manifest and downloads each XML file, returning
+    them as a dict suitable for embedding in a learn plan PR.
+
+    Args:
+        git: Git gateway instance.
+        repo_root: Repository root path.
+        plan_id: Plan identifier string.
+
+    Returns:
+        Dict mapping file paths to XML content. Empty if branch not found or
+        manifest is missing.
+    """
+    session_branch = f"async-learn/{plan_id}"
+
+    if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
+        return {}
+
+    git.remote.fetch_branch(repo_root, "origin", session_branch)
+
+    # Read manifest
+    raw = git.commit.read_file_from_ref(
+        repo_root,
+        ref=f"origin/{session_branch}",
+        file_path=".erk/sessions/manifest.json",
+    )
+    if raw is None:
+        return {}
+    content = raw.decode("utf-8").strip()
+    if not content:
+        return {}
+    manifest = json.loads(content)
+
+    # Download each XML file referenced in manifest
+    xml_files: dict[str, str] = {}
+    sessions = manifest.get("sessions", [])
+    for session_entry in sessions:
+        for filename in session_entry.get("files", []):
+            file_raw = git.commit.read_file_from_ref(
+                repo_root,
+                ref=f"origin/{session_branch}",
+                file_path=f".erk/sessions/{filename}",
+            )
+            if file_raw is not None:
+                xml_path = f"{IMPL_CONTEXT_DIR}/sessions/{filename}"
+                xml_files[xml_path] = file_raw.decode("utf-8")
+
+    return xml_files
 
 
 def _create_learn_pr_for_merged_branch(
@@ -81,6 +141,17 @@ def _create_learn_pr_for_merged_branch(
 
     # Log session discovery summary and collect XML files for embedding
     xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+
+    # Fallback: fetch from async-learn branch (remote implementations)
+    if not xml_files and all_session_ids:
+        xml_files = _fetch_xmls_from_async_learn_branch(
+            ctx.git, repo_root=main_repo_root, plan_id=plan_id
+        )
+        if xml_files:
+            user_output(
+                click.style("✓", fg="green")
+                + f" Fetched {len(xml_files)} file(s) from async-learn/{plan_id}"
+            )
 
     if not xml_files:
         if not all_session_ids:
@@ -480,6 +551,17 @@ def _create_learn_pr_impl(
 
     # Log session discovery summary and collect XML files for embedding
     xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+
+    # Fallback: fetch from async-learn branch (remote implementations)
+    if not xml_files and all_session_ids:
+        xml_files = _fetch_xmls_from_async_learn_branch(
+            ctx.git, repo_root=state.main_repo_root, plan_id=plan_id
+        )
+        if xml_files:
+            user_output(
+                click.style("✓", fg="green")
+                + f" Fetched {len(xml_files)} file(s) from async-learn/{plan_id}"
+            )
 
     if not xml_files:
         if not all_session_ids:

@@ -11,6 +11,7 @@ from erk.cli.commands.land_learn import (
     _compute_session_stats,
     _create_learn_pr_impl,
     _create_learn_pr_with_sessions,
+    _fetch_xmls_from_async_learn_branch,
     _log_learn_pr_files,
     _log_session_discovery,
     _should_create_learn_pr,
@@ -840,3 +841,236 @@ def test_log_learn_pr_files_shows_sizes_in_kb_for_large_files(
     assert "KB" in captured.err
     # The large file should show "2 KB"
     assert "2 KB" in captured.err
+
+
+# ---------------------------------------------------------------------------
+# _fetch_xmls_from_async_learn_branch
+# ---------------------------------------------------------------------------
+
+
+def test_fetch_xmls_returns_empty_when_no_branch(tmp_path: Path) -> None:
+    """Returns empty dict when async-learn branch does not exist on remote."""
+    fake_git = FakeGit(trunk_branches={tmp_path: "main"})
+
+    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
+
+    assert result == {}
+
+
+def test_fetch_xmls_returns_xml_content_from_manifest(tmp_path: Path) -> None:
+    """Returns dict with XML content when branch exists and manifest is valid."""
+    manifest = {
+        "sessions": [
+            {
+                "session_id": "aaaa1111-2222-3333-4444-555566667777",
+                "files": ["impl-aaaa1111.xml"],
+            }
+        ]
+    }
+    manifest_bytes = json.dumps(manifest).encode("utf-8")
+    xml_content = b"<session>test data</session>"
+
+    fake_git = FakeGit(
+        trunk_branches={tmp_path: "main"},
+        remote_branches={tmp_path: ["origin/async-learn/100"]},
+        ref_file_contents={
+            ("origin/async-learn/100", ".erk/sessions/manifest.json"): manifest_bytes,
+            ("origin/async-learn/100", ".erk/sessions/impl-aaaa1111.xml"): xml_content,
+        },
+    )
+
+    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
+
+    assert len(result) == 1
+    path = ".erk/impl-context/sessions/impl-aaaa1111.xml"
+    assert path in result
+    assert result[path] == "<session>test data</session>"
+
+
+def test_fetch_xmls_returns_empty_when_manifest_missing(tmp_path: Path) -> None:
+    """Returns empty dict when branch exists but manifest is not found."""
+    fake_git = FakeGit(
+        trunk_branches={tmp_path: "main"},
+        remote_branches={tmp_path: ["origin/async-learn/100"]},
+    )
+
+    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="100")
+
+    assert result == {}
+
+
+def test_fetch_xmls_handles_multiple_sessions(tmp_path: Path) -> None:
+    """Returns XML files for all sessions listed in manifest."""
+    manifest = {
+        "sessions": [
+            {
+                "session_id": "aaaa1111",
+                "files": ["impl-aaaa1111.xml"],
+            },
+            {
+                "session_id": "bbbb2222",
+                "files": ["impl-bbbb2222.xml", "impl-bbbb2222-part2.xml"],
+            },
+        ]
+    }
+    manifest_bytes = json.dumps(manifest).encode("utf-8")
+
+    fake_git = FakeGit(
+        trunk_branches={tmp_path: "main"},
+        remote_branches={tmp_path: ["origin/async-learn/200"]},
+        ref_file_contents={
+            ("origin/async-learn/200", ".erk/sessions/manifest.json"): manifest_bytes,
+            ("origin/async-learn/200", ".erk/sessions/impl-aaaa1111.xml"): b"<xml>a</xml>",
+            ("origin/async-learn/200", ".erk/sessions/impl-bbbb2222.xml"): b"<xml>b1</xml>",
+            ("origin/async-learn/200", ".erk/sessions/impl-bbbb2222-part2.xml"): b"<xml>b2</xml>",
+        },
+    )
+
+    result = _fetch_xmls_from_async_learn_branch(fake_git, repo_root=tmp_path, plan_id="200")
+
+    assert len(result) == 3
+    assert ".erk/impl-context/sessions/impl-aaaa1111.xml" in result
+    assert ".erk/impl-context/sessions/impl-bbbb2222.xml" in result
+    assert ".erk/impl-context/sessions/impl-bbbb2222-part2.xml" in result
+
+
+# ---------------------------------------------------------------------------
+# _create_learn_pr_impl — async-learn branch fallback
+# ---------------------------------------------------------------------------
+
+
+def test_fetches_from_async_learn_branch_when_local_not_found(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Creates learn PR using remote XML when local sessions are not found."""
+    from erk.cli.commands import land_learn as learn_mod
+
+    pr = _make_pr_details(
+        pr_number=100,
+        branch="feature",
+        title="Add widgets",
+        labels=("erk-plan",),
+    )
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_time = FakeTime()
+
+    # Configure FakeGit with async-learn branch data
+    manifest = {
+        "sessions": [
+            {
+                "session_id": "aaaa1111-2222-3333-4444-555566667777",
+                "files": ["impl-aaaa1111.xml"],
+            }
+        ]
+    }
+    manifest_bytes = json.dumps(manifest).encode("utf-8")
+    xml_content = b"<session>remote data</session>"
+
+    fake_git = FakeGit(
+        trunk_branches={tmp_path: "main"},
+        remote_branches={tmp_path: ["origin/async-learn/100"]},
+        ref_file_contents={
+            ("origin/async-learn/100", ".erk/sessions/manifest.json"): manifest_bytes,
+            ("origin/async-learn/100", ".erk/sessions/impl-aaaa1111.xml"): xml_content,
+        },
+    )
+    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        issues=fake_issues,
+        plan_store=plan_store,
+        time=fake_time,
+        cwd=tmp_path,
+    )
+    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+
+    # Patch _log_session_discovery to return empty (simulating no local sessions)
+    # but ensure all_session_ids is non-empty so the fallback triggers
+    sessions_with_ids = _make_sessions(
+        impl=["aaaa1111-2222-3333-4444-555566667777"],
+    )
+
+    monkeypatch.setattr(
+        plan_store,
+        "find_sessions_for_plan",
+        lambda _root, _plan_id: sessions_with_ids,
+    )
+
+    def _fake_log_session_discovery(*_args: object, **_kwargs: object) -> dict[str, str]:
+        return {}
+
+    monkeypatch.setattr(learn_mod, "_log_session_discovery", _fake_log_session_discovery)
+
+    _create_learn_pr_impl(ctx, state=state)
+
+    # Draft PR should have been created using remote XML
+    assert len(fake_github.created_prs) == 1
+    _branch, pr_title, _body, _base, _draft = fake_github.created_prs[0]
+    assert "Learn: Add widgets" in pr_title
+
+    # Success output should mention fetching from async-learn branch
+    captured = capsys.readouterr()
+    assert "Fetched 1 file(s) from async-learn/100" in captured.err
+    assert "Created learn plan" in captured.err
+
+
+def test_skips_when_async_learn_branch_not_found(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Still skips when sessions exist but no local XML and no async-learn branch."""
+    from erk.cli.commands import land_learn as learn_mod
+
+    pr = _make_pr_details(
+        pr_number=100,
+        branch="feature",
+        title="Add widgets",
+        labels=("erk-plan",),
+    )
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_time = FakeTime()
+    # No async-learn branch configured
+    fake_git = FakeGit(trunk_branches={tmp_path: "main"})
+    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        issues=fake_issues,
+        plan_store=plan_store,
+        time=fake_time,
+        cwd=tmp_path,
+    )
+    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+
+    # Sessions exist but no local XML
+    sessions_with_ids = _make_sessions(
+        impl=["aaaa1111-2222-3333-4444-555566667777"],
+    )
+
+    monkeypatch.setattr(
+        plan_store,
+        "find_sessions_for_plan",
+        lambda _root, _plan_id: sessions_with_ids,
+    )
+
+    def _fake_log_session_discovery(*_args: object, **_kwargs: object) -> dict[str, str]:
+        return {}
+
+    monkeypatch.setattr(learn_mod, "_log_session_discovery", _fake_log_session_discovery)
+
+    _create_learn_pr_impl(ctx, state=state)
+
+    # No PR should be created
+    assert len(fake_github.created_prs) == 0
+
+    captured = capsys.readouterr()
+    assert "Skipping learn plan for #100" in captured.err
+    assert "sessions found but no XML could be extracted" in captured.err
