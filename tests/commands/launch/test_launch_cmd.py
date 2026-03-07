@@ -461,7 +461,6 @@ def test_workflow_launch_one_shot_triggers_workflow(tmp_path: Path) -> None:
         assert inputs["branch_name"] == "feature-branch"
         assert inputs["pr_number"] == "123"
         assert inputs["submitted_by"] == "test-user"
-        assert inputs["modify_existing"] == "true"
 
 
 def test_workflow_launch_one_shot_with_file(tmp_path: Path) -> None:

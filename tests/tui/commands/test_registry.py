@@ -627,6 +627,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "address_remote",
         "rewrite_remote",
         "cmux_checkout",
+        "incremental_dispatch",
         "open_issue",
         "open_pr",
         "open_run",
@@ -836,6 +837,7 @@ def test_commands_available_in_plans_view() -> None:
         "address_remote",
         "rewrite_remote",
         "land_pr",
+        "incremental_dispatch",
         "open_issue",
         "open_pr",
         "open_run",
@@ -945,3 +947,57 @@ def test_launch_key_only_on_action_commands() -> None:
             assert cmd.category == CommandCategory.ACTION, (
                 f"Command {cmd.id} has launch_key={cmd.launch_key!r} but is {cmd.category.name}"
             )
+
+
+# === Incremental Dispatch Tests ===
+
+
+def test_incremental_dispatch_registered() -> None:
+    """incremental_dispatch should be registered as a command."""
+    commands = get_all_commands()
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "incremental_dispatch" in cmd_ids
+
+
+def test_incremental_dispatch_available_when_pr_open() -> None:
+    """incremental_dispatch should be available when PR is OPEN."""
+    row = make_plan_row(123, "Test", pr_number=456, pr_state="OPEN")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "incremental_dispatch" in cmd_ids
+
+
+def test_incremental_dispatch_not_available_when_no_pr() -> None:
+    """incremental_dispatch should not be available when no PR."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "incremental_dispatch" not in cmd_ids
+
+
+def test_incremental_dispatch_not_available_when_pr_merged() -> None:
+    """incremental_dispatch should not be available when PR is MERGED."""
+    row = make_plan_row(123, "Test", pr_number=456, pr_state="MERGED")
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "incremental_dispatch" not in cmd_ids
+
+
+def test_incremental_dispatch_not_available_in_objectives_view() -> None:
+    """incremental_dispatch should not appear in Objectives view."""
+    row = make_plan_row(123, "Test", pr_number=456, pr_state="OPEN")
+    ctx = CommandContext(row=row, view_mode=ViewMode.OBJECTIVES)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "incremental_dispatch" not in cmd_ids
+
+
+def test_display_name_incremental_dispatch() -> None:
+    """incremental_dispatch should show the exec command with PR number."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    cmd = next(c for c in get_all_commands() if c.id == "incremental_dispatch")
+    assert get_display_name(cmd, ctx) == "erk exec incremental-dispatch --pr 456"

@@ -331,7 +331,6 @@ def _dispatch_one_shot(
         "branch_name": branch_name,
         "pr_number": str(pr_number),
         "submitted_by": submitted_by,
-        "modify_existing": "true",
     }
     if model is not None:
         inputs["model_name"] = model

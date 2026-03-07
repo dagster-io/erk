@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import uuid
 from typing import TYPE_CHECKING
 
 from textual import work
@@ -415,6 +416,64 @@ class BackgroundWorkersMixin:
                 severity="error",
                 timeout=5,
             )
+
+    @work(thread=True)
+    def _incremental_dispatch_async(
+        self: ErkDashApp, op_id: str, pr_number: int, plan_content: str
+    ) -> None:
+        """Dispatch incremental plan in background thread with toast.
+
+        Writes plan_content to .erk/scratch storage, invokes erk exec
+        incremental-dispatch, then cleans up the scratch file.
+
+        Args:
+            op_id: Operation identifier for status bar tracking
+            pr_number: The PR number to dispatch against
+            plan_content: The plan markdown content
+        """
+        from erk_shared.scratch.scratch import write_scratch_file
+
+        session_id = f"tui-{uuid.uuid4().hex[:12]}"
+        scratch_path = write_scratch_file(
+            plan_content,
+            session_id=session_id,
+            suffix=".md",
+            prefix="incremental-plan-",
+        )
+        try:
+            result = self._run_streaming_operation(
+                op_id=op_id,
+                command=[
+                    "erk",
+                    "exec",
+                    "incremental-dispatch",
+                    "--plan-file",
+                    str(scratch_path),
+                    "--pr",
+                    str(pr_number),
+                    "--format",
+                    "json",
+                ],
+            )
+            self.call_from_thread(self._finish_operation, op_id=op_id)
+            if result.success:
+                self.call_from_thread(
+                    self.notify,
+                    f"Dispatched incremental plan to PR #{pr_number}",
+                    timeout=3,
+                )
+                self.call_from_thread(self.action_refresh)
+            else:
+                error_msg = last_output_line(result)
+                self.call_from_thread(
+                    self.notify,
+                    f"Incremental dispatch failed for PR #{pr_number}: {error_msg}",
+                    severity="error",
+                    timeout=5,
+                )
+        finally:
+            if scratch_path.exists():
+                scratch_path.unlink()
 
     @work(thread=True)
     def _load_activity_and_resort(self: ErkDashApp) -> None:

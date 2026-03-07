@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from erk.tui.commands.registry import get_copy_text
 from erk.tui.commands.types import CommandContext
 from erk.tui.screens.one_shot_prompt_screen import OneShotPromptScreen
+from erk.tui.screens.plan_input_screen import PlanInputScreen
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp
@@ -208,6 +209,14 @@ class PaletteActionsMixin:
                     plan_id=plan_id,
                 )
 
+        elif command_id == "incremental_dispatch":
+            if row.pr_number:
+                self._pending_dispatch_pr = row.pr_number
+                self.push_screen(
+                    PlanInputScreen(pr_number=row.pr_number),
+                    self._on_incremental_dispatch_result,
+                )
+
         elif command_id == "copy_replan":
             cmd = f"/erk:replan {row.plan_id}"
             self._service.clipboard.copy(cmd)
@@ -267,3 +276,21 @@ class PaletteActionsMixin:
         op_id = f"dispatch-one-shot-{time.monotonic_ns()}"
         self._start_operation(op_id=op_id, label="Dispatching one-shot prompt...")
         self._one_shot_dispatch_async(op_id, prompt_text)
+
+    def _on_incremental_dispatch_result(self: ErkDashApp, plan_markdown: str | None) -> None:
+        """Handle result from the incremental dispatch plan input screen.
+
+        Args:
+            plan_markdown: The user's plan markdown, or None if cancelled/empty
+        """
+        if plan_markdown is None:
+            return
+        pr_number = getattr(self, "_pending_dispatch_pr", None)
+        if pr_number is None:
+            return
+        op_id = f"incremental-dispatch-pr-{pr_number}"
+        self._start_operation(
+            op_id=op_id,
+            label=f"Dispatching incremental plan to PR #{pr_number}...",
+        )
+        self._incremental_dispatch_async(op_id, pr_number, plan_markdown)

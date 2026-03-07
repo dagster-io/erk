@@ -160,6 +160,11 @@ def _display_copy_rewrite_remote(ctx: CommandContext) -> str:
     return f"erk launch pr-rewrite --pr {ctx.row.pr_number}"
 
 
+def _display_incremental_dispatch(ctx: CommandContext) -> str:
+    """Display name for incremental_dispatch command."""
+    return f"erk exec incremental-dispatch --pr {ctx.row.pr_number}"
+
+
 # === Display Name Generators (Objective Commands) ===
 
 
@@ -292,6 +297,18 @@ def get_all_commands() -> list[CommandDefinition]:
                 and ctx.cmux_integration
             ),
             get_display_name=_display_cmux_checkout,
+        ),
+        CommandDefinition(
+            id="incremental_dispatch",
+            name="Incremental Dispatch",
+            description="incremental dispatch",
+            category=CommandCategory.ACTION,
+            shortcut=None,
+            launch_key="i",
+            is_available=lambda ctx: (
+                _is_plan_view(ctx) and ctx.row.pr_number is not None and ctx.row.pr_state == "OPEN"
+            ),
+            get_display_name=_display_incremental_dispatch,
         ),
         # === OBJECTIVE ACTIONS ===
         CommandDefinition(
