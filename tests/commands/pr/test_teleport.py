@@ -308,7 +308,7 @@ def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr = _make_pr_details(200, "feature-sync")
-        github = FakeGitHub(pr_details={200: pr})
+        github = FakeLocalGitHub(pr_details={200: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -340,7 +340,7 @@ def test_teleport_new_slot_script_mode_without_sync_omits_gt_submit() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr = _make_pr_details(201, "feature-no-sync")
-        github = FakeGitHub(pr_details={201: pr})
+        github = FakeLocalGitHub(pr_details={201: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -366,7 +366,7 @@ def test_teleport_in_place_script_mode_with_sync_includes_gt_submit() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr = _make_pr_details(202, "feature-in-place")
-        github = FakeGitHub(pr_details={202: pr})
+        github = FakeLocalGitHub(pr_details={202: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
