@@ -23,35 +23,7 @@ import click
 
 from erk_shared.context.helpers import require_git, require_repo_root
 from erk_shared.gateway.git.abc import Git
-
-
-def _fetch_manifest(
-    *,
-    repo_root: Path,
-    session_branch: str,
-    git: Git,
-) -> dict | None:
-    """Read manifest from the remote branch via git show.
-
-    Args:
-        repo_root: Repository root path.
-        session_branch: Branch name to read from.
-        git: Git gateway instance.
-
-    Returns:
-        Parsed manifest dict if found, None otherwise.
-    """
-    raw = git.commit.read_file_from_ref(
-        repo_root,
-        ref=f"origin/{session_branch}",
-        file_path=".erk/sessions/manifest.json",
-    )
-    if raw is None:
-        return None
-    content = raw.decode("utf-8").strip()
-    if not content:
-        return None
-    return json.loads(content)
+from erk_shared.sessions.manifest import read_session_manifest
 
 
 def _fetch_file_from_branch(
@@ -125,7 +97,7 @@ def fetch_sessions(
     git.remote.fetch_branch(repo_root, "origin", session_branch)
 
     # Read manifest
-    manifest = _fetch_manifest(repo_root=repo_root, session_branch=session_branch, git=git)
+    manifest = read_session_manifest(git, repo_root=repo_root, session_branch=session_branch)
     if manifest is None:
         click.echo(json.dumps({"success": False, "error": "manifest_not_found"}))
         raise SystemExit(1)

@@ -23,7 +23,6 @@ Exit Codes:
 import json
 import subprocess
 import tempfile
-from dataclasses import dataclass
 from datetime import UTC
 from pathlib import Path
 from typing import Literal
@@ -36,76 +35,12 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
-from erk_shared.gateway.git.abc import Git
 from erk_shared.learn.extraction.session_schema import (
-    iter_jsonl_entries,
-    parse_session_timestamp,
+    SessionProvenance,
+    compute_session_provenance,
 )
 from erk_shared.plan_store.types import PlanNotFound
-
-
-@dataclass(frozen=True)
-class SessionProvenance:
-    """Lightweight provenance stats computed before preprocessing."""
-
-    user_turns: int
-    duration_minutes: int | None
-    raw_size_kb: int
-
-
-def _has_user_text(message_content: str | list) -> bool:
-    """Check if message content contains non-empty user text."""
-    if isinstance(message_content, list):
-        return any(
-            isinstance(block, dict)
-            and block.get("type") == "text"
-            and block.get("text", "").strip()
-            for block in message_content
-        )
-    if isinstance(message_content, str):
-        return bool(message_content.strip())
-    return False
-
-
-def _compute_session_provenance(session_file: Path) -> SessionProvenance | None:
-    """Compute lightweight provenance stats from a session JSONL file.
-
-    Reads the JSONL to count user turns and compute duration from timestamps.
-    Does not run the full preprocessing pipeline.
-
-    Args:
-        session_file: Path to the session JSONL file.
-
-    Returns:
-        SessionProvenance with stats, or None if the file cannot be read.
-    """
-    if not session_file.exists():
-        return None
-
-    content = session_file.read_text(encoding="utf-8")
-    raw_size_kb = session_file.stat().st_size // 1024
-
-    timestamps: list[float] = []
-    user_turns = 0
-    for entry in iter_jsonl_entries(content):
-        ts = parse_session_timestamp(entry.get("timestamp"))
-        if ts is not None:
-            timestamps.append(ts)
-        if entry.get("type") == "user":
-            msg_content = entry.get("message", {}).get("content", "")
-            if _has_user_text(msg_content):
-                user_turns += 1
-
-    duration_minutes: int | None = None
-    if len(timestamps) >= 2:
-        duration_seconds = max(timestamps) - min(timestamps)
-        duration_minutes = round(duration_seconds / 60)
-
-    return SessionProvenance(
-        user_turns=user_turns,
-        duration_minutes=duration_minutes,
-        raw_size_kb=raw_size_kb,
-    )
+from erk_shared.sessions.manifest import read_session_manifest
 
 
 def _preprocess_session(
@@ -164,35 +99,6 @@ def _preprocess_session(
             persistent_files.append(dest)
 
         return persistent_files
-
-
-def _read_manifest_from_branch(
-    *,
-    repo_root: Path,
-    session_branch: str,
-    git: Git,
-) -> dict | None:
-    """Read existing manifest from the remote branch via git show.
-
-    Args:
-        repo_root: Repository root path.
-        session_branch: Branch name to read from.
-        git: Git gateway instance.
-
-    Returns:
-        Parsed manifest dict if found, None otherwise.
-    """
-    raw = git.commit.read_file_from_ref(
-        repo_root,
-        ref=f"origin/{session_branch}",
-        file_path=".erk/sessions/manifest.json",
-    )
-    if raw is None:
-        return None
-    content = raw.decode("utf-8").strip()
-    if not content:
-        return None
-    return json.loads(content)
 
 
 def _build_manifest_entry(
@@ -302,7 +208,7 @@ def push_session(
     time = require_time(ctx)
 
     # Step 0: Compute provenance stats from raw JSONL (before preprocessing)
-    provenance = _compute_session_provenance(session_file)
+    provenance = compute_session_provenance(session_file)
 
     # Step 1: Preprocess session to XML
     xml_files = _preprocess_session(
@@ -332,10 +238,10 @@ def push_session(
         git.branch.delete_branch(repo_root, session_branch, force=True)
         git.branch.create_branch(repo_root, session_branch, f"origin/{session_branch}", force=False)
         # Read existing manifest
-        existing_manifest = _read_manifest_from_branch(
+        existing_manifest = read_session_manifest(
+            git,
             repo_root=repo_root,
             session_branch=session_branch,
-            git=git,
         )
     else:
         # First upload — create from origin/master

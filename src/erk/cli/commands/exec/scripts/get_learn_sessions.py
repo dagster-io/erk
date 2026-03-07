@@ -30,7 +30,6 @@ Exit Codes:
 """
 
 import json
-import subprocess
 from pathlib import Path
 
 import click
@@ -56,6 +55,7 @@ from erk_shared.sessions.discovery import (
     find_local_sessions_for_project,
     get_readable_sessions,
 )
+from erk_shared.sessions.manifest import read_session_manifest
 
 
 def _extract_plan_number(identifier: str) -> int | None:
@@ -102,22 +102,7 @@ def _fetch_preprocessed_manifest(
 
     git.remote.fetch_branch(repo_root, "origin", session_branch)
 
-    result = subprocess.run(
-        [
-            "git",
-            "show",
-            f"origin/{session_branch}:.erk/sessions/manifest.json",
-        ],
-        cwd=str(repo_root),
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        return None
-    content = result.stdout.strip()
-    if not content:
-        return None
-    return json.loads(content)
+    return read_session_manifest(git, repo_root=repo_root, session_branch=session_branch)
 
 
 def _build_result(

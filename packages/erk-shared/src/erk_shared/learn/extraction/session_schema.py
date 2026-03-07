@@ -27,6 +27,7 @@ import json
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 
@@ -570,3 +571,67 @@ def extract_session_exchanges_from_jsonl(
                     break
 
     return exchanges
+
+
+def has_user_text(message_content: str | list) -> bool:
+    """Check if message content contains non-empty user text."""
+    if isinstance(message_content, list):
+        return any(
+            isinstance(block, dict)
+            and block.get("type") == "text"
+            and block.get("text", "").strip()
+            for block in message_content
+        )
+    if isinstance(message_content, str):
+        return bool(message_content.strip())
+    return False
+
+
+@dataclass(frozen=True)
+class SessionProvenance:
+    """Lightweight provenance stats computed before preprocessing."""
+
+    user_turns: int
+    duration_minutes: int | None
+    raw_size_kb: int
+
+
+def compute_session_provenance(session_file: Path) -> SessionProvenance | None:
+    """Compute lightweight provenance stats from a session JSONL file.
+
+    Reads the JSONL to count user turns and compute duration from timestamps.
+    Does not run the full preprocessing pipeline.
+
+    Args:
+        session_file: Path to the session JSONL file.
+
+    Returns:
+        SessionProvenance with stats, or None if the file cannot be read.
+    """
+    if not session_file.exists():
+        return None
+
+    content = session_file.read_text(encoding="utf-8")
+    raw_size_kb = session_file.stat().st_size // 1024
+
+    timestamps: list[float] = []
+    user_turns = 0
+    for entry in iter_jsonl_entries(content):
+        ts = parse_session_timestamp(entry.get("timestamp"))
+        if ts is not None:
+            timestamps.append(ts)
+        if entry.get("type") == "user":
+            msg_content = entry.get("message", {}).get("content", "")
+            if has_user_text(msg_content):
+                user_turns += 1
+
+    duration_minutes: int | None = None
+    if len(timestamps) >= 2:
+        duration_seconds = max(timestamps) - min(timestamps)
+        duration_minutes = round(duration_seconds / 60)
+
+    return SessionProvenance(
+        user_turns=user_turns,
+        duration_minutes=duration_minutes,
+        raw_size_kb=raw_size_kb,
+    )

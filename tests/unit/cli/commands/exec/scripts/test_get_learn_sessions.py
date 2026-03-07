@@ -6,7 +6,6 @@ Uses fakes for fast, reliable testing without subprocess calls.
 
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -619,14 +618,15 @@ def test_preprocessed_manifest_none_when_branch_missing(tmp_path: Path) -> None:
     assert output["preprocessed_manifest"] is None
 
 
-def test_preprocessed_manifest_none_when_git_show_fails(tmp_path: Path) -> None:
-    """preprocessed_manifest is None when git show fails (manifest not on branch)."""
+def test_preprocessed_manifest_none_when_manifest_not_on_branch(tmp_path: Path) -> None:
+    """preprocessed_manifest is None when manifest file is not on the branch."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
         fake_git = FakeGit(
             remote_branches={cwd: ["origin/planned-pr-context/700"]},
+            # No ref_file_contents for manifest — read_file_from_ref returns None
         )
         test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
         fake_issues = FakeGitHubIssues(issues={700: test_issue})
@@ -636,30 +636,18 @@ def test_preprocessed_manifest_none_when_git_show_fails(tmp_path: Path) -> None:
         )
         fake_claude = FakeClaudeInstallation.for_test()
 
-        def fake_subprocess(*args, **kwargs):
-            class FakeResult:
-                returncode = 1
-                stdout = ""
-                stderr = "not found"
-
-            return FakeResult()
-
-        with patch(
-            "erk.cli.commands.exec.scripts.get_learn_sessions.subprocess.run",
-            side_effect=fake_subprocess,
-        ):
-            result = runner.invoke(
-                get_learn_sessions,
-                ["700"],
-                obj=ErkContext.for_test(
-                    git=fake_git,
-                    github=fake_github,
-                    plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
-                    claude_installation=fake_claude,
-                    cwd=cwd,
-                    repo_root=cwd,
-                ),
-            )
+        result = runner.invoke(
+            get_learn_sessions,
+            ["700"],
+            obj=ErkContext.for_test(
+                git=fake_git,
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                claude_installation=fake_claude,
+                cwd=cwd,
+                repo_root=cwd,
+            ),
+        )
 
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
@@ -671,17 +659,6 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
-
-        fake_git = FakeGit(
-            remote_branches={cwd: ["origin/planned-pr-context/700"]},
-        )
-        test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
-        fake_issues = FakeGitHubIssues(issues={700: test_issue})
-        fake_github = FakeLocalGitHub(
-            pr_details={700: issue_info_to_pr_details(test_issue)},
-            issues_gateway=fake_issues,
-        )
-        fake_claude = FakeClaudeInstallation.for_test()
 
         manifest = {
             "version": 1,
@@ -697,30 +674,34 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
             ],
         }
 
-        def fake_subprocess(*args, **kwargs):
-            class FakeResult:
-                returncode = 0
-                stdout = json.dumps(manifest)
-                stderr = ""
+        fake_git = FakeGit(
+            remote_branches={cwd: ["origin/planned-pr-context/700"]},
+            ref_file_contents={
+                ("origin/planned-pr-context/700", ".erk/sessions/manifest.json"): json.dumps(
+                    manifest
+                ).encode("utf-8"),
+            },
+        )
+        test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
+        fake_issues = FakeGitHubIssues(issues={700: test_issue})
+        fake_github = FakeLocalGitHub(
+            pr_details={700: issue_info_to_pr_details(test_issue)},
+            issues_gateway=fake_issues,
+        )
+        fake_claude = FakeClaudeInstallation.for_test()
 
-            return FakeResult()
-
-        with patch(
-            "erk.cli.commands.exec.scripts.get_learn_sessions.subprocess.run",
-            side_effect=fake_subprocess,
-        ):
-            result = runner.invoke(
-                get_learn_sessions,
-                ["700"],
-                obj=ErkContext.for_test(
-                    git=fake_git,
-                    github=fake_github,
-                    plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
-                    claude_installation=fake_claude,
-                    cwd=cwd,
-                    repo_root=cwd,
-                ),
-            )
+        result = runner.invoke(
+            get_learn_sessions,
+            ["700"],
+            obj=ErkContext.for_test(
+                git=fake_git,
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                claude_installation=fake_claude,
+                cwd=cwd,
+                repo_root=cwd,
+            ),
+        )
 
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)

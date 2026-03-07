@@ -6,7 +6,6 @@ Extracted to avoid circular imports between land_cmd and land_pipeline.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -27,8 +26,7 @@ from erk.cli.commands.exec.scripts.preprocess_session import (
 from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext
 from erk_shared.learn.extraction.session_schema import (
-    iter_jsonl_entries,
-    parse_session_timestamp,
+    compute_session_provenance,
 )
 from erk_shared.naming import generate_planned_pr_branch_name
 from erk_shared.output.output import user_output
@@ -36,6 +34,7 @@ from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.sessions.discovery import SessionsForPlan, get_readable_sessions
+from erk_shared.sessions.manifest import read_session_manifest
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -49,7 +48,7 @@ def _fetch_xmls_from_context_branch(
     *,
     repo_root: Path,
     plan_id: str,
-) -> dict[str, str]:
+) -> tuple[dict[str, str], dict | None]:
     """Fetch preprocessed session XMLs from the planned-pr-context branch.
 
     Remote implementations upload session data to planned-pr-context/{plan_id} branches.
@@ -62,28 +61,20 @@ def _fetch_xmls_from_context_branch(
         plan_id: Plan identifier string.
 
     Returns:
-        Dict mapping file paths to XML content. Empty if branch not found or
-        manifest is missing.
+        Tuple of (xml_files, manifest). xml_files is empty and manifest is None
+        if branch not found or manifest is missing.
     """
     session_branch = f"planned-pr-context/{plan_id}"
 
     if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
-        return {}
+        return {}, None
 
     git.remote.fetch_branch(repo_root, "origin", session_branch)
 
     # Read manifest
-    raw = git.commit.read_file_from_ref(
-        repo_root,
-        ref=f"origin/{session_branch}",
-        file_path=".erk/sessions/manifest.json",
-    )
-    if raw is None:
-        return {}
-    content = raw.decode("utf-8").strip()
-    if not content:
-        return {}
-    manifest = json.loads(content)
+    manifest = read_session_manifest(git, repo_root=repo_root, session_branch=session_branch)
+    if manifest is None:
+        return {}, None
 
     # Download each XML file referenced in manifest
     xml_files: dict[str, str] = {}
@@ -99,36 +90,7 @@ def _fetch_xmls_from_context_branch(
                 xml_path = f"{IMPL_CONTEXT_DIR}/sessions/{filename}"
                 xml_files[xml_path] = file_raw.decode("utf-8")
 
-    return xml_files
-
-
-def _read_manifest_from_context_branch(
-    git: Git,
-    *,
-    repo_root: Path,
-    plan_id: str,
-) -> dict | None:
-    """Read manifest JSON from the planned-pr-context branch.
-
-    Returns parsed manifest dict if found, None otherwise.
-    """
-    session_branch = f"planned-pr-context/{plan_id}"
-    if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
-        return None
-
-    git.remote.fetch_branch(repo_root, "origin", session_branch)
-
-    raw = git.commit.read_file_from_ref(
-        repo_root,
-        ref=f"origin/{session_branch}",
-        file_path=".erk/sessions/manifest.json",
-    )
-    if raw is None:
-        return None
-    content = raw.decode("utf-8").strip()
-    if not content:
-        return None
-    return json.loads(content)
+    return xml_files, manifest
 
 
 def _extract_session_ids_from_manifest(manifest: dict) -> list[str]:
@@ -187,10 +149,11 @@ def _collect_session_material(
     Returns (all_session_ids, xml_files) or None if no material found.
     """
     # Primary path: fetch from planned-pr-context branch
-    xml_files = _fetch_xmls_from_context_branch(ctx.git, repo_root=repo_root, plan_id=plan_id)
+    xml_files, manifest = _fetch_xmls_from_context_branch(
+        ctx.git, repo_root=repo_root, plan_id=plan_id
+    )
 
     if xml_files:
-        manifest = _read_manifest_from_context_branch(ctx.git, repo_root=repo_root, plan_id=plan_id)
         if manifest is not None:
             _log_session_summary_from_manifest(manifest)
             all_session_ids = _extract_session_ids_from_manifest(manifest)
@@ -345,20 +308,6 @@ class SessionStats:
     xml_chunks: tuple[str, ...]
 
 
-def _has_user_text(message_content: str | list) -> bool:
-    """Check if message content contains non-empty user text."""
-    if isinstance(message_content, list):
-        return any(
-            isinstance(block, dict)
-            and block.get("type") == "text"
-            and block.get("text", "").strip()
-            for block in message_content
-        )
-    if isinstance(message_content, str):
-        return bool(message_content.strip())
-    return False
-
-
 def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionStats | None:
     """Compute preprocessing stats for a session.
 
@@ -367,28 +316,14 @@ def _compute_session_stats(session_path: Path, *, session_id: str) -> SessionSta
 
     Returns None if preprocessing fails (e.g. corrupt JSONL).
     """
-    if not session_path.exists():
+    provenance = compute_session_provenance(session_path)
+    if provenance is None:
         return None
 
-    # Count user turns and compute duration from raw JSONL
-    content = session_path.read_text(encoding="utf-8")
-    timestamps: list[float] = []
-    user_turns = 0
-    for entry in iter_jsonl_entries(content):
-        ts = parse_session_timestamp(entry.get("timestamp"))
-        if ts is not None:
-            timestamps.append(ts)
-        if entry.get("type") == "user":
-            message_content = entry.get("message", {}).get("content", "")
-            if _has_user_text(message_content):
-                user_turns += 1
+    user_turns = provenance.user_turns
+    duration_minutes = provenance.duration_minutes
 
-    duration_minutes: int | None = None
-    if len(timestamps) >= 2:
-        duration_seconds = max(timestamps) - min(timestamps)
-        duration_minutes = round(duration_seconds / 60)
-
-    # Compute raw size: main JSONL + agent logs
+    # Compute raw size: main JSONL + agent logs (includes agent log sizes)
     raw_bytes = session_path.stat().st_size
     agent_logs = discover_agent_logs(session_path, session_id)
     for agent_log in agent_logs:
