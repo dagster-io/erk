@@ -154,7 +154,7 @@ class PaletteActionsMixin:
                     op_id=op_id,
                     label=f"Creating cmux workspace for PR #{row.pr_number}...",
                 )
-                self._cmux_checkout_async(op_id, row.pr_number, row.pr_head_branch)
+                self._cmux_checkout_async(op_id, row.pr_number, row.pr_head_branch, teleport=False)
 
         elif command_id == "cmux_teleport":
             if row.pr_number and row.pr_head_branch:
@@ -163,9 +163,7 @@ class PaletteActionsMixin:
                     op_id=op_id,
                     label=f"Creating cmux workspace (teleport) for PR #{row.pr_number}...",
                 )
-                self._cmux_checkout_async(
-                    op_id, row.pr_number, row.pr_head_branch, teleport=True
-                )
+                self._cmux_checkout_async(op_id, row.pr_number, row.pr_head_branch, teleport=True)
 
         elif command_id == "rebase_remote":
             if row.pr_number:

@@ -124,7 +124,7 @@ class BackgroundWorkersMixin:
 
     @work(thread=True)
     def _cmux_checkout_async(
-        self: ErkDashApp, op_id: str, pr_number: int, branch: str, *, teleport: bool = False
+        self: ErkDashApp, op_id: str, pr_number: int, branch: str, *, teleport: bool
     ) -> None:
         """Create cmux workspace, checkout PR, and focus the workspace.
 
