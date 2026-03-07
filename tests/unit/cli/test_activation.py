@@ -175,8 +175,8 @@ def test_render_activation_script_without_subpath() -> None:
     assert "Try to preserve relative directory position" not in script
 
 
-def test_render_activation_script_refreshes_workspace_packages() -> None:
-    """Activation script includes unconditional workspace package refresh."""
+def test_render_activation_script_no_uv_pip_install() -> None:
+    """Activation script does not contain hardcoded uv pip install (uv sync handles it)."""
     script = render_activation_script(
         worktree_path=Path("/path/to/worktree"),
         target_subpath=None,
@@ -184,15 +184,9 @@ def test_render_activation_script_refreshes_workspace_packages() -> None:
         final_message='echo "Activated worktree: $(pwd)"',
         comment="work activate-script",
     )
-    assert "uv pip install --no-deps --quiet" in script
-    assert "-e packages/erk-shared" in script
-    assert "-e packages/erk-statusline" in script
-    # Refresh line should come after the venv creation conditional
-    venv_creation_index = script.find("uv sync")
-    refresh_index = script.find("uv pip install --no-deps")
-    assert venv_creation_index != -1
-    assert refresh_index != -1
-    assert venv_creation_index < refresh_index
+    assert "uv pip install" not in script
+    assert "packages/erk-shared" not in script
+    assert "packages/erk-statusline" not in script
 
 
 def test_render_activation_script_with_subpath() -> None:
@@ -493,12 +487,12 @@ def test_render_activation_script_contains_virtual_env_guard() -> None:
     assert 'if [ "$VIRTUAL_ENV" != "/path/to/worktree/.venv" ]' in script
     # Guard should wrap activation code (venv source, .env, completion)
     assert "unset VIRTUAL_ENV" in script
-    # uv sync and uv pip install should be OUTSIDE the guard (before it)
+    # uv sync should be OUTSIDE the guard (before it)
     guard_index = script.find('if [ "$VIRTUAL_ENV"')
     uv_sync_index = script.find("uv sync")
-    uv_pip_index = script.find("uv pip install")
     assert uv_sync_index < guard_index
-    assert uv_pip_index < guard_index
+    # uv pip install should NOT be present
+    assert "uv pip install" not in script
     # Post-activation section should be outside guard
     assert "# Optional: show where we are" in script
 

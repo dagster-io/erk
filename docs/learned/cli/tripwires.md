@@ -114,7 +114,7 @@ Rules triggered by matching actions in code.
 
 **modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
 
-**moving uv sync or uv pip install inside the VIRTUAL_ENV guard** → Read [Activation Scripts](activation-scripts.md) first. uv sync and uv pip install run OUTSIDE the guard (always execute, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard.
+**moving uv sync inside the VIRTUAL_ENV guard** → Read [Activation Scripts](activation-scripts.md) first. uv sync runs OUTSIDE the guard (always executes, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard.
 
 **mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
