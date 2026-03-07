@@ -10,7 +10,9 @@ class TestFakeCodespaceRunSSHCommand:
 
     def test_run_tracks_calls(self) -> None:
         """run_ssh_command() calls are tracked in ssh_calls property."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
         codespace.run_ssh_command("cs-abc123", "echo hello")
         codespace.run_ssh_command("cs-def456", "pwd")
 
@@ -24,7 +26,9 @@ class TestFakeCodespaceRunSSHCommand:
 
     def test_last_call_returns_most_recent(self) -> None:
         """last_call returns most recent SSH call."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
         codespace.run_ssh_command("cs-first", "cmd1")
         codespace.run_ssh_command("cs-second", "cmd2")
 
@@ -34,13 +38,17 @@ class TestFakeCodespaceRunSSHCommand:
 
     def test_last_call_returns_none_when_empty(self) -> None:
         """last_call returns None when no SSH calls made."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         assert codespace.last_call is None
 
     def test_ssh_calls_empty_initially(self) -> None:
         """ssh_calls is empty list initially."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         assert codespace.ssh_calls == []
 
@@ -50,7 +58,9 @@ class TestFakeCodespaceExitCodeMode:
 
     def test_default_exit_code_returns_zero(self) -> None:
         """Default codespace returns 0 from run_ssh_command()."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         result = codespace.run_ssh_command("cs-test", "command")
 
@@ -58,7 +68,9 @@ class TestFakeCodespaceExitCodeMode:
 
     def test_run_exit_code_configurable(self) -> None:
         """run_exit_code parameter controls return value."""
-        codespace = FakeCodespace(run_exit_code=42)
+        codespace = FakeCodespace(
+            run_exit_code=42, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         result = codespace.run_ssh_command("cs-test", "failing-command")
 
@@ -66,7 +78,9 @@ class TestFakeCodespaceExitCodeMode:
 
     def test_failure_mode_still_tracks_calls(self) -> None:
         """Failure mode still tracks SSH calls."""
-        codespace = FakeCodespace(run_exit_code=1)
+        codespace = FakeCodespace(
+            run_exit_code=1, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
         codespace.run_ssh_command("cs-test", "command")
 
         assert len(codespace.ssh_calls) == 1
@@ -78,7 +92,9 @@ class TestFakeCodespaceExecInteractive:
 
     def test_exec_sets_exec_called_flag(self) -> None:
         """exec_ssh_interactive() sets exec_called flag."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         with pytest.raises(SystemExit):
             codespace.exec_ssh_interactive("cs-test", "command")
@@ -87,7 +103,9 @@ class TestFakeCodespaceExecInteractive:
 
     def test_exec_tracks_call(self) -> None:
         """exec_ssh_interactive() tracks the call as interactive."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         with pytest.raises(SystemExit):
             codespace.exec_ssh_interactive("cs-test", "command")
@@ -99,7 +117,9 @@ class TestFakeCodespaceExecInteractive:
 
     def test_exec_raises_system_exit(self) -> None:
         """exec_ssh_interactive() raises SystemExit to simulate process replacement."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         with pytest.raises(SystemExit) as exc_info:
             codespace.exec_ssh_interactive("cs-test", "command")
@@ -108,7 +128,9 @@ class TestFakeCodespaceExecInteractive:
 
     def test_exec_called_initially_false(self) -> None:
         """exec_called is False initially."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         assert codespace.exec_called is False
 
@@ -118,14 +140,18 @@ class TestFakeCodespaceStartCodespace:
 
     def test_start_tracks_gh_name(self) -> None:
         """start_codespace() calls are tracked in started_codespaces property."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
         codespace.start_codespace("cs-abc123")
 
         assert codespace.started_codespaces == ["cs-abc123"]
 
     def test_start_tracks_multiple_calls(self) -> None:
         """Multiple start_codespace() calls are all tracked."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
         codespace.start_codespace("cs-abc123")
         codespace.start_codespace("cs-def456")
 
@@ -133,13 +159,17 @@ class TestFakeCodespaceStartCodespace:
 
     def test_started_codespaces_empty_initially(self) -> None:
         """started_codespaces is empty list initially."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
 
         assert codespace.started_codespaces == []
 
     def test_started_codespaces_returns_copy(self) -> None:
         """started_codespaces returns a copy to prevent external mutation."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
         codespace.start_codespace("cs-abc123")
 
         returned_list = codespace.started_codespaces
@@ -153,7 +183,9 @@ class TestFakeCodespaceDefensiveCopying:
 
     def test_ssh_calls_returns_copy_of_list(self) -> None:
         """ssh_calls returns a copy to prevent external mutation."""
-        codespace = FakeCodespace()
+        codespace = FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        )
         codespace.run_ssh_command("cs-test", "command")
 
         # Modify the returned list

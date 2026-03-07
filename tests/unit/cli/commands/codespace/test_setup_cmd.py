@@ -1,14 +1,17 @@
 """Unit tests for codespace setup command."""
 
 from datetime import datetime
+from pathlib import Path
 
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.commands.codespace.setup_cmd import DEFAULT_MACHINE_TYPE
 from erk.core.context import context_for_test
+from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.github.types import RepoInfo
 
 TEST_REPO_INFO = RepoInfo(owner="testorg", name="testrepo")
@@ -31,54 +34,76 @@ def test_setup_shows_error_when_name_exists() -> None:
     assert "erk codespace [name]" in result.output
 
 
-def test_setup_derives_name_from_repo_info() -> None:
-    """setup command derives codespace name from repo_info if not provided.
-
-    This test is limited because the actual gh api subprocess call will fail,
-    but we can verify the derived name is used before the subprocess step.
-    """
+def test_setup_derives_name_from_repo_info(tmp_path: Path) -> None:
+    """setup command derives codespace name from repo_info if not provided."""
     runner = CliRunner()
 
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry()
+    erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
     ctx = context_for_test(
+        codespace=fake_codespace,
         codespace_registry=codespace_registry,
+        erk_installation=erk_installation,
         repo_info=TEST_REPO_INFO,
     )
 
-    # Will fail at subprocess but should output the derived name
-    result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=True)
+    result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=False)
 
-    # The derived name should be "{repo_name}-codespace"
+    assert result.exit_code == 0
     assert "Using codespace name: testrepo-codespace" in result.output
+    assert "Setup complete!" in result.output
 
 
-def test_setup_uses_default_name_without_repo_info() -> None:
+def test_setup_uses_default_name_without_repo_info(tmp_path: Path) -> None:
     """setup command uses default name when no repo_info available."""
     runner = CliRunner()
 
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry()
-    ctx = context_for_test(codespace_registry=codespace_registry, repo_info=None)
-
-    result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=True)
-
-    # Should fall back to "erk-codespace"
-    assert "Using codespace name: erk-codespace" in result.output
-
-
-def test_setup_accepts_explicit_name() -> None:
-    """setup command accepts explicit name argument."""
-    runner = CliRunner()
-
-    codespace_registry = FakeCodespaceRegistry()
-    ctx = context_for_test(codespace_registry=codespace_registry, repo_info=TEST_REPO_INFO)
-
-    # Will fail at subprocess but should use the explicit name
-    result = runner.invoke(
-        cli, ["codespace", "setup", "custom-name"], obj=ctx, catch_exceptions=True
+    erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        erk_installation=erk_installation,
+        repo_info=None,
     )
 
-    # Should output the creating message with explicit name (not the derived one)
+    # No repo info → error at _resolve_owner_repo
+    result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=True)
+
+    assert "Using codespace name: erk-codespace" in result.output
+    assert result.exit_code == 1
+    assert "No repository specified" in result.output
+
+
+def test_setup_accepts_explicit_name(tmp_path: Path) -> None:
+    """setup command accepts explicit name argument and creates codespace."""
+    runner = CliRunner()
+
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="gh-custom-abc"
+    )
+    codespace_registry = FakeCodespaceRegistry()
+    erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        erk_installation=erk_installation,
+        repo_info=TEST_REPO_INFO,
+    )
+
+    result = runner.invoke(
+        cli, ["codespace", "setup", "custom-name"], obj=ctx, catch_exceptions=False
+    )
+
+    assert result.exit_code == 0
     assert "Creating codespace 'custom-name'" in result.output
+    assert "Setup complete!" in result.output
 
 
 def test_setup_errors_without_repo_info_or_repo_flag() -> None:
@@ -94,47 +119,138 @@ def test_setup_errors_without_repo_info_or_repo_flag() -> None:
     assert "No repository specified" in result.output
 
 
-def test_setup_repo_id_lookup_uses_repo_flag() -> None:
-    """setup command uses --repo to look up repo ID when provided.
-
-    The gh api call will fail in tests, but we can verify the error output
-    includes the repo flag value, confirming it was used for the API call.
-    """
+def test_setup_repo_id_lookup_uses_repo_flag(tmp_path: Path) -> None:
+    """setup command uses --repo flag for repo ID lookup."""
     runner = CliRunner()
 
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=99999, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry()
-    ctx = context_for_test(codespace_registry=codespace_registry, repo_info=None)
+    erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        erk_installation=erk_installation,
+        repo_info=None,
+    )
 
     result = runner.invoke(
         cli,
         ["codespace", "setup", "mybox", "--repo", "owner/repo"],
         obj=ctx,
-        catch_exceptions=True,
+        catch_exceptions=False,
     )
 
-    # The error from run_with_error_reporting includes the command that failed
-    # which should contain the repo path
-    assert "repos/owner/repo" in result.output
+    assert result.exit_code == 0
+    assert fake_codespace.get_repo_id_calls == ["owner/repo"]
 
 
-def test_setup_repo_id_lookup_uses_repo_info() -> None:
-    """setup command uses ctx.repo_info to look up repo ID when --repo not provided.
-
-    The gh api call will fail in tests, but we can verify the error output
-    includes the repo info, confirming it was used for the API call.
-    """
+def test_setup_repo_id_lookup_uses_repo_info(tmp_path: Path) -> None:
+    """setup command uses ctx.repo_info for repo ID lookup when --repo not provided."""
     runner = CliRunner()
 
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=42, created_codespace_name="fake-gh-name"
+    )
     codespace_registry = FakeCodespaceRegistry()
-    ctx = context_for_test(codespace_registry=codespace_registry, repo_info=TEST_REPO_INFO)
+    erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        erk_installation=erk_installation,
+        repo_info=TEST_REPO_INFO,
+    )
 
-    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=True)
+    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=False)
 
-    # The error from run_with_error_reporting includes the command that failed
-    # which should contain the derived owner/repo path
-    assert "repos/testorg/testrepo" in result.output
+    assert result.exit_code == 0
+    assert fake_codespace.get_repo_id_calls == ["testorg/testrepo"]
 
 
 def test_setup_default_machine_type_is_premium_linux() -> None:
     """Default machine type constant is premiumLinux."""
     assert DEFAULT_MACHINE_TYPE == "premiumLinux"
+
+
+def test_setup_creates_codespace_with_correct_params(tmp_path: Path) -> None:
+    """setup command passes correct parameters to create_codespace."""
+    runner = CliRunner()
+
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="gh-mybox-abc"
+    )
+    codespace_registry = FakeCodespaceRegistry()
+    erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        erk_installation=erk_installation,
+        repo_info=TEST_REPO_INFO,
+    )
+
+    result = runner.invoke(
+        cli,
+        ["codespace", "setup", "mybox", "--branch", "main", "--machine", "basicLinux"],
+        obj=ctx,
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert len(fake_codespace.create_codespace_calls) == 1
+    call = fake_codespace.create_codespace_calls[0]
+    assert call["repo_id"] == 12345
+    assert call["machine"] == "basicLinux"
+    assert call["display_name"] == "mybox"
+    assert call["branch"] == "main"
+
+
+def test_setup_calls_ssh_login(tmp_path: Path) -> None:
+    """setup command runs SSH login command after creating codespace."""
+    runner = CliRunner()
+
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="gh-mybox-abc"
+    )
+    codespace_registry = FakeCodespaceRegistry()
+    erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        erk_installation=erk_installation,
+        repo_info=TEST_REPO_INFO,
+    )
+
+    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert len(fake_codespace.ssh_calls) == 1
+    ssh_call = fake_codespace.ssh_calls[0]
+    assert ssh_call.gh_name == "gh-mybox-abc"
+    assert ssh_call.remote_command == "claude login"
+    assert ssh_call.interactive is False
+
+
+def test_setup_shows_retry_hint_on_login_failure(tmp_path: Path) -> None:
+    """setup command shows retry hint when SSH login returns non-zero exit code."""
+    runner = CliRunner()
+
+    fake_codespace = FakeCodespace(
+        run_exit_code=1,
+        repo_id=12345,
+        created_codespace_name="gh-mybox-abc",
+    )
+    codespace_registry = FakeCodespaceRegistry()
+    erk_installation = FakeErkInstallation(root_path=tmp_path / ".erk")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        erk_installation=erk_installation,
+        repo_info=TEST_REPO_INFO,
+    )
+
+    result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert "Claude login may have failed or was cancelled" in result.output
+    assert "gh codespace ssh -c gh-mybox-abc" in result.output

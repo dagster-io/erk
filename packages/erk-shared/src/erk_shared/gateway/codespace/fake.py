@@ -35,18 +35,25 @@ class FakeCodespace(Codespace):
     def __init__(
         self,
         *,
-        run_exit_code: int = 0,
+        run_exit_code: int,
+        repo_id: int,
+        created_codespace_name: str,
     ) -> None:
         """Create FakeCodespace with configurable behavior.
 
         Args:
             run_exit_code: Exit code to return from run_ssh_command.
-                Defaults to 0 (success) for most tests.
+            repo_id: Repository ID to return from get_repo_id.
+            created_codespace_name: Name to return from create_codespace.
         """
         self._run_exit_code = run_exit_code
+        self._repo_id = repo_id
+        self._created_codespace_name = created_codespace_name
         self._ssh_calls: list[SSHCall] = []
         self._started_codespaces: list[str] = []
         self._exec_called = False
+        self._get_repo_id_calls: list[str] = []
+        self._create_codespace_calls: list[dict[str, object]] = []
 
     @property
     def ssh_calls(self) -> list[SSHCall]:
@@ -128,3 +135,60 @@ class FakeCodespace(Codespace):
             SSHCall(gh_name=gh_name, remote_command=remote_command, interactive=False)
         )
         return self._run_exit_code
+
+    def get_repo_id(self, owner_repo: str) -> int:
+        """Return configured repo ID and track the call.
+
+        Args:
+            owner_repo: Repository in "owner/repo" format.
+
+        Returns:
+            The configured repo_id value.
+        """
+        self._get_repo_id_calls.append(owner_repo)
+        return self._repo_id
+
+    def create_codespace(
+        self,
+        *,
+        repo_id: int,
+        machine: str,
+        display_name: str,
+        branch: str | None,
+    ) -> str:
+        """Return configured codespace name and track the call.
+
+        Args:
+            repo_id: GitHub repository database ID.
+            machine: Machine type for the codespace.
+            display_name: Human-readable display name.
+            branch: Branch to create codespace from, or None for default.
+
+        Returns:
+            The configured created_codespace_name value.
+        """
+        self._create_codespace_calls.append(
+            {
+                "repo_id": repo_id,
+                "machine": machine,
+                "display_name": display_name,
+                "branch": branch,
+            }
+        )
+        return self._created_codespace_name
+
+    @property
+    def get_repo_id_calls(self) -> list[str]:
+        """Get the list of owner_repo values passed to get_repo_id.
+
+        Returns a copy to prevent external mutation.
+        """
+        return list(self._get_repo_id_calls)
+
+    @property
+    def create_codespace_calls(self) -> list[dict[str, object]]:
+        """Get the list of create_codespace call parameters.
+
+        Returns a copy to prevent external mutation.
+        """
+        return list(self._create_codespace_calls)

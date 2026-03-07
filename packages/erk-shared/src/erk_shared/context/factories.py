@@ -148,7 +148,9 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         plan_store=PlannedPRBackend(real_github, github_issues, time=fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
-        codespace=FakeCodespace(),
+        codespace=FakeCodespace(
+            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+        ),
         agent_launcher=FakeAgentLauncher(),
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
