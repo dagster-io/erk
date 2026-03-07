@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix Slow Unit Tests: Move to Integration + Fake Gateway for setup_cmd"
+  "plan_id": "8922",
+  "url": "https://github.com/dagster-io/erk/pull/8922",
+  "created_at": "2026-03-07T16:48:29.477206",
+  "synced_at": "2026-03-07T16:48:29.477206",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
