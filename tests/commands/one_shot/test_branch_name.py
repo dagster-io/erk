@@ -2,7 +2,7 @@
 
 import re
 
-from erk.cli.commands.one_shot_dispatch import generate_branch_name
+from erk.cli.commands.one_shot_remote_dispatch import generate_branch_name
 from erk_shared.gateway.time.fake import FakeTime
 
 
