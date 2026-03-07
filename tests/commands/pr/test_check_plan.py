@@ -188,11 +188,17 @@ def test_check_missing_first_comment_fails() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-123",
             issues={42: issue},
-            comments={42: []},
+            issue_comments={42: []},
+            pr_references=None,
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
@@ -230,11 +236,17 @@ def test_check_missing_plan_body_fails() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # First comment without plan-body block
-        issues = FakeGitHubIssues(
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-123",
             issues={42: issue},
-            comments={42: ["Just a regular comment"]},
+            issue_comments={42: ["Just a regular comment"]},
+            pr_references=None,
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
@@ -278,11 +290,17 @@ def test_check_github_url_parsing() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-123",
             issues={42: issue},
-            comments={42: [plan_body_block]},
+            issue_comments={42: [plan_body_block]},
+            pr_references=None,
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
         # Act - Use GitHub URL instead of number
         result = runner.invoke(
@@ -333,11 +351,17 @@ def test_check_valid_draft_pr_plan_passes() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # No comments needed for draft-PR format
-        issues = FakeGitHubIssues(
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-123",
             issues={42: issue},
-            comments={42: ["submission-queued comment"]},
+            issue_comments={42: ["submission-queued comment"]},
+            pr_references=None,
         )
-        ctx = build_workspace_test_context(env, issues=issues)
+        ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "check", "42"], obj=ctx)
@@ -355,8 +379,17 @@ def test_check_invalid_identifier_fails() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        issues = FakeGitHubIssues(issues={}, comments={})
-        ctx = build_workspace_test_context(env, issues=issues)
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-123",
+            issues={},
+            issue_comments={},
+            pr_references=None,
+        )
+        ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "check", "not-a-valid-identifier"], obj=ctx)
@@ -372,7 +405,7 @@ def test_check_invalid_identifier_fails() -> None:
 # =============================================================================
 
 
-def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
+def test_validate_plan_format_passes_valid_plan() -> None:
     """Returns PlanValidationSuccess with passed=True for valid plan."""
     from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
@@ -406,12 +439,18 @@ def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
         author="test-user",
     )
 
-    issues = FakeGitHubIssues(
+    fake_remote = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-123",
         issues={42: issue},
-        comments={42: [plan_body_block]},
+        issue_comments={42: [plan_body_block]},
+        pr_references=None,
     )
 
-    result = validate_plan_format(issues, tmp_path, 42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is True
@@ -421,7 +460,7 @@ def test_validate_plan_format_passes_valid_plan(tmp_path: Path) -> None:
     assert all(passed for passed, _ in result.checks)
 
 
-def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
+def test_validate_plan_format_fails_missing_plan_header() -> None:
     """Returns PlanValidationSuccess with passed=False when plan-header missing."""
     from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
@@ -438,12 +477,18 @@ def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
         author="test-user",
     )
 
-    issues = FakeGitHubIssues(
+    fake_remote = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-123",
         issues={42: issue},
-        comments={42: []},
+        issue_comments={42: []},
+        pr_references=None,
     )
 
-    result = validate_plan_format(issues, tmp_path, 42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -453,7 +498,7 @@ def test_validate_plan_format_fails_missing_plan_header(tmp_path: Path) -> None:
     assert "plan-header metadata block present" in failed_checks
 
 
-def test_validate_plan_format_fails_missing_first_comment(tmp_path: Path) -> None:
+def test_validate_plan_format_fails_missing_first_comment() -> None:
     """Returns PlanValidationSuccess with passed=False when no comments exist."""
     from erk.cli.commands.pr.check_cmd import PlanValidationSuccess, validate_plan_format
 
