@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Fix `issue_number` references in docs/learned/ (Node 6.3)",
+  "objective_id": 8381,
+  "node_ids": [
+    "6.3"
+  ]
+}
