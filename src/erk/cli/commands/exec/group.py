@@ -13,6 +13,7 @@ from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
 from erk.cli.commands.exec.scripts.add_remote_execution_note import (
     add_remote_execution_note,
 )
+from erk.cli.commands.exec.scripts.audit_collect import audit_collect
 from erk.cli.commands.exec.scripts.capture_session_info import (
     capture_session_info,
 )
@@ -193,6 +194,7 @@ exec_group.add_command(add_plan_label, name="add-plan-label")
 exec_group.add_command(add_plan_labels, name="add-plan-labels")
 exec_group.add_command(add_pr_labels, name="add-pr-labels")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
+exec_group.add_command(audit_collect, name="audit-collect")
 exec_group.add_command(capture_session_info, name="capture-session-info")
 exec_group.add_command(cleanup_impl_context, name="cleanup-impl-context")
 exec_group.add_command(cmux_checkout_workspace, name="cmux-checkout-workspace")
