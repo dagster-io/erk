@@ -36,7 +36,7 @@ def test_pr_rebase_non_graphite_success() -> None:
 
 
 def test_pr_rebase_non_graphite_conflict_launches_tui() -> None:
-    """Test that git rebase conflicts launch Claude TUI."""
+    """Test that git rebase conflicts show files and launch Claude TUI after confirm."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -46,16 +46,21 @@ def test_pr_rebase_non_graphite_conflict_launches_tui() -> None:
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
             rebase_onto_result=RebaseResult(success=False, conflict_files=("file.py",)),
+            conflicted_files=["file.py"],
         )
 
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx)
+        result = runner.invoke(
+            pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx, input="y\n"
+        )
 
         assert result.exit_code == 0
         assert "Rebase hit conflicts" in result.output
+        assert "file.py" in result.output
+        assert "Launch Claude to resolve conflicts?" in result.output
         assert len(executor.interactive_calls) == 1
         call = executor.interactive_calls[0]
         assert call[2] == "/erk:rebase"  # command
@@ -85,7 +90,7 @@ def test_pr_rebase_non_graphite_no_target_error() -> None:
 
 
 def test_pr_rebase_in_progress_launches_tui() -> None:
-    """Test that existing rebase-in-progress launches Claude TUI directly."""
+    """Test that existing rebase-in-progress shows files and launches Claude TUI."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -95,16 +100,20 @@ def test_pr_rebase_in_progress_launches_tui() -> None:
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},
             rebase_in_progress=True,
+            conflicted_files=["src/context.py", "src/fast_llm.py"],
         )
 
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx, input="y\n")
 
         assert result.exit_code == 0
         assert "Rebase in progress" in result.output
+        assert "src/context.py" in result.output
+        assert "src/fast_llm.py" in result.output
+        assert "Launch Claude to resolve conflicts?" in result.output
         assert len(executor.interactive_calls) == 1
 
 
@@ -186,3 +195,59 @@ def test_pr_rebase_claude_not_available() -> None:
         assert "claude.com/download" in result.output
 
         assert len(executor.interactive_calls) == 0
+
+
+def test_pr_rebase_conflict_user_declines() -> None:
+    """Test that declining the confirm prompt does not launch Claude."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            rebase_onto_result=RebaseResult(success=False, conflict_files=("file.py",)),
+            conflicted_files=["file.py"],
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(
+            pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx, input="n\n"
+        )
+
+        assert result.exit_code == 0
+        assert "file.py" in result.output
+        assert "Launch Claude to resolve conflicts?" in result.output
+        assert "Rebase paused" in result.output
+        assert len(executor.interactive_calls) == 0
+
+
+def test_pr_rebase_conflict_no_conflicted_files_still_confirms() -> None:
+    """Test that confirm prompt appears even when get_conflicted_files returns empty."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            rebase_onto_result=RebaseResult(success=False, conflict_files=("file.py",)),
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(
+            pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx, input="y\n"
+        )
+
+        assert result.exit_code == 0
+        assert "Conflicted files:" not in result.output
+        assert "Launch Claude to resolve conflicts?" in result.output
+        assert len(executor.interactive_calls) == 1
