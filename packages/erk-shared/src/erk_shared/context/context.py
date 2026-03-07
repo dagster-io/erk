@@ -41,7 +41,7 @@ from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.types import RepoInfo
 from erk_shared.gateway.github_admin.abc import GitHubAdmin
@@ -77,7 +77,7 @@ class ErkContext:
 
     # Gateway integrations (from erk_shared)
     git: Git  # Note: branch ops accessed via git.branch subgateway
-    github: GitHub  # Note: issues accessed via github.issues property
+    github: LocalGitHub  # Note: issues accessed via github.issues property
     github_admin: GitHubAdmin  # GitHub Actions admin operations
     graphite: Graphite
     graphite_branch_ops: GraphiteBranchOps | None  # None when Graphite disabled
@@ -212,7 +212,7 @@ class ErkContext:
         *,
         github_issues: GitHubIssues | None = None,
         git: Git | None = None,
-        github: GitHub | None = None,
+        github: LocalGitHub | None = None,
         github_admin: GitHubAdmin | None = None,
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
@@ -232,7 +232,7 @@ class ErkContext:
         Args:
             github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
             git: Optional Git implementation. If None, creates FakeGit.
-            github: Optional GitHub implementation. If None, creates FakeGitHub.
+            github: Optional GitHub implementation. If None, creates FakeLocalGitHub.
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
             plan_store: Optional PlanBackend. If None, creates PlannedPRBackend.

@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.get_pr_view import get_pr_view
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 
@@ -51,7 +51,7 @@ def _make_pr_details(
 def test_get_pr_view_by_number() -> None:
     """Test direct PR number lookup returns all expected fields."""
     pr = _make_pr_details(number=123, head_ref_name="feature-branch", title="My PR", body="PR body")
-    fake_gh = FakeGitHub(pr_details={123: pr})
+    fake_gh = FakeLocalGitHub(pr_details={123: pr})
     runner = CliRunner()
 
     result = runner.invoke(
@@ -81,7 +81,7 @@ def test_get_pr_view_by_number() -> None:
 
 def test_get_pr_view_not_found() -> None:
     """Test PR number that doesn't exist returns error."""
-    fake_gh = FakeGitHub()
+    fake_gh = FakeLocalGitHub()
     runner = CliRunner()
 
     result = runner.invoke(
@@ -100,7 +100,7 @@ def test_get_pr_view_auto_detect_from_branch() -> None:
     """Test auto-detection of current branch to find PR."""
     cwd = Path("/fake/worktree")
     pr = _make_pr_details(number=42, head_ref_name="my-feature")
-    fake_gh = FakeGitHub(prs_by_branch={"my-feature": pr})
+    fake_gh = FakeLocalGitHub(prs_by_branch={"my-feature": pr})
     fake_git = FakeGit(current_branches={cwd: "my-feature"})
     runner = CliRunner()
 
@@ -120,7 +120,7 @@ def test_get_pr_view_auto_detect_from_branch() -> None:
 def test_get_pr_view_auto_detect_no_pr() -> None:
     """Test auto-detection when current branch has no PR."""
     cwd = Path("/fake/worktree")
-    fake_gh = FakeGitHub()
+    fake_gh = FakeLocalGitHub()
     fake_git = FakeGit(current_branches={cwd: "no-pr-branch"})
     runner = CliRunner()
 
@@ -139,7 +139,7 @@ def test_get_pr_view_auto_detect_no_pr() -> None:
 def test_get_pr_view_by_branch_flag() -> None:
     """Test explicit --branch flag lookup."""
     pr = _make_pr_details(number=77, head_ref_name="feature-x")
-    fake_gh = FakeGitHub(prs_by_branch={"feature-x": pr})
+    fake_gh = FakeLocalGitHub(prs_by_branch={"feature-x": pr})
     runner = CliRunner()
 
     result = runner.invoke(
@@ -162,7 +162,7 @@ def test_get_pr_view_labels() -> None:
         head_ref_name="labeled-branch",
         labels=("erk-plan", "erk-plan-review", "bug"),
     )
-    fake_gh = FakeGitHub(pr_details={55: pr})
+    fake_gh = FakeLocalGitHub(pr_details={55: pr})
     runner = CliRunner()
 
     result = runner.invoke(

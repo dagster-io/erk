@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from datetime import UTC
 from pathlib import Path
 
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.label_ops import add_labels_resilient
 from erk_shared.gateway.github.metadata.core import (
@@ -93,7 +93,7 @@ class PlannedPRBackend(PlanBackend):
         Plan content here...
     """
 
-    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
+    def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time) -> None:
         """Initialize PlannedPRBackend with GitHub and issues gateways.
 
         Args:

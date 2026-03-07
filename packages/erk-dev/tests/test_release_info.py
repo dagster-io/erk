@@ -9,7 +9,7 @@ from erk_dev.cli import cli
 from erk_dev.commands.release_info.command import parse_last_release
 from erk_dev.context import ErkDevContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 
 
 def test_parse_last_release_extracts_version_and_date(tmp_path: Path) -> None:
@@ -127,7 +127,7 @@ version = "0.2.1"
         result = runner.invoke(
             cli,
             ["release-info", "--json-output"],
-            obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+            obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
         )
 
     assert result.exit_code == 0
@@ -172,7 +172,7 @@ version = "1.0.0"
         result = runner.invoke(
             cli,
             ["release-info"],
-            obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+            obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
         )
 
     assert result.exit_code == 0

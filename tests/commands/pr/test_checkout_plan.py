@@ -9,7 +9,7 @@ from erk.cli.cli import cli
 from erk.cli.github_parsing import parse_issue_identifier
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import PRReference
 from erk_shared.gateway.github.types import PRDetails
@@ -100,7 +100,7 @@ def test_checkout_local_branch_exists() -> None:
         fake_issues = FakeGitHubIssues(
             pr_references={123: [PRReference(number=200, state="OPEN", is_draft=False)]},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={200: pr_details},
             issues_gateway=fake_issues,
         )
@@ -133,7 +133,7 @@ def test_checkout_with_plain_number() -> None:
         fake_issues = FakeGitHubIssues(
             pr_references={456: [PRReference(number=200, state="OPEN", is_draft=False)]},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={200: pr_details},
             issues_gateway=fake_issues,
         )
@@ -172,7 +172,7 @@ def test_checkout_branch_already_in_worktree() -> None:
         fake_issues = FakeGitHubIssues(
             pr_references={789: [PRReference(number=300, state="OPEN", is_draft=False)]},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={300: pr_details},
             issues_gateway=fake_issues,
         )
@@ -208,7 +208,7 @@ def test_checkout_no_local_branch_fetches_pr() -> None:
         fake_issues = FakeGitHubIssues(
             pr_references={42: [PRReference(number=200, state="OPEN", is_draft=False)]},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={200: pr_details},
             issues_gateway=fake_issues,
         )
@@ -244,7 +244,7 @@ def test_checkout_multiple_open_prs_shows_table() -> None:
                 ]
             },
         )
-        github = FakeGitHub(issues_gateway=fake_issues)
+        github = FakeLocalGitHub(issues_gateway=fake_issues)
         ctx = build_workspace_test_context(env, git=git, github=github, issues=fake_issues)
 
         result = runner.invoke(cli, ["pr", "checkout", "P50"], obj=ctx)
@@ -283,7 +283,7 @@ def test_checkout_filters_to_open_prs_only() -> None:
                 ]
             },
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={400: pr_details},
             issues_gateway=fake_issues,
         )
@@ -310,7 +310,7 @@ def test_checkout_no_branch_no_pr_shows_help() -> None:
             existing_paths={env.cwd, env.repo.worktrees_dir},
         )
         fake_issues = FakeGitHubIssues(pr_references={})
-        github = FakeGitHub(issues_gateway=fake_issues)
+        github = FakeLocalGitHub(issues_gateway=fake_issues)
         ctx = build_workspace_test_context(env, git=git, github=github, issues=fake_issues)
 
         result = runner.invoke(cli, ["pr", "checkout", "P999"], obj=ctx)
@@ -366,7 +366,7 @@ def test_checkout_with_github_url() -> None:
         fake_issues = FakeGitHubIssues(
             pr_references={555: [PRReference(number=600, state="OPEN", is_draft=False)]},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={600: pr_details},
             issues_gateway=fake_issues,
         )
@@ -409,7 +409,7 @@ def test_checkout_worktree_with_existing_pr_branch() -> None:
         fake_issues = FakeGitHubIssues(
             pr_references={777: [PRReference(number=800, state="OPEN", is_draft=False)]},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={800: pr_details},
             issues_gateway=fake_issues,
         )

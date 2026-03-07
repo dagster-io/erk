@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -13,7 +13,7 @@ def test_happy_path_with_existing_issue() -> None:
     """Command succeeds with --plan flag, using existing plan number."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        fake_github = FakeGitHub()
+        fake_github = FakeLocalGitHub()
         fake_issues = FakeGitHubIssues()
         ctx = env.build_context(
             current_branch="my-feature",
@@ -48,7 +48,7 @@ def test_happy_path_creating_new_issue() -> None:
     """Command succeeds without --plan, creating a new plan."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        fake_github = FakeGitHub()
+        fake_github = FakeLocalGitHub()
         fake_issues = FakeGitHubIssues()
         ctx = env.build_context(
             current_branch="my-feature",
@@ -75,7 +75,7 @@ def test_happy_path_uses_detected_trunk_branch() -> None:
     """Command uses detected trunk branch (non-main) as PR base and workflow base_branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        fake_github = FakeGitHub()
+        fake_github = FakeLocalGitHub()
         fake_issues = FakeGitHubIssues()
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},

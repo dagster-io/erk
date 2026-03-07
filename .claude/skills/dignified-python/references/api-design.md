@@ -58,7 +58,7 @@ def activate_worktree(ctx, repo, path, script, command_name) -> None:
 
 1. **Truly optional behavior** - Where the default is correct for 95%+ of callers
 2. **Backwards compatibility** - When adding a parameter to existing API (temporary)
-3. **Test helper functions and Fake classes** - Functions in `tests/test_utils/` that exist to reduce test boilerplate are explicitly exempt. These helpers often wrap complex constructors (like `format_plan_header_body`) with sensible defaults, and having many default parameters is their intended purpose—not a code smell. Similarly, **Fake classes** (`FakeGit`, `FakeGitHub`, `FakeGraphite`, etc.) used for testing are exempt since they often have many optional configuration parameters for setting up different test scenarios
+3. **Test helper functions and Fake classes** - Functions in `tests/test_utils/` that exist to reduce test boilerplate are explicitly exempt. These helpers often wrap complex constructors (like `format_plan_header_body`) with sensible defaults, and having many default parameters is their intended purpose—not a code smell. Similarly, **Fake classes** (`FakeGit`, `FakeLocalGitHub`, `FakeGraphite`, etc.) used for testing are exempt since they often have many optional configuration parameters for setting up different test scenarios
 4. **Loop closure capture** - Using `def f(x=x)` to capture the current value of a loop variable is the standard Python idiom for avoiding late-binding closure bugs. This is not a "default" in the API design sense—it's a scoping mechanism.
 
 **When reviewing code with defaults, ask:**
@@ -173,7 +173,7 @@ Fakes should mirror production interfaces. Adding test-only configuration knobs 
 
 ```python
 # WRONG: Test-only parameter that's never used in production
-class FakeGitHub:
+class FakeLocalGitHub:
     def __init__(
         self,
         prs: dict[str, PullRequestInfo] | None = None,
@@ -182,7 +182,7 @@ class FakeGitHub:
         self._rate_limited = rate_limited  # Never set to True anywhere
 
 # CORRECT: Only add infrastructure when you need it
-class FakeGitHub:
+class FakeLocalGitHub:
     def __init__(
         self,
         prs: dict[str, PullRequestInfo] | None = None,

@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.close_prs import close_prs
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.time.fake import FakeTime
@@ -41,7 +41,7 @@ def test_close_prs_batch_success() -> None:
     issue_42 = _make_issue(42, "Plan A", "Body A")
     issue_43 = _make_issue(43, "Plan B", "Body B")
     fake_gh = FakeGitHubIssues(issues={42: issue_42, 43: issue_43})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={
             42: issue_info_to_pr_details(issue_42),
             43: issue_info_to_pr_details(issue_43),
@@ -84,7 +84,7 @@ def test_close_prs_partial_failure() -> None:
     """Test batch where one plan fails (not found) but others succeed."""
     issue_42 = _make_issue(42, "Plan A", "Body A")
     fake_gh = FakeGitHubIssues(issues={42: issue_42})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue_42)},
         issues_gateway=fake_gh,
     )
@@ -118,7 +118,7 @@ def test_close_prs_partial_failure() -> None:
 def test_close_prs_invalid_json() -> None:
     """Test error handling for invalid JSON input."""
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -139,7 +139,7 @@ def test_close_prs_invalid_json() -> None:
 def test_close_prs_missing_field() -> None:
     """Test error handling for missing required fields."""
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     batch_input = json.dumps([{"plan_number": 42}])  # Missing 'comment'
@@ -163,7 +163,7 @@ def test_close_prs_missing_field() -> None:
 def test_close_prs_empty_array() -> None:
     """Test that empty array returns success with no results."""
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(

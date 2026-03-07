@@ -5,7 +5,7 @@ from click.testing import CliRunner
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -42,7 +42,7 @@ def test_teleport_pr_not_found() -> None:
     """Teleport errors when PR doesn't exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        github = FakeGitHub(pr_details={})
+        github = FakeLocalGitHub(pr_details={})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -59,7 +59,7 @@ def test_teleport_cross_repo_errors() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr = _make_pr_details(123, "feature", is_cross_repository=True)
-        github = FakeGitHub(pr_details={123: pr})
+        github = FakeLocalGitHub(pr_details={123: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -76,7 +76,7 @@ def test_teleport_wrong_branch_switches_and_teleports() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr = _make_pr_details(123, "feature-branch")
-        github = FakeGitHub(pr_details={123: pr})
+        github = FakeLocalGitHub(pr_details={123: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -97,7 +97,7 @@ def test_teleport_wrong_branch_exists_in_other_worktree() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         other_worktree_path = env.repo.worktrees_dir / "other"
         pr = _make_pr_details(123, "feature-branch")
-        github = FakeGitHub(pr_details={123: pr})
+        github = FakeLocalGitHub(pr_details={123: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -121,7 +121,7 @@ def test_teleport_in_place_with_force() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr = _make_pr_details(123, "feature-branch")
-        github = FakeGitHub(pr_details={123: pr})
+        github = FakeLocalGitHub(pr_details={123: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -142,7 +142,7 @@ def test_teleport_already_in_sync_exits_cleanly() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr = _make_pr_details(123, "feature-branch")
-        github = FakeGitHub(pr_details={123: pr})
+        github = FakeLocalGitHub(pr_details={123: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -167,7 +167,7 @@ def test_teleport_stacked_pr_fetches_base_with_graphite() -> None:
             "plnd/add-print-statement",
             base_ref_name="plnd/rename-sync-teleport",
         )
-        github = FakeGitHub(pr_details={123: pr})
+        github = FakeLocalGitHub(pr_details={123: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -214,7 +214,7 @@ def test_teleport_trunk_parent_tracks_without_base_fetch() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # PR with base = main (trunk) — not stacked, but still needs Graphite tracking
         pr = _make_pr_details(123, "feature-branch", base_ref_name="main")
-        github = FakeGitHub(pr_details={123: pr})
+        github = FakeLocalGitHub(pr_details={123: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -244,7 +244,7 @@ def test_teleport_already_tracked_retracks() -> None:
             "plnd/add-print-statement",
             base_ref_name="plnd/rename-sync-teleport",
         )
-        github = FakeGitHub(pr_details={123: pr})
+        github = FakeLocalGitHub(pr_details={123: pr})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},

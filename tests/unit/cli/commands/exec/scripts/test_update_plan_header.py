@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
@@ -56,7 +56,7 @@ def test_update_single_field() -> None:
     """update-plan-header sets a single field in plan-header."""
     issue = _make_issue_with_plan_header(123)
     fake_gh = FakeGitHubIssues(issues={123: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -91,7 +91,7 @@ def test_update_multiple_fields() -> None:
     """update-plan-header sets multiple fields at once."""
     issue = _make_issue_with_plan_header(456)
     fake_gh = FakeGitHubIssues(issues={456: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={456: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -130,7 +130,7 @@ def test_overwrites_existing() -> None:
     )
     issue = _make_issue(789, body)
     fake_gh = FakeGitHubIssues(issues={789: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={789: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -170,7 +170,7 @@ def test_null_coercion() -> None:
     )
     issue = _make_issue(100, body)
     fake_gh = FakeGitHubIssues(issues={100: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={100: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -200,7 +200,7 @@ def test_int_coercion() -> None:
     """update-plan-header coerces valid integer strings to int."""
     issue = _make_issue_with_plan_header(101)
     fake_gh = FakeGitHubIssues(issues={101: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={101: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -231,7 +231,7 @@ def test_run_id_field_stays_string() -> None:
     """update-plan-header keeps last_remote_impl_run_id as str, not int."""
     issue = _make_issue_with_plan_header(103)
     fake_gh = FakeGitHubIssues(issues={103: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={103: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -262,7 +262,7 @@ def test_dispatched_run_id_stays_string() -> None:
     """update-plan-header keeps last_dispatched_run_id as str, not int."""
     issue = _make_issue_with_plan_header(104)
     fake_gh = FakeGitHubIssues(issues={104: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={104: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -293,7 +293,7 @@ def test_non_string_field_still_coerced_to_int() -> None:
     """update-plan-header still coerces objective_issue numeric strings to int."""
     issue = _make_issue_with_plan_header(105)
     fake_gh = FakeGitHubIssues(issues={105: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={105: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -324,7 +324,7 @@ def test_string_preserved() -> None:
     """update-plan-header preserves string values as strings."""
     issue = _make_issue_with_plan_header(102)
     fake_gh = FakeGitHubIssues(issues={102: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={102: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -360,7 +360,7 @@ def test_schema_validation_rejects_unknown_field() -> None:
     """update-plan-header rejects unknown field names via schema validation."""
     issue = _make_issue_with_plan_header(200)
     fake_gh = FakeGitHubIssues(issues={200: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={200: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -386,7 +386,7 @@ def test_schema_validation_rejects_invalid_lifecycle_stage() -> None:
     """update-plan-header rejects invalid lifecycle_stage values."""
     issue = _make_issue_with_plan_header(201)
     fake_gh = FakeGitHubIssues(issues={201: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={201: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -412,7 +412,7 @@ def test_immutable_field_protected() -> None:
     """update-plan-header silently ignores immutable fields (backend behavior)."""
     issue = _make_issue_with_plan_header(202)
     fake_gh = FakeGitHubIssues(issues={202: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={202: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -448,7 +448,7 @@ def test_immutable_field_protected() -> None:
 def test_no_fields_provided() -> None:
     """update-plan-header exits 1 when no fields are provided."""
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -469,7 +469,7 @@ def test_no_fields_provided() -> None:
 def test_invalid_field_format() -> None:
     """update-plan-header exits 1 for fields without '=' separator."""
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -495,7 +495,7 @@ def test_invalid_field_format() -> None:
 def test_plan_not_found() -> None:
     """update-plan-header exits 1 when plan doesn't exist."""
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     repo_root = Path("/fake/repo")
 
     runner = CliRunner()
@@ -522,7 +522,7 @@ This is an issue created before plan-header blocks were introduced.
 """
     issue = _make_issue(400, old_format_body)
     fake_gh = FakeGitHubIssues(issues={400: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={400: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )

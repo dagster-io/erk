@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.track_learn_evaluation import track_learn_evaluation
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRNotFound
@@ -35,7 +35,7 @@ def test_track_learn_evaluation_posts_comment_and_updates_header(tmp_path: Path)
     plan_body = format_plan_header_body_for_test()
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -83,7 +83,7 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
     plan_body = format_plan_header_body_for_test()
     test_issue = create_test_issue(100, "Test Plan #100", plan_body)
     fake_issues = FakeGitHubIssues(issues={100: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={100: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -132,7 +132,7 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
         )
         issue = create_test_issue(456, "Test Plan #456", plan_body)
         fake_issues = FakeGitHubIssues(issues={456: issue})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={456: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
@@ -161,7 +161,7 @@ def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
     plan_body = format_plan_header_body_for_test()
     test_issue = create_test_issue(789, "Test Plan #789", plan_body)
     fake_issues = FakeGitHubIssues(issues={789: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={789: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -202,7 +202,7 @@ def test_track_learn_evaluation_fails_without_issue(tmp_path: Path) -> None:
             current_branches={cwd: "main"},  # Not a P{issue} branch
         )
         fake_issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = runner.invoke(
             track_learn_evaluation,
@@ -226,7 +226,7 @@ def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None
     """Test error with invalid plan identifier."""
     fake_git = FakeGit()
     fake_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -260,7 +260,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
     plan_body = format_plan_header_body_for_test()
     test_issue = create_test_issue(200, "Test Plan #200", plan_body)
     fake_issues = FakeGitHubIssues(issues={200: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={200: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -298,7 +298,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
     """Test JSON output structure on error."""
     fake_git = FakeGit()
     fake_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):

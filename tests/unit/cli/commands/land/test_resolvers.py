@@ -14,7 +14,7 @@ from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 
@@ -84,7 +84,7 @@ class TestResolveCurrentBranch:
             worktrees={repo_root: [worktree_info]},
             default_branches={repo_root: "main"},
         )
-        fake_github = FakeGitHub(prs_by_branch={branch: pr_details})
+        fake_github = FakeLocalGitHub(prs_by_branch={branch: pr_details})
 
         ctx = context_for_test(
             git=fake_git,
@@ -140,8 +140,8 @@ class TestResolveCurrentBranch:
             worktrees={repo_root: [worktree_info]},
             default_branches={repo_root: "main"},
         )
-        # No PR configured in FakeGitHub
-        fake_github = FakeGitHub()
+        # No PR configured in FakeLocalGitHub
+        fake_github = FakeLocalGitHub()
 
         ctx = context_for_test(
             git=fake_git,
@@ -178,7 +178,7 @@ class TestResolvePr:
             current_branches={repo_root: "other-branch"},
             default_branches={repo_root: "main"},
         )
-        fake_github = FakeGitHub(pr_details={pr_number: pr_details})
+        fake_github = FakeLocalGitHub(pr_details={pr_number: pr_details})
 
         ctx = context_for_test(
             git=fake_git,
@@ -216,7 +216,7 @@ class TestResolvePr:
             current_branches={repo_root: "main"},
             default_branches={repo_root: "main"},
         )
-        fake_github = FakeGitHub(pr_details={pr_number: pr_details})
+        fake_github = FakeLocalGitHub(pr_details={pr_number: pr_details})
 
         ctx = context_for_test(
             git=fake_git,
@@ -246,7 +246,7 @@ class TestResolvePr:
         )
 
         fake_git = FakeGit(default_branches={repo_root: "main"})
-        fake_github = FakeGitHub(pr_details={pr_number: pr_details})
+        fake_github = FakeLocalGitHub(pr_details={pr_number: pr_details})
 
         ctx = context_for_test(
             git=fake_git,
@@ -266,7 +266,7 @@ class TestResolvePr:
         pr_number = 999
 
         fake_git = FakeGit(default_branches={repo_root: "main"})
-        fake_github = FakeGitHub()  # No PRs
+        fake_github = FakeLocalGitHub()  # No PRs
 
         ctx = context_for_test(
             git=fake_git,
@@ -303,7 +303,7 @@ class TestResolveBranch:
             current_branches={repo_root: "other-branch"},
             default_branches={repo_root: "main"},
         )
-        fake_github = FakeGitHub(prs_by_branch={branch: pr_details})
+        fake_github = FakeLocalGitHub(prs_by_branch={branch: pr_details})
 
         ctx = context_for_test(
             git=fake_git,
@@ -347,7 +347,7 @@ class TestResolveBranch:
             worktrees={repo_root: [worktree_info]},
             default_branches={repo_root: "main"},
         )
-        fake_github = FakeGitHub(prs_by_branch={branch: pr_details})
+        fake_github = FakeLocalGitHub(prs_by_branch={branch: pr_details})
 
         ctx = context_for_test(
             git=fake_git,
@@ -373,7 +373,7 @@ class TestResolveBranch:
             current_branches={repo_root: "main"},
             default_branches={repo_root: "main"},
         )
-        fake_github = FakeGitHub()  # No PRs
+        fake_github = FakeLocalGitHub()  # No PRs
 
         ctx = context_for_test(
             git=fake_git,

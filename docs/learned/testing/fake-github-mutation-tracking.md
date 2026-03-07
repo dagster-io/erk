@@ -1,17 +1,17 @@
 ---
-title: FakeGitHub Mutation Tracking
+title: FakeLocalGitHub Mutation Tracking
 read_when:
-  - "asserting against FakeGitHub mutations in tests"
-  - "adding a new mutation tracking list to FakeGitHub or FakeGitHubIssues"
+  - "asserting against FakeLocalGitHub mutations in tests"
+  - "adding a new mutation tracking list to FakeLocalGitHub or FakeGitHubIssues"
   - "understanding tuple formats in fake gateway tracking lists"
 tripwires:
   - action: "adding a tracking list without documenting the tuple field order"
     warning: "Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong."
 ---
 
-# FakeGitHub Mutation Tracking
+# FakeLocalGitHub Mutation Tracking
 
-The `FakeGitHub` and `FakeGitHubIssues` classes track all mutations as lists of tuples. Tests assert against these lists to verify correct API call sequences without hitting real GitHub.
+The `FakeLocalGitHub` and `FakeGitHubIssues` classes track all mutations as lists of tuples. Tests assert against these lists to verify correct API call sequences without hitting real GitHub.
 
 ## Tuple Format Convention
 
@@ -19,7 +19,7 @@ The `FakeGitHub` and `FakeGitHubIssues` classes track all mutations as lists of 
 
 Every tracking list uses a typed tuple with a specific field order. The convention is `list[tuple[field1_type, field2_type, ...]]` with the field order documented in the property docstring.
 
-## FakeGitHub Tracking Lists
+## FakeLocalGitHub Tracking Lists
 
 | List                       | Tuple Format                                      | Example                                          |
 | -------------------------- | ------------------------------------------------- | ------------------------------------------------ |
@@ -57,7 +57,7 @@ Every tracking list uses a typed tuple with a specific field order. The conventi
 
 ## Three-Component Pattern for Tracking Lists
 
-Each mutation tracking list follows a three-component pattern. Example: `mark_pr_ready` in `FakeGitHub`:
+Each mutation tracking list follows a three-component pattern. Example: `mark_pr_ready` in `FakeLocalGitHub`:
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:164, FakeGitHub.__init__ -->
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py:771-777, FakeGitHub.mark_pr_ready -->

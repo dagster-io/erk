@@ -71,12 +71,12 @@ def setup_submit_context(
                            These are passed to FakeGit's remote_branches keyed by repo_root.
 
     Returns (ctx, fake_git, fake_github, fake_backing, fake_graphite, repo_root)
-        where fake_backing is FakeGitHub.
+        where fake_backing is FakeLocalGitHub.
     """
     from erk_shared.context.types import GlobalConfig
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
@@ -94,7 +94,7 @@ def setup_submit_context(
         git_kwargs["remote_branches"] = {repo_root: remote_branch_refs}
 
     fake_git = FakeGit(**git_kwargs)
-    fake_github = FakeGitHub(**(github_kwargs or {}))
+    fake_github = FakeLocalGitHub(**(github_kwargs or {}))
     # When use_graphite=False, use GraphiteDisabled sentinel to match production behavior
     if use_graphite:
         fake_graphite = FakeGraphite(**(graphite_kwargs or {}))

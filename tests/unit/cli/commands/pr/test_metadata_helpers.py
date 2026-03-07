@@ -9,7 +9,7 @@ from erk.cli.commands.pr.metadata_helpers import (
 )
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.time.fake import FakeTime
@@ -18,8 +18,8 @@ from tests.commands.dispatch.conftest import create_plan, make_plan_body
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
-def _register_branch_alias(fake_github: FakeGitHub, plan_id: str, branch: str) -> None:
-    """Register an additional branch name for an existing PR in FakeGitHub.
+def _register_branch_alias(fake_github: FakeLocalGitHub, plan_id: str, branch: str) -> None:
+    """Register an additional branch name for an existing PR in FakeLocalGitHub.
 
     PlannedPRBackend resolves plans via get_pr_for_branch, which requires
     the PR to be registered under the actual branch name.
@@ -49,7 +49,7 @@ def _create_backend_with_raw_body(
     *,
     branch: str = "",
     author: str = "test-author",
-) -> tuple[PlannedPRBackend, FakeGitHub]:
+) -> tuple[PlannedPRBackend, FakeLocalGitHub]:
     """Create PlannedPRBackend with a PR that has the exact given body (no auto-synthesis).
 
     This bypasses create_plan_store_with_plans which auto-synthesizes a plan-header
@@ -88,7 +88,7 @@ def _create_backend_with_raw_body(
             head_branch=branch,
         ),
     }
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={pr_number: pr_details},
         prs=prs,
     )
@@ -99,8 +99,8 @@ def _create_backend_with_raw_body(
 # --- Tests for maybe_update_plan_dispatch_metadata ---
 
 
-class _FakeGitHubNoNodeId(FakeGitHub):
-    """FakeGitHub that returns None for node_id lookups."""
+class _FakeGitHubNoNodeId(FakeLocalGitHub):
+    """FakeLocalGitHub that returns None for node_id lookups."""
 
     def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> None:
         return None

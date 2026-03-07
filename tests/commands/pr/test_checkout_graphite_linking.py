@@ -13,7 +13,7 @@ from click.testing import CliRunner
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -64,7 +64,7 @@ def test_pr_checkout_tracks_untracked_branch_with_graphite() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={100: pr_details})
+        github = FakeLocalGitHub(pr_details={100: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -111,7 +111,7 @@ def test_pr_checkout_skips_graphite_for_existing_worktree() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={101: pr_details})
+        github = FakeLocalGitHub(pr_details={101: pr_details})
         existing_wt_path = env.repo.worktrees_dir / "existing-branch"
         existing_wt_path.mkdir(parents=True, exist_ok=True)
         git = FakeGit(
@@ -153,7 +153,7 @@ def test_pr_checkout_skips_graphite_for_already_tracked_not_diverged() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={102: pr_details})
+        github = FakeLocalGitHub(pr_details={102: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -209,7 +209,7 @@ def test_pr_checkout_skips_graphite_for_fork_prs() -> None:
             is_cross_repository=True,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={103: pr_details})
+        github = FakeLocalGitHub(pr_details={103: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -245,7 +245,7 @@ def test_pr_checkout_retracks_diverged_graphite_branch() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={105: pr_details})
+        github = FakeLocalGitHub(pr_details={105: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -306,7 +306,7 @@ def test_pr_checkout_script_mode_includes_gt_submit_for_new_graphite_worktree() 
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={110: pr_details})
+        github = FakeLocalGitHub(pr_details={110: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -342,7 +342,7 @@ def test_pr_checkout_script_mode_no_gt_submit_for_existing_worktree() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={111: pr_details})
+        github = FakeLocalGitHub(pr_details={111: pr_details})
         existing_wt_path = env.repo.worktrees_dir / "existing-submit-branch"
         existing_wt_path.mkdir(parents=True, exist_ok=True)
         git = FakeGit(
@@ -384,7 +384,7 @@ def test_pr_checkout_script_mode_no_gt_submit_for_fork_prs() -> None:
             is_cross_repository=True,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={112: pr_details})
+        github = FakeLocalGitHub(pr_details={112: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -419,7 +419,7 @@ def test_pr_checkout_script_mode_no_gt_submit_without_sync_flag() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={113: pr_details})
+        github = FakeLocalGitHub(pr_details={113: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -454,7 +454,7 @@ def test_pr_checkout_skips_graphite_when_disabled() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={104: pr_details})
+        github = FakeLocalGitHub(pr_details={104: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -498,7 +498,7 @@ def test_pr_checkout_stacked_pr_rebases_then_tracks() -> None:
             state="OPEN",
             base_ref_name="parent-branch",
         )
-        github = FakeGitHub(pr_details={120: pr_details})
+        github = FakeLocalGitHub(pr_details={120: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},

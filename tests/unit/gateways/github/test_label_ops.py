@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.label_ops import AddLabelsResult, add_labels_resilient
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
@@ -39,7 +39,7 @@ REPO_ROOT = Path("/fake/repo")
 
 def test_all_labels_added_successfully() -> None:
     """All labels added without errors."""
-    fake_github = FakeGitHub(pr_details={42: _make_pr_details()})
+    fake_github = FakeLocalGitHub(pr_details={42: _make_pr_details()})
     fake_time = FakeTime()
 
     result = add_labels_resilient(
@@ -62,7 +62,7 @@ def test_all_labels_added_successfully() -> None:
 
 def test_empty_labels_returns_success() -> None:
     """Empty labels tuple returns success with no mutations."""
-    fake_github = FakeGitHub(pr_details={42: _make_pr_details()})
+    fake_github = FakeLocalGitHub(pr_details={42: _make_pr_details()})
     fake_time = FakeTime()
 
     result = add_labels_resilient(
@@ -80,7 +80,7 @@ def test_empty_labels_returns_success() -> None:
 
 def test_transient_error_retries_then_exhausted() -> None:
     """Transient error exhausts retries and records failure."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: _make_pr_details()},
         add_label_errors={"flaky": "connection reset by peer"},
     )
@@ -104,7 +104,7 @@ def test_transient_error_retries_then_exhausted() -> None:
 
 def test_permanent_error_no_retry() -> None:
     """Non-transient error fails immediately without retrying."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: _make_pr_details()},
         add_label_errors={"bad": "label not found"},
     )
@@ -127,7 +127,7 @@ def test_permanent_error_no_retry() -> None:
 
 def test_mixed_success_and_failure() -> None:
     """Some labels succeed, some fail — partial success reported."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: _make_pr_details()},
         add_label_errors={"bad-label": "permission denied"},
     )

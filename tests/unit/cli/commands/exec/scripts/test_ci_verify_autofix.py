@@ -21,7 +21,7 @@ from erk.cli.commands.exec.scripts.ci_verify_autofix import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.ci_runner.fake import FakeCIRunner
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 
 
 class TestVerifyAutofixImpl:
@@ -29,7 +29,7 @@ class TestVerifyAutofixImpl:
 
     def test_no_new_commit_returns_early(self, tmp_path: Path) -> None:
         """When current SHA matches original, return immediately without running checks."""
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
         ci_runner = FakeCIRunner.create_passing_all()
 
         result = _verify_autofix_impl(
@@ -53,7 +53,7 @@ class TestVerifyAutofixImpl:
 
     def test_new_commit_runs_checks(self, tmp_path: Path) -> None:
         """When SHA changes, run all checks."""
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
         ci_runner = FakeCIRunner.create_passing_all()
 
         result = _verify_autofix_impl(
@@ -81,7 +81,7 @@ class TestVerifyAutofixImpl:
 
     def test_failed_check_reports_failure(self, tmp_path: Path) -> None:
         """When a check fails, report failure status."""
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
         ci_runner = FakeCIRunner(failing_checks={"lint"}, missing_commands=None)
 
         result = _verify_autofix_impl(
@@ -135,7 +135,7 @@ class TestCiVerifyAutofixCommand:
         git = FakeGit(
             branch_heads={"HEAD": "abc123"},
         )
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
         ctx = ErkContext.for_test(git=git, github=github, cwd=tmp_path)
 
         runner = CliRunner()
@@ -155,7 +155,7 @@ class TestCiVerifyAutofixCommand:
         git = FakeGit(
             branch_heads={"HEAD": "def456"},
         )
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
         ctx = ErkContext.for_test(git=git, github=github, cwd=tmp_path)
 
         runner = CliRunner()

@@ -16,8 +16,8 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.dry_run import DryRunGitHub
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.dry_run import DryRunLocalGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import BodyText, GitHubRepoId
@@ -105,7 +105,7 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
     ctx = context_for_test(
         git=DryRunGit(git_ops),
         global_config=global_config_ops,
-        github=DryRunGitHub(FakeGitHub()),
+        github=DryRunLocalGitHub(FakeLocalGitHub()),
         graphite=DryRunGraphite(FakeGraphite()),
         shell=FakeShell(),
         cwd=repo,

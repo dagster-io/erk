@@ -2,12 +2,12 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRReviewComment, PRReviewThread
 
 
 def test_fake_get_pr_review_threads_returns_configured_threads() -> None:
-    """Test that FakeGitHub returns pre-configured review threads."""
+    """Test that FakeLocalGitHub returns pre-configured review threads."""
     comment = PRReviewComment(
         id=1,
         body="This should use LBYL pattern",
@@ -25,7 +25,7 @@ def test_fake_get_pr_review_threads_returns_configured_threads() -> None:
         comments=(comment,),
     )
 
-    github = FakeGitHub(pr_review_threads={123: [thread]})
+    github = FakeLocalGitHub(pr_review_threads={123: [thread]})
 
     threads = github.get_pr_review_threads(Path("/repo"), 123)
 
@@ -57,7 +57,7 @@ def test_fake_get_pr_review_threads_filters_resolved_by_default() -> None:
         comments=(),
     )
 
-    github = FakeGitHub(pr_review_threads={123: [unresolved_thread, resolved_thread]})
+    github = FakeLocalGitHub(pr_review_threads={123: [unresolved_thread, resolved_thread]})
 
     threads = github.get_pr_review_threads(Path("/repo"), 123)
 
@@ -84,7 +84,7 @@ def test_fake_get_pr_review_threads_includes_resolved_when_requested() -> None:
         comments=(),
     )
 
-    github = FakeGitHub(pr_review_threads={123: [unresolved_thread, resolved_thread]})
+    github = FakeLocalGitHub(pr_review_threads={123: [unresolved_thread, resolved_thread]})
 
     threads = github.get_pr_review_threads(Path("/repo"), 123, include_resolved=True)
 
@@ -118,7 +118,7 @@ def test_fake_get_pr_review_threads_sorts_by_path_and_line() -> None:
         comments=(),
     )
 
-    github = FakeGitHub(pr_review_threads={123: [thread_b_20, thread_a_10, thread_a_5]})
+    github = FakeLocalGitHub(pr_review_threads={123: [thread_b_20, thread_a_10, thread_a_5]})
 
     threads = github.get_pr_review_threads(Path("/repo"), 123)
 
@@ -130,7 +130,7 @@ def test_fake_get_pr_review_threads_sorts_by_path_and_line() -> None:
 
 def test_fake_get_pr_review_threads_returns_empty_for_unknown_pr() -> None:
     """Test that unknown PR numbers return empty list."""
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
 
     threads = github.get_pr_review_threads(Path("/repo"), 999)
 
@@ -139,7 +139,7 @@ def test_fake_get_pr_review_threads_returns_empty_for_unknown_pr() -> None:
 
 def test_fake_resolve_review_thread_tracks_resolution() -> None:
     """Test that resolve_review_thread tracks the resolved thread ID."""
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
 
     result = github.resolve_review_thread(Path("/repo"), "PRRT_1")
 
@@ -158,7 +158,7 @@ def test_fake_resolve_review_thread_affects_subsequent_queries() -> None:
         comments=(),
     )
 
-    github = FakeGitHub(pr_review_threads={123: [thread]})
+    github = FakeLocalGitHub(pr_review_threads={123: [thread]})
 
     # Before resolution
     threads = github.get_pr_review_threads(Path("/repo"), 123)
@@ -227,7 +227,7 @@ def test_pr_review_thread_outdated_flag() -> None:
 
 def test_fake_add_review_thread_reply_tracks_replies() -> None:
     """Test that add_review_thread_reply tracks the thread_id and body."""
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
 
     result = github.add_review_thread_reply(Path("/repo"), "PRRT_1", "Fixed this issue")
 
@@ -238,7 +238,7 @@ def test_fake_add_review_thread_reply_tracks_replies() -> None:
 
 def test_fake_add_review_thread_reply_multiple() -> None:
     """Test that multiple replies are tracked."""
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
 
     github.add_review_thread_reply(Path("/repo"), "PRRT_1", "First reply")
     github.add_review_thread_reply(Path("/repo"), "PRRT_2", "Second reply")

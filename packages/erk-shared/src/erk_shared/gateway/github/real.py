@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.debug import debug_log
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
@@ -92,7 +92,7 @@ USE_REST_API_FOR_PR_MUTATIONS = True
 USE_GH_PR_MERGE_FOR_LANDING = True
 
 
-class RealGitHub(GitHub):
+class RealLocalGitHub(LocalGitHub):
     """Production implementation using gh CLI.
 
     All GitHub operations execute actual gh commands via subprocess.
@@ -105,7 +105,7 @@ class RealGitHub(GitHub):
         *,
         issues: GitHubIssues,
     ):
-        """Initialize RealGitHub.
+        """Initialize RealLocalGitHub.
 
         Args:
             time: Time abstraction for sleep operations
@@ -122,10 +122,10 @@ class RealGitHub(GitHub):
         cls,
         time: Time | None = None,
         repo_info: RepoInfo | None = None,
-    ) -> "RealGitHub":
-        """Create RealGitHub with test defaults.
+    ) -> "RealLocalGitHub":
+        """Create RealLocalGitHub with test defaults.
 
-        Convenience factory for tests that need RealGitHub but don't care
+        Convenience factory for tests that need RealLocalGitHub but don't care
         about the issues gateway configuration.
 
         Args:
@@ -133,7 +133,7 @@ class RealGitHub(GitHub):
             repo_info: Repository info (defaults to None)
 
         Returns:
-            RealGitHub configured with FakeGitHubIssues
+            RealLocalGitHub configured with FakeGitHubIssues
         """
         from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
         from erk_shared.gateway.time.fake import FakeTime

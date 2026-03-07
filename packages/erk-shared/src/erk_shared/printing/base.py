@@ -2,7 +2,7 @@
 
 This module provides a base class that contains common functionality for
 printing wrapper implementations, eliminating code duplication across
-PrintingGit, PrintingGitHub, and PrintingGraphite.
+PrintingGit, PrintingLocalGitHub, and PrintingGraphite.
 """
 
 from typing import Any

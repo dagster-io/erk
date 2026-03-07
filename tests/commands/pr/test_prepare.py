@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -40,7 +40,7 @@ def test_prepare_auto_detects_plan_from_branch() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(number=200, head_ref_name="feature-branch")
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={200: pr_details},
             prs_by_branch={"feature-branch": pr_details},
         )
@@ -67,7 +67,7 @@ def test_prepare_with_explicit_plan_number() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(number=300, head_ref_name="other-branch")
-        github = FakeGitHub(pr_details={300: pr_details})
+        github = FakeLocalGitHub(pr_details={300: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -90,7 +90,7 @@ def test_prepare_error_no_pr_for_branch() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -114,7 +114,7 @@ def test_prepare_idempotent_existing_impl_context() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
         pr_details = _make_pr_details(number=400, head_ref_name="feature-branch")
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={400: pr_details},
             prs_by_branch={"feature-branch": pr_details},
         )

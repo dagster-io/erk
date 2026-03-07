@@ -7,7 +7,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     capture_existing_pr_body,
 )
 from erk.core.context import context_for_test
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 _PR_BODY_WITH_METADATA = (
@@ -74,7 +74,7 @@ def _pr_with_metadata(*, number: int = 42, branch: str = "feature") -> PRDetails
 def test_captures_full_body_from_existing_pr(tmp_path: Path) -> None:
     """Full PR body is captured from existing PR."""
     pr = _pr_with_metadata(number=42, branch="feature")
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
     )
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
@@ -88,7 +88,7 @@ def test_captures_full_body_from_existing_pr(tmp_path: Path) -> None:
 
 def test_no_pr_returns_state_unchanged(tmp_path: Path) -> None:
     """When no PR exists for the branch, state is returned unchanged."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
@@ -115,7 +115,7 @@ def test_pr_with_empty_body_returns_state_unchanged(tmp_path: Path) -> None:
         owner="owner",
         repo="repo",
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
     )
     ctx = context_for_test(github=fake_github, cwd=tmp_path)

@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
@@ -105,7 +105,7 @@ def test_add_node_to_existing_phase() -> None:
             "--description",
             "Add error handling",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -137,7 +137,7 @@ def test_add_node_to_phase_2() -> None:
             "--description",
             "Add integration tests",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -161,7 +161,7 @@ def test_add_node_auto_generates_slug() -> None:
             "--description",
             "Clean up dead code paths",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -189,7 +189,7 @@ def test_add_node_with_explicit_slug() -> None:
             "--slug",
             "cleanup-dead-code",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -219,7 +219,7 @@ def test_add_node_with_depends_on() -> None:
             "--depends-on",
             "1.2",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -248,7 +248,7 @@ def test_add_node_with_reason() -> None:
             "--reason",
             "Added during re-evaluation",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -273,7 +273,7 @@ def test_add_node_issue_not_found() -> None:
             "--description",
             "Some task",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -297,7 +297,7 @@ def test_add_node_no_roadmap() -> None:
             "--description",
             "Some task",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -321,7 +321,7 @@ def test_add_node_to_new_phase() -> None:
             "--description",
             "New phase task",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -351,7 +351,7 @@ def test_add_node_with_explicit_status() -> None:
             "--status",
             "planning",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -453,7 +453,7 @@ def test_add_node_rerenders_comment_table() -> None:
             "--description",
             "Add error handling",
         ],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"

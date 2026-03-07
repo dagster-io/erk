@@ -9,7 +9,7 @@ from erk.cli.commands.exec.scripts.push_and_create_pr import push_and_create_pr
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 
@@ -53,7 +53,7 @@ def test_success_json_output(tmp_path: Path) -> None:
             )
         },
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -104,7 +104,7 @@ def test_force_flag_propagation(tmp_path: Path) -> None:
             )
         },
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -135,7 +135,7 @@ def test_no_graphite_flag(tmp_path: Path) -> None:
             )
         },
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )

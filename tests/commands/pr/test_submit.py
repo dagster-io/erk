@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -112,7 +112,7 @@ def test_pr_submit_skip_description_skips_claude_check() -> None:
             pr_info={"feature": pr_info},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -192,7 +192,7 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
 
         # Graphite not authenticated - but core submit will still work
         graphite = FakeGraphite(authenticated=False)
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -233,7 +233,7 @@ def test_pr_submit_fails_when_github_not_authenticated() -> None:
 
         # Graphite authenticated, GitHub not authenticated
         graphite = FakeGraphite(authenticated=True)
-        github = FakeGitHub(authenticated=False)
+        github = FakeLocalGitHub(authenticated=False)
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(
@@ -285,7 +285,7 @@ def test_pr_submit_fails_when_no_commits_ahead() -> None:
                 ),
             },
         )
-        github = FakeGitHub(authenticated=True)
+        github = FakeLocalGitHub(authenticated=True)
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(
@@ -367,7 +367,7 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
                 ),
             },
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -458,7 +458,7 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
         )
 
         # Configure GitHub to fail on PR updates
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -481,7 +481,7 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
-        # The RuntimeError from FakeGitHub propagates up - command fails
+        # The RuntimeError from FakeLocalGitHub propagates up - command fails
         assert result.exit_code != 0
         # The exception message should be captured in the output or exception
         assert result.exception is not None or "PR update failed" in result.output
@@ -552,7 +552,7 @@ def test_pr_submit_success(tmp_path: Path) -> None:
             pr_info={"feature": pr_info},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -686,7 +686,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
             pr_info={"branch-2": pr_info},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"branch-2": pr_info},
             pr_details={456: pr_details},
@@ -785,7 +785,7 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
             },
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -882,7 +882,7 @@ def test_pr_submit_short_force_flag() -> None:
             },
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -978,7 +978,7 @@ def test_pr_submit_shows_graphite_url() -> None:
             pr_info={"feature": pr_info},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -1010,7 +1010,7 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
     """Test that output shows 'created' when PR is newly created."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # No existing PR - FakeGitHub.create_pr will be called
+        # No existing PR - FakeLocalGitHub.create_pr will be called
         # and return PR #999
 
         git = FakeGit(
@@ -1064,7 +1064,7 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
             labels=(),
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={},  # No existing PR
             pr_details={999: pr_details_999},  # Details for newly created PR
@@ -1150,7 +1150,7 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
         )
 
         # Neither feature nor parent-branch has a PR
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={},  # No PRs exist
         )
@@ -1242,7 +1242,7 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
         )
 
         # Existing PR configured
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},  # Existing PR
             pr_details={123: pr_details},
@@ -1392,7 +1392,7 @@ plan_comment_id: 1000
             comments_with_urls={5823: [plan_comment]},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"P5823-add-feature": pr_info},
             pr_details={123: pr_details},
@@ -1556,7 +1556,7 @@ objective_issue: 5000
             comments_with_urls={5823: [plan_comment]},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"P5823-add-feature": pr_info},
             pr_details={123: pr_details},
@@ -1655,7 +1655,7 @@ def test_pr_submit_shows_no_plan_message() -> None:
             pr_info={"feature": pr_info},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -1731,7 +1731,7 @@ def test_pr_submit_graphite_flow_detects_remote_divergence() -> None:
             },
         )
 
-        github = FakeGitHub(authenticated=True)
+        github = FakeLocalGitHub(authenticated=True)
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(
@@ -1823,7 +1823,7 @@ def test_pr_submit_graphite_flow_force_bypasses_divergence() -> None:
             pr_info={"feature": pr_info},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -1919,7 +1919,7 @@ def test_pr_submit_graphite_flow_skips_check_for_new_branch() -> None:
             pr_info={"feature": pr_info},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},

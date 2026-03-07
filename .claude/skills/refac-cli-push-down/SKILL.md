@@ -66,7 +66,7 @@ A prompt is a candidate for push-down when you spot any of these smells:
 4. **Write tests first.** Create a test file alongside or in a parallel test directory. Test the happy path, error cases, and edge cases. Mock external dependencies (API calls, file system, subprocess).
 
    ```python
-   def test_check_pr_status_returns_open_prs(fake_github: FakeGitHub) -> None:
+   def test_check_pr_status_returns_open_prs(fake_github: FakeLocalGitHub) -> None:
        fake_github.add_pr(number=42, state="open", title="Add feature")
        result = invoke_cli(["check-pr-status", "--repo", "myorg/myrepo", "--json"])
        data = json.loads(result.output)

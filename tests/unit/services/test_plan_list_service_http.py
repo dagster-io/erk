@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from erk.core.services.plan_list_service import PlannedPRPlanListService
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.time.fake import FakeTime
@@ -71,7 +71,7 @@ def test_http_path_returns_plan_for_pr() -> None:
     rest_items = [_make_rest_issue_pr(number=42, title="My Plan")]
     http_client = _setup_http_client_for_plan(rest_items=rest_items, pr_numbers=[42])
 
-    service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
+    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
         labels=["erk-plan"],
@@ -90,7 +90,7 @@ def test_http_path_empty_response() -> None:
         response=[],
     )
 
-    service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
+    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
         labels=["erk-plan"],
@@ -123,7 +123,7 @@ def test_http_path_filters_non_pr_items() -> None:
     )
     http_client.set_response("graphql", response=_make_graphql_enrichment([42]))
 
-    service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
+    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
         labels=["erk-plan"],
@@ -148,7 +148,7 @@ def test_http_path_excludes_labels() -> None:
     )
     http_client.set_response("graphql", response=_make_graphql_enrichment([1]))
 
-    service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
+    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
         labels=["erk-plan"],
@@ -165,7 +165,7 @@ def test_http_path_populates_timing_data() -> None:
     rest_items = [_make_rest_issue_pr(number=42)]
     http_client = _setup_http_client_for_plan(rest_items=rest_items, pr_numbers=[42])
 
-    service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
+    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
         labels=["erk-plan"],
@@ -181,7 +181,7 @@ def test_http_path_skip_workflow_runs() -> None:
     rest_items = [_make_rest_issue_pr(number=42)]
     http_client = _setup_http_client_for_plan(rest_items=rest_items, pr_numbers=[42])
 
-    service = PlannedPRPlanListService(FakeGitHub(), time=FakeTime())
+    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
     result = service.get_plan_list_data(
         location=TEST_LOCATION,
         labels=["erk-plan"],

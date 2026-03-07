@@ -15,7 +15,7 @@ from erk.core.workflow_smoke_test import (
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 
@@ -30,7 +30,7 @@ class TestRunSmokeTest:
             default_branches={repo_root: "main"},
             current_branches={repo_root: "main"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             auth_username="testuser",
         )
@@ -111,7 +111,7 @@ class TestCleanupSmokeTests:
                 ],
             },
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 "plnd/smoke-test-01-15-1430": PullRequestInfo(
                     number=42,
@@ -164,7 +164,7 @@ class TestCleanupSmokeTests:
                 repo_root: ["origin/main", "origin/feature/unrelated"],
             },
         )
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
 
         ctx = ErkContext.for_test(
             git=git,

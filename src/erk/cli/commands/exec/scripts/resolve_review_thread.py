@@ -38,7 +38,7 @@ import click
 from erk_shared.context.helpers import require_github, require_repo_root
 
 if TYPE_CHECKING:
-    from erk_shared.gateway.github.abc import GitHub
+    from erk_shared.gateway.github.abc import LocalGitHub
 
 T = TypeVar("T")
 
@@ -95,7 +95,7 @@ def _ensure_not_error(result: T | ResolveThreadError) -> T:
 
 
 def _add_comment_if_provided(
-    github: GitHub,
+    github: LocalGitHub,
     repo_root: Path,
     thread_id: str,
     comment: str | None,
@@ -120,7 +120,7 @@ def _add_comment_if_provided(
 
 
 def _resolve_single(
-    github: GitHub,
+    github: LocalGitHub,
     repo_root: Path,
     thread_id: str,
     comment: str | None,

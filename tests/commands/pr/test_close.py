@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
 from erk_shared.gateway.time.fake import FakeTime
@@ -117,7 +117,7 @@ def test_close_plan_closes_linked_open_prs() -> None:
             issues={42: issue},
             pr_references={42: [open_draft_pr, open_non_draft_pr]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={42: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
@@ -133,7 +133,7 @@ def test_close_plan_closes_linked_open_prs() -> None:
         assert result.exit_code == 0
         assert "Closed plan #42" in result.output
         assert "Closed 2 linked PR(s): #100, #101" in result.output
-        # Verify both linked PRs were closed via FakeGitHub
+        # Verify both linked PRs were closed via FakeLocalGitHub
         assert 100 in fake_github.closed_prs
         assert 101 in fake_github.closed_prs
 
@@ -167,7 +167,7 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
             issues={42: issue},
             pr_references={42: [open_pr, closed_pr, merged_pr]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={42: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
@@ -213,7 +213,7 @@ def test_close_plan_no_linked_prs() -> None:
             issues={42: issue},
             pr_references={},  # No linked PRs
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={42: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
@@ -297,7 +297,7 @@ def test_close_plan_reports_closed_prs() -> None:
             issues={42: issue},
             pr_references={42: [pr1, pr2, pr3]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={42: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )

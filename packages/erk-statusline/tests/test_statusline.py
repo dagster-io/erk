@@ -13,7 +13,7 @@ from erk_shared.gateway.branch_manager.fake import FakeBranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_statusline.context import StatuslineContext
 from erk_statusline.statusline import (
@@ -1352,7 +1352,7 @@ class TestGetGitRootViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=FakeBranchManager(),
         )
 
@@ -1375,7 +1375,7 @@ class TestGetGitStatusViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=FakeBranchManager(),
         )
 
@@ -1392,7 +1392,7 @@ class TestGetGitStatusViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=FakeBranchManager(),
         )
 
@@ -1419,7 +1419,7 @@ class TestGetWorktreeInfoViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=FakeBranchManager(),
         )
 
@@ -1445,7 +1445,7 @@ class TestGetWorktreeInfoViaGateway:
             cwd=linked_wt,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=FakeBranchManager(),
         )
 
@@ -1466,7 +1466,7 @@ class TestGetGitHubRepoViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=FakeBranchManager(),
         )
 
@@ -1482,7 +1482,7 @@ class TestGetGitHubRepoViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=FakeBranchManager(),
         )
 
@@ -1511,7 +1511,7 @@ class TestGetPrInfoViaBranchManager:
             cwd=repo_root,
             git=FakeGit(),
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=fake_branch_manager,
         )
 
@@ -1528,7 +1528,7 @@ class TestGetPrInfoViaBranchManager:
             cwd=repo_root,
             git=FakeGit(),
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=fake_branch_manager,
         )
 
@@ -1548,7 +1548,7 @@ class TestFetchGitHubDataViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=FakeBranchManager(),
         )
 
@@ -1565,7 +1565,7 @@ class TestFetchGitHubDataViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=fake_branch_manager,
         )
 
@@ -1606,7 +1606,7 @@ class TestFetchGitHubDataViaGateway:
             cwd=repo_root,
             git=fake_git,
             graphite=FakeGraphite(),
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             branch_manager=fake_branch_manager,
         )
 

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from erk_shared.gateway.github.issues.abc import GitHubIssues
 
 
-class GitHub(ABC):
+class LocalGitHub(ABC):
     """Abstract interface for GitHub operations.
 
     All implementations (real and fake) must implement this interface.

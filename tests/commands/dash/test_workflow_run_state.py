@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import WorkflowRun
 from erk_shared.plan_store.types import Plan, PlanState
@@ -96,7 +96,7 @@ last_dispatched_node_id: 'WFR_running'
         issues = FakeGitHubIssues(
             issues={1010: plan_to_issue(queued_plan), 1011: plan_to_issue(running_plan)},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(queued_plan), plan_to_issue(running_plan)],
             workflow_runs_by_node_id={"WFR_queued": queued_run, "WFR_running": running_run},
         )
@@ -193,7 +193,7 @@ last_dispatched_node_id: 'WFR_failed'
         issues = FakeGitHubIssues(
             issues={1020: plan_to_issue(success_plan), 1021: plan_to_issue(failed_plan)},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(success_plan), plan_to_issue(failed_plan)],
             workflow_runs_by_node_id={"WFR_success": success_run, "WFR_failed": failed_run},
         )
@@ -244,7 +244,7 @@ def test_plan_list_run_state_filter_no_matches() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1030: plan_to_issue(plan)}, comments={})
-        github = FakeGitHub(workflow_runs=[success_run])
+        github = FakeLocalGitHub(workflow_runs=[success_run])
         plan_service = build_fake_plan_list_service([plan])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service

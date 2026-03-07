@@ -1,7 +1,7 @@
 """Unit tests for close-pr command.
 
 Tests use PlannedPRBackend for dependency injection via ErkContext.for_test().
-The command uses PlanBackend which routes to FakeGitHub PR operations.
+The command uses PlanBackend which routes to FakeLocalGitHub PR operations.
 """
 
 import json
@@ -13,7 +13,7 @@ from erk.cli.commands.exec.scripts.close_pr import (
     close_pr,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRNotFound
@@ -47,7 +47,7 @@ def test_close_pr_success() -> None:
     """Test successfully closing an issue with a comment."""
     issue = _make_issue(42, "Test Issue", "This is the issue body")
     fake_gh = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -66,10 +66,10 @@ def test_close_pr_success() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["plan_number"] == 42
-    # PlannedPRBackend.add_comment returns string ID from FakeGitHub (starts at 1000000)
+    # PlannedPRBackend.add_comment returns string ID from FakeLocalGitHub (starts at 1000000)
     assert output["comment_id"] == "1000000"
 
-    # Verify the user comment was added (via PlannedPRBackend -> FakeGitHub.create_pr_comment)
+    # Verify the user comment was added (via PlannedPRBackend -> FakeLocalGitHub.create_pr_comment)
     assert len(fake_github.pr_comments) >= 1
     # First PR comment is the user's comment
     pr_number, comment_body = fake_github.pr_comments[0]
@@ -83,7 +83,7 @@ def test_close_pr_success() -> None:
 def test_close_pr_not_found() -> None:
     """Test error when issue does not exist."""
     fake_gh = FakeGitHubIssues()  # Empty issues dict
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -109,7 +109,7 @@ def test_close_pr_multiline() -> None:
     """Test closing with a multiline comment."""
     issue = _make_issue(100, "Plan Issue", "Implementation plan")
     fake_gh = FakeGitHubIssues(issues={100: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={100: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -137,7 +137,7 @@ See #1234 for details."""
     assert output["success"] is True
     assert output["plan_number"] == 100
 
-    # Verify the full comment was preserved (via FakeGitHub.create_pr_comment)
+    # Verify the full comment was preserved (via FakeLocalGitHub.create_pr_comment)
     pr_number, comment_body = fake_github.pr_comments[0]
     assert pr_number == 100
     assert "superseded" in comment_body
@@ -148,7 +148,7 @@ def test_close_pr_changes_state() -> None:
     """Test that the PR state changes to closed."""
     issue = _make_issue(55, "Open Issue", "Body")
     fake_gh = FakeGitHubIssues(issues={55: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={55: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -175,7 +175,7 @@ def test_close_pr_requires_comment_flag() -> None:
     """Test that --comment flag is required."""
     issue = _make_issue(10, "Test", "Body")
     fake_gh = FakeGitHubIssues(issues={10: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={10: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )

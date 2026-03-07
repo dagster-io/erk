@@ -8,7 +8,7 @@ from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
     get_issue_timeline_prs,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import PRReference
 
@@ -21,7 +21,7 @@ def test_get_issue_timeline_prs_returns_empty_list() -> None:
     result = runner.invoke(
         get_issue_timeline_prs,
         ["42"],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -44,7 +44,7 @@ def test_get_issue_timeline_prs_returns_pr_list() -> None:
     result = runner.invoke(
         get_issue_timeline_prs,
         ["42"],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -71,7 +71,7 @@ def test_get_issue_timeline_prs_different_issue_numbers() -> None:
     result = runner.invoke(
         get_issue_timeline_prs,
         ["42"],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -93,7 +93,7 @@ def test_json_output_structure() -> None:
     result = runner.invoke(
         get_issue_timeline_prs,
         ["123"],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0

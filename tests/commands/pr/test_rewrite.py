@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
@@ -62,7 +62,7 @@ def _make_rewrite_fakes(
     prompt_output: str = "Add awesome feature\n\nThis PR adds an awesome new feature.",
     prompt_error: str | None = None,
     submit_branch_error: SubmitBranchError | None = None,
-) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
+) -> tuple[FakeGit, FakeGraphite, FakeLocalGitHub, FakePromptExecutor]:
     """Create standard fakes for rewrite command tests."""
     pr_details = _make_pr_details(number=pr_number, branch=branch_name, body=pr_body)
 
@@ -98,7 +98,7 @@ def _make_rewrite_fakes(
         },
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         authenticated=True,
         prs_by_branch={branch_name: pr_details},
     )
@@ -204,7 +204,7 @@ def test_pr_rewrite_fails_when_no_pr() -> None:
             },
         )
         # No PR configured for the branch
-        github = FakeGitHub(authenticated=True)
+        github = FakeLocalGitHub(authenticated=True)
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(

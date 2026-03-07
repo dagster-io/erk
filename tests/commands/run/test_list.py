@@ -23,7 +23,7 @@ from erk.cli.commands.run.list_cmd import list_runs
 from erk.core.context import ErkContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
@@ -68,7 +68,7 @@ def _make_ctx(
     *,
     workflow_runs: list[WorkflowRun],
     issues: dict[int, IssueInfo] | None = None,
-    github: FakeGitHub | None = None,
+    github: FakeLocalGitHub | None = None,
 ) -> ErkContext:
     """Create a test context with standard setup."""
     git_ops = _make_git(tmp_path)
@@ -76,7 +76,7 @@ def _make_ctx(
         issues = {1: _make_issue(1, "Dummy")}
     issues_ops = FakeGitHubIssues(issues=issues)
     if github is None:
-        github = FakeGitHub(workflow_runs=workflow_runs)
+        github = FakeLocalGitHub(workflow_runs=workflow_runs)
     return create_test_context(
         git=git_ops,
         github=github,
@@ -88,7 +88,7 @@ def _make_ctx(
 def test_list_runs_empty_state(tmp_path: Path) -> None:
     """Test list command displays message when no runs found."""
     git_ops = _make_git(tmp_path)
-    github_ops = FakeGitHub(workflow_runs=[])
+    github_ops = FakeLocalGitHub(workflow_runs=[])
     ctx = create_test_context(
         git=git_ops,
         github=github_ops,
@@ -175,7 +175,7 @@ def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(
         has_conflicts=False,
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         workflow_runs=workflow_runs,
         pr_plan_linkages={142: [pr_info]},
     )
@@ -329,7 +329,7 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
         has_conflicts=False,
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         workflow_runs=workflow_runs,
         pr_plan_linkages={142: [pr_info]},
     )

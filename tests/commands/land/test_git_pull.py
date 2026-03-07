@@ -15,7 +15,7 @@ from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -53,7 +53,7 @@ def test_land_default_calls_git_pull_in_python() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -155,7 +155,7 @@ def test_land_no_pull_flag_skips_git_pull() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -257,7 +257,7 @@ def test_land_with_up_does_not_call_git_pull() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -364,7 +364,7 @@ def test_land_git_pull_failure_shows_warning_but_succeeds() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -476,7 +476,7 @@ def test_land_detects_diverged_branch_and_skips_pull() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -594,7 +594,7 @@ def test_land_pulls_when_behind_only() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -708,7 +708,7 @@ def test_land_skips_pull_when_up_to_date() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -824,7 +824,7 @@ def test_land_pull_failure_after_divergence_check_shows_warning() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,

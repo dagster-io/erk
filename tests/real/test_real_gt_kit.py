@@ -56,7 +56,7 @@ class TestRealGtKitOps:
 
     def test_github(self, git_repo: Path) -> None:
         """Test github attribute returns a GitHub implementation."""
-        from erk_shared.gateway.github.abc import GitHub
+        from erk_shared.gateway.github.abc import LocalGitHub
 
         ops = RealGtKit(git_repo)
 
@@ -64,4 +64,4 @@ class TestRealGtKitOps:
         github_ops = ops.github
 
         # Verify return type matches interface contract
-        assert isinstance(github_ops, GitHub)
+        assert isinstance(github_ops, LocalGitHub)

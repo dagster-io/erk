@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment
 from erk_shared.gateway.github.types import PRDetails, PRReviewComment, PRReviewThread
@@ -95,7 +95,7 @@ def test_get_pr_feedback_with_pr_number(tmp_path: Path) -> None:
     comments = [make_issue_comment(100, "Please update docs", author="reviewer1", pr_number=123)]
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         issues_gateway=fake_github_issues,
         pr_details={123: pr_details},
         pr_review_threads={123: [thread]},
@@ -139,7 +139,7 @@ def test_get_pr_feedback_auto_detect_branch(tmp_path: Path) -> None:
     comments = [make_issue_comment(200, "Looks good", author="reviewer", pr_number=42)]
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={42: comments})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         issues_gateway=fake_github_issues,
         prs_by_branch={"my-feature": pr_details},
         pr_review_threads={42: [thread]},
@@ -171,7 +171,7 @@ def test_get_pr_feedback_no_comments(tmp_path: Path) -> None:
     pr_details = make_pr_details(123, branch="feature-branch")
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         issues_gateway=fake_github_issues,
         pr_details={123: pr_details},
         pr_review_threads={123: []},
@@ -210,7 +210,7 @@ def test_get_pr_feedback_include_resolved(tmp_path: Path) -> None:
     pr_details = make_pr_details(123, branch="feature-branch")
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         issues_gateway=fake_github_issues,
         pr_details={123: pr_details},
         pr_review_threads={123: [unresolved, resolved]},
@@ -247,7 +247,7 @@ def test_get_pr_feedback_filters_resolved_by_default(tmp_path: Path) -> None:
     pr_details = make_pr_details(123, branch="feature-branch")
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         issues_gateway=fake_github_issues,
         pr_details={123: pr_details},
         pr_review_threads={123: [unresolved, resolved]},
@@ -299,7 +299,7 @@ def test_get_pr_feedback_filters_null_thread_ids(tmp_path: Path) -> None:
     pr_details = make_pr_details(123, branch="feature-branch")
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         issues_gateway=fake_github_issues,
         pr_details={123: pr_details},
         pr_review_threads={123: [valid_thread, invalid_thread]},
@@ -334,7 +334,7 @@ def test_get_pr_feedback_filters_null_thread_ids(tmp_path: Path) -> None:
 def test_get_pr_feedback_pr_not_found(tmp_path: Path) -> None:
     """Test error when PR doesn't exist."""
     fake_github_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues)
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -360,7 +360,7 @@ def test_get_pr_feedback_pr_not_found(tmp_path: Path) -> None:
 def test_get_pr_feedback_no_branch_detected(tmp_path: Path) -> None:
     """Test error when no branch can be detected and no --pr specified."""
     fake_github_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues)
     fake_git = FakeGit()  # No current branch configured
     runner = CliRunner()
 
@@ -397,7 +397,7 @@ def test_get_pr_feedback_json_structure(tmp_path: Path) -> None:
     comments = [make_issue_comment(100, "Discussion comment", author="reviewer", pr_number=123)]
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         issues_gateway=fake_github_issues,
         pr_details={123: pr_details},
         pr_review_threads={123: [thread]},

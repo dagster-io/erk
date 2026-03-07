@@ -14,7 +14,7 @@ from erk.core.prompt_executor import PromptExecutor
 from erk.core.script_writer import ScriptWriter
 from erk_shared.gateway.completion.fake import FakeCompletion
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.shell.fake import FakeShell
@@ -22,7 +22,7 @@ from erk_shared.gateway.shell.fake import FakeShell
 
 def create_test_context(
     git: FakeGit | None = None,
-    github: FakeGitHub | None = None,
+    github: FakeLocalGitHub | None = None,
     issues: GitHubIssues | None = None,
     graphite: FakeGraphite | None = None,
     shell: FakeShell | None = None,
@@ -43,8 +43,8 @@ def create_test_context(
     Args:
         git: Optional FakeGit with test configuration.
                 If None, creates empty FakeGit.
-        github: Optional FakeGitHub with test configuration.
-                   If None, creates empty FakeGitHub.
+        github: Optional FakeLocalGitHub with test configuration.
+                   If None, creates empty FakeLocalGitHub.
         issues: Optional GitHubIssues implementation (Real/Fake/DryRun).
                    If None, creates empty FakeGitHubIssues.
         graphite: Optional FakeGraphite with test configuration.

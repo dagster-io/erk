@@ -13,7 +13,7 @@ from erk.core.context import context_for_test
 from erk.core.plan_context_provider import PlanContext
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
@@ -124,7 +124,7 @@ def test_updates_pr_title_and_body(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -163,7 +163,7 @@ def test_adds_learn_plan_label(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -184,7 +184,7 @@ def test_amends_commit_with_title_and_body(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -211,7 +211,7 @@ def test_cleans_up_diff_file(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -238,7 +238,7 @@ def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -279,7 +279,7 @@ def test_retracks_graphite_after_amend(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -315,7 +315,7 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -351,7 +351,7 @@ def test_marks_planned_pr_as_ready(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -371,7 +371,7 @@ def test_does_not_mark_non_planned_pr_as_ready(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -391,7 +391,7 @@ def test_publishes_planned_pr(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -411,7 +411,7 @@ def test_does_not_publish_non_planned_pr(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -502,7 +502,7 @@ def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
         issues_gateway=fake_issues,
@@ -529,7 +529,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )

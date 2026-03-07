@@ -5,7 +5,7 @@ from pathlib import Path
 from erk.cli.commands.pr.dispatch_cmd import _detect_plan_number_from_context
 from erk_shared.context.testing import context_for_test
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 
@@ -43,7 +43,7 @@ def test_fallback_to_plan_backend_when_no_impl_dir(tmp_path: Path) -> None:
     branch = "plnd/fix-something-01-01-1200"
     pr_details = _make_pr_details(number=42, branch=branch)
 
-    github = FakeGitHub(prs_by_branch={branch: pr_details})
+    github = FakeLocalGitHub(prs_by_branch={branch: pr_details})
     ctx = context_for_test(github=github, cwd=tmp_path, repo_root=tmp_path)
     repo = _repo_context(tmp_path)
 

@@ -1,7 +1,7 @@
 """Unit tests for get_pr_for_plan exec command.
 
 Tests direct PR lookup by plan ID (which IS the PR number in planned-PR backend).
-Uses FakeGitHub and FakeGitHubIssues for fast, reliable testing.
+Uses FakeLocalGitHub and FakeGitHubIssues for fast, reliable testing.
 """
 
 import json
@@ -10,7 +10,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
@@ -49,7 +49,7 @@ def test_get_pr_for_plan_success() -> None:
     """Test successful PR lookup by plan ID (which IS the PR number)."""
     pr_number = 5103
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(
+    fake_gh = FakeLocalGitHub(
         issues_gateway=fake_issues,
         pr_details={pr_number: make_pr_details(number=pr_number, head_ref_name="plan-branch")},
     )
@@ -80,7 +80,7 @@ def test_get_pr_for_plan_success() -> None:
 def test_get_pr_for_plan_not_found() -> None:
     """Test error when PR doesn't exist."""
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(issues_gateway=fake_issues)
+    fake_gh = FakeLocalGitHub(issues_gateway=fake_issues)
     planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 
@@ -108,7 +108,7 @@ def test_json_output_structure_success() -> None:
     """Test JSON output structure on success."""
     pr_number = 5103
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(
+    fake_gh = FakeLocalGitHub(
         issues_gateway=fake_issues,
         pr_details={pr_number: make_pr_details(number=pr_number, head_ref_name="plan-branch")},
     )
@@ -148,7 +148,7 @@ def test_json_output_structure_success() -> None:
 def test_json_output_structure_error() -> None:
     """Test JSON output structure on error."""
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(issues_gateway=fake_issues)
+    fake_gh = FakeLocalGitHub(issues_gateway=fake_issues)
     planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 
@@ -181,7 +181,7 @@ def test_get_pr_for_plan_planned_pr_backend() -> None:
     """Test that planned-PR backend looks up PR directly by plan_id (which IS the PR number)."""
     pr_number = 7670
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(
+    fake_gh = FakeLocalGitHub(
         issues_gateway=fake_issues,
         pr_details={pr_number: make_pr_details(number=pr_number, head_ref_name="plan-fix-learn")},
     )
@@ -205,7 +205,7 @@ def test_get_pr_for_plan_planned_pr_backend() -> None:
 def test_get_pr_for_plan_planned_pr_backend_not_found() -> None:
     """Test that planned-PR backend returns error when PR doesn't exist."""
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(issues_gateway=fake_issues)
+    fake_gh = FakeLocalGitHub(issues_gateway=fake_issues)
     planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=FakeTime())
     runner = CliRunner()
 

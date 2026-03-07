@@ -18,13 +18,13 @@ from erk_shared.plan_store.types import PlanNotFound
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
     from erk.core.repo_discovery import RepoContext
-    from erk_shared.gateway.github.abc import GitHub
+    from erk_shared.gateway.github.abc import LocalGitHub
 
 
 def write_dispatch_metadata(
     *,
     plan_backend: PlanBackend,
-    github: GitHub,
+    github: LocalGitHub,
     repo_root: Path,
     plan_number: int,
     run_id: str,

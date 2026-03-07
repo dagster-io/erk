@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
 from erk_shared.gateway.github.transient_errors import is_transient_error
 from erk_shared.gateway.time.abc import Time
@@ -26,7 +26,7 @@ class AddLabelsResult:
 
 
 def add_labels_resilient(
-    github: GitHub,
+    github: LocalGitHub,
     *,
     time: Time,
     repo_root: Path,

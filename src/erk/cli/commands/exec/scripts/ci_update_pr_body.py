@@ -52,7 +52,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
@@ -164,7 +164,7 @@ def _build_pr_body(
 def _update_pr_body_impl(
     *,
     git: Git,
-    github: GitHub,
+    github: LocalGitHub,
     executor: PromptExecutor,
     repo_root: Path,
     run_id: str | None,

@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -45,7 +45,7 @@ def test_land_with_up_navigates_to_child_branch() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -143,7 +143,7 @@ def test_land_with_up_no_children_fails_before_merge() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -234,7 +234,7 @@ def test_land_with_up_multiple_children_fails_before_merge() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -338,7 +338,7 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,

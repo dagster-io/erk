@@ -10,7 +10,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 
@@ -51,7 +51,7 @@ def test_incremental_dispatch_success(tmp_path: Path) -> None:
 
     pr = _make_pr(42, branch="feature/my-feature")
     fake_git = _make_fake_git(tmp_path)
-    fake_github = FakeGitHub(pr_details={42: pr})
+    fake_github = FakeLocalGitHub(pr_details={42: pr})
 
     runner = CliRunner()
     result = runner.invoke(
@@ -92,7 +92,7 @@ def test_incremental_dispatch_pr_not_found(tmp_path: Path) -> None:
     plan_file = tmp_path / "plan.md"
     plan_file.write_text("# Plan", encoding="utf-8")
 
-    fake_github = FakeGitHub(pr_details={})
+    fake_github = FakeLocalGitHub(pr_details={})
 
     runner = CliRunner()
     result = runner.invoke(
@@ -113,7 +113,7 @@ def test_incremental_dispatch_pr_not_open(tmp_path: Path) -> None:
     plan_file.write_text("# Plan", encoding="utf-8")
 
     pr = _make_pr(42, state="CLOSED")
-    fake_github = FakeGitHub(pr_details={42: pr})
+    fake_github = FakeLocalGitHub(pr_details={42: pr})
 
     runner = CliRunner()
     result = runner.invoke(
@@ -135,7 +135,7 @@ def test_incremental_dispatch_display_format(tmp_path: Path) -> None:
 
     pr = _make_pr(42, branch="feature/display-test")
     fake_git = _make_fake_git(tmp_path)
-    fake_github = FakeGitHub(pr_details={42: pr})
+    fake_github = FakeLocalGitHub(pr_details={42: pr})
 
     runner = CliRunner()
     result = runner.invoke(
@@ -172,7 +172,7 @@ def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
         },
         existing_paths={worktree_path},
     )
-    fake_github = FakeGitHub(pr_details={42: pr})
+    fake_github = FakeLocalGitHub(pr_details={42: pr})
     fake_graphite = FakeGraphite()
 
     runner = CliRunner()

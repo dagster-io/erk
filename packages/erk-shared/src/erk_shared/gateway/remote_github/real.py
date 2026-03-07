@@ -156,7 +156,7 @@ class RealRemoteGitHub(RemoteGitHub):
     ) -> str:
         """Dispatch a workflow and poll for the run ID.
 
-        Replicates the dispatch+poll pattern from RealGitHub.trigger_workflow
+        Replicates the dispatch+poll pattern from RealLocalGitHub.trigger_workflow
         but uses HttpClient instead of subprocess.
         """
         distinct_id = _generate_distinct_id()

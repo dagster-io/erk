@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
@@ -29,8 +29,8 @@ def _next_branch() -> str:
 
 
 def _make_planned_pr_backend() -> PlanBackend:
-    """Create a PlannedPRBackend backed by FakeGitHub."""
-    fake_github = FakeGitHub()
+    """Create a PlannedPRBackend backed by FakeLocalGitHub."""
+    fake_github = FakeLocalGitHub()
     return PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
 
@@ -44,7 +44,7 @@ def _create_metadata(backend: PlanBackend) -> dict[str, object]:
 
 def _make_planned_pr_backend_with_plan() -> tuple[PlanBackend, str]:
     """Create PlannedPRBackend with a pre-existing plan by creating one via API."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(
@@ -511,7 +511,7 @@ def test_get_comments_returns_empty_list_for_no_comments(
 
 def test_get_comments_returns_preconfigured_comments_planned_pr() -> None:
     """PlannedPRBackend returns pre-configured comments from FakeGitHubIssues."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
     # Create a plan so the PR exists

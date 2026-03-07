@@ -8,7 +8,7 @@ from pathlib import Path
 
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import (
@@ -183,7 +183,7 @@ def test_execute_diff_extraction_success(tmp_path: Path) -> None:
         diff_to_branch={(tmp_path, "main"): local_diff},
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         pr_bases={123: "main"},
     )
 
@@ -231,7 +231,7 @@ def test_execute_diff_extraction_truncates_large_diff(tmp_path: Path) -> None:
         diff_to_branch={(tmp_path, "main"): large_diff},
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         pr_bases={123: "main"},
     )
 
@@ -272,7 +272,7 @@ def test_execute_diff_extraction_progress_messages(tmp_path: Path) -> None:
         diff_to_branch={(tmp_path, "main"): local_diff},
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         pr_bases={123: "main"},
     )
 
@@ -315,7 +315,7 @@ def test_execute_diff_extraction_uses_passed_base_branch(tmp_path: Path) -> None
         },
     )
 
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
 
     ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
 

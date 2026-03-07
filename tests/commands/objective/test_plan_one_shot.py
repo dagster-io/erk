@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
@@ -141,7 +141,7 @@ def _build_one_shot_context(
         trunk_branches={env.cwd: "main"},
         current_branches={env.cwd: "main"},
     )
-    github = FakeGitHub(authenticated=True, issues_gateway=issues)
+    github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
     if remote is None:
         remote = _make_remote()
 
@@ -537,7 +537,7 @@ def test_plan_one_shot_next_fails_on_branch_without_objective() -> None:
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "plnd/setup-infra-01-15-1200"},
         )
-        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
         ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
 
         result = runner.invoke(

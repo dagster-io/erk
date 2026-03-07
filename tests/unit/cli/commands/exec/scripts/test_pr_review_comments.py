@@ -1,7 +1,7 @@
 """Unit tests for PR review comment kit CLI commands.
 
 Tests get-pr-review-comments and resolve-review-thread commands.
-Uses FakeGitHub for fast, reliable testing.
+Uses FakeLocalGitHub for fast, reliable testing.
 """
 
 import json
@@ -17,7 +17,7 @@ from erk.cli.commands.exec.scripts.resolve_review_thread import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PRReviewComment, PRReviewThread
 
 
@@ -77,7 +77,7 @@ def test_get_pr_review_comments_with_pr_number(tmp_path: Path) -> None:
     thread = make_thread("PRRT_1", "src/foo.py", 42, "Fix this code")
     pr_details = make_pr_details(123)
 
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: pr_details},
         pr_review_threads={123: [thread]},
     )
@@ -109,7 +109,7 @@ def test_get_pr_review_comments_filters_resolved_by_default(tmp_path: Path) -> N
     resolved = make_thread("PRRT_2", "src/bar.py", 20, "Resolved", is_resolved=True)
     pr_details = make_pr_details(123)
 
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: pr_details},
         pr_review_threads={123: [unresolved, resolved]},
     )
@@ -137,7 +137,7 @@ def test_get_pr_review_comments_include_resolved_flag(tmp_path: Path) -> None:
     resolved = make_thread("PRRT_2", "src/bar.py", 20, "Resolved", is_resolved=True)
     pr_details = make_pr_details(123)
 
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: pr_details},
         pr_review_threads={123: [unresolved, resolved]},
     )
@@ -162,7 +162,7 @@ def test_get_pr_review_comments_no_threads(tmp_path: Path) -> None:
     """Test get-pr-review-comments returns empty list when no threads."""
     pr_details = make_pr_details(123)
 
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: pr_details},
         pr_review_threads={123: []},
     )
@@ -215,7 +215,7 @@ def test_get_pr_review_comments_filters_null_ids(tmp_path: Path) -> None:
 
     pr_details = make_pr_details(123)
 
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: pr_details},
         pr_review_threads={123: [valid_thread, invalid_thread]},
     )
@@ -246,7 +246,7 @@ def test_get_pr_review_comments_filters_null_ids(tmp_path: Path) -> None:
 
 def test_get_pr_review_comments_pr_not_found(tmp_path: Path) -> None:
     """Test error when PR doesn't exist."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -272,7 +272,7 @@ def test_get_pr_review_comments_pr_not_found(tmp_path: Path) -> None:
 
 def test_resolve_review_thread_success(tmp_path: Path) -> None:
     """Test successfully resolving a review thread."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -296,7 +296,7 @@ def test_resolve_review_thread_success(tmp_path: Path) -> None:
 
 def test_resolve_review_thread_multiple(tmp_path: Path) -> None:
     """Test resolving multiple threads tracks all of them."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -329,7 +329,7 @@ def test_resolve_review_thread_multiple(tmp_path: Path) -> None:
 
 def test_resolve_review_thread_missing_thread_id(tmp_path: Path) -> None:
     """Test error when thread-id is missing."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -357,7 +357,7 @@ def test_get_pr_review_comments_json_structure(tmp_path: Path) -> None:
     thread = make_thread("PRRT_1", "src/foo.py", 42, "Fix this", is_outdated=True)
     pr_details = make_pr_details(123)
 
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: pr_details},
         pr_review_threads={123: [thread]},
     )
@@ -400,7 +400,7 @@ def test_get_pr_review_comments_json_structure(tmp_path: Path) -> None:
 
 def test_resolve_review_thread_json_structure_success(tmp_path: Path) -> None:
     """Test JSON output structure for resolve-review-thread success."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -428,7 +428,7 @@ def test_resolve_review_thread_json_structure_success(tmp_path: Path) -> None:
 
 def test_resolve_review_thread_with_comment(tmp_path: Path) -> None:
     """Test resolving a review thread with a comment."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -458,7 +458,7 @@ def test_resolve_review_thread_with_comment(tmp_path: Path) -> None:
 
 def test_resolve_review_thread_without_comment(tmp_path: Path) -> None:
     """Test resolving a review thread without a comment."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -483,7 +483,7 @@ def test_resolve_review_thread_without_comment(tmp_path: Path) -> None:
 
 def test_resolve_review_thread_json_structure_with_comment(tmp_path: Path) -> None:
     """Test JSON output structure includes comment_added field."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 

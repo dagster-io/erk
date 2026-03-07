@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 
@@ -36,7 +36,7 @@ def _make_pr_details(*, number: int = 42) -> PRDetails:
 
 def test_add_pr_labels_success() -> None:
     """Test successfully adding labels to a PR."""
-    fake_github = FakeGitHub(pr_details={42: _make_pr_details()})
+    fake_github = FakeLocalGitHub(pr_details={42: _make_pr_details()})
     runner = CliRunner()
 
     result = runner.invoke(
@@ -54,7 +54,7 @@ def test_add_pr_labels_success() -> None:
 
 def test_add_pr_labels_pr_not_found() -> None:
     """Test exit code 1 when PR does not exist."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     runner = CliRunner()
 
     result = runner.invoke(
@@ -71,7 +71,7 @@ def test_add_pr_labels_pr_not_found() -> None:
 
 def test_add_pr_labels_single_label() -> None:
     """Test adding a single label."""
-    fake_github = FakeGitHub(pr_details={10: _make_pr_details(number=10)})
+    fake_github = FakeLocalGitHub(pr_details={10: _make_pr_details(number=10)})
     runner = CliRunner()
 
     result = runner.invoke(

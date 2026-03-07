@@ -1,7 +1,7 @@
 """Pure parsing functions for GitHub PR and workflow data.
 
-Extracted from RealGitHub to enable reuse by both the subprocess path
-(via RealGitHub methods) and the direct HTTP path (via PlannedPRPlanListService).
+Extracted from RealLocalGitHub to enable reuse by both the subprocess path
+(via RealLocalGitHub methods) and the direct HTTP path (via PlannedPRPlanListService).
 
 All functions are stateless — they transform data without side effects.
 """

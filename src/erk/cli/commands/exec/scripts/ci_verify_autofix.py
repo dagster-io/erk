@@ -34,7 +34,7 @@ import click
 from erk_shared.context.helpers import require_cwd, require_git, require_github
 from erk_shared.gateway.ci_runner.abc import CIRunner
 from erk_shared.gateway.ci_runner.real import RealCIRunner
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 
 # Check definitions: (name, command)
 CI_CHECKS = [
@@ -110,7 +110,7 @@ def _verify_autofix_impl(
     repo: str,
     cwd: Path,
     current_sha: str,
-    github: GitHub,
+    github: LocalGitHub,
     ci_runner: CIRunner,
 ) -> VerifySuccess | VerifyError:
     """Main implementation of CI verification.

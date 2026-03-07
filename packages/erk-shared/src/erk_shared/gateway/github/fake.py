@@ -1,6 +1,6 @@
 """Fake GitHub operations for testing.
 
-FakeGitHub is an in-memory implementation that accepts pre-configured state
+FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
 in its constructor. Construct instances directly with keyword arguments.
 """
 
@@ -10,7 +10,7 @@ from datetime import UTC
 from pathlib import Path
 from typing import Any
 
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
@@ -34,7 +34,7 @@ from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.fake import FakeTime
 
 
-class FakeGitHub(GitHub):
+class FakeLocalGitHub(LocalGitHub):
     """In-memory fake implementation of GitHub operations.
 
     This class has NO public setup methods. All state is provided via constructor
@@ -80,7 +80,7 @@ class FakeGitHub(GitHub):
         time: Time | None = None,
         add_label_errors: dict[str, str] | None = None,
     ) -> None:
-        """Create FakeGitHub with pre-configured state.
+        """Create FakeLocalGitHub with pre-configured state.
 
         Args:
             repo_info: Repository owner/name info (defaults to test-owner/test-repo)

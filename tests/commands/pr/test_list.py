@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
@@ -64,7 +64,7 @@ def test_plan_list_no_filters() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         plan_service = build_fake_plan_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -112,7 +112,7 @@ def test_plan_list_filter_by_state() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
-        github = FakeGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
         plan_service = build_fake_plan_list_service([open_plan, closed_plan])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -160,7 +160,7 @@ def test_plan_list_filter_by_labels() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(plan_with_both), 2: plan_to_issue(plan_with_one)}
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)]
         )
         plan_service = build_fake_plan_list_service([plan_with_both, plan_with_one])
@@ -207,7 +207,7 @@ def test_plan_list_with_limit() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues=plans_dict)
-        github = FakeGitHub(issues_data=issues_list)
+        github = FakeLocalGitHub(issues_data=issues_list)
         plan_service = build_fake_plan_list_service(all_plans)
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -238,7 +238,7 @@ def test_plan_list_empty_results() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
         plan_service = build_fake_plan_list_service([plan])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -291,7 +291,7 @@ last_dispatched_node_id: 'WFR_all_flag'
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan)],
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
         )
@@ -342,7 +342,7 @@ def test_plan_list_sort_issue_default() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         plan_service = build_fake_plan_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -442,7 +442,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         )
 
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         plan_service = build_fake_plan_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
             env, git=git, issues=issues, github=github, plan_list_service=plan_service
@@ -573,7 +573,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         )
 
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         plan_service = build_fake_plan_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
             env, git=git, issues=issues, github=github, plan_list_service=plan_service
@@ -649,7 +649,9 @@ def test_pr_list_stage_filter() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(planned_plan), 2: plan_to_issue(impl_plan)}
         )
-        github = FakeGitHub(issues_data=[plan_to_issue(planned_plan), plan_to_issue(impl_plan)])
+        github = FakeLocalGitHub(
+            issues_data=[plan_to_issue(planned_plan), plan_to_issue(impl_plan)]
+        )
         plan_service = build_fake_plan_list_service([planned_plan, impl_plan])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -683,7 +685,7 @@ def test_pr_list_displays_enrichment_warnings() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
         plan_service = build_fake_plan_list_service(
             [plan],
             warnings=(
@@ -721,7 +723,7 @@ def test_pr_list_no_warnings_when_enrichment_succeeds() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
         plan_service = build_fake_plan_list_service([plan])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service

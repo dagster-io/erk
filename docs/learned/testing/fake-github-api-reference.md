@@ -1,23 +1,23 @@
 ---
-title: FakeGitHub API Reference
+title: FakeLocalGitHub API Reference
 read_when:
   - "writing tests that need fake GitHub PR or issue data"
-  - "understanding FakeGitHub.create_pr() auto-registration"
-  - "using mutation tracking in GitHub fake tests"
+  - "understanding FakeLocalGitHub.create_pr() auto-registration"
+  - "using mutation tracking in LocalGitHub fake tests"
 tripwires:
-  - action: "creating a FakeGitHub PR without checking auto-registration in _pr_details"
-    warning: "FakeGitHub.create_pr() auto-registers the PR in _pr_details. Manually adding to _pr_details after create_pr() causes duplicates."
+  - action: "creating a FakeLocalGitHub PR without checking auto-registration in _pr_details"
+    warning: "FakeLocalGitHub.create_pr() auto-registers the PR in _pr_details. Manually adding to _pr_details after create_pr() causes duplicates."
   - action: "using context_for_test without matching parameter names to the current API"
     warning: "context_for_test() parameter names evolve. Check the current function signature before adding new parameters."
 ---
 
-# FakeGitHub API Reference
+# FakeLocalGitHub API Reference
 
-Reference for the FakeGitHub test double used throughout erk's test suite. Covers auto-registration behavior, mutation tracking, and common patterns.
+Reference for the FakeLocalGitHub test double used throughout erk's test suite. Covers auto-registration behavior, mutation tracking, and common patterns.
 
-## FakeGitHub.create_pr() Auto-Registration
+## FakeLocalGitHub.create_pr() Auto-Registration
 
-When `FakeGitHub.create_pr()` is called, it automatically:
+When `FakeLocalGitHub.create_pr()` is called, it automatically:
 
 1. Creates the PR record
 2. Registers it in `_pr_details` for subsequent `get_pr_details()` calls
@@ -27,7 +27,7 @@ Do NOT manually add to `_pr_details` after calling `create_pr()` — this causes
 
 ## Mutation Tracking API
 
-FakeGitHub tracks all mutations for test assertions:
+FakeLocalGitHub tracks all mutations for test assertions:
 
 | Property                  | Tracks                           | Format                             |
 | ------------------------- | -------------------------------- | ---------------------------------- |
@@ -66,7 +66,7 @@ Common patterns for setting up test data:
 
 ```python
 # Configure PR details via constructor
-fake_github = FakeGitHub(
+fake_github = FakeLocalGitHub(
     pr_details={42: PRDetails(number=42, title="My PR", body="PR body content")},
 )
 
@@ -79,5 +79,5 @@ fake_issues = FakeGitHubIssues(
 ## Related Documentation
 
 - [Backend Testing Composition](backend-testing-composition.md) — Real backend + fake gateway testing
-- [FakeGitHub Mutation Tracking](fake-github-mutation-tracking.md) — Detailed mutation tracking patterns
+- [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) — Detailed mutation tracking patterns
 - [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) — Issue vs PR comment routing

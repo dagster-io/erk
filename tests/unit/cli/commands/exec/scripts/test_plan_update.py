@@ -10,7 +10,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
@@ -62,7 +62,7 @@ def test_plan_update_success() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -110,7 +110,7 @@ def test_plan_update_display_format() -> None:
         issues={99: issue},
         comments_with_urls={99: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={99: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -144,7 +144,7 @@ def test_plan_update_no_plan_found() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -172,7 +172,7 @@ def test_plan_update_issue_not_found() -> None:
     """Test error when issue does not exist."""
     # Empty issues dict - no issues
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     plan_content = """# Test
 
 - Step"""
@@ -203,7 +203,7 @@ def test_plan_update_formats_plan_content() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -242,7 +242,7 @@ def test_plan_update_updates_title_from_plan() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -292,7 +292,7 @@ def test_plan_update_learn_plan_gets_learn_tag() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -327,7 +327,7 @@ def test_plan_update_strips_plan_prefix_from_title() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -360,7 +360,7 @@ def test_plan_update_display_format_shows_new_title() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -424,7 +424,7 @@ def test_plan_update_pushes_to_branch() -> None:
     """Test that plan update pushes to branch when branch_name is in header_fields."""
     branch_name = "plnd/my-feature-branch"
     pr = _make_pr_details(42, "[erk-plan] Old Title", branch_name=branch_name)
-    fake_github = FakeGitHub(pr_details={42: pr})
+    fake_github = FakeLocalGitHub(pr_details={42: pr})
     fake_git = FakeGit()
     plan_content = """# Updated Plan
 
@@ -471,7 +471,7 @@ def test_plan_update_branch_push_failure_still_succeeds() -> None:
     """Test that push failure still reports success (PR body was updated)."""
     branch_name = "plnd/my-feature-branch"
     pr = _make_pr_details(42, "[erk-plan] Old Title", branch_name=branch_name)
-    fake_github = FakeGitHub(pr_details={42: pr})
+    fake_github = FakeLocalGitHub(pr_details={42: pr})
     fake_git = FakeGit(push_to_remote_error=PushError(message="rejected"))
     plan_content = """# Updated Plan
 
@@ -509,7 +509,7 @@ def test_plan_update_no_branch_skips_push() -> None:
         issues={42: issue},
         comments_with_urls={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )

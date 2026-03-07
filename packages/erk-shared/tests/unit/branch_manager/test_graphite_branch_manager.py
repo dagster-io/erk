@@ -10,7 +10,7 @@ from pathlib import Path
 
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -43,7 +43,7 @@ def test_delete_branch_uses_graphite_when_tracked_and_not_diverged() -> None:
         git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
-        github=FakeGitHub(),
+        github=FakeLocalGitHub(),
     )
     manager.delete_branch(repo_root, "feature-branch")
 
@@ -71,7 +71,7 @@ def test_delete_branch_falls_back_to_git_when_untracked() -> None:
         git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
-        github=FakeGitHub(),
+        github=FakeLocalGitHub(),
     )
     manager.delete_branch(repo_root, "feature-branch")
 
@@ -112,7 +112,7 @@ def test_delete_branch_uses_graphite_even_when_diverged() -> None:
         git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
-        github=FakeGitHub(),
+        github=FakeLocalGitHub(),
     )
     manager.delete_branch(repo_root, "feature-branch")
 
@@ -152,7 +152,7 @@ def test_delete_branch_uses_graphite_when_commit_sha_is_none() -> None:
         git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
-        github=FakeGitHub(),
+        github=FakeLocalGitHub(),
     )
     manager.delete_branch(repo_root, "feature-branch")
 
@@ -192,7 +192,7 @@ def test_delete_branch_uses_graphite_when_git_branch_head_is_none() -> None:
         git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
-        github=FakeGitHub(),
+        github=FakeLocalGitHub(),
     )
     manager.delete_branch(repo_root, "feature-branch")
 
@@ -223,7 +223,7 @@ def test_create_branch_tracks_with_graphite() -> None:
         git_branch_ops=fake_git_branch_ops,
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
-        github=FakeGitHub(),
+        github=FakeLocalGitHub(),
     )
     manager.create_branch(repo_root, "feature-branch", "main")
 
@@ -260,7 +260,7 @@ def test_get_pr_for_branch_returns_from_graphite_cache() -> None:
         },
     )
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     manager = GraphiteBranchManager(
         git=fake_git,
@@ -290,7 +290,7 @@ def test_get_pr_for_branch_falls_back_to_github_when_not_in_cache() -> None:
         pr_info={},  # Branch not in Graphite cache
     )
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={
             "feature-branch": PRDetails(
                 number=456,
@@ -338,7 +338,7 @@ def test_get_pr_for_branch_returns_none_when_not_found_anywhere() -> None:
         pr_info={},
     )
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()  # No PRs configured
+    fake_github = FakeLocalGitHub()  # No PRs configured
 
     manager = GraphiteBranchManager(
         git=fake_git,

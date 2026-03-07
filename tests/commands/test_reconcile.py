@@ -10,7 +10,7 @@ from erk.cli.commands.reconcile_pipeline import (
 )
 from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -100,7 +100,7 @@ def test_detects_merged_branches() -> None:
             },
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs_by_branch={"feature-1": _merged_pr(number=100, branch="feature-1")},
         )
         ctx = env.build_context(git=git, github=github)
@@ -142,7 +142,7 @@ def test_detects_multiple_merged_branches() -> None:
             },
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs_by_branch={
                 "feat-a": _merged_pr(number=101, branch="feat-a"),
                 "feat-b": _merged_pr(number=102, branch="feat-b"),
@@ -180,7 +180,7 @@ def test_skips_closed_not_merged() -> None:
             },
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs_by_branch={"abandoned": _closed_pr(number=200, branch="abandoned")},
         )
         ctx = env.build_context(git=git, github=github)
@@ -213,7 +213,7 @@ def test_skips_normal_branches() -> None:
             },
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs_by_branch={"active": _merged_pr(number=300, branch="active")},
         )
         ctx = env.build_context(git=git, github=github)
@@ -273,8 +273,8 @@ def test_skips_branch_with_no_pr() -> None:
             },
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        # No PRs configured in FakeGitHub → returns PRNotFound
-        github = FakeGitHub()
+        # No PRs configured in FakeLocalGitHub → returns PRNotFound
+        github = FakeLocalGitHub()
         ctx = env.build_context(git=git, github=github)
 
         result = detect_merged_branches(ctx, repo_root=env.cwd, main_repo_root=env.cwd)
@@ -305,7 +305,7 @@ def test_skips_open_pr() -> None:
             },
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs_by_branch={"open-pr": _open_pr(number=400, branch="open-pr")},
         )
         ctx = env.build_context(git=git, github=github)
@@ -386,7 +386,7 @@ def test_detected_branch_includes_metadata() -> None:
             },
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs_by_branch={
                 "feature-1": _merged_pr(number=500, branch="feature-1", title="Add feature one")
             },
@@ -654,7 +654,7 @@ def test_cli_dry_run() -> None:
             repository_roots={env.cwd: env.cwd},
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs_by_branch={
                 "feature-1": _merged_pr(number=100, branch="feature-1"),
             },
@@ -696,7 +696,7 @@ def test_cli_force_processes_without_prompt() -> None:
             repository_roots={env.cwd: env.cwd},
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs_by_branch={
                 "feature-1": _merged_pr(number=100, branch="feature-1"),
             },

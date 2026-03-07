@@ -11,7 +11,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -42,7 +42,7 @@ def test_land_by_number() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -146,7 +146,7 @@ def test_land_by_url() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=456,
@@ -250,7 +250,7 @@ def test_land_by_branch_name() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -353,7 +353,7 @@ def test_land_fork_pr() -> None:
         )
 
         # Fork PR - is_cross_repository=True
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             pr_details={
                 789: PRDetails(
                     number=789,

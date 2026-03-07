@@ -11,7 +11,7 @@ from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 
@@ -92,7 +92,7 @@ def _pr_details(
 
 def test_github_auth_failure_returns_error(tmp_path: Path) -> None:
     """SubmitError(error_type='github_auth_failed') when not authenticated."""
-    fake_github = FakeGitHub(authenticated=False)
+    fake_github = FakeLocalGitHub(authenticated=False)
     ctx = context_for_test(github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
@@ -158,7 +158,7 @@ def test_force_allows_diverged_push(tmp_path: Path) -> None:
         },
         repository_roots={tmp_path: tmp_path},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -186,7 +186,7 @@ def test_auto_rebase_when_behind_remote(tmp_path: Path) -> None:
         },
         repository_roots={tmp_path: tmp_path},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )
@@ -257,7 +257,7 @@ def test_creates_new_pr_when_none_exists(tmp_path: Path) -> None:
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
     # No existing PR for branch; get_pr returns PRNotFound for pr 999 too
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
     state = _make_state(cwd=tmp_path)
 
@@ -265,7 +265,7 @@ def test_creates_new_pr_when_none_exists(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     assert result.was_created is True
-    assert result.pr_number == 999  # FakeGitHub.create_pr returns 999
+    assert result.pr_number == 999  # FakeLocalGitHub.create_pr returns 999
     assert result.pr_url == "https://github.com/owner/repo/pull/999"
 
 
@@ -283,7 +283,7 @@ def test_parent_branch_no_pr_returns_error(tmp_path: Path) -> None:
         repository_roots={tmp_path: tmp_path},
     )
     # No PR for either branch
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
     state = _make_state(
         cwd=tmp_path,
@@ -311,7 +311,7 @@ def test_existing_pr_adds_footer_if_missing(tmp_path: Path) -> None:
         },
         repository_roots={tmp_path: tmp_path},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
         pr_details={42: pr},
     )

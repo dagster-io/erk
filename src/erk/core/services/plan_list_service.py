@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from erk_shared.core.plan_list_service import PlanListData as PlanListData
 from erk_shared.core.plan_list_service import PlanListService
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
@@ -47,7 +47,7 @@ class PlannedPRPlanListService(PlanListService):
     results to PlanListData with fully populated PullRequestInfo for display.
     """
 
-    def __init__(self, github: GitHub, *, time: Time) -> None:
+    def __init__(self, github: LocalGitHub, *, time: Time) -> None:
         """Initialize with GitHub gateway.
 
         Args:
@@ -196,7 +196,7 @@ class PlannedPRPlanListService(PlanListService):
         """Batch-fetch rich PR fields via HttpClient.graphql().
 
         Builds the same aliased pullRequest(number: N) query as
-        RealGitHub._enrich_prs_via_graphql but sends it via HTTP.
+        RealLocalGitHub._enrich_prs_via_graphql but sends it via HTTP.
         """
         pr_fields = """
             isDraft
@@ -336,7 +336,7 @@ class RealPlanListService(PlanListService):
     batch lookup of workflow runs by node_id.
     """
 
-    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -> None:
+    def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time) -> None:
         """Initialize PlanListService with required integrations.
 
         Args:

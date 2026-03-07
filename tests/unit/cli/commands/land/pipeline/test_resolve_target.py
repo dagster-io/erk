@@ -14,7 +14,7 @@ from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 
@@ -73,7 +73,7 @@ def test_resolves_current_branch(tmp_path: Path) -> None:
         worktrees={tmp_path: [worktree]},
         default_branches={tmp_path: "main"},
     )
-    fake_github = FakeGitHub(prs_by_branch={branch: pr_details})
+    fake_github = FakeLocalGitHub(prs_by_branch={branch: pr_details})
 
     ctx = context_for_test(
         git=fake_git,
@@ -106,7 +106,7 @@ def test_resolves_pr_by_number(tmp_path: Path) -> None:
         current_branches={tmp_path: "other-branch"},
         default_branches={tmp_path: "main"},
     )
-    fake_github = FakeGitHub(pr_details={pr_number: pr_details})
+    fake_github = FakeLocalGitHub(pr_details={pr_number: pr_details})
 
     ctx = context_for_test(
         git=fake_git,
@@ -136,7 +136,7 @@ def test_resolves_branch_by_name(tmp_path: Path) -> None:
         current_branches={tmp_path: "other-branch"},
         default_branches={tmp_path: "main"},
     )
-    fake_github = FakeGitHub(prs_by_branch={branch: pr_details})
+    fake_github = FakeLocalGitHub(prs_by_branch={branch: pr_details})
 
     ctx = context_for_test(
         git=fake_git,
@@ -160,7 +160,7 @@ def test_returns_error_for_up_flag_with_pr(tmp_path: Path) -> None:
     pr_details = _make_pr_details(pr_number=pr_number, branch="branch")
 
     fake_git = FakeGit(default_branches={tmp_path: "main"})
-    fake_github = FakeGitHub(pr_details={pr_number: pr_details})
+    fake_github = FakeLocalGitHub(pr_details={pr_number: pr_details})
 
     ctx = context_for_test(
         git=fake_git,

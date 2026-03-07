@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
@@ -39,7 +39,7 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={106: plan_to_issue(plan)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
         # No PR linkages configured
         plan_service = build_fake_plan_list_service([plan])
         ctx = build_workspace_test_context(

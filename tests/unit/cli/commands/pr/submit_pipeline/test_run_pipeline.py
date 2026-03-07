@@ -64,7 +64,7 @@ def test_threads_state_through_steps(tmp_path: Path) -> None:
     # Pipeline should get past prepare_state (populated branch_name)
     # and commit_wip (no-op, clean), then fail at push_and_create_pr
     # which checks GitHub auth.
-    # FakeGitHub defaults to authenticated=True, so it should fail at
+    # FakeLocalGitHub defaults to authenticated=True, so it should fail at
     # no_commits (0 commits ahead) since we didn't configure commits_ahead.
     assert isinstance(result, SubmitError)
     assert result.error_type == "no_commits"

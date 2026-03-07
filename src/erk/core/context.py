@@ -57,12 +57,12 @@ from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.real import RealGit
-from erk_shared.gateway.github.abc import GitHub
-from erk_shared.gateway.github.dry_run import DryRunGitHub
+from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.dry_run import DryRunLocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.github.parsing import parse_git_remote_url
-from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.github.types import RepoInfo
 from erk_shared.gateway.github_admin.abc import GitHubAdmin
 from erk_shared.gateway.github_admin.real import RealGitHubAdmin
@@ -141,7 +141,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
@@ -150,7 +150,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.time.fake import FakeTime
 
     fake_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_graphite = FakeGraphite()
     fake_graphite_branch_ops = FakeGraphiteBranchOps()
     fake_codespace = FakeCodespace()
@@ -201,7 +201,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 def context_for_test(
     *,
     git: Git | None = None,
-    github: GitHub | None = None,
+    github: LocalGitHub | None = None,
     github_admin: GitHubAdmin | None = None,
     issues: GitHubIssues | None = None,
     plan_store: PlanBackend | None = None,
@@ -239,7 +239,7 @@ def context_for_test(
 
     Args:
         git: Optional Git implementation. If None, creates empty FakeGit.
-        github: Optional GitHub implementation. If None, creates empty FakeGitHub.
+        github: Optional GitHub implementation. If None, creates empty FakeLocalGitHub.
         issues: Optional GitHubIssues implementation.
                    If None, creates empty FakeGitHubIssues.
         graphite: Optional Graphite implementation.
@@ -276,7 +276,7 @@ def context_for_test(
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.dry_run import DryRunGraphiteBranchOps
@@ -301,10 +301,10 @@ def context_for_test(
     # If github is provided without issues_gateway, use github as-is (it has its own issues)
     # Only inject issues if caller explicitly passed BOTH github and issues
     if github is None:
-        github = FakeGitHub(issues_gateway=issues)
-    elif isinstance(github, FakeGitHub) and issues_explicitly_passed:
+        github = FakeLocalGitHub(issues_gateway=issues)
+    elif isinstance(github, FakeLocalGitHub) and issues_explicitly_passed:
         # Caller passed both github and issues separately - inject issues
-        # into the existing FakeGitHub instance to preserve test references
+        # into the existing FakeLocalGitHub instance to preserve test references
         github._issues_gateway = issues
 
     if github_admin is None:
@@ -401,13 +401,13 @@ def context_for_test(
         repo = NoRepoSentinel()
 
     # Apply dry-run wrappers if needed (matching production behavior)
-    # Note: DryRunGitHub composes DryRunGitHubIssues internally for github.issues
+    # Note: DryRunLocalGitHub composes DryRunGitHubIssues internally for github.issues
     if dry_run:
         git = DryRunGit(git)
         graphite = DryRunGraphite(graphite)
         if graphite_branch_ops is not None:
             graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
-        github = DryRunGitHub(github)
+        github = DryRunLocalGitHub(github)
 
     return ErkContext(
         git=git,
@@ -624,7 +624,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # Create issues first, then compose into github
     # Use plans_repo for cross-repo plan management if configured
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
-    github: GitHub = RealGitHub(time, repo_info, issues=issues)
+    github: LocalGitHub = RealLocalGitHub(time, repo_info, issues=issues)
 
     plan_store: PlanBackend = PlannedPRBackend(github, issues, time=RealTime())
     plan_list_service: PlanListService = PlannedPRPlanListService(github, time=time)
@@ -633,15 +633,15 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     objective_list_service: ObjectiveListService = RealObjectiveListService(github, time=time)
 
     # 9. Apply dry-run wrappers if needed
-    # Note: DryRunGitHub composes DryRunGitHubIssues internally,
+    # Note: DryRunLocalGitHub composes DryRunGitHubIssues internally,
     # but we still wrap issues separately for ctx.issues backward compatibility
-    # Note: DryRunGitHub composes DryRunGitHubIssues internally for github.issues
+    # Note: DryRunLocalGitHub composes DryRunGitHubIssues internally for github.issues
     if dry_run:
         git = DryRunGit(git)
         graphite = DryRunGraphite(graphite)
         if graphite_branch_ops is not None:
             graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
-        github = DryRunGitHub(github)
+        github = DryRunLocalGitHub(github)
 
     # 10. Create prompt executor (FallbackPromptExecutor: API-first, CLI-fallback)
     from erk.core.anthropic_prompt_executor import AnthropicApiPromptExecutor

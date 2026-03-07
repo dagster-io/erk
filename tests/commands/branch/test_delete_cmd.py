@@ -9,7 +9,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -256,7 +256,7 @@ def test_delete_branch_with_all_flag_closes_pr() -> None:
 
         # Set up GitHub with a PR for the branch
         # PullRequestInfo: number, state, url, is_draft, title, checks_passing, owner, repo
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 "feature-pr": PullRequestInfo(
                     number=123,

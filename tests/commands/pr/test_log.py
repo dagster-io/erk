@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
@@ -93,7 +93,7 @@ def test_log_displays_timeline_chronologically() -> None:
         issues={42: issue},
         comments={42: [comment1, comment2, comment3]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -154,7 +154,7 @@ def test_log_json_output() -> None:
         issues={42: issue},
         comments={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -204,7 +204,7 @@ def test_log_with_no_events() -> None:
         issues={42: issue},
         comments={42: []},  # No comments
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -278,7 +278,7 @@ def test_log_with_all_event_types() -> None:
         issues={42: issue},
         comments={42: comments},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -361,7 +361,7 @@ def test_log_multiple_status_updates() -> None:
         issues={42: issue},
         comments={42: comments},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -414,7 +414,7 @@ def test_log_json_structure() -> None:
         issues={42: issue},
         comments={42: [comment]},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )

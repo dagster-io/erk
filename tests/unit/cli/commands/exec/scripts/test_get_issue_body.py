@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -42,7 +42,7 @@ def test_get_issue_body_success() -> None:
     result = runner.invoke(
         get_issue_body,
         ["42"],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -79,7 +79,7 @@ def hello():
     result = runner.invoke(
         get_issue_body,
         ["99"],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 0
@@ -97,7 +97,7 @@ def test_get_issue_body_not_found() -> None:
     result = runner.invoke(
         get_issue_body,
         ["999"],
-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
 
     assert result.exit_code == 1

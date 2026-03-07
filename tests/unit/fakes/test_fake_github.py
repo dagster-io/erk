@@ -1,13 +1,13 @@
-"""Tests for FakeGitHub test infrastructure.
+"""Tests for FakeLocalGitHub test infrastructure.
 
-These tests verify that FakeGitHub correctly simulates GitHub operations,
+These tests verify that FakeLocalGitHub correctly simulates GitHub operations,
 providing reliable test doubles for CLI tests.
 """
 
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
@@ -26,7 +26,7 @@ TEST_LOCATION = GitHubRepoLocation(root=sentinel_path(), repo_id=GitHubRepoId("o
 
 def test_fake_github_ops_update_pr_base_branch_single() -> None:
     """Test update_pr_base_branch tracks single update."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.update_pr_base_branch(sentinel_path(), 123, "main")
 
@@ -35,7 +35,7 @@ def test_fake_github_ops_update_pr_base_branch_single() -> None:
 
 def test_fake_github_ops_update_pr_base_branch_multiple() -> None:
     """Test update_pr_base_branch tracks multiple updates in order."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.update_pr_base_branch(sentinel_path(), 123, "main")
     ops.update_pr_base_branch(sentinel_path(), 456, "develop")
@@ -50,7 +50,7 @@ def test_fake_github_ops_update_pr_base_branch_multiple() -> None:
 
 def test_fake_github_ops_update_pr_base_branch_same_pr_twice() -> None:
     """Test update_pr_base_branch tracks same PR updated multiple times."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.update_pr_base_branch(sentinel_path(), 123, "main")
     ops.update_pr_base_branch(sentinel_path(), 123, "develop")
@@ -64,14 +64,14 @@ def test_fake_github_ops_update_pr_base_branch_same_pr_twice() -> None:
 
 def test_fake_github_ops_updated_pr_bases_empty_initially() -> None:
     """Test updated_pr_bases property is empty list initially."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     assert ops.updated_pr_bases == []
 
 
 def test_fake_github_ops_updated_pr_bases_read_only() -> None:
     """Test updated_pr_bases property returns list that can be read."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
     ops.update_pr_base_branch(sentinel_path(), 123, "main")
 
     # Should be able to read the list
@@ -141,7 +141,7 @@ def test_fake_github_ops_full_workflow() -> None:
             repo="testrepo",
         ),
     }
-    ops = FakeGitHub(prs=prs, pr_bases=pr_bases, pr_details=pr_details)
+    ops = FakeLocalGitHub(prs=prs, pr_bases=pr_bases, pr_details=pr_details)
 
     # Query operations
     pr = ops.get_pr_for_branch(sentinel_path(), "feature-1")
@@ -171,7 +171,7 @@ def test_fake_github_ops_full_workflow() -> None:
 
 def test_fake_github_ops_merge_pr_single() -> None:
     """Test merge_pr tracks single PR merge."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
 
@@ -180,7 +180,7 @@ def test_fake_github_ops_merge_pr_single() -> None:
 
 def test_fake_github_ops_merge_pr_multiple() -> None:
     """Test merge_pr tracks multiple PR merges in order."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
     ops.merge_pr(sentinel_path(), 456, squash=True, verbose=False)
@@ -191,7 +191,7 @@ def test_fake_github_ops_merge_pr_multiple() -> None:
 
 def test_fake_github_ops_merge_pr_same_pr_twice() -> None:
     """Test merge_pr tracks same PR merged multiple times."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
     ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
@@ -202,14 +202,14 @@ def test_fake_github_ops_merge_pr_same_pr_twice() -> None:
 
 def test_fake_github_ops_merged_prs_empty_initially() -> None:
     """Test merged_prs property is empty list initially."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     assert ops.merged_prs == []
 
 
 def test_fake_github_ops_merged_prs_read_only() -> None:
     """Test merged_prs property returns list that can be read."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
     ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
 
     # Should be able to read the list
@@ -220,7 +220,7 @@ def test_fake_github_ops_merged_prs_read_only() -> None:
 
 def test_fake_github_list_workflow_runs_empty() -> None:
     """Test list_workflow_runs returns empty list when no runs configured."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     result = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml")
 
@@ -245,7 +245,7 @@ def test_fake_github_list_workflow_runs_configured() -> None:
             head_sha="def456",
         ),
     ]
-    ops = FakeGitHub(workflow_runs=workflow_runs)
+    ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
     result = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml")
 
@@ -269,7 +269,7 @@ def test_fake_github_list_workflow_runs_ignores_workflow_param() -> None:
             head_sha="abc123",
         ),
     ]
-    ops = FakeGitHub(workflow_runs=workflow_runs)
+    ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
     # Should return same data regardless of workflow parameter
     result1 = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml")
@@ -291,7 +291,7 @@ def test_fake_github_list_workflow_runs_ignores_limit_param() -> None:
         )
         for i in range(10)
     ]
-    ops = FakeGitHub(workflow_runs=workflow_runs)
+    ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
     # Should return all runs regardless of limit parameter
     result = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml", limit=5)
@@ -317,7 +317,7 @@ def test_fake_github_list_workflow_runs_with_in_progress() -> None:
             head_sha="def456",
         ),
     ]
-    ops = FakeGitHub(workflow_runs=workflow_runs)
+    ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
     result = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml")
 
@@ -328,7 +328,7 @@ def test_fake_github_list_workflow_runs_with_in_progress() -> None:
 
 def test_fake_github_get_workflow_run_node_id_returns_fake_for_any_run() -> None:
     """Test get_workflow_run_node_id returns a generated fake node_id for any run_id."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     result = ops.get_workflow_run_node_id(sentinel_path(), "12345")
 
@@ -347,7 +347,7 @@ def test_fake_github_get_workflow_run_node_id_from_workflow_runs_list() -> None:
             head_sha="abc123",
         ),
     ]
-    ops = FakeGitHub(workflow_runs=workflow_runs)
+    ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
     result = ops.get_workflow_run_node_id(sentinel_path(), "123")
 
@@ -364,7 +364,7 @@ def test_fake_github_get_workflow_run_node_id_from_node_id_mapping() -> None:
         branch="feat-2",
         head_sha="def456",
     )
-    ops = FakeGitHub(workflow_runs_by_node_id={"WFR_kwXXXX": workflow_run})
+    ops = FakeLocalGitHub(workflow_runs_by_node_id={"WFR_kwXXXX": workflow_run})
 
     result = ops.get_workflow_run_node_id(sentinel_path(), "456")
 
@@ -381,7 +381,7 @@ def test_fake_github_get_workflow_run_node_id_prefers_node_id_mapping() -> None:
         branch="main",
         head_sha="ghi789",
     )
-    ops = FakeGitHub(
+    ops = FakeLocalGitHub(
         workflow_runs=[workflow_run],
         workflow_runs_by_node_id={"WFR_real_node": workflow_run},
     )
@@ -394,7 +394,7 @@ def test_fake_github_get_workflow_run_node_id_prefers_node_id_mapping() -> None:
 
 def test_fake_github_get_issues_with_pr_linkages_empty() -> None:
     """Test get_issues_with_pr_linkages returns empty when no issues configured."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
@@ -432,7 +432,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
         updated_at=now,
         author="test-user",
     )
-    ops = FakeGitHub(issues_data=[issue1, issue2])
+    ops = FakeLocalGitHub(issues_data=[issue1, issue2])
 
     issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
@@ -470,7 +470,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         updated_at=now,
         author="test-user",
     )
-    ops = FakeGitHub(issues_data=[open_issue, closed_issue])
+    ops = FakeLocalGitHub(issues_data=[open_issue, closed_issue])
 
     issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
@@ -507,7 +507,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
         owner="owner",
         repo="repo",
     )
-    ops = FakeGitHub(
+    ops = FakeLocalGitHub(
         issues_data=[issue],
         pr_plan_linkages={42: [pr]},
     )
@@ -540,7 +540,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
         )
         for i in range(10)
     ]
-    ops = FakeGitHub(issues_data=issues)
+    ops = FakeLocalGitHub(issues_data=issues)
 
     result_issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
@@ -589,7 +589,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
         repo="repo",
     )
     # Issue 2 has PR linkage but doesn't match label filter
-    ops = FakeGitHub(
+    ops = FakeLocalGitHub(
         issues_data=[issue1, issue2],
         pr_plan_linkages={2: [pr]},
     )
@@ -622,7 +622,7 @@ def test_fake_github_get_pr_returns_configured_details() -> None:
         repo="repo",
         labels=("enhancement", "reviewed"),
     )
-    ops = FakeGitHub(pr_details={123: pr_details})
+    ops = FakeLocalGitHub(pr_details={123: pr_details})
 
     result = ops.get_pr(sentinel_path(), 123)
 
@@ -640,7 +640,7 @@ def test_fake_github_get_pr_returns_configured_details() -> None:
 
 def test_fake_github_get_pr_returns_pr_not_found_for_missing_pr() -> None:
     """Test get_pr returns PRNotFound when PR number not found."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     result = ops.get_pr(sentinel_path(), 999)
 
@@ -651,7 +651,7 @@ def test_fake_github_get_pr_returns_pr_not_found_for_missing_pr() -> None:
 
 def test_fake_github_get_pr_returns_pr_not_found_with_empty_dict() -> None:
     """Test get_pr returns PRNotFound with explicitly empty pr_details dict."""
-    ops = FakeGitHub(pr_details={})
+    ops = FakeLocalGitHub(pr_details={})
 
     result = ops.get_pr(sentinel_path(), 123)
 
@@ -692,7 +692,7 @@ def test_fake_github_get_pr_multiple_prs() -> None:
         repo="repo",
         labels=("wip",),
     )
-    ops = FakeGitHub(pr_details={100: pr1, 200: pr2})
+    ops = FakeLocalGitHub(pr_details={100: pr1, 200: pr2})
 
     result1 = ops.get_pr(sentinel_path(), 100)
     result2 = ops.get_pr(sentinel_path(), 200)
@@ -734,7 +734,7 @@ def test_fake_github_get_pr_for_branch_returns_details() -> None:
         repo="repo",
         labels=("enhancement",),
     )
-    ops = FakeGitHub(
+    ops = FakeLocalGitHub(
         prs={"feature-branch": pr_info},
         pr_details={123: pr_details},
     )
@@ -754,7 +754,7 @@ def test_fake_github_get_pr_for_branch_returns_details() -> None:
 
 def test_fake_github_get_pr_for_branch_returns_pr_not_found_for_missing_branch() -> None:
     """Test get_pr_for_branch returns PRNotFound when branch has no PR."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     result = ops.get_pr_for_branch(sentinel_path(), "nonexistent-branch")
 
@@ -776,7 +776,7 @@ def test_fake_github_get_pr_for_branch_returns_pr_not_found_when_pr_exists_but_n
         repo="repo",
     )
     # prs configured but pr_details not configured for this PR number
-    ops = FakeGitHub(prs={"some-branch": pr_info})
+    ops = FakeLocalGitHub(prs={"some-branch": pr_info})
 
     result = ops.get_pr_for_branch(sentinel_path(), "some-branch")
 
@@ -786,7 +786,7 @@ def test_fake_github_get_pr_for_branch_returns_pr_not_found_when_pr_exists_but_n
 
 def test_fake_github_merge_pr_returns_merge_result_on_success() -> None:
     """Test merge_pr returns MergeResult on success."""
-    ops = FakeGitHub(merge_should_succeed=True)
+    ops = FakeLocalGitHub(merge_should_succeed=True)
 
     result = ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
 
@@ -797,7 +797,7 @@ def test_fake_github_merge_pr_returns_merge_result_on_success() -> None:
 
 def test_fake_github_merge_pr_returns_merge_error_on_failure() -> None:
     """Test merge_pr returns MergeError on failure."""
-    ops = FakeGitHub(merge_should_succeed=False)
+    ops = FakeLocalGitHub(merge_should_succeed=False)
 
     result = ops.merge_pr(sentinel_path(), 123, squash=True, verbose=False)
 
@@ -813,7 +813,7 @@ def test_fake_github_merge_pr_returns_merge_error_on_failure() -> None:
 
 def test_fake_github_create_pr_review_comment_returns_int_id() -> None:
     """Test create_pr_review_comment returns an integer comment ID."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     result = ops.create_pr_review_comment(
         repo_root=sentinel_path(),
@@ -831,7 +831,7 @@ def test_fake_github_create_pr_review_comment_returns_int_id() -> None:
 
 def test_fake_github_create_pr_review_comment_tracks_mutation() -> None:
     """Test create_pr_review_comment tracks the comment in mutation list."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.create_pr_review_comment(
         repo_root=sentinel_path(),
@@ -847,7 +847,7 @@ def test_fake_github_create_pr_review_comment_tracks_mutation() -> None:
 
 def test_fake_github_create_pr_review_comment_increments_ids() -> None:
     """Test create_pr_review_comment returns unique incrementing IDs."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     id1 = ops.create_pr_review_comment(
         repo_root=sentinel_path(),
@@ -875,7 +875,7 @@ def test_fake_github_create_pr_review_comment_increments_ids() -> None:
 
 def test_fake_github_create_pr_comment_returns_int_id() -> None:
     """Test create_pr_comment returns an integer comment ID."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     result = ops.create_pr_comment(sentinel_path(), 123, "Summary comment")
 
@@ -886,7 +886,7 @@ def test_fake_github_create_pr_comment_returns_int_id() -> None:
 
 def test_fake_github_create_pr_comment_tracks_mutation() -> None:
     """Test create_pr_comment tracks the comment in mutation list."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.create_pr_comment(sentinel_path(), 123, "Summary comment body")
 
@@ -898,7 +898,7 @@ def test_fake_github_create_pr_comment_tracks_mutation() -> None:
 
 def test_fake_github_find_pr_comment_by_marker_returns_none_when_not_found() -> None:
     """Test find_pr_comment_by_marker returns None when no matching comment."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     result = ops.find_pr_comment_by_marker(sentinel_path(), 123, "<!-- my-marker -->")
 
@@ -907,7 +907,7 @@ def test_fake_github_find_pr_comment_by_marker_returns_none_when_not_found() -> 
 
 def test_fake_github_find_pr_comment_by_marker_finds_matching_comment() -> None:
     """Test find_pr_comment_by_marker finds comment containing marker."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     # Create a comment with a marker
     ops.create_pr_comment(sentinel_path(), 123, "Header\n\n<!-- my-marker -->\n\nBody")
@@ -921,7 +921,7 @@ def test_fake_github_find_pr_comment_by_marker_finds_matching_comment() -> None:
 
 def test_fake_github_find_pr_comment_by_marker_ignores_different_pr() -> None:
     """Test find_pr_comment_by_marker only searches specified PR."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     # Create comment on PR 123
     ops.create_pr_comment(sentinel_path(), 123, "<!-- marker -->\nOn PR 123")
@@ -938,7 +938,7 @@ def test_fake_github_find_pr_comment_by_marker_ignores_different_pr() -> None:
 
 def test_fake_github_update_pr_comment_tracks_mutation() -> None:
     """Test update_pr_comment tracks the update in mutation list."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.update_pr_comment(sentinel_path(), 12345, "Updated body")
 
@@ -952,7 +952,7 @@ def test_fake_github_update_pr_comment_tracks_mutation() -> None:
 
 def test_create_pr_returns_incrementing_numbers() -> None:
     """Test create_pr returns unique incrementing PR numbers."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     pr1 = ops.create_pr(sentinel_path(), "branch-1", "Title 1", "Body 1")
     pr2 = ops.create_pr(sentinel_path(), "branch-2", "Title 2", "Body 2")
@@ -964,7 +964,7 @@ def test_create_pr_returns_incrementing_numbers() -> None:
 
 def test_create_pr_auto_registers_pr_details() -> None:
     """Test create_pr automatically registers PRDetails for get_pr() lookups."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     pr_number = ops.create_pr(
         sentinel_path(), "feature-branch", "Add feature", "Feature body", draft=True
@@ -983,7 +983,7 @@ def test_create_pr_auto_registers_pr_details() -> None:
 
 def test_create_pr_auto_registers_for_branch_lookup() -> None:
     """Test create_pr automatically registers for get_pr_for_branch() lookups."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     pr_number = ops.create_pr(sentinel_path(), "my-branch", "Title", "Body")
 
@@ -994,7 +994,7 @@ def test_create_pr_auto_registers_for_branch_lookup() -> None:
 
 def test_create_pr_uses_custom_base() -> None:
     """Test create_pr uses provided base branch."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     pr_number = ops.create_pr(sentinel_path(), "feature", "Title", "Body", "develop")
 
@@ -1010,7 +1010,7 @@ def test_create_pr_uses_custom_base() -> None:
 
 def test_update_pr_body_updates_stored_pr_details() -> None:
     """Test update_pr_body updates the PRDetails returned by get_pr()."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     pr_number = ops.create_pr(sentinel_path(), "branch", "Title", "Original body")
 
@@ -1023,7 +1023,7 @@ def test_update_pr_body_updates_stored_pr_details() -> None:
 
 def test_update_pr_body_updates_branch_lookup() -> None:
     """Test update_pr_body keeps prs_by_branch in sync."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.create_pr(sentinel_path(), "my-branch", "Title", "Original")
 
@@ -1041,7 +1041,7 @@ def test_update_pr_body_updates_branch_lookup() -> None:
 
 def test_close_pr_updates_stored_pr_state() -> None:
     """Test close_pr updates the PRDetails state to CLOSED."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     pr_number = ops.create_pr(sentinel_path(), "branch", "Title", "Body")
 
@@ -1058,7 +1058,7 @@ def test_close_pr_updates_stored_pr_state() -> None:
 
 def test_close_pr_updates_branch_lookup() -> None:
     """Test close_pr keeps prs_by_branch in sync."""
-    ops = FakeGitHub()
+    ops = FakeLocalGitHub()
 
     ops.create_pr(sentinel_path(), "my-branch", "Title", "Body")
 
@@ -1075,9 +1075,9 @@ def test_close_pr_updates_branch_lookup() -> None:
 
 
 def test_get_ci_summary_logs_returns_configured_logs() -> None:
-    """FakeGitHub returns pre-configured ci-summarize log text for a run ID."""
+    """FakeLocalGitHub returns pre-configured ci-summarize log text for a run ID."""
     log_text = "=== ERK-CI-SUMMARY:lint ===\n- Issue\n=== /ERK-CI-SUMMARY:lint ==="
-    ops = FakeGitHub(ci_summary_logs={"run-123": log_text})
+    ops = FakeLocalGitHub(ci_summary_logs={"run-123": log_text})
 
     result = ops.get_ci_summary_logs(sentinel_path(), "run-123")
 
@@ -1085,8 +1085,8 @@ def test_get_ci_summary_logs_returns_configured_logs() -> None:
 
 
 def test_get_ci_summary_logs_returns_none_for_unknown_run() -> None:
-    """FakeGitHub returns None when no ci-summarize logs are configured for a run ID."""
-    ops = FakeGitHub()
+    """FakeLocalGitHub returns None when no ci-summarize logs are configured for a run ID."""
+    ops = FakeLocalGitHub()
 
     result = ops.get_ci_summary_logs(sentinel_path(), "run-999")
 
@@ -1094,7 +1094,7 @@ def test_get_ci_summary_logs_returns_none_for_unknown_run() -> None:
 
 
 def test_get_ci_summary_logs_default_empty() -> None:
-    """FakeGitHub with no ci_summary_logs argument returns None for any run ID."""
-    ops = FakeGitHub()
+    """FakeLocalGitHub with no ci_summary_logs argument returns None for any run ID."""
+    ops = FakeLocalGitHub()
 
     assert ops.get_ci_summary_logs(sentinel_path(), "any-run") is None

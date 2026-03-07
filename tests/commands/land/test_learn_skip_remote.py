@@ -13,7 +13,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -62,7 +62,7 @@ def test_land_skips_learn_prompt_for_remote_pr(
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 plan_branch: PullRequestInfo(
                     number=100,
@@ -209,7 +209,7 @@ def test_land_shows_learn_prompt_for_local_plan_branch() -> None:
 
         from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 plan_branch: PullRequestInfo(
                     number=100,

@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -41,7 +41,7 @@ def test_land_pr_not_found() -> None:
         )
 
         # No PRs configured
-        github_ops = FakeGitHub()
+        github_ops = FakeLocalGitHub()
 
         repo = RepoContext(
             root=env.cwd,
@@ -86,7 +86,7 @@ def test_land_branch_no_pr_found() -> None:
         )
 
         # No PRs configured
-        github_ops = FakeGitHub()
+        github_ops = FakeLocalGitHub()
 
         repo = RepoContext(
             root=env.cwd,
@@ -134,7 +134,7 @@ def test_land_branch_pr_not_open() -> None:
         )
 
         # PR is already merged
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -216,7 +216,7 @@ def test_land_branch_pr_base_not_trunk() -> None:
         )
 
         # PR targets feature-1, not main
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-2": PullRequestInfo(
                     number=123,

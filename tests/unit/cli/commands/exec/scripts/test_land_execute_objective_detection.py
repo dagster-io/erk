@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
@@ -81,7 +81,7 @@ def test_land_execute_no_objective_auto_detection() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 feature_branch: PullRequestInfo(
                     number=123,
@@ -200,7 +200,7 @@ def test_land_execute_with_objective_triggers_update() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 feature_branch: PullRequestInfo(
                     number=123,

@@ -19,7 +19,7 @@ from typing import Protocol
 
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.time.abc import Time
 
@@ -50,7 +50,7 @@ class GtKit(Protocol):
         ...
 
     @property
-    def github(self) -> GitHub:
+    def github(self) -> LocalGitHub:
         """GitHub operations interface."""
         ...
 

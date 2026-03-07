@@ -1,7 +1,7 @@
 """Unit tests for set-local-review-marker exec command.
 
 Tests PR body marker setting for local review skip in CI.
-Uses FakeGitHub and FakeGit for fast, reliable testing.
+Uses FakeLocalGitHub and FakeGit for fast, reliable testing.
 """
 
 import json
@@ -16,7 +16,7 @@ from erk.cli.commands.exec.scripts.set_local_review_marker import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
@@ -123,7 +123,7 @@ def test_happy_path_sets_marker(tmp_path: Path) -> None:
     sha = "abc123def456789012345678901234567890abcd"
     pr_body = "Original PR body"
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(
+    fake_gh = FakeLocalGitHub(
         issues_gateway=fake_issues,
         prs={branch: _make_pr_info(number=42, head_branch=branch)},
         pr_details={42: _make_pr_details(number=42, head_ref_name=branch, body=pr_body)},
@@ -168,7 +168,7 @@ def test_no_pr_for_branch(tmp_path: Path) -> None:
     branch = "feature-branch"
     sha = "abc123def456789012345678901234567890abcd"
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(issues_gateway=fake_issues, prs={}, pr_details={})
+    fake_gh = FakeLocalGitHub(issues_gateway=fake_issues, prs={}, pr_details={})
     fake_git = FakeGit(
         current_branches={tmp_path: branch},
         branch_heads={branch: sha},
@@ -204,7 +204,7 @@ def test_existing_marker_replaced(tmp_path: Path) -> None:
     new_sha = "abc123def456789012345678901234567890abcd"
     pr_body = f"PR description\n<!-- erk:local-review-passed:{old_sha} -->\n"
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(
+    fake_gh = FakeLocalGitHub(
         issues_gateway=fake_issues,
         prs={branch: _make_pr_info(number=42, head_branch=branch)},
         pr_details={42: _make_pr_details(number=42, head_ref_name=branch, body=pr_body)},
@@ -247,7 +247,7 @@ def test_pr_body_with_footer(tmp_path: Path) -> None:
     sha = "abc123def456789012345678901234567890abcd"
     pr_body = "## Summary\n\nChanges.\n\n---\nCloses #123\n\nCo-Authored-By: Test <test@test.com>"
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(
+    fake_gh = FakeLocalGitHub(
         issues_gateway=fake_issues,
         prs={branch: _make_pr_info(number=42, head_branch=branch)},
         pr_details={42: _make_pr_details(number=42, head_ref_name=branch, body=pr_body)},
@@ -287,7 +287,7 @@ def test_pr_body_with_footer(tmp_path: Path) -> None:
 def test_detached_head(tmp_path: Path) -> None:
     """Test graceful handling when in detached HEAD state."""
     fake_issues = FakeGitHubIssues()
-    fake_gh = FakeGitHub(issues_gateway=fake_issues)
+    fake_gh = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_git = FakeGit(current_branches={tmp_path: None})
     runner = CliRunner()
 

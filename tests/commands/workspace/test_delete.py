@@ -12,7 +12,7 @@ from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
@@ -151,7 +151,7 @@ def test_delete_dry_run_with_branch() -> None:
         test_ctx = env.build_context(
             use_graphite=True,
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=graphite_ops,
             shell=FakeShell(),
             dry_run=True,
@@ -257,7 +257,7 @@ def test_delete_with_branch_without_graphite() -> None:
         test_ctx = env.build_context(
             use_graphite=False,
             git=fake_git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             shell=FakeShell(),
             existing_paths={wt},
         )
@@ -297,7 +297,7 @@ def test_delete_with_branch_with_graphite() -> None:
         test_ctx = env.build_context(
             use_graphite=True,
             git=fake_git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=graphite_ops,
             shell=FakeShell(),
             existing_paths={wt},
@@ -344,7 +344,7 @@ def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
         test_ctx = env.build_context(
             use_graphite=True,
             git=fake_git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=graphite_ops,
             shell=FakeShell(),
             existing_paths={wt},
@@ -437,7 +437,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
         )
         fake_plan_store, fake_github = create_plan_store_with_plans({"123": plan})
 
-        # Add PR for the branch to the same FakeGitHub backing the plan store
+        # Add PR for the branch to the same FakeLocalGitHub backing the plan store
         pr_info = _make_pr_info(456, state="OPEN")
         pr_details = _make_pr_details(456, "feature-branch", state="OPEN")
         fake_github._prs["feature-branch"] = pr_info
@@ -463,7 +463,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
         assert_cli_success(result)
         # Verify PR was closed
         assert 456 in fake_github.closed_prs
-        # Verify plan was closed (PlannedPRBackend closes via FakeGitHub.close_pr)
+        # Verify plan was closed (PlannedPRBackend closes via FakeLocalGitHub.close_pr)
         assert 123 in fake_github.closed_prs
         # Verify branch was deleted (--all implies --branch)
         assert "feature-branch" in fake_git.deleted_branches
@@ -485,7 +485,7 @@ def test_delete_all_implies_branch() -> None:
         # No PR or plan - just verify branch is deleted
         test_ctx = env.build_context(
             git=fake_git,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             shell=FakeShell(),
             existing_paths={wt},
         )
@@ -507,7 +507,7 @@ def test_delete_all_skips_already_closed_pr() -> None:
         # Create PR that's already merged - need both prs and pr_details
         pr_info = _make_pr_info(456, state="MERGED")
         pr_details = _make_pr_details(456, "feature-branch", state="MERGED")
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={456: pr_details},
         )
@@ -541,8 +541,8 @@ def test_delete_all_skips_when_no_pr_exists() -> None:
         repo_name = env.cwd.name
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
 
-        # No PR configured in FakeGitHub
-        fake_github = FakeGitHub()
+        # No PR configured in FakeLocalGitHub
+        fake_github = FakeLocalGitHub()
 
         # Build fake git ops with worktree info
         fake_git = FakeGit(
@@ -627,7 +627,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
 
         test_ctx = env.build_context(
             git=fake_git,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             plan_store=fake_plan_store,
             issues=fake_github.issues,
             shell=FakeShell(),
@@ -670,7 +670,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
         # Create OPEN PR for the branch
         pr_info = _make_pr_info(123, state="OPEN")
         pr_details = _make_pr_details(123, "feature-branch", state="OPEN")
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -710,7 +710,7 @@ def test_delete_all_shows_merged_pr_status_in_confirmation() -> None:
         # Create MERGED PR for the branch
         pr_info = _make_pr_info(999, state="MERGED")
         pr_details = _make_pr_details(999, "feature-branch", state="MERGED")
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={999: pr_details},
         )
@@ -793,7 +793,7 @@ def test_delete_slot_aware_unassigns_slot() -> None:
 
         test_ctx = env.build_context(
             git=fake_git,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             shell=FakeShell(),
             repo=repo,
         )

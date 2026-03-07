@@ -11,7 +11,7 @@ from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 
@@ -144,7 +144,7 @@ def test_restack_error_returns_actionable_message(tmp_path: Path) -> None:
 def test_pr_not_found_after_submit_returns_error(tmp_path: Path) -> None:
     """SubmitError(error_type='pr_not_found') when no PR after gt submit."""
     fake_graphite = FakeGraphite()
-    fake_github = FakeGitHub()  # No PRs configured
+    fake_github = FakeLocalGitHub()  # No PRs configured
     global_config = GlobalConfig(
         erk_root=Path("/test/erks"),
         use_graphite=True,
@@ -169,7 +169,7 @@ def test_success(tmp_path: Path) -> None:
     """PR number + graphite URL + was_created=True on success."""
     pr = _pr_details(number=42, branch="feature")
     fake_graphite = FakeGraphite()
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
     )
     fake_git = FakeGit(
@@ -204,7 +204,7 @@ def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
     """Plan impl branch (plan_id set) auto-forces when behind remote; no error returned."""
     pr = _pr_details(number=42, branch="feature")
     fake_graphite = FakeGraphite()
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
     )
     fake_git = FakeGit(
@@ -241,7 +241,7 @@ def test_plnd_branch_prefix_auto_forces_on_divergence(tmp_path: Path) -> None:
     branch = "plnd/delay-impl-context-cleanup"
     pr = _pr_details(number=42, branch=branch)
     fake_graphite = FakeGraphite()
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={branch: pr},
     )
     fake_git = FakeGit(
@@ -278,7 +278,7 @@ def test_branch_not_on_remote_skips_divergence_check(tmp_path: Path) -> None:
     """Branch absent from remote proceeds to gt submit without divergence check."""
     pr = _pr_details(number=42, branch="feature")
     fake_graphite = FakeGraphite()
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
     )
     fake_git = FakeGit(

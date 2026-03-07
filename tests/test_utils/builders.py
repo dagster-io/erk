@@ -37,7 +37,7 @@ from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -402,7 +402,7 @@ class WorktreeScenario:
             current_branches=self._current_branches,
         )
 
-        self.github = FakeGitHub(prs=self._prs)
+        self.github = FakeLocalGitHub(prs=self._prs)
 
         # PRs now come from Graphite, not GitHub
         self.graphite = FakeGraphite(stacks=self._graphite_stacks, pr_info=self._prs)

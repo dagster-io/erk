@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.objective_plan_setup import objective_plan_setup
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 
@@ -76,7 +76,7 @@ def test_success_with_valid_objective(tmp_path: Path) -> None:
     issue = _make_issue(100, "Test Objective", VALID_OBJECTIVE_BODY)
     fake_gh = FakeGitHubIssues(issues={100: issue})
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_gh),
+        github=FakeLocalGitHub(issues_gateway=fake_gh),
         repo_root=tmp_path,
     )
 
@@ -108,7 +108,7 @@ def test_success_with_valid_objective(tmp_path: Path) -> None:
 def test_not_found_error(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues()
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_gh),
+        github=FakeLocalGitHub(issues_gateway=fake_gh),
         repo_root=tmp_path,
     )
 
@@ -129,7 +129,7 @@ def test_is_plan_error(tmp_path: Path) -> None:
     issue = _make_issue(200, "Some Plan", "body", labels=["erk-plan"])
     fake_gh = FakeGitHubIssues(issues={200: issue})
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_gh),
+        github=FakeLocalGitHub(issues_gateway=fake_gh),
         repo_root=tmp_path,
     )
 
@@ -150,7 +150,7 @@ def test_warning_for_missing_label(tmp_path: Path) -> None:
     issue = _make_issue(300, "No Label Issue", VALID_OBJECTIVE_BODY, labels=["bug"])
     fake_gh = FakeGitHubIssues(issues={300: issue})
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_gh),
+        github=FakeLocalGitHub(issues_gateway=fake_gh),
         repo_root=tmp_path,
     )
 
@@ -173,7 +173,7 @@ def test_marker_file_created(tmp_path: Path) -> None:
     issue = _make_issue(400, "Marker Test", VALID_OBJECTIVE_BODY)
     fake_gh = FakeGitHubIssues(issues={400: issue})
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_gh),
+        github=FakeLocalGitHub(issues_gateway=fake_gh),
         repo_root=tmp_path,
     )
 
@@ -196,7 +196,7 @@ def test_roadmap_free_objective(tmp_path: Path) -> None:
     issue = _make_issue(500, "Simple Objective", body)
     fake_gh = FakeGitHubIssues(issues={500: issue})
     ctx = ErkContext.for_test(
-        github=FakeGitHub(issues_gateway=fake_gh),
+        github=FakeLocalGitHub(issues_gateway=fake_gh),
         repo_root=tmp_path,
     )
 

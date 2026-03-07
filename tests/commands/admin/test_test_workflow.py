@@ -7,13 +7,13 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-class CommitBeforePRTrackingGitHub(FakeGitHub):
-    """FakeGitHub that verifies commits exist before PR creation.
+class CommitBeforePRTrackingGitHub(FakeLocalGitHub):
+    """FakeLocalGitHub that verifies commits exist before PR creation.
 
     This class stores a reference to the git fake so it can check
     the commit count when create_pr is called.

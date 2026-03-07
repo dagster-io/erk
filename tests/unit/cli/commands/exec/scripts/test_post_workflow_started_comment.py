@@ -18,7 +18,7 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
     post_workflow_started_comment as post_workflow_started_comment_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
@@ -184,7 +184,7 @@ def test_cli_success(tmp_path: Path) -> None:
     fake_gh_issues = FakeGitHubIssues(
         issues={123: issue},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh_issues,
     )
@@ -230,7 +230,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     runner = CliRunner()
     # Issue not in the fake, so add_comment will raise RuntimeError
     fake_gh_issues = FakeGitHubIssues(issues={})
-    fake_github = FakeGitHub(issues_gateway=fake_gh_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh_issues)
     ctx = ErkContext.for_test(
         github=fake_github,
         plan_store=PlannedPRBackend(fake_github, fake_gh_issues, time=FakeTime()),
@@ -282,7 +282,7 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     fake_gh_issues = FakeGitHubIssues(
         issues={789: issue},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={789: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh_issues,
     )

@@ -1,10 +1,10 @@
 """Helpers for creating plan stores with Plan objects in tests.
 
 This module provides utilities for tests that need to set up plan state.
-It converts Plan objects to PlannedPRBackend backed by FakeGitHub.
+It converts Plan objects to PlannedPRBackend backed by FakeLocalGitHub.
 """
 
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
@@ -21,7 +21,7 @@ _PLAN_HEADER_END_MARKER = "<!-- /erk:metadata-block:plan-header -->"
 
 
 def _plan_to_pr_details(plan: Plan) -> PRDetails:
-    """Convert a Plan to PRDetails for FakeGitHub.
+    """Convert a Plan to PRDetails for FakeLocalGitHub.
 
     Handles two body formats:
     1. Body with plan-header metadata block: reformats into PR body format
@@ -82,8 +82,8 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
 
 def create_plan_store_with_plans(
     plans: dict[str, Plan],
-) -> tuple[PlannedPRBackend, FakeGitHub]:
-    """Create PlannedPRBackend backed by FakeGitHub.
+) -> tuple[PlannedPRBackend, FakeLocalGitHub]:
+    """Create PlannedPRBackend backed by FakeLocalGitHub.
 
     This helper converts Plan objects to PRDetails so tests can continue
     constructing Plan objects while using PlannedPRBackend internally.
@@ -120,7 +120,7 @@ def create_plan_store_with_plans(
         )
         pr_labels[pr_number] = set(details.labels)
 
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details=pr_details,
         prs=prs,
     )
@@ -241,7 +241,7 @@ def issue_info_to_pr_details(issue: IssueInfo) -> PRDetails:
 
 def create_backend_from_issues(
     issues: dict[int, IssueInfo],
-) -> tuple[PlannedPRBackend, FakeGitHub, FakeGitHubIssues]:
+) -> tuple[PlannedPRBackend, FakeLocalGitHub, FakeGitHubIssues]:
     """Create a PlannedPRBackend from IssueInfo data.
 
     Converts test data to PR-based data for PlannedPRBackend.
@@ -259,6 +259,6 @@ def create_backend_from_issues(
         pr_details[num] = issue_info_to_pr_details(issue)
 
     fake_issues = FakeGitHubIssues(issues=issues)
-    fake_github = FakeGitHub(pr_details=pr_details, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details=pr_details, issues_gateway=fake_issues)
     backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
     return backend, fake_github, fake_issues

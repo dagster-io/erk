@@ -6,7 +6,7 @@ import pytest
 
 from erk_shared.gateway.branch_manager.fake import FakeBranchManager
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.plan_issues import (
     CreatePlanIssueResult,
@@ -29,7 +29,7 @@ def _create_plan(
     objective_id: int | None = None,
     created_from_session: str | None = None,
     learned_from_issue: int | None = None,
-    fake_github: FakeGitHub | None = None,
+    fake_github: FakeLocalGitHub | None = None,
     fake_issues: FakeGitHubIssues | None = None,
     fake_git: FakeGit | None = None,
     fake_time: FakeTime | None = None,
@@ -39,7 +39,7 @@ def _create_plan(
     if fake_issues is None:
         fake_issues = FakeGitHubIssues(username="testuser")
     if fake_github is None:
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     if fake_git is None:
         fake_git = FakeGit(trunk_branches={tmp_path: "main"})
     if fake_time is None:
@@ -75,7 +75,7 @@ class TestCreatePlanDraftPRSuccess:
     def test_creates_standard_plan_pr(self, tmp_path: Path) -> None:
         """Create a standard plan draft PR with minimal options."""
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = _create_plan(tmp_path=tmp_path, fake_github=fake_github, fake_issues=fake_issues)
 
@@ -92,7 +92,7 @@ class TestCreatePlanDraftPRSuccess:
     def test_creates_learn_plan_pr(self, tmp_path: Path) -> None:
         """Create a learn plan draft PR with learn-specific labels."""
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = _create_plan(
             tmp_path=tmp_path,
@@ -472,7 +472,7 @@ class TestCreatePlanDraftPRBranchAlreadyExists:
         from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
         branch_manager = FakeBranchManager(
             _create_branch_error=BranchAlreadyExists(
                 branch_name="plnd/my-feature-01-15-1430",
@@ -519,7 +519,7 @@ class TestCreatePlanDraftPRMetadata:
     def test_source_repo_in_pr_body(self, tmp_path: Path) -> None:
         """source_repo is included in the plan-header metadata block."""
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = _create_plan(
             tmp_path=tmp_path,
@@ -535,7 +535,7 @@ class TestCreatePlanDraftPRMetadata:
     def test_objective_id_in_pr_body(self, tmp_path: Path) -> None:
         """objective_id is included in the plan-header metadata block."""
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = _create_plan(
             tmp_path=tmp_path,
@@ -551,7 +551,7 @@ class TestCreatePlanDraftPRMetadata:
     def test_created_from_session_in_pr_body(self, tmp_path: Path) -> None:
         """created_from_session is included in the plan-header metadata block."""
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = _create_plan(
             tmp_path=tmp_path,
@@ -567,7 +567,7 @@ class TestCreatePlanDraftPRMetadata:
     def test_learned_from_issue_in_pr_body(self, tmp_path: Path) -> None:
         """learned_from_issue is included in the plan-header metadata block."""
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = _create_plan(
             tmp_path=tmp_path,
@@ -583,7 +583,7 @@ class TestCreatePlanDraftPRMetadata:
     def test_all_metadata_fields_together(self, tmp_path: Path) -> None:
         """All optional metadata fields populate correctly when provided together."""
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = create_plan_draft_pr(
             git=FakeGit(trunk_branches={tmp_path: "main"}),
@@ -626,7 +626,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
         from erk_shared.plan_store.types import CreatePlanResult
 
         fake_issues = FakeGitHubIssues(username="testuser")
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         def patched_create_plan(self_inner: object, **kwargs: object) -> CreatePlanResult:
             return CreatePlanResult(plan_id="not-a-number", url="")
@@ -669,7 +669,7 @@ class TestCreatePlanDraftPRExtraFiles:
         """extra_files entries appear in the branch commit alongside plan.md and ref.json."""
         fake_issues = FakeGitHubIssues(username="testuser")
         fake_git = FakeGit(trunk_branches={tmp_path: "main"})
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         session_xml = "<session><message>hello</message></session>"
         extra = {".erk/impl-context/sessions/impl-abc123def456.xml": session_xml}
@@ -707,7 +707,7 @@ class TestCreatePlanDraftPRExtraFiles:
         """When extra_files=None, only plan.md and ref.json are committed."""
         fake_issues = FakeGitHubIssues(username="testuser")
         fake_git = FakeGit(trunk_branches={tmp_path: "main"})
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         result = create_plan_draft_pr(
             git=fake_git,

@@ -86,9 +86,9 @@ The REST API returns field names that differ from GraphQL and internal conventio
 
 ## Implementation in erk
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.get_pr -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealLocalGitHub.get_pr -->
 
-The `RealGitHub.get_pr()` method in `packages/erk-shared/src/erk_shared/gateway/github/real.py` implements this pattern, returning a `PRDetails` dataclass with all commonly-needed fields.
+The `RealLocalGitHub.get_pr()` method in `packages/erk-shared/src/erk_shared/gateway/github/real.py` implements this pattern, returning a `PRDetails` dataclass with all commonly-needed fields.
 
 ```python
 from erk_shared.gateway.github.types import PRDetails
@@ -120,15 +120,15 @@ This pattern:
 
 When adding a new field to `PullRequestInfo` in `types.py`, three parsers in `real.py` must be updated to extract the field:
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub._parse_pr_from_timeline_event -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealLocalGitHub._parse_pr_from_timeline_event -->
 
 1. **`_parse_pr_from_timeline_event()`** — Parses PRs from GraphQL timeline cross-reference events (used by `get_prs_for_issue()`). Uses the `ISSUE_PR_LINKAGE_FRAGMENT` GraphQL fragment.
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub.list_prs -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealLocalGitHub.list_prs -->
 
 2. **`list_prs()`** — Parses PRs from REST API responses. Field names differ from GraphQL (e.g., `base.ref` vs `baseRefName`).
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealGitHub._parse_plan_prs_with_details -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/real.py, RealLocalGitHub._parse_plan_prs_with_details -->
 
 3. **`_parse_plan_prs_with_details()`** — Parses PRs from the `GET_PLAN_PRS_WITH_DETAILS_QUERY` GraphQL query (used by `list_plan_prs_with_details()`).
 

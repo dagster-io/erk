@@ -502,13 +502,13 @@ class FakeFileSystem(FileSystemGateway):
 
 ### The Distinction
 
-| Aspect              | Gateway                                      | Backend                                                                   |
-| ------------------- | -------------------------------------------- | ------------------------------------------------------------------------- |
-| **Purpose**         | Thin wrapper around external system          | Higher-level abstraction that composes gateways                           |
-| **Examples**        | `GitHub`, `Git`, `Graphite`, `Shell`, `Time` | `PlannedPRBackend`, `PlanBackend` implementations                         |
-| **Implementations** | 4: ABC, Real, Fake, DryRun                   | Just ABC + real implementations                                           |
-| **Needs Fake?**     | ✅ Yes - provides in-memory simulation       | ❌ No - inject fake gateways instead                                      |
-| **Testing**         | Use `FakeGitHub` directly                    | Use `PlannedPRBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime())` |
+| Aspect              | Gateway                                           | Backend                                                                        |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Purpose**         | Thin wrapper around external system               | Higher-level abstraction that composes gateways                                |
+| **Examples**        | `LocalGitHub`, `Git`, `Graphite`, `Shell`, `Time` | `PlannedPRBackend`, `PlanBackend` implementations                              |
+| **Implementations** | 4: ABC, Real, Fake, DryRun                        | Just ABC + real implementations                                                |
+| **Needs Fake?**     | ✅ Yes - provides in-memory simulation            | ❌ No - inject fake gateways instead                                           |
+| **Testing**         | Use `FakeLocalGitHub` directly                    | Use `PlannedPRBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())` |
 
 ### Backend Architecture
 
@@ -521,7 +521,7 @@ Backends are higher-level abstractions that:
 ```python
 # Backend takes gateways as constructor arguments
 class PlannedPRBackend(PlanBackend):
-    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time):
+    def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time):
         self._github = github  # Injects gateway
         self._github_issues = github_issues
         self._time = time
@@ -539,7 +539,7 @@ To test code that uses a backend, inject fake gateways into the real backend:
 ```python
 # ✅ CORRECT: Inject fake gateways into real backend
 def test_create_plan():
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_issues = FakeGitHubIssues()
     plan_backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
 

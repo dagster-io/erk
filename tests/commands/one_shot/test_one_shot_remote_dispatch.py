@@ -228,7 +228,7 @@ def test_remote_dispatch_with_plan_only() -> None:
 def test_cli_repo_flag_rejects_invalid_format() -> None:
     """Test --repo flag rejects invalid owner/repo format."""
     from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from tests.test_utils.context_builders import build_workspace_test_context
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -241,7 +241,7 @@ def test_cli_repo_flag_rejects_invalid_format() -> None:
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "main"},
         )
-        github = FakeGitHub(authenticated=True)
+        github = FakeLocalGitHub(authenticated=True)
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(
@@ -257,7 +257,7 @@ def test_cli_repo_flag_rejects_invalid_format() -> None:
 def test_cli_repo_flag_rejects_ref_current() -> None:
     """Test --repo + --ref-current is rejected."""
     from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from tests.test_utils.context_builders import build_workspace_test_context
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -270,7 +270,7 @@ def test_cli_repo_flag_rejects_ref_current() -> None:
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "main"},
         )
-        github = FakeGitHub(authenticated=True)
+        github = FakeLocalGitHub(authenticated=True)
         ctx = build_workspace_test_context(env, git=git, github=github)
 
         result = runner.invoke(

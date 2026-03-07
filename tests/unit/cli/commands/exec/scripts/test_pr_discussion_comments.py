@@ -1,7 +1,7 @@
 """Unit tests for PR discussion comment kit CLI commands.
 
 Tests get-pr-discussion-comments command.
-Uses FakeGitHub and FakeGitHubIssues for fast, reliable testing.
+Uses FakeLocalGitHub and FakeGitHubIssues for fast, reliable testing.
 """
 
 import json
@@ -14,7 +14,7 @@ from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment
 from erk_shared.gateway.github.types import PRDetails
@@ -68,7 +68,7 @@ def test_get_pr_discussion_comments_with_pr_number(tmp_path: Path) -> None:
     ]
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -103,7 +103,7 @@ def test_get_pr_discussion_comments_no_comments(tmp_path: Path) -> None:
     pr_details = make_pr_details(123)
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -135,7 +135,7 @@ def test_get_pr_discussion_comments_no_comments(tmp_path: Path) -> None:
 def test_get_pr_discussion_comments_pr_not_found(tmp_path: Path) -> None:
     """Test error when PR doesn't exist."""
     fake_github_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues)
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -170,7 +170,7 @@ def test_get_pr_discussion_comments_json_structure(tmp_path: Path) -> None:
     comments = [make_issue_comment(100, "Test comment")]
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 

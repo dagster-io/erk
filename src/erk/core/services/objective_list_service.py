@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListData
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.types import (
     GitHubRepoLocation,
@@ -36,7 +36,7 @@ class RealObjectiveListService(ObjectiveListService):
     converts via github_issue_to_plan.
     """
 
-    def __init__(self, github: GitHub, *, time: Time) -> None:
+    def __init__(self, github: LocalGitHub, *, time: Time) -> None:
         self._github = github
         self._time = time
 

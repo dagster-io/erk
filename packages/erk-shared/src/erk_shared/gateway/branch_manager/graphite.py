@@ -9,7 +9,7 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
@@ -27,7 +27,7 @@ class GraphiteBranchManager(BranchManager):
     git: Git
     graphite: Graphite
     graphite_branch_ops: GraphiteBranchOps
-    github: GitHub
+    github: LocalGitHub
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
         """Get PR info from Graphite's local cache, falling back to GitHub API.

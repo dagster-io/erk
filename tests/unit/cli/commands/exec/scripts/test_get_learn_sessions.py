@@ -18,7 +18,7 @@ from erk_shared.gateway.claude_installation.fake import (
     FakeSessionData,
 )
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
@@ -44,7 +44,7 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
     fake_git = FakeGit()
     test_issue = create_test_issue(123, "Test Plan #123", "Plan body")
     fake_issues = FakeGitHubIssues(issues={123: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -83,7 +83,7 @@ def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
         )
         issue = create_test_issue(456, "Test Plan #456", "Plan body")
         fake_issues = FakeGitHubIssues(issues={456: issue})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={456: issue_info_to_pr_details(issue)},
             issues_gateway=fake_issues,
         )
@@ -113,7 +113,7 @@ def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
     fake_git = FakeGit()
     test_issue = create_test_issue(789, "Test Plan #789", "Plan body")
     fake_issues = FakeGitHubIssues(issues={789: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={789: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -156,7 +156,7 @@ def test_get_learn_sessions_fails_without_issue(tmp_path: Path) -> None:
             current_branches={cwd: "main"},  # Not a P{issue} branch
         )
         fake_issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
         fake_claude = FakeClaudeInstallation.for_test()
 
         result = runner.invoke(
@@ -182,7 +182,7 @@ def test_get_learn_sessions_fails_with_invalid_issue(tmp_path: Path) -> None:
     """Test error with invalid issue identifier."""
     fake_git = FakeGit()
     fake_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_claude = FakeClaudeInstallation.for_test()
 
     runner = CliRunner()
@@ -217,7 +217,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
     fake_git = FakeGit()
     test_issue = create_test_issue(100, "Test Plan #100", "Plan body")
     fake_issues = FakeGitHubIssues(issues={100: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={100: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -271,7 +271,7 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
         fake_git = FakeGit(current_branches={cwd: "plnd/feature-200-01-01-1200"})
         test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
         fake_issues = FakeGitHubIssues(issues={200: test_issue})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={200: issue_info_to_pr_details(test_issue)},
             issues_gateway=fake_issues,
         )
@@ -354,7 +354,7 @@ def test_session_sources_includes_remote_session(tmp_path: Path) -> None:
     )
     test_issue = create_test_issue(300, "Test Plan #300", body=plan_body)
     fake_issues = FakeGitHubIssues(issues={300: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={300: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -405,7 +405,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
         )
         test_issue = create_test_issue(400, "Test Plan #400", body=plan_body)
         fake_issues = FakeGitHubIssues(issues={400: test_issue})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={400: issue_info_to_pr_details(test_issue)},
             issues_gateway=fake_issues,
         )
@@ -472,7 +472,7 @@ def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None
     )
     test_issue = create_test_issue(500, "Test Plan #500", body=plan_body)
     fake_issues = FakeGitHubIssues(issues={500: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={500: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -515,7 +515,7 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
         fake_git = FakeGit(current_branches={cwd: "plnd/feature-600-01-01-1200"})
         test_issue = create_test_issue(600, "Test Plan #600", "Plan body")
         fake_issues = FakeGitHubIssues(issues={600: test_issue})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={600: issue_info_to_pr_details(test_issue)},
             issues_gateway=fake_issues,
         )
@@ -592,7 +592,7 @@ def test_preprocessed_manifest_none_when_branch_missing(tmp_path: Path) -> None:
     fake_git = FakeGit()
     test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
     fake_issues = FakeGitHubIssues(issues={700: test_issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={700: issue_info_to_pr_details(test_issue)},
         issues_gateway=fake_issues,
     )
@@ -630,7 +630,7 @@ def test_preprocessed_manifest_none_when_git_show_fails(tmp_path: Path) -> None:
         )
         test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
         fake_issues = FakeGitHubIssues(issues={700: test_issue})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={700: issue_info_to_pr_details(test_issue)},
             issues_gateway=fake_issues,
         )
@@ -677,7 +677,7 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
         )
         test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
         fake_issues = FakeGitHubIssues(issues={700: test_issue})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             pr_details={700: issue_info_to_pr_details(test_issue)},
             issues_gateway=fake_issues,
         )

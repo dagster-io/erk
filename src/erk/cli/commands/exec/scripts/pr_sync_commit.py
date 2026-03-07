@@ -41,7 +41,7 @@ import click
 
 from erk_shared.context.helpers import require_git, require_github, require_repo_root
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.pr_footer import (
     extract_footer_from_body,
     extract_header_from_body,
@@ -74,7 +74,7 @@ class SyncError:
 def _sync_pr_from_commit(
     *,
     git: Git,
-    github: GitHub,
+    github: LocalGitHub,
     repo_root: Path,
 ) -> SyncSuccess | SyncError:
     """Implementation of PR sync from commit.

@@ -1,7 +1,7 @@
 """Unit tests for add_remote_execution_note kit CLI command.
 
 Tests adding remote execution tracking notes to PR bodies.
-Uses FakeGitHub for fast, reliable testing (Layer 4: Business Logic over Fakes).
+Uses FakeLocalGitHub for fast, reliable testing (Layer 4: Business Logic over Fakes).
 """
 
 from pathlib import Path
@@ -12,7 +12,7 @@ from erk.cli.commands.exec.scripts.add_remote_execution_note import (
     add_remote_execution_note,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 
 
@@ -42,7 +42,7 @@ def _make_pr_details(pr_number: int, body: str) -> PRDetails:
 
 def test_add_remote_execution_note_success(tmp_path: Path) -> None:
     """Test successfully adding a remote execution note to a PR."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={100: _make_pr_details(100, "Initial PR body")},
     )
     runner = CliRunner()
@@ -77,7 +77,7 @@ def test_add_remote_execution_note_success(tmp_path: Path) -> None:
 
 def test_add_remote_execution_note_to_empty_body(tmp_path: Path) -> None:
     """Test adding note to PR with no existing body."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={200: _make_pr_details(200, "")},
     )
     runner = CliRunner()
@@ -116,7 +116,7 @@ This PR implements feature X.
 
 - [x] Unit tests pass
 """
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={300: _make_pr_details(300, existing_body)},
     )
     runner = CliRunner()
@@ -150,7 +150,7 @@ This PR implements feature X.
 
 def test_add_remote_execution_note_when_body_is_none(tmp_path: Path) -> None:
     """Test handling when PR body is None (not set)."""
-    fake_github = FakeGitHub()  # No pr_bodies_by_number configured
+    fake_github = FakeLocalGitHub()  # No pr_bodies_by_number configured
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -184,7 +184,7 @@ def test_add_remote_execution_note_when_body_is_none(tmp_path: Path) -> None:
 
 def test_missing_pr_number(tmp_path: Path) -> None:
     """Test error when pr-number is missing."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -207,7 +207,7 @@ def test_missing_pr_number(tmp_path: Path) -> None:
 
 def test_missing_run_id(tmp_path: Path) -> None:
     """Test error when run-id is missing."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -230,7 +230,7 @@ def test_missing_run_id(tmp_path: Path) -> None:
 
 def test_missing_run_url(tmp_path: Path) -> None:
     """Test error when run-url is missing."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):

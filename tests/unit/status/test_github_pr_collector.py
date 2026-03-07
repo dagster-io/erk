@@ -8,7 +8,7 @@ import pytest
 from erk.status.collectors.github import GitHubPRCollector
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from tests.fakes.context import create_test_context
@@ -74,7 +74,7 @@ def setup_collector(
     )
     ctx = create_test_context(
         git=git_ops,
-        github=FakeGitHub(),  # No longer provide PRs via GitHub
+        github=FakeLocalGitHub(),  # No longer provide PRs via GitHub
         graphite=graphite_ops,
         global_config=global_config,
     )

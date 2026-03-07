@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import WorkflowRun
@@ -109,7 +109,7 @@ Implementation details"""
             branch="master",
             head_sha="abc123",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_abc123": workflow_run}
         )
         issues = FakeGitHubIssues(issues={123: plan_to_issue(plan)})
@@ -207,7 +207,7 @@ last_dispatched_node_id: 'WFR_def456'
             branch="master",
             head_sha="def456",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_def456": workflow_run}
         )
         issues = FakeGitHubIssues(issues={456: plan_to_issue(plan)})
@@ -304,7 +304,7 @@ last_dispatched_node_id: 'WFR_ghi789'
             branch="master",
             head_sha="ghi789",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_ghi789": workflow_run}
         )
         issues = FakeGitHubIssues(issues={789: plan_to_issue(plan)})
@@ -379,7 +379,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
         )
 
         # No workflow runs
-        github = FakeGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[])
         issues = FakeGitHubIssues(issues={111: plan_to_issue(plan)}, comments={})
         plan_service = build_fake_plan_list_service([plan])
 
@@ -455,7 +455,7 @@ def test_plan_list_handles_batch_query_failure() -> None:
         )
 
         # No workflow runs configured (simulates API failure or no runs found)
-        github = FakeGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[])
         issues = FakeGitHubIssues(issues={222: plan_to_issue(plan)}, comments={})
         plan_service = build_fake_plan_list_service([plan])
 
@@ -595,7 +595,7 @@ last_dispatched_node_id: 'WFR_node2'
             branch="master",
             head_sha="abc222",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)],
             workflow_runs_by_node_id={"WFR_node1": run1, "WFR_node2": run2},
         )
@@ -658,7 +658,7 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
             branch="some-other-branch",
             head_sha="xyz999",
         )
-        github = FakeGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[workflow_run])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[workflow_run])
         issues = FakeGitHubIssues(issues={999: plan_to_issue(plan)}, comments={})
         plan_service = build_fake_plan_list_service([plan])
 

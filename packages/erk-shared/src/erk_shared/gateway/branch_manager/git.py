@@ -10,7 +10,7 @@ from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, S
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
 from erk_shared.gateway.git.remote_ops.types import PushError
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.types import PRNotFound
 
 
@@ -23,7 +23,7 @@ class GitBranchManager(BranchManager):
     """
 
     git: Git
-    github: GitHub
+    github: LocalGitHub
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
         """Get PR info from GitHub REST API.

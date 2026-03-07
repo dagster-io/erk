@@ -11,7 +11,7 @@ read_when:
   - "adding composing template methods to ABC"
 tripwires:
   - action: "passing dry_run boolean flags through business logic function parameters"
-    warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
+    warning: "Use dependency injection with DryRunGit/DryRunLocalGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
   - action: "calling os.chdir() in erk code"
     warning: "After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError."
     pattern: "os\\.chdir\\("
@@ -67,7 +67,7 @@ This codebase has two distinct dry-run patterns, each appropriate in different c
 
 **MUST**: Use DryRun wrappers for multi-step workflows
 **MUST NOT**: Pass dry_run flags through business logic functions
-**SHOULD**: Inject DryRunGit/DryRunGitHub at the context creation level
+**SHOULD**: Inject DryRunGit/DryRunLocalGitHub at the context creation level
 
 ```python
 # WRONG: Passing dry_run flag through business logic
@@ -535,7 +535,7 @@ All gateways live under `packages/erk-shared/src/erk_shared/gateway/`:
 from erk_shared.gateway.git.abc import Git, WorktreeInfo
 from erk_shared.gateway.git.real import RealGit
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 ```
 
 Gateway `__init__.py` files do not re-export, so always import from the specific submodule.
