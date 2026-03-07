@@ -343,7 +343,7 @@ def _collect_stale_and_attention_prs(
             continue
 
         mergeable = "UNKNOWN"
-        if pr.has_conflicts is True:
+        if pr.has_conflicts:
             mergeable = "CONFLICTING"
         elif pr.has_conflicts is False:
             mergeable = "MERGEABLE"
