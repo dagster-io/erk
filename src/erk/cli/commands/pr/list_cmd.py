@@ -1,6 +1,8 @@
 """Command to list plans with filtering."""
 
+import tempfile
 from collections.abc import Callable
+from pathlib import Path
 from typing import ParamSpec, TypeVar
 
 import click
@@ -8,6 +10,12 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
+from erk.cli.commands.pr.repo_resolution import (
+    get_remote_github,
+    is_remote_mode,
+    repo_option,
+    resolve_owner_repo,
+)
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
@@ -234,6 +242,94 @@ def _row_to_static_values(
     return tuple(values)
 
 
+def _pr_list_remote(
+    ctx: ErkContext,
+    *,
+    label: tuple[str, ...],
+    state: str | None,
+    run_state: str | None,
+    stage: str | None,
+    limit: int | None,
+    all_users: bool,
+    sort: str,
+    target_repo: str | None,
+) -> None:
+    """Remote path for listing plans without local git clone.
+
+    Uses the same PlanListService / RealPlanDataProvider pipeline but with a
+    temporary directory as root (since worktree mapping is not available remotely).
+    """
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+
+    http_client = ctx.http_client
+    if http_client is None:
+        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+        raise SystemExit(1)
+
+    # Determine creator filter via RemoteGitHub
+    creator: str | None = None
+    if not all_users:
+        remote = get_remote_github(ctx)
+        is_authenticated, username, _ = remote.check_auth_status()
+        if is_authenticated and username:
+            creator = username
+
+    labels = label if label else ("erk-pr", "erk-plan")
+
+    # Use a temp path as root since we have no local git clone.
+    # PlanListService only uses location.repo_id for API queries.
+    temp_root = Path(tempfile.gettempdir()) / "erk-remote"
+    location = GitHubRepoLocation(
+        root=temp_root,
+        repo_id=GitHubRepoId(owner, repo_name),
+    )
+
+    provider = RealPlanDataProvider(
+        ctx,
+        location=location,
+        http_client=http_client,
+    )
+
+    effective_state: IssueFilterState = "closed" if state == "closed" else "open"
+
+    filters = PlanFilters(
+        labels=labels,
+        state=effective_state,
+        run_state=run_state,
+        limit=limit,
+        show_prs=True,
+        show_runs=True,
+        exclude_labels=(),
+        creator=creator,
+        show_pr_column=False,
+        lifecycle_stage=stage,
+    )
+
+    rows, timings = provider.fetch_plans(filters)
+
+    if timings is not None and timings.warnings:
+        for warning in timings.warnings:
+            user_output(click.style("Warning: ", fg="yellow") + warning)
+
+    if stage is not None:
+        rows = [r for r in rows if strip_rich_markup(r.lifecycle_display).startswith(stage)]
+
+    if not rows:
+        user_output("No plans found matching the criteria.")
+        return
+
+    # Sort: branch activity not available in remote mode, fall back to plan ID
+    sort_key = SortKey.PLAN_ID
+    rows = sort_plans(rows, sort_key)
+
+    table = _build_static_table(rows, show_pr_column=False)
+
+    user_output(f"\nFound {len(rows)} plan(s):\n")
+    console = Console(stderr=True, width=200, force_terminal=True)
+    console.print(table)
+    console.print()
+
+
 def _pr_list_impl(
     ctx: ErkContext,
     *,
@@ -444,6 +540,7 @@ def _run_interactive_mode(
 
 @click.command("list")
 @pr_filter_options
+@repo_option
 @click.pass_obj
 def pr_list(
     ctx: ErkContext,
@@ -455,6 +552,7 @@ def pr_list(
     limit: int | None,
     all_users: bool,
     sort: str,
+    target_repo: str | None,
 ) -> None:
     """List plans as a static table.
 
@@ -471,17 +569,31 @@ def pr_list(
         erk pr list --run-state in_progress
         erk pr list --stage impl         # Filter by lifecycle stage
         erk pr list --sort activity      # Sort by recent branch activity
+        erk pr list --repo owner/repo    # Remote mode (no local git required)
     """
-    _pr_list_impl(
-        ctx,
-        label=label,
-        state=state,
-        run_state=run_state,
-        stage=stage,
-        limit=limit,
-        all_users=all_users,
-        sort=sort,
-    )
+    if is_remote_mode(ctx, target_repo=target_repo):
+        _pr_list_remote(
+            ctx,
+            label=label,
+            state=state,
+            run_state=run_state,
+            stage=stage,
+            limit=limit,
+            all_users=all_users,
+            sort=sort,
+            target_repo=target_repo,
+        )
+    else:
+        _pr_list_impl(
+            ctx,
+            label=label,
+            state=state,
+            run_state=run_state,
+            stage=stage,
+            limit=limit,
+            all_users=all_users,
+            sort=sort,
+        )
 
 
 @click.command("dash")

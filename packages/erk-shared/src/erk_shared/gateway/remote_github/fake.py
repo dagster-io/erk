@@ -5,6 +5,7 @@ Constructor-injected responses for reads, mutation tracking lists for write asse
 
 from dataclasses import dataclass
 
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 
 
@@ -84,6 +85,24 @@ class AddedIssueComment:
     body: str
 
 
+@dataclass(frozen=True)
+class ClosedIssue:
+    """Recorded close_issue call."""
+
+    owner: str
+    repo: str
+    number: int
+
+
+@dataclass(frozen=True)
+class ClosedPR:
+    """Recorded close_pr call."""
+
+    owner: str
+    repo: str
+    number: int
+
+
 class FakeRemoteGitHub(RemoteGitHub):
     """In-memory fake for testing remote GitHub operations.
 
@@ -98,6 +117,9 @@ class FakeRemoteGitHub(RemoteGitHub):
         default_branch_sha: str,
         next_pr_number: int,
         dispatch_run_id: str,
+        issues: dict[int, IssueInfo] | None = None,
+        issue_comments: dict[int, list[str]] | None = None,
+        pr_references: dict[int, list[PRReference]] | None = None,
     ) -> None:
         """Create FakeRemoteGitHub with configurable responses.
 
@@ -107,12 +129,24 @@ class FakeRemoteGitHub(RemoteGitHub):
             default_branch_sha: SHA to return from get_default_branch_sha
             next_pr_number: PR number to return from create_pull_request
             dispatch_run_id: Run ID to return from dispatch_workflow
+            issues: Pre-configured issues keyed by number
+            issue_comments: Pre-configured comment bodies keyed by issue number
+            pr_references: Pre-configured PR references keyed by issue number
         """
         self._authenticated_user = authenticated_user
         self._default_branch_name = default_branch_name
         self._default_branch_sha = default_branch_sha
         self._next_pr_number = next_pr_number
         self._dispatch_run_id = dispatch_run_id
+
+        # Read response storage
+        self._issues: dict[int, IssueInfo] = issues if issues is not None else {}
+        self._issue_comments: dict[int, list[str]] = (
+            issue_comments if issue_comments is not None else {}
+        )
+        self._pr_references: dict[int, list[PRReference]] = (
+            pr_references if pr_references is not None else {}
+        )
 
         # Mutation tracking
         self._created_refs: list[CreatedRef] = []
@@ -122,6 +156,8 @@ class FakeRemoteGitHub(RemoteGitHub):
         self._added_labels: list[AddedLabels] = []
         self._dispatched_workflows: list[DispatchedWorkflow] = []
         self._added_issue_comments: list[AddedIssueComment] = []
+        self._closed_issues: list[ClosedIssue] = []
+        self._closed_prs: list[ClosedPR] = []
 
     # --- Read methods ---
 
@@ -235,6 +271,81 @@ class FakeRemoteGitHub(RemoteGitHub):
             AddedIssueComment(owner=owner, repo=repo, issue_number=issue_number, body=body)
         )
 
+    # --- Read operations for PR commands ---
+
+    def get_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> IssueInfo | IssueNotFound:
+        if number in self._issues:
+            return self._issues[number]
+        return IssueNotFound(issue_number=number)
+
+    def get_issue_comments(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> list[str]:
+        return list(self._issue_comments.get(number, []))
+
+    def list_issues(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        labels: tuple[str, ...],
+        state: str,
+        limit: int | None,
+        creator: str | None,
+    ) -> list[IssueInfo]:
+        results: list[IssueInfo] = []
+        for issue in self._issues.values():
+            if state.upper() != issue.state:
+                continue
+            if creator is not None and issue.author != creator:
+                continue
+            if labels and not any(label in issue.labels for label in labels):
+                continue
+            results.append(issue)
+            if limit is not None and len(results) >= limit:
+                break
+        return results
+
+    def get_prs_referencing_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> list[PRReference]:
+        return list(self._pr_references.get(number, []))
+
+    def close_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> None:
+        self._closed_issues.append(ClosedIssue(owner=owner, repo=repo, number=number))
+
+    def close_pr(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> None:
+        self._closed_prs.append(ClosedPR(owner=owner, repo=repo, number=number))
+
+    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
+        return (True, self._authenticated_user, None)
+
     # --- Read-only properties for test assertions ---
 
     @property
@@ -271,3 +382,13 @@ class FakeRemoteGitHub(RemoteGitHub):
     def added_issue_comments(self) -> list[AddedIssueComment]:
         """Returns list of AddedIssueComment records."""
         return list(self._added_issue_comments)
+
+    @property
+    def closed_issues(self) -> list[ClosedIssue]:
+        """Returns list of ClosedIssue records."""
+        return list(self._closed_issues)
+
+    @property
+    def closed_prs(self) -> list[ClosedPR]:
+        """Returns list of ClosedPR records."""
+        return list(self._closed_prs)

@@ -7,8 +7,10 @@ with no local git repository or gh CLI required.
 import base64
 import secrets
 import string
+from datetime import UTC, datetime
 
-from erk_shared.gateway.http.abc import HttpClient
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+from erk_shared.gateway.http.abc import HttpClient, HttpError
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.time.abc import Time
 from erk_shared.output.output import user_output
@@ -213,6 +215,196 @@ class RealRemoteGitHub(RemoteGitHub):
             f"repos/{owner}/{repo}/issues/{issue_number}/comments",
             data={"body": body},
         )
+
+    # --- Read operations for PR commands ---
+
+    def get_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> IssueInfo | IssueNotFound:
+        """Fetch issue data by number via REST API."""
+        try:
+            response = self._http.get(f"repos/{owner}/{repo}/issues/{number}")
+        except HttpError as e:
+            if e.status_code == 404:
+                return IssueNotFound(issue_number=number)
+            raise
+
+        return _parse_issue_response(response)
+
+    def get_issue_comments(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> list[str]:
+        """Fetch all comment bodies for an issue via REST API."""
+        comments = self._http.get_list(
+            f"repos/{owner}/{repo}/issues/{number}/comments?per_page=100"
+        )
+        return [c.get("body", "") for c in comments]
+
+    def list_issues(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        labels: tuple[str, ...],
+        state: str,
+        limit: int | None,
+        creator: str | None,
+    ) -> list[IssueInfo]:
+        """List issues with filtering via REST API."""
+        params = [
+            f"state={state}",
+            f"labels={','.join(labels)}",
+            "per_page=100",
+        ]
+        if creator is not None:
+            params.append(f"creator={creator}")
+        query = "&".join(params)
+        items = self._http.get_list(f"repos/{owner}/{repo}/issues?{query}")
+
+        results: list[IssueInfo] = []
+        for item in items:
+            # Skip pull requests (GitHub includes PRs in issues endpoint)
+            if "pull_request" in item:
+                continue
+            results.append(_parse_issue_response(item))
+            if limit is not None and len(results) >= limit:
+                break
+        return results
+
+    def get_prs_referencing_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> list[PRReference]:
+        """Get PRs that reference an issue via timeline API."""
+        events = self._http.get_list(f"repos/{owner}/{repo}/issues/{number}/timeline?per_page=100")
+
+        pr_refs: list[PRReference] = []
+        seen_numbers: set[int] = set()
+        for event in events:
+            if event.get("event") != "cross-referenced":
+                continue
+            source = event.get("source", {})
+            issue = source.get("issue", {})
+            pr_data = issue.get("pull_request")
+            if pr_data is None:
+                continue
+            pr_number = issue.get("number")
+            if pr_number is None or pr_number in seen_numbers:
+                continue
+            seen_numbers.add(pr_number)
+            state = issue.get("state", "").upper()
+            if state == "OPEN" and issue.get("draft", False):
+                pass  # state stays OPEN
+            merged_at = pr_data.get("merged_at")
+            if merged_at is not None:
+                state = "MERGED"
+            pr_refs.append(
+                PRReference(
+                    number=pr_number,
+                    state=state,
+                    is_draft=issue.get("draft", False),
+                )
+            )
+        return pr_refs
+
+    def close_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> None:
+        """Close a GitHub issue via REST API."""
+        self._http.patch(
+            f"repos/{owner}/{repo}/issues/{number}",
+            data={"state": "closed"},
+        )
+
+    def close_pr(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> None:
+        """Close a pull request via REST API."""
+        self._http.patch(
+            f"repos/{owner}/{repo}/pulls/{number}",
+            data={"state": "closed"},
+        )
+
+    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
+        """Check authentication status via REST API."""
+        try:
+            response = self._http.get("user")
+            login = response.get("login")
+            if login is None:
+                return (False, None, "GitHub API returned user without login field")
+            return (True, login, None)
+        except HttpError as e:
+            return (False, None, f"Authentication failed: {e}")
+
+
+def _parse_issue_response(data: dict) -> IssueInfo:
+    """Parse a GitHub REST API issue response into IssueInfo.
+
+    Args:
+        data: Raw JSON dict from GitHub API
+
+    Returns:
+        IssueInfo with parsed fields
+    """
+    created_at_str = data.get("created_at", "")
+    updated_at_str = data.get("updated_at", "")
+
+    created_at = (
+        datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+        if created_at_str
+        else datetime.now(UTC)
+    )
+    updated_at = (
+        datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+        if updated_at_str
+        else datetime.now(UTC)
+    )
+
+    labels_raw = data.get("labels", [])
+    labels = [
+        label.get("name", "") if isinstance(label, dict) else str(label) for label in labels_raw
+    ]
+
+    assignees_raw = data.get("assignees", [])
+    assignees = [a.get("login", "") for a in assignees_raw if isinstance(a, dict)]
+
+    user_data = data.get("user", {})
+    author = user_data.get("login", "") if isinstance(user_data, dict) else ""
+
+    state_raw = data.get("state", "open")
+    state = state_raw.upper() if isinstance(state_raw, str) else "OPEN"
+
+    return IssueInfo(
+        number=data.get("number", 0),
+        title=data.get("title", ""),
+        body=data.get("body", "") or "",
+        state=state,
+        url=data.get("html_url", ""),
+        labels=labels,
+        assignees=assignees,
+        created_at=created_at,
+        updated_at=updated_at,
+        author=author,
+    )
 
 
 def _generate_distinct_id() -> str:
