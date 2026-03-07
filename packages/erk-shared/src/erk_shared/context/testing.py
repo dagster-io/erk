@@ -151,9 +151,7 @@ def context_for_test(
     resolved_codespace: Codespace = (
         codespace
         if codespace is not None
-        else FakeCodespace(
-            run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
-        )
+        else FakeCodespace(run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name")
     )
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
