@@ -8,8 +8,6 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-import click
-
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.real import RealGit
@@ -55,9 +53,6 @@ def create_context(*, dry_run: bool = False) -> ErkDevContext:
         text=True,
         check=False,
     )
-    if result.returncode != 0:
-        click.echo("Error: Not in a git repository", err=True)
-        raise SystemExit(1)
-    repo_root = Path(result.stdout.strip())
+    repo_root = Path(result.stdout.strip()) if result.returncode == 0 else Path.cwd()
 
     return ErkDevContext(git=git, github=github, repo_root=repo_root)

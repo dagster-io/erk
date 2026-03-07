@@ -20,11 +20,11 @@ Scripts that are **only invoked by local slash commands** (`.claude/commands/loc
 
 ## Decision Framework
 
-| Invoked by | Package | Example |
-|---|---|---|
-| CI workflows, hooks, remote dispatch | `erk` (exec scripts) | `plan-save`, `impl-init`, `pre-tool-use-hook` |
-| Local slash commands only | `erk-dev` | `audit-collect` |
-| Developer tooling (release, lint, etc.) | `erk-dev` | `bump-version`, `clean-cache` |
+| Invoked by                              | Package              | Example                                       |
+| --------------------------------------- | -------------------- | --------------------------------------------- |
+| CI workflows, hooks, remote dispatch    | `erk` (exec scripts) | `plan-save`, `impl-init`, `pre-tool-use-hook` |
+| Local slash commands only               | `erk-dev`            | `audit-collect`                               |
+| Developer tooling (release, lint, etc.) | `erk-dev`            | `bump-version`, `clean-cache`                 |
 
 ## How to Implement in erk-dev
 
