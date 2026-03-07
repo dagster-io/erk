@@ -28,6 +28,8 @@ runs:
         fi
 
     - uses: astral-sh/setup-uv@v7
+      with:
+        prune-cache: false
 
     - uses: ./.github/actions/setup-claude-code
 
