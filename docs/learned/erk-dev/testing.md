@@ -5,7 +5,7 @@ read_when:
   - "writing tests for erk-dev commands"
   - "getting context injection errors in erk-dev tests"
   - "testing ErkDevContext-based commands"
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-03-07 21:00 PT"
 audit_result: clean
 ---
 
@@ -14,6 +14,8 @@ audit_result: clean
 ## Context Injection Pattern
 
 erk-dev commands use `ErkDevContext` for dependency injection, which differs from the main erk package's `ErkContext`.
+
+`ErkDevContext` has three fields: `git: Git`, `github: GitHub`, and `repo_root: Path`.
 
 ### Correct Pattern
 
@@ -24,16 +26,18 @@ from click.testing import CliRunner
 from erk_dev.cli import cli
 from erk_dev.context import ErkDevContext
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
 
 def test_my_command(tmp_path: Path) -> None:
     fake_git = FakeGit()
+    fake_github = FakeGitHub()
+    ctx = ErkDevContext(git=fake_git, github=fake_github, repo_root=tmp_path)
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        result = runner.invoke(
-            cli,  # Use CLI group, not individual command
-            ["my-command", "--flag"],
-            obj=ErkDevContext(git=fake_git),  # Inject context
-        )
+    result = runner.invoke(
+        cli,  # Use CLI group, not individual command
+        ["my-command", "--flag"],
+        obj=ctx,  # Inject context
+    )
     assert result.exit_code == 0
 ```
 

@@ -13,7 +13,7 @@ Automates the branch audit workflow using pre-collected, categorized data.
 Run the audit-collect command to get pre-categorized JSON:
 
 ```bash
-erk exec audit-collect
+erk-dev audit-collect
 ```
 
 Parse the JSON output. The structure contains:

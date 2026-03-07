@@ -1,4 +1,4 @@
-"""Unit tests for audit-collect exec command.
+"""Unit tests for audit-collect erk-dev command.
 
 Tests the branch/worktree/PR categorization logic using pure function tests
 and CLI integration tests with fakes.
@@ -10,13 +10,13 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.audit_collect import (
+from erk_dev.cli import cli
+from erk_dev.commands.audit_collect.command import (
     _is_async_learn_branch,
     _is_stub_branch,
     _run_audit_collect,
-    audit_collect,
 )
-from erk_shared.context.context import ErkContext
+from erk_dev.context import ErkDevContext
 from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -508,8 +508,8 @@ def test_cli_produces_valid_json(tmp_path: Path) -> None:
         },
     )
 
-    ctx = ErkContext.for_test(git=git, github=github, repo_root=tmp_path)
-    result = runner.invoke(audit_collect, [], obj=ctx)
+    ctx = ErkDevContext(git=git, github=github, repo_root=tmp_path)
+    result = runner.invoke(cli, ["audit-collect"], obj=ctx)
 
     assert result.exit_code == 0
     output = json.loads(result.output)

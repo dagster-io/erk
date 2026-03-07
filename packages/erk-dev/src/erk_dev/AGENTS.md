@@ -57,6 +57,38 @@ Click's completion mechanism requires all commands to be available at import tim
 - **Existing dependencies only**: Use erk-dev's dependencies (no external packages)
 - **`__init__.py` is optional**: May contain docstring, be empty, or be omitted entirely
 
+## Context Injection
+
+`ErkDevContext` provides dependency injection for erk-dev commands:
+
+```python
+@dataclass(frozen=True)
+class ErkDevContext:
+    git: Git
+    github: GitHub
+    repo_root: Path
+```
+
+Commands that need gateway access use `@click.pass_context` and access `ctx.obj`:
+
+```python
+@click.command(name="audit-collect")
+@click.pass_context
+def audit_collect_command(ctx: click.Context) -> None:
+    dev_ctx: ErkDevContext = ctx.obj
+    git = dev_ctx.git
+    github = dev_ctx.github
+    repo_root = dev_ctx.repo_root
+```
+
+Simple commands that only need subprocess can ignore the context entirely.
+
+## Local-Only Scripts
+
+Scripts only invoked by local slash commands (`.claude/commands/local/`) belong in erk-dev, not in the main erk package. The erk package ships to users; local-only developer tooling should not be bundled.
+
+See `docs/learned/erk-dev/local-only-scripts.md` for the full decision framework.
+
 ## Subprocess and Gateway Patterns
 
 **erk-dev is developer tooling, not production code.** The tripwire rules from `docs/learned/` (subprocess wrappers, gateway ABCs) apply to production erk code in `src/erk/` and `packages/erk-shared/`, but do NOT strictly apply to erk-dev.
@@ -72,7 +104,7 @@ subprocess.run(["git", "rev-parse", "--show-toplevel"], check=False, capture_out
 **Why:**
 
 - erk-dev doesn't have (or need) subprocess wrapper utilities
-- erk-dev doesn't have (or need) gateway ABCs for git/docker operations
+- Commands can use erk_shared gateways via ErkDevContext when testability is important
 - Commands are developer tools for local use, not production code paths
 - Using `check=False` with LBYL pattern is explicitly allowed per subprocess-wrappers.md
 

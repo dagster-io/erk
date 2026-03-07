@@ -1,7 +1,7 @@
 """Collect and categorize branch/worktree/PR data for audit-branches.
 
 Usage:
-    erk exec audit-collect
+    erk-dev audit-collect
 
 Output:
     JSON with pre-categorized branches ready for presentation.
@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from erk_shared.context.helpers import require_git, require_github, require_repo_root
+from erk_dev.context import ErkDevContext
 
 if TYPE_CHECKING:
     from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
@@ -432,17 +432,18 @@ def _run_audit_collect(
 
 @click.command(name="audit-collect")
 @click.pass_context
-def audit_collect(ctx: click.Context) -> None:
+def audit_collect_command(ctx: click.Context) -> None:
     """Collect and categorize branch/worktree/PR data for audit.
 
     Outputs comprehensive JSON with pre-categorized branches for
     the audit-branches slash command to present.
     """
-    repo_root = require_repo_root(ctx)
-    git = require_git(ctx)
-    github = require_github(ctx)
+    dev_ctx: ErkDevContext = ctx.obj
+    git = dev_ctx.git
+    github = dev_ctx.github
+    repo_root = dev_ctx.repo_root
 
-    # Fetch all data in parallel-friendly order
+    # Fetch all data
     local_branches = git.branch.list_local_branches(repo_root)
     remote_branches = git.branch.list_remote_branches(repo_root)
     worktrees = git.worktree.list_worktrees(repo_root)

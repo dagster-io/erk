@@ -7,6 +7,7 @@ available at import time for inspection.
 
 import click
 
+from erk_dev.commands.audit_collect.command import audit_collect_command
 from erk_dev.commands.branch_commit_count.command import (
     branch_commit_count_command,
 )
@@ -47,6 +48,7 @@ def cli(ctx: click.Context) -> None:
 
 
 # Register all commands
+cli.add_command(audit_collect_command)
 cli.add_command(branch_commit_count_command)
 cli.add_command(bump_version_command)
 cli.add_command(changelog_commits_command)
