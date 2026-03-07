@@ -1,11 +1,7 @@
 """Set up a new codespace for remote Claude execution."""
 
-import json
-import subprocess
-
 import click
 
-from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.real import register_codespace, set_default_codespace
@@ -13,26 +9,15 @@ from erk_shared.gateway.codespace_registry.real import register_codespace, set_d
 DEFAULT_MACHINE_TYPE = "premiumLinux"
 
 
-def _get_repo_id(*, repo: str | None, ctx: ErkContext) -> int:
-    """Get the GitHub repository database ID.
-
-    Uses the --repo flag if provided, otherwise derives from ctx.repo_info.
-    """
+def _resolve_owner_repo(*, repo: str | None, ctx: ErkContext) -> str:
+    """Resolve the owner/repo string from --repo flag or ctx.repo_info."""
     if repo is not None:
-        owner_repo = repo
-    elif ctx.repo_info is not None:
-        owner_repo = f"{ctx.repo_info.owner}/{ctx.repo_info.name}"
-    else:
-        click.echo("Error: No repository specified and no repo info available.", err=True)
-        click.echo("Use --repo owner/repo to specify the repository.", err=True)
-        raise SystemExit(1)
-
-    result = run_with_error_reporting(
-        ["gh", "api", f"repos/{owner_repo}", "--jq", ".id"],
-        error_prefix=f"Failed to get repository ID for '{owner_repo}'",
-        troubleshooting=["Ensure gh is authenticated", "Check the repository exists"],
-    )
-    return int(result.stdout.strip())
+        return repo
+    if ctx.repo_info is not None:
+        return f"{ctx.repo_info.owner}/{ctx.repo_info.name}"
+    click.echo("Error: No repository specified and no repo info available.", err=True)
+    click.echo("Use --repo owner/repo to specify the repository.", err=True)
+    raise SystemExit(1)
 
 
 @click.command("setup")
@@ -89,51 +74,27 @@ def setup_codespace(
         click.echo("\nUse 'erk codespace [name]' to connect to it.", err=True)
         raise SystemExit(1)
 
+    owner_repo = _resolve_owner_repo(repo=repo, ctx=ctx)
+
     # Get repository ID for REST API call
     click.echo(f"Creating codespace '{name}'...", err=True)
-    repo_id = _get_repo_id(repo=repo, ctx=ctx)
+    try:
+        repo_id = ctx.codespace.get_repo_id(owner_repo)
+    except RuntimeError as e:
+        click.echo(f"Failed to get repository ID for '{owner_repo}': {e}", err=True)
+        raise SystemExit(1) from e
 
-    # Build gh api REST call to create codespace directly
-    # This bypasses the broken machines endpoint that gh codespace create uses
-    # GH-API-AUDIT: REST - POST user/codespaces
-    cmd = [
-        "gh",
-        "api",
-        "--method",
-        "POST",
-        "/user/codespaces",
-        "-F",
-        f"repository_id={repo_id}",
-        "-f",
-        f"machine={machine}",
-        "-f",
-        f"display_name={name}",
-        "-f",
-        "devcontainer_path=.devcontainer/devcontainer.json",
-    ]
-
-    if branch is not None:
-        cmd.extend(["-f", f"ref={branch}"])
-
-    click.echo(f"Running: {' '.join(cmd)}", err=True)
-    click.echo("", err=True)
-
-    result = run_with_error_reporting(
-        cmd,
-        error_prefix="Codespace creation failed",
-        troubleshooting=[
-            "Ensure gh is authenticated with codespace permissions",
-            "Check that the machine type is valid",
-        ],
-    )
-
-    # Parse the JSON response to get the codespace name
-    response = json.loads(result.stdout)
-    if "name" not in response:
-        click.echo("Error: API response missing 'name' field.", err=True)
-        click.echo(f"Response: {result.stdout.strip()}", err=True)
-        raise SystemExit(1)
-    gh_name = response["name"]
+    # Create the codespace via gateway
+    try:
+        gh_name = ctx.codespace.create_codespace(
+            repo_id=repo_id,
+            machine=machine,
+            display_name=name,
+            branch=branch,
+        )
+    except RuntimeError as e:
+        click.echo(f"Codespace creation failed: {e}", err=True)
+        raise SystemExit(1) from e
 
     registered = RegisteredCodespace(
         name=name,
@@ -155,22 +116,9 @@ def setup_codespace(
     click.echo("Opening SSH connection for Claude login...", err=True)
     click.echo("", err=True)
 
-    # GH-API-AUDIT: REST - codespace SSH connection
-    login_result = subprocess.run(
-        [
-            "gh",
-            "codespace",
-            "ssh",
-            "-c",
-            gh_name,
-            "--",
-            "-t",
-            "claude login",
-        ],
-        check=False,
-    )
+    login_result = ctx.codespace.run_ssh_command(gh_name, "claude login")
 
-    if login_result.returncode != 0:
+    if login_result != 0:
         click.echo("", err=True)
         click.echo("Note: Claude login may have failed or was cancelled.", err=True)
         retry_cmd = f"gh codespace ssh -c {gh_name} -- -t 'claude login'"

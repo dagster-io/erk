@@ -53,3 +53,43 @@ class Codespace(ABC):
             Exit code from the remote command (0 for success)
         """
         ...
+
+    @abstractmethod
+    def get_repo_id(self, owner_repo: str) -> int:
+        """Get GitHub repository database ID via REST API.
+
+        Args:
+            owner_repo: Repository in "owner/repo" format.
+
+        Returns:
+            The numeric repository ID.
+
+        Raises:
+            RuntimeError: If the API call fails.
+        """
+        ...
+
+    @abstractmethod
+    def create_codespace(
+        self,
+        *,
+        repo_id: int,
+        machine: str,
+        display_name: str,
+        branch: str | None,
+    ) -> str:
+        """Create a codespace via REST API.
+
+        Args:
+            repo_id: GitHub repository database ID.
+            machine: Machine type for the codespace.
+            display_name: Human-readable display name.
+            branch: Branch to create codespace from, or None for default.
+
+        Returns:
+            The gh_name of the created codespace.
+
+        Raises:
+            RuntimeError: If the API call fails or response is malformed.
+        """
+        ...
