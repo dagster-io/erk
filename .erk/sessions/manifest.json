@@ -5,10 +5,11 @@
     {
       "session_id": "b3444176-a7a7-40a5-8a31-a8d95cb22558",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-07T20:53:46.931050+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-07T20:54:55.523683+00:00",
       "files": [
-        "impl-b3444176-a7a7-40a5-8a31-a8d95cb22558-b3444176-a7a7-40a5-8a31-a8d95cb22558.xml"
+        "impl-b3444176-a7a7-40a5-8a31-a8d95cb22558-b3444176-a7a7-40a5-8a31-a8d95cb22558-part1.xml",
+        "impl-b3444176-a7a7-40a5-8a31-a8d95cb22558-b3444176-a7a7-40a5-8a31-a8d95cb22558-part2.xml"
       ]
     }
   ]
