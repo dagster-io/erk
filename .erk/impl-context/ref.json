@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Wire Incremental Dispatch into TUI (Objective #8470, Phase 2)",
+  "objective_id": 8470,
+  "node_ids": [
+    "2.1"
+  ]
+}
