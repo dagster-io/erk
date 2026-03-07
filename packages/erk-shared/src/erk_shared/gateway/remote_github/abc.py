@@ -7,6 +7,8 @@ git repository. All methods take explicit owner/repo parameters.
 
 from abc import ABC, abstractmethod
 
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+
 
 class RemoteGitHub(ABC):
     """GitHub operations that don't require a local git clone.
@@ -194,5 +196,136 @@ class RemoteGitHub(ABC):
             repo: Repository name
             issue_number: Issue or PR number
             body: Comment body
+        """
+        ...
+
+    # --- Read operations for PR commands ---
+
+    @abstractmethod
+    def get_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> IssueInfo | IssueNotFound:
+        """Fetch issue data by number.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            number: Issue number to fetch
+
+        Returns:
+            IssueInfo if found, IssueNotFound if not
+        """
+        ...
+
+    @abstractmethod
+    def get_issue_comments(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> list[str]:
+        """Fetch all comment bodies for an issue.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            number: Issue number
+
+        Returns:
+            List of comment body strings
+        """
+        ...
+
+    @abstractmethod
+    def list_issues(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        labels: tuple[str, ...],
+        state: str,
+        limit: int | None,
+        creator: str | None,
+    ) -> list[IssueInfo]:
+        """List issues with filtering.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            labels: Labels to filter by
+            state: Issue state ("open" or "closed")
+            limit: Maximum number of issues (None for no limit)
+            creator: Filter by creator username (None for all)
+
+        Returns:
+            List of IssueInfo objects
+        """
+        ...
+
+    @abstractmethod
+    def get_prs_referencing_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> list[PRReference]:
+        """Get PRs that reference an issue via timeline API.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            number: Issue number
+
+        Returns:
+            List of PRReference objects
+        """
+        ...
+
+    @abstractmethod
+    def close_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> None:
+        """Close a GitHub issue.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            number: Issue number to close
+        """
+        ...
+
+    @abstractmethod
+    def close_pr(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> None:
+        """Close a pull request.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            number: PR number to close
+        """
+        ...
+
+    @abstractmethod
+    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
+        """Check authentication status via REST API.
+
+        Returns:
+            Tuple of (is_authenticated, username, error_message)
         """
         ...

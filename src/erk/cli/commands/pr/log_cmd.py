@@ -7,9 +7,17 @@ from typing import Literal, TypeAlias, TypedDict
 
 import click
 
+from erk.cli.commands.pr.repo_resolution import (
+    get_remote_github,
+    is_remote_mode,
+    repo_option,
+    resolve_owner_repo,
+)
 from erk.cli.core import discover_repo_context
+from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
 from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.output.output import user_output
@@ -106,8 +114,15 @@ EventExtractor: TypeAlias = Callable[[dict], Event | None]
     is_flag=True,
     help="Output events as JSON instead of human-readable timeline",
 )
+@repo_option
 @click.pass_obj
-def pr_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
+def pr_log(
+    ctx: ErkContext,
+    identifier: str,
+    output_json: bool,
+    *,
+    target_repo: str | None,
+) -> None:
     """Display chronological event log for a plan.
 
     Shows all events from plan creation through submission, workflow execution,
@@ -125,9 +140,59 @@ def pr_log(ctx: ErkContext, identifier: str, output_json: bool) -> None:
         # View events as JSON for scripting
         $ erk pr log 42 --json
 
-        # View by worktree name
-        $ erk pr log erk-add-feature
+        # View from outside a git repo
+        $ erk pr log 42 --repo owner/repo
     """
+    if is_remote_mode(ctx, target_repo=target_repo):
+        _pr_log_remote(ctx, identifier, output_json=output_json, target_repo=target_repo)
+    else:
+        _pr_log_local(ctx, identifier, output_json=output_json)
+
+
+def _pr_log_remote(
+    ctx: ErkContext,
+    identifier: str,
+    *,
+    output_json: bool,
+    target_repo: str | None,
+) -> None:
+    """Remote path for pr log using RemoteGitHub."""
+    try:
+        owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+        remote = get_remote_github(ctx)
+
+        plan_number = parse_issue_identifier(identifier)
+
+        # Verify plan exists
+        issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
+        if isinstance(issue, IssueNotFound):
+            user_output(click.style("Error: ", fg="red") + f"Plan '{identifier}' not found")
+            raise SystemExit(1)
+
+        # Fetch all comments
+        comment_bodies = remote.get_issue_comments(owner=owner, repo=repo_name, number=plan_number)
+
+        # Extract events from all comments
+        events = _extract_events_from_comments(comment_bodies)
+        events.sort(key=lambda e: e["timestamp"])
+
+        if output_json:
+            _output_json(events)
+        else:
+            _output_timeline(events, plan_number)
+
+    except (RuntimeError, ValueError) as e:
+        user_output(click.style("Error: ", fg="red") + str(e))
+        raise SystemExit(1) from e
+
+
+def _pr_log_local(
+    ctx: ErkContext,
+    identifier: str,
+    *,
+    output_json: bool,
+) -> None:
+    """Local path for pr log using local git context."""
     try:
         repo = discover_repo_context(ctx, ctx.cwd)
         ensure_erk_metadata_dir(repo)

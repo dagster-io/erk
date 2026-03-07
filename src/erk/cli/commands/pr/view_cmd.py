@@ -4,11 +4,18 @@ from datetime import datetime
 
 import click
 
+from erk.cli.commands.pr.repo_resolution import (
+    get_remote_github,
+    is_remote_mode,
+    repo_option,
+    resolve_owner_repo,
+)
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.core.typing_utils import narrow_to_literal
+from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.schemas import (
     BRANCH_NAME,
     CREATED_BY,
@@ -36,7 +43,8 @@ from erk_shared.gateway.github.parsing import (
     extract_owner_repo_from_github_url,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.conversion import github_issue_to_plan
+from erk_shared.plan_store.types import Plan, PlanNotFound
 
 
 def _format_value(value: object) -> str:
@@ -222,8 +230,15 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
 @click.option("--full", "-f", is_flag=True, help="Show full plan body")
+@repo_option
 @click.pass_obj
-def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
+def pr_view(
+    ctx: ErkContext,
+    identifier: str | None,
+    *,
+    full: bool,
+    target_repo: str | None,
+) -> None:
     """Fetch and display a plan by identifier.
 
     IDENTIFIER can be a plain number (e.g., "42") or a GitHub issue URL
@@ -234,10 +249,56 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
 
     By default, shows only header information. Use --full to display
     the complete plan body.
+
+    Examples:
+        erk pr view 42
+        erk pr view 42 --full
+        erk pr view 42 --repo owner/repo
     """
+    if is_remote_mode(ctx, target_repo=target_repo):
+        _pr_view_remote(ctx, identifier, full=full, target_repo=target_repo)
+    else:
+        _pr_view_local(ctx, identifier, full=full)
+
+
+def _pr_view_remote(
+    ctx: ErkContext,
+    identifier: str | None,
+    *,
+    full: bool,
+    target_repo: str | None,
+) -> None:
+    """Remote path for pr view using RemoteGitHub."""
+    if identifier is None:
+        user_output(
+            click.style("Error: ", fg="red")
+            + "A plan identifier is required in remote mode (cannot infer from branch).\n"
+            "Usage: erk pr view <number> --repo owner/repo"
+        )
+        raise SystemExit(1)
+
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_remote_github(ctx)
+
+    plan_number = parse_issue_identifier(identifier)
+
+    issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
+    if isinstance(issue, IssueNotFound):
+        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+        raise SystemExit(1)
+
+    # Convert IssueInfo to Plan using existing conversion
+    plan = github_issue_to_plan(issue)
+    header_info = plan.header_fields
+
+    _display_plan(plan, plan_id=str(plan_number), header_info=header_info, full=full)
+
+
+def _pr_view_local(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
+    """Local path for pr view using local git context."""
     repo = discover_repo_context(ctx, ctx.cwd)
-    ensure_erk_metadata_dir(repo)  # Ensure erk metadata directories exist
-    repo_root = repo.root  # Use git repository root for GitHub operations
+    ensure_erk_metadata_dir(repo)
+    repo_root = repo.root
 
     # Resolve plan: explicit argument or infer from branch
     if identifier is not None:
@@ -281,7 +342,20 @@ def pr_view(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
     else:
         header_info = all_meta
 
-    # Display plan details with consistent formatting
+    _display_plan(plan, plan_id=plan_id, header_info=header_info, full=full)
+
+
+def _display_plan(
+    plan: Plan,
+    *,
+    plan_id: str,
+    header_info: dict[str, object],
+    full: bool,
+) -> None:
+    """Display plan details with consistent formatting.
+
+    Shared display logic used by both local and remote paths.
+    """
     user_output("")
     user_output(_format_field("Title", click.style(plan.title, bold=True)))
 

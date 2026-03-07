@@ -1,0 +1,439 @@
+"""Tests for PR command remote paths (--repo flag / NoRepoSentinel)."""
+
+from datetime import UTC, datetime
+
+from click.testing import CliRunner
+
+from erk.cli.cli import cli
+from erk.core.context import context_for_test
+from erk_shared.context.types import NoRepoSentinel
+from erk_shared.core.fakes import FakePlanListService
+from erk_shared.core.plan_list_service import PlanListData
+from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from erk_shared.plan_store.types import Plan, PlanState
+from tests.fakes.prompt_executor import FakePromptExecutor
+
+
+def _make_fake_remote(
+    *,
+    issues: dict[int, IssueInfo] | None = None,
+    issue_comments: dict[int, list[str]] | None = None,
+    pr_references: dict[int, list[PRReference]] | None = None,
+) -> FakeRemoteGitHub:
+    """Create a FakeRemoteGitHub with sensible defaults."""
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues,
+        issue_comments=issue_comments,
+        pr_references=pr_references,
+    )
+
+
+def _make_issue(number: int, *, title: str = "Test Plan", state: str = "OPEN") -> IssueInfo:
+    """Create a test IssueInfo."""
+    return IssueInfo(
+        number=number,
+        title=title,
+        body="Test plan body content",
+        state=state,
+        url=f"https://github.com/owner/repo/issues/{number}",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-author",
+    )
+
+
+def _build_remote_context(
+    fake_remote: FakeRemoteGitHub,
+    *,
+    target_repo: str | None = "owner/repo",
+) -> context_for_test:
+    """Build ErkContext configured for remote mode testing."""
+    return context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+    )
+
+
+# --- pr view --repo ---
+
+
+def test_view_remote_displays_plan() -> None:
+    """Test pr view with --repo flag displays plan data."""
+    issue = _make_issue(42, title="Remote Plan Title")
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "view", "42", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "Remote Plan Title" in result.output
+    assert "#42" in result.output
+    assert "OPEN" in result.output
+
+
+def test_view_remote_with_full_flag() -> None:
+    """Test pr view --repo --full shows the body."""
+    issue = IssueInfo(
+        number=42,
+        title="Full View Plan",
+        body="Detailed plan body here",
+        state="OPEN",
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-author",
+    )
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "view", "42", "--repo", "owner/repo", "--full"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "Detailed plan body here" in result.output
+
+
+def test_view_remote_not_found() -> None:
+    """Test pr view --repo with non-existent plan."""
+    fake_remote = _make_fake_remote(issues={})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "view", "999", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "Plan #999 not found" in result.output
+
+
+def test_view_remote_requires_identifier() -> None:
+    """Test pr view --repo without identifier gives error."""
+    fake_remote = _make_fake_remote()
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "view", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "identifier is required in remote mode" in result.output
+
+
+# --- pr close --repo ---
+
+
+def test_close_remote_closes_plan() -> None:
+    """Test pr close with --repo flag closes the plan."""
+    issue = _make_issue(42)
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "close", "42", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "Closed plan #42" in result.output
+    assert len(fake_remote.closed_issues) == 1
+    assert fake_remote.closed_issues[0].number == 42
+
+
+def test_close_remote_closes_linked_prs() -> None:
+    """Test pr close --repo closes linked OPEN PRs."""
+    issue = _make_issue(42)
+    open_pr = PRReference(number=100, state="OPEN", is_draft=False)
+    merged_pr = PRReference(number=101, state="MERGED", is_draft=False)
+    fake_remote = _make_fake_remote(
+        issues={42: issue},
+        pr_references={42: [open_pr, merged_pr]},
+    )
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "close", "42", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "Closed plan #42" in result.output
+    assert "Closed 1 linked PR(s): #100" in result.output
+    # Only OPEN PR should be closed
+    assert len(fake_remote.closed_prs) == 1
+    assert fake_remote.closed_prs[0].number == 100
+
+
+def test_close_remote_not_found() -> None:
+    """Test pr close --repo with non-existent plan."""
+    fake_remote = _make_fake_remote(issues={})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "close", "999", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "Plan #999 not found" in result.output
+
+
+# --- pr log --repo ---
+
+
+def test_log_remote_displays_events() -> None:
+    """Test pr log with --repo flag parses events from comments."""
+    issue = _make_issue(42)
+    # Comment with an erk-plan metadata block
+    comment_body = """<!-- erk:metadata-block:erk-plan -->
+<details>
+<summary><code>erk-plan</code></summary>
+
+```yaml
+
+timestamp: "2024-01-15T10:30:00Z"
+worktree_name: test-wt
+
+```
+
+</details>
+<!-- /erk:metadata-block:erk-plan -->
+"""
+    fake_remote = _make_fake_remote(
+        issues={42: issue},
+        issue_comments={42: [comment_body]},
+    )
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "log", "42", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "Plan #42 Event Timeline" in result.output
+    assert "Plan created" in result.output
+
+
+def test_log_remote_not_found() -> None:
+    """Test pr log --repo with non-existent plan."""
+    fake_remote = _make_fake_remote(issues={})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "log", "999", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "Plan '999' not found" in result.output
+
+
+def test_log_remote_no_events() -> None:
+    """Test pr log --repo with no events."""
+    issue = _make_issue(42)
+    fake_remote = _make_fake_remote(
+        issues={42: issue},
+        issue_comments={42: []},
+    )
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "log", "42", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "No events found" in result.output
+
+
+# --- pr check --repo ---
+
+
+def test_check_remote_requires_identifier() -> None:
+    """Test pr check --repo without identifier gives error."""
+    fake_remote = _make_fake_remote()
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "check", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "local git repository" in result.output
+
+
+def test_check_remote_plan_not_found() -> None:
+    """Test pr check --repo with non-existent plan."""
+    fake_remote = _make_fake_remote(issues={})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "check", "999", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "Plan #999 not found" in result.output
+
+
+# --- repo_resolution edge cases ---
+
+
+def test_invalid_repo_format() -> None:
+    """Test --repo with invalid format gives helpful error."""
+    fake_remote = _make_fake_remote()
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "view", "42", "--repo", "invalid"], obj=ctx)
+
+    assert result.exit_code != 0
+    assert "Invalid --repo format" in result.output
+
+
+# --- pr duplicate-check --repo ---
+
+
+def _make_plan(
+    *,
+    plan_identifier: str,
+    title: str,
+    body: str,
+) -> Plan:
+    return Plan(
+        plan_identifier=plan_identifier,
+        title=title,
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2025, 1, 1, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+
+def _make_plan_list_service(plans: list[Plan]) -> FakePlanListService:
+    return FakePlanListService(
+        data=PlanListData(plans=plans, pr_linkages={}, workflow_runs={}),
+    )
+
+
+def _non_interactive_console() -> FakeConsole:
+    return FakeConsole(
+        is_interactive=False,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=None,
+    )
+
+
+def test_duplicate_check_remote_no_duplicates() -> None:
+    """Test pr duplicate-check --repo with no duplicates returns success."""
+    executor = FakePromptExecutor(
+        simulated_prompt_output='{"duplicates": []}',
+    )
+    existing = _make_plan(
+        plan_identifier="100", title="Refactor auth", body="Restructure auth flow"
+    )
+
+    issue = _make_issue(200, title="New Plan")
+    fake_remote = _make_fake_remote(issues={200: issue})
+
+    ctx = context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+        prompt_executor=executor,
+        console=_non_interactive_console(),
+        plan_list_service=_make_plan_list_service([existing]),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    assert "No duplicates found" in result.output
+
+
+def test_duplicate_check_remote_finds_duplicate() -> None:
+    """Test pr duplicate-check --repo detects duplicates."""
+    llm_output = '{"duplicates": [{"plan_id": "100", "explanation": "Both refactor auth"}]}'
+    executor = FakePromptExecutor(
+        simulated_prompt_output=llm_output,
+    )
+    existing = _make_plan(
+        plan_identifier="100", title="Refactor auth", body="Restructure auth flow"
+    )
+
+    issue = _make_issue(200, title="New Plan")
+    fake_remote = _make_fake_remote(issues={200: issue})
+
+    ctx = context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+        prompt_executor=executor,
+        console=_non_interactive_console(),
+        plan_list_service=_make_plan_list_service([existing]),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 1
+    assert "Potential duplicate(s) found" in result.output
+    assert "Both refactor auth" in result.output
+
+
+# --- pr list --repo ---
+
+
+def test_list_remote_shows_plans() -> None:
+    """Test pr list --repo displays plans."""
+    plan1 = _make_plan(plan_identifier="1", title="Plan One", body="body")
+    plan2 = _make_plan(plan_identifier="2", title="Plan Two", body="body")
+
+    fake_remote = _make_fake_remote()
+
+    ctx = context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+        plan_list_service=_make_plan_list_service([plan1, plan2]),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "list", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    assert "Found 2 plan(s)" in result.output
+    assert "#1" in result.output
+    assert "#2" in result.output
+
+
+def test_list_remote_empty() -> None:
+    """Test pr list --repo with no plans."""
+    fake_remote = _make_fake_remote()
+
+    ctx = context_for_test(
+        repo=NoRepoSentinel(),
+        remote_github=fake_remote,
+        plan_list_service=_make_plan_list_service([]),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "list", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0
+    assert "No plans found" in result.output
