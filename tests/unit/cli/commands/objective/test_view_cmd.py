@@ -799,3 +799,47 @@ def test_view_fan_out_json_includes_pending_unblocked() -> None:
 
         # in_flight should be 0 (nothing planning or in_progress)
         assert data["summary"]["in_flight"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Objective inference tests (no explicit ref argument)
+# ---------------------------------------------------------------------------
+
+
+def test_view_objective_inferred_from_branch_name() -> None:
+    """Test that objective is inferred from branch name when no ref provided."""
+    issue = _make_issue(8832, "Objective: Branch Inferred", OBJECTIVE_WITH_ROADMAP)
+    fake_gh = FakeGitHubIssues(issues={8832: issue})
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(
+            issues=fake_gh,
+            current_branch="plnd/O8832-rename-thing-03-06-1802",
+        )
+        result = runner.invoke(
+            view_objective,
+            [],  # No argument provided
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert "Objective: Branch Inferred" in result.output
+
+
+def test_view_objective_no_ref_no_inference() -> None:
+    """Test error when no ref provided and branch is not linked to an objective."""
+    runner = CliRunner()
+
+    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(
+            current_branch="feature-branch",
+        )
+        result = runner.invoke(
+            view_objective,
+            [],  # No argument provided
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 1
+        assert "not linked to an objective" in result.output

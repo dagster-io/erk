@@ -11,20 +11,33 @@ Displays progress and associations for an objective issue, including roadmap sta
 ## Usage
 
 ```bash
-/local:objective-view <objective_number>
+/local:objective-view [<objective_number>]
 ```
 
 ---
 
 ## Agent Instructions
 
-### Step 1: Validate Arguments
+### Step 1: Resolve Objective Reference
 
-Parse `$ARGUMENTS` for the objective number. If no objective number provided, display error:
+Parse `$ARGUMENTS` for the objective number.
+
+**If `$ARGUMENTS` is provided (non-empty):** Use the provided value directly as the objective number (parse as number or URL).
+
+**If `$ARGUMENTS` is empty/not provided:** Infer the objective from the current branch:
+
+```bash
+erk exec resolve-objective-ref
+```
+
+Parse the JSON output:
+
+- If `"resolved": true`, use the `objective_number` from the result.
+- If `"resolved": false`, display error:
 
 ```
-Error: Objective number required.
-Usage: /local:objective-view <objective_number>
+Error: No objective number provided and could not infer from current branch.
+Usage: /local:objective-view [<objective_number>]
 ```
 
 ### Step 2: Fetch Objective Issue
