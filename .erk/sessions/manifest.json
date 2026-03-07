@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "plan_id": 8891,
+  "sessions": [
+    {
+      "session_id": "ed7dd152-8d13-4ecf-aed7-8a515eaac8c6",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-06T21:16:08.793456+00:00",
+      "files": [
+        "planning-ed7dd152-8d13-4ecf-aed7-8a515eaac8c6-ed7dd152-8d13-4ecf-aed7-8a515eaac8c6-part1.xml",
+        "planning-ed7dd152-8d13-4ecf-aed7-8a515eaac8c6-ed7dd152-8d13-4ecf-aed7-8a515eaac8c6-part2.xml"
+      ]
+    }
+  ]
+}

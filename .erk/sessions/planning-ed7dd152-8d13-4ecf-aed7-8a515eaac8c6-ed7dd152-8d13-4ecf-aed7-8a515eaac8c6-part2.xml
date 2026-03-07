@@ -1,0 +1,494 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01NGim9voDZz3GWGHr1QfSiS">
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:118:    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-119-        """Resolve plan identifier for a branch by querying for a PR.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-120-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-121-        Resolving the plan requires an API call to find the draft PR associated
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-122-        with the branch.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-123-
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-124-        Args:
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-125-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-126-            branch_name: Git branch name
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-127-
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-128-        Returns:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-129-            PR number as string if a draft PR exists for the branch, None otherwise
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-130-        """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-131-        result = self._github.get_pr_for_branch(repo_root, branch_name)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-132-        if isinstance(result, PRNotFound):
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-133-            return None
+--
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:136:    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -&gt; Plan | PlanNotFound:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-137-        """Look up the plan associated with a branch.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-138-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-139-        Queries for a draft PR on the branch and converts to Plan.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-140-
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-141-        Args:
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-142-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-143-            branch_name: Git branch name
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-144-
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-145-        Returns:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-146-            Plan if found, PlanNotFound if no draft PR exists for the branch
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-147-        """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-148-        result = self._github.get_pr_for_branch(repo_root, branch_name)
+
+... [37 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3159" cache_read_input_tokens="62622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3159}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have all the information I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3159" cache_read_input_tokens="62622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3159}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01C4pgpxmB6e1ik7KLsWWsKW">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3159" cache_read_input_tokens="62622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3159}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C4pgpxmB6e1ik7KLsWWsKW">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01TRinjZvrDLK8KR7Ribjg4d">
+    <param name="file_path">/Users/schrockn/.claude/plans/structured-watching-codd.md</param>
+    <param name="content"># Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking
+
+## Context
+
+PRs merged out...[truncated 4649 chars]...to-end**: Land a PR with `erk land`, verify the `erk-reconciled` label appears on the PR.
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4056" cache_read_input_tokens="65781" output_tokens="1586" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4056, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TRinjZvrDLK8KR7Ribjg4d">
+File created successfully at: /Users/schrockn/.claude/plans/structured-watching-codd.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01P9LQvgNMJaZ7tLyUzNHJfT">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1624" cache_read_input_tokens="69837" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1624, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P9LQvgNMJaZ7tLyUzNHJfT">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01ANfrA4SBfGsvMvVRebgbNZ">
+    <param name="plan"># Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking
+
+## Context
+
+PRs merged out...[truncated 4649 chars]...to-end**: Land a PR with `erk land`, verify the `erk-reconciled` label appears on the PR.
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="847" cache_read_input_tokens="71461" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 847, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ANfrA4SBfGsvMvVRebgbNZ">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/structured-watching-codd.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id ed7dd152-8d13-4ecf-aed7-8a515eaac8c6 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0187jNcrCwZAf1avddNyhUxU">
+    <param name="file_path">/Users/schrockn/.claude/plans/structured-watching-codd.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="72308" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 686, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0187jNcrCwZAf1avddNyhUxU">
+     1→# Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking
+     2→
+     3→## Context
+     4→
+     5→PRs merged outside `erk land` (e.g., via GitHub web UI or Graphite merge button) don't get their post-merge lifecycle executed: objective updates and learn PR creation are skipped. `erk reconcile` was designed to catch these, but it only detects **local** branches whose remote tracking ref is `gone`. PRs that were dispatched remotely and merged without ever having a local branch (like PR #8884) slip through entirely.
+     6→
+     7→The fix: introduce an `erk-reconciled` label that gets stamped on every PR after its post-merge lifecycle completes. This gives reconcile a second detection path: sweep GitHub for merged `erk-pr` PRs missing the label.
+     8→
+     9→## Plan
+    10→
+    11→### 1. Add label constant
+    12→
+    13→**File:** `src/erk/cli/constants.py`
+    14→
+    15→Add `ERK_RECONCILED_LABEL = "erk-reconciled"` alongside the existing label constants.
+    16→
+    17→### 2. Stamp label after `erk land` succeeds
+    18→
+    19→Both execution paths need the stamp, placed after the execution pipeline succeeds but before the objective update (which is already fail-open):
+    20→
+    21→**Path A — Direct execution:** `src/erk/cli/commands/land_cmd.py:_execute_land_directly`
+    22→- Insert after line 930 (`exit_after = exc`), before line 932 (objective update)
+    23→- Fail-open: wrap in try/except, log warning on failure
+    24→
+    25→**Path B — Deferred execution:** `src/erk/cli/commands/exec/scripts/land_execute.py:land_execute`
+    26→- Insert after line 191 (`exit_after = exc`), before line 193 (objective update)
+    27→- Same fail-open pattern
+    28→
+    29→Both call `ctx.github.add_label_to_pr(main_repo_root, pr_number, ERK_RECONCILED_LABEL)`.
+    30→
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_015Ed16nn4X25HJQfqHEsJDi">
+    <param name="questions">[{'question': 'Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking\nCurrent conte...[truncated 386 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1877" cache_read_input_tokens="72994" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1877}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Ed16nn4X25HJQfqHEsJDi">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>before we proceed we need to understand the endstate. what is the final realized vision of erk with this reconciliation flow enabled?</user>
+  <assistant>
+
+Good question. Let me think about this holistically.
+
+The realized vision is: **every merged `erk-pr` PR gets its full post-merge lifecycle — learn extraction and objective updates — regardless of how it was merged.** The three merge paths all converge:
+
+1. **`erk land`** — lifecycle runs inline, stamps `erk-reconciled`
+2. **Merged via GitHub/Graphite UI with a local branch** — `erk reconcile` detects the gone branch, runs lifecycle, stamps `erk-reconciled`
+3. **Merged remotely with no local branch** (dispatched PRs) — `erk reconcile` sweeps GitHub for unreconciled merged PRs, runs lifecycle, stamps `erk-reconciled`
+
+The label is the unifying invariant: **a merged `erk-pr` PR without `erk-reconciled` means its lifecycle hasn't run.** This makes the system self-healing — you can run `erk reconcile` at any time and it will catch up on anything that was missed, whether from yesterday or last week.
+
+The practical outcomes:
+- **Objectives stay accurate** — nodes get marked done even when PRs land outside the happy path
+- **Learning never gets skipped** — sessions from dispatched implementations get mined for insights
+- **Auditable** — look at any merged PR's labels and you can tell if it went through the lifecycle
+
+The deeper question is probably: **where does `erk reconcile` fit in the workflow?** Is it something you run manually when you notice things are stale? Is it automatic (hook on `git pull`, cron, CI)? Does `erk dash` surface "N unreconciled PRs" as a nudge?
+
+Right now it's manual. The label foundation makes all those future integrations possible without changing the detection logic.
+
+What's your thinking on where this should go?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1923" cache_read_input_tokens="74871" output_tokens="428" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1923, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>for now its manual but we would have to automate it at some point in the near future once we understand all the use caess</user>
+  <assistant>
+
+Makes sense — manual now, build the foundation right so automation is just a trigger change later.
+
+Let me save this plan so we can implement it in a dedicated worktree.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="615" cache_read_input_tokens="76794" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 615}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01NBwo1wdi19QBZavpAtNKEz">
+    <param name="questions">[{'question': 'Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking\nCurrent conte...[truncated 386 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="615" cache_read_input_tokens="76794" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 615, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NBwo1wdi19QBZavpAtNKEz">
+User has answered your questions: "Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01FBTPrGX2KPQzNKoFgVYoCF">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="77409" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 339, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FBTPrGX2KPQzNKoFgVYoCF">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_019CAzn4he6V4jgaXpAHFMe5">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="77748" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019CAzn4he6V4jgaXpAHFMe5">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="ed7dd152-8d13-4ecf-aed7-8a515eaac8c6" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="ed7dd152-8d13-4ecf-aed7-8a515eaac8c6" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "ed7dd152-8d13-4ecf-aed7-8a515eaac8c6" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "ed7dd152-8d13-4ecf-aed7-8a515eaac8c6" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "ed7dd152-8d13-4ecf-aed7-8a515eaac8c6" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "ed7dd152-8d13-4ecf-aed7-8a515eaac8c6" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me follow the plan-save steps.
+
+**Step 1: Parse Arguments** — No flags passed. All flags empty.
+
+**Step 2: Generate Branch Slug** — From title "Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking":
+
+`BRANCH_SLUG = "add-reconciled-label"`
+
+**Step 3: Generate Plan Summary**
+
+`PLAN_SUMMARY = "Introduces an erk-reconciled GitHub label stamped after post-merge lifecycle (learn + objective update) completes. Adds a sweep detection path to erk reconcile that finds merged erk-pr PRs missing this label, closing the gap where remotely-dispatched PRs were never processed."`
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2393" cache_read_input_tokens="78316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2393}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019dRbmXxDCrgAxqUW6yfipS">
+    <param name="command">erk exec plan-save --format json --session-id="ed7dd152-8d13-4ecf-aed7-8a515eaac8c6" --bra...[truncated 210 chars]...s missing this label, closing the gap where remotely-dispatched PRs were never processed."</param>
+    <param name="description">Save plan as draft PR on GitHub</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2393" cache_read_input_tokens="78316" output_tokens="387" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2393, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019dRbmXxDCrgAxqUW6yfipS">
+{"success": true, "plan_number": 8891, "plan_url": "https://github.com/dagster-io/erk/pull/8891", "title": "[erk-plan] Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking", "branch_name": "plnd/add-reconciled-label-03-06-2115", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/ed7dd152-8d13-4ecf-aed7-8a515eaac8c6/plan_snapshots/000001-90251dad"}
+  </tool_result>
+  <assistant>**Step 5 (objective):** No objective linked — skipping.
+
+**Step 6 (objective roadmap):** No objective linked — skipping.
+
+**Step 7: Display Results**
+
+Plan "Add `erk-reconciled` Label for Post-Merge Lifecycle Tracking" saved as draft PR #8891
+URL: https://github.com/dagster-io/erk/pull/8891
+
+**Push Planning Session:**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="80709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 682}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UXDv54boqpiYBZHZCw5c62">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="80709" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 682, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UXDv54boqpiYBZHZCw5c62">
+SESSION_ID=ed7dd152-8d13-4ecf-aed7-8a515eaac8c6
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/ed7dd152-8d13-4ecf-aed7-8a515eaac8c6.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01V74gDkx5sgCpeLdqcRWr3P">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4ecf-aed7-8a515eaac8c6" --stage planning --source local --plan-id 8891 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="81391" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 287, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
