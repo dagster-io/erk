@@ -101,9 +101,12 @@ Quick reference for all `erk exec` subcommands.
 | `set-pr-description`              | Update PR title and body with agent-provided values.                        |
 | `setup-impl`                      | Consolidated implementation setup.                                          |
 | `setup-impl-from-pr`              | Set up .erk/impl-context/ folder from GitHub PR in current worktree.        |
-| `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan.                  |
-| `track-learn-evaluation`          | Track learn evaluation completion on a plan.                                |
-| `track-learn-result`              | Track learn workflow result on a plan.                                      |
+| `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan issue.            |
+| `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                          |
+| `track-learn-result`              | Track learn workflow result on a plan issue.                                |
+| `trigger-async-learn`             | Trigger async learn workflow for a plan.                                    |
+| `tripwire-scan`                   | Mechanical pre-scan of tripwire patterns against the current diff.          |
+| `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                        |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).         |
 | `update-objective-node`           | Update node PR cells in an objective's roadmap table.                       |
 | `update-plan-header`              | Update plan-header metadata fields on a plan.                               |
@@ -1292,6 +1295,43 @@ Track learn workflow result on a plan.
 | `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
 | `--learn-plan` | INTEGER | No       | Sentinel.UNSET | Learn plan number (required if status is completed_with_plan)        |
 | `--plan-pr`    | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
+
+### trigger-async-learn
+
+Trigger async learn workflow for a plan.
+
+**Usage:** `erk exec trigger-async-learn` <plan_id>
+
+**Arguments:**
+
+| Name      | Required | Description |
+| --------- | -------- | ----------- |
+| `PLAN_ID` | Yes      | -           |
+
+**Options:**
+
+| Flag              | Type | Required | Default | Description                                                                     |
+| ----------------- | ---- | -------- | ------- | ------------------------------------------------------------------------------- |
+| `--skip-workflow` | FLAG | No       | -       | Run preprocessing and commit to learn branch, but skip triggering the workflow. |
+
+### tripwire-scan
+
+Mechanical pre-scan of tripwire patterns against the current diff.
+
+**Usage:** `erk exec tripwire-scan`
+
+**Options:**
+
+| Flag     | Type | Required | Default | Description                                    |
+| -------- | ---- | -------- | ------- | ---------------------------------------------- |
+| `--base` | TEXT | No       | -       | Base ref for diff (default: auto-detect trunk) |
+
+### tripwires-reminder-hook
+
+Output tripwires reminder for UserPromptSubmit hook.
+
+**Usage:** `erk exec tripwires-reminder-hook`
+
 
 ### update-issue-body
 
