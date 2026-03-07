@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "plan_id": 8878,
+  "sessions": [
+    {
+      "session_id": "a7132142-dfc1-4689-810c-c656060b3cf6",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-07T00:28:17.795472+00:00",
+      "files": [
+        "impl-a7132142-dfc1-4689-810c-c656060b3cf6-a7132142-dfc1-4689-810c-c656060b3cf6.xml"
+      ]
+    }
+  ]
+}
