@@ -45,6 +45,8 @@ from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_docs.real import RealAgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.cmux.abc import Cmux
+from erk_shared.gateway.cmux.real import RealCmux
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.codespace.real import RealCodespace
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
@@ -136,6 +138,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 
     from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    from erk_shared.gateway.cmux.fake import FakeCmux
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
     from erk_shared.gateway.completion.fake import FakeCompletion
@@ -178,6 +181,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         console=fake_console,
         shell=FakeShell(),
         codespace=fake_codespace,
+        cmux=FakeCmux(workspace_ref="fake-ws"),
         agent_launcher=FakeAgentLauncher(),
         agent_docs=FakeAgentDocs(files={}, has_docs_dir=True),
         completion=FakeCompletion(),
@@ -211,6 +215,7 @@ def context_for_test(
     console: Console | None = None,
     shell: Shell | None = None,
     codespace: Codespace | None = None,
+    cmux: Cmux | None = None,
     agent_launcher: AgentLauncher | None = None,
     agent_docs: AgentDocs | None = None,
     completion: Completion | None = None,
@@ -272,6 +277,7 @@ def context_for_test(
 
     from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    from erk_shared.gateway.cmux.fake import FakeCmux
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
     from erk_shared.gateway.completion.fake import FakeCompletion
@@ -355,6 +361,9 @@ def context_for_test(
             run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
         )
 
+    if cmux is None:
+        cmux = FakeCmux(workspace_ref="fake-ws")
+
     if agent_launcher is None:
         agent_launcher = FakeAgentLauncher()
 
@@ -423,6 +432,7 @@ def context_for_test(
         console=console,
         shell=shell,
         codespace=codespace,
+        cmux=cmux,
         agent_launcher=agent_launcher,
         agent_docs=agent_docs,
         completion=completion,
@@ -693,6 +703,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         console=console,
         shell=RealShell(),
         codespace=RealCodespace(),
+        cmux=RealCmux(),
         agent_launcher=real_agent_launcher,
         agent_docs=real_agent_docs,
         completion=RealCompletion(),

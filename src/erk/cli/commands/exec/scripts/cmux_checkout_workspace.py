@@ -22,10 +22,12 @@ Exit Codes:
 """
 
 import json
-import subprocess
 from dataclasses import asdict, dataclass
 
 import click
+
+from erk_shared.context.helpers import require_context, require_github, require_repo_root
+from erk_shared.gateway.github.types import PRNotFound
 
 
 @dataclass(frozen=True)
@@ -44,30 +46,6 @@ class CmuxOpenPrError:
 
     success: bool
     error: str
-
-
-def _get_pr_head_branch(pr_number: int) -> str | None:
-    """Fetch PR head branch name using gh."""
-    try:
-        result = subprocess.run(
-            [
-                "gh",
-                "pr",
-                "view",
-                str(pr_number),
-                "--json",
-                "headRefName",
-                "--jq",
-                ".headRefName",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        branch = result.stdout.strip()
-        return branch if branch else None
-    except subprocess.CalledProcessError:
-        return None
 
 
 def _extract_workspace_name(output: str) -> str | None:
@@ -105,7 +83,8 @@ def _extract_workspace_name(output: str) -> str | None:
     default="checkout",
     help="checkout (lightweight) or teleport (heavyweight with sync)",
 )
-def cmux_open_pr(pr: int, branch: str | None, mode: str) -> None:
+@click.pass_context
+def cmux_open_pr(ctx: click.Context, pr: int, branch: str | None, mode: str) -> None:
     """Create a cmux workspace to open a PR.
 
     Creates a new cmux workspace that:
@@ -116,8 +95,10 @@ def cmux_open_pr(pr: int, branch: str | None, mode: str) -> None:
     """
     # Auto-detect branch if not provided
     if branch is None:
-        branch = _get_pr_head_branch(pr)
-        if branch is None:
+        github = require_github(ctx)
+        repo_root = require_repo_root(ctx)
+        result = github.get_pr(repo_root, pr)
+        if isinstance(result, PRNotFound):
             click.echo(
                 json.dumps(
                     asdict(
@@ -130,6 +111,7 @@ def cmux_open_pr(pr: int, branch: str | None, mode: str) -> None:
                 )
             )
             raise SystemExit(1)
+        branch = result.head_ref_name
 
     # Build the checkout command that will run inside the new workspace
     if mode == "teleport":
@@ -137,25 +119,12 @@ def cmux_open_pr(pr: int, branch: str | None, mode: str) -> None:
     else:
         checkout_cmd = f'source "$(erk pr checkout {pr} --script)"'
 
-    # Build the shell pipeline:
-    # 1. Create workspace with checkout command
-    # 2. Extract workspace name
-    # 3. Rename workspace to branch name
-    shell_cmd = (
-        f"WS=$(cmux new-workspace --command '{checkout_cmd}' | awk '{{print $2}}') && "
-        f'cmux rename-workspace --workspace "$WS" "{branch}" && '
-        "echo $WS"
-    )
+    cmux = require_context(ctx).cmux
 
     try:
-        result = subprocess.run(
-            ["bash", "-c", shell_cmd],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        workspace_name = _extract_workspace_name(result.stdout)
+        ws_ref = cmux.create_workspace(command=checkout_cmd)
+        cmux.rename_workspace(workspace_ref=ws_ref, new_name=branch)
+        workspace_name = _extract_workspace_name(ws_ref)
 
         click.echo(
             json.dumps(
@@ -169,14 +138,13 @@ def cmux_open_pr(pr: int, branch: str | None, mode: str) -> None:
                 )
             )
         )
-    except subprocess.CalledProcessError as e:
-        error_output = e.stderr.strip() if e.stderr else e.stdout.strip()
+    except RuntimeError as e:
         click.echo(
             json.dumps(
                 asdict(
                     CmuxOpenPrError(
                         success=False,
-                        error=f"Failed to create cmux workspace: {error_output}",
+                        error=f"Failed to create cmux workspace: {e}",
                     )
                 )
             )

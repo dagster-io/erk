@@ -25,6 +25,7 @@ from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.cmux.abc import Cmux
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import LocalGitHub
@@ -51,6 +52,7 @@ def context_for_test(
     agent_docs: AgentDocs | None = None,
     prompt_executor: PromptExecutor | None = None,
     codespace: Codespace | None = None,
+    cmux: Cmux | None = None,
     plan_store: PlanBackend | None = None,
     local_config: LoadedConfig | None = None,
     remote_github: RemoteGitHub | None = None,
@@ -100,6 +102,7 @@ def context_for_test(
     from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
     from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
     from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    from erk_shared.gateway.cmux.fake import FakeCmux
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
@@ -153,6 +156,9 @@ def context_for_test(
         if codespace is not None
         else FakeCodespace(run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name")
     )
+    resolved_cmux: Cmux = (
+        cmux if cmux is not None else FakeCmux(workspace_ref="fake-ws")
+    )
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
     # Create repo context
@@ -202,6 +208,7 @@ def context_for_test(
         shell=FakeShell(),
         completion=FakeCompletion(),
         codespace=resolved_codespace,
+        cmux=resolved_cmux,
         agent_launcher=resolved_agent_launcher,
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
