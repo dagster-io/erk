@@ -140,7 +140,7 @@ Step 4 (`extract_diff`) truncates diffs to fit AI context limits **before** writ
 
 ## State-Based Plan Detection
 
-The pipeline detects plan implementations via `state.plan_id is not None`. This drives two auto-behaviors:
+The pipeline detects plan implementations via `state.plan_id is not None or state.branch_name.startswith("plnd/")`. The branch-prefix fallback handles the case where `.erk/impl-context/` cleanup occurred before a failed push attempt, leaving `plan_id` as `None` but the branch name still indicating a plan implementation. This drives two auto-behaviors:
 
 1. **Auto-force push:** Plan branches always diverge from remote (scaffolding vs implementation commits). The pipeline derives `effective_force = state.force or is_plan_impl` to auto-enable force-push. See [Derived Flags Pattern](../architecture/derived-flags.md).
 

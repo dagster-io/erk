@@ -32,7 +32,7 @@ branch_exists_on_remote() → fetch_branch() → is_branch_diverged_from_remote(
 1. **`branch_exists_on_remote()`**: Skip divergence check entirely for new branches (no remote to diverge from)
 2. **`fetch_branch()`**: Fetch the remote branch so local git knows the remote state
 3. **`is_branch_diverged_from_remote()`**: Returns a divergence object with `ahead` and `behind` counts
-4. **Check `behind > 0`**: If the local branch is behind remote AND `effective_force` is `False`, return a `SubmitError` with `error_type="remote_diverged"`. Note: `effective_force = state.force or is_plan_impl`, so plan implementations (`state.plan_id is not None`) auto-force and never hit this guard — it only applies to non-plan `erk pr submit` invocations.
+4. **Check `behind > 0`**: If the local branch is behind remote AND `effective_force` is `False`, return a `SubmitError` with `error_type="remote_diverged"`. Note: `effective_force = state.force or is_plan_impl`, so plan implementations (`state.plan_id is not None or state.branch_name.startswith("plnd/")`) auto-force and never hit this guard — it only applies to non-plan `erk pr submit` invocations. The `plnd/` branch prefix fallback handles cases where `.erk/impl-context/` was cleaned up before a failed push, leaving `plan_id` as `None`.
 
 ## Core vs Graphite-First Difference
 
