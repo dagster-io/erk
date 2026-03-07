@@ -1,0 +1,916 @@
+<session>
+  <meta source="agent-a8baff5" />
+  <meta branch="plnd/outside-repo-03-06-1630" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the existing test structure for one-shot commands. Please find:
+1. All test files in tests/unit/cli/commands/one_shot/ directory
+2. Read one representative test file to understand patterns
+3. Check if tests/unit/cli/commands/test_one_shot_dispatch.py exists
+4. Look at how FakeGitHub.trigger_workflow works
+5. Look at how FakeGitHub.create_pr works
+6. Check run_subprocess_with_context signature and module location
+7. Find the NoRepoSentinel class definition
+
+Report file paths and key patterns.</user>
+  <assistant>I'll help you understand the existing test structure for one-shot commands. Let me start by checking the documentation index and then exploring the codebase systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18873" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18873, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016VmpgP7RXcvqNxH33qQtf5">
+    <param name="pattern">one.shot|one_shot</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18873" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18873, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_0174VCQNRraJL5FG9ZVWNj2Q">
+    <param name="pattern">tests/unit/cli/commands/one_shot/**</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18873" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18873, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Nvqm9gvKtGYWahpnZcFiCG">
+    <param name="pattern">tests/unit/cli/commands/test_one_shot*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18873" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18873, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016VmpgP7RXcvqNxH33qQtf5">
+Found 31 files
+docs/learned/workflows/index.md
+docs/learned/workflows/one-shot-workflow.md
+docs/learned/workflows/tripwires.md
+docs/learned/tui/tui-command-registration.md
+docs/learned/tui/view-aware-commands.md
+docs/learned/tui/async-action-refresh-pattern.md
+docs/learned/tui/index.md
+docs/learned/tui/keyboard-shortcuts.md
+docs/learned/tui/one-shot-prompt-modal.md
+docs/learned/tui/action-inventory.md
+docs/learned/pr-operations/index.md
+docs/learned/pr-operations/pr-submit-phases.md
+docs/learned/pr-operations/stub-pr-workflow-link.md
+docs/learned/pr-operations/tripwires.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/plan-creation-pathways.md
+docs/learned/planning/lifecycle.md
+docs/learned/planning/one-shot-workflow.md
+docs/learned/planning/index.md
+docs/learned/objectives/dependency-status-resolution.md
+docs/learned/objectives/objective-lifecycle.md
+docs/learned/integrations/mcp-integration.md
+docs/learned/erk/branch-naming.md
+docs/learned/erk/dispatch-ref-config.md
+docs/learned/cli/workflow-run-list.md
+docs/learned/cli/doctor-workflow.md
+docs/learned/cli/command-organization.md
+docs/learned/ci/workflow-model-policy.md
+docs/learned/ci/claude-kill-switch.md
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Nvqm9gvKtGYWahpnZcFiCG">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_0174VCQNRraJL5FG9ZVWNj2Q">
+No files found
+  </tool_result>
+  <assistant>Let me check the one-shot documentation and then search for test files more broadly:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="762" cache_read_input_tokens="18873" cache_creation="{'ephemeral_5m_input_tokens': 762, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LPU9a9YDAi1ziNwRckHnD4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="762" cache_read_input_tokens="18873" cache_creation="{'ephemeral_5m_input_tokens': 762, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Pa21A8VvRg2wUcriwuEQeH">
+    <param name="pattern">tests/unit/cli/commands/*.py</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="762" cache_read_input_tokens="18873" cache_creation="{'ephemeral_5m_input_tokens': 762, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01JSDSrZy2aEqR9j1ia6c1xr">
+    <param name="pattern">tests/unit/cli/commands/*/</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="762" cache_read_input_tokens="18873" cache_creation="{'ephemeral_5m_input_tokens': 762, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LPU9a9YDAi1ziNwRckHnD4">
+     1→---
+     2→title: One-Shot Workflow
+     3→last_audited: "2026-02-24 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "working with erk one-shot dispatch"
+     7→  - "understanding how plans are autonomously created and implemented"
+     8→  - "debugging one-shot workflow failures"
+     9→  - "integrating objectives with one-shot dispatch"
+    10→tripwires:
+    11→  - action: "adding dry-run support to one-shot commands"
+    12→    warning: "One-shot dry-run mode must NOT create skeleton issues"
+    13→  - action: "modifying register-one-shot-plan exit behavior"
+    14→    warning: "register-one-shot-plan uses best-effort: exit 0 if any operation succeeds"
+    15→  - action: "adding post-dispatch operations without matching dispatch_cmd.py pattern"
+    16→    warning: "dispatch_one_shot() and _dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other."
+    17→  - action: "writing post-dispatch operations without try/except guards"
+    18→    warning: "Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py."
+    19→  - action: "editing plan body content in plan creation, replan, or one-shot dispatch"
+    20→    warning: "One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers."
+    21→    score: 9
+    22→---
+    23→
+    24→# One-Shot Workflow
+    25→
+    26→The one-shot workflow enables fully autonomous planning and implementation from a single CLI command. It dispatches a GitHub Actions workflow that creates a plan and implements it without human intervention.
+    27→
+    28→## End-to-End Pipeline
+    29→
+    30→```
+
+... [163 lines omitted] ...
+
+   104→`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+   111→The command outputs JSON results for each operation with success/error details.
+   124→The CLI write is the primary source; CI registration fills gaps when the CLI couldn't complete (e.g., network failure during dispatch).
+  </tool_result>
+  <tool_result tool="toolu_01Pa21A8VvRg2wUcriwuEQeH">
+/home/runner/work/erk/erk/tests/unit/cli/commands/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_github_pr_setting.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_upgrade_repo.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_implement_shared.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_ref_resolution.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_claude_ci.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_force_flag.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_test_workflow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_gh_actions_api_key.py
+  </tool_result>
+  <tool_result tool="toolu_01JSDSrZy2aEqR9j1ia6c1xr">
+No files found
+  </tool_result>
+  <assistant>Good! The one-shot workflow doc is very detailed. Now let me search for test files related to one-shot and check the structure more broadly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4213" cache_read_input_tokens="19635" cache_creation="{'ephemeral_5m_input_tokens': 4213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019s6uLwwDA2S2SwQyry78CV">
+    <param name="command">find /home/runner/work/erk/erk/tests -type f -name "*one_shot*" -o -name "*one-shot*"</param>
+    <param name="description">Find all one-shot related test files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4213" cache_read_input_tokens="19635" cache_creation="{'ephemeral_5m_input_tokens': 4213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0152RZjfQWCBkje3Zpuxt7gM">
+    <param name="command">ls -la /home/runner/work/erk/erk/tests/unit/cli/commands/</param>
+    <param name="description">List all test files in commands directory</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4213" cache_read_input_tokens="19635" cache_creation="{'ephemeral_5m_input_tokens': 4213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0152RZjfQWCBkje3Zpuxt7gM">
+total 100
+drwxr-xr-x 13 runner runner 4096 Mar  7 00:38 .
+drwxr-xr-x  3 runner runner 4096 Mar  7 00:38 ..
+-rw-r--r--  1 runner runner    0 Mar  7 00:38 __init__.py
+drwxr-xr-x  2 runner runner 4096 Mar  7 00:38 branch
+drwxr-xr-x  3 runner runner 4096 Mar  7 00:38 codespace
+drwxr-xr-x  2 runner runner 4096 Mar  7 00:38 docs
+drwxr-xr-x  3 runner runner 4096 Mar  7 00:38 exec
+drwxr-xr-x  3 runner runner 4096 Mar  7 00:38 init
+drwxr-xr-x  3 runner runner 4096 Mar  7 00:38 land
+drwxr-xr-x  2 runner runner 4096 Mar  7 00:38 objective
+drwxr-xr-x  3 runner runner 4096 Mar  7 00:38 pr
+drwxr-xr-x  2 runner runner 4096 Mar  7 00:38 slot
+drwxr-xr-x  2 runner runner 4096 Mar  7 00:38 stack
+-rw-r--r--  1 runner runner 3157 Mar  7 00:38 test_admin_claude_ci.py
+-rw-r--r--  1 runner runner 9342 Mar  7 00:38 test_admin_gh_actions_api_key.py
+-rw-r--r--  1 runner runner 3317 Mar  7 00:38 test_admin_github_pr_setting.py
+-rw-r--r--  1 runner runner 5357 Mar  7 00:38 test_admin_test_workflow.py
+-rw-r--r--  1 runner runner 3346 Mar  7 00:38 test_admin_upgrade_repo.py
+-rw-r--r--  1 runner runner  990 Mar  7 00:38 test_force_flag.py
+-rw-r--r--  1 runner runner 6424 Mar  7 00:38 test_implement_shared.py
+-rw-r--r--  1 runner runner 2239 Mar  7 00:38 test_ref_resolution.py
+drwxr-xr-x  2 runner runner 4096 Mar  7 00:38 wt
+  </tool_result>
+  <tool_result tool="toolu_019s6uLwwDA2S2SwQyry78CV">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py
+/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py
+/home/runner/work/erk/erk/tests/tui/screens/test_one_shot_prompt_screen.py
+  </tool_result>
+  <assistant>Excellent! Now I can see the test files are in `tests/commands/` not `tests/unit/cli/commands/`. Let me read the key test files:</assistant>
+  <usage input_tokens="708" cache_creation_input_tokens="586" cache_read_input_tokens="23848" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D8stB9jnChazSvz6tEZKCf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="708" cache_creation_input_tokens="586" cache_read_input_tokens="23848" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HYZYz6pDdThjL5gabpgDDE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="708" cache_creation_input_tokens="586" cache_read_input_tokens="23848" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SaqsQ4bK9iL8GAWLjjrP6L">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py</param>
+  </tool_use>
+  <usage input_tokens="708" cache_creation_input_tokens="586" cache_read_input_tokens="23848" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D8stB9jnChazSvz6tEZKCf">
+     1→"""Tests for one-shot dispatch shared logic."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.commands.one_shot_dispatch import (
+     7→    OneShotDispatchParams,
+     8→    dispatch_one_shot,
+     9→)
+    10→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.git.remote_ops.types import PushError
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→from tests.test_utils.context_builders import build_workspace_test_context
+    16→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    17→
+    18→
+    19→def test_dispatch_happy_path() -&gt; None:
+    20→    """Test dispatch creates plnd/ branch, PR with metadata, and triggers workflow."""
+    21→    runner = CliRunner()
+    22→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    23→        env.setup_repo_structure()
+    24→
+    25→        git = FakeGit(
+    26→            git_common_dirs={env.cwd: env.git_dir},
+    27→            default_branches={env.cwd: "main"},
+    28→            trunk_branches={env.cwd: "main"},
+    29→            current_branches={env.cwd: "main"},
+    30→        )
+
+... [309 lines omitted] ...
+
+   150→            catch_exceptions=False,
+   164→def test_dispatch_stays_on_current_branch_on_error() -&gt; None:
+   175→            push_to_remote_error=PushError(message="network error"),
+   187→        # Verify command failed
+   269→    """Test dispatch exits with clear error when branch already exists locally."""
+   279→            create_branch_error=BranchAlreadyExists(
+  </tool_result>
+  <tool_result tool="toolu_01HYZYz6pDdThjL5gabpgDDE">
+     1→"""Tests for erk one-shot command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.git.remote_ops.types import PushError
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_one_shot_happy_path() -&gt; None:
+    14→    """Test one-shot command creates branch, PR, and triggers workflow."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        env.setup_repo_structure()
+    18→
+    19→        git = FakeGit(
+    20→            git_common_dirs={env.cwd: env.git_dir},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "main"},
+    24→        )
+    25→        github = FakeGitHub(authenticated=True)
+    26→
+    27→        ctx = build_workspace_test_context(env, git=git, github=github)
+    28→
+    29→        result = runner.invoke(
+    30→            cli,
+
+... [376 lines omitted] ...
+
+    33→            catch_exceptions=False,
+    36→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   119→            catch_exceptions=False,
+   122→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   155→            catch_exceptions=False,
+   158→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   186→            catch_exceptions=False,
+   189→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   216→            catch_exceptions=False,
+   219→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   227→def test_one_shot_stays_on_current_branch_on_error() -&gt; None:
+   238→            push_to_remote_error=PushError(message="network error"),
+   250→        # Verify command failed
+   307→            catch_exceptions=False,
+   310→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   367→            catch_exceptions=False,
+   370→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01SaqsQ4bK9iL8GAWLjjrP6L">
+     1→"""Tests for register-one-shot-plan exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.register_one_shot_plan import register_one_shot_plan
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from erk_shared.gateway.github.types import PRDetails
+    15→from erk_shared.gateway.time.fake import FakeTime
+    16→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    17→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    18→
+    19→RUN_URL = "https://github.com/test-owner/test-repo/actions/runs/99999"
+    20→CLI_ARGS = [
+    21→    "--plan-number",
+    22→    "123",
+    23→    "--run-id",
+    24→    "99999",
+    25→    "--pr-number",
+    26→    "42",
+    27→    "--submitted-by",
+    28→    "alice",
+    29→    "--run-url",
+    30→    RUN_URL,
+
+... [133 lines omitted] ...
+
+    35→    return """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Now let me search for the FakeGitHub implementation and the specific methods:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="19584" cache_read_input_tokens="24434" cache_creation="{'ephemeral_5m_input_tokens': 19584, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017dDuNzz3JJmmZ7Edx6XVWv">
+    <param name="pattern">src/erk_shared/gateway/github/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19584" cache_read_input_tokens="24434" cache_creation="{'ephemeral_5m_input_tokens': 19584, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KVhM7NhGgxTtc1WqKFs3q9">
+    <param name="command">grep -n "def trigger_workflow\|def create_pr" /home/runner/work/erk/erk/src/erk_shared/gateway/github/fake.py | head -20</param>
+    <param name="description">Find trigger_workflow and create_pr method definitions</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="19584" cache_read_input_tokens="24434" cache_creation="{'ephemeral_5m_input_tokens': 19584, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017dDuNzz3JJmmZ7Edx6XVWv">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01KVhM7NhGgxTtc1WqKFs3q9">
+grep: /home/runner/work/erk/erk/src/erk_shared/gateway/github/fake.py: No such file or directory
+  </tool_result>
+  <assistant>Let me find the correct location of FakeGitHub:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="427" cache_read_input_tokens="44018" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EiB8pe59PArFxrKbQ59DqP">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "*.py" -path "*github*fake*" | head -20</param>
+    <param name="description">Find FakeGitHub file locations</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="427" cache_read_input_tokens="44018" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FgTV9qbEDpGVd1yGQ3om14">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "fake.py" | head -20</param>
+    <param name="description">Find all fake.py files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="427" cache_read_input_tokens="44018" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FgTV9qbEDpGVd1yGQ3om14">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/clipboard/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/browser/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/claude_installation/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/live_display/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/ci_runner/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/completion/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/gt/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/config_ops/fake.py
+  </tool_result>
+  <tool_result tool="toolu_01EiB8pe59PArFxrKbQ59DqP">
+/home/runner/work/erk/erk/tests/unit/core/github/test_fake_github.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_issues_fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py
+  </tool_result>
+  <assistant>Great! Now let me read the FakeGitHub implementation:</assistant>
+  <usage input_tokens="763" cache_creation_input_tokens="552" cache_read_input_tokens="44445" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T1qMhyxPW3Qvd1q3zGFQy5">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+  </tool_use>
+  <usage input_tokens="763" cache_creation_input_tokens="552" cache_read_input_tokens="44445" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CzNFbsECXzwdwgC49Ky66E">
+    <param name="command">grep -n "def run_subprocess_with_context\|class NoRepoSentinel" /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py | head -20</param>
+    <param name="description">Search for run_subprocess_with_context and NoRepoSentinel</param>
+  </tool_use>
+  <usage input_tokens="763" cache_creation_input_tokens="552" cache_read_input_tokens="44445" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="222" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T1qMhyxPW3Qvd1q3zGFQy5">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import GitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+
+... [1186 lines omitted] ...
+
+    71→        resolve_thread_failures: set[str] | None = None,
+    72→        pr_diff_error: str | None = None,
+    73→        workflow_runs_error: str | None = None,
+    81→        add_label_errors: dict[str, str] | None = None,
+   111→                RuntimeError simulating GraphQL rate limit
+   112→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   113→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   114→                Use to simulate HTTP 406 "diff too large" errors.
+   115→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   116→                RuntimeError with this message. Use to simulate API failures.
+   120→                False or raise to simulate failure.
+   156→        self._resolve_thread_failures = resolve_thread_failures or set()
+   157→        self._pr_diff_error = pr_diff_error
+   158→        self._workflow_runs_error = workflow_runs_error
+   191→        self._add_label_errors = add_label_errors or {}
+   219→        Raises RuntimeError if pr_update_should_succeed is False.
+   222→            raise RuntimeError("PR update failed (configured to fail)")
+   242→    ) -&gt; MergeResult | MergeError:
+   245→        Returns MergeResult on success, MergeError on failure.
+   251→        return MergeError(pr_number=pr_number, message="Merge failed (configured to fail in test)")
+   416→        Raises RuntimeError if run_id not found, mimicking gh CLI behavior.
+   420→            raise RuntimeError(msg)
+   471→        matching workflow runs. Uses priority: in_progress/queued &gt; failed &gt; success &gt; other.
+   501→            # Priority 2: failed completed runs
+   502→            failed_runs = [
+   503→                r for r in branch_runs if r.status == "completed" and r.conclusion == "failure"
+   505→            if failed_runs:
+   506→                result[branch] = failed_runs[0]
+   590→        Raises RuntimeError if workflow_runs_error is set, simulating API failures.
+   599→        if self._workflow_runs_error is not None:
+   600→            raise RuntimeError(self._workflow_runs_error)
+   775→        Raises RuntimeError if pr_update_should_succeed is False.
+   778→            raise RuntimeError("PR update failed (configured to fail)")
+   827→        First checks if pr_diff_error is set and raises RuntimeError.
+   831→        if self._pr_diff_error is not None:
+   832→            raise RuntimeError(self._pr_diff_error)
+   855→        if label in self._add_label_errors:
+   856→            raise RuntimeError(self._add_label_errors[label])
+   901→        Raises RuntimeError if review_threads_rate_limited is True, simulating
+   902→        a GraphQL API rate limit error.
+   905→            raise RuntimeError("GraphQL API RATE_LIMIT exceeded")
+   945→        Returns False if thread_id is in resolve_thread_failures set.
+   948→        if thread_id in self._resolve_thread_failures:
+  </tool_result>
+  <tool_result tool="toolu_01CzNFbsECXzwdwgC49Ky66E">
+
+  </tool_result>
+  <assistant>Now let me search for run_subprocess_with_context and NoRepoSentinel:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="18143" cache_read_input_tokens="44997" cache_creation="{'ephemeral_5m_input_tokens': 18143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SwsrWc5FCXbT6nzLRb1v3r">
+    <param name="command">find /home/runner/work/erk/erk -type f -name "*.py" -exec grep -l "run_subprocess_with_context\|NoRepoSentinel" {} \; | head -20</param>
+    <param name="description">Find files containing run_subprocess_with_context or NoRepoSentinel</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18143" cache_read_input_tokens="44997" cache_creation="{'ephemeral_5m_input_tokens': 18143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SwsrWc5FCXbT6nzLRb1v3r">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_generate_summaries.py
+/home/runner/work/erk/erk/tests/unit/test_subprocess_utils.py
+/home/runner/work/erk/erk/tests/unit/gateways/github/test_real.py
+/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py
+/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py
+/home/runner/work/erk/erk/tests/commands/land/test_git_pull.py
+/home/runner/work/erk/erk/tests/real/test_subprocess.py
+/home/runner/work/erk/erk/tests/integration/test_real_github.py
+/home/runner/work/erk/erk/tests/fakes/context.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/factories.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/completion/real.py
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+find: ‘grep’ terminated by signal 13
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Let me search more directly for these classes and functions:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1366" cache_read_input_tokens="63140" cache_creation="{'ephemeral_5m_input_tokens': 1366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YLGN69kkTeed2RCu2MTjb3">
+    <param name="pattern">^def run_subprocess_with_context</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1366" cache_read_input_tokens="63140" cache_creation="{'ephemeral_5m_input_tokens': 1366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VA6HdpK9K9xEyd7ij9isUB">
+    <param name="pattern">^class NoRepoSentinel</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1366" cache_read_input_tokens="63140" cache_creation="{'ephemeral_5m_input_tokens': 1366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YLGN69kkTeed2RCu2MTjb3">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01VA6HdpK9K9xEyd7ij9isUB">
+Found 1 file
+packages/erk-shared/src/erk_shared/context/types.py
+  </tool_result>
+  <assistant>Great! Now let me read the context files to find these definitions:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="473" cache_read_input_tokens="64506" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JLS4C3KUxoo1Hf2Toqbiks">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="473" cache_read_input_tokens="64506" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V1qnwoTDgdu29oqwgcKFdK">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="473" cache_read_input_tokens="64506" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JLS4C3KUxoo1Hf2Toqbiks">
+     1→"""Context types for erk and erk-kits.
+     2→
+     3→This module provides the core data types used by ErkContext:
+     4→- RepoContext: Repository discovery result
+     5→- NoRepoSentinel: Sentinel for when not in a repository
+     6→- GlobalConfig: Global erk configuration
+     7→- LoadedConfig: Repository-level configuration
+     8→- InteractiveAgentConfig: Configuration for interactive agent launches (Claude or Codex)
+     9→- AgentBackend: Type for agent backend selection
+    10→- PermissionMode: Generic permission mode for both Claude and Codex
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal, Self
+    19→
+    20→from erk_shared.gateway.github.types import GitHubRepoId
+    21→
+    22→# Agent backend types
+    23→AgentBackend = Literal["claude", "codex"]
+    24→
+    25→# Claude CLI permission modes:
+    26→# - "default": Default mode with permission prompts
+    27→# - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
+    28→# - "plan": Plan mode for exploration and planning (--permission-mode plan)
+    29→# - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
+    30→ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
+
+... [303 lines omitted] ...
+
+    51→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    75→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    99→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+  </tool_result>
+  <tool_result tool="toolu_01V1qnwoTDgdu29oqwgcKFdK">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import GitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.plan_store.backend import PlanBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get PlanBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <assistant>Now let me search for run_subprocess_with_context:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="10553" cache_read_input_tokens="64979" cache_creation="{'ephemeral_5m_input_tokens': 10553, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EhkrBADT6nYsmEz7Prmv5v">
+    <param name="command">grep -rn "^def run_subprocess_with_context" /home/runner/work/erk/erk/packages/erk-shared/src/ 2&gt;/dev/null | head -5</param>
+    <param name="description">Find run_subprocess_with_context definition</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="10553" cache_read_input_tokens="64979" cache_creation="{'ephemeral_5m_input_tokens': 10553, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012qicrxMmPmcMaUgNvGvkvT">
+    <param name="command">grep -rn "run_subprocess_with_context" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/ 2&gt;/dev/null | head -5</param>
+    <param name="description">Find run_subprocess_with_context in context module</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="10553" cache_read_input_tokens="64979" cache_creation="{'ephemeral_5m_input_tokens': 10553, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012qicrxMmPmcMaUgNvGvkvT">
+
+  </tool_result>
+  <tool_result tool="toolu_01EhkrBADT6nYsmEz7Prmv5v">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py:73:def run_subprocess_with_context(
+  </tool_result>
+  <assistant>Perfect! Let me read that file:</assistant>
+  <usage input_tokens="36" cache_creation_input_tokens="469" cache_read_input_tokens="75532" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SEw6T22YJ1EdfHdaRJoVkh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="36" cache_creation_input_tokens="469" cache_read_input_tokens="75532" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SEw6T22YJ1EdfHdaRJoVkh">
+     1→"""Simple subprocess utilities for erk-shared.
+     2→
+     3→This module provides basic subprocess execution for GitHub CLI commands.
+     4→It's intentionally minimal to avoid pulling in complex dependencies.
+     5→"""
+     6→
+     7→import logging
+     8→import os
+     9→import subprocess
+    10→import time
+    11→from collections.abc import Sequence
+    12→from pathlib import Path
+    13→from typing import IO, Any
+    14→
+    15→from erk_shared.gateway.github.retry import (
+    16→    RETRY_DELAYS,
+    17→    RetriesExhausted,
+    18→    RetryRequested,
+    19→    with_retries,
+    20→)
+    21→from erk_shared.gateway.github.transient_errors import is_transient_error
+    22→from erk_shared.gateway.time.abc import Time
+    23→
+    24→logger = logging.getLogger(__name__)
+    25→
+    26→
+    27→def copied_env_for_git_subprocess() -&gt; dict[str, str]:
+    28→    """Return a copy of the environment for git subprocess calls.
+    29→
+    30→    Sets GIT_TERMINAL_PROMPT=0 so git commands fail fast with an error
+
+... [125 lines omitted] ...
+
+    87→    """Execute subprocess with enriched error reporting for integration layer.
+    89→    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+   109→        RuntimeError: If command fails or times out, with enriched error context
+   110→        FileNotFoundError: If command binary is not found
+   140→        error_msg = f"Timed out after {timeout}s trying to {operation_context}"
+   141→        error_msg += f"\nCommand: {cmd_str}"
+   142→        raise RuntimeError(error_msg) from e
+   144→    except subprocess.CalledProcessError as e:
+   146→        error_msg = f"Failed to {operation_context}"
+   147→        error_msg += f"\nCommand: {cmd_str}"
+   148→        error_msg += f"\nExit code: {e.returncode}"
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive report by summarizing all the findings:
+
+## Summary Report: One-Shot Command Test Structure
+
+I've successfully explored the existing test structure for one-shot commands. Here are the findings:
+
+### 1. Test Files Found
+
+**Main one-shot test locations:**
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py` - CLI command tests
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py` - Dispatch function tests
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py` - Registration script tests
+- `/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py` - Objective integration tests
+
+**Additional related tests:**
+- `/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py` - TUI integration
+- `/home/runner/work/erk/erk/tests/tui/screens/test_one_shot_prompt_screen.py` - TUI screens
+
+### 2. Test Pattern Example: `test_one_shot_dispatch.py`
+
+**Key test patterns used:**
+
+```python
+# Setup with fakes
+git = FakeGit(
+    git_common_dirs={env.cwd: env.git_dir},
+    default_branches={env.cwd: "main"},
+    trunk_branches={env.cwd: "main"},
+    current_branches={env.cwd: "main"},
+)
+issues = FakeGitHubIssues()
+github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+# Build context with test helper
+ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+# Execute dispatch
+params = OneShotDispatchParams(
+    prompt="fix the import in config.py",
+    model=None,
+    extra_workflow_inputs={},
+    slug=None,
+)
+result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=None)
+
+# Assert state via fake properties
+assert result.branch_name.startswith("plnd/")
+assert len(issues.created_issues) == 0
+assert len(git.created_branches) == 1
+```
+
+### 3. FakeGitHub Implementation
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py`
+
+**Key methods for one-shot testing:**
+
+```python
+def trigger_workflow(
+    self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
+) -&gt; str:
+    """Record workflow trigger in mutation tracking list."""
+    self._triggered_workflows.append((workflow, inputs, ref))
+    # Creates WorkflowRun entry for get_workflow_run() lookups
+    return "1234567890"  # Fake run ID
+
+def create_pr(
+    self,
+    repo_root: Path,
+    branch: str,
+    title: str,
+    body: str,
+    base: str | None = None,
+    *,
+    draft: bool = False,
+) -&gt; int:
+    """Record PR creation and register PR in internal state."""
+    pr_number = self._next_pr_number
+    self._next_pr_number += 1
+    self._created_prs.append((branch, title, body, base, draft))
+    # Auto-registers PRDetails so get_pr() works after creation
+    return pr_number
+```
+
+**Read-only properties for test assertions:**
+- `triggered_workflows` - List of (workflow, inputs, ref) tuples
+- `created_prs` - List of (branch, title, body, base, draft) tuples
+- `added_labels` - List of (pr_number, label) tuples
+- `pr_comments` - List of (pr_number, body) tuples
+
+### 4. NoRepoSentinel Class Definition
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py`
+
+```python
+@dataclass(frozen=True)
+class NoRepoSentinel:
+    """Sentinel value indicating execution outside a git repository.
+
+    Used when commands run outside git repositories (e.g., before init,
+    in non-git directories). Commands that require repo context can check
+    for this sentinel and fail fast.
+    """
+
+    message: str = "Not inside a git repository"
+```
+
+**Usage in helpers (via LBYL pattern):**
+```python
+# In erk_shared/context/helpers.py
+repo = ctx.obj.repo
+if isinstance(repo, NoRepoSentinel):
+    click.echo("Error: Not in a git repository", err=True)
+    raise SystemExit(1)
+```
+
+### 5. run_subprocess_with_context Signature
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py`
+
+```python
+def run_subprocess_with_context(
+    *,
+    cmd: Sequence[str],
+    operation_context: str,
+    cwd: Path | None = None,
+    timeout: float | None = None,
+    capture_output: bool = True,
+    text: bool = True,
+    encoding: str = "utf-8",
+    check: bool = True,
+    stdout: int | IO[Any] | None = None,
+    stderr: int | IO[Any] | None = None,
+    **kwargs: Any,
+) -&gt; subprocess.CompletedProcess[str]:
+    """Execute subprocess with enriched error reporting for integration layer.
+    
+    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+    with operation context, stderr output, and command details.
+    """
+```
+
+### 6. Test Organization Structure
+
+The tests follow the 5-layer architecture pattern from `docs/learned/testing/`:
+
+- **Layer 3 (Commands):** `/tests/commands/one_shot/` - CLI tests using CliRunner + fakes
+- **Layer 4 (Core):** Uses direct function calls with fakes (dispatch_one_shot)
+- **Layer 1 (Unit/Fakes):** `/tests/unit/` - Tests of fake implementations
+
+### 7. Key Testing Patterns Observed
+
+1. **No skeleton issues created for planned-PR backend:**
+   - Expected behavior: `assert len(issues.created_issues) == 0`
+   - Branch is created directly with `plnd/` prefix
+
+2. **Workflow trigger verification:**
+   ```python
+   _workflow, inputs, _ref = github.triggered_workflows[0]
+   assert inputs["prompt"] == "fix the import in config.py"
+   assert inputs["plan_backend"] == "planned_pr"
+   ```
+
+3. **PR creation verification:**
+   ```python
+   branch, title, body, base, draft = github.created_prs[0]
+   assert draft is True
+   assert "plan-header" in pr_body
+   ```
+
+4. **Dry-run mode verification:**
+   - No mutations should occur
+   - `len(git.created_branches) == 0`
+   - `len(github.created_prs) == 0`
+
+5. **Extra workflow inputs (objective context):**
+   ```python
+   params = OneShotDispatchParams(
+       prompt="implement step 1.1",
+       model=None,
+       extra_workflow_inputs={
+           "objective_issue": "42",
+           "node_id": "1.1",
+       },
+       slug=None,
+   )
+   ```
+
+All file paths are absolute as requested above.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2160" cache_read_input_tokens="76001" cache_creation="{'ephemeral_5m_input_tokens': 2160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
