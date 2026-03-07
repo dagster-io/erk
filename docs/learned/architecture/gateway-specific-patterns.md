@@ -112,5 +112,5 @@ When designing gateway error handling:
 ## Related Documentation
 
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) - When and how to use discriminated unions
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-place implementation checklist
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - Implementation checklist
 - [LBYL Gateway Pattern](lbyl-gateway-pattern.md) - LBYL principles for gateway design

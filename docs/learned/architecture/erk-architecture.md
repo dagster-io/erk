@@ -82,9 +82,9 @@ def execute_plan(plan, git):
 
 # At the context creation level:
 if dry_run:
-    git = DryRunGit(real_git)  # or PrintingGit(DryRunGit(...))
+    git = DryRunGit(real_git)
 else:
-    git = real_git  # or PrintingGit(real_git)
+    git = real_git
 ```
 
 ### Pattern 2: CLI Preview Flag (for simple commands)
@@ -392,8 +392,7 @@ packages/erk-shared/src/erk_shared/
     │   ├── real.py                    # Production implementation
     │   ├── fake.py                    # In-memory test implementation
     │   ├── dry_run.py                 # No-op wrapper for dry-run mode
-    │   ├── lock.py                    # Git lock handling
-    │   └── printing.py                # Wrapper that logs operations
+    │   └── lock.py                    # Git lock handling
     ├── github/                        # GitHub API gateway
     │   ├── __init__.py
     │   ├── abc.py

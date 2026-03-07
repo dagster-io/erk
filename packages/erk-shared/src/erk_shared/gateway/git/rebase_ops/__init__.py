@@ -8,5 +8,4 @@ Import from submodules:
 - real: RealGitRebaseOps
 - fake: FakeGitRebaseOps
 - dry_run: DryRunGitRebaseOps
-- printing: PrintingGitRebaseOps
 """

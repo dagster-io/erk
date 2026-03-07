@@ -9,7 +9,7 @@ tripwires:
   - action: "using bare subprocess.run with check=True"
     warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI)."
   - action: "adding a new method to Git/GitHub/Graphite ABC"
-    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    warning: "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py."
   - action: "raising exceptions for expected failure cases"
     warning: "Use discriminated unions (T | ErrorType) instead."
   - action: "using Path.home() directly in production code"
@@ -41,7 +41,7 @@ Unlike category-specific tripwires (which are loaded when working in specific di
 Each tripwire links to detailed documentation:
 
 - [Subprocess Wrappers](architecture/subprocess-wrappers.md) - Wrapper functions for subprocess calls
-- [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) - 5-place implementation pattern
+- [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) - 4-place implementation pattern
 - [Discriminated Union Error Handling](architecture/discriminated-union-error-handling.md) - Error handling patterns
 - [Exec Script Testing Patterns](testing/exec-script-testing.md) - Path.home() alternatives
 - [Erk Architecture Patterns](architecture/erk-architecture.md) - Context regeneration, time abstraction, lightweight init

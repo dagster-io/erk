@@ -7,5 +7,4 @@ Import from submodules:
 - real: RealGitRepoOps
 - fake: FakeGitRepoOps
 - dry_run: DryRunGitRepoOps
-- printing: PrintingGitRepoOps
 """

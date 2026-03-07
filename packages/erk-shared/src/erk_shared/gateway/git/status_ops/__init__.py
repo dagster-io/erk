@@ -8,5 +8,4 @@ Import from submodules:
 - real: RealGitStatusOps
 - fake: FakeGitStatusOps
 - dry_run: DryRunGitStatusOps
-- printing: PrintingGitStatusOps
 """

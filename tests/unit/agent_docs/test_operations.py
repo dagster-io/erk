@@ -36,7 +36,7 @@ read_when:
   - working on gateways
 tripwires:
   - action: creating a new gateway
-    warning: Follow the 5-place pattern.
+    warning: Follow the 4-place pattern.
   - action: using subprocess directly
     warning: Use run_subprocess_with_context instead.
 ---
@@ -162,7 +162,7 @@ def test_collect_tripwires_from_valid_doc() -> None:
 
     assert len(tripwires) == 2
     assert tripwires[0].action == "creating a new gateway"
-    assert tripwires[0].warning == "Follow the 5-place pattern."
+    assert tripwires[0].warning == "Follow the 4-place pattern."
     assert tripwires[0].doc_path == "architecture/patterns.md"
     assert tripwires[0].doc_title == "Architecture Patterns"
 

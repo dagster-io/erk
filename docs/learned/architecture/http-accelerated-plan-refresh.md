@@ -34,17 +34,16 @@ No subprocess overhead. Enables batched and parallel requests. The subprocess fa
 
 The `HttpClient` ABC is defined in `packages/erk-shared/src/erk_shared/gateway/http/abc.py`. See that file for the current method list.
 
-## 5-Place Gateway Implementation
+## 4-Place Gateway Implementation
 
 HttpClient follows the standard gateway pattern:
 
-| Place    | File               | Purpose                |
-| -------- | ------------------ | ---------------------- |
-| ABC      | `http/abc.py`      | Interface definition   |
-| Real     | `http/real.py`     | Production HTTP client |
-| Fake     | `http/fake.py`     | In-memory test double  |
-| Dry Run  | `http/dry_run.py`  | No-op for dry-run mode |
-| Printing | `http/printing.py` | Verbose output wrapper |
+| Place    | File              | Purpose                |
+| -------- | ----------------- | ---------------------- |
+| ABC      | `http/abc.py`     | Interface definition   |
+| Real     | `http/real.py`    | Production HTTP client |
+| Fake     | `http/fake.py`    | In-memory test double  |
+| Dry Run  | `http/dry_run.py` | No-op for dry-run mode |
 
 ## Required http_client Parameter
 
@@ -81,5 +80,5 @@ PR data parsing is extracted to a shared module to avoid duplication. Both plan 
 
 ## Related Documentation
 
-- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-place implementation pattern
+- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 4-place implementation pattern
 - [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) — When to use gateway vs backend

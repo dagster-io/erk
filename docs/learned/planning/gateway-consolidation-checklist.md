@@ -22,10 +22,10 @@ tripwires:
 All gateway packages live under `packages/erk-shared/src/erk_shared/gateway/`. This was not always the case — gateways were originally scattered across domain-specific directories (e.g., TUI commands, CLI utilities). Consolidation into a single `gateway/` tree was done because:
 
 1. **Discoverability** — agents searching for "where is the X gateway?" need one place to look, not a codebase-wide search
-2. **Consistency enforcement** — the 5-file pattern (abc/real/fake/dry_run/printing) is easier to verify when all gateways are siblings
+2. **Consistency enforcement** — the 4-file pattern (abc/real/fake/dry_run) is easier to verify when all gateways are siblings
 3. **Import predictability** — `erk_shared.gateway.<name>.abc` is a mechanical derivation from the gateway name, eliminating guesswork
 
-There are currently 27 gateway packages in this directory. Some use the full 5-file pattern, others use a simplified 3-file pattern (no dry_run/printing). Complex domains (Git, GitHub, Graphite) use nested sub-gateways.
+There are currently 27 gateway packages in this directory. Some use the full 4-file pattern, others use a simplified 3-file pattern (no dry_run). Complex domains (Git, GitHub, Graphite) use nested sub-gateways.
 
 ## Operation Ordering: Why It Matters
 
@@ -83,5 +83,5 @@ After moving files and updating imports, these steps are easy to forget:
 ## Related Documentation
 
 - [Gateway Inventory](../architecture/gateway-inventory.md) — current catalog of all gateway packages
-- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-place implementation pattern that consolidated gateways must follow
+- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 4-place implementation pattern that consolidated gateways must follow
 - [LibCST Systematic Imports](../refactoring/libcst-systematic-imports.md) — automated import refactoring for batch moves

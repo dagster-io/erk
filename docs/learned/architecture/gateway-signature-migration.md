@@ -15,14 +15,14 @@ tripwires:
 
 # Gateway Signature Migration
 
-When changing a gateway method signature (especially return types), you must update every implementation and every caller. The gateway's 5-file pattern magnifies the impact—a single method change touches at least 5 files, and typically many more when callers are updated.
+When changing a gateway method signature (especially return types), you must update every implementation and every caller. The gateway's 4-file pattern magnifies the impact—a single method change touches at least 4 files, and typically many more when callers are updated.
 
 ## Why This Is Hard
 
 Gateway methods are called from many locations across packages. Unlike single-file refactorings where the IDE finds all usages, gateway changes involve:
 
 1. **Cross-package call sites** — `packages/erk-shared/` gateways called from `src/erk/`
-2. **Multiple implementation variants** — abc, real, fake, dry_run, printing
+2. **Multiple implementation variants** — abc, real, fake, dry_run
 3. **Test fixtures and helpers** — tests often construct gateway calls indirectly
 4. **Type checker limitations** — changing the ABC doesn't automatically flag all call sites
 
@@ -46,13 +46,13 @@ grep -rn "method_name" src/ packages/ tests/
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py, push_to_remote, pull_rebase -->
 
-Change the abstract method signature in the gateway's `abc.py`. This is your anchor point—the type checker will now flag all 4 remaining implementations (real, fake, dry_run, printing) as incomplete.
+Change the abstract method signature in the gateway's `abc.py`. This is your anchor point—the type checker will now flag all 3 remaining implementations (real, fake, dry_run) as incomplete.
 
 See `push_to_remote()` and `pull_rebase()` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py` for examples of methods that return discriminated unions.
 
 **Why ABC first:** The type checker becomes your assistant. Each implementation that doesn't match the new signature shows up as an error.
 
-### Step 3: Update All 5 Implementations in Order
+### Step 3: Update All Implementations in Order
 
 Work through each implementation systematically:
 
@@ -60,9 +60,8 @@ Work through each implementation systematically:
 2. **`real.py`** — Production behavior (subprocess calls, API requests)
 3. **`fake.py`** — Test double behavior (constructor parameters, mutation tracking)
 4. **`dry_run.py`** — Preview behavior (no-op for mutations, delegate for reads)
-5. **`printing.py`** — Verbose behavior (log and delegate)
 
-Each file must match the ABC signature exactly. The type checker will guide you through real, fake, and dry_run. Printing implementations often fall behind—don't forget them.
+Each file must match the ABC signature exactly. The type checker will guide you through real, fake, and dry_run.
 
 ### Step 4: Migrate Every Caller
 
@@ -100,7 +99,7 @@ PR #6329 converted `push_to_remote` and `pull_rebase` from exception-based error
 
 **Scope:**
 
-- **5 gateway implementations** (abc, real, fake, dry_run, printing)
+- **4 gateway implementations** (abc, real, fake, dry_run)
 - **8 call sites** across **7 files**
 - **New types module** (`remote_ops/types.py`) with 4 new frozen dataclasses
 
@@ -126,9 +125,9 @@ For very large changes (10+ call sites), consider a two-PR approach:
 1. **PR 1:** Add the new signature as an optional variant (e.g., new method name or optional parameter)
 2. **PR 2:** Migrate all callers and remove the old signature
 
-This keeps each PR focused and testable. However, for gateway ABCs where the 5-file pattern already constrains you, doing it atomically in one PR is often cleaner.
+This keeps each PR focused and testable. However, for gateway ABCs where the 4-file pattern already constrains you, doing it atomically in one PR is often cleaner.
 
 ## Related Documentation
 
-- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — The 5-place pattern for all gateway changes
+- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — The 4-place pattern for all gateway changes
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) — Why and when to use return unions instead of exceptions

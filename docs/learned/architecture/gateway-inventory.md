@@ -47,9 +47,9 @@ This decomposition keeps each ABC focused and testable.
 
 **Purpose**: Abstract `os.execvp()` for launching Claude agent processes.
 
-**Pattern**: 3-file simplified gateway (abc.py, real.py, fake.py) — no dry_run.py or printing.py
+**Pattern**: 3-file simplified gateway (abc.py, real.py, fake.py) — no dry_run.py
 
-**Why simplified**: `os.execvp()` replaces the current process with no return (`NoReturn`). There's no return value to simulate in dry-run or print modes.
+**Why simplified**: `os.execvp()` replaces the current process with no return (`NoReturn`). There's no return value to simulate in dry-run mode.
 
 **Key characteristics**:
 
@@ -75,4 +75,4 @@ This decomposition keeps each ABC focused and testable.
 4. Wire into `ErkContext` (non-obvious step — check existing context setup)
 5. Add tests using the fake
 
-**Special case**: NoReturn operations (like `os.execvp()`) use 3-file simplified pattern — omit dry_run.py and printing.py
+**Special case**: NoReturn operations (like `os.execvp()`) use 3-file simplified pattern — omit dry_run.py

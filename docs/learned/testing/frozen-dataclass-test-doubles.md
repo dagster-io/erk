@@ -85,5 +85,5 @@ When a higher-level fake (like `FakeBranchManager`) delegates to a lower-level f
 
 ## Related Documentation
 
-- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-file pattern that fakes implement, including the fake mutation tracking checklist
+- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 4-file pattern that fakes implement, including the fake mutation tracking checklist
 - [BranchManager Abstraction](../architecture/branch-manager-abstraction.md) — the dual-mode abstraction that motivates the frozen dataclass fake variant

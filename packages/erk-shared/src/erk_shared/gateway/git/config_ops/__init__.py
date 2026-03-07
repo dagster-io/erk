@@ -7,5 +7,4 @@ Import from submodules:
 - real: RealGitConfigOps
 - fake: FakeGitConfigOps
 - dry_run: DryRunGitConfigOps
-- printing: PrintingGitConfigOps
 """

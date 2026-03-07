@@ -165,7 +165,7 @@ MyClass(prompt_executor=ClaudeCliPromptExecutor(console=None))
 
 ## Phase 4b: Create a new fake (only if needed)
 
-If no suitable fake exists, create one following the 5-place gateway pattern.
+If no suitable fake exists, create one following the 4-place gateway pattern.
 See `fake-driven-testing` skill for full guidance.
 
 Short version: the fake should:

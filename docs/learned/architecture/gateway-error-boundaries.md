@@ -10,7 +10,7 @@ tripwires:
   - score: 8
     action: "try/except in fake.py or dry_run.py"
     warning: "Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions."
-    context: "The 5-file gateway pattern has clear error boundary responsibilities. Real implementations catch and convert subprocess/system errors. Fakes simulate errors via constructor params. Dry-run always returns success."
+    context: "The 4-file gateway pattern has clear error boundary responsibilities. Real implementations catch and convert subprocess/system errors. Fakes simulate errors via constructor params. Dry-run always returns success."
     pattern: "\\btry:|\\bexcept\\s"
 ---
 
@@ -18,20 +18,19 @@ tripwires:
 
 ## The Core Principle
 
-In erk's 5-file gateway pattern, **only real.py catches exceptions**. The other four files (abc.py, fake.py, dry_run.py, printing.py) never use try/except — they express failure through different mechanisms.
+In erk's 4-file gateway pattern, **only real.py catches exceptions**. The other three files (abc.py, fake.py, dry_run.py) never use try/except — they express failure through different mechanisms.
 
 This separation exists because error boundaries serve different purposes:
 
 - **Real implementations** defend against actual system failures (subprocess crashes, missing files, network timeouts)
 - **Fake implementations** simulate failure modes for testing via constructor configuration
 - **Dry-run implementations** model the success path for validation workflows
-- **Printing implementations** delegate transparently without intercepting errors
 
 ## Why This Matters
 
 ### The Temptation to Add try/except Everywhere
 
-When implementing a gateway method that can fail, it's tempting to add try/except blocks to all five files. This feels symmetric — "if real.py catches exceptions, shouldn't fake.py and dry_run.py do the same?"
+When implementing a gateway method that can fail, it's tempting to add try/except blocks to all files. This feels symmetric — "if real.py catches exceptions, shouldn't fake.py and dry_run.py do the same?"
 
 **No.** The symmetry is in the _return type_ (discriminated unions), not the error handling mechanism.
 
@@ -93,13 +92,12 @@ result = fake.merge_pr(repo_root, pr_number, ...)
 
 ## Implementation Responsibilities by File
 
-| File          | Error Mechanism                                    | Uses try/except? |
-| ------------- | -------------------------------------------------- | ---------------- |
-| `abc.py`      | Defines discriminated union return types           | No               |
-| `real.py`     | Catches subprocess/system exceptions               | **Yes**          |
-| `fake.py`     | Returns discriminants based on constructor         | No               |
-| `dry_run.py`  | Always returns success discriminant                | No               |
-| `printing.py` | Delegates to wrapped implementation (pass-through) | No               |
+| File         | Error Mechanism                          | Uses try/except? |
+| ------------ | ---------------------------------------- | ---------------- |
+| `abc.py`     | Defines discriminated union return types | No               |
+| `real.py`    | Catches subprocess/system exceptions     | **Yes**          |
+| `fake.py`    | Returns discriminants based on constructor | No               |
+| `dry_run.py` | Always returns success discriminant      | No               |
 
 ### abc.py: Type Definitions
 
@@ -135,16 +133,6 @@ Always returns success discriminants. Used for validation workflows where you wa
 1. Log what would have been done
 2. Return success discriminant
 3. No error handling (failure scenarios aren't modeled in dry-run)
-
-### printing.py: Transparent Wrapper
-
-Logs the operation, delegates to wrapped implementation, returns whatever the wrapped implementation returns. No error handling — errors flow through from the wrapped gateway.
-
-**Pattern:**
-
-1. Log operation parameters
-2. Delegate to `self._impl.method(...)`
-3. Return the result (success or error discriminant)
 
 ## Anti-Patterns
 
@@ -199,7 +187,7 @@ class RealLocalGitHub(LocalGitHub):
 
 ## Related Patterns
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-file checklist covering abc.py, real.py, fake.py, dry_run.py, printing.py
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - 4-file checklist covering abc.py, real.py, fake.py, dry_run.py
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Return type design for operations that can fail
 - [Subprocess Wrappers](subprocess-wrappers.md) - Subprocess execution patterns used in real.py
 - [Fake-Driven Testing](../testing/fake-driven-testing.md) - How fakes enable fast, deterministic tests

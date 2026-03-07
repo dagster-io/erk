@@ -132,7 +132,7 @@ See `PlanBodyScreen.__init__()` in `src/erk/tui/screens/plan_body_screen.py`. Ac
 - `content_type="Objective"` -> calls `provider.fetch_objective_content()`
 - `content_type="Plan"` -> calls `provider.fetch_plan_content()`
 
-**Symmetric gateway API:** `fetch_plan_content()` and `fetch_objective_content()` follow the 5-place gateway pattern (ABC, real, fake, test helper, tests) with matching extraction functions.
+**Symmetric gateway API:** `fetch_plan_content()` and `fetch_objective_content()` follow the gateway pattern (ABC, real, fake, test helper, tests) with matching extraction functions.
 
 **Display labels:** `content_type.lower()` is used for user-facing strings (e.g., "Loading plan content..." vs "Loading objective content...").
 

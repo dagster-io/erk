@@ -112,17 +112,16 @@ See `BranchCreated` and `BranchAlreadyExists` in `packages/erk-shared/src/erk_sh
 
 Error handling responsibilities differ by implementation file:
 
-| File          | Error Handling Mechanism                                               | Uses try/except? |
-| ------------- | ---------------------------------------------------------------------- | ---------------- |
-| `real.py`     | Catches subprocess/system exceptions, converts to discriminated unions | **Yes**          |
-| `fake.py`     | Returns error discriminants based on constructor params                | No               |
-| `dry_run.py`  | Always returns success discriminants                                   | No               |
-| `abc.py`      | Defines return type signatures only                                    | No               |
-| `printing.py` | Delegates transparently                                                | No               |
+| File         | Error Handling Mechanism                                               | Uses try/except? |
+| ------------ | ---------------------------------------------------------------------- | ---------------- |
+| `real.py`    | Catches subprocess/system exceptions, converts to discriminated unions | **Yes**          |
+| `fake.py`    | Returns error discriminants based on constructor params                | No               |
+| `dry_run.py` | Always returns success discriminants                                   | No               |
+| `abc.py`     | Defines return type signatures only                                    | No               |
 
 **Why this split?** Real implementations interact with unpredictable external systems. Fake implementations simulate pre-configured failure scenarios for tests. The error boundary belongs at the subprocess interface, not in test infrastructure.
 
-See [Gateway Error Boundaries](gateway-error-boundaries.md) for the complete rationale and implementation patterns.
+See [Gateway Error Boundaries](gateway-error-boundaries.md) for the complete rationale and implementation patterns (the 4-file gateway pattern).
 
 ## Relation to Discriminated Unions
 
@@ -145,5 +144,5 @@ Example flow in `RealGitBranchOps.create_branch()`:
 ## Related Patterns
 
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) — When to use unions vs exceptions, pattern structure
-- [Gateway Error Boundaries](gateway-error-boundaries.md) — Where try/except belongs in the 5-file gateway pattern
+- [Gateway Error Boundaries](gateway-error-boundaries.md) — Where try/except belongs in the 4-file gateway pattern
 - [Subprocess Wrappers](subprocess-wrappers.md) — Using `run_subprocess_with_context()` correctly

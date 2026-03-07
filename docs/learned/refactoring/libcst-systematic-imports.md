@@ -377,5 +377,5 @@ pytest tests/unit/test_bar.py
 ## Related Documentation
 
 - [Gateway Consolidation Checklist](../planning/gateway-consolidation-checklist.md) — the full refactoring workflow that LibCST plugs into
-- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-place pattern that must be updated during consolidation
+- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 4-place pattern that must be updated during consolidation
 - [Re-Export Pattern](../architecture/re-export-pattern.md) — temporary re-exports during migration, cleaned up after LibCST pass

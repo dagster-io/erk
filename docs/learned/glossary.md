@@ -643,7 +643,7 @@ all_children = list(set(graphite_children) | set(github_children))
 
 ### Gateway
 
-An ABC (Abstract Base Class) defining an interface for an external system (Git, LocalGitHub, Graphite, etc.). Each gateway has a 5-file implementation pattern: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`.
+An ABC (Abstract Base Class) defining an interface for an external system (Git, LocalGitHub, Graphite, etc.). Each gateway has an implementation pattern: `abc.py`, `real.py`, `fake.py` (3-file default), plus `dry_run.py` for dry-run-enabled gateways (4-file).
 
 **Related**: [Gateway ABC Implementation](architecture/gateway-abc-implementation.md), [Gateway Inventory](architecture/gateway-inventory.md)
 

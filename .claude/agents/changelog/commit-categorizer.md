@@ -184,7 +184,7 @@ Example format:
 
 **By content:**
 
-- Gateway ABC method additions (`abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`) -> internal
+- Gateway ABC method additions (`abc.py`, `real.py`, `fake.py`, `dry_run.py`) -> internal
 - Code convention migrations (frozen dataclasses, default params) -> internal
 - Import reorganization -> internal
 

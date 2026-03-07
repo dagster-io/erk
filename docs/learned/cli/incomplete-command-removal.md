@@ -44,5 +44,5 @@ Before removing any command or workflow:
 
 ## Related Documentation
 
-- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — 5-place pattern (similar multi-location removal concern)
+- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — 4-place pattern (similar multi-location removal concern)
 - [Workflow Commands](workflow-commands.md) — WORKFLOW_COMMAND_MAP structure

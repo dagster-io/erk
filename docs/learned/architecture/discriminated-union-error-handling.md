@@ -416,5 +416,5 @@ This pattern was corrected in `validate_objective_slug()` in `naming.py` — pre
 
 ## Related Documentation
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-place implementation pattern for gateway methods
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - 4-place implementation pattern for gateway methods
 - [Erk Architecture Patterns](erk-architecture.md) - Broader architectural context for this pattern

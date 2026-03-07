@@ -187,7 +187,6 @@ def execute_split_plan(
     The actual execution depends on the Git implementation passed in:
     - RealGit: Actually creates the worktrees
     - DryRunGit: No-op execution for dry-run mode
-    - PrintingGit: Prints operations (wraps either Real or Noop)
 
     Args:
         plan: The split plan to execute

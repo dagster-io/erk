@@ -123,6 +123,6 @@ The `force` parameter in `delete_branch()` controls whether git uses `-D` (force
 ## Related Documentation
 
 - [Branch Manager Decision Tree](branch-manager-decision-tree.md) — When to use `ctx.branch_manager` vs `ctx.git.branch`
-- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-place implementation pattern for gateway ABCs
+- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 4-place implementation pattern for gateway ABCs
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) — When to use discriminated unions vs exceptions
 - [Frozen Dataclass Test Doubles](../testing/frozen-dataclass-test-doubles.md) — Testing pattern for FakeBranchManager

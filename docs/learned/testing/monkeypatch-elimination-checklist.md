@@ -42,7 +42,7 @@ The first migration step is identifying which gateway replaces each monkeypatch 
 | `webbrowser.open()`               | Browser gateway                       | Captures URLs opened without launching a browser         |
 | `os.execvp()`                     | AgentLauncher gateway                 | Process replacement abstracted with NoReturn semantics   |
 
-If the operation doesn't map to an existing gateway, create one before migrating tests. See [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) for the 5-file (or 3-file simplified) pattern.
+If the operation doesn't map to an existing gateway, create one before migrating tests. See [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) for the 4-file (or 3-file simplified) pattern.
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/ -->
 

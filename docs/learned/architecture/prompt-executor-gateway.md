@@ -185,5 +185,5 @@ The ABC lives in `erk-shared` (packages/erk-shared/src/erk_shared/core/prompt_ex
 
 ## Related Documentation
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-file gateway pattern
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 4-file gateway pattern
 - [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Event type design rationale

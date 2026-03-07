@@ -37,12 +37,12 @@ Real and fake implementations may raise different exception types:
 
 ## Benefits Over Abstract Methods
 
-| Aspect         | Abstract Method (5 files)       | Convenience Method (1 file) |
-| -------------- | ------------------------------- | --------------------------- |
-| Implementation | abc, real, fake, dry_run, print | abc only                    |
-| Maintenance    | High (5 places to update)       | Low (1 place)               |
-| Testing        | Needs fake behavior             | Uses existing primitives    |
-| Use case       | New primitive operation         | Composing existing ops      |
+| Aspect         | Abstract Method (3-4 files) | Convenience Method (1 file) |
+| -------------- | --------------------------- | --------------------------- |
+| Implementation | abc, real, fake, dry_run    | abc only                    |
+| Maintenance    | High (3-4 places to update) | Low (1 place)               |
+| Testing        | Needs fake behavior         | Uses existing primitives    |
+| Use case       | New primitive operation     | Composing existing ops      |
 
 ## When NOT to Use
 
