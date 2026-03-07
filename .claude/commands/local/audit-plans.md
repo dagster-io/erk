@@ -213,7 +213,7 @@ last_remote_impl_at: "2024-12-06T..."
 For assessing a single plan's relevance without running a full audit, use:
 
 ```bash
-/local:check-relevance <plan-number>
+/local:check-superceded <pr-number>
 ```
 
-This provides focused, evidence-based assessment inline when reviewing or creating plans.
+This provides focused, evidence-based assessment with deep code comparison when reviewing PRs.
