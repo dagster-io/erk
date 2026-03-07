@@ -429,7 +429,7 @@ def add_node_to_frontmatter(
     last_phase_index = -1
     for i, step in enumerate(steps):
         if step.id.startswith(phase_prefix):
-            suffix = step.id[len(phase_prefix):]
+            suffix = step.id[len(phase_prefix) :]
             if suffix.isdigit():
                 node_num = int(suffix)
                 if node_num > max_node_num:
@@ -724,6 +724,7 @@ def find_next_node(phases: list[RoadmapPhase]) -> dict[str, str] | None:
 # ---------------------------------------------------------------------------
 # Roadmap table markers
 # ---------------------------------------------------------------------------
+
 
 def slugify_description(description: str) -> str:
     """Convert description to kebab-case slug.
