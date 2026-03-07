@@ -1,0 +1,334 @@
+<session>
+  <meta source="agent-ad75d92" />
+  <meta branch="plnd/consolidate-learn-docs-03-07-2145" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Read the following source files and report relevant sections:
+
+1. `src/erk/cli/commands/pr/incremental_dispatch.py` - Look at lines 130-145 for retrack_branch() and index sync patterns
+2. `src/erk/cli/commands/pr/dispatch_helpers.py` - Look at the `ensure_trunk_synced` function, particularly the `find_worktree_for_branch` LBYL check and conditional git pull vs update_local_ref logic
+3. `src/erk/cli/commands/pr/teleport_cmd.py` - Look at lines 195-235 for `_register_with_graphite()` and stacked vs non-stacked PR handling
+
+Report the exact function names, line numbers, and key logic patterns.</user>
+  <assistant>I'll help you explore these source files and report the relevant sections. Let me start by checking the documentation, then read the specific files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0117evU9b7NT4caAb5bRUHYg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017QkXFotS3y44Y78vo25262">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015TVQ5vvwQ3ovQdZkm2ftdh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01L8cfx1aCZYjGK22WKSQ7Ba">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15222" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15222, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017QkXFotS3y44Y78vo25262">
+&lt;tool_use_error&gt;File does not exist.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_0117evU9b7NT4caAb5bRUHYg">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015TVQ5vvwQ3ovQdZkm2ftdh">
+     1→"""Helper functions for dispatch command."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk_shared.output.output import user_output
+     8→
+     9→
+    10→def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -&gt; None:
+    11→    """Raise SystemExit(1) if trunk is checked out in a dirty worktree."""
+    12→    trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+    13→    if trunk_worktree is None:
+    14→        return
+    15→    if not ctx.git.status.has_uncommitted_changes(trunk_worktree):
+    16→        return
+    17→    user_output(
+    18→        click.style("Error: ", fg="red")
+    19→        + f"Worktree at {trunk_worktree} has {trunk} checked out with "
+    20→        f"uncommitted changes.\n\n"
+    21→        f"Please commit or stash changes before running erk pr dispatch."
+    22→    )
+    23→    raise SystemExit(1)
+    24→
+    25→
+    26→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    27→    """Ensure local trunk ref is synced with remote, without requiring checkout.
+    28→
+    29→    Uses fetch + update_local_ref to advance the local trunk branch pointer
+    30→    without needing trunk to be checked out. If trunk IS checked out in a
+
+... [64 lines omitted] ...
+
+    33→    Raises SystemExit(1) on sync failure with clear error message.
+    45→            click.style("Error: ", fg="red")
+    73→            click.style("Error: ", fg="red")
+    82→            click.style("Error: ", fg="red")
+    86→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <tool_result tool="toolu_01L8cfx1aCZYjGK22WKSQ7Ba">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.activation import (
+    17→    activation_config_activate_only,
+    18→    ensure_worktree_activate_script,
+    19→    print_activation_instructions,
+    20→)
+    21→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    22→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    23→from erk.cli.ensure import Ensure
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    26→from erk_shared.gateway.github.types import PRNotFound
+    27→from erk_shared.output.output import user_output
+    28→
+    29→
+    30→@click.command("teleport")
+
+... [239 lines omitted] ...
+
+    57→        ctx.console.error("Not in a git repository")
+    65→        ctx.console.error(
+    72→        ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   239→    except RuntimeError:
+   254→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <assistant>Now let me search for the incremental_dispatch.py file since it wasn't found at the expected path:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6694" cache_read_input_tokens="15222" cache_creation="{'ephemeral_5m_input_tokens': 6694, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01SLSajKaH4AxhkSGWgZdya6">
+    <param name="pattern">**/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6694" cache_read_input_tokens="15222" cache_creation="{'ephemeral_5m_input_tokens': 6694, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01N1KjK4XG1L7G2Pf18fHPvb">
+    <param name="command">find /home/runner/work/erk/erk -name "incremental_dispatch.py" -type f 2&gt;/dev/null</param>
+    <param name="description">Find incremental_dispatch.py file location</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6694" cache_read_input_tokens="15222" cache_creation="{'ephemeral_5m_input_tokens': 6694, 'ephemeral_1h_input_tokens': 0}" output_tokens="174" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N1KjK4XG1L7G2Pf18fHPvb">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+  </tool_result>
+  <tool_result tool="toolu_01SLSajKaH4AxhkSGWgZdya6">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+  </tool_result>
+  <assistant>Good, now let me read that file:</assistant>
+  <usage input_tokens="62" cache_creation_input_tokens="381" cache_read_input_tokens="21916" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ESD1UsRjN2uiCzP9rLZaQH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="62" cache_creation_input_tokens="381" cache_read_input_tokens="21916" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ESD1UsRjN2uiCzP9rLZaQH">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
+     2→
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
+     5→
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-plan label — just an OPEN PR.
+     9→"""
+    10→
+    11→import json
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    17→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    18→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    19→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    20→from erk_shared.context.helpers import (
+    21→    require_branch_manager,
+    22→    require_context,
+    23→    require_git,
+    24→    require_github,
+    25→    require_repo_root,
+    26→    require_time,
+    27→)
+    28→from erk_shared.context.types import NoRepoSentinel
+    29→from erk_shared.gateway.git.remote_ops.types import PushError
+    30→from erk_shared.gateway.github.parsing import (
+
+... [189 lines omitted] ...
+
+    83→        _output_error(output_format, f"PR #{pr_number} not found")
+    87→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+    98→        _output_error(output_format, "Not in a git repository")
+   147→    if isinstance(push_result, PushError):
+   148→        _output_error(output_format, f"Push failed: {push_result.message}")
+   208→def _output_error(output_format: str, message: str) -&gt; None:
+   209→    """Output error in the requested format."""
+   211→        click.echo(json.dumps({"success": False, "error": message}))
+   213→        user_output(click.style("Error: ", fg="red") + message)
+  </tool_result>
+  <assistant>Perfect! Now I have all the source files. Let me compile the findings in a comprehensive report.
+
+## FINDINGS REPORT
+
+I have successfully located and analyzed the three source files you requested. Here are the key functions, line numbers, and logic patterns:
+
+---
+
+### 1. **incremental_dispatch.py** (Correct location: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py`)
+
+**Function: `retrack_branch()` - Lines 133**
+
+```python
+# Line 132-133:
+branch_manager = require_branch_manager(ctx)
+branch_manager.retrack_branch(repo_root, branch_name)
+```
+
+**Index Sync Patterns (Lines 102-111):**
+
+```python
+# Line 102-111: Branch synchronization without checkout requirement
+# Sync local branch ref to remote (no checkout required)
+user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
+git.remote.fetch_branch(repo_root, "origin", branch_name)
+checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
+if checked_out_path is None:
+    git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
+else:
+    remote_sha = git.branch.get_branch_head(repo_root, f"origin/{branch_name}")
+    if remote_sha is not None:
+        git.branch.update_local_ref(repo_root, branch_name, remote_sha)
+```
+
+**Key Pattern:** After committing files via `commit_files_to_branch()`, the code uses `retrack_branch()` to update Graphite tracking (line 133), then conditionally writes files to disk if the branch is currently checked out (lines 136-141).
+
+---
+
+### 2. **dispatch_helpers.py** (Location: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py`)
+
+**Function: `ensure_trunk_synced()` - Lines 26-88**
+
+**LBYL Check Pattern (Lines 60-68):**
+
+```python
+# Line 60-68: Conditional git pull vs update_local_ref logic
+trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+
+user_output(f"Syncing {trunk} with origin/{trunk}...")
+if trunk_worktree is not None:
+    # Trunk is checked out — must use pull to update index + working tree
+    ctx.git.remote.pull_branch(trunk_worktree, "origin", trunk, ff_only=True)
+else:
+    # Trunk not checked out — safe to update ref directly
+    ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)
+```
+
+**Key Logic:**
+- **Line 12-14:** LBYL check in `_check_trunk_worktree_clean()`: `if trunk_worktree is None: return`
+- **Lines 53-88:** Three-way merge analysis:
+  - **Lines 56-69:** Local is behind remote → fast-forward (uses pull if checked out, else update_local_ref)
+  - **Lines 70-78:** Local is ahead of remote → error (user has unpushed commits)
+  - **Lines 79-88:** Diverged → error (both have unique commits)
+
+**Critical Pattern:** When trunk is checked out in a worktree, use `pull_branch()` to update both ref AND working tree. When NOT checked out, use `update_local_ref()` for direct ref updates without checkout.
+
+---
+
+### 3. **teleport_cmd.py** (Location: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py`)
+
+**Function: `_register_with_graphite()` - Lines 198-232**
+
+**Stacked vs Non-Stacked PR Handling (Lines 215-232):**
+
+```python
+# Line 213: Detect trunk branch
+trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+
+# Line 216-223: Stacked PR handling (base is not trunk)
+if base_ref_name != trunk:
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
+    if base_ref_name not in local_branches:
+        ctx.console.info(f"Fetching base branch '{base_ref_name}'...")
+        ctx.git.remote.fetch_branch(repo.root, "origin", base_ref_name)
+        ctx.branch_manager.create_tracking_branch(
+            repo.root, base_ref_name, f"origin/{base_ref_name}"
+        )
+
+# Line 225-232: Graphite registration (applies to all PRs)
+parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
+if parent is None:
+    ctx.console.info("Tracking branch with Graphite...")
+    ctx.branch_manager.track_branch(repo.root, branch_name, base_ref_name)
+else:
+    if ctx.graphite_branch_ops is not None:
+        ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+```
+
+**Key Patterns:**
+1. **Lines 216-223:** For **stacked PRs** (base ≠ trunk), fetch the base branch locally and create a tracking branch
+2. **Lines 226-232:** For **all PRs**:
+   - If no parent exists: call `track_branch()` (initial registration)
+   - If parent exists: call `retrack_branch()` via graphite_branch_ops (update existing tracking)
+3. **LBYL Check (line 231):** `if ctx.graphite_branch_ops is not None:` before calling retrack
+
+---
+
+### Summary Table
+
+| File | Function | Lines | Key Pattern |
+|------|----------|-------|------------|
+| incremental_dispatch.py | `retrack_branch()` call | 133 | Call after committing; update Graphite after plumbing changes |
+| incremental_dispatch.py | Index sync pattern | 102-111 | LBYL: fetch, check if checked out, then either create_branch or update_local_ref |
+| dispatch_helpers.py | `ensure_trunk_synced()` | 26-88 | LBYL: find_worktree_for_branch, then pull (if checked out) vs update_local_ref (if not) |
+| dispatch_helpers.py | Merge analysis | 53-88 | Three-way: behind (fast-forward), ahead (error), diverged (error) |
+| teleport_cmd.py | `_register_with_graphite()` | 198-232 | Stacked: fetch base if needed; all: track (new) or retrack (existing) with LBYL check |</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3966" cache_read_input_tokens="22297" cache_creation="{'ephemeral_5m_input_tokens': 3966, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

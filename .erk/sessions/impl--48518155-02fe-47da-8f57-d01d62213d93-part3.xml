@@ -1,0 +1,568 @@
+<session>
+  <meta source="agent-a2538a8" />
+  <meta branch="plnd/consolidate-learn-docs-03-07-2145" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Read these source files and report key patterns:
+
+1. `src/erk/cli/commands/land_learn.py` - Look for `_fetch_xmls_from_async_learn_branch()` function and its integration with `_create_learn_pr_impl()` and `_create_learn_pr_for_merged_branch()`
+2. `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` - Look for: `reason` field on RoadmapNode (around line 40), `add_node_to_frontmatter()` (around line 393), `slugify_description()` (around line 729), conditional rendering of `reason` in YAML (lines 219-233)
+3. `src/erk/cli/commands/codespace/connect_cmd.py` - Look at lines 60-90 for `checkout_prefix` injection pattern for both shell and non-shell modes
+
+Report exact function names, line numbers, and key logic.</user>
+  <assistant>I'll search the docs first, then explore the source files you've specified.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15275" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Nr11d7nC9pCU2LQFCkjjsy">
+    <param name="pattern">fetch_xmls|land_learn|learn branch</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15275" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HPV5wbv7DMs4EAwNAHKCqH">
+    <param name="pattern">RoadmapNode|reason field</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15275" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ByKRkCf8BDZ7PEYr9HYA2G">
+    <param name="pattern">checkout_prefix|connect codespace</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15275" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nr11d7nC9pCU2LQFCkjjsy">
+Found 12 files
+docs/learned/sessions/index.md
+docs/learned/sessions/session-accumulation.md
+docs/learned/planning/session-preprocessing.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/remote-branch-learn.md
+docs/learned/planning/learn-pipeline-workflow.md
+docs/learned/planning/learn-session-embedding.md
+docs/learned/glossary.md
+docs/learned/cli/plan-implement.md
+docs/learned/cli/tripwires.md
+docs/learned/cli/land-learn-integration.md
+docs/learned/architecture/inference-hoisting.md
+  </tool_result>
+  <tool_result tool="toolu_01HPV5wbv7DMs4EAwNAHKCqH">
+Found 6 files
+docs/learned/objectives/phase-name-enrichment.md
+docs/learned/objectives/roadmap-format-versioning.md
+docs/learned/objectives/roadmap-parser-api.md
+docs/learned/objectives/roadmap-parser.md
+docs/learned/objectives/tripwires.md
+docs/learned/cli/commands/update-objective-node.md
+  </tool_result>
+  <tool_result tool="toolu_01ByKRkCf8BDZ7PEYr9HYA2G">
+No files found
+  </tool_result>
+  <assistant>Good, I found relevant docs. Let me read the key ones before exploring the source files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="746" cache_read_input_tokens="15275" cache_creation="{'ephemeral_5m_input_tokens': 746, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Tkx5NWoZdBbvGT4qw6Sp9X">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="746" cache_read_input_tokens="15275" cache_creation="{'ephemeral_5m_input_tokens': 746, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MuXfQPpxyLsr4PPDuYoJGu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="746" cache_read_input_tokens="15275" cache_creation="{'ephemeral_5m_input_tokens': 746, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FfHHnmJgCoAacL9GS7S36k">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/roadmap-format-versioning.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="746" cache_read_input_tokens="15275" cache_creation="{'ephemeral_5m_input_tokens': 746, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tkx5NWoZdBbvGT4qw6Sp9X">
+     1→---
+     2→title: Land-Learn Integration
+     3→read_when:
+     4→  - "modifying the erk land command's learn workflow"
+     5→  - "debugging session discovery during land"
+     6→  - "working with session reporting in the land pipeline"
+     7→  - "learn plan creation"
+     8→  - "session discovery"
+     9→  - "empty learn plan"
+    10→tripwires:
+    11→  - action: "making session discovery failures block the land command"
+    12→    warning: "Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors."
+    13→    score: 6
+    14→  - action: "modifying learn plan skip guards in land_learn.py"
+    15→    warning: "Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards."
+    16→---
+    17→
+    18→# Land-Learn Integration
+    19→
+    20→After landing a PR, `erk land` optionally creates a learn plan to capture implementation insights. The session discovery step reports what sessions are available for the learn workflow.
+    21→
+    22→## Skip Guards
+    23→
+    24→Learn plan creation skips in two scenarios:
+    25→
+    26→1. **No sessions tracked at all** — e.g., manual CHANGELOG PRs or PRs without implementation sessions. The `all_session_ids` list is empty because no planning, implementation, or learn sessions were recorded.
+    27→
+    28→2. **Sessions exist but XML extraction produces no content** — Sessions were tracked in GitHub metadata but preprocessing produced no usable XML (warmup sessions, empty sessions, or sessions that fail to parse).
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/land_learn.py, _create_learn_pr_impl --&gt;
+
+... [113 lines omitted] ...
+
+   116→## Fire-and-Forget Error Resilience
+   120→See `_create_learn_pr_with_sessions()` in `src/erk/cli/commands/land_learn.py` for the fire-and-forget wrapper. The entire learn workflow is wrapped in a try/except that catches all exceptions and emits a warning instead of raising. This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+  </tool_result>
+  <tool_result tool="toolu_01MuXfQPpxyLsr4PPDuYoJGu">
+     1→---
+     2→title: Learn Pipeline Workflow
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - debugging why learn materials are missing or malformed
+     7→  - understanding data flow from sessions to documentation plan
+     8→  - choosing between local learn and async learn modes
+     9→  - adding a new stage to the learn pipeline
+    10→tripwires:
+    11→  - action: "adding a new pipeline stage to the async learn pipeline"
+    12→    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
+    13→  - action: "changing how sessions are classified as planning vs impl"
+    14→    warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
+    15→  - action: "modifying how learn materials are committed to a branch"
+    16→    warning: "The CI workflow checks out the learn branch and reads materials from .erk/impl-context/. File names and directory structure must match what learn.yml expects."
+    17→---
+    18→
+    19→# Learn Pipeline Workflow
+    20→
+    21→## Purpose
+    22→
+    23→This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Async Learn Local Preprocessing](async-learn-local-preprocessing.md).
+    24→
+    25→## Pipeline Architecture
+    26→
+    27→The learn pipeline has 7 stages that transform raw session JSONL into a documentation plan issue. The key architectural decision is **where processing happens**: stages 1-5 run locally (fast, free), while stages 6-7 run in GitHub Actions (background, billed).
+    28→
+    29→```
+    30→Local machine                              GitHub Actions
+
+... [131 lines omitted] ...
+
+    82→Tool result pruning (30 line limit, error lines preserved) occurs during XML generation, not as a preprocessing filter step.
+   120→## Failure Modes
+   122→| Stage                | Failure              | Behavior                                                                 |
+   124→| 1 (Discovery)        | No sessions found    | Warning, continues with empty list; local fallback scans recent sessions |
+   128→| 4 (Branch Commit)    | Push failure         | **Pipeline fails** — learn branch is required for async path             |
+   129→| 5 (Workflow Trigger) | Workflow not found   | Fails with error about missing `learn.yml`                               |
+  </tool_result>
+  <tool_result tool="toolu_01FfHHnmJgCoAacL9GS7S36k">
+     1→---
+     2→title: Roadmap Format Versioning
+     3→read_when:
+     4→  - extending the roadmap table format with new columns
+     5→  - planning backward-compatible parser changes to roadmap tables
+     6→  - understanding roadmap column format history
+     7→tripwires:
+     8→  - action: "adding columns to the roadmap table format"
+     9→    warning: "Read this doc to understand the header-based detection and rendering strategy before adding columns."
+    10→  - action: "referencing a 'plan' field on RoadmapNode"
+    11→    warning: "The plan field was removed (PR #8128). RoadmapNode has: id, description, status, pr, depends_on, slug. Plan references are no longer tracked in the roadmap."
+    12→last_audited: "2026-02-26 00:00 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# Roadmap Format Versioning
+    17→
+    18→This document captures the design thinking around the roadmap table format, including the current 4-column canonical format and historical context.
+    19→
+    20→## Current State: 4-Column Format (Canonical)
+    21→
+    22→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapNode --&gt;
+    23→
+    24→The `RoadmapNode` dataclass has six fields (`id`, `description`, `status`, `pr`, `depends_on`, `slug`). The `pr` field holds a PR reference (`"#123"`) for both in-progress and landed PRs and is `str | None`. The `depends_on` field holds explicit dependencies (`tuple[str, ...] | None`), and `slug` holds a kebab-case identifier (`str | None`). The `plan` field was removed in PR #8128 — plan references are no longer tracked in the roadmap table.
+    25→
+    26→The canonical rendered table format:
+    27→
+    28→```markdown
+    29→| Node | Description | Status      | PR   |
+    30→| ---- | ----------- | ----------- | ---- |
+
+... [50 lines omitted] ...
+
+    46→Previous formats are no longer actively parsed by `parse_roadmap()`. The parser requires v2+ YAML frontmatter and returns a legacy format error for non-v2+ content. Historical formats included a separate Plan column and a combined PR column with `plan #N` syntax.
+    59→- **v2/v3/v4 parsing**: `parse_roadmap()` accepts all three schema versions. Returns a legacy format error for non-v2/v3/v4 content (no table-parsing fallback)
+  </tool_result>
+  <assistant>Now let me read the source files you specified:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7659" cache_read_input_tokens="16021" cache_creation="{'ephemeral_5m_input_tokens': 7659, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015ymsxwXWVLyggzrejUaTSX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7659" cache_read_input_tokens="16021" cache_creation="{'ephemeral_5m_input_tokens': 7659, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SRpJK7Mz84cFKQMUn9NBGk">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7659" cache_read_input_tokens="16021" cache_creation="{'ephemeral_5m_input_tokens': 7659, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KjDmHev1kzdncnU9DV3CK4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7659" cache_read_input_tokens="16021" cache_creation="{'ephemeral_5m_input_tokens': 7659, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015ymsxwXWVLyggzrejUaTSX">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→from dataclasses import dataclass
+    11→from typing import TYPE_CHECKING
+    12→
+    13→import click
+    14→from rich.console import Console
+    15→from rich.table import Table
+    16→
+    17→from erk.cli.commands.exec.scripts.preprocess_session import (
+    18→    deduplicate_assistant_messages,
+    19→    deduplicate_documentation_blocks,
+    20→    discover_agent_logs,
+    21→    is_empty_session,
+    22→    is_warmup_session,
+    23→    process_log_file,
+    24→    split_entries_to_chunks,
+    25→    truncate_tool_parameters,
+    26→)
+    27→from erk.core.branch_slug_generator import generate_branch_slug
+    28→from erk.core.context import ErkContext
+    29→from erk_shared.learn.extraction.session_schema import (
+    30→    iter_jsonl_entries,
+
+... [610 lines omitted] ...
+
+   118→    Fire-and-forget: raises on error (caller should catch).
+   221→    elif result.error:
+   223→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+   372→    except Exception as exc:
+   373→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   532→    """Inner implementation for learn plan creation (raises on error)."""
+   631→    elif result.error:
+   633→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <tool_result tool="toolu_01KjDmHev1kzdncnU9DV3CK4">
+     1→"""Connect to a codespace and launch Claude."""
+     2→
+     3→import shlex
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.codespace.resolve import resolve_codespace
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.context.types import NoRepoSentinel
+    10→
+    11→
+    12→def _build_export_prefix(env_vars: tuple[str, ...]) -&gt; str:
+    13→    """Parse --env KEY=VALUE args and return an export prefix string.
+    14→
+    15→    Returns empty string if no env vars provided, otherwise returns
+    16→    'export K1=V1 K2=V2 &amp;&amp; ' ready to prepend to a command.
+    17→    """
+    18→    if not env_vars:
+    19→        return ""
+    20→
+    21→    parts: list[str] = []
+    22→    for env_var in env_vars:
+    23→        if "=" not in env_var:
+    24→            click.echo(f"Error: Invalid --env format: {env_var!r} (expected KEY=VALUE)", err=True)
+    25→            raise SystemExit(1)
+    26→        key, value = env_var.split("=", 1)
+    27→        parts.append(f"{key}={shlex.quote(value)}")
+    28→
+    29→    return f"export {' '.join(parts)} &amp;&amp; "
+    30→
+
+... [71 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SRpJK7Mz84cFKQMUn9NBGk">
+     1→"""Shared parser, serializer, and data types for objective roadmap operations.
+     2→
+     3→This module provides:
+     4→- Data types: RoadmapNodeStatus, RoadmapNode, RoadmapPhase
+     5→- Parsing: parse_roadmap() (v2 frontmatter only)
+     6→- Frontmatter: validate, parse, group, update
+     7→- Utilities: compute_summary(), find_next_node(), serialize_phases()
+     8→
+     9→Previously split across objective_roadmap_shared.py and
+    10→objective_roadmap_frontmatter.py in the erk package. Consolidated
+    11→here to eliminate the circular dependency between erk_shared and erk.
+    12→"""
+    13→
+    14→import re
+    15→from collections.abc import Mapping
+    16→from dataclasses import dataclass, replace
+    17→from typing import Literal, cast
+    18→
+    19→import yaml
+    20→
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    extract_raw_metadata_blocks,
+    23→    parse_metadata_block_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.types import BlockKeys
+    26→
+    27→RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [843 lines omitted] ...
+
+    67→        Tuple of (steps, errors). If validation succeeds,
+    68→        errors is empty. If validation fails, steps is None.
+    70→    errors: list[str] = []
+    75→        errors.append("Missing required field: schema_version")
+    76→        return None, errors
+    79→        errors.append(f"Unsupported schema_version: {schema_version}")
+    80→        return None, errors
+    88→        errors.append("Missing required field: nodes (or steps for v2)")
+    89→        return None, errors
+    91→        errors.append("Field 'steps' must be a list")
+    92→        return None, errors
+    98→            errors.append(f"Step {i} is not a mapping")
+    99→            return None, errors
+   106→                errors.append(f"Step {i} missing required field: {field}")
+   107→                return None, errors
+   119→            errors.append(f"Step {i} field 'id' must be a string")
+   120→            return None, errors
+   122→            errors.append(f"Step {i} field 'description' must be a string")
+   123→            return None, errors
+   125→            errors.append(f"Step {i} field 'status' must be a string")
+   126→            return None, errors
+   129→            errors.append(f"Step {i} field 'status' must be one of: {valid_statuses}")
+   130→            return None, errors
+   132→            errors.append(f"Step {i} field 'pr' must be a string or null")
+   133→            return None, errors
+   139→                errors.append(f"Step {i} field 'depends_on' must be a list or null")
+   140→                return None, errors
+   143→                    errors.append(f"Step {i} field 'depends_on' item {j} must be a string")
+   144→                    return None, errors
+   149→            errors.append(f"Step {i} field 'slug' must be a string or null")
+   150→            return None, errors
+   154→            errors.append(f"Step {i} field 'reason' must be a string or null")
+   155→            return None, errors
+   169→    return steps, errors
+   189→    except ValueError:
+   191→    steps, _errors = validate_roadmap_frontmatter(data)
+   198→        "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n"
+   520→        ``(phases, validation_errors)`` on success, or ``None`` when the
+   539→    steps, errors = validate_roadmap_frontmatter(data)
+   545→    return (phases, errors)
+   548→_LEGACY_FORMAT_ERROR = (
+   559→        (phases, validation_errors)
+   577→    # Block exists but failed to parse — legacy/broken format
+   578→    return ([], [_LEGACY_FORMAT_ERROR])
+  </tool_result>
+  <assistant>Perfect! Now I have all the source code. Let me compile a comprehensive report with the exact patterns you requested.
+
+## Key Patterns Report
+
+### 1. `land_learn.py` - Learn PR Creation Pattern
+
+#### `_fetch_xmls_from_async_learn_branch()` (lines 47-102)
+**Purpose:** Fetches preprocessed session XMLs from remote implementation branches for learn plan inclusion.
+
+**Function signature:**
+```python
+def _fetch_xmls_from_async_learn_branch(
+    git: Git,
+    *,
+    repo_root: Path,
+    plan_id: str,
+) -&gt; dict[str, str]:
+```
+
+**Key logic:**
+- Checks if `async-learn/{plan_id}` branch exists on remote via `git.branch.branch_exists_on_remote()` (line 70)
+- Fetches the branch with `git.remote.fetch_branch()` (line 73)
+- Reads manifest from `.erk/sessions/manifest.json` using `git.commit.read_file_from_ref()` (lines 76-86)
+- Iterates manifest entries to download each XML file from `.erk/sessions/` (lines 91-100)
+- Returns dict mapping file paths like `{IMPL_CONTEXT_DIR}/sessions/{filename}` to XML content
+- Empty dict return on any step failure (lenient fallback pattern)
+
+#### `_create_learn_pr_impl()` (lines 527-634)
+**Purpose:** Inner implementation (raises on error) for learn plan creation called from `_create_learn_pr_with_sessions()`.
+
+**Integration flow:**
+1. Gets plan from store to check labels (skip if `erk-learn` label present for cycle prevention, line 545)
+2. Discovers sessions via `ctx.plan_backend.find_sessions_for_plan()` (line 549)
+3. Calls `_log_session_discovery()` to get XML files dict (line 553)
+4. **Fallback to async-learn branch**: If no local XMLs but sessions exist, calls `_fetch_xmls_from_async_learn_branch()` (lines 556-564)
+5. Checks for skip conditions: no XMLs at all returns with detail message (lines 566-576)
+6. Creates learn plan PR with `create_plan_draft_pr()` passing `extra_files=xml_files or None` (line 618)
+
+#### `_create_learn_pr_for_merged_branch()` (lines 105-225)
+**Purpose:** Thin wrapper for creating learn plan when branch merged outside erk land (fire-and-forget).
+
+**Key difference from `_create_learn_pr_impl()`:**
+- Same core logic but receives `merged_pr_number` directly instead from LandState
+- Constructs plan body manually with merged PR reference (lines 171-176)
+- Calls `_create_learn_pr_impl()` indirectly via its own implementation (fires and forgets in try/except)
+
+#### Supporting functions integration:
+- **`_log_session_discovery()`** (lines 393-489): Returns dict mapping file paths to XML content, classifies sessions by type (planning/impl/learn), computes stats via `_compute_session_stats()`, handles multi-chunk sessions with `-part{N}` suffix
+- **`_compute_session_stats()`** (lines 252-338): Preprocesses sessions locally, splits at 200,000 token limit, returns `SessionStats` with XML chunks
+- **`_session_type_prefix()`** (lines 376-390): Maps session ID to type prefix string based on session type classification
+
+---
+
+### 2. `roadmap.py` - RoadmapNode and Metadata Pattern
+
+#### `RoadmapNode` dataclass (lines 30-40)
+**Structure:**
+```python
+@dataclass(frozen=True)
+class RoadmapNode:
+    id: str                          # Node ID (e.g., "1.1")
+    description: str
+    status: RoadmapNodeStatus        # Literal: "pending", "planning", "done", "in_progress", "blocked", "skipped"
+    pr: str | None                   # None or "#456" (PR number)
+    depends_on: tuple[str, ...] | None  # None = not specified, () = no deps
+    slug: str | None                 # Kebab-case identifier
+    reason: str | None               # Reason text (e.g., why skipped) — LINE 40
+```
+
+**Key point:** `reason` field added at line 40 to support optional reason text for skipped/blocked nodes.
+
+#### `add_node_to_frontmatter()` (lines 393-463)
+**Purpose:** Adds new node to roadmap phase, auto-assigns node ID.
+
+**Signature:**
+```python
+def add_node_to_frontmatter(
+    block_content: str,
+    *,
+    phase: int,
+    description: str,
+    slug: str | None,
+    status: RoadmapNodeStatus,
+    depends_on: tuple[str, ...] | None,
+    reason: str | None,
+) -&gt; tuple[str, str] | None:
+```
+
+**Key logic:**
+- Parses frontmatter (line 421)
+- Finds max node number in phase (lines 426-437)
+- Auto-generates slug via `slugify_description()` if not provided (line 446)
+- Creates new `RoadmapNode` with all fields including `reason` (lines 448-456)
+- Inserts after last node of same phase (line 461)
+- Returns updated YAML block content and assigned node ID
+
+#### `slugify_description()` (lines 729-739)
+**Purpose:** Converts description to kebab-case slug.
+
+**Logic:**
+```python
+def slugify_description(description: str) -&gt; str:
+    slug = description.lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)  # Replace non-alphanumeric with hyphens
+    slug = re.sub(r"-+", "-", slug)          # Collapse multiple hyphens
+    slug = slug.strip("-")                   # Strip leading/trailing hyphens
+    return slug
+```
+
+#### Conditional rendering of `reason` (lines 219-233)
+**Location:** `render_roadmap_block_inner()` function
+
+**Pattern:**
+```python
+def render_roadmap_block_inner(nodes: list[RoadmapNode]) -&gt; str:
+    any_has_depends_on = any(s.depends_on is not None for s in nodes)
+    any_has_reason = any(s.reason is not None for s in nodes)  # LINE 220
+    node_dicts: list[dict[str, object]] = []
+    for s in nodes:
+        node_dict: dict[str, object] = {
+            "id": s.id,
+            "slug": s.slug,
+            "description": s.description,
+            "status": s.status,
+            "pr": s.pr,
+        }
+        if any_has_depends_on:
+            node_dict["depends_on"] = list(s.depends_on) if s.depends_on is not None else []
+        if any_has_reason:                   # LINE 232
+            node_dict["reason"] = s.reason   # LINE 233
+        node_dicts.append(node_dict)
+    # ... rest of YAML rendering
+```
+
+**Key insight:** Conditional rendering means `reason` only appears in YAML when ANY node has it (not just per-node).
+
+---
+
+### 3. `connect_cmd.py` - Checkout Prefix Injection Pattern
+
+#### Shell vs Non-Shell Mode (lines 60-90)
+
+**Pattern for both modes:**
+```python
+# Determine local branch for remote checkout (skip if not in a repo)
+if isinstance(ctx.repo, NoRepoSentinel):
+    local_branch = None
+else:
+    local_branch = ctx.git.branch.get_current_branch(ctx.repo_root)
+
+if local_branch is not None:
+    quoted = shlex.quote(local_branch)
+    checkout_prefix = f"git fetch origin {quoted} &amp;&amp; git checkout {quoted} &amp;&amp; "
+else:
+    checkout_prefix = ""
+```
+
+**Shell mode (lines 81-85):**
+```python
+if shell:
+    if export_prefix or cd_prefix or checkout_prefix:
+        remote_command = f"bash -l -c '{cd_prefix}{checkout_prefix}{export_prefix}exec bash -l'"
+    else:
+        remote_command = "bash -l"
+```
+- When any prefix exists, wraps entire command in `bash -l -c '{...}'`
+- Concatenates: `{cd_prefix}{checkout_prefix}{export_prefix}exec bash -l`
+- Terminates with `exec bash -l` to replace shell process
+
+**Non-shell mode (lines 86-90):**
+```python
+else:
+    setup = "git pull &amp;&amp; uv sync &amp;&amp; source .venv/bin/activate"
+    claude_cmd = "claude --dangerously-skip-permissions"
+    inner = f"{cd_prefix}{checkout_prefix}{export_prefix}{setup} &amp;&amp; {claude_cmd}"
+    remote_command = f"bash -l -c '{inner}'"
+```
+- Always uses `bash -l -c` wrapper
+- Concatenates: `{cd_prefix}{checkout_prefix}{export_prefix}{setup} &amp;&amp; {claude_cmd}`
+
+**Key injections:**
+- `checkout_prefix`: Only set if local branch exists (lines 66-68)
+- `export_prefix`: Built from `--env KEY=VALUE` args via `_build_export_prefix()` (line 78)
+- `cd_prefix`: Built from `codespace_working_directory` config if set (line 80)
+- Order is always: CD → Checkout → Export → Command
+
+**SSH execution (line 95):**
+```python
+ctx.codespace.exec_ssh_interactive(codespace.gh_name, remote_command)
+```
+
+The `remote_command` (a single string) is passed directly to SSH, which preserves the quoted shell structure.
+
+---
+
+## Summary of Key Architectural Patterns
+
+1. **Learn Plan Integration**: Two-path fallback system (local preprocessing → async-learn branch fetch) ensures both local and remote implementations contribute session material to learn plans.
+
+2. **Roadmap Metadata**: Optional `reason` field uses conditional rendering (only included in YAML when any node needs it) to maintain backward compatibility while extending functionality.
+
+3. **Remote Prefix Injection**: Three-tier prefix system (CD, Checkout, Export) concatenates in consistent order into a single bash command string, handling both shell and non-shell modes with unified SSH invocation.</assistant>
+  <usage input_tokens="1471" cache_creation_input_tokens="20141" cache_read_input_tokens="23680" cache_creation="{'ephemeral_5m_input_tokens': 20141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
