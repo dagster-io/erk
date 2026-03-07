@@ -19,7 +19,7 @@ erk pr prepare <number>     # Prepare for specific plan number
 
 ## Implementation
 
-**File:** `src/erk/cli/commands/pr/prepare_cmd.py` (84 lines)
+**File:** `src/erk/cli/commands/pr/prepare_cmd.py`
 
 ### Auto-Detection
 

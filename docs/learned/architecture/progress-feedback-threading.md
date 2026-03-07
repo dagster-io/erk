@@ -28,7 +28,7 @@ LLM calls for PR description generation block for 10-30 seconds with no user fee
 The generator runs the LLM call in a background thread and polls with `thread.join(timeout=2.0)`:
 
 - Background thread executes the LLM call
-- Main thread polls every 2 seconds (`_PROGRESS_INTERVAL_SECONDS`)
+- Main thread polls every 2 seconds
 - Yields `ProgressEvent` with elapsed time on each poll
 - Yields `CompletionEvent` when thread finishes
 
@@ -41,7 +41,7 @@ Time tracking uses `self._time.monotonic()` from the injected `Time` abstraction
 Wraps the generator in a second producer thread with queue-based event collection:
 
 - Producer thread consumes generator events and puts them on a queue
-- Main thread waits on `queue.get(timeout=5.0)` (`_PROGRESS_TIMEOUT_SECONDS`)
+- Main thread waits on `queue.get(timeout=5.0)`
 - On `queue.Empty`, emits a "Still waiting" message
 - Resets elapsed timer on each progress event
 - Uses sentinel (`None`) to signal completion

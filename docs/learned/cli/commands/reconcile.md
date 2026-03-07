@@ -24,8 +24,8 @@ erk reconcile --skip-learn  # Skip learn PR creation step
 
 ## Implementation
 
-- **Command:** `src/erk/cli/commands/reconcile_cmd.py` (173 lines)
-- **Pipeline:** `src/erk/cli/commands/reconcile_pipeline.py` (248 lines)
+- **Command:** `src/erk/cli/commands/reconcile_cmd.py`
+- **Pipeline:** `src/erk/cli/commands/reconcile_pipeline.py`
 
 ### Detection Pipeline
 
