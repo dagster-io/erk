@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+from erk_shared.core.prompt_executor import PromptExecutor, PromptResult
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt
 from erk_shared.gateway.time.abc import Time
@@ -68,14 +68,15 @@ class CommitMessageResult:
 
 
 class CommitMessageGenerator:
-    """Generates commit messages via direct Anthropic API calls.
+    """Generates commit messages via PromptExecutor.
 
-    Uses LlmCaller for fast, direct API access instead of spawning
-    a Claude CLI subprocess.
+    Uses execute_prompt() for fast API access. When a FallbackPromptExecutor
+    is wired, this goes through the Anthropic SDK directly, bypassing
+    CLI subprocess overhead.
     """
 
-    def __init__(self, llm_caller: LlmCaller, *, time: Time) -> None:
-        self._llm_caller = llm_caller
+    def __init__(self, prompt_executor: PromptExecutor, *, time: Time) -> None:
+        self._executor = prompt_executor
         self._time = time
 
     def generate(
@@ -134,11 +135,18 @@ class CommitMessageGenerator:
         )
         system_prompt = get_commit_message_prompt(request.repo_root)
 
-        result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
+        result_holder: list[PromptResult] = []
 
         def _run_call() -> None:
             result_holder.append(
-                self._llm_caller.call(user_prompt, system_prompt=system_prompt, max_tokens=4096)
+                self._executor.execute_prompt(
+                    user_prompt,
+                    model="haiku",
+                    tools=None,
+                    cwd=None,
+                    system_prompt=system_prompt,
+                    dangerous=False,
+                )
             )
 
         thread = threading.Thread(target=_run_call, daemon=True)
@@ -164,19 +172,19 @@ class CommitMessageGenerator:
 
         result = result_holder[0]
 
-        if isinstance(result, (NoApiKey, LlmCallFailed)):
+        if not result.success:
             yield CompletionEvent(
                 CommitMessageResult(
                     success=False,
                     title=None,
                     body=None,
-                    error_message=result.message,
+                    error_message=result.error or "Prompt execution failed",
                 )
             )
             return
 
         # Parse output into title and body
-        title, body = self._parse_output(result.text)
+        title, body = self._parse_output(result.output)
 
         yield ProgressEvent("PR description generated", style="success")
         yield CompletionEvent(

@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from erk_shared.core.health_check_runner import HealthCheckRunner
     from erk_shared.core.objective_list_service import ObjectiveListService
 
-from erk_shared.core.llm_caller import LlmCaller
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
@@ -89,7 +88,6 @@ class ErkContext:
     agent_docs: AgentDocs  # docs/learned/ file access
     plan_store: PlanBackend
     prompt_executor: PromptExecutor
-    llm_caller: LlmCaller
 
     # Shell/CLI integrations (moved to erk_shared)
     shell: Shell
@@ -218,7 +216,6 @@ class ErkContext:
         github_admin: GitHubAdmin | None = None,
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
-        llm_caller: LlmCaller | None = None,
         plan_store: PlanBackend | None = None,
         remote_github: RemoteGitHub | None = None,
         debug: bool = False,
@@ -263,7 +260,6 @@ class ErkContext:
             github_admin=github_admin,
             claude_installation=claude_installation,
             prompt_executor=prompt_executor,
-            llm_caller=llm_caller,
             plan_store=plan_store,
             remote_github=remote_github,
             debug=debug,

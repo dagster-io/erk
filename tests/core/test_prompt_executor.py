@@ -6,12 +6,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from erk.core.output_filter import extract_pr_metadata_from_text
-from erk.core.prompt_executor import ClaudePromptExecutor, format_prompt_error
+from erk.core.prompt_executor import ClaudeCliPromptExecutor, format_prompt_error
 
 
 def test_parse_stream_json_line_extracts_pr_metadata_from_string_content() -> None:
     """Test that _parse_stream_json_line extracts PR metadata from string tool_result content."""
-    executor = ClaudePromptExecutor(console=None)
+    executor = ClaudeCliPromptExecutor(console=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -47,7 +47,7 @@ def test_parse_stream_json_line_extracts_pr_metadata_from_list_content() -> None
     This is the stream-json format where tool_result.content is a list of text items:
     {"type": "tool_result", "content": [{"type": "text", "text": "...json..."}]}
     """
-    executor = ClaudePromptExecutor(console=None)
+    executor = ClaudeCliPromptExecutor(console=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -89,7 +89,7 @@ def test_parse_stream_json_line_extracts_pr_metadata_from_list_content() -> None
 
 def test_parse_stream_json_line_handles_list_content_without_pr_metadata() -> None:
     """Test that list content without PR metadata returns None values."""
-    executor = ClaudePromptExecutor(console=None)
+    executor = ClaudeCliPromptExecutor(console=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -117,7 +117,7 @@ def test_parse_stream_json_line_handles_list_content_without_pr_metadata() -> No
 
 def test_parse_stream_json_line_handles_empty_list_content() -> None:
     """Test that empty list content is handled gracefully."""
-    executor = ClaudePromptExecutor(console=None)
+    executor = ClaudeCliPromptExecutor(console=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -136,7 +136,7 @@ def test_parse_stream_json_line_handles_empty_list_content() -> None:
 
 def test_parse_stream_json_line_extracts_result_num_turns() -> None:
     """Test that _parse_stream_json_line extracts num_turns from type: result messages."""
-    executor = ClaudePromptExecutor(console=None)
+    executor = ClaudeCliPromptExecutor(console=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -160,7 +160,7 @@ def test_parse_stream_json_line_extracts_result_num_turns() -> None:
 
 def test_parse_stream_json_line_extracts_result_with_positive_turns() -> None:
     """Test that _parse_stream_json_line extracts num_turns from successful result."""
-    executor = ClaudePromptExecutor(console=None)
+    executor = ClaudeCliPromptExecutor(console=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -186,7 +186,7 @@ def test_parse_stream_json_line_extracts_result_with_positive_turns() -> None:
 
 def test_parse_stream_json_line_extracts_result_error() -> None:
     """Test that _parse_stream_json_line handles error results."""
-    executor = ClaudePromptExecutor(console=None)
+    executor = ClaudeCliPromptExecutor(console=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -611,7 +611,7 @@ class TestFormatPromptError:
 def test_subprocess_env_strips_claudecode_when_present() -> None:
     """_subprocess_env() removes CLAUDECODE from the returned environment."""
     with patch.dict(os.environ, {"CLAUDECODE": "1", "PATH": "/usr/bin"}):
-        env = ClaudePromptExecutor._subprocess_env()
+        env = ClaudeCliPromptExecutor._subprocess_env()
 
     assert "CLAUDECODE" not in env
     assert env["PATH"] == "/usr/bin"
@@ -620,7 +620,7 @@ def test_subprocess_env_strips_claudecode_when_present() -> None:
 def test_subprocess_env_works_when_claudecode_absent() -> None:
     """_subprocess_env() works when CLAUDECODE is not in environment."""
     with patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True):
-        env = ClaudePromptExecutor._subprocess_env()
+        env = ClaudeCliPromptExecutor._subprocess_env()
 
     assert "CLAUDECODE" not in env
     assert env["PATH"] == "/usr/bin"
@@ -629,5 +629,5 @@ def test_subprocess_env_works_when_claudecode_absent() -> None:
 def test_subprocess_env_does_not_modify_os_environ() -> None:
     """_subprocess_env() returns a copy, does not modify os.environ."""
     with patch.dict(os.environ, {"CLAUDECODE": "1"}):
-        ClaudePromptExecutor._subprocess_env()
+        ClaudeCliPromptExecutor._subprocess_env()
         assert os.environ.get("CLAUDECODE") == "1"

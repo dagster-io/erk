@@ -206,5 +206,5 @@ def one_shot(
         dry_run=dry_run,
         ref=ref,
         time_gateway=ctx.time,
-        llm_caller=ctx.llm_caller,
+        prompt_executor=ctx.prompt_executor,
     )

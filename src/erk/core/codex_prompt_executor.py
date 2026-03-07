@@ -1,6 +1,6 @@
 """Codex CLI prompt execution implementation.
 
-This module provides the CodexPromptExecutor implementation that maps erk's
+This module provides the CodexCliPromptExecutor implementation that maps erk's
 PromptExecutor ABC to OpenAI's Codex CLI. Codex uses a completely different
 CLI interface and JSONL streaming format from Claude.
 
@@ -147,11 +147,11 @@ def build_codex_prompt_args(
     return cmd
 
 
-class CodexPromptExecutor(PromptExecutor):
+class CodexCliPromptExecutor(PromptExecutor):
     """Production implementation using subprocess and Codex CLI."""
 
     def __init__(self, console: Console | None) -> None:
-        """Initialize CodexPromptExecutor with Console dependency.
+        """Initialize CodexCliPromptExecutor with Console dependency.
 
         Args:
             console: Console gateway for TTY detection.

@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
 from erk_shared.context.types import PermissionMode
-from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
 from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.prompt_executor import (
@@ -311,45 +310,6 @@ class FakePlanListService(PlanListService):
             workflow_runs=self._data.workflow_runs,
             warnings=self._data.warnings,
         )
-
-
-class LlmCall(NamedTuple):
-    """Record of an LlmCaller.call() invocation."""
-
-    prompt: str
-    system_prompt: str
-    max_tokens: int
-
-
-class FakeLlmCaller(LlmCaller):
-    """Fake LlmCaller that returns pre-configured responses.
-
-    Supports a single response or a queue of responses for sequential calls.
-    Records all calls for test assertions.
-    """
-
-    def __init__(
-        self,
-        *,
-        response: LlmResponse | NoApiKey | LlmCallFailed,
-        responses: list[LlmResponse | NoApiKey | LlmCallFailed] | None = None,
-    ) -> None:
-        self.response = response
-        self._responses = list(responses) if responses is not None else None
-        self._response_index = 0
-        self.calls: list[LlmCall] = []
-
-    def call(
-        self, prompt: str, *, system_prompt: str, max_tokens: int
-    ) -> LlmResponse | NoApiKey | LlmCallFailed:
-        self.calls.append(
-            LlmCall(prompt=prompt, system_prompt=system_prompt, max_tokens=max_tokens)
-        )
-        if self._responses is not None and self._response_index < len(self._responses):
-            result = self._responses[self._response_index]
-            self._response_index += 1
-            return result
-        return self.response
 
 
 class FakeObjectiveListService(ObjectiveListService):

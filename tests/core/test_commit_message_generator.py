@@ -8,8 +8,8 @@ from erk.core.commit_message_generator import (
     CommitMessageResult,
 )
 from erk.core.plan_context_provider import PlanContext
-from erk_shared.core.fakes import FakeLlmCaller
-from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse
+from erk_shared.core.fakes import FakePromptExecutor
+from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.time.fake import FakeTime
 
@@ -39,10 +39,16 @@ def test_generate_success(tmp_path: Path) -> None:
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(text="Add new feature\n\nThis adds a new feature to the codebase."),
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output="Add new feature\n\nThis adds a new feature to the codebase.",
+                error=None,
+            )
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -67,12 +73,12 @@ def test_generate_success(tmp_path: Path) -> None:
     assert any("Analyzing" in e.message for e in progress_events)
     assert any(e.style == "success" for e in progress_events)
 
-    # Verify LLM was called
-    assert len(caller.calls) == 1
-    call = caller.calls[0]
+    # Verify prompt executor was called
+    assert len(executor.prompt_calls) == 1
+    call = executor.prompt_calls[0]
     assert "feature-branch" in call.prompt
     assert "main" in call.prompt
-    assert call.max_tokens == 4096
+    assert call.model == "haiku"
 
 
 def test_generate_with_multiline_body(tmp_path: Path) -> None:
@@ -80,19 +86,23 @@ def test_generate_with_multiline_body(tmp_path: Path) -> None:
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff content", encoding="utf-8")
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(
-            text=(
-                "Refactor authentication module\n\n"
-                "## Summary\n\n"
-                "Restructured the auth module for better maintainability.\n\n"
-                "## Files Changed\n\n"
-                "- `auth.py` - Main changes\n"
-                "- `tests/test_auth.py` - Updated tests"
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output=(
+                    "Refactor authentication module\n\n"
+                    "## Summary\n\n"
+                    "Restructured the auth module for better maintainability.\n\n"
+                    "## Files Changed\n\n"
+                    "- `auth.py` - Main changes\n"
+                    "- `tests/test_auth.py` - Updated tests"
+                ),
+                error=None,
             )
-        ),
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -113,8 +123,10 @@ def test_generate_with_multiline_body(tmp_path: Path) -> None:
 
 def test_generate_fails_when_diff_file_not_found(tmp_path: Path) -> None:
     """Test that generation fails when diff file doesn't exist."""
-    caller = FakeLlmCaller(response=LlmResponse(text="unused"))
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="unused", error=None)]
+    )
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=tmp_path / "nonexistent.diff",
         repo_root=tmp_path,
@@ -132,8 +144,8 @@ def test_generate_fails_when_diff_file_not_found(tmp_path: Path) -> None:
     assert result.error_message is not None
     assert "not found" in result.error_message.lower()
 
-    # Verify no LLM call was made
-    assert len(caller.calls) == 0
+    # Verify no prompt execution was made
+    assert len(executor.prompt_calls) == 0
 
 
 def test_generate_fails_when_diff_file_empty(tmp_path: Path) -> None:
@@ -141,8 +153,10 @@ def test_generate_fails_when_diff_file_empty(tmp_path: Path) -> None:
     diff_file = tmp_path / "empty.diff"
     diff_file.write_text("", encoding="utf-8")
 
-    caller = FakeLlmCaller(response=LlmResponse(text="unused"))
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="unused", error=None)]
+    )
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -158,19 +172,19 @@ def test_generate_fails_when_diff_file_empty(tmp_path: Path) -> None:
     assert result.error_message is not None
     assert "empty" in result.error_message.lower()
 
-    # Verify no LLM call was made
-    assert len(caller.calls) == 0
+    # Verify no prompt execution was made
+    assert len(executor.prompt_calls) == 0
 
 
 def test_generate_fails_when_llm_call_fails(tmp_path: Path) -> None:
-    """Test that generation fails when LLM call returns an error."""
+    """Test that generation fails when prompt execution returns an error."""
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff content", encoding="utf-8")
 
-    caller = FakeLlmCaller(
-        response=LlmCallFailed(message="API call failed"),
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=False, output="", error="API call failed")],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -194,10 +208,10 @@ def test_generate_handles_title_only_output(tmp_path: Path) -> None:
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff content", encoding="utf-8")
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(text="Fix typo in README"),
+    executor = FakePromptExecutor(
+        prompt_results=[PromptResult(success=True, output="Fix typo in README", error=None)],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -220,18 +234,22 @@ def test_generate_strips_code_fence_wrapper(tmp_path: Path) -> None:
     diff_file.write_text("diff content", encoding="utf-8")
 
     # Simulate Claude wrapping output in code fences
-    caller = FakeLlmCaller(
-        response=LlmResponse(
-            text=(
-                "```\n"
-                "Fix PR title parsing when Claude wraps output in code fences\n\n"
-                "This fixes an issue where the parser would incorrectly use the code fence\n"
-                "as the PR title when Claude wraps its response in markdown code blocks.\n"
-                "```"
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output=(
+                    "```\n"
+                    "Fix PR title parsing when Claude wraps output in code fences\n\n"
+                    "This fixes an issue where the parser would incorrectly use the code fence\n"
+                    "as the PR title when Claude wraps its response in markdown code blocks.\n"
+                    "```"
+                ),
+                error=None,
             )
-        ),
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -256,12 +274,18 @@ def test_generate_strips_code_fence_with_language_tag(tmp_path: Path) -> None:
     diff_file.write_text("diff content", encoding="utf-8")
 
     # Simulate Claude wrapping output in code fences with language specifier
-    caller = FakeLlmCaller(
-        response=LlmResponse(
-            text="```markdown\nAdd new feature\n\n## Summary\n\nThis adds a new feature.\n```"
-        ),
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output=(
+                    "```markdown\nAdd new feature\n\n## Summary\n\nThis adds a new feature.\n```"
+                ),
+                error=None,
+            )
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -286,10 +310,16 @@ def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -> None:
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(text="Add feature based on commit context\n\nUsed commit messages."),
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output="Add feature based on commit context\n\nUsed commit messages.",
+                error=None,
+            )
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -306,8 +336,8 @@ def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -> None:
 
     assert result.success is True
     # Verify commit messages were included in the prompt
-    assert len(caller.calls) == 1
-    prompt = caller.calls[0].prompt
+    assert len(executor.prompt_calls) == 1
+    prompt = executor.prompt_calls[0].prompt
     assert "Initial implementation" in prompt
     assert "Added basic structure" in prompt
     assert "Fix bug in parsing" in prompt
@@ -320,10 +350,12 @@ def test_generate_works_without_commit_messages(tmp_path: Path) -> None:
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff content", encoding="utf-8")
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(text="Simple title\n\nSimple body."),
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(success=True, output="Simple title\n\nSimple body.", error=None)
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -337,22 +369,26 @@ def test_generate_works_without_commit_messages(tmp_path: Path) -> None:
 
     assert result.success is True
     # Prompt should not mention Developer's Commit Messages
-    assert len(caller.calls) == 1
-    prompt = caller.calls[0].prompt
+    assert len(executor.prompt_calls) == 1
+    prompt = executor.prompt_calls[0].prompt
     assert "Developer's Commit Messages" not in prompt
 
 
 def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
-    """Test that system prompt is passed separately to the LLM caller."""
+    """Test that system prompt is passed separately to the prompt executor."""
     from erk_shared.gateway.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT
 
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(text="Add new feature\n\nThis adds a new feature."),
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True, output="Add new feature\n\nThis adds a new feature.", error=None
+            )
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -367,8 +403,8 @@ def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
     assert result.success is True
 
     # Verify system_prompt was passed separately
-    assert len(caller.calls) == 1
-    call = caller.calls[0]
+    assert len(executor.prompt_calls) == 1
+    call = executor.prompt_calls[0]
 
     # System prompt should be passed separately
     assert call.system_prompt == COMMIT_MESSAGE_SYSTEM_PROMPT
@@ -393,10 +429,16 @@ def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
         objective_summary=None,
     )
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(text="Fix authentication session expiration\n\nImplemented fix."),
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output="Fix authentication session expiration\n\nImplemented fix.",
+                error=None,
+            )
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -410,8 +452,8 @@ def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
 
     assert result.success is True
     # Verify plan context was included in the prompt
-    assert len(caller.calls) == 1
-    prompt = caller.calls[0].prompt
+    assert len(executor.prompt_calls) == 1
+    prompt = executor.prompt_calls[0].prompt
     assert "Implementation Plan (Plan #123)" in prompt
     assert "Fix Authentication Bug" in prompt
     assert "session expiration" in prompt
@@ -429,10 +471,16 @@ def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -
         objective_summary="Objective #100: Improve Observability",
     )
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(text="Add usage metrics tracking\n\nImplemented metrics."),
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output="Add usage metrics tracking\n\nImplemented metrics.",
+                error=None,
+            )
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -445,8 +493,8 @@ def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -
     result, _ = _consume_generator(generator, request)
 
     assert result.success is True
-    assert len(caller.calls) == 1
-    prompt = caller.calls[0].prompt
+    assert len(executor.prompt_calls) == 1
+    prompt = executor.prompt_calls[0].prompt
     assert "Implementation Plan (Plan #456)" in prompt
     assert "Parent Objective" in prompt
     assert "Objective #100: Improve Observability" in prompt
@@ -463,10 +511,16 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
         objective_summary=None,
     )
 
-    caller = FakeLlmCaller(
-        response=LlmResponse(text="Refactor API for simplicity\n\nSimplified API layer."),
+    executor = FakePromptExecutor(
+        prompt_results=[
+            PromptResult(
+                success=True,
+                output="Refactor API for simplicity\n\nSimplified API layer.",
+                error=None,
+            )
+        ],
     )
-    generator = CommitMessageGenerator(caller, time=FakeTime())
+    generator = CommitMessageGenerator(executor, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -482,8 +536,8 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
     result, _ = _consume_generator(generator, request)
 
     assert result.success is True
-    assert len(caller.calls) == 1
-    prompt = caller.calls[0].prompt
+    assert len(executor.prompt_calls) == 1
+    prompt = executor.prompt_calls[0].prompt
     # Both should be present
     assert "Implementation Plan (Plan #789)" in prompt
     assert "Refactor API" in prompt
