@@ -1,10 +1,4 @@
 {
   "provider": "github-draft-pr",
-  "plan_id": "8880",
-  "url": "https://github.com/dagster-io/erk/pull/8880",
-  "created_at": "2026-03-06T16:38:11.658682",
-  "synced_at": "2026-03-06T16:38:11.658682",
-  "labels": [],
-  "objective_id": 8832,
-  "node_ids": null
+  "title": "Learn: Add objective node management improvements: update fields and add new nodes"
 }
