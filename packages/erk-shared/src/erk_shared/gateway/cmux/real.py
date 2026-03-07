@@ -32,9 +32,7 @@ class RealCmux(Cmux):
             )
         except subprocess.CalledProcessError as e:
             error_output = e.stderr.strip() if e.stderr else e.stdout.strip()
-            raise RuntimeError(
-                f"cmux new-workspace failed: {error_output}"
-            ) from e
+            raise RuntimeError(f"cmux new-workspace failed: {error_output}") from e
 
         # Parse workspace ref from output (awk '{print $2}' equivalent)
         stdout = result.stdout.strip()
@@ -62,6 +60,4 @@ class RealCmux(Cmux):
             )
         except subprocess.CalledProcessError as e:
             error_output = e.stderr.strip() if e.stderr else e.stdout.strip()
-            raise RuntimeError(
-                f"cmux rename-workspace failed: {error_output}"
-            ) from e
+            raise RuntimeError(f"cmux rename-workspace failed: {error_output}") from e

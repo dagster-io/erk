@@ -156,9 +156,7 @@ def context_for_test(
         if codespace is not None
         else FakeCodespace(run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name")
     )
-    resolved_cmux: Cmux = (
-        cmux if cmux is not None else FakeCmux(workspace_ref="fake-ws")
-    )
+    resolved_cmux: Cmux = cmux if cmux is not None else FakeCmux(workspace_ref="fake-ws")
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
     # Create repo context
