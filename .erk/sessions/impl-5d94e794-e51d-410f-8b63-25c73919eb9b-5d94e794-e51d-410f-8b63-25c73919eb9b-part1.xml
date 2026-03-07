@@ -600,4 +600,153 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8896
 }
   </tool_result>
+  <tool_result tool="toolu_01HZfVgcS4e38JrT1rNLxGXW">
+{"uploaded": true, "plan_id": 8896}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Cehfd8YZXJgZPDzN7Vcn7G">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="52037" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Cehfd8YZXJgZPDzN7Vcn7G">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WPhEdV2EhhQbn1myisK4UY">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="52363" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WPhEdV2EhhQbn1myisK4UY">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8896 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8896
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (6,129 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8896
+  Branch:      plnd/hide-stubs-default-03-07-1018 → master
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015obDjWNQmuo8TRzzceDpd3">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="52486" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NMeYzhnBS6wK8eshoPfkpp">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="52486" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015obDjWNQmuo8TRzzceDpd3">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8896
+}
+  </tool_result>
+  <tool_result tool="toolu_01NMeYzhnBS6wK8eshoPfkpp">
+Exit code 1
+Checking PR #8896 for branch plnd/hide-stubs-default-03-07-1018...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#8896)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context directory needs to be cleaned up. Let me handle that:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="515" cache_read_input_tokens="52869" cache_creation="{'ephemeral_5m_input_tokens': 515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Xtenitjq89QuWPawTprYhV">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">List impl-context contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="515" cache_read_input_tokens="52869" cache_creation="{'ephemeral_5m_input_tokens': 515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xtenitjq89QuWPawTprYhV">
+plan.md
+plnd--hide-stubs-default-03-07-1018
+prompt.md
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FW9tdHHTXpNaL8qvFbnvkv">
+    <param name="command">git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove impl-context after implementation" &amp;&amp; git push</param>
+    <param name="description">Remove impl-context and push</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="53384" cache_creation="{'ephemeral_5m_input_tokens': 152, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FW9tdHHTXpNaL8qvFbnvkv">
+Exit code 128
+fatal: pathspec '.erk/impl-context/' did not match any files
+  </tool_result>
+  <assistant>The directory isn't tracked by git (it's in .gitignore). Let me just remove it from disk:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="53536" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_019dYAwwxHHFrBVqKfTwZYGL">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Remove impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="53536" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019dYAwwxHHFrBVqKfTwZYGL">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DYR3Qrn6JNHwA8bF6hAibk">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Re-validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="146" cache_read_input_tokens="53898" cache_creation="{'ephemeral_5m_input_tokens': 146, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DYR3Qrn6JNHwA8bF6hAibk">
+Checking PR #8896 for branch plnd/hide-stubs-default-03-07-1018...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="54044" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_018JRDWF4LjJcVSi2moMGFZw">
+    <param name="todos">[{'content': 'Read existing source and test files for context', 'status': 'completed', 'ac...[truncated 429 chars]...ubmit PR', 'status': 'completed', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="54044" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018JRDWF4LjJcVSi2moMGFZw">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #8896 implementation complete. Summary:
+
+**Changes made:**
+
+1. **`src/erk/cli/commands/branch/list_cmd.py`** — Added `is_placeholder_branch` import, `--all`/`-a` flag, and filtering logic to hide stub branches by default (matching `erk wt list` behavior)
+
+2. **`tests/unit/cli/commands/branch/test_list_cmd.py`** — Added 3 new tests:
+   - `test_branch_list_hides_stub_branches_by_default` — verifies stubs are hidden without flags
+   - `test_branch_list_all_flag_shows_stub_branches` — verifies `--all` reveals stubs
+   - `test_branch_list_short_all_flag` — verifies `-a` short flag works
+
+**CI results:** All 15 tests pass, type checker clean, linter clean.
+
+**PR:** https://github.com/dagster-io/erk/pull/8896</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="54396" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
