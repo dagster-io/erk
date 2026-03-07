@@ -148,6 +148,17 @@ erk exec add-objective-node 8470 --phase 1 \
   --reason "Discovered during re-evaluation"
 ```
 
+### Updating Node Status
+
+Always use the programmatic command — never manually edit YAML or prose tables:
+
+```bash
+erk exec update-objective-node <issue> --node <id> --status <status>
+erk exec update-objective-node <issue> --node <id> --pr '#1234'
+```
+
+Then validate: `erk objective check <issue-number>`
+
 ### Viewing an Objective
 
 View an objective's dependency graph, dependencies, and next node:

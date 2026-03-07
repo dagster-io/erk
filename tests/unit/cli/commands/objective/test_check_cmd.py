@@ -15,7 +15,7 @@ from erk.cli.commands.objective.check_cmd import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
 
 def _make_issue(
@@ -809,3 +809,147 @@ def test_fan_out_fan_in_json_output() -> None:
     # next_node should be one of the fan-out branches (2.1 by position order)
     assert output["next_node"]["id"] == "2.1"
     assert output["all_complete"] is False
+
+
+# --- Check 8: Roadmap table sync tests ---
+
+_CHECK8_ISSUE_BODY = """\
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-header -->
+<details>
+<summary><code>objective-header</code></summary>
+
+```yaml
+
+created_at: '2025-01-01T00:00:00+00:00'
+created_by: testuser
+objective_comment_id: 42
+
+```
+
+</details>
+<!-- /erk:metadata-block:objective-header -->
+
+<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: Set up project structure
+  status: done
+  plan: null
+  pr: '#100'
+- id: '1.2'
+  description: Add core types
+  status: pending
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+_CHECK8_COMMENT_IN_SYNC = """\
+# Objective Body
+
+Some context here.
+
+<!-- erk:roadmap-table -->
+### Phase 1: Foundation (1 PR)
+| Node | Description | Status | PR |
+|------|-------------|--------|----|
+| 1.1 | Set up project structure | done | #100 |
+| 1.2 | Add core types | pending | - |
+<!-- /erk:roadmap-table -->
+
+More content.
+"""
+
+_CHECK8_COMMENT_OUT_OF_SYNC = """\
+# Objective Body
+
+Some context here.
+
+<!-- erk:roadmap-table -->
+### Phase 1: Foundation (0 PR)
+
+| Node | Description | Status | PR |
+|------|-------------|--------|----|
+| 1.1 | Set up project structure | pending | - |
+| 1.2 | Add core types | pending | - |
+<!-- /erk:roadmap-table -->
+
+More content.
+"""
+
+
+def test_roadmap_table_in_sync_passes() -> None:
+    """Check 8: comment table matches YAML → PASS."""
+    issue = _make_issue(2300, "Objective: Sync Test", _CHECK8_ISSUE_BODY)
+    comment = IssueComment(
+        body=_CHECK8_COMMENT_IN_SYNC,
+        url="https://github.com/test/repo/issues/2300#issuecomment-42",
+        id=42,
+        author="testuser",
+    )
+    fake_gh = FakeGitHubIssues(
+        issues={2300: issue},
+        comments_with_urls={2300: [comment]},
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["2300"],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert "Roadmap table in sync with YAML" in result.output
+    assert "[FAIL]" not in result.output
+
+
+def test_roadmap_table_out_of_sync_fails() -> None:
+    """Check 8: comment has stale status → FAIL."""
+    issue = _make_issue(2400, "Objective: Drift Test", _CHECK8_ISSUE_BODY)
+    comment = IssueComment(
+        body=_CHECK8_COMMENT_OUT_OF_SYNC,
+        url="https://github.com/test/repo/issues/2400#issuecomment-42",
+        id=42,
+        author="testuser",
+    )
+    fake_gh = FakeGitHubIssues(
+        issues={2400: issue},
+        comments_with_urls={2400: [comment]},
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["2400"],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 1
+    assert "Roadmap table out of sync" in result.output
+
+
+def test_roadmap_table_check_skipped_without_comment_id() -> None:
+    """Check 8: no objective_comment_id → check not run, no FAIL."""
+    issue = _make_issue(2500, "Objective: No Comment ID", VALID_OBJECTIVE_BODY)
+    fake_gh = FakeGitHubIssues(issues={2500: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["2500"],
+        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0
+    assert "Roadmap table" not in result.output

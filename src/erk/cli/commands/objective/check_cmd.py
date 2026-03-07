@@ -25,9 +25,10 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 )
 from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
+    rerender_comment_roadmap,
     serialize_phases,
 )
-from erk_shared.gateway.github.metadata.types import BlockKeys
+from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
@@ -66,6 +67,38 @@ class ObjectiveValidationError:
 
 
 ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+
+
+def _check_roadmap_table_sync(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    issue_body: str,
+    header_block: MetadataBlock | None,
+) -> tuple[bool, str] | None:
+    """Check if roadmap table in comment matches YAML source of truth.
+
+    Returns a (passed, description) check tuple, or None if the check
+    should be skipped (no header block, no comment ID, or comment not found).
+    """
+    if header_block is None:
+        return None
+
+    comment_id = header_block.data.get("objective_comment_id")
+    if comment_id is None:
+        return None
+
+    try:
+        comment_body = github_issues.get_comment_by_id(repo_root, comment_id)
+    except RuntimeError:
+        return None
+
+    rerendered = rerender_comment_roadmap(issue_body, comment_body)
+    if rerendered is None:
+        return None
+
+    if rerendered == comment_body:
+        return (True, "Roadmap table in sync with YAML")
+    return (False, "Roadmap table out of sync with YAML source of truth")
 
 
 def validate_objective(
@@ -201,6 +234,11 @@ def validate_objective(
         checks.append((True, "PR references use '#' prefix"))
     else:
         checks.append((False, f"Invalid reference format: {invalid_refs[0]}"))
+
+    # Check 8: Roadmap table in comment matches YAML source of truth
+    check8 = _check_roadmap_table_sync(github_issues, repo_root, issue.body, header_block)
+    if check8 is not None:
+        checks.append(check8)
 
     summary = compute_graph_summary(graph)
     next_node = find_graph_next_node(graph, phases)
