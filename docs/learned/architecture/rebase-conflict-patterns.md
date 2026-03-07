@@ -59,7 +59,7 @@ Some files are auto-generated (e.g., `tripwires.md`, `index.md`). For these:
 - If Graphite is enabled and the branch is tracked: runs `gt restack --no-interactive`
 - If Graphite is disabled: runs `git rebase <target>` (requires `--target` option)
 
-**Phase 2: Claude TUI fallback** — If Phase 1 hits conflicts, launches Claude Code interactively with `/erk:rebase` for AI-assisted conflict resolution via `execute_interactive()`.
+**Phase 2: Claude TUI fallback** — If Phase 1 hits conflicts, launches Claude Code interactively with `/erk:pr-rebase` for AI-assisted conflict resolution via `execute_interactive()`.
 
 The Phase 1 strategy selection checks whether Graphite is enabled by inspecting the graphite context object. See the Phase 1 dispatch logic in `src/erk/cli/commands/pr/rebase_cmd.py`.
 

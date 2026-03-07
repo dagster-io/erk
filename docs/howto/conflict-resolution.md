@@ -32,7 +32,7 @@ erk pr rebase --dangerous
 **Slash command** (inside a Claude Code session):
 
 ```
-/erk:rebase
+/erk:pr-rebase
 ```
 
 Both invoke Claude to resolve conflicts. The `--dangerous` flag acknowledges that Claude will run with elevated permissions.
@@ -189,7 +189,7 @@ When `master` advances, each branch in the stack may need rebasing. Conflicts re
 After landing a PR in a stack:
 
 1. `gt restack` attempts to rebase remaining branches
-2. If conflicts occur, resolve them with `/erk:rebase`
+2. If conflicts occur, resolve them with `/erk:pr-rebase`
 3. After resolution, `gt restack` continues automatically
 4. Repeat until the entire stack is rebased
 

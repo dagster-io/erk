@@ -1,7 +1,7 @@
 """Rebase PR onto base branch with mechanical rebase and Claude TUI fallback.
 
 Phase 1: Attempt mechanical rebase via gt restack (Graphite) or git rebase (non-Graphite).
-Phase 2: If conflicts arise, launch Claude TUI interactively with /erk:rebase.
+Phase 2: If conflicts arise, launch Claude TUI interactively with /erk:pr-rebase.
 """
 
 import subprocess
@@ -39,7 +39,7 @@ def rebase(ctx: ErkContext, *, dangerous: bool, target: str | None) -> None:
 
     First attempts a mechanical rebase using gt restack (if Graphite is enabled)
     or git rebase --target <branch> (if Graphite is disabled). If conflicts arise,
-    launches Claude TUI with /erk:rebase for interactive resolution.
+    launches Claude TUI with /erk:pr-rebase for interactive resolution.
 
     Also works when a rebase is already in progress with unresolved conflicts.
     If you started a rebase manually and hit conflicts you can't resolve, run
@@ -133,7 +133,7 @@ def rebase(ctx: ErkContext, *, dangerous: bool, target: str | None) -> None:
     executor.execute_interactive(
         worktree_path=cwd,
         dangerous=dangerous,
-        command="/erk:rebase",
+        command="/erk:pr-rebase",
         target_subpath=None,
         model=None,
         permission_mode="edits",

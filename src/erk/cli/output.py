@@ -278,7 +278,7 @@ def stream_rebase(
 ) -> RebaseResult:
     """Stream rebase command via Claude executor with live feedback.
 
-    Handles the /erk:rebase command execution with:
+    Handles the /erk:pr-rebase command execution with:
     - Live output streaming with visual feedback
     - Semantic conflict detection (AskUserQuestion)
     - Deduped spinner updates
@@ -298,11 +298,11 @@ def stream_rebase(
     start_time = time.time()
 
     # Print start marker with bold styling
-    click.echo(click.style("--- /erk:rebase ---", bold=True))
+    click.echo(click.style("--- /erk:pr-rebase ---", bold=True))
     click.echo("")
 
     for event in executor.execute_command_streaming(
-        command="/erk:rebase",
+        command="/erk:pr-rebase",
         worktree_path=worktree_path,
         dangerous=True,  # Rebase modifies git state
         permission_mode="edits",
@@ -327,7 +327,7 @@ def stream_rebase(
                     click.echo("Claude needs your input to resolve this conflict.")
                     click.echo("Run rebase interactively:")
                     click.echo("")
-                    click.echo(click.style("    claude /erk:rebase", fg="cyan"))
+                    click.echo(click.style("    claude /erk:pr-rebase", fg="cyan"))
                     click.echo("")
                     return RebaseResult(
                         success=False,
@@ -363,7 +363,7 @@ def stream_rebase(
         success = False
         error_message = (
             "Claude completed without producing any output - "
-            "check hooks or run 'claude /erk:rebase' directly to debug"
+            "check hooks or run 'claude /erk:pr-rebase' directly to debug"
         )
         click.echo(click.style(f"   {error_message}", fg="yellow"))
 
