@@ -112,6 +112,53 @@ def test_cmux_checkout_workspace_fails_cmux_command() -> None:
     assert "Failed to create cmux workspace" in output["error"]
 
 
+def test_cmux_checkout_workspace_teleport_mode() -> None:
+    """cmux-checkout-workspace --mode teleport uses teleport command."""
+    runner = CliRunner()
+
+    with mock.patch("subprocess.run") as mock_run:
+        mock_run.return_value = mock.Mock(
+            returncode=0,
+            stdout="workspace-12345\n",
+            stderr="",
+        )
+
+        result = runner.invoke(
+            cmux_checkout_workspace,
+            ["--pr", "8152", "--branch", "my-branch", "--mode", "teleport"],
+        )
+
+    assert result.exit_code == 0
+    # Verify the teleport command was used in the shell pipeline
+    shell_cmd = mock_run.call_args_list[0][0][0][2]  # bash -c <cmd>
+    assert "erk pr teleport" in shell_cmd
+    assert "--new-slot --script --sync" in shell_cmd
+
+
+def test_cmux_checkout_workspace_default_mode_uses_checkout() -> None:
+    """cmux-checkout-workspace default mode uses checkout command."""
+    runner = CliRunner()
+
+    with mock.patch("subprocess.run") as mock_run:
+        mock_run.return_value = mock.Mock(
+            returncode=0,
+            stdout="workspace-12345\n",
+            stderr="",
+        )
+
+        result = runner.invoke(
+            cmux_checkout_workspace,
+            ["--pr", "8152", "--branch", "my-branch"],
+        )
+
+    assert result.exit_code == 0
+    # Verify the checkout command was used in the shell pipeline
+    shell_cmd = mock_run.call_args_list[0][0][0][2]  # bash -c <cmd>
+    assert "erk pr checkout" in shell_cmd
+    assert "--script" in shell_cmd
+    assert "teleport" not in shell_cmd
+
+
 def test_cmux_checkout_workspace_extracts_workspace_name() -> None:
     """cmux-checkout-workspace correctly extracts workspace name from output."""
     runner = CliRunner()

@@ -1179,6 +1179,8 @@ class TestCmuxCheckoutAsync:
                 "456",
                 "--branch",
                 "test-branch",
+                "--mode",
+                "checkout",
             ]
 
     @pytest.mark.asyncio

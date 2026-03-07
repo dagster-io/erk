@@ -1,11 +1,16 @@
-"""Create a cmux workspace with PR checkout and sync.
+"""Create a cmux workspace with PR checkout.
 
-This script creates a cmux workspace that automatically checks out a PR,
-syncs it with the trunk, and renames the workspace to the PR's head branch.
+This script creates a cmux workspace that automatically checks out a PR
+and renames the workspace to the PR's head branch.
 
 Usage:
     erk exec cmux-checkout-workspace --pr 8152
+    erk exec cmux-checkout-workspace --pr 8152 --mode teleport
     erk exec cmux-checkout-workspace --pr 8152 --branch "my-branch"
+
+Modes:
+    checkout (default): lightweight -- runs `erk pr checkout {pr} --script`
+    teleport: heavyweight -- runs `erk pr teleport {pr} --new-slot --script --sync`
 
 Output:
     JSON with {success, pr_number, branch, workspace_name} on success
@@ -87,20 +92,25 @@ def _extract_workspace_name(output: str) -> str | None:
     "--pr",
     required=True,
     type=int,
-    help="PR number to checkout and sync",
+    help="PR number to checkout",
 )
 @click.option(
     "--branch",
     default=None,
     help="PR head branch name (auto-detected via gh if omitted)",
 )
-def cmux_checkout_workspace(pr: int, branch: str | None) -> None:
-    """Create a cmux workspace with PR checkout and sync.
+@click.option(
+    "--mode",
+    type=click.Choice(["checkout", "teleport"]),
+    default="checkout",
+    help="checkout (lightweight) or teleport (heavyweight with sync)",
+)
+def cmux_checkout_workspace(pr: int, branch: str | None, mode: str) -> None:
+    """Create a cmux workspace with PR checkout.
 
     Creates a new cmux workspace that:
-    1. Checks out the PR and syncs it with trunk
-    2. Submits changes via Graphite
-    3. Renames the workspace to the PR's head branch
+    1. Checks out the PR (and optionally syncs it with trunk in teleport mode)
+    2. Renames the workspace to the PR's head branch
 
     If --branch is not provided, it will be auto-detected from GitHub.
     """
@@ -122,7 +132,10 @@ def cmux_checkout_workspace(pr: int, branch: str | None) -> None:
             raise SystemExit(1)
 
     # Build the checkout command that will run inside the new workspace
-    checkout_cmd = f'source "$(erk pr teleport {pr} --new-slot --script --sync)"'
+    if mode == "teleport":
+        checkout_cmd = f'source "$(erk pr teleport {pr} --new-slot --script --sync)"'
+    else:
+        checkout_cmd = f'source "$(erk pr checkout {pr} --script)"'
 
     # Build the shell pipeline:
     # 1. Create workspace with checkout command

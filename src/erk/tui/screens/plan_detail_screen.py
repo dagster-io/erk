@@ -760,7 +760,7 @@ class PlanDetailScreen(ModalScreen):
                 executor.copy_to_clipboard(cmd)
                 executor.notify(f"Copied: {cmd}", severity=None)
 
-        elif command_id == "copy_cmux_checkout":
+        elif command_id in ("copy_cmux_checkout", "copy_cmux_teleport"):
             ctx = CommandContext(
                 row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
             )
@@ -779,6 +779,19 @@ class PlanDetailScreen(ModalScreen):
                         label=f"Creating cmux workspace for PR #{row.pr_number}...",
                     )
                     self.app._cmux_checkout_async(op_id, row.pr_number, row.pr_head_branch)
+
+        elif command_id == "cmux_teleport":
+            if row.pr_number and row.pr_head_branch:
+                self.dismiss()
+                if isinstance(self.app, ErkDashApp):
+                    op_id = f"cmux-teleport-{row.pr_number}"
+                    self.app._start_operation(
+                        op_id=op_id,
+                        label=f"Creating cmux workspace (teleport) for PR #{row.pr_number}...",
+                    )
+                    self.app._cmux_checkout_async(
+                        op_id, row.pr_number, row.pr_head_branch, teleport=True
+                    )
 
         elif command_id == "rebase_remote":
             if row.pr_number is not None:
