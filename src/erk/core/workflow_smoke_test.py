@@ -94,7 +94,7 @@ def run_smoke_test(
             dry_run=False,
             ref=ref,
             time_gateway=ctx.time,
-            llm_caller=ctx.llm_caller,
+            prompt_executor=ctx.prompt_executor,
         )
     except SystemExit as exc:
         return SmokeTestError(step="dispatch", message=f"Exit code {exc.code}")

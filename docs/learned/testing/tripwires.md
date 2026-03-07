@@ -24,7 +24,7 @@ Rules triggered by matching actions in code.
 
 **adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
 
-**adding a tracking list without documenting the tuple field order** → Read [FakeGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
 
 **adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
 
@@ -52,7 +52,7 @@ Rules triggered by matching actions in code.
 
 **creating FakeSessionData without gitBranch JSONL** → Read [Testing with FakeClaudeInstallation](session-store-testing.md) first. Missing `gitBranch` field causes silent empty results from branch-filtered discovery. Always include gitBranch in fake session data.
 
-**creating a FakeGitHub PR without checking auto-registration in \_pr_details** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. FakeGitHub.create_pr() auto-registers the PR in \_pr_details. Manually adding to \_pr_details after create_pr() causes duplicates.
+**creating a FakeLocalGitHub PR without checking auto-registration in \_pr_details** → Read [FakeLocalGitHub API Reference](fake-github-api-reference.md) first. FakeLocalGitHub.create_pr() auto-registers the PR in \_pr_details. Manually adding to \_pr_details after create_pr() causes duplicates.
 
 **creating a FakePlanBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers.
 
@@ -120,7 +120,7 @@ Rules triggered by matching actions in code.
 
 **using branch names with '/' in test data for resolve_impl_dir() tests** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Branch name sanitization (\_sanitize_branch_for_dirname() at packages/erk-shared/src/erk_shared/impl_folder.py) replaces '/' with '--'. Test data must account for this: branch 'plnd/my-feature' becomes directory 'plnd--my-feature'.
 
-**using context_for_test without matching parameter names to the current API** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. context_for_test() parameter names evolve. Check the current function signature before adding new parameters.
+**using context_for_test without matching parameter names to the current API** → Read [FakeLocalGitHub API Reference](fake-github-api-reference.md) first. context_for_test() parameter names evolve. Check the current function signature before adding new parameters.
 
 **using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
 

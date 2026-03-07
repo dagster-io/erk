@@ -954,7 +954,7 @@ def test_fetches_from_async_learn_branch_when_local_not_found(
         labels=("erk-plan",),
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
-    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
 
     # Configure FakeGit with async-learn branch data
@@ -1034,7 +1034,7 @@ def test_skips_when_async_learn_branch_not_found(
         labels=("erk-plan",),
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
-    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     # No async-learn branch configured
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})

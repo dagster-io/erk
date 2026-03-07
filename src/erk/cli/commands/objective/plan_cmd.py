@@ -306,7 +306,7 @@ def _handle_all_unblocked(
             dry_run=dry_run,
             ref=ref,
             time_gateway=ctx.time,
-            llm_caller=ctx.llm_caller,
+            prompt_executor=ctx.prompt_executor,
         )
 
         if dispatch_result is not None:
@@ -818,7 +818,7 @@ def _handle_one_shot(
         dry_run=dry_run,
         ref=ref,
         time_gateway=ctx.time,
-        llm_caller=ctx.llm_caller,
+        prompt_executor=ctx.prompt_executor,
     )
 
     # After successful dispatch, immediately mark node as "planning" with draft PR
