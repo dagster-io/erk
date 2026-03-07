@@ -25,6 +25,7 @@ from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
+from erk_shared.gateway.remote_github.real import RealRemoteGitHub
 from erk_shared.output.output import user_output
 
 
@@ -50,8 +51,6 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
         raise UserFacingCliError(
             "GitHub authentication required.\nRun 'gh auth login' to authenticate."
         )
-
-    from erk_shared.gateway.remote_github.real import RealRemoteGitHub
 
     return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
 
