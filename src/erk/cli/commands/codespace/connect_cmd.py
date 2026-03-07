@@ -6,6 +6,7 @@ import click
 
 from erk.cli.commands.codespace.resolve import resolve_codespace
 from erk.core.context import ErkContext
+from erk_shared.context.types import NoRepoSentinel
 
 
 def _build_export_prefix(env_vars: tuple[str, ...]) -> str:
@@ -56,6 +57,18 @@ def connect_codespace(
         config_codespace_name=ctx.local_config.codespace_name,
     )
 
+    # Determine local branch for remote checkout (skip if not in a repo)
+    if isinstance(ctx.repo, NoRepoSentinel):
+        local_branch = None
+    else:
+        local_branch = ctx.git.branch.get_current_branch(ctx.repo_root)
+
+    if local_branch is not None:
+        quoted = shlex.quote(local_branch)
+        checkout_prefix = f"git fetch origin {quoted} && git checkout {quoted} && "
+    else:
+        checkout_prefix = ""
+
     # Connect via SSH and launch Claude (or shell with --shell flag)
     # -t: Force pseudo-terminal allocation (required for interactive TUI like claude)
     # bash -l -c: Use login shell to ensure PATH is set up (claude installs to ~/.claude/local/)
@@ -66,14 +79,14 @@ def connect_codespace(
     working_dir = ctx.local_config.codespace_working_directory
     cd_prefix = f"cd {shlex.quote(working_dir)} && " if working_dir is not None else ""
     if shell:
-        if export_prefix or cd_prefix:
-            remote_command = f"bash -l -c '{cd_prefix}{export_prefix}exec bash -l'"
+        if export_prefix or cd_prefix or checkout_prefix:
+            remote_command = f"bash -l -c '{cd_prefix}{checkout_prefix}{export_prefix}exec bash -l'"
         else:
             remote_command = "bash -l"
     else:
         setup = "git pull && uv sync && source .venv/bin/activate"
         claude_cmd = "claude --dangerously-skip-permissions"
-        inner = f"{cd_prefix}{export_prefix}{setup} && {claude_cmd}"
+        inner = f"{cd_prefix}{checkout_prefix}{export_prefix}{setup} && {claude_cmd}"
         remote_command = f"bash -l -c '{inner}'"
 
     click.echo(f"Connecting to codespace '{codespace.name}'...", err=True)
