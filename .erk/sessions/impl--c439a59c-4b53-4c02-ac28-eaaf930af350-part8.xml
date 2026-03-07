@@ -1,0 +1,1570 @@
+<session>
+  <meta source="agent-aa88169" />
+  <meta branch="plnd/push-down-audit-collect-03-06-2116" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand exactly how exec scripts are registered in the `erk exec` CLI group. The `src/erk/cli/commands/exec/scripts/__init__.py` is nearly empty and `src/erk/cli/commands/exec/__init__.py` just has a docstring. 
+
+1. Search for where exec scripts are collected/registered - look for patterns like `add_command`, `group.add_command`, or automatic discovery of scripts in the exec directory
+2. Find the file that creates the `exec` Click group and adds the individual script commands to it
+3. Read that file fully so I can understand how to add a new script
+
+Also find:
+4. The `WorktreeInfo` type definition - it's in `erk_shared/gateway/git/abc.py`
+5. The `BranchSyncInfo` type definition - also in `erk_shared/gateway/git/abc.py`
+6. Read an existing test that uses FakeGitHub and FakeWorktree together - check `tests/unit/cli/commands/exec/scripts/test_dash_data.py` fully
+7. Read the test fixtures file `tests/unit/cli/commands/exec/scripts/fixtures.py` fully
+
+Return the full content of all files found.</user>
+  <assistant>I'll help you understand how exec scripts are registered in the `erk exec` CLI group. Let me start by checking the documentation, then systematically search for the relevant code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6119" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6119, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SzhRKcYYDSbhVpHrMgSnGC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6119" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6119, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01AjennwcqsXRCTRNCdK3b5q">
+    <param name="pattern">**/cli/commands/exec*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6119" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6119, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Y2AUrqZ8tQVYZSfCt4kJ8p">
+    <param name="pattern">**/cli/commands/exec/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6119" cache_read_input_tokens="9174" cache_creation="{'ephemeral_5m_input_tokens': 6119, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SzhRKcYYDSbhVpHrMgSnGC">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AjennwcqsXRCTRNCdK3b5q">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01Y2AUrqZ8tQVYZSfCt4kJ8p">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_fetch_summaries.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_remote_execution_note.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/capture_session_info.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cleanup_impl_context.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_verify_autofix.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/extract_latest_plan.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/discover_reviews.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_issue_timeline_prs.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+
+... [71 lines omitted] ...
+  </tool_result>
+  <assistant>Good! Now let me check the CLI documentation and read the key files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4776" cache_read_input_tokens="15293" cache_creation="{'ephemeral_5m_input_tokens': 4776, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UYuF4s1SaEBTQKhb3KB48V">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4776" cache_read_input_tokens="15293" cache_creation="{'ephemeral_5m_input_tokens': 4776, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NKoW6ES8KVKw1VnjUT52xj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4776" cache_read_input_tokens="15293" cache_creation="{'ephemeral_5m_input_tokens': 4776, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014edXPuZE7rZs5b3QLHx5Ss">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4776" cache_read_input_tokens="15293" cache_creation="{'ephemeral_5m_input_tokens': 4776, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GdVJ6FkxZCMxFueuzKfhQ6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4776" cache_read_input_tokens="15293" cache_creation="{'ephemeral_5m_input_tokens': 4776, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UYuF4s1SaEBTQKhb3KB48V">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01NKoW6ES8KVKw1VnjUT52xj">
+     1→"""Static exec group for erk scripts."""
+     2→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_014edXPuZE7rZs5b3QLHx5Ss">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    11→from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+    12→from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
+    13→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    14→    add_remote_execution_note,
+    15→)
+    16→from erk.cli.commands.exec.scripts.capture_session_info import (
+    17→    capture_session_info,
+    18→)
+    19→from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+    20→from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+    21→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    22→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    23→from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
+    24→from erk.cli.commands.exec.scripts.close_pr import (
+    25→    close_pr,
+    26→)
+    27→from erk.cli.commands.exec.scripts.close_prs import close_prs
+    28→from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_checkout_workspace
+    29→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    30→    create_impl_context_from_plan,
+
+... [258 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GdVJ6FkxZCMxFueuzKfhQ6">
+     1→"""Erk exec scripts module.
+     2→
+     3→This module contains all the CLI scripts available via `erk exec &lt;command&gt;`.
+     4→Each script is a Click command that can be invoked directly.
+     5→"""
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now let me search for the WorktreeInfo and BranchSyncInfo types, and the test files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7207" cache_read_input_tokens="20069" cache_creation="{'ephemeral_5m_input_tokens': 7207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JUH7izymMSdQSTpx8zcigz">
+    <param name="pattern">class WorktreeInfo</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7207" cache_read_input_tokens="20069" cache_creation="{'ephemeral_5m_input_tokens': 7207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012YNNcvUwoGNW3iHp3NSspA">
+    <param name="pattern">**/erk_shared/gateway/git/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7207" cache_read_input_tokens="20069" cache_creation="{'ephemeral_5m_input_tokens': 7207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01BQF2i2tSCfCZug8muqaQjs">
+    <param name="pattern">**/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7207" cache_read_input_tokens="20069" cache_creation="{'ephemeral_5m_input_tokens': 7207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HE9nVxg3uqVmB8iyJDfdXu">
+    <param name="pattern">**/tests/unit/cli/commands/exec/scripts/fixtures.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7207" cache_read_input_tokens="20069" cache_creation="{'ephemeral_5m_input_tokens': 7207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JUH7izymMSdQSTpx8zcigz">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/git/abc.py
+  </tool_result>
+  <tool_result tool="toolu_012YNNcvUwoGNW3iHp3NSspA">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/printing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/lock.py
+  </tool_result>
+  <tool_result tool="toolu_01HE9nVxg3uqVmB8iyJDfdXu">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py
+  </tool_result>
+  <tool_result tool="toolu_01BQF2i2tSCfCZug8muqaQjs">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py
+  </tool_result>
+  <assistant>Excellent! Now let me read the git ABC file, test file, and fixtures:</assistant>
+  <usage input_tokens="58" cache_creation_input_tokens="790" cache_read_input_tokens="27276" cache_creation="{'ephemeral_5m_input_tokens': 790, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019pPVxqYJwsfyeuj3S6A7gx">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+  </tool_use>
+  <usage input_tokens="58" cache_creation_input_tokens="790" cache_read_input_tokens="27276" cache_creation="{'ephemeral_5m_input_tokens': 790, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014Dvj4bdTsh2XQXXJG1zmZg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="58" cache_creation_input_tokens="790" cache_read_input_tokens="27276" cache_creation="{'ephemeral_5m_input_tokens': 790, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LQ5kecsguTbbBBeeysuv3b">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py</param>
+  </tool_use>
+  <usage input_tokens="58" cache_creation_input_tokens="790" cache_read_input_tokens="27276" cache_creation="{'ephemeral_5m_input_tokens': 790, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019pPVxqYJwsfyeuj3S6A7gx">
+     1→"""High-level git operations interface.
+     2→
+     3→This module provides a clean abstraction over git subprocess calls, making the
+     4→codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Git: Abstract base class defining the interface
+     8→- RealGit: Production implementation using subprocess
+     9→- Standalone functions: Convenience wrappers delegating to module singleton
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→from abc import ABC, abstractmethod
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING, NamedTuple
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→    from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    22→    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    23→    from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    24→    from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    25→    from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    26→    from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    27→    from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    28→    from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+    29→    from erk_shared.gateway.git.worktree.abc import Worktree
+    30→
+
+... [142 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014Dvj4bdTsh2XQXXJG1zmZg">
+     1→"""Unit tests for dash-data exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+     9→
+    10→
+    11→def test_serialize_plan_row_basic() -&gt; None:
+    12→    """Test basic serialization of PlanRowData to dict."""
+    13→    row = make_plan_row(123, "Test Plan")
+    14→    result = _serialize_plan_row(row)
+    15→
+    16→    assert result["plan_id"] == 123
+    17→    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
+    18→    assert result["pr_number"] is None
+    19→    assert result["exists_locally"] is False
+    20→    assert result["last_local_impl_at"] is None
+    21→    assert result["last_remote_impl_at"] is None
+    22→
+    23→
+    24→def test_serialize_plan_row_datetime_fields() -&gt; None:
+    25→    """Test that datetime fields are converted to ISO 8601 strings."""
+    26→    now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
+    27→    row = PlanRowData(
+    28→        plan_id=456,
+    29→        plan_url="https://github.com/test/repo/issues/456",
+    30→        pr_number=None,
+
+... [294 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LQ5kecsguTbbBBeeysuv3b">
+     1→"""Test fixtures for session log preprocessing tests.
+     2→
+     3→Contains real JSONL entry samples extracted from actual Claude Code session logs.
+     4→"""
+     5→
+     6→# File history snapshot entry (should be filtered out)
+     7→JSONL_FILE_HISTORY_SNAPSHOT = """{
+     8→  "type": "file-history-snapshot",
+     9→  "messageId": "msg_123",
+    10→  "parentUuid": "parent_456",
+    11→  "sessionId": "session_789",
+    12→  "snapshot": {"trackedFileBackups": {}, "timestamp": "2025-11-20T00:00:00Z"},
+    13→  "isSnapshotUpdate": false,
+    14→  "timestamp": "2025-11-20T00:00:00.000Z",
+    15→  "gitBranch": "test-branch",
+    16→  "cwd": "/test/dir",
+    17→  "userType": "user",
+    18→  "isSidechain": false
+    19→}"""
+    20→
+    21→# User message with string content
+    22→JSONL_USER_MESSAGE_STRING = """{
+    23→  "type": "user",
+    24→  "message": {"role": "user", "content": "Hello, how are you?"},
+    25→  "parentUuid": "parent_123",
+    26→  "sessionId": "session_456",
+    27→  "gitBranch": "test-branch",
+    28→  "cwd": "/test/dir",
+    29→  "timestamp": "2025-11-20T00:00:00.000Z",
+    30→  "userType": "user",
+
+... [276 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me get the dash_data.py script to see how it uses the gateway pattern:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="14652" cache_read_input_tokens="28066" cache_creation="{'ephemeral_5m_input_tokens': 14652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DeKjyPAq4XstULUJo1VvbS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14652" cache_read_input_tokens="28066" cache_creation="{'ephemeral_5m_input_tokens': 14652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_014oGbZfTCXtaijQkeNaMkW8">
+    <param name="pattern">**/gateway/github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14652" cache_read_input_tokens="28066" cache_creation="{'ephemeral_5m_input_tokens': 14652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019karpqFyvg9CYoZbVvUQR3">
+    <param name="pattern">**/gateway/github/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14652" cache_read_input_tokens="28066" cache_creation="{'ephemeral_5m_input_tokens': 14652, 'ephemeral_1h_input_tokens': 0}" output_tokens="192" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DeKjyPAq4XstULUJo1VvbS">
+     1→"""Serialize plan dashboard data to JSON for external consumers.
+     2→
+     3→Usage:
+     4→    erk exec dash-data [--state open|closed] [--label LABEL] [--limit N]
+     5→        [--show-prs/--no-show-prs] [--show-runs/--no-show-runs]
+     6→        [--run-state STATE] [--creator USER]
+     7→
+     8→Output:
+     9→    JSON with {success, plans, count}
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (missing repo info, API error)
+    14→"""
+    15→
+    16→import dataclasses
+    17→import json
+    18→from datetime import datetime
+    19→from typing import Any
+    20→
+    21→import click
+    22→
+    23→from erk.cli.core import discover_repo_context
+    24→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    25→from erk.tui.data.real_provider import RealPlanDataProvider
+    26→from erk.tui.data.types import PlanFilters, PlanRowData
+    27→from erk_shared.context.helpers import require_context
+    28→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
+    29→
+    30→
+
+... [88 lines omitted] ...
+
+    76→            json.dumps({"success": False, "error": "Could not determine repository owner/name"})
+    87→        click.echo(json.dumps({"success": False, "error": "GitHub authentication not available"}))
+  </tool_result>
+  <tool_result tool="toolu_014oGbZfTCXtaijQkeNaMkW8">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py
+  </tool_result>
+  <tool_result tool="toolu_019karpqFyvg9CYoZbVvUQR3">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py
+  </tool_result>
+  <assistant>Now let me read the GitHub gateway files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2080" cache_read_input_tokens="42718" cache_creation="{'ephemeral_5m_input_tokens': 2080, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0149wBYSQRCi4rrYZR3cc1Lt">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2080" cache_read_input_tokens="42718" cache_creation="{'ephemeral_5m_input_tokens': 2080, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014ZYEQxTkZZM4w2gKBmRd4h">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2080" cache_read_input_tokens="42718" cache_creation="{'ephemeral_5m_input_tokens': 2080, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0149wBYSQRCi4rrYZR3cc1Lt">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class GitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [225 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+  </tool_result>
+  <tool_result tool="toolu_014ZYEQxTkZZM4w2gKBmRd4h">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import GitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+
+... [175 lines omitted] ...
+
+    71→        resolve_thread_failures: set[str] | None = None,
+    72→        pr_diff_error: str | None = None,
+    73→        workflow_runs_error: str | None = None,
+    81→        add_label_errors: dict[str, str] | None = None,
+   111→                RuntimeError simulating GraphQL rate limit
+   112→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   113→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   114→                Use to simulate HTTP 406 "diff too large" errors.
+   115→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   116→                RuntimeError with this message. Use to simulate API failures.
+   120→                False or raise to simulate failure.
+   156→        self._resolve_thread_failures = resolve_thread_failures or set()
+   157→        self._pr_diff_error = pr_diff_error
+   158→        self._workflow_runs_error = workflow_runs_error
+   191→        self._add_label_errors = add_label_errors or {}
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary document by reading one more example exec script to show the pattern clearly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6794" cache_read_input_tokens="44798" cache_creation="{'ephemeral_5m_input_tokens': 6794, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RZeotziGJL4PEz6PgAVyCo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_init.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6794" cache_read_input_tokens="44798" cache_creation="{'ephemeral_5m_input_tokens': 6794, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RZeotziGJL4PEz6PgAVyCo">
+     1→"""Initialize implementation by validating .erk/impl-context/ folder.
+     2→
+     3→This exec command validates .erk/impl-context/ folder for /erk:plan-implement:
+     4→- Validates .erk/impl-context/ folder structure (plan.md exists)
+     5→- Checks for GitHub issue tracking (plan-ref.json)
+     6→- Parses "Related Documentation" section for skills and docs
+     7→
+     8→Usage:
+     9→    erk exec impl-init --json
+    10→
+    11→Output:
+    12→    JSON with validation status and related docs
+    13→    Always outputs JSON (for machine parsing by slash command)
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Validation error
+    18→
+    19→Examples:
+    20→    $ erk exec impl-init --json
+    21→    {"valid": true, "has_plan_tracking": true, ...}
+    22→"""
+    23→
+    24→import json
+    25→import re
+    26→from pathlib import Path
+    27→from typing import NoReturn
+    28→
+    29→import click
+    30→
+
+... [75 lines omitted] ...
+
+    35→def _error_json(error_type: str, message: str) -&gt; NoReturn:
+    36→    """Output error as JSON and exit with code 1."""
+    37→    result = {"valid": False, "error_type": error_type, "message": message}
+    65→            "error_type": "no_impl_folder",
+    73→        _error_json("no_plan_file", f"No plan.md found in {impl_dir.name}/ folder")
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need to provide a comprehensive report. Let me compile the findings:
+
+## Summary Report: Exec Scripts Registration and Integration
+
+I've thoroughly explored your codebase and can now provide complete answers to all your questions:
+
+---
+
+### 1. HOW EXEC SCRIPTS ARE REGISTERED IN THE `erk exec` CLI GROUP
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py`
+
+**Pattern: Static Registration**
+
+The `exec` CLI group uses **static registration**, not automatic discovery. Here's how it works:
+
+1. **Import all scripts** (lines 10-182 of `group.py`):
+   - Each script is imported individually with explicit imports
+   - Example: `from erk.cli.commands.exec.scripts.dash_data import dash_data`
+
+2. **Create the exec Click group** (lines 185-188):
+   ```python
+   @click.group(name="exec", hidden=True)
+   def exec_group() -&gt; None:
+       """Execute erk workflow scripts."""
+   ```
+   - The group is created with `@click.group` decorator
+   - It's marked `hidden=True` (hidden from top-level help)
+   - The group function itself is empty (just documentation)
+
+3. **Register commands explicitly** (lines 191-282):
+   ```python
+   exec_group.add_command(add_plan_label, name="add-plan-label")
+   exec_group.add_command(add_plan_labels, name="add-plan-labels")
+   exec_group.add_command(dash_data, name="dash-data")
+   # ... 75+ more commands
+   ```
+   - Each script command is added using `exec_group.add_command()`
+   - The command name is provided as the `name` parameter
+   - Names use kebab-case (e.g., `add-plan-label`)
+
+**Key characteristics:**
+- **Manual, not automatic**: No dynamic discovery from the `scripts/` directory
+- **All-at-once registration**: All imports and registrations happen in one file
+- **Explicit naming**: Each command gets an explicit Click name
+- **One canonical location**: `group.py` is the single source of truth for registration
+
+---
+
+### 2. FILE THAT CREATES THE `exec` GROUP
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py` (lines 1-288)
+
+This is the only file that creates the Click group and registers all commands.
+
+**Full content:**
+
+```python
+"""Static exec group for erk scripts.
+
+This module provides the `erk exec` command group with all scripts
+statically registered.
+"""
+
+import click
+
+# Import and register all scripts
+from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
+from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    add_remote_execution_note,
+)
+from erk.cli.commands.exec.scripts.capture_session_info import (
+    capture_session_info,
+)
+from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
+from erk.cli.commands.exec.scripts.close_pr import (
+    close_pr,
+)
+from erk.cli.commands.exec.scripts.close_prs import close_prs
+from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_checkout_workspace
+from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+    create_impl_context_from_plan,
+)
+from erk.cli.commands.exec.scripts.create_pr_from_session import (
+    create_pr_from_session,
+)
+from erk.cli.commands.exec.scripts.dash_data import dash_data
+from erk.cli.commands.exec.scripts.detect_plan_from_branch import (
+    detect_plan_from_branch,
+)
+from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
+from erk.cli.commands.exec.scripts.discover_reviews import discover_reviews
+from erk.cli.commands.exec.scripts.download_remote_session import (
+    download_remote_session,
+)
+from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
+from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
+from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
+from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
+    generate_pr_address_summary,
+)
+from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
+from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
+from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
+    get_issue_timeline_prs,
+)
+from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
+from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
+from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
+from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+    get_plans_for_objective,
+)
+from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
+from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
+from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
+from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
+    get_pr_discussion_comments,
+)
+from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
+from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
+from erk.cli.commands.exec.scripts.get_pr_review_comments import (
+    get_pr_review_comments,
+)
+from erk.cli.commands.exec.scripts.get_pr_view import get_pr_view
+from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
+from erk.cli.commands.exec.scripts.impl_init import impl_init
+from erk.cli.commands.exec.scripts.impl_signal import impl_signal
+from erk.cli.commands.exec.scripts.impl_verify import impl_verify
+from erk.cli.commands.exec.scripts.incremental_dispatch import (
+    incremental_dispatch,
+)
+from erk.cli.commands.exec.scripts.land_execute import land_execute
+from erk.cli.commands.exec.scripts.list_sessions import list_sessions
+from erk.cli.commands.exec.scripts.marker import marker
+from erk.cli.commands.exec.scripts.migrate_objective_schema import (
+    migrate_objective_schema,
+)
+from erk.cli.commands.exec.scripts.normalize_tripwire_candidates import (
+    normalize_tripwire_candidates,
+)
+from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
+    objective_apply_landed_update,
+)
+from erk.cli.commands.exec.scripts.objective_fetch_context import (
+    objective_fetch_context,
+)
+from erk.cli.commands.exec.scripts.objective_link_pr import (
+    objective_link_pr,
+)
+from erk.cli.commands.exec.scripts.objective_plan_setup import (
+    objective_plan_setup,
+)
+from erk.cli.commands.exec.scripts.objective_post_action_comment import (
+    objective_post_action_comment,
+)
+from erk.cli.commands.exec.scripts.objective_render_roadmap import (
+    objective_render_roadmap,
+)
+from erk.cli.commands.exec.scripts.objective_save_to_issue import (
+    objective_save_to_issue,
+)
+from erk.cli.commands.exec.scripts.objective_update_after_land import (
+    objective_update_after_land,
+)
+from erk.cli.commands.exec.scripts.plan_save import plan_save
+from erk.cli.commands.exec.scripts.plan_update import plan_update
+from erk.cli.commands.exec.scripts.post_or_update_pr_summary import (
+    post_or_update_pr_summary,
+)
+from erk.cli.commands.exec.scripts.post_pr_inline_comment import (
+    post_pr_inline_comment,
+)
+from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
+    post_workflow_started_comment,
+)
+from erk.cli.commands.exec.scripts.pr_sync_commit import pr_sync_commit
+from erk.cli.commands.exec.scripts.pre_tool_use_hook import pre_tool_use_hook
+from erk.cli.commands.exec.scripts.preprocess_session import preprocess_session
+from erk.cli.commands.exec.scripts.push_and_create_pr import push_and_create_pr
+from erk.cli.commands.exec.scripts.push_session import push_session
+from erk.cli.commands.exec.scripts.quick_submit import quick_submit
+from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
+    rebase_with_conflict_resolution,
+)
+from erk.cli.commands.exec.scripts.register_one_shot_plan import (
+    register_one_shot_plan,
+)
+from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
+    reply_to_discussion_comment,
+)
+from erk.cli.commands.exec.scripts.resolve_objective_ref import (
+    resolve_objective_ref,
+)
+from erk.cli.commands.exec.scripts.resolve_review_thread import (
+    resolve_review_thread,
+)
+from erk.cli.commands.exec.scripts.resolve_review_threads import (
+    resolve_review_threads,
+)
+from erk.cli.commands.exec.scripts.run_review import run_review
+from erk.cli.commands.exec.scripts.session_id_injector_hook import (
+    session_id_injector_hook,
+)
+from erk.cli.commands.exec.scripts.set_local_review_marker import (
+    set_local_review_marker,
+)
+from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
+from erk.cli.commands.exec.scripts.setup_impl import setup_impl
+from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
+    setup_impl_from_pr,
+)
+from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+    store_tripwire_candidates,
+)
+from erk.cli.commands.exec.scripts.track_learn_evaluation import (
+    track_learn_evaluation,
+)
+from erk.cli.commands.exec.scripts.track_learn_result import (
+    track_learn_result,
+)
+from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
+from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
+from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
+from erk.cli.commands.exec.scripts.update_pr_description import (
+    update_pr_description,
+)
+from erk.cli.commands.exec.scripts.upload_impl_session import upload_impl_session
+from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
+from erk.cli.commands.exec.scripts.validate_claude_credentials import (
+    validate_claude_credentials,
+)
+from erk.cli.commands.exec.scripts.validate_plan_content import (
+    validate_plan_content,
+)
+
+
+# Create the exec group (hidden from top-level help)
+@click.group(name="exec", hidden=True)
+def exec_group() -&gt; None:
+    """Execute erk workflow scripts."""
+
+
+# Register all commands
+exec_group.add_command(add_plan_label, name="add-plan-label")
+exec_group.add_command(add_plan_labels, name="add-plan-labels")
+exec_group.add_command(add_pr_labels, name="add-pr-labels")
+exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
+exec_group.add_command(capture_session_info, name="capture-session-info")
+exec_group.add_command(cleanup_impl_context, name="cleanup-impl-context")
+exec_group.add_command(cmux_checkout_workspace, name="cmux-checkout-workspace")
+exec_group.add_command(create_pr_from_session, name="create-pr-from-session")
+exec_group.add_command(dash_data, name="dash-data")
+exec_group.add_command(create_impl_context_from_plan, name="create-impl-context-from-plan")
+exec_group.add_command(detect_plan_from_branch, name="detect-plan-from-branch")
+exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
+exec_group.add_command(discover_reviews, name="discover-reviews")
+exec_group.add_command(download_remote_session, name="download-remote-session")
+exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
+exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
+exec_group.add_command(fetch_sessions, name="fetch-sessions")
+exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
+exec_group.add_command(get_plan_info, name="get-plan-info")
+exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
+exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
+exec_group.add_command(get_pr_for_plan, name="get-pr-for-plan")
+exec_group.add_command(get_pr_view, name="get-pr-view")
+exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
+exec_group.add_command(get_issue_body, name="get-issue-body")
+exec_group.add_command(get_issue_timeline_prs, name="get-issue-timeline-prs")
+exec_group.add_command(get_learn_sessions, name="get-learn-sessions")
+exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
+exec_group.add_command(get_pr_context, name="get-pr-context")
+exec_group.add_command(handle_no_changes, name="handle-no-changes")
+exec_group.add_command(get_pr_commits, name="get-pr-commits")
+exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
+exec_group.add_command(get_pr_feedback, name="get-pr-feedback")
+exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
+exec_group.add_command(incremental_dispatch, name="incremental-dispatch")
+exec_group.add_command(impl_init, name="impl-init")
+exec_group.add_command(impl_signal, name="impl-signal")
+exec_group.add_command(impl_verify, name="impl-verify")
+exec_group.add_command(land_execute, name="land-execute")
+exec_group.add_command(list_sessions, name="list-sessions")
+exec_group.add_command(marker, name="marker")
+exec_group.add_command(migrate_objective_schema, name="migrate-objective-schema")
+exec_group.add_command(normalize_tripwire_candidates, name="normalize-tripwire-candidates")
+exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap")
+exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
+exec_group.add_command(objective_apply_landed_update, name="objective-apply-landed-update")
+exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
+exec_group.add_command(objective_plan_setup, name="objective-plan-setup")
+exec_group.add_command(objective_link_pr, name="objective-link-pr")
+exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
+exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
+exec_group.add_command(plan_save, name="plan-save")
+exec_group.add_command(plan_update, name="plan-update")
+exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
+exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
+exec_group.add_command(pr_sync_commit, name="pr-sync-commit")
+exec_group.add_command(post_workflow_started_comment, name="post-workflow-started-comment")
+exec_group.add_command(pre_tool_use_hook, name="pre-tool-use-hook")
+exec_group.add_command(preprocess_session, name="preprocess-session")
+exec_group.add_command(push_and_create_pr, name="push-and-create-pr")
+exec_group.add_command(push_session, name="push-session")
+exec_group.add_command(quick_submit, name="quick-submit")
+exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
+exec_group.add_command(register_one_shot_plan, name="register-one-shot-plan")
+exec_group.add_command(resolve_objective_ref, name="resolve-objective-ref")
+exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
+exec_group.add_command(resolve_review_threads, name="resolve-review-threads")
+exec_group.add_command(run_review, name="run-review")
+exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
+exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
+exec_group.add_command(set_local_review_marker, name="set-local-review-marker")
+exec_group.add_command(set_pr_description, name="set-pr-description")
+exec_group.add_command(setup_impl, name="setup-impl")
+exec_group.add_command(setup_impl_from_pr, name="setup-impl-from-pr")
+exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
+exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
+exec_group.add_command(track_learn_result, name="track-learn-result")
+exec_group.add_command(update_issue_body, name="update-issue-body")
+exec_group.add_command(update_plan_header, name="update-plan-header")
+exec_group.add_command(update_objective_node, name="update-objective-node")
+exec_group.add_command(update_pr_description, name="update-pr-description")
+exec_group.add_command(upload_impl_session, name="upload-impl-session")
+exec_group.add_command(ci_fetch_summaries, name="ci-fetch-summaries")
+exec_group.add_command(ci_generate_summaries, name="ci-generate-summaries")
+exec_group.add_command(ci_update_pr_body)
+exec_group.add_command(ci_verify_autofix, name="ci-verify-autofix")
+exec_group.add_command(close_pr, name="close-pr")
+exec_group.add_command(close_prs, name="close-prs")
+exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
+exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")
+exec_group.add_command(validate_plan_content, name="validate-plan-content")
+```
+
+---
+
+### 3. TYPES: WorktreeInfo and BranchSyncInfo
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py` (lines 47-65)
+
+```python
+@dataclass(frozen=True)
+class WorktreeInfo:
+    """Information about a single git worktree."""
+
+    path: Path
+    branch: str | None
+    is_root: bool = False
+
+
+@dataclass(frozen=True)
+class BranchSyncInfo:
+    """Sync status for a branch relative to its upstream."""
+
+    branch: str
+    upstream: str | None  # None if no tracking branch
+    ahead: int
+    behind: int
+    gone: bool = False  # True if upstream tracking branch has been deleted
+```
+
+---
+
+### 4-7. TEST FILES (Full Content)
+
+#### 4. Test File: `test_dash_data.py`
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py`
+
+```python
+"""Unit tests for dash-data exec command."""
+
+import json
+from datetime import UTC, datetime
+
+from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
+from erk.tui.data.types import PlanRowData
+from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+
+
+def test_serialize_plan_row_basic() -&gt; None:
+    """Test basic serialization of PlanRowData to dict."""
+    row = make_plan_row(123, "Test Plan")
+    result = _serialize_plan_row(row)
+
+    assert result["plan_id"] == 123
+    assert result["plan_url"] == "https://github.com/test/repo/issues/123"
+    assert result["pr_number"] is None
+    assert result["exists_locally"] is False
+    assert result["last_local_impl_at"] is None
+    assert result["last_remote_impl_at"] is None
+
+
+def test_serialize_plan_row_datetime_fields() -&gt; None:
+    """Test that datetime fields are converted to ISO 8601 strings."""
+    now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
+    row = PlanRowData(
+        plan_id=456,
+        plan_url="https://github.com/test/repo/issues/456",
+        pr_number=None,
+        pr_url=None,
+        pr_display="-",
+        checks_display="-",
+        checks_passing=None,
+        checks_counts=None,
+        ci_summary_comment_id=None,
+        worktree_name="",
+        exists_locally=False,
+        local_impl_display="-",
+        remote_impl_display="-",
+        run_id_display="-",
+        run_state_display="-",
+        run_url=None,
+        full_title="Datetime Test",
+        plan_body="",
+        pr_title=None,
+        pr_state=None,
+        pr_head_branch=None,
+        worktree_branch=None,
+        last_local_impl_at=now,
+        last_remote_impl_at=now,
+        run_id=None,
+        run_status=None,
+        run_conclusion=None,
+        log_entries=(),
+        resolved_comment_count=0,
+        total_comment_count=0,
+        comments_display="-",
+        learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_issue_closed=None,
+        learn_plan_pr=None,
+        learn_run_url=None,
+        learn_display="- not started",
+        learn_display_icon="-",
+        objective_issue=None,
+        objective_url=None,
+        objective_display="-",
+        objective_done_nodes=0,
+        objective_total_nodes=0,
+        objective_progress_display="-",
+        objective_slug_display="-",
+        objective_state_display="-",
+        objective_deps_display="-",
+        objective_deps_plans=(),
+        objective_next_node_display="-",
+        updated_at=now,
+        updated_display="-",
+        created_at=now,
+        created_display="-",
+        author="test-user",
+        is_learn_plan=False,
+        lifecycle_display="-",
+        status_display="-",
+    )
+
+    result = _serialize_plan_row(row)
+
+    assert result["last_local_impl_at"] == "2025-06-15T12:30:00+00:00"
+    assert result["last_remote_impl_at"] == "2025-06-15T12:30:00+00:00"
+
+
+def test_serialize_plan_row_tuple_to_list() -&gt; None:
+    """Test that tuple fields (log_entries) are converted to lists."""
+    row = PlanRowData(
+        plan_id=789,
+        plan_url="https://github.com/test/repo/issues/789",
+        pr_number=None,
+        pr_url=None,
+        pr_display="-",
+        checks_display="-",
+        checks_passing=None,
+        checks_counts=None,
+        ci_summary_comment_id=None,
+        worktree_name="",
+        exists_locally=False,
+        local_impl_display="-",
+        remote_impl_display="-",
+        run_id_display="-",
+        run_state_display="-",
+        run_url=None,
+        full_title="Tuple Test",
+        plan_body="",
+        pr_title=None,
+        pr_state=None,
+        pr_head_branch=None,
+        worktree_branch=None,
+        last_local_impl_at=None,
+        last_remote_impl_at=None,
+        run_id=None,
+        run_status=None,
+        run_conclusion=None,
+        log_entries=(("started", "2025-01-01T00:00:00Z", "https://example.com"),),
+        resolved_comment_count=0,
+        total_comment_count=0,
+        comments_display="-",
+        learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_issue_closed=None,
+        learn_plan_pr=None,
+        learn_run_url=None,
+        learn_display="- not started",
+        learn_display_icon="-",
+        objective_issue=None,
+        objective_url=None,
+        objective_display="-",
+        objective_done_nodes=0,
+        objective_total_nodes=0,
+        objective_progress_display="-",
+        objective_slug_display="-",
+        objective_state_display="-",
+        objective_deps_display="-",
+        objective_deps_plans=(),
+        objective_next_node_display="-",
+        updated_at=datetime(2025, 1, 1, tzinfo=UTC),
+        updated_display="-",
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
+        created_display="-",
+        author="test-user",
+        is_learn_plan=False,
+        lifecycle_display="-",
+        status_display="-",
+    )
+
+    result = _serialize_plan_row(row)
+
+    assert isinstance(result["log_entries"], list)
+    assert len(result["log_entries"]) == 1
+    assert result["log_entries"][0] == ["started", "2025-01-01T00:00:00Z", "https://example.com"]
+
+
+def test_serialize_plan_row_with_pr_data() -&gt; None:
+    """Test serialization includes PR data when present."""
+    row = make_plan_row(
+        100,
+        "PR Plan",
+        pr_number=200,
+        pr_url="https://github.com/test/repo/pull/200",
+        pr_title="Fix something",
+        pr_state="OPEN",
+    )
+    result = _serialize_plan_row(row)
+
+    assert result["pr_number"] == 200
+    assert result["pr_url"] == "https://github.com/test/repo/pull/200"
+    assert result["pr_title"] == "Fix something"
+    assert result["pr_state"] == "OPEN"
+
+
+def test_serialize_plan_row_all_fields_present() -&gt; None:
+    """Test that all PlanRowData fields appear in serialized output."""
+    row = make_plan_row(1, "All Fields")
+    result = _serialize_plan_row(row)
+
+    expected_fields = {
+        "plan_id",
+        "plan_url",
+        "pr_number",
+        "pr_url",
+        "pr_display",
+        "checks_display",
+        "checks_passing",
+        "checks_counts",
+        "ci_summary_comment_id",
+        "worktree_name",
+        "exists_locally",
+        "local_impl_display",
+        "remote_impl_display",
+        "run_id_display",
+        "run_state_display",
+        "run_url",
+        "full_title",
+        "plan_body",
+        "pr_title",
+        "pr_state",
+        "pr_head_branch",
+        "worktree_branch",
+        "last_local_impl_at",
+        "last_remote_impl_at",
+        "run_id",
+        "run_status",
+        "run_conclusion",
+        "log_entries",
+        "resolved_comment_count",
+        "total_comment_count",
+        "comments_display",
+        "learn_status",
+        "learn_plan_issue",
+        "learn_plan_issue_closed",
+        "learn_plan_pr",
+        "learn_run_url",
+        "learn_display",
+        "learn_display_icon",
+        "objective_issue",
+        "objective_url",
+        "objective_display",
+        "objective_done_nodes",
+        "objective_total_nodes",
+        "objective_progress_display",
+        "objective_slug_display",
+        "objective_state_display",
+        "objective_deps_display",
+        "objective_deps_plans",
+        "objective_next_node_display",
+        "updated_at",
+        "updated_display",
+        "created_at",
+        "created_display",
+        "author",
+        "is_learn_plan",
+        "lifecycle_display",
+        "status_display",
+    }
+    assert set(result.keys()) == expected_fields
+
+
+def test_serialize_plan_row_json_roundtrip() -&gt; None:
+    """Test that serialized output is valid JSON."""
+    now = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
+    row = PlanRowData(
+        plan_id=42,
+        plan_url="https://github.com/test/repo/issues/42",
+        pr_number=99,
+        pr_url="https://github.com/test/repo/pull/99",
+        pr_display="#99 ✅",
+        checks_display="✓",
+        checks_passing=True,
+        checks_counts=(5, 5),
+        ci_summary_comment_id=None,
+        worktree_name="erk-slot-1",
+        exists_locally=True,
+        local_impl_display="2h ago",
+        remote_impl_display="-",
+        run_id_display="-",
+        run_state_display="-",
+        run_url=None,
+        full_title="JSON Test Full Title",
+        plan_body="Some body",
+        pr_title="Fix it",
+        pr_state="MERGED",
+        pr_head_branch="feature-branch",
+        worktree_branch="feature-branch",
+        last_local_impl_at=now,
+        last_remote_impl_at=None,
+        run_id=None,
+        run_status=None,
+        run_conclusion=None,
+        log_entries=(("started", "2025-01-01T00:00:00Z", "https://example.com"),),
+        resolved_comment_count=3,
+        total_comment_count=5,
+        comments_display="3/5",
+        learn_status="pending",
+        learn_plan_issue=None,
+        learn_plan_issue_closed=None,
+        learn_plan_pr=None,
+        learn_run_url=None,
+        learn_display="⟳ in progress",
+        learn_display_icon="⟳",
+        objective_issue=100,
+        objective_url="https://github.com/test/repo/issues/100",
+        objective_display="#100",
+        objective_done_nodes=0,
+        objective_total_nodes=0,
+        objective_progress_display="-",
+        objective_slug_display="-",
+        objective_state_display="-",
+        objective_deps_display="-",
+        objective_deps_plans=(),
+        objective_next_node_display="-",
+        updated_at=now,
+        updated_display="-",
+        created_at=now,
+        created_display="-",
+        author="test-user",
+        is_learn_plan=False,
+        lifecycle_display="-",
+        status_display="-",
+    )
+
+    result = _serialize_plan_row(row)
+    json_str = json.dumps(result)
+    parsed = json.loads(json_str)
+
+    assert parsed["plan_id"] == 42
+    assert parsed["last_local_impl_at"] == "2025-01-15T10:00:00+00:00"
+    assert parsed["last_remote_impl_at"] is None
+    assert parsed["log_entries"] == [["started", "2025-01-01T00:00:00Z", "https://example.com"]]
+    assert parsed["objective_issue"] == 100
+```
+
+#### 5. Fixtures File: `fixtures.py`
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/fixtures.py` (full content)
+
+```python
+"""Test fixtures for session log preprocessing tests.
+
+Contains real JSONL entry samples extracted from actual Claude Code session logs.
+"""
+
+# File history snapshot entry (should be filtered out)
+JSONL_FILE_HISTORY_SNAPSHOT = """{
+  "type": "file-history-snapshot",
+  "messageId": "msg_123",
+  "parentUuid": "parent_456",
+  "sessionId": "session_789",
+  "snapshot": {"trackedFileBackups": {}, "timestamp": "2025-11-20T00:00:00Z"},
+  "isSnapshotUpdate": false,
+  "timestamp": "2025-11-20T00:00:00.000Z",
+  "gitBranch": "test-branch",
+  "cwd": "/test/dir",
+  "userType": "user",
+  "isSidechain": false
+}"""
+
+# User message with string content
+JSONL_USER_MESSAGE_STRING = """{
+  "type": "user",
+  "message": {"role": "user", "content": "Hello, how are you?"},
+  "parentUuid": "parent_123",
+  "sessionId": "session_456",
+  "gitBranch": "test-branch",
+  "cwd": "/test/dir",
+  "timestamp": "2025-11-20T00:00:00.000Z",
+  "userType": "user",
+  "isSidechain": false
+}"""
+
+# User message with structured content
+JSONL_USER_MESSAGE_STRUCTURED = """{
+  "type": "user",
+  "message": {
+    "role": "user",
+    "content": [{"type": "text", "text": "Let me test &lt;special&gt; &amp; chars"}]
+  },
+  "parentUuid": "parent_789",
+  "sessionId": "session_abc",
+  "gitBranch": "test-branch",
+  "cwd": "/test/dir",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Assistant message with text only
+JSONL_ASSISTANT_TEXT = """{
+  "type": "assistant",
+  "message": {
+    "role": "assistant",
+    "content": [{"type": "text", "text": "I'll help you with that."}],
+    "usage": {"input_tokens": 100, "output_tokens": 50}
+  },
+  "parentUuid": "parent_def",
+  "sessionId": "session_ghi",
+  "gitBranch": "test-branch",
+  "cwd": "/test/dir",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Assistant message with tool use
+JSONL_ASSISTANT_TOOL_USE = """{
+  "type": "assistant",
+  "message": {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_abc123",
+        "name": "Read",
+        "input": {"file_path": "/test/file.py"}
+      }
+    ],
+    "usage": {"input_tokens": 200, "output_tokens": 30}
+  },
+  "parentUuid": "parent_jkl",
+  "sessionId": "session_mno",
+  "gitBranch": "test-branch",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Duplicate assistant message (for deduplication testing)
+JSONL_DUPLICATE_ASSISTANT_TEXT = """{
+  "type": "assistant",
+  "message": {
+    "role": "assistant",
+    "content": [{"type": "text", "text": "I'll help you with that."}]
+  },
+  "sessionId": "session_pqr"
+}"""
+
+# Duplicate assistant message with tool_use (should keep tool_use, drop text)
+JSONL_DUPLICATE_ASSISTANT_WITH_TOOL = """{
+  "type": "assistant",
+  "message": {
+    "role": "assistant",
+    "content": [
+      {"type": "text", "text": "I'll help you with that."},
+      {
+        "type": "tool_use",
+        "id": "toolu_xyz789",
+        "name": "Edit",
+        "input": {"file_path": "/test/edit.py"}
+      }
+    ]
+  },
+  "sessionId": "session_stu"
+}"""
+
+# Tool result
+JSONL_TOOL_RESULT = """{
+  "type": "tool_result",
+  "message": {
+    "role": "user",
+    "content": [
+      {
+        "type": "tool_result",
+        "tool_use_id": "toolu_abc123",
+        "content": "File contents:\\n     1→def hello():\\n     2→    print('Hello')"
+      }
+    ],
+    "tool_use_id": "toolu_abc123"
+  },
+  "sessionId": "session_vwx"
+}"""
+
+# Expected XML outputs
+EXPECTED_XML_USER_STRING = """  &lt;user&gt;Hello, how are you?&lt;/user&gt;"""
+
+EXPECTED_XML_USER_STRUCTURED = """  &lt;user&gt;Let me test &amp;lt;special&amp;gt; &amp;amp; chars&lt;/user&gt;"""
+
+EXPECTED_XML_ASSISTANT_TEXT = """  &lt;assistant&gt;I'll help you with that.&lt;/assistant&gt;"""
+
+EXPECTED_XML_TOOL_USE = """  &lt;tool_use name="Read" id="toolu_abc123"&gt;
+    &lt;param name="file_path"&gt;/test/file.py&lt;/param&gt;
+  &lt;/tool_use&gt;"""
+
+EXPECTED_XML_TOOL_RESULT = """  &lt;tool_result tool="toolu_abc123"&gt;
+File contents:
+     1→def hello():
+     2→    print('Hello')
+  &lt;/tool_result&gt;"""
+
+
+# Slug-based fixtures for plan extraction testing
+
+# Session entry with a slug field (indicates plan mode was entered)
+JSONL_SESSION_WITH_SLUG = """{
+  "type": "assistant",
+  "slug": "joyful-munching-hammock",
+  "message": {"role": "assistant", "content": [{"type": "text", "text": "I'll help you."}]},
+  "parentUuid": "parent_123",
+  "sessionId": "session_456",
+  "gitBranch": "test-branch",
+  "cwd": "/test/dir",
+  "timestamp": "2025-11-23T10:00:00.000Z"
+}"""
+
+# Session entry without slug field (no plan mode)
+JSONL_SESSION_WITHOUT_SLUG = """{
+  "type": "assistant",
+  "message": {"role": "assistant", "content": [{"type": "text", "text": "I'll help you."}]},
+  "parentUuid": "parent_789",
+  "sessionId": "session_abc",
+  "gitBranch": "test-branch",
+  "cwd": "/test/dir",
+  "timestamp": "2025-11-23T11:00:00.000Z"
+}"""
+
+# Sample plan content for testing
+SAMPLE_PLAN_CONTENT = """# Test Feature
+
+## Problem Statement
+
+This is a test plan for unit testing.
+
+## Implementation Steps
+
+1. Step one
+2. Step two
+3. Step three
+
+## Files to Modify
+
+- `src/module.py`
+- `tests/test_module.py`
+"""
+
+
+def create_session_file(path, entries: list[str]) -&gt; None:
+    """Write JSONL entries to a session file.
+
+    JSONL format requires each JSON object on a single line with no internal newlines.
+    This function parses each entry and writes it as compact single-line JSON.
+
+    Args:
+        path: Path object or string path to write to
+        entries: List of JSONL entry strings to write (can be pretty-printed)
+    """
+    import json
+    from pathlib import Path
+
+    file_path = Path(path)
+    with open(file_path, "w", encoding="utf-8") as f:
+        for entry in entries:
+            # Parse JSON and write back as compact single-line
+            data = json.loads(entry)
+            f.write(json.dumps(data) + "\n")
+
+
+def create_session_entry(session_id: str, slug: str | None = None) -&gt; str:
+    """Create a minimal JSONL session entry for testing.
+
+    Args:
+        session_id: The session ID for the entry
+        slug: Optional slug field (indicates plan mode)
+
+    Returns:
+        JSON string for the entry
+    """
+    import json
+
+    entry = {
+        "type": "assistant",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "Test"}]},
+        "sessionId": session_id,
+        "timestamp": "2025-11-23T10:00:00.000Z",
+    }
+    if slug:
+        entry["slug"] = slug
+    return json.dumps(entry)
+
+
+# Assistant message with thinking block
+JSONL_ASSISTANT_WITH_THINKING = """{
+  "type": "assistant",
+  "message": {
+    "role": "assistant",
+    "content": [
+      {"type": "thinking", "thinking": "Let me analyze this carefully before responding."},
+      {"type": "text", "text": "Here is my response."}
+    ],
+    "model": "claude-opus-4-5-20251101"
+  },
+  "parentUuid": "parent_thinking",
+  "sessionId": "session_thinking",
+  "gitBranch": "test-branch",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Summary entry
+JSONL_SUMMARY_ENTRY = """{
+  "type": "summary",
+  "summary": "User requested feature implementation. Assistant created plan and began execution.",
+  "sessionId": "session_summary",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# System entry with turn_duration subtype
+JSONL_SYSTEM_ENTRY = """{
+  "type": "system",
+  "subtype": "turn_duration",
+  "durationMs": 1234,
+  "sessionId": "session_system",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Assistant message with usage metadata
+JSONL_ASSISTANT_WITH_USAGE = """{
+  "type": "assistant",
+  "message": {
+    "role": "assistant",
+    "content": [{"type": "text", "text": "Response with usage tracking."}],
+    "usage": {"input_tokens": 150, "output_tokens": 75},
+    "model": "claude-sonnet-4-5"
+  },
+  "parentUuid": "parent_usage",
+  "sessionId": "session_usage",
+  "gitBranch": "test-branch",
+  "timestamp": "2025-11-20T00:00:00.000Z"
+}"""
+
+# Expected XML for thinking block
+EXPECTED_XML_THINKING = (
+    """  &lt;thinking&gt;Let me analyze this carefully before responding.&lt;/thinking&gt;"""
+)
+
+# Expected XML for summary entry
+EXPECTED_XML_SUMMARY = (
+    """  &lt;summary&gt;User requested feature implementation. """
+    """Assistant created plan and began execution.&lt;/summary&gt;"""
+)
+
+# Expected XML for system entry
+EXPECTED_XML_SYSTEM = """  &lt;system subtype="turn_duration" duration_ms="1234" /&gt;"""
+
+# Expected XML for usage metadata
+EXPECTED_XML_USAGE = """  &lt;usage input_tokens="150" output_tokens="75" /&gt;"""
+```
+
+---
+
+## Summary
+
+**Key Findings:**
+
+1. **Exec scripts use STATIC registration**, not automatic discovery. All imports and registrations are in `/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py`
+
+2. **To add a new script:**
+   - Create the script file in `src/erk/cli/commands/exec/scripts/`
+   - Implement it as a Click command with `@click.command` and `@click.pass_context`
+   - Import it in `group.py`
+   - Register it with `exec_group.add_command(function_name, name="kebab-case-name")`
+
+3. **Script pattern** (from `impl_init.py`):
+   - Use `@click.pass_context` decorator
+   - Get dependencies via `require_cwd(ctx)` and `require_git(ctx)` helpers
+   - Output JSON for machine parsing
+   - Use `raise SystemExit(code)` for error handling
+
+4. **WorktreeInfo and BranchSyncInfo** are frozen dataclasses in the Git gateway ABC
+
+5. **Testing follows gateway injection patterns** where FakeGitHub and other fakes are created with constructor arguments, then used in tests</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1389" cache_read_input_tokens="51592" cache_creation="{'ephemeral_5m_input_tokens': 1389, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
