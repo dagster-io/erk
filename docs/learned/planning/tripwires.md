@@ -166,8 +166,6 @@ Rules triggered by matching actions in code.
 
 **marking a planned-PR plan as 'implementation complete' and referencing itself as the implementing PR** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Self-referential close prevention: when a planned PR IS the plan, it cannot close itself. The plan's implementation-complete event cannot reference the plan PR as the implementing PR. One-shot dispatch guards against this — do not remove the guard.
 
-**modifying commit message format in incremental dispatch** → Read [Incremental Dispatch System](incremental-dispatch.md) first. The commit message embeds the full plan content in the body. This is intentional — it provides commit-level plan context in git history.
-
 **modifying how learn materials are committed to a branch** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. The CI workflow checks out the learn branch and reads materials from .erk/impl-context/. File names and directory structure must match what learn.yml expects.
 
 **modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
