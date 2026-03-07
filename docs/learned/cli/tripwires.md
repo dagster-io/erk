@@ -58,6 +58,8 @@ Rules triggered by matching actions in code.
 
 **assuming erk implement always requires a plan number argument** → Read [Implement Command](implement-command.md) first. erk implement supports auto-detection from .erk/impl-context/ and from branch PRs. Read this doc first.
 
+**building CLI tables with Rich** → Read [Rich Table CLI Output Pattern](rich-table-output.md) first. Use Console(stderr=True, force_terminal=True) to avoid breaking piped output. Use escape() on user-provided text. See rich-table-output.md for the full pattern.
+
 **calling an external tool that overwrites state without capturing it first** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it.
 
 **calling gh or git directly from a slash command** → Read [Slash Command to Exec Migration](slash-command-exec-migration.md) first. Use an erk exec script instead. Direct CLI calls bypass gateways, making the logic untestable and unreusable.
@@ -123,6 +125,8 @@ Rules triggered by matching actions in code.
 **passing --pr flag to erk pr rewrite** → Read [PR Rewrite Command](pr-rewrite.md) first. Do NOT pass --pr to erk pr rewrite; the command auto-discovers the PR from the current branch. The --pr flag does not exist.
 
 **plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
+
+**promoting a nested command to top-level** → Read [CLI Command Promotion Pattern](command-promotion.md) first. Three files must be updated: cli.py (import + add_command), help_formatter.py (top_level_commands list), and the command module (help text). See command-promotion.md.
 
 **putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
 

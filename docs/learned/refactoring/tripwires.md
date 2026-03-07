@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **renaming a Python package without checking all entry points** → Read [Python Package Rename Checklist](python-package-rename-checklist.md) first. Package renames require updating pyproject.toml scripts, Makefile targets, CI config, and documentation. Use the checklist in python-package-rename-checklist.md.
 
+**renaming a command or concept across the codebase** → Read [Coordinated Cross-Codebase Rename Pattern](coordinated-rename.md) first. Follow the 12-point checklist in coordinated-rename.md. Renames typically touch 13-15 files across CLI/TUI/tests/docs/skills. Missing any site causes runtime errors or stale references.
+
 **renaming display strings without checking test assertions** → Read [Systematic Terminology Renames](systematic-terminology-renames.md) first. After display-string renames, search test assertions: `grep -r '"old_term"' tests/`. Not caught by linters or type checkers.
 
 **running targeted edits after replace_all operations in the same file** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. During type migrations, complete all rename operations before attempting targeted edits. replace_all operations change strings that later edits expect to find.

@@ -156,6 +156,8 @@ Rules triggered by matching actions in code.
 
 **choosing between post_event and update_metadata** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline.
 
+**committing files to a branch that may be checked out in a worktree** → Read [Checked-Out Branch Handling Pattern](checked-out-branch-handling.md) first. git branch -f fails on checked-out branches. Use is_branch_checked_out() to detect, then update_local_ref() instead of create_branch(). Sync working tree with 'git checkout HEAD --'. See checked-out-branch-handling.md.
+
 **comparing git SHA to Graphite's tracked SHA for divergence detection** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches.
 
 **comparing worktree path to repo_root to detect root worktree** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently.

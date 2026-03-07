@@ -19,7 +19,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                       |
 | [ci](ci/tripwires.md)                       | 55        | `.github/workflows/`, `.github/actions/` |
 | [claude-code](claude-code/tripwires.md)     | 3         | Claude Code configuration, settings      |
-| [cli](cli/tripwires.md)                     | 89        | `src/erk/cli/`                           |
+| [cli](cli/tripwires.md)                     | 90        | `src/erk/cli/`                           |
 | [commands](commands/tripwires.md)           | 7         | `.claude/commands/`, slash commands      |
 | [config](config/tripwires.md)               | 3         | `config/` code                           |
 | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                    |
@@ -32,7 +32,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [objectives](objectives/tripwires.md)       | 45        | `objectives/` code                       |
 | [planning](planning/tripwires.md)           | 127       | `.erk/impl-context/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 18        | `pr-operations/` code                    |
-| [refactoring](refactoring/tripwires.md)     | 14        | `refactoring/` code                      |
+| [refactoring](refactoring/tripwires.md)     | 15        | `refactoring/` code                      |
 | [reference](reference/tripwires.md)         | 15        | `reference/` code                        |
 | [review](review/tripwires.md)               | 3         | `review/` code                           |
 | [reviews](reviews/tripwires.md)             | 4         | `reviews/` code                          |
