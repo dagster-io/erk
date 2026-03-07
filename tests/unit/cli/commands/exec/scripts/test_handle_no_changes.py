@@ -1,7 +1,7 @@
 """Unit tests for handle_no_changes exec CLI command.
 
 Tests the no-changes scenario handling for plan-implement workflow.
-Uses FakeGitHub for dependency injection.
+Uses FakeLocalGitHub for dependency injection.
 """
 
 import json
@@ -20,7 +20,7 @@ from erk.cli.commands.exec.scripts.handle_no_changes import (
     handle_no_changes as handle_no_changes_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails
@@ -62,15 +62,15 @@ def _make_plan_header_body() -> str:
 
 def _create_github_with_plan_pr(
     plan_id: int,
-) -> tuple[FakeGitHub, FakeGitHubIssues, PlannedPRBackend]:
-    """Create FakeGitHub with a draft PR configured as a plan for PlannedPRBackend.
+) -> tuple[FakeLocalGitHub, FakeGitHubIssues, PlannedPRBackend]:
+    """Create FakeLocalGitHub with a draft PR configured as a plan for PlannedPRBackend.
 
     Returns:
-        Tuple of (FakeGitHub, FakeGitHubIssues, PlannedPRBackend).
+        Tuple of (FakeLocalGitHub, FakeGitHubIssues, PlannedPRBackend).
     """
     body = _make_plan_header_body()
     issues_gateway = FakeGitHubIssues()
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         issues_gateway=issues_gateway,
         pr_details={
             plan_id: PRDetails(

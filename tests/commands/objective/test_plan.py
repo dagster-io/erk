@@ -15,7 +15,7 @@ from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
 from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -171,7 +171,7 @@ def test_plan_with_node_flag() -> None:
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "main"},
         )
-        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
         ctx = build_workspace_test_context(
             env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
         )
@@ -324,7 +324,7 @@ def test_plan_next_with_issue_ref() -> None:
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "main"},
         )
-        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
         ctx = build_workspace_test_context(
             env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
         )
@@ -456,7 +456,7 @@ def test_plan_next_fails_on_branch_without_objective() -> None:
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "plnd/setup-infra-01-15-1200"},
         )
-        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
         ctx = build_workspace_test_context(
             env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
         )
@@ -487,7 +487,7 @@ def test_plan_next_no_pending_nodes() -> None:
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "main"},
         )
-        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
         ctx = build_workspace_test_context(
             env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
         )
@@ -516,7 +516,7 @@ def test_plan_next_branch_not_linked() -> None:
             trunk_branches={env.cwd: "main"},
             current_branches={env.cwd: "random-branch"},
         )
-        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
         ctx = build_workspace_test_context(
             env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
         )

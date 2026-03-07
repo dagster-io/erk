@@ -500,7 +500,7 @@ A frozen dataclass containing all injected dependencies.
 **Key Integration Fields**:
 
 - `git: Git` - Git operations (branch ops via `git.branch` subgateway)
-- `github: GitHub` - GitHub PR operations (issues via `github.issues` property)
+- `github: LocalGitHub` - GitHub PR operations (issues via `github.issues` property)
 - `github_admin: GitHubAdmin` - GitHub Actions admin operations
 - `graphite: Graphite` - Graphite CLI operations
 - `graphite_branch_ops: GraphiteBranchOps | None` - None when Graphite disabled
@@ -643,7 +643,7 @@ all_children = list(set(graphite_children) | set(github_children))
 
 ### Gateway
 
-An ABC (Abstract Base Class) defining an interface for an external system (Git, GitHub, Graphite, etc.). Each gateway has a 5-file implementation pattern: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`.
+An ABC (Abstract Base Class) defining an interface for an external system (Git, LocalGitHub, Graphite, etc.). Each gateway has a 5-file implementation pattern: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`.
 
 **Related**: [Gateway ABC Implementation](architecture/gateway-abc-implementation.md), [Gateway Inventory](architecture/gateway-inventory.md)
 
@@ -827,7 +827,7 @@ Test that uses fake implementations and isolated filesystem.
 
 **Characteristics**:
 
-- Uses `FakeGit`, `FakeGitHub`, etc.
+- Uses `FakeGit`, `FakeLocalGitHub`, etc.
 - Fast (no subprocess calls)
 - Majority of test suite
 

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
@@ -28,7 +28,7 @@ from erk_shared.printing.base import PrintingBase
 _MAX_WORKFLOW_POLL_ATTEMPTS = 15
 
 
-class PrintingGitHub(PrintingBase, GitHub):
+class PrintingLocalGitHub(PrintingBase, LocalGitHub):
     """Wrapper that prints operations before delegating to inner implementation.
 
     This wrapper prints styled output for operations, then delegates to the
@@ -36,11 +36,11 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     Usage:
         # For production
-        printing_ops = PrintingGitHub(real_ops, script_mode=False, dry_run=False)
+        printing_ops = PrintingLocalGitHub(real_ops, script_mode=False, dry_run=False)
 
         # For dry-run
-        noop_inner = DryRunGitHub(real_ops)
-        printing_ops = PrintingGitHub(noop_inner, script_mode=False, dry_run=True)
+        noop_inner = DryRunLocalGitHub(real_ops)
+        printing_ops = PrintingLocalGitHub(noop_inner, script_mode=False, dry_run=True)
     """
 
     # Inherits __init__, _emit, and _format_command from PrintingBase

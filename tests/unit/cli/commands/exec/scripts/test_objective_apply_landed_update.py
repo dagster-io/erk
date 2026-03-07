@@ -12,7 +12,7 @@ from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
 )
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
@@ -154,7 +154,7 @@ class TestApplyLandedUpdateHappyPath:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
         )
@@ -228,7 +228,7 @@ class TestApplyLandedUpdateHappyPath:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
         )
@@ -281,7 +281,7 @@ class TestApplyLandedUpdateNoNodes:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
         )
@@ -385,7 +385,7 @@ class TestApplyLandedUpdateAutoMatch:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
         )
@@ -431,7 +431,7 @@ class TestApplyLandedUpdateErrors:
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         fake_issues = FakeGitHubIssues(issues={6513: plan})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
         )
@@ -468,7 +468,7 @@ class TestApplyLandedUpdateErrors:
         plan = _make_issue(number=6513, title="My Plan", body="plan body")
 
         fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6513: issue_info_to_pr_details(plan)},
         )
@@ -502,7 +502,7 @@ class TestApplyLandedUpdateErrors:
     def test_bad_branch_no_plan(self, tmp_path: Path) -> None:
         """Returns error when branch doesn't match any plan pattern."""
         fake_issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(
@@ -539,7 +539,7 @@ class TestApplyLandedUpdateDiscovery:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
         )
@@ -590,7 +590,7 @@ class TestApplyLandedUpdateDiscovery:
             issues={6423: objective, 6513: plan},
             comments_with_urls={6423: [comment]},
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
         )
@@ -626,7 +626,7 @@ class TestApplyLandedUpdateDiscovery:
     def test_plan_direct_lookup_not_found(self, tmp_path: Path) -> None:
         """--plan returns error when the specified plan doesn't exist."""
         fake_issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=fake_issues)
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(

@@ -13,7 +13,7 @@ from erk.cli.commands.land_pipeline import (
 from erk.cli.ensure import UserFacingCliError
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 
@@ -77,7 +77,7 @@ def test_passes_for_open_pr_targeting_trunk(tmp_path: Path) -> None:
     )
 
     fake_git = FakeGit(default_branches={tmp_path: "main"})
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     ctx = context_for_test(
         git=fake_git,

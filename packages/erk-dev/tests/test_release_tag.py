@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from erk_dev.cli import cli
 from erk_dev.context import ErkDevContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 
 
 class TestReleaseTagCommand:
@@ -29,7 +29,7 @@ class TestReleaseTagCommand:
             result = runner.invoke(
                 cli,
                 ["release-tag"],
-                obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+                obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
             )
             assert result.exit_code == 0
             assert "Created tag: v1.2.3" in result.output
@@ -52,7 +52,7 @@ class TestReleaseTagCommand:
             result = runner.invoke(
                 cli,
                 ["release-tag"],
-                obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+                obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
             )
             assert result.exit_code == 0
             assert "Tag v1.2.3 already exists" in result.output
@@ -75,7 +75,7 @@ class TestReleaseTagCommand:
             result = runner.invoke(
                 cli,
                 ["release-tag", "--dry-run"],
-                obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+                obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
             )
             assert result.exit_code == 0
             assert "[DRY RUN] Would run: git tag -a v1.2.3" in result.output
@@ -94,7 +94,7 @@ class TestReleaseTagCommand:
             result = runner.invoke(
                 cli,
                 ["release-tag", "--dry-run", "--push"],
-                obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+                obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
             )
             assert result.exit_code == 0
             assert "[DRY RUN] Would run: git tag -a v1.2.3" in result.output
@@ -114,7 +114,7 @@ class TestReleaseTagCommand:
             result = runner.invoke(
                 cli,
                 ["release-tag", "--push"],
-                obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+                obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
             )
             assert result.exit_code == 0
             assert "Created tag: v1.2.3" in result.output
@@ -134,7 +134,7 @@ class TestReleaseTagCommand:
             result = runner.invoke(
                 cli,
                 ["release-tag"],
-                obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+                obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
             )
             assert result.exit_code != 0
             assert "Could not find repository root" in result.output
@@ -154,7 +154,7 @@ class TestReleaseTagCommand:
             result = runner.invoke(
                 cli,
                 ["release-tag"],
-                obj=ErkDevContext(git=fake_git, github=FakeGitHub(), repo_root=tmp_path),
+                obj=ErkDevContext(git=fake_git, github=FakeLocalGitHub(), repo_root=tmp_path),
             )
             assert result.exit_code != 0
             assert "Could not determine current version" in result.output

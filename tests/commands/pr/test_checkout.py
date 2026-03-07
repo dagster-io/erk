@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.abc import RebaseResult, WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -66,7 +66,7 @@ def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={123: pr_details})
+        github = FakeLocalGitHub(pr_details={123: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -105,7 +105,7 @@ def test_pr_checkout_same_repo_branch_already_local() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={456: pr_details})
+        github = FakeLocalGitHub(pr_details={456: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -141,7 +141,7 @@ def test_pr_checkout_cross_repository_fork() -> None:
             is_cross_repository=True,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={789: pr_details})
+        github = FakeLocalGitHub(pr_details={789: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -176,7 +176,7 @@ def test_pr_checkout_already_checked_out() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={111: pr_details})
+        github = FakeLocalGitHub(pr_details={111: pr_details})
         existing_wt_path = env.repo.worktrees_dir / "existing-wt-branch"
         existing_wt_path.mkdir(parents=True, exist_ok=True)
         git = FakeGit(
@@ -208,7 +208,7 @@ def test_pr_checkout_pr_not_found() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
-        github = FakeGitHub(pr_details={})  # Empty - PR 999 not found
+        github = FakeLocalGitHub(pr_details={})  # Empty - PR 999 not found
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -232,7 +232,7 @@ def test_pr_checkout_warns_on_closed_pr() -> None:
             is_cross_repository=False,
             state="CLOSED",
         )
-        github = FakeGitHub(pr_details={222: pr_details})
+        github = FakeLocalGitHub(pr_details={222: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -258,7 +258,7 @@ def test_pr_checkout_warns_on_merged_pr() -> None:
             is_cross_repository=False,
             state="MERGED",
         )
-        github = FakeGitHub(pr_details={333: pr_details})
+        github = FakeLocalGitHub(pr_details={333: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -284,7 +284,7 @@ def test_pr_checkout_with_github_url() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={444: pr_details})
+        github = FakeLocalGitHub(pr_details={444: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -333,7 +333,7 @@ def test_pr_checkout_script_mode_outputs_script_path() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={555: pr_details})
+        github = FakeLocalGitHub(pr_details={555: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -371,7 +371,7 @@ def test_pr_checkout_non_script_mode_prints_activation_instructions() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={666: pr_details})
+        github = FakeLocalGitHub(pr_details={666: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -404,7 +404,7 @@ def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
             state="OPEN",
             base_ref_name="feature-a",  # Not trunk - this is a stacked PR
         )
-        github = FakeGitHub(pr_details={777: pr_details})
+        github = FakeLocalGitHub(pr_details={777: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -444,7 +444,7 @@ def test_pr_checkout_stacked_pr_base_already_local() -> None:
             state="OPEN",
             base_ref_name="feature-a",  # Stacked PR
         )
-        github = FakeGitHub(pr_details={778: pr_details})
+        github = FakeLocalGitHub(pr_details={778: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -483,7 +483,7 @@ def test_pr_checkout_stacked_pr_with_conflicts_warns_user() -> None:
             state="OPEN",
             base_ref_name="feature-base",  # Stacked PR
         )
-        github = FakeGitHub(pr_details={888: pr_details})
+        github = FakeLocalGitHub(pr_details={888: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -525,7 +525,7 @@ def test_pr_checkout_trunk_pr_skips_rebase() -> None:
             state="OPEN",
             base_ref_name="main",  # Targets trunk - not a stacked PR
         )
-        github = FakeGitHub(pr_details={999: pr_details})
+        github = FakeLocalGitHub(pr_details={999: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -559,7 +559,7 @@ def test_pr_checkout_creates_slot_assignment() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={1001: pr_details})
+        github = FakeLocalGitHub(pr_details={1001: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -596,7 +596,7 @@ def test_pr_checkout_no_slot_skips_assignment() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={1002: pr_details})
+        github = FakeLocalGitHub(pr_details={1002: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -641,7 +641,7 @@ def test_pr_checkout_reuses_inactive_slot() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={1003: pr_details})
+        github = FakeLocalGitHub(pr_details={1003: pr_details})
 
         # Configure FakeGit with the existing slot worktree but no assignment
         git = FakeGit(
@@ -702,7 +702,7 @@ def test_pr_checkout_force_unassigns_oldest() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={1004: pr_details})
+        github = FakeLocalGitHub(pr_details={1004: pr_details})
 
         # Configure FakeGit with existing slot worktree
         git = FakeGit(
@@ -777,7 +777,7 @@ def test_pr_checkout_pool_full_no_force_fails() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={1005: pr_details})
+        github = FakeLocalGitHub(pr_details={1005: pr_details})
 
         # Configure FakeGit
         git = FakeGit(
@@ -838,7 +838,7 @@ def test_pr_checkout_prints_activation_instructions() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={2001: pr_details})
+        github = FakeLocalGitHub(pr_details={2001: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -875,7 +875,7 @@ def test_pr_checkout_existing_worktree_prints_activation_instructions() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={2002: pr_details})
+        github = FakeLocalGitHub(pr_details={2002: pr_details})
         existing_wt_path = env.repo.worktrees_dir / "existing-wt-branch"
         existing_wt_path.mkdir(parents=True, exist_ok=True)
         git = FakeGit(
@@ -921,7 +921,7 @@ def test_pr_checkout_script_mode_no_activation_instructions() -> None:
             is_cross_repository=False,
             state="OPEN",
         )
-        github = FakeGitHub(pr_details={2003: pr_details})
+        github = FakeLocalGitHub(pr_details={2003: pr_details})
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},

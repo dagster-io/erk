@@ -248,21 +248,21 @@ All gateway ABCs have:
 
 ### Phase 3: GitHub Gateway Steelthread (1 PR)
 
-| Node | Description                               | Status  | PR  |
-| ---- | ----------------------------------------- | ------- | --- |
-| 3.1  | Create FakeGitHub with just `create_pr()` | pending |     |
-| 3.2  | Wire into PR submission test              | pending |     |
+| Node | Description                                    | Status  | PR  |
+| ---- | ---------------------------------------------- | ------- | --- |
+| 3.1  | Create FakeLocalGitHub with just `create_pr()` | pending |     |
+| 3.2  | Wire into PR submission test                   | pending |     |
 
-**Test:** PR creation test uses FakeGitHub.
+**Test:** PR creation test uses FakeLocalGitHub.
 
-### Phase 4: Complete GitHub Gateway (1 PR)
+### Phase 4: Complete LocalGitHub Gateway (1 PR)
 
-| Node | Description                      | Status  | PR  |
-| ---- | -------------------------------- | ------- | --- |
-| 4.1  | Add remaining FakeGitHub methods | pending |     |
-| 4.2  | Add DryRunGitHub wrapper         | pending |     |
+| Node | Description                           | Status  | PR  |
+| ---- | ------------------------------------- | ------- | --- |
+| 4.1  | Add remaining FakeLocalGitHub methods | pending |     |
+| 4.2  | Add DryRunLocalGitHub wrapper         | pending |     |
 
-**Test:** All GitHub gateway tests use FakeGitHub.
+**Test:** All LocalGitHub gateway tests use FakeLocalGitHub.
 
 ## Implementation Context
 
@@ -278,12 +278,12 @@ See `erk/gateways/git/` for the full pattern.
 
 ### Technical Requirements
 
-- FakeGitHub must implement all methods from GitHub ABC
+- FakeLocalGitHub must implement all methods from LocalGitHub ABC
 - State tracking for PRs, issues, and reviews
 
 ### Test Strategy
 
-- Tests should use FakeGitHub instead of subprocess mocking
+- Tests should use FakeLocalGitHub instead of subprocess mocking
 - One integration test per major workflow
 ```
 
@@ -414,7 +414,7 @@ When a node turns out to need subdivision:
 
 ### What Was Done
 
-- Started work on FakeGitHub
+- Started work on FakeLocalGitHub
 - Realized authentication is complex enough to warrant separate node
 
 ### Lessons Learned
@@ -425,8 +425,8 @@ When a node turns out to need subdivision:
 ### Roadmap Updates
 
 - Node 2.1 split into:
-  - 2.1a: FakeGitHub core (pending)
-  - 2.1b: FakeGitHub authentication (pending)
+  - 2.1a: FakeLocalGitHub core (pending)
+  - 2.1b: FakeLocalGitHub authentication (pending)
 ```
 
 Then update the issue body to reflect the new structure.

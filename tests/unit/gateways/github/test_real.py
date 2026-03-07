@@ -1,4 +1,4 @@
-"""Unit tests for RealGitHub parsing and caching methods."""
+"""Unit tests for RealLocalGitHub parsing and caching methods."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 
 
@@ -45,7 +45,7 @@ def _make_pr_data(
 
 def test_parses_timestamps_from_iso_string() -> None:
     """Valid ISO timestamp strings are parsed into timezone-aware datetimes."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_info = RepoInfo(owner="owner", name="repo")
 
     data = _make_pr_data(
@@ -60,7 +60,7 @@ def test_parses_timestamps_from_iso_string() -> None:
 
 def test_uses_epoch_sentinel_when_timestamps_missing() -> None:
     """Missing timestamp strings fall back to the epoch sentinel datetime."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_info = RepoInfo(owner="owner", name="repo")
 
     data = _make_pr_data(created_at="", updated_at="")
@@ -73,7 +73,7 @@ def test_uses_epoch_sentinel_when_timestamps_missing() -> None:
 
 def test_extracts_author_from_user_login() -> None:
     """Author is extracted from the user.login field."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_info = RepoInfo(owner="owner", name="repo")
 
     data = _make_pr_data(user_login="octocat")
@@ -84,7 +84,7 @@ def test_extracts_author_from_user_login() -> None:
 
 def test_author_empty_when_user_is_none() -> None:
     """Author is empty string when the user object is None (e.g., deleted account)."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_info = RepoInfo(owner="owner", name="repo")
 
     data = _make_pr_data(user_login=None)
@@ -146,7 +146,7 @@ def _wrap_graphql_response(nodes: list[dict]) -> dict:
 
 def test_parse_plan_prs_returns_both_draft_and_non_draft() -> None:
     """Both draft and non-draft PRs are returned (no draft filtering)."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="owner", repo="repo")
 
     response = _wrap_graphql_response(
@@ -165,7 +165,7 @@ def test_parse_plan_prs_returns_both_draft_and_non_draft() -> None:
 
 def test_parse_plan_prs_preserves_is_draft_state() -> None:
     """is_draft field is correctly set on both PRDetails and PullRequestInfo."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="owner", repo="repo")
 
     response = _wrap_graphql_response(
@@ -189,7 +189,7 @@ def test_parse_plan_prs_preserves_is_draft_state() -> None:
 
 def test_parse_plan_prs_filters_by_author() -> None:
     """Author filter excludes PRs from other authors."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="owner", repo="repo")
 
     response = _wrap_graphql_response(
@@ -207,7 +207,7 @@ def test_parse_plan_prs_filters_by_author() -> None:
 
 def test_parse_plan_prs_empty_response() -> None:
     """Empty repository data returns empty results."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="owner", repo="repo")
 
     response = {"data": {"repository": None}}
@@ -229,7 +229,7 @@ def test_parse_plan_prs_empty_response() -> None:
 def test_get_default_branch_returns_branch(mock_execute) -> None:  # noqa: ANN001
     """First call fetches the default branch via REST API and returns it."""
     mock_execute.return_value = "main\n"
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_root = Path("/test/repo")
 
     result = github._get_default_branch(repo_root)
@@ -242,7 +242,7 @@ def test_get_default_branch_returns_branch(mock_execute) -> None:  # noqa: ANN00
 def test_get_default_branch_caches_result(mock_execute) -> None:  # noqa: ANN001
     """Second call for the same repo_root returns cached result without API call."""
     mock_execute.return_value = "main\n"
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_root = Path("/test/repo")
 
     first = github._get_default_branch(repo_root)
@@ -258,7 +258,7 @@ def test_get_default_branch_caches_result(mock_execute) -> None:  # noqa: ANN001
 def test_get_default_branch_separate_cache_per_repo(mock_execute) -> None:  # noqa: ANN001
     """Different repo_root paths get independent cache entries."""
     mock_execute.side_effect = ["main\n", "master\n"]
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_a = Path("/test/repo-a")
     repo_b = Path("/test/repo-b")
 
@@ -279,7 +279,7 @@ def test_get_default_branch_separate_cache_per_repo(mock_execute) -> None:  # no
 def test_get_default_branch_strips_whitespace(mock_execute) -> None:  # noqa: ANN001
     """Trailing whitespace/newlines from API stdout are stripped."""
     mock_execute.return_value = "  main  \n"
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
 
     result = github._get_default_branch(Path("/test/repo"))
 
@@ -290,7 +290,7 @@ def test_get_default_branch_strips_whitespace(mock_execute) -> None:  # noqa: AN
 def test_get_default_branch_uses_rest_api_endpoint(mock_execute) -> None:  # noqa: ANN001
     """The command uses repos/{owner}/{repo} REST endpoint with --jq filter."""
     mock_execute.return_value = "main\n"
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_root = Path("/test/repo")
 
     github._get_default_branch(repo_root)
@@ -304,7 +304,7 @@ def test_get_default_branch_uses_rest_api_endpoint(mock_execute) -> None:  # noq
 def test_get_default_branch_propagates_runtime_error(mock_execute) -> None:  # noqa: ANN001
     """RuntimeError from the API call propagates without caching."""
     mock_execute.side_effect = RuntimeError("GitHub command failed: network error")
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_root = Path("/test/repo")
 
     with pytest.raises(RuntimeError, match="network error"):
@@ -319,7 +319,7 @@ def test_get_default_branch_propagates_runtime_error(mock_execute) -> None:  # n
 
 def test_build_issues_by_numbers_query_single_issue() -> None:
     """Query contains one aliased issueOrPullRequest for a single issue."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     query = github._build_issues_by_numbers_query([100], repo_id)
@@ -330,7 +330,7 @@ def test_build_issues_by_numbers_query_single_issue() -> None:
 
 def test_build_issues_by_numbers_query_multiple_issues() -> None:
     """Query contains one alias per issue number."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     query = github._build_issues_by_numbers_query([100, 200, 300], repo_id)
@@ -367,7 +367,7 @@ def _make_issue_node(
 
 def test_parse_issues_by_numbers_response_single_issue() -> None:
     """Single issue node is parsed into one IssueInfo."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     response = {
@@ -388,7 +388,7 @@ def test_parse_issues_by_numbers_response_single_issue() -> None:
 
 def test_parse_issues_by_numbers_response_multiple_issues() -> None:
     """Multiple issue nodes are all parsed."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     response = {
@@ -408,7 +408,7 @@ def test_parse_issues_by_numbers_response_multiple_issues() -> None:
 
 def test_parse_issues_by_numbers_response_skips_null_nodes() -> None:
     """Null nodes (deleted/inaccessible issues) are skipped."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     response = {
@@ -428,7 +428,7 @@ def test_parse_issues_by_numbers_response_skips_null_nodes() -> None:
 
 def test_parse_issues_by_numbers_response_empty_repository() -> None:
     """Empty repository data returns empty results."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
     response = {"data": {"repository": {}}}

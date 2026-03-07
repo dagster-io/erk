@@ -13,7 +13,7 @@ from erk.cli.commands.exec.scripts.setup_impl import setup_impl
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import get_impl_dir
@@ -29,7 +29,7 @@ def test_file_setup_creates_impl(tmp_path: Path) -> None:
     plan_file.write_text("# My Feature Plan\n\nSome content here.\n", encoding="utf-8")
 
     git = FakeGit(current_branches={tmp_path: "master"})
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     ctx = ErkContext.for_test(
         cwd=tmp_path,
         git=git,
@@ -51,7 +51,7 @@ def test_file_setup_creates_impl(tmp_path: Path) -> None:
 def test_no_plan_found_exits_1(tmp_path: Path) -> None:
     """Exits 1 when no plan source can be determined."""
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
 
     runner = CliRunner()
@@ -73,7 +73,7 @@ def test_existing_impl_no_tracking(tmp_path: Path) -> None:
     (impl_dir / "plan.md").write_text("# Existing Plan\n\nContent.\n", encoding="utf-8")
 
     git = FakeGit(current_branches={tmp_path: BRANCH})
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
 
     runner = CliRunner()
@@ -86,7 +86,7 @@ def test_branch_detection_p_prefix(tmp_path: Path) -> None:
     """P-prefix branches no longer auto-detect plan numbers."""
     # P-prefix branches no longer resolve to issue numbers
     git = FakeGit(current_branches={tmp_path: "P9999-feature"})
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
 
     runner = CliRunner()
@@ -104,7 +104,7 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
     setup_impl_from_issue which doesn't accept that parameter.
     """
     plan_branch = "plan-fix-branch-slug-02-24"
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
     plan_result = backend.create_plan(
         repo_root=tmp_path,

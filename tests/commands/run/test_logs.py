@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from erk.cli.commands.run.logs_cmd import logs_run
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import WorkflowRun
 from tests.fakes.context import create_test_context
 
@@ -26,7 +26,7 @@ def test_logs_explicit_run_id(tmp_path: Path) -> None:
         current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
     )
-    github_ops = FakeGitHub(run_logs={"12345": "Step 1: Setup\nStep 2: Tests\n"})
+    github_ops = FakeLocalGitHub(run_logs={"12345": "Step 1: Setup\nStep 2: Tests\n"})
     ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
 
     runner = CliRunner()
@@ -67,7 +67,7 @@ def test_logs_auto_detect(tmp_path: Path) -> None:
             head_sha="def",
         ),
     ]
-    github_ops = FakeGitHub(
+    github_ops = FakeLocalGitHub(
         workflow_runs=workflow_runs, run_logs={"222": "Logs for feature-x run\n"}
     )
     ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
@@ -94,7 +94,7 @@ def test_logs_run_not_found(tmp_path: Path) -> None:
         current_branches={repo_root: "main"},
         git_common_dirs={repo_root: repo_root / ".git"},
     )
-    github_ops = FakeGitHub(run_logs={})  # No logs configured
+    github_ops = FakeLocalGitHub(run_logs={})  # No logs configured
     ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
 
     runner = CliRunner()
@@ -128,7 +128,7 @@ def test_logs_no_runs_for_branch(tmp_path: Path) -> None:
             head_sha="abc",
         ),
     ]
-    github_ops = FakeGitHub(workflow_runs=workflow_runs)
+    github_ops = FakeLocalGitHub(workflow_runs=workflow_runs)
     ctx = create_test_context(git=git_ops, github=github_ops, cwd=repo_root)
 
     runner = CliRunner()

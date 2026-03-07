@@ -25,7 +25,7 @@ from erk_shared.gateway.claude_installation.fake import (
     FakeSessionData,
 )
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
@@ -137,7 +137,7 @@ def test_returns_true_when_both_unset(tmp_path: Path) -> None:
 def test_returns_early_when_plan_id_is_none(tmp_path: Path) -> None:
     """No-op when state.plan_id is None."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
     state = _land_state(tmp_path, plan_id=None, merged_pr_number=99)
 
@@ -149,7 +149,7 @@ def test_returns_early_when_plan_id_is_none(tmp_path: Path) -> None:
 def test_returns_early_when_merged_pr_number_is_none(tmp_path: Path) -> None:
     """No-op when state.merged_pr_number is None."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
     state = _land_state(tmp_path, plan_id="100", merged_pr_number=None)
 
@@ -190,7 +190,7 @@ def test_shows_warning_on_exception(
 def test_create_learn_pr_skips_when_skip_learn_is_set(tmp_path: Path) -> None:
     """Skips learn plan creation when skip_learn=True."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
     state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
     state = replace(state, skip_learn=True)
@@ -208,7 +208,7 @@ def test_create_learn_pr_skips_when_skip_learn_is_set(tmp_path: Path) -> None:
 def test_skips_when_config_disabled(tmp_path: Path) -> None:
     """Returns early when prompt_learn_on_land is False."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
@@ -231,7 +231,7 @@ def test_skips_for_erk_learn_plan(tmp_path: Path) -> None:
         labels=("erk-plan", "erk-learn"),
     )
     fake_issues = FakeGitHubIssues(username="testuser")
-    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
 
@@ -251,7 +251,7 @@ def test_skips_for_erk_learn_plan(tmp_path: Path) -> None:
 def test_skips_when_plan_not_found(tmp_path: Path) -> None:
     """Returns silently when get_plan returns PlanNotFound."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_time = FakeTime()
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
 
@@ -261,7 +261,7 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
         plan_store=plan_store,
         cwd=tmp_path,
     )
-    # plan_id "999" has no PR configured in FakeGitHub
+    # plan_id "999" has no PR configured in FakeLocalGitHub
     state = _land_state(tmp_path, plan_id="999", merged_pr_number=99)
 
     _create_learn_pr_impl(ctx, state=state)
@@ -281,7 +281,7 @@ def test_skips_when_no_xml_files_and_no_sessions(
         labels=("erk-plan",),
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
-    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
 
@@ -320,7 +320,7 @@ def test_skips_when_sessions_exist_but_no_xml_extracted(
         labels=("erk-plan",),
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
-    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
 
@@ -384,7 +384,7 @@ def test_creates_pr_and_shows_success(
         labels=("erk-plan",),
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
-    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
@@ -437,7 +437,7 @@ def test_skips_when_no_sessions_discovered(
         labels=("erk-plan",),
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
-    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
 

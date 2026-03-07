@@ -27,7 +27,7 @@ from erk_shared.gateway.agent_launcher.abc import AgentLauncher
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 from erk_shared.gateway.github_admin.abc import GitHubAdmin
@@ -43,7 +43,7 @@ def context_for_test(
     *,
     github_issues: GitHubIssues | None = None,
     git: Git | None = None,
-    github: GitHub | None = None,
+    github: LocalGitHub | None = None,
     github_admin: GitHubAdmin | None = None,
     graphite: Graphite | None = None,
     claude_installation: ClaudeInstallation | None = None,
@@ -73,7 +73,7 @@ def context_for_test(
     Args:
         github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
         git: Optional Git implementation. If None, creates FakeGit.
-        github: Optional GitHub implementation. If None, creates FakeGitHub.
+        github: Optional GitHub implementation. If None, creates FakeLocalGitHub.
         graphite: Optional Graphite implementation. If None, creates FakeGraphite.
         claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
         agent_launcher: Optional AgentLauncher. If None, creates FakeAgentLauncher.
@@ -105,7 +105,7 @@ def context_for_test(
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
@@ -120,9 +120,9 @@ def context_for_test(
     )
     resolved_git: Git = git if git is not None else FakeGit()
     # Compose github with issues
-    # If github is provided, use it as-is (caller wires issues via FakeGitHub constructor)
+    # If github is provided, use it as-is (caller wires issues via FakeLocalGitHub constructor)
     if github is None:
-        resolved_github: GitHub = FakeGitHub(issues_gateway=resolved_issues)
+        resolved_github: LocalGitHub = FakeLocalGitHub(issues_gateway=resolved_issues)
     else:
         resolved_github = github
     resolved_graphite: Graphite = graphite if graphite is not None else FakeGraphite()

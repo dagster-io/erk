@@ -12,7 +12,7 @@ from erk.cli.commands.land_pipeline import (
 )
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
@@ -56,7 +56,7 @@ def _execution_state(
 def test_returns_state_unchanged_when_plan_id_none(tmp_path: Path) -> None:
     """No-op when plan_id is None — returns state unchanged."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
     state = _execution_state(tmp_path, plan_id=None, merged_pr_number=99)
 
@@ -70,7 +70,7 @@ def test_returns_state_unchanged_when_plan_id_none(tmp_path: Path) -> None:
 def test_returns_state_unchanged_when_merged_pr_none(tmp_path: Path) -> None:
     """No-op when merged_pr_number is None — returns state unchanged."""
     fake_issues = FakeGitHubIssues(username="testuser")
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
     state = _execution_state(tmp_path, plan_id="100", merged_pr_number=None)
 
@@ -110,7 +110,7 @@ def test_returns_state_after_creating_pr(
         updated_at=now,
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
-    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
     plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)

@@ -6,7 +6,7 @@ from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 
@@ -26,7 +26,7 @@ def test_create_branch_from_origin_when_local_matches_remote() -> None:
     )
     fake_graphite = FakeGraphite()
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     manager = GraphiteBranchManager(
         git=fake_git,
@@ -70,7 +70,7 @@ def test_create_branch_from_origin_when_local_diverged() -> None:
     )
     fake_graphite = FakeGraphite()
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     manager = GraphiteBranchManager(
         git=fake_git,
@@ -116,7 +116,7 @@ def test_create_branch_from_origin_when_local_missing() -> None:
     )
     fake_graphite = FakeGraphite()
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     manager = GraphiteBranchManager(
         git=fake_git,
@@ -159,7 +159,7 @@ def test_create_branch_from_local_branch_no_remote_sync() -> None:
     )
     fake_graphite = FakeGraphite()
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     manager = GraphiteBranchManager(
         git=fake_git,
@@ -210,7 +210,7 @@ def test_create_branch_auto_fixes_diverged_parent() -> None:
     }
     fake_graphite = FakeGraphite(branches=branches)
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     manager = GraphiteBranchManager(
         git=fake_git,
@@ -253,7 +253,7 @@ def test_create_branch_from_origin_skips_force_update_when_on_checked_out_branch
     )
     fake_graphite = FakeGraphite()
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     manager = GraphiteBranchManager(
         git=fake_git,
@@ -310,7 +310,7 @@ def test_create_branch_skips_retrack_when_parent_not_diverged() -> None:
     }
     fake_graphite = FakeGraphite(branches=branches)
     fake_graphite_branch_ops = fake_graphite.create_linked_branch_ops()
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
 
     manager = GraphiteBranchManager(
         git=fake_git,

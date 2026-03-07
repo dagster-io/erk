@@ -13,7 +13,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, WorkflowRun
 
 
@@ -55,7 +55,7 @@ class TestCiFetchSummaries:
     def test_returns_summaries_as_json(self, tmp_path: Path) -> None:
         """Command outputs parsed CI summaries as JSON."""
         log_text = "=== ERK-CI-SUMMARY:lint ===\n- Formatting issues\n=== /ERK-CI-SUMMARY:lint ==="
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={123: _make_pr_details()},
             workflow_runs=[_make_workflow_run()],
             ci_summary_logs={"999": log_text},
@@ -76,7 +76,7 @@ class TestCiFetchSummaries:
 
     def test_pr_not_found_exits_with_error(self, tmp_path: Path) -> None:
         """Command exits with code 1 when PR is not found."""
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
         ctx = ErkContext.for_test(github=github, cwd=tmp_path)
 
         runner = CliRunner()
@@ -92,7 +92,7 @@ class TestCiFetchSummaries:
 
     def test_no_workflow_run_returns_empty(self, tmp_path: Path) -> None:
         """Command returns empty JSON when no CI workflow run exists."""
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={123: _make_pr_details()},
         )
         ctx = ErkContext.for_test(github=github, cwd=tmp_path)
@@ -110,7 +110,7 @@ class TestCiFetchSummaries:
 
     def test_no_ci_summarize_job_returns_empty(self, tmp_path: Path) -> None:
         """Command returns empty JSON when ci-summarize job doesn't exist."""
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={123: _make_pr_details()},
             workflow_runs=[_make_workflow_run()],
             # No ci_summary_logs configured -> get_ci_summary_logs returns None
@@ -139,7 +139,7 @@ class TestCiFetchSummaries:
             "- 2 tests failed\n"
             "=== /ERK-CI-SUMMARY:unit-tests ==="
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_details={123: _make_pr_details()},
             workflow_runs=[_make_workflow_run()],
             ci_summary_logs={"999": log_text},

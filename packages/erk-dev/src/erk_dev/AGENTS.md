@@ -65,7 +65,7 @@ Click's completion mechanism requires all commands to be available at import tim
 @dataclass(frozen=True)
 class ErkDevContext:
     git: Git
-    github: GitHub
+    github: LocalGitHub
     repo_root: Path
 ```
 

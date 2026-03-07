@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -67,7 +67,7 @@ def test_pr_submit_core_path_succeeds_without_graphite() -> None:
             diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+# Test change"},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
@@ -112,7 +112,7 @@ def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
             diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+# Test change"},
         )
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},

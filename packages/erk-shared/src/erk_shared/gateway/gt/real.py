@@ -17,9 +17,9 @@ from pathlib import Path
 from erk_shared.context.factories import get_repo_info
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.real import RealGit
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
-from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.time.abc import Time
@@ -32,12 +32,12 @@ class RealGtKit:
     Combines real git, GitHub, and Graphite operations for production use.
     Satisfies the GtKit Protocol through structural typing.
 
-    GitHub operations now use the main RealGitHub from erk_shared.gateway.github
+    GitHub operations now use the main RealLocalGitHub from erk_shared.gateway.github
     which provides repo_root-based methods.
     """
 
     git: Git
-    github: GitHub
+    github: LocalGitHub
     graphite: Graphite
     time: Time
 
@@ -57,5 +57,5 @@ class RealGtKit:
 
         # Create issues first, then compose into github
         issues = RealGitHubIssues(target_repo=None, time=self.time)
-        self.github = RealGitHub(time=self.time, repo_info=repo_info, issues=issues)
+        self.github = RealLocalGitHub(time=self.time, repo_info=repo_info, issues=issues)
         self.graphite = RealGraphite()

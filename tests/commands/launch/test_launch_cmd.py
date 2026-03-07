@@ -9,7 +9,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 from erk.cli.cli import cli
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
 
@@ -91,7 +91,7 @@ def test_workflow_launch_pr_rebase_triggers_workflow(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Add feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -135,7 +135,7 @@ def test_workflow_launch_pr_rebase_with_pr_option(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Other feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"other-branch": pr_info},
             pr_details={456: pr_details},
         )
@@ -172,7 +172,7 @@ def test_workflow_launch_pr_rebase_with_no_squash(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -208,7 +208,7 @@ def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Add feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -258,7 +258,7 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        github = FakeGitHub()
+        github = FakeLocalGitHub()
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -331,7 +331,7 @@ def test_workflow_launch_with_model_option(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -371,7 +371,7 @@ def test_workflow_launch_pr_rewrite_triggers_workflow(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Add feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -431,7 +431,7 @@ def test_workflow_launch_one_shot_triggers_workflow(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Add feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -481,7 +481,7 @@ def test_workflow_launch_one_shot_with_file(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Add feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -604,7 +604,7 @@ def test_workflow_launch_with_ref_option(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Add feature",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"feature-branch": pr_info},
             pr_details={123: pr_details},
         )
@@ -640,7 +640,7 @@ def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -> None:
             base_ref_name="main",
             title="Closed PR",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={"closed-branch": pr_info},
             pr_details={111: pr_details},
         )

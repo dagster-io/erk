@@ -5,7 +5,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
 from erk_shared.gateway.github.types import PRDetails
@@ -67,7 +67,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
             labels=("erk-plan",),
         )
 
-        fake_gh = FakeGitHub(
+        fake_gh = FakeLocalGitHub(
             authenticated=True,
             polled_run_id="12345",
             pr_details={42: pr_42},
@@ -198,7 +198,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
         )
         (impl_dir / "plan-ref.json").write_text(plan_ref_content, encoding="utf-8")
 
-        fake_gh = FakeGitHub(
+        fake_gh = FakeLocalGitHub(
             authenticated=True,
             polled_run_id="12345",
             pr_details={42: pr_42},
@@ -273,7 +273,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
         (impl_context_dir / "ref.json").write_text(plan_ref_content, encoding="utf-8")
         (impl_context_dir / "plan.md").write_text("# Test plan\n", encoding="utf-8")
 
-        fake_gh = FakeGitHub(
+        fake_gh = FakeLocalGitHub(
             authenticated=True,
             polled_run_id="12345",
             pr_details={42: pr_42},
@@ -329,7 +329,7 @@ def test_dispatch_no_args_no_context_fails() -> None:
     """Test that dispatch with no arguments and no context gives helpful error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        fake_gh = FakeGitHub(
+        fake_gh = FakeLocalGitHub(
             authenticated=True,
             # No PRs configured — branch lookup will return PRNotFound
         )
@@ -415,7 +415,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
             labels=("erk-plan",),
         )
 
-        fake_gh = FakeGitHub(
+        fake_gh = FakeLocalGitHub(
             authenticated=True,
             polled_run_id="12345",
             pr_details={42: pr_42},
@@ -483,7 +483,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
         plan_branch = "draft-pr-plan-branch"
         pr_42 = _make_pr_42(plan_branch=plan_branch)
 
-        fake_gh = FakeGitHub(
+        fake_gh = FakeLocalGitHub(
             authenticated=True,
             polled_run_id="12345",
             pr_details={42: pr_42},

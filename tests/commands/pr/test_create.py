@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.console.fake import FakeConsole
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -21,7 +21,7 @@ def test_create_from_file(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act
@@ -54,7 +54,7 @@ def test_create_from_stdin() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         # Console must be non-interactive so stdin is read as piped data
         console = FakeConsole(
             is_interactive=False, is_stdout_tty=None, is_stderr_tty=None, confirm_responses=None
@@ -88,7 +88,7 @@ def test_create_extracts_h1_title(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act
@@ -110,7 +110,7 @@ def test_create_with_explicit_title(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act
@@ -134,7 +134,7 @@ def test_create_with_additional_labels(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act
@@ -206,7 +206,7 @@ def test_create_with_file_ignores_stdin(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act (provide both file and stdin - file should take precedence)
@@ -233,7 +233,7 @@ def test_create_adds_labels_to_pr(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act
@@ -258,7 +258,7 @@ def test_create_uses_current_schema(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act
@@ -326,7 +326,7 @@ def test_create_with_h2_title_fallback(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act
@@ -352,7 +352,7 @@ def test_create_does_not_include_worktree_name(tmp_path) -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        fake_github = FakeGitHub(issues_gateway=issues)
+        fake_github = FakeLocalGitHub(issues_gateway=issues)
         ctx = build_workspace_test_context(env, issues=issues, github=fake_github)
 
         # Act

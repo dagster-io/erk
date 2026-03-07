@@ -14,7 +14,7 @@ from erk.cli.commands.land_pipeline import (
 )
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 
@@ -54,7 +54,7 @@ def test_merge_pr_step_succeeds(tmp_path: Path) -> None:
         current_branches={tmp_path: "main"},
         default_branches={tmp_path: "main"},
     )
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={pr_number: pr_details},
         merge_should_succeed=True,
     )
@@ -96,7 +96,7 @@ def test_execution_pipeline_stops_on_merge_error(tmp_path: Path) -> None:
     pr_details = _make_pr_details(pr_number=pr_number, branch=branch)
 
     fake_git = FakeGit(default_branches={tmp_path: "main"})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={pr_number: pr_details},
         merge_should_succeed=False,
     )

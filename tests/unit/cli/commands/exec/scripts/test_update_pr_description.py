@@ -12,7 +12,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
@@ -87,7 +87,7 @@ def _make_standard_fakes(
     prompt_output: str = "Add awesome feature\n\nThis PR adds an awesome new feature.",
     prompt_error: str | None = None,
     available: bool = True,
-) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
+) -> tuple[FakeGit, FakeGraphite, FakeLocalGitHub, FakePromptExecutor]:
     """Create standard fakes for update-pr-description tests."""
     git = FakeGit(
         git_common_dirs={env.cwd: env.git_dir},
@@ -125,7 +125,7 @@ def _make_standard_fakes(
         branch=branch_name,
         body=pr_body,
     )
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         authenticated=True,
         prs_by_branch={branch_name: pr_details},
         issues_gateway=fake_github_issues,
@@ -218,7 +218,7 @@ def test_fails_when_no_pr() -> None:
         )
 
         # No PRs configured
-        github = FakeGitHub(authenticated=True)
+        github = FakeLocalGitHub(authenticated=True)
         executor = FakePromptExecutor(available=True)
 
         ctx = build_workspace_test_context(
@@ -333,7 +333,7 @@ def test_uses_graphite_parent() -> None:
         )
 
         pr_details = _make_pr_details(number=99, branch="branch-2")
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs_by_branch={"branch-2": pr_details},
         )

@@ -15,7 +15,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.time.fake import FakeTime
@@ -274,7 +274,7 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
     """Started event posts a comment and updates PR metadata via PlannedPRBackend."""
     issue = _make_issue(number=123)
     fake_issues = FakeGitHubIssues(issues={123: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -298,13 +298,13 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
     assert data["event"] == "started"
     assert data["plan_number"] == 123
 
-    # Verify comment was posted (via FakeGitHub.create_pr_comment)
+    # Verify comment was posted (via FakeLocalGitHub.create_pr_comment)
     assert len(fake_github.pr_comments) == 1
     comment_pr_number, comment_body = fake_github.pr_comments[0]
     assert comment_pr_number == 123
     assert "Starting implementation" in comment_body
 
-    # Verify PR body was updated (metadata block via FakeGitHub.update_pr_body)
+    # Verify PR body was updated (metadata block via FakeLocalGitHub.update_pr_body)
     assert len(fake_github.updated_pr_bodies) == 1
     updated_pr_number, updated_body = fake_github.updated_pr_bodies[0]
     assert updated_pr_number == 123
@@ -315,7 +315,7 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
     """Ended event updates PR metadata via PlannedPRBackend without posting a comment."""
     issue = _make_issue(number=456)
     fake_issues = FakeGitHubIssues(issues={456: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={456: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -354,7 +354,7 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
     """Started event sets lifecycle_stage to 'impl' in metadata."""
     issue = _make_issue(number=321)
     fake_issues = FakeGitHubIssues(issues={321: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={321: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -387,7 +387,7 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
     """Started event writes local run state file."""
     issue = _make_issue(number=789)
     fake_issues = FakeGitHubIssues(issues={789: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={789: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -424,7 +424,7 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
     """Submitted event sets lifecycle_stage to 'implemented' via PlannedPRBackend."""
     issue = _make_issue(number=100)
     fake_issues = FakeGitHubIssues(issues={100: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={100: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -482,7 +482,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
     """Submitted event succeeds without --session-id (not required)."""
     issue = _make_issue(number=200)
     fake_issues = FakeGitHubIssues(issues={200: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={200: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -510,7 +510,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
 def test_submitted_issue_not_found(tmp_path: Path) -> None:
     """Submitted event returns error when plan doesn't exist."""
     fake_issues = FakeGitHubIssues(issues={})
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     _setup_plan_ref(tmp_path, plan_id="999")
 
     runner = CliRunner()

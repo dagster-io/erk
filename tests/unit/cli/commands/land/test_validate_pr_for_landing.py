@@ -10,7 +10,7 @@ from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 
@@ -188,7 +188,7 @@ class TestValidatePrForLandingBaseRef:
         )
 
         fake_git = FakeGit(default_branches={repo_root: "main"})
-        fake_github = FakeGitHub()
+        fake_github = FakeLocalGitHub()
         # FakeConsole with confirm_responses for cleanup confirmation prompt
         fake_console = FakeConsole(
             is_interactive=True,
@@ -278,7 +278,7 @@ class TestValidatePrForLandingCleanWorkingTree:
             default_branches={repo_root: "main"},
             file_statuses={repo_root: ([], ["modified.py"], [])},
         )
-        fake_github = FakeGitHub()
+        fake_github = FakeLocalGitHub()
         # FakeConsole with confirm_responses for cleanup confirmation prompt
         fake_console = FakeConsole(
             is_interactive=True,
@@ -326,7 +326,7 @@ class TestValidatePrForLandingSuccess:
         )
 
         fake_git = FakeGit(default_branches={repo_root: "main"})
-        fake_github = FakeGitHub()
+        fake_github = FakeLocalGitHub()
         # FakeConsole with confirm_responses for cleanup confirmation prompt
         fake_console = FakeConsole(
             is_interactive=True,

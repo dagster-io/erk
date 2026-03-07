@@ -10,7 +10,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -399,7 +399,7 @@ def test_down_delete_current_success() -> None:
         )
 
         # PR for feature-2 is merged
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-2": PullRequestInfo(
                     number=123,
@@ -527,7 +527,7 @@ def test_down_delete_current_pr_open() -> None:
 
         # PR for feature-2 is OPEN (active work in progress)
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-2": PullRequestInfo(
                     number=123,
@@ -616,7 +616,7 @@ def test_down_delete_current_force_with_open_pr() -> None:
 
         # PR for feature-2 is OPEN
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-2": PullRequestInfo(
                     number=123,
@@ -724,7 +724,7 @@ def test_down_delete_current_pr_closed() -> None:
         )
 
         # PR for feature-2 is CLOSED (abandoned/rejected work)
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-2": PullRequestInfo(
                     number=123,
@@ -800,7 +800,7 @@ def test_down_delete_current_no_pr() -> None:
         )
 
         # No PR for feature-2
-        github_ops = FakeGitHub(prs={})
+        github_ops = FakeLocalGitHub(prs={})
 
         repo = RepoContext(
             root=env.cwd,
@@ -857,7 +857,7 @@ def test_down_delete_current_trunk_in_root() -> None:
         )
 
         # PR for feature-1 is merged
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -1231,7 +1231,7 @@ def test_down_delete_current_slot_aware_unassigns_slot() -> None:
         )
 
         # PR for feature-2 is merged
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-2": PullRequestInfo(
                     number=123,
@@ -1372,7 +1372,7 @@ def test_down_delete_current_from_root_worktree() -> None:
         )
 
         # PR for feature-1 is merged
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,

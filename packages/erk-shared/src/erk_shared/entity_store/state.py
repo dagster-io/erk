@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.entity_store.types import EntityKind
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
@@ -59,7 +59,7 @@ def fetch_entity_body(
     *,
     number: int,
     kind: EntityKind,
-    github: GitHub,
+    github: LocalGitHub,
     github_issues: GitHubIssues,
     repo_root: Path,
 ) -> str:
@@ -83,7 +83,7 @@ def push_entity_body(
     number: int,
     kind: EntityKind,
     body: str,
-    github: GitHub,
+    github: LocalGitHub,
     github_issues: GitHubIssues,
     repo_root: Path,
 ) -> None:
@@ -100,7 +100,7 @@ def entity_state_set(
     data: dict[str, Any],
     *,
     schema: MetadataBlockSchema,
-    github: GitHub,
+    github: LocalGitHub,
     github_issues: GitHubIssues,
     repo_root: Path,
 ) -> EntityState:
@@ -133,7 +133,7 @@ def entity_state_set_field(
     value: Any,
     *,
     schema: MetadataBlockSchema,
-    github: GitHub,
+    github: LocalGitHub,
     github_issues: GitHubIssues,
     repo_root: Path,
 ) -> EntityState:
@@ -155,7 +155,7 @@ def entity_state_update(
     fields: dict[str, Any],
     *,
     schema: MetadataBlockSchema,
-    github: GitHub,
+    github: LocalGitHub,
     github_issues: GitHubIssues,
     repo_root: Path,
 ) -> EntityState:

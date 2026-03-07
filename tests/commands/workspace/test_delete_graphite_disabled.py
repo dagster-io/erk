@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_success
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -30,7 +30,7 @@ def test_wt_delete_succeeds_without_graphite() -> None:
         # use_graphite=False is the default
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             shell=FakeShell(),
             use_graphite=False,
             existing_paths={wt},
@@ -56,7 +56,7 @@ def test_wt_delete_with_branch_flag_uses_git() -> None:
 
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             shell=FakeShell(),
             use_graphite=False,
             existing_paths={wt},
@@ -87,7 +87,7 @@ def test_wt_delete_all_flag_works_without_graphite() -> None:
 
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             shell=FakeShell(),
             use_graphite=False,
             existing_paths={wt},
@@ -114,7 +114,7 @@ def test_wt_delete_no_graphite_errors() -> None:
 
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             shell=FakeShell(),
             use_graphite=False,
             existing_paths={wt},

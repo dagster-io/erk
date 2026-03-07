@@ -613,7 +613,7 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
 
 def test_slot_repair_repairs_closed_pr() -> None:
     """Test repair fixes closed-pr issues by removing the assignment."""
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
@@ -645,8 +645,8 @@ def test_slot_repair_repairs_closed_pr() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # Configure FakeGitHub with a closed PR for the branch
-        fake_github = FakeGitHub(
+        # Configure FakeLocalGitHub with a closed PR for the branch
+        fake_github = FakeLocalGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
                     number=123,
@@ -699,7 +699,7 @@ def test_slot_repair_repairs_closed_pr() -> None:
 
 def test_slot_repair_repairs_merged_pr() -> None:
     """Test repair fixes merged-pr issues by removing the assignment."""
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
@@ -731,8 +731,8 @@ def test_slot_repair_repairs_merged_pr() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # Configure FakeGitHub with a merged PR for the branch
-        fake_github = FakeGitHub(
+        # Configure FakeLocalGitHub with a merged PR for the branch
+        fake_github = FakeLocalGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
                     number=456,
@@ -785,7 +785,7 @@ def test_slot_repair_repairs_merged_pr() -> None:
 
 def test_slot_repair_skips_open_pr() -> None:
     """Test repair does NOT flag slots with open PRs."""
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
     from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
     runner = CliRunner()
@@ -817,8 +817,8 @@ def test_slot_repair_skips_open_pr() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # Configure FakeGitHub with an OPEN PR for the branch
-        fake_github = FakeGitHub(
+        # Configure FakeLocalGitHub with an OPEN PR for the branch
+        fake_github = FakeLocalGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
                     number=789,
@@ -869,7 +869,7 @@ def test_slot_repair_skips_open_pr() -> None:
 
 def test_slot_repair_skips_branch_without_pr() -> None:
     """Test repair does NOT flag slots where no PR exists."""
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -900,8 +900,8 @@ def test_slot_repair_skips_branch_without_pr() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # FakeGitHub with no PRs configured - will return PRNotFound
-        fake_github = FakeGitHub()
+        # FakeLocalGitHub with no PRs configured - will return PRNotFound
+        fake_github = FakeLocalGitHub()
 
         assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))

@@ -1,6 +1,6 @@
 """Unit tests for pr-sync-commit exec CLI command.
 
-Tests the PR sync from commit functionality using FakeGit and FakeGitHub
+Tests the PR sync from commit functionality using FakeGit and FakeLocalGitHub
 for dependency injection.
 """
 
@@ -19,7 +19,7 @@ from erk.cli.commands.exec.scripts.pr_sync_commit import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
 # ============================================================================
@@ -50,7 +50,7 @@ def test_impl_success_basic(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=456,
@@ -99,7 +99,7 @@ def test_impl_preserves_header(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=456,
@@ -150,7 +150,7 @@ def test_impl_preserves_footer(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=456,
@@ -207,7 +207,7 @@ def test_impl_preserves_both_header_and_footer(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=456,
@@ -260,7 +260,7 @@ def test_impl_uses_title_as_body_when_no_body(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=456,
@@ -293,7 +293,7 @@ def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
         head_commit_messages_full={tmp_path: "Commit message"},
     )
 
-    github = FakeGitHub()  # No PRs configured
+    github = FakeLocalGitHub()  # No PRs configured
 
     result = _sync_pr_from_commit(git=git, github=github, repo_root=tmp_path)
 
@@ -309,7 +309,7 @@ def test_impl_not_on_branch(tmp_path: Path) -> None:
         head_commit_messages_full={tmp_path: "Commit message"},
     )
 
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
 
     result = _sync_pr_from_commit(git=git, github=github, repo_root=tmp_path)
 
@@ -346,7 +346,7 @@ def test_cli_success_human_readable(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -397,7 +397,7 @@ def test_cli_success_json(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -434,7 +434,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
         head_commit_messages_full={tmp_path: "Commit message"},
     )
 
-    github = FakeGitHub()  # No PRs
+    github = FakeLocalGitHub()  # No PRs
 
     ctx = ErkContext.for_test(git=git, github=github, repo_root=tmp_path, cwd=tmp_path)
 
@@ -451,7 +451,7 @@ def test_cli_error_json_structure(tmp_path: Path) -> None:
         head_commit_messages_full={tmp_path: "Commit message"},
     )
 
-    github = FakeGitHub()  # No PRs
+    github = FakeLocalGitHub()  # No PRs
 
     ctx = ErkContext.for_test(git=git, github=github, repo_root=tmp_path, cwd=tmp_path)
 
@@ -488,7 +488,7 @@ def test_cli_updates_pr_title(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,

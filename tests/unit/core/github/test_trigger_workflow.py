@@ -2,12 +2,12 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 
 
 def test_trigger_workflow_tracks_call() -> None:
-    """Verify FakeGitHub records workflow triggers and returns run ID."""
-    github = FakeGitHub()
+    """Verify FakeLocalGitHub records workflow triggers and returns run ID."""
+    github = FakeLocalGitHub()
     repo_root = Path("/repo")
 
     run_id = github.trigger_workflow(
@@ -26,7 +26,7 @@ def test_trigger_workflow_tracks_call() -> None:
 
 def test_trigger_workflow_tracks_multiple_calls() -> None:
     """Verify multiple workflow triggers are tracked and return run IDs."""
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     repo_root = Path("/repo")
 
     run_id1 = github.trigger_workflow(

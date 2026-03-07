@@ -11,7 +11,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.time.fake import FakeTime
@@ -81,7 +81,7 @@ def test_get_plan_metadata_returns_existing_field() -> None:
     body = make_plan_header_body(objective_issue=3400)
     issue = make_issue_info(3509, body)
     fake_gh = FakeGitHubIssues(issues={3509: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={3509: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -108,7 +108,7 @@ def test_get_plan_metadata_returns_string_field() -> None:
     body = make_plan_header_body(worktree_name="P3509-feature-xyz")
     issue = make_issue_info(3509, body)
     fake_gh = FakeGitHubIssues(issues={3509: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={3509: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -134,7 +134,7 @@ def test_get_plan_metadata_returns_null_for_nonexistent_field() -> None:
     body = make_plan_header_body()
     issue = make_issue_info(3509, body)
     fake_gh = FakeGitHubIssues(issues={3509: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={3509: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -160,7 +160,7 @@ def test_get_plan_metadata_returns_null_for_null_field() -> None:
     body = make_plan_header_body(objective_issue=None)
     issue = make_issue_info(3509, body)
     fake_gh = FakeGitHubIssues(issues={3509: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={3509: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -189,7 +189,7 @@ This is an issue created before plan-header blocks were introduced.
 """
     issue = make_issue_info(100, old_format_body)
     fake_gh = FakeGitHubIssues(issues={100: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={100: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -219,7 +219,7 @@ This is an issue created before plan-header blocks were introduced.
 def test_get_plan_metadata_issue_not_found() -> None:
     """Test error when issue doesn't exist."""
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -247,7 +247,7 @@ def test_json_output_structure_success() -> None:
     body = make_plan_header_body(objective_issue=3400)
     issue = make_issue_info(321, body)
     fake_gh = FakeGitHubIssues(issues={321: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={321: issue_info_to_pr_details(issue)},
         issues_gateway=fake_gh,
     )
@@ -285,7 +285,7 @@ def test_json_output_structure_success() -> None:
 def test_json_output_structure_error() -> None:
     """Test JSON output structure on error."""
     fake_gh = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_gh)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(

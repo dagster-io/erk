@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.register_one_shot_plan import register_one_shot_plan
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
@@ -88,7 +88,7 @@ def _pr(number: int, body: str) -> PRDetails:
     )
 
 
-def _ctx(tmp_path: Path, *, issues: FakeGitHubIssues, github: FakeGitHub) -> ErkContext:
+def _ctx(tmp_path: Path, *, issues: FakeGitHubIssues, github: FakeLocalGitHub) -> ErkContext:
     (tmp_path / ".erk").mkdir(exist_ok=True)
     (tmp_path / ".erk" / "config.toml").write_text("", encoding="utf-8")
     return ErkContext.for_test(
@@ -101,7 +101,7 @@ def _ctx(tmp_path: Path, *, issues: FakeGitHubIssues, github: FakeGitHub) -> Erk
 def test_all_succeed(tmp_path: Path) -> None:
     issue = _issue(123, _plan_header_body())
     issues = FakeGitHubIssues(issues={123: issue})
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         issues_gateway=issues,
         pr_details={42: _pr(42, "Draft PR"), 123: issue_info_to_pr_details(issue)},
     )
@@ -130,7 +130,7 @@ def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -> None:
             "--run-url",
             RUN_URL,
         ],
-        obj=_ctx(tmp_path, issues=FakeGitHubIssues(), github=FakeGitHub()),
+        obj=_ctx(tmp_path, issues=FakeGitHubIssues(), github=FakeLocalGitHub()),
     )
     assert result.exit_code == 1
     output = json.loads(result.output)
@@ -143,7 +143,7 @@ def test_dispatch_succeeds_when_plan_header_missing(tmp_path: Path) -> None:
     """Missing plan-header is auto-created by ensure_plan_header; all operations succeed."""
     issue = _issue(123, "# No plan-header")
     issues = FakeGitHubIssues(issues={123: issue})
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         issues_gateway=issues,
         pr_details={42: _pr(42, "Draft PR"), 123: issue_info_to_pr_details(issue)},
     )

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
@@ -21,7 +21,7 @@ from erk_shared.gateway.github.types import (
 )
 
 
-class DryRunGitHub(GitHub):
+class DryRunLocalGitHub(LocalGitHub):
     """No-op wrapper for GitHub operations.
 
     Read operations are delegated to the wrapped implementation.
@@ -31,7 +31,7 @@ class DryRunGitHub(GitHub):
     while still allowing read operations for validation.
     """
 
-    def __init__(self, wrapped: GitHub) -> None:
+    def __init__(self, wrapped: LocalGitHub) -> None:
         """Initialize dry-run wrapper with a real implementation.
 
         Composes DryRunGitHubIssues wrapping the wrapped.issues internally.

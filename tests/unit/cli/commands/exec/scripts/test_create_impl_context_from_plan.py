@@ -16,7 +16,7 @@ from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
     create_impl_context_from_plan,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.time.fake import FakeTime
@@ -56,7 +56,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
         url="https://github.com/test-owner/test-repo/issues/123",
     )
     fake_issues = FakeGitHubIssues(issues={123: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={123: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -100,7 +100,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
 def test_plan_not_found_exits_with_error(tmp_path: Path) -> None:
     """Test error output when plan does not exist."""
     fake_issues = FakeGitHubIssues(issues={})
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -135,7 +135,7 @@ def test_objective_id_preserved_in_ref_json(tmp_path: Path) -> None:
         url="https://github.com/test-owner/test-repo/issues/456",
     )
     fake_issues = FakeGitHubIssues(issues={456: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={456: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )

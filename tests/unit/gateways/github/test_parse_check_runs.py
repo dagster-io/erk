@@ -1,6 +1,6 @@
-"""Unit tests for RealGitHub._parse_check_runs_response."""
+"""Unit tests for RealLocalGitHub._parse_check_runs_response."""
 
-from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.real import RealLocalGitHub
 
 
 def _make_check_run_node(
@@ -56,7 +56,7 @@ def _wrap_check_runs_response(nodes: list[dict | None]) -> dict:
 
 def test_parse_check_runs_filters_successful_checks() -> None:
     """SUCCESS CheckRuns are excluded from results."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     response = _wrap_check_runs_response(
         [
             _make_check_run_node(name="passing-check", conclusion="SUCCESS"),
@@ -70,7 +70,7 @@ def test_parse_check_runs_filters_successful_checks() -> None:
 
 def test_parse_check_runs_includes_failed_checks() -> None:
     """FAILURE CheckRuns are included in results."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     response = _wrap_check_runs_response(
         [
             _make_check_run_node(name="failing-check", conclusion="FAILURE"),
@@ -87,7 +87,7 @@ def test_parse_check_runs_includes_failed_checks() -> None:
 
 def test_parse_check_runs_includes_in_progress_checks() -> None:
     """CheckRuns with null conclusion (in progress) are included."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     response = _wrap_check_runs_response(
         [
             _make_check_run_node(name="running-check", status="IN_PROGRESS", conclusion=None),
@@ -106,7 +106,7 @@ def test_parse_check_runs_includes_in_progress_checks() -> None:
 
 def test_parse_check_runs_handles_status_context_failure() -> None:
     """StatusContext with FAILURE state is included."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     response = _wrap_check_runs_response(
         [
             _make_status_context_node(context="ci/deploy", state="FAILURE"),
@@ -123,7 +123,7 @@ def test_parse_check_runs_handles_status_context_failure() -> None:
 
 def test_parse_check_runs_handles_status_context_pending() -> None:
     """StatusContext with PENDING state is included with no conclusion."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     response = _wrap_check_runs_response(
         [
             _make_status_context_node(context="ci/pending-job", state="PENDING"),
@@ -140,7 +140,7 @@ def test_parse_check_runs_handles_status_context_pending() -> None:
 
 def test_parse_check_runs_excludes_status_context_success() -> None:
     """StatusContext with SUCCESS state is excluded."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     response = _wrap_check_runs_response(
         [
             _make_status_context_node(context="ci/passing", state="SUCCESS"),
@@ -154,7 +154,7 @@ def test_parse_check_runs_excludes_status_context_success() -> None:
 
 def test_parse_check_runs_sorts_by_name() -> None:
     """Results are sorted alphabetically by name."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     response = _wrap_check_runs_response(
         [
             _make_check_run_node(name="z-check", conclusion="FAILURE"),
@@ -170,7 +170,7 @@ def test_parse_check_runs_sorts_by_name() -> None:
 
 def test_parse_check_runs_empty_response() -> None:
     """Null/missing data returns empty list."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
 
     # No pullRequest data
     response = {"data": {"repository": {"pullRequest": None}}}
@@ -187,7 +187,7 @@ def test_parse_check_runs_empty_response() -> None:
 
 def test_parse_check_runs_null_nodes_skipped() -> None:
     """None nodes in the list are skipped."""
-    github = RealGitHub.for_test()
+    github = RealLocalGitHub.for_test()
     response = _wrap_check_runs_response(
         [
             None,

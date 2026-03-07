@@ -60,7 +60,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
     """
     from unittest.mock import patch
 
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
 
     # Arrange
     plan1 = Plan(
@@ -80,7 +80,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Mock _run_interactive_mode to verify CLI routing works
@@ -102,7 +102,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
     """
     from unittest.mock import patch
 
-    from erk_shared.gateway.github.fake import FakeGitHub
+    from erk_shared.gateway.github.fake import FakeLocalGitHub
 
     # Arrange
     open_plan = Plan(
@@ -122,7 +122,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(open_plan)})
-        github = FakeGitHub(issues_data=[plan_to_issue(open_plan)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(open_plan)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Mock _run_interactive_mode to verify filters are passed

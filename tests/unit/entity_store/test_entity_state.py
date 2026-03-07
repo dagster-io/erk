@@ -15,7 +15,7 @@ from erk_shared.entity_store.state import (
     fetch_entity_body,
 )
 from erk_shared.entity_store.types import EntityKind
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
@@ -142,7 +142,7 @@ class TestEntityStateWrite:
 
     def test_set_creates_new_block_on_empty_body(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         state = EntityState(number=1, kind=EntityKind.ISSUE, body="")
         new_state = entity_state_set(
             state,
@@ -166,7 +166,7 @@ class TestEntityStateWrite:
     def test_set_replaces_existing_block(self) -> None:
         block_text = _render_block("plan-header", {"status": "draft"})
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body=block_text)})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         state = EntityState(number=1, kind=EntityKind.ISSUE, body=block_text)
         new_state = entity_state_set(
             state,
@@ -184,7 +184,7 @@ class TestEntityStateWrite:
 
     def test_set_then_get_round_trip(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         state = EntityState(number=1, kind=EntityKind.ISSUE, body="")
         new_state = entity_state_set(
             state,
@@ -204,7 +204,7 @@ class TestEntityStateWrite:
     def test_set_field_updates_single_field(self) -> None:
         block_text = _render_block("plan-header", {"status": "draft", "version": 1})
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body=block_text)})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         state = EntityState(number=1, kind=EntityKind.ISSUE, body=block_text)
         new_state = entity_state_set_field(
             state,
@@ -227,7 +227,7 @@ class TestEntityStateWrite:
             "plan-header", {"status": "draft", "version": 1, "author": "alice"}
         )
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body=block_text)})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         state = EntityState(number=1, kind=EntityKind.ISSUE, body=block_text)
         new_state = entity_state_update(
             state,
@@ -247,7 +247,7 @@ class TestEntityStateWrite:
 
     def test_update_raises_when_block_missing(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="No blocks")})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         state = EntityState(number=1, kind=EntityKind.ISSUE, body="No blocks")
         with pytest.raises(ValueError, match="not found"):
             entity_state_update(
@@ -267,7 +267,7 @@ class TestEntityStatePR:
     def test_set_on_pr_updates_pr_body(self) -> None:
         pr = _make_pr_details(number=42, body="")
         issues = FakeGitHubIssues()
-        github = FakeGitHub(issues_gateway=issues, pr_details={42: pr})
+        github = FakeLocalGitHub(issues_gateway=issues, pr_details={42: pr})
         state = EntityState(number=42, kind=EntityKind.PR, body="")
         new_state = entity_state_set(
             state,
@@ -279,7 +279,7 @@ class TestEntityStatePR:
             repo_root=REPO_ROOT,
         )
 
-        # Verify the PR body was updated via FakeGitHub
+        # Verify the PR body was updated via FakeLocalGitHub
         assert len(github._updated_pr_bodies) == 1
         pr_number, new_body = github._updated_pr_bodies[0]
         assert pr_number == 42
@@ -294,7 +294,7 @@ class TestFetchEntityBody:
 
     def test_fetch_issue_body(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="issue body")})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         body = fetch_entity_body(
             number=1,
             kind=EntityKind.ISSUE,
@@ -307,7 +307,7 @@ class TestFetchEntityBody:
     def test_fetch_pr_body(self) -> None:
         pr = _make_pr_details(number=42, body="pr body")
         issues = FakeGitHubIssues()
-        github = FakeGitHub(issues_gateway=issues, pr_details={42: pr})
+        github = FakeLocalGitHub(issues_gateway=issues, pr_details={42: pr})
         body = fetch_entity_body(
             number=42,
             kind=EntityKind.PR,
@@ -319,7 +319,7 @@ class TestFetchEntityBody:
 
     def test_pr_not_found_raises_runtime_error(self) -> None:
         issues = FakeGitHubIssues()
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         with pytest.raises(RuntimeError, match="PR #999 not found"):
             fetch_entity_body(
                 number=999,
@@ -331,7 +331,7 @@ class TestFetchEntityBody:
 
     def test_issue_not_found_raises_runtime_error(self) -> None:
         issues = FakeGitHubIssues()
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         with pytest.raises(RuntimeError, match="Issue #999 not found"):
             fetch_entity_body(
                 number=999,

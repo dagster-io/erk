@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo
 from tests.test_utils.builders import PullRequestInfoBuilder
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -63,7 +63,7 @@ def test_list_pr_emoji_mapping(
 
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(prs={branch_name: pr}),
+            github=FakeLocalGitHub(prs={branch_name: pr}),
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
@@ -115,7 +115,7 @@ def test_list_pr_with_merge_conflicts() -> None:
 
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(prs={branch_name: pr}),
+            github=FakeLocalGitHub(prs={branch_name: pr}),
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
@@ -155,7 +155,7 @@ def test_list_graceful_degradation_no_pr_info() -> None:
         # No PR info from GitHub API
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(prs={}),
+            github=FakeLocalGitHub(prs={}),
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
@@ -210,7 +210,7 @@ def test_list_shows_pr_info_from_github_api() -> None:
 
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(prs={branch_name: github_pr}),
+            github=FakeLocalGitHub(prs={branch_name: github_pr}),
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)

@@ -15,7 +15,7 @@ from erk.cli.commands.exec.scripts.detect_plan_from_branch import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 
 # --- Implementation Logic Tests ---
 
@@ -81,7 +81,7 @@ def test_detect_impl_branch_name_takes_priority() -> None:
 def test_cli_detects_from_branch_name(tmp_path: Path) -> None:
     """CLI outputs not-found for P-prefix branch."""
     git = FakeGit(current_branches={tmp_path: "P2521-fix-auth"})
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
 
     runner = CliRunner()
@@ -95,7 +95,7 @@ def test_cli_detects_from_branch_name(tmp_path: Path) -> None:
 def test_cli_not_found_exits_zero(tmp_path: Path) -> None:
     """CLI always exits 0, even when no plan is found."""
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     ctx = ErkContext.for_test(cwd=tmp_path, git=git, github=github, repo_root=tmp_path)
 
     runner = CliRunner()

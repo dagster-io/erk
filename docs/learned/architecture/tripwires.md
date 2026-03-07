@@ -238,7 +238,7 @@ Rules triggered by matching actions in code.
 
 **passing array or object variables to gh api graphql with -F and json.dumps()** [pattern: `json\.dumps\(.*-F`] → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
 
-**passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
+**passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunLocalGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
 
 **passing multiple labels to a GitHub GraphQL label filter expecting OR semantics** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. GitHub GraphQL uses AND semantics for label filters. Passing labels=['erk-plan', 'erk-learn'] returns only items with BOTH labels, not either. Query by type-specific labels separately.
 

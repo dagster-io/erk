@@ -16,7 +16,7 @@ from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
@@ -147,7 +147,7 @@ def test_reply_to_discussion_comment_success(tmp_path: Path) -> None:
         issues={123: make_issue_info(123)},
         comments_with_urls={123: comments},
     )
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -203,7 +203,7 @@ def test_reply_to_discussion_comment_quotes_original(tmp_path: Path) -> None:
         issues={123: make_issue_info(123)},
         comments_with_urls={123: comments},
     )
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -245,7 +245,7 @@ def test_reply_to_discussion_comment_quotes_original(tmp_path: Path) -> None:
 def test_reply_to_discussion_comment_pr_not_found(tmp_path: Path) -> None:
     """Test error when PR doesn't exist."""
     fake_github_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues)
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -275,7 +275,7 @@ def test_reply_to_discussion_comment_comment_not_found(tmp_path: Path) -> None:
     comments = [make_issue_comment(100, "Existing comment")]
 
     fake_github_issues = FakeGitHubIssues(comments_with_urls={123: comments})
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -371,7 +371,7 @@ def test_reply_to_discussion_comment_json_structure(tmp_path: Path) -> None:
         issues={123: make_issue_info(123)},
         comments_with_urls={123: comments},
     )
-    fake_github = FakeGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
+    fake_github = FakeLocalGitHub(issues_gateway=fake_github_issues, pr_details={123: pr_details})
     fake_git = FakeGit()
     runner = CliRunner()
 

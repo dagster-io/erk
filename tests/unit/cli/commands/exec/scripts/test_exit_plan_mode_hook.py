@@ -1202,7 +1202,7 @@ class TestHookIntegration:
 
         Regression test for issue #4238: create_branch_manager was called with
         swapped positional arguments (github and graphite were reversed), causing
-        AttributeError: 'RealGitHub' object has no attribute 'get_prs_from_graphite'.
+        AttributeError: 'RealLocalGitHub' object has no attribute 'get_prs_from_graphite'.
 
         This test exercises the code path where:
         1. A plan file exists (needs_blocking_message is True)

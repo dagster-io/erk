@@ -9,7 +9,7 @@ from erk_shared.entity_store.entity import GitHubEntity
 from erk_shared.entity_store.log import EntityLog, entity_log_append
 from erk_shared.entity_store.state import EntityState, entity_state_set_field
 from erk_shared.entity_store.types import EntityKind
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
@@ -98,7 +98,7 @@ class TestGitHubEntityProperties:
 
     def test_number_property(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
@@ -110,7 +110,7 @@ class TestGitHubEntityProperties:
 
     def test_kind_property(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
@@ -122,7 +122,7 @@ class TestGitHubEntityProperties:
 
     def test_state_returns_entity_state(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
@@ -134,7 +134,7 @@ class TestGitHubEntityProperties:
 
     def test_log_returns_entity_log(self) -> None:
         issues = FakeGitHubIssues(issues={1: _make_issue_info(number=1, body="")})
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
@@ -153,7 +153,7 @@ class TestGitHubEntityIssueWorkflow:
         issues = FakeGitHubIssues(
             issues={1: _make_issue_info(number=1, body=block_text)},
         )
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
@@ -199,7 +199,7 @@ class TestGitHubEntityIssueWorkflow:
             issues={1: _make_issue_info(number=1, body=block_text)},
             comments={1: [log_comment]},
         )
-        github = FakeGitHub(issues_gateway=issues)
+        github = FakeLocalGitHub(issues_gateway=issues)
         entity = GitHubEntity.create(
             number=1,
             kind=EntityKind.ISSUE,
@@ -225,7 +225,7 @@ class TestGitHubEntityPRWorkflow:
         block_text = _render_block("plan-header", {"status": "submitted"})
         pr = _make_pr_details(number=42, body=block_text)
         issues = FakeGitHubIssues(issues={42: _make_issue_info(number=42, body="issue body")})
-        github = FakeGitHub(issues_gateway=issues, pr_details={42: pr})
+        github = FakeLocalGitHub(issues_gateway=issues, pr_details={42: pr})
         entity = GitHubEntity.create(
             number=42,
             kind=EntityKind.PR,
@@ -248,7 +248,7 @@ class TestGitHubEntityPRWorkflow:
             issues={42: _make_issue_info(number=42, body="")},
             comments={42: [log_comment]},
         )
-        github = FakeGitHub(issues_gateway=issues, pr_details={42: pr})
+        github = FakeLocalGitHub(issues_gateway=issues, pr_details={42: pr})
         entity = GitHubEntity.create(
             number=42,
             kind=EntityKind.PR,

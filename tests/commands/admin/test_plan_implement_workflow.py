@@ -8,15 +8,15 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import WorkflowRun
 from erk_shared.gateway.time.fake import FakeTime
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-class CommitBeforePRTrackingGitHub(FakeGitHub):
-    """FakeGitHub that verifies commits exist before PR creation.
+class CommitBeforePRTrackingGitHub(FakeLocalGitHub):
+    """FakeLocalGitHub that verifies commits exist before PR creation.
 
     This class stores a reference to the git fake so it can check
     the commit count when create_pr is called.
@@ -70,7 +70,7 @@ def test_creates_empty_commit_before_pr() -> None:
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
 
-        # Set up FakeGitHub with workflow runs for list_workflow_runs
+        # Set up FakeLocalGitHub with workflow runs for list_workflow_runs
         # Use tracking version that records commit count when PR is created
         fake_github = CommitBeforePRTrackingGitHub(
             git=git,
@@ -155,8 +155,8 @@ def test_creates_issue_when_not_provided() -> None:
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
 
-        # Set up FakeGitHub with workflow runs
-        fake_github = FakeGitHub(
+        # Set up FakeLocalGitHub with workflow runs
+        fake_github = FakeLocalGitHub(
             workflow_runs=[
                 WorkflowRun(
                     run_id="12345",

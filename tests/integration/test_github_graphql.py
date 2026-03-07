@@ -1,6 +1,6 @@
 """Tests for GitHub GraphQL operations with mocked subprocess execution.
 
-These tests verify that RealGitHub correctly passes GraphQL variables using
+These tests verify that RealLocalGitHub correctly passes GraphQL variables using
 the gh CLI's special array and object syntax.
 """
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 from pytest import MonkeyPatch
 
-from erk_shared.gateway.github.real import RealGitHub
+from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -47,7 +47,7 @@ def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_labels(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub.for_test()
+        github = RealLocalGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -103,7 +103,7 @@ def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_states(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub.for_test()
+        github = RealLocalGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -163,7 +163,7 @@ def test_get_issues_with_pr_linkages_uses_gh_object_syntax_for_filterby(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub.for_test()
+        github = RealLocalGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -218,7 +218,7 @@ def test_get_issues_with_pr_linkages_uses_string_flags_for_strings(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub.for_test()
+        github = RealLocalGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -276,7 +276,7 @@ def test_get_issues_with_pr_linkages_uses_typed_flag_for_first(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub.for_test()
+        github = RealLocalGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -329,7 +329,7 @@ def test_get_issues_with_pr_linkages_handles_multiple_labels(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub.for_test()
+        github = RealLocalGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),

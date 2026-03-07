@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -76,15 +76,15 @@ def test_outputs_valid_json() -> None:
         )
 
         pr_details = _make_pr_details(number=42, branch="feature")
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             authenticated=True,
             prs_by_branch={"feature": pr_details},
         )
 
-        # Use a separate FakeGitHub for plan_store with no prs_by_branch,
+        # Use a separate FakeLocalGitHub for plan_store with no prs_by_branch,
         # so PlannedPRBackend.get_plan_for_branch returns PlanNotFound
         # (matching original intent: no plan context for "feature" branch)
-        plan_github = FakeGitHub()
+        plan_github = FakeLocalGitHub()
         ctx = build_workspace_test_context(
             env,
             git=git,
@@ -139,7 +139,7 @@ def test_fails_when_no_pr() -> None:
             },
         )
 
-        github = FakeGitHub(authenticated=True)
+        github = FakeLocalGitHub(authenticated=True)
 
         ctx = build_workspace_test_context(env, git=git, graphite=graphite, github=github)
 

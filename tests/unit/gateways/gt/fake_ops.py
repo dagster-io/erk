@@ -22,8 +22,8 @@ from erk_shared.gateway.branch_manager.git import GitBranchManager
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.abc import GitHub
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
@@ -47,10 +47,10 @@ class GitBuilderState:
 
 @dataclass
 class GitHubBuilderState:
-    """Mutable builder state for constructing FakeGitHub instances.
+    """Mutable builder state for constructing FakeLocalGitHub instances.
 
     This dataclass accumulates configuration from builder methods
-    and is used to construct a FakeGitHub instance on demand.
+    and is used to construct a FakeLocalGitHub instance on demand.
     """
 
     pr_numbers: dict[str, int] = field(default_factory=dict)
@@ -74,7 +74,7 @@ class FakeGtKitOps:
 
     Provides declarative setup methods for common test scenarios.
     Satisfies the GtKit Protocol through structural typing.
-    Uses lazy construction to build FakeGitHub from accumulated builder state.
+    Uses lazy construction to build FakeLocalGitHub from accumulated builder state.
     """
 
     def __init__(
@@ -108,7 +108,7 @@ class FakeGtKitOps:
         self._github_builder_state = (
             github_builder_state if github_builder_state is not None else GitHubBuilderState()
         )
-        self._github_instance: FakeGitHub | None = None
+        self._github_instance: FakeLocalGitHub | None = None
 
         # Graphite instance
         self._main_graphite = main_graphite if main_graphite is not None else FakeGraphite()
@@ -197,17 +197,17 @@ class FakeGtKitOps:
         return self._git_instance
 
     @property
-    def github(self) -> GitHub:
+    def github(self) -> LocalGitHub:
         """Get the GitHub operations interface.
 
-        Constructs FakeGitHub lazily from accumulated builder state.
+        Constructs FakeLocalGitHub lazily from accumulated builder state.
         """
         if self._github_instance is None:
             self._github_instance = self._build_fake_github()
         return self._github_instance
 
-    def _build_fake_github(self) -> FakeGitHub:
-        """Build FakeGitHub from accumulated builder state."""
+    def _build_fake_github(self) -> FakeLocalGitHub:
+        """Build FakeLocalGitHub from accumulated builder state."""
         # Build prs dict from pr_numbers, pr_urls, pr_states
         prs: dict[str, PullRequestInfo] = {}
         for branch, pr_number in self._github_builder_state.pr_numbers.items():
@@ -267,7 +267,7 @@ class FakeGtKitOps:
                 repo="test-repo",
             )
 
-        return FakeGitHub(
+        return FakeLocalGitHub(
             prs=prs,
             pr_titles=self._github_builder_state.pr_titles,
             pr_bodies_by_number=self._github_builder_state.pr_bodies,

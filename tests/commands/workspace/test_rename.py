@@ -9,7 +9,7 @@ from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from tests.fakes.shell import FakeShell
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -34,7 +34,7 @@ def test_rename_successful() -> None:
         )
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
             repo=repo,
@@ -54,7 +54,7 @@ def test_rename_old_worktree_not_found() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
             dry_run=False,
@@ -84,7 +84,7 @@ def test_rename_new_name_already_exists() -> None:
         )
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
             repo=repo,
@@ -117,7 +117,7 @@ def test_rename_with_graphite_enabled() -> None:
         test_ctx = env.build_context(
             use_graphite=True,
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
             repo=repo,
@@ -150,7 +150,7 @@ def test_rename_dry_run() -> None:
         )
         test_ctx = env.build_context(
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
             repo=repo,

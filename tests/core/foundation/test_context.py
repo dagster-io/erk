@@ -8,7 +8,7 @@ from erk.core.context import context_for_test, minimal_context
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from tests.fakes.shell import FakeShell
 from tests.test_utils.paths import sentinel_path
@@ -17,7 +17,7 @@ from tests.test_utils.paths import sentinel_path
 def test_context_initialization_and_attributes() -> None:
     """Initialization wires through every dependency and exposes them as attributes."""
     git_ops = FakeGit()
-    github_ops = FakeGitHub()
+    github_ops = FakeLocalGitHub()
     graphite_ops = FakeGraphite()
     shell_ops = FakeShell()
     global_config = GlobalConfig.test(Path("/tmp"), use_graphite=False, shell_setup_complete=False)
@@ -46,7 +46,7 @@ def test_context_is_frozen() -> None:
     ctx = context_for_test(
         git=FakeGit(),
         global_config=global_config,
-        github=FakeGitHub(),
+        github=FakeLocalGitHub(),
         graphite=FakeGraphite(),
         shell=FakeShell(),
         cwd=sentinel_path(),
@@ -92,7 +92,7 @@ def test_minimal_factory_creates_fake_ops() -> None:
     ctx = minimal_context(git_ops, cwd)
 
     # All other ops should be fake implementations
-    assert isinstance(ctx.github, FakeGitHub)
+    assert isinstance(ctx.github, FakeLocalGitHub)
     assert isinstance(ctx.graphite, FakeGraphite)
     assert isinstance(ctx.shell, FakeShell)
 
@@ -109,7 +109,7 @@ def test_for_test_factory_creates_context_with_defaults() -> None:
     ctx = context_for_test()
 
     assert isinstance(ctx.git, FakeGit)
-    assert isinstance(ctx.github, FakeGitHub)
+    assert isinstance(ctx.github, FakeLocalGitHub)
     # With use_graphite=False (default), graphite is GraphiteDisabled
     assert isinstance(ctx.graphite, GraphiteDisabled)
     assert isinstance(ctx.shell, FakeShell)
@@ -124,7 +124,7 @@ def test_for_test_factory_accepts_custom_ops() -> None:
         current_branches={Path("/repo"): "main"},
         default_branches={Path("/repo"): "main"},
     )
-    github_ops = FakeGitHub()
+    github_ops = FakeLocalGitHub()
     cwd = Path("/custom/cwd")
 
     ctx = context_for_test(

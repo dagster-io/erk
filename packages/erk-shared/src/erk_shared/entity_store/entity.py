@@ -6,7 +6,7 @@ from pathlib import Path
 from erk_shared.entity_store.log import EntityLog
 from erk_shared.entity_store.state import EntityState, fetch_entity_body
 from erk_shared.entity_store.types import EntityKind
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 
 
@@ -30,7 +30,7 @@ class GitHubEntity:
         *,
         number: int,
         kind: EntityKind,
-        github: GitHub,
+        github: LocalGitHub,
         github_issues: GitHubIssues,
         repo_root: Path,
     ) -> "GitHubEntity":

@@ -1,7 +1,7 @@
 """Unit tests for ci_update_pr_body kit CLI command.
 
 Tests the PR body update with AI-generated summary and footer.
-Uses FakeGit, FakeGitHub, and FakePromptExecutor for dependency injection.
+Uses FakeGit, FakeLocalGitHub, and FakePromptExecutor for dependency injection.
 """
 
 import json
@@ -24,7 +24,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.core.fakes import FakePromptExecutor
 from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -135,7 +135,7 @@ def test_impl_success(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -189,7 +189,7 @@ def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
     """Test error when no PR exists for the current branch."""
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
     # No PR configured for this branch
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     executor = FakePromptExecutor()
 
     result = _update_pr_body_impl(
@@ -227,7 +227,7 @@ def test_impl_empty_diff(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -281,7 +281,7 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -339,7 +339,7 @@ def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -400,7 +400,7 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -463,7 +463,7 @@ def test_cli_success(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -524,7 +524,7 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -575,7 +575,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     """Test CLI command exits with error code on failure."""
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
     # No PR configured
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     executor = FakePromptExecutor()
 
     ctx = ErkContext.for_test(
@@ -625,7 +625,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feature-branch": PullRequestInfo(
                 number=123,
@@ -674,7 +674,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
 def test_cli_json_output_structure_error(tmp_path: Path) -> None:
     """Test that JSON output has expected structure on error."""
     git = FakeGit(current_branches={tmp_path: "feature-branch"})
-    github = FakeGitHub()
+    github = FakeLocalGitHub()
     executor = FakePromptExecutor()
 
     ctx = ErkContext.for_test(
@@ -751,7 +751,7 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
         labels=("erk-plan",),
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "plan-test-01-01": PullRequestInfo(
                 number=42,
@@ -834,7 +834,7 @@ def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> No
         repo="test-repo",
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "plan-test-01-01": PullRequestInfo(
                 number=42,
@@ -901,7 +901,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
         labels=("erk-plan",),
     )
 
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "plan-test-01-01": PullRequestInfo(
                 number=42,

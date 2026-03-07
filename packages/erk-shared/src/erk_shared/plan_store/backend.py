@@ -7,7 +7,7 @@ inject fake gateways into the real backend implementation.
 Example:
     # Testing with fake gateway
     fake_issues = FakeGitHubIssues()
-    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
     result = backend.create_plan(...)
 

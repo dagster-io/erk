@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.services.objective_list_service import RealObjectiveListService
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, WorkflowRun
 from erk_shared.gateway.http.fake import FakeHttpClient
@@ -31,7 +31,7 @@ class TestObjectiveListService:
             updated_at=now,
             author="test-user",
         )
-        fake_github = FakeGitHub(issues_data=[issue])
+        fake_github = FakeLocalGitHub(issues_data=[issue])
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
         result = service.get_objective_list_data(
@@ -69,7 +69,7 @@ class TestObjectiveListService:
             updated_at=now,
             author="test-user",
         )
-        fake_github = FakeGitHub(issues_data=[open_issue, closed_issue])
+        fake_github = FakeLocalGitHub(issues_data=[open_issue, closed_issue])
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
         result = service.get_objective_list_data(
@@ -97,7 +97,7 @@ class TestObjectiveListService:
                 author="test-user",
             )
             issues.append(issue)
-        fake_github = FakeGitHub(issues_data=issues)
+        fake_github = FakeLocalGitHub(issues_data=issues)
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
         result = service.get_objective_list_data(
@@ -133,7 +133,7 @@ last_dispatched_node_id: 'WFR_obj123'
             updated_at=now,
             author="test-user",
         )
-        fake_github = FakeGitHub(issues_data=[issue])
+        fake_github = FakeLocalGitHub(issues_data=[issue])
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
         result = service.get_objective_list_data(
@@ -176,7 +176,7 @@ last_dispatched_node_id: 'WFR_obj456'
             branch="main",
             head_sha="abc123",
         )
-        fake_github = FakeGitHub(
+        fake_github = FakeLocalGitHub(
             issues_data=[issue],
             workflow_runs_by_node_id={"WFR_obj456": run},
         )
@@ -217,7 +217,7 @@ last_dispatched_node_id: 'WFR_obj456'
             updated_at=now,
             author="bob",
         )
-        fake_github = FakeGitHub(issues_data=[issue_alice, issue_bob])
+        fake_github = FakeLocalGitHub(issues_data=[issue_alice, issue_bob])
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
         result = service.get_objective_list_data(
@@ -229,7 +229,7 @@ last_dispatched_node_id: 'WFR_obj456'
 
     def test_returns_empty_data_when_no_objectives(self) -> None:
         """Empty case returns empty data."""
-        fake_github = FakeGitHub()
+        fake_github = FakeLocalGitHub()
 
         service = RealObjectiveListService(fake_github, time=FakeTime())
         result = service.get_objective_list_data(

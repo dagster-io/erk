@@ -19,7 +19,7 @@ from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -55,7 +55,7 @@ def test_land_outputs_deferred_execution_script() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -165,7 +165,7 @@ def test_land_execute_merges_and_cleans_up() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -379,7 +379,7 @@ def test_land_error_no_pr_found() -> None:
         )
 
         # No PRs configured - branch has no PR
-        github_ops = FakeGitHub(prs={})
+        github_ops = FakeLocalGitHub(prs={})
 
         repo = RepoContext(
             root=env.cwd,
@@ -421,7 +421,7 @@ def test_land_error_pr_not_open() -> None:
         )
 
         # PR is already MERGED (not OPEN)
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -498,7 +498,7 @@ def test_land_does_not_call_safe_chdir() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -595,7 +595,7 @@ def test_land_default_executes_directly() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -678,7 +678,7 @@ def test_land_up_and_down_mutually_exclusive() -> None:
             file_statuses={env.cwd: ([], [], [])},
         )
 
-        github_ops = FakeGitHub()
+        github_ops = FakeLocalGitHub()
         issues_ops = FakeGitHubIssues(username="testuser")
 
         repo = RepoContext(
@@ -738,7 +738,7 @@ def test_land_updates_upstack_pr_base_branches() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -896,7 +896,7 @@ def test_land_updates_github_only_child_pr_base() -> None:
         )
 
         # GitHub has the child PR targeting feature-1
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,
@@ -1045,7 +1045,7 @@ def test_land_updates_upstack_pr_base_before_merge() -> None:
             }
         )
 
-        github_ops = FakeGitHub(
+        github_ops = FakeLocalGitHub(
             prs={
                 "feature-1": PullRequestInfo(
                     number=123,

@@ -1,6 +1,6 @@
 """Unit tests for get_plan_info exec command.
 
-Tests backend-aware plan info retrieval using PlannedPRBackend and FakeGitHub.
+Tests backend-aware plan info retrieval using PlannedPRBackend and FakeLocalGitHub.
 """
 
 import json
@@ -10,20 +10,20 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
 from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 
 def _create_backend_with_plan(
     *, title: str = "Test Plan Title", content: str = "# Plan Content"
-) -> tuple[PlannedPRBackend, FakeGitHub, str]:
+) -> tuple[PlannedPRBackend, FakeLocalGitHub, str]:
     """Create a PlannedPRBackend with a single plan.
 
     Returns:
         Tuple of (backend, fake_github, plan_id).
     """
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
 
     result = backend.create_plan(

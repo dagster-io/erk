@@ -7,7 +7,7 @@ error conditions.
 
 from pathlib import Path
 
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComments
 from erk_shared.gateway.github.types import PRDetails, PRNotFound
@@ -46,7 +46,7 @@ class GitHubChecks:
 
     @staticmethod
     def pr_for_branch(
-        github: GitHub,
+        github: LocalGitHub,
         repo_root: Path,
         branch: str,
     ) -> PRDetails | NoPRForBranch:
@@ -67,7 +67,7 @@ class GitHubChecks:
 
     @staticmethod
     def pr_by_number(
-        github: GitHub,
+        github: LocalGitHub,
         repo_root: Path,
         pr_number: int,
     ) -> PRDetails | PRNotFoundError:

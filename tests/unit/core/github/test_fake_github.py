@@ -1,12 +1,12 @@
-"""Unit tests for FakeGitHub implementation.
+"""Unit tests for FakeLocalGitHub implementation.
 
 These tests verify that the fake implementation behaves correctly and reliably.
-Testing the fake ensures all higher-layer tests using FakeGitHub are reliable.
+Testing the fake ensures all higher-layer tests using FakeLocalGitHub are reliable.
 """
 
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import WorkflowRun
 
 
@@ -27,7 +27,7 @@ def test_get_workflow_run_returns_correct_run_by_id() -> None:
         branch="feature",
         head_sha="def",
     )
-    github = FakeGitHub(workflow_runs=[run1, run2])
+    github = FakeLocalGitHub(workflow_runs=[run1, run2])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -50,7 +50,7 @@ def test_get_workflow_run_returns_none_when_not_found() -> None:
         branch="main",
         head_sha="abc",
     )
-    github = FakeGitHub(workflow_runs=[run1])
+    github = FakeLocalGitHub(workflow_runs=[run1])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -63,7 +63,7 @@ def test_get_workflow_run_returns_none_when_not_found() -> None:
 def test_get_workflow_run_handles_empty_workflow_runs() -> None:
     """Test that get_workflow_run returns None when no workflow runs configured."""
     # Arrange
-    github = FakeGitHub(workflow_runs=[])
+    github = FakeLocalGitHub(workflow_runs=[])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -90,7 +90,7 @@ def test_get_workflow_runs_by_branches_prefers_in_progress_over_completed() -> N
         branch="feature",
         head_sha="def",
     )
-    github = FakeGitHub(workflow_runs=[completed_run, in_progress_run])
+    github = FakeLocalGitHub(workflow_runs=[completed_run, in_progress_run])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -120,7 +120,7 @@ def test_get_workflow_runs_by_branches_prefers_queued_over_completed() -> None:
         branch="feature",
         head_sha="jkl",
     )
-    github = FakeGitHub(workflow_runs=[completed_run, queued_run])
+    github = FakeLocalGitHub(workflow_runs=[completed_run, queued_run])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -150,7 +150,7 @@ def test_get_workflow_runs_by_branches_prefers_failed_over_success() -> None:
         branch="feature",
         head_sha="pqr",
     )
-    github = FakeGitHub(workflow_runs=[success_run, failed_run])
+    github = FakeLocalGitHub(workflow_runs=[success_run, failed_run])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -180,7 +180,7 @@ def test_get_workflow_runs_by_branches_returns_most_recent_when_multiple_complet
         branch="feature",
         head_sha="vwx",
     )
-    github = FakeGitHub(workflow_runs=[recent_run, older_run])
+    github = FakeLocalGitHub(workflow_runs=[recent_run, older_run])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -202,7 +202,7 @@ def test_get_workflow_runs_by_branches_handles_empty_branches() -> None:
         branch="feature",
         head_sha="xyz",
     )
-    github = FakeGitHub(workflow_runs=[run])
+    github = FakeLocalGitHub(workflow_runs=[run])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -222,7 +222,7 @@ def test_get_workflow_runs_by_branches_handles_no_matching_runs() -> None:
         branch="other-branch",
         head_sha="aaa",
     )
-    github = FakeGitHub(workflow_runs=[run])
+    github = FakeLocalGitHub(workflow_runs=[run])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -258,7 +258,7 @@ def test_get_workflow_runs_by_branches_handles_multiple_branches() -> None:
         branch="feature-3",
         head_sha="ddd",
     )
-    github = FakeGitHub(workflow_runs=[run1, run2, run3])
+    github = FakeLocalGitHub(workflow_runs=[run1, run2, run3])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -283,7 +283,7 @@ def test_get_workflow_runs_by_branches_omits_branches_without_runs() -> None:
         branch="has-run",
         head_sha="eee",
     )
-    github = FakeGitHub(workflow_runs=[run])
+    github = FakeLocalGitHub(workflow_runs=[run])
     repo_root = Path("/fake/repo")
 
     # Act
@@ -322,16 +322,16 @@ def test_get_workflow_runs_by_branches_priority_order() -> None:
     )
 
     # Test 1: Only completed runs (failure preferred)
-    github1 = FakeGitHub(workflow_runs=[completed_success, completed_failure])
+    github1 = FakeLocalGitHub(workflow_runs=[completed_success, completed_failure])
     result1 = github1.get_workflow_runs_by_branches(Path("/fake"), "workflow.yml", ["test"])
     assert result1["test"].run_id == "402", "Expected failed run when no active runs"
 
     # Test 2: Active run present (highest priority)
-    github2 = FakeGitHub(workflow_runs=[completed_success, completed_failure, in_progress])
+    github2 = FakeLocalGitHub(workflow_runs=[completed_success, completed_failure, in_progress])
     result2 = github2.get_workflow_runs_by_branches(Path("/fake"), "workflow.yml", ["test"])
     assert result2["test"].run_id == "403", "Expected in-progress run (highest priority)"
 
     # Test 3: Only completed success (fallback to most recent)
-    github3 = FakeGitHub(workflow_runs=[completed_success])
+    github3 = FakeLocalGitHub(workflow_runs=[completed_success])
     result3 = github3.get_workflow_runs_by_branches(Path("/fake"), "workflow.yml", ["test"])
     assert result3["test"].run_id == "401", "Expected completed success as fallback"

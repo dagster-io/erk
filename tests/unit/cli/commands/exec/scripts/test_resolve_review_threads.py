@@ -1,7 +1,7 @@
 """Unit tests for resolve-review-threads batch command.
 
 Tests the batch resolution command that processes multiple threads from JSON stdin.
-Uses FakeGitHub for fast, reliable testing.
+Uses FakeLocalGitHub for fast, reliable testing.
 """
 
 import json
@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.resolve_review_threads import resolve_review_threads
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 
 # ============================================================================
 # Success Cases
@@ -21,7 +21,7 @@ from erk_shared.gateway.github.fake import FakeGitHub
 
 def test_batch_resolve_empty_array(tmp_path: Path) -> None:
     """Test batch resolve with empty array returns success."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -42,7 +42,7 @@ def test_batch_resolve_empty_array(tmp_path: Path) -> None:
 
 def test_batch_resolve_single_thread(tmp_path: Path) -> None:
     """Test batch resolve with a single thread."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -71,7 +71,7 @@ def test_batch_resolve_single_thread(tmp_path: Path) -> None:
 
 def test_batch_resolve_multiple_threads(tmp_path: Path) -> None:
     """Test batch resolve with multiple threads."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -104,7 +104,7 @@ def test_batch_resolve_multiple_threads(tmp_path: Path) -> None:
 
 def test_batch_resolve_with_comments(tmp_path: Path) -> None:
     """Test batch resolve with comments on some threads."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -146,7 +146,7 @@ def test_batch_resolve_with_comments(tmp_path: Path) -> None:
 
 def test_batch_resolve_with_null_comment(tmp_path: Path) -> None:
     """Test batch resolve with explicit null comment."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -176,7 +176,7 @@ def test_batch_resolve_with_null_comment(tmp_path: Path) -> None:
 def test_batch_resolve_partial_failure(tmp_path: Path) -> None:
     """Test batch resolve with one thread failing."""
     # Configure fake to fail on specific thread
-    fake_github = FakeGitHub(resolve_thread_failures={"PRRT_2"})
+    fake_github = FakeLocalGitHub(resolve_thread_failures={"PRRT_2"})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -210,7 +210,7 @@ def test_batch_resolve_partial_failure(tmp_path: Path) -> None:
 def test_batch_resolve_all_failures(tmp_path: Path) -> None:
     """Test batch resolve when all threads fail."""
     # Configure fake to fail on all threads
-    fake_github = FakeGitHub(resolve_thread_failures={"PRRT_1", "PRRT_2"})
+    fake_github = FakeLocalGitHub(resolve_thread_failures={"PRRT_1", "PRRT_2"})
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -240,7 +240,7 @@ def test_batch_resolve_all_failures(tmp_path: Path) -> None:
 
 def test_batch_resolve_invalid_json(tmp_path: Path) -> None:
     """Test batch resolve with invalid JSON."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -262,7 +262,7 @@ def test_batch_resolve_invalid_json(tmp_path: Path) -> None:
 
 def test_batch_resolve_not_array(tmp_path: Path) -> None:
     """Test batch resolve with non-array JSON."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -286,7 +286,7 @@ def test_batch_resolve_not_array(tmp_path: Path) -> None:
 
 def test_batch_resolve_item_not_object(tmp_path: Path) -> None:
     """Test batch resolve with non-object item in array."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -310,7 +310,7 @@ def test_batch_resolve_item_not_object(tmp_path: Path) -> None:
 
 def test_batch_resolve_missing_thread_id(tmp_path: Path) -> None:
     """Test batch resolve with missing thread_id field."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -334,7 +334,7 @@ def test_batch_resolve_missing_thread_id(tmp_path: Path) -> None:
 
 def test_batch_resolve_non_string_thread_id(tmp_path: Path) -> None:
     """Test batch resolve with non-string thread_id."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -358,7 +358,7 @@ def test_batch_resolve_non_string_thread_id(tmp_path: Path) -> None:
 
 def test_batch_resolve_non_string_comment(tmp_path: Path) -> None:
     """Test batch resolve with non-string comment."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -387,7 +387,7 @@ def test_batch_resolve_non_string_comment(tmp_path: Path) -> None:
 
 def test_batch_resolve_json_structure_success(tmp_path: Path) -> None:
     """Test JSON output structure for successful batch resolution."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 
@@ -419,7 +419,7 @@ def test_batch_resolve_json_structure_success(tmp_path: Path) -> None:
 
 def test_batch_resolve_json_structure_error(tmp_path: Path) -> None:
     """Test JSON output structure for validation error."""
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     fake_git = FakeGit()
     runner = CliRunner()
 

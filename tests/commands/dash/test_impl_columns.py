@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
 from erk_shared.plan_store.types import Plan, PlanState
@@ -72,7 +72,7 @@ last_dispatched_node_id: 'WFR_all_flag'
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan)],
             pr_plan_linkages={200: [pr]},
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},

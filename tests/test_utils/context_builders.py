@@ -10,7 +10,7 @@ from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
 from erk_shared.plan_store.types import Plan
 from tests.fakes.shell import FakeShell
@@ -68,7 +68,7 @@ def build_workspace_test_context(
 
     # Provide defaults for other integrations if not in kwargs
     if "github" not in kwargs:
-        kwargs["github"] = FakeGitHub()
+        kwargs["github"] = FakeLocalGitHub()
     # Note: Don't set graphite here - let env.build_context handle it
     # based on use_graphite flag (uses GraphiteDisabled when disabled)
     if "shell" not in kwargs:

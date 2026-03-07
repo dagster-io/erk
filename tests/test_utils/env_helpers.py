@@ -93,7 +93,7 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.git.abc import Git, WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -385,7 +385,7 @@ class ErkIsolatedFsEnv:
         use_graphite: bool = False,
         git: Git | None = None,
         graphite: FakeGraphite | None = None,
-        github: FakeGitHub | None = None,
+        github: FakeLocalGitHub | None = None,
         shell: FakeShell | None = None,
         repo: RepoContext | None = None,
         dry_run: bool = False,
@@ -405,7 +405,7 @@ class ErkIsolatedFsEnv:
             use_graphite: Enable Graphite integration (default: False)
             git: Custom FakeGit instance (overrides smart defaults)
             graphite: Custom FakeGraphite instance
-            github: Custom FakeGitHub instance
+            github: Custom FakeLocalGitHub instance
             shell: Custom FakeShell instance
             repo: Custom RepoContext (default: None)
             dry_run: Whether to wrap with DryRunGit
@@ -518,7 +518,7 @@ class ErkIsolatedFsEnv:
                 graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
         if github is None:
-            github = FakeGitHub()
+            github = FakeLocalGitHub()
 
         if shell is None:
             shell = FakeShell()
@@ -830,7 +830,7 @@ class ErkInMemEnv:
         use_graphite: bool = False,
         git: Git | None = None,
         graphite: FakeGraphite | None = None,
-        github: FakeGitHub | None = None,
+        github: FakeLocalGitHub | None = None,
         shell: FakeShell | None = None,
         repo: RepoContext | None = None,
         existing_paths: set[Path] | None = None,
@@ -852,7 +852,7 @@ class ErkInMemEnv:
             use_graphite: Enable Graphite integration (default: False)
             git: Custom FakeGit instance (overrides smart defaults)
             graphite: Custom FakeGraphite instance
-            github: Custom FakeGitHub instance
+            github: Custom FakeLocalGitHub instance
             shell: Custom FakeShell instance
             repo: Custom RepoContext (default: None)
             existing_paths: Set of sentinel paths to treat as existing (pure mode only)
@@ -967,7 +967,7 @@ class ErkInMemEnv:
                 graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
         if github is None:
-            github = FakeGitHub()
+            github = FakeLocalGitHub()
 
         if shell is None:
             shell = FakeShell()

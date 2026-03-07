@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
@@ -53,7 +53,7 @@ def test_plan_list_no_filters() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         plan_service = build_fake_plan_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -104,7 +104,7 @@ def test_plan_list_filter_by_state() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
-        github = FakeGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
         plan_service = build_fake_plan_list_service([open_plan, closed_plan])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -155,7 +155,7 @@ def test_plan_list_filter_by_labels() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(plan_with_both), 2: plan_to_issue(plan_with_one)}
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)]
         )
         plan_service = build_fake_plan_list_service([plan_with_both, plan_with_one])
@@ -205,7 +205,7 @@ def test_plan_list_with_limit() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues=plans_dict)
-        github = FakeGitHub(issues_data=issues_list)
+        github = FakeLocalGitHub(issues_data=issues_list)
         plan_service = build_fake_plan_list_service(all_plans)
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service
@@ -271,7 +271,7 @@ def test_plan_list_combined_filters() -> None:
                 3: plan_to_issue(wrong_labels_plan),
             }
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             issues_data=[
                 plan_to_issue(matching_plan),
                 plan_to_issue(wrong_state_plan),
@@ -327,7 +327,7 @@ def test_plan_list_empty_results() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
-        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
+        github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
         plan_service = build_fake_plan_list_service([plan])
         ctx = build_workspace_test_context(
             env, issues=issues, github=github, plan_list_service=plan_service

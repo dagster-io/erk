@@ -22,7 +22,7 @@ from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
@@ -186,7 +186,7 @@ def require_git(ctx: click.Context) -> Git:
     return ctx.obj.git
 
 
-def require_github(ctx: click.Context) -> GitHub:
+def require_github(ctx: click.Context) -> LocalGitHub:
     """Get GitHub from context, exiting with error if not initialized.
 
     Uses LBYL pattern to check context before accessing.

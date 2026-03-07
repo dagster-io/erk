@@ -11,7 +11,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
@@ -28,7 +28,7 @@ This plan describes the implementation of a new feature.
 def _planned_pr_context(
     *,
     tmp_path: Path,
-    fake_github: FakeGitHub | None = None,
+    fake_github: FakeLocalGitHub | None = None,
     fake_git: FakeGit | None = None,
     fake_claude: FakeClaudeInstallation | None = None,
     monkeypatch: pytest.MonkeyPatch,
@@ -37,7 +37,7 @@ def _planned_pr_context(
     if fake_git is None:
         fake_git = FakeGit(current_branches={tmp_path: "main"})
     if fake_github is None:
-        fake_github = FakeGitHub()
+        fake_github = FakeLocalGitHub()
     if fake_claude is None:
         fake_claude = FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT})
 
@@ -333,7 +333,7 @@ def test_planned_pr_trunk_branch_passes_through_to_pr_base(
 ) -> None:
     """When on trunk, trunk_branch flows through metadata to PR base."""
     fake_git = FakeGit(current_branches={tmp_path: "master"}, trunk_branches={tmp_path: "master"})
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_git=fake_git,
@@ -435,7 +435,7 @@ def test_planned_pr_feature_branch_creates_correct_pr_base(
         trunk_branches={tmp_path: "master"},
         remote_branches={tmp_path: ["origin/feature/my-work"]},
     )
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
@@ -463,7 +463,7 @@ def test_planned_pr_unpushed_feature_branch_falls_back_to_trunk(
         trunk_branches={tmp_path: "master"},
         # No remote_branches — branch is not on remote
     )
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
@@ -499,7 +499,7 @@ def test_planned_pr_learn_branch_uses_trunk_as_base(
         current_branches={tmp_path: "learn/8163"},
         trunk_branches={tmp_path: "master"},
     )
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
@@ -817,7 +817,7 @@ def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.M
         current_branches={tmp_path: "my-feature-branch"},
         trunk_branches={tmp_path: "master"},
     )
-    fake_github = FakeGitHub()
+    fake_github = FakeLocalGitHub()
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_git=fake_git,

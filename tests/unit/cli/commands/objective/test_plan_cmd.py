@@ -13,7 +13,7 @@ from erk.cli.commands.objective.plan_cmd import (
 )
 from erk.core.context import context_for_test
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
@@ -234,7 +234,7 @@ class TestHandleAllUnblocked:
                 trunk_branches={env.cwd: "main"},
                 current_branches={env.cwd: "main"},
             )
-            github = FakeGitHub(authenticated=True, issues_gateway=issues)
+            github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
             remote = FakeRemoteGitHub(
                 authenticated_user="testuser",
                 default_branch_name="main",
@@ -280,7 +280,7 @@ class TestHandleAllUnblocked:
                 trunk_branches={env.cwd: "main"},
                 current_branches={env.cwd: "main"},
             )
-            github = FakeGitHub(authenticated=True, issues_gateway=issues)
+            github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
             remote = FakeRemoteGitHub(
                 authenticated_user="testuser",
                 default_branch_name="main",
@@ -327,7 +327,7 @@ class TestHandleAllUnblocked:
                 trunk_branches={env.cwd: "main"},
                 current_branches={env.cwd: "main"},
             )
-            github = FakeGitHub(authenticated=True, issues_gateway=issues)
+            github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
             remote = FakeRemoteGitHub(
                 authenticated_user="testuser",
                 default_branch_name="main",

@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -81,7 +81,7 @@ def _make_standard_fakes(
         branch=branch_name,
         body=pr_body,
     )
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         authenticated=True,
         prs_by_branch={branch_name: pr_details},
     )
@@ -173,7 +173,7 @@ def test_fails_when_no_pr() -> None:
             },
         )
 
-        github = FakeGitHub(authenticated=True)
+        github = FakeLocalGitHub(authenticated=True)
 
         ctx = build_workspace_test_context(env, git=git, graphite=graphite, github=github)
 

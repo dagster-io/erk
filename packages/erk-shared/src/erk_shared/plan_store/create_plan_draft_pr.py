@@ -18,7 +18,7 @@ from pathlib import Path
 from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
@@ -50,7 +50,7 @@ class CreatePlanDraftPRResult:
 def create_plan_draft_pr(
     *,
     git: Git,
-    github: GitHub,
+    github: LocalGitHub,
     github_issues: GitHubIssues,
     branch_manager: BranchManager,
     time: Time,

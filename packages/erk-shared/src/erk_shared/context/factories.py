@@ -80,7 +80,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.gateway.erk_installation.real import RealErkInstallation
     from erk_shared.gateway.git.real import RealGit
     from erk_shared.gateway.github.issues.real import RealGitHubIssues
-    from erk_shared.gateway.github.real import RealGitHub
+    from erk_shared.gateway.github.real import RealLocalGitHub
     from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
     from erk_shared.gateway.graphite.fake import FakeGraphite
 
@@ -131,7 +131,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     # Import here to avoid circular imports
     from erk_shared.gateway.agent_docs.real import RealAgentDocs
 
-    real_github = RealGitHub(time=time, repo_info=repo_info, issues=github_issues)
+    real_github = RealLocalGitHub(time=time, repo_info=repo_info, issues=github_issues)
 
     return ErkContext(
         git=git,

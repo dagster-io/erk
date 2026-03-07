@@ -11,7 +11,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.track_learn_result import track_learn_result
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRNotFound
@@ -33,7 +33,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -73,7 +73,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -118,7 +118,7 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -148,7 +148,7 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -183,7 +183,7 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -224,7 +224,7 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -254,7 +254,7 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
@@ -293,7 +293,7 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )

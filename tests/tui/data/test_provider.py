@@ -11,7 +11,7 @@ from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import (
@@ -502,9 +502,9 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return empty PR linkages
-        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.fake import FakeLocalGitHub
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -558,10 +558,10 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return linked PRs
-        from erk_shared.gateway.github.fake import FakeGitHub
+        from erk_shared.gateway.github.fake import FakeLocalGitHub
         from erk_shared.gateway.github.types import PullRequestInfo
 
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_plan_linkages={
                 123: [
                     PullRequestInfo(
@@ -653,7 +653,7 @@ class TestCommentCountsDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -731,7 +731,7 @@ class TestCommentCountsDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -809,7 +809,7 @@ class TestCommentCountsDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -899,7 +899,7 @@ class TestStackedPrDetection:
             github_planning=True,
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -981,7 +981,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1045,7 +1045,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1109,7 +1109,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1173,7 +1173,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1241,7 +1241,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1309,7 +1309,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1379,7 +1379,7 @@ class TestLearnStatusDisplay:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        github = FakeGitHub(pr_plan_linkages={})
+        github = FakeLocalGitHub(pr_plan_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -1475,7 +1475,7 @@ class TestBlockingDepsPlans:
 
         ctx = create_test_context(
             git=git,
-            github=FakeGitHub(pr_plan_linkages={}),
+            github=FakeLocalGitHub(pr_plan_linkages={}),
             cwd=repo_root,
             repo=_make_repo_context(repo_root, tmp_path),
         )
@@ -1794,7 +1794,7 @@ class TestFetchPlansByIds:
             },
             git_common_dirs={repo_root: repo_root / ".git"},
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             pr_plan_linkages=pr_linkages or {},
             issues_data=issues_data or [],
         )
@@ -1912,7 +1912,7 @@ class TestAppendTimingLog:
 
         ctx = create_test_context(
             git=git,
-            github=FakeGitHub(pr_plan_linkages={}),
+            github=FakeLocalGitHub(pr_plan_linkages={}),
             cwd=repo_root,
             repo=_make_repo_context(repo_root, tmp_path),
         )

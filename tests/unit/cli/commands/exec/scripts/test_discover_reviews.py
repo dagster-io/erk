@@ -1,6 +1,6 @@
 """Tests for discover-reviews exec command.
 
-Tests the CLI command end-to-end using FakeGitHub for dependency injection.
+Tests the CLI command end-to-end using FakeLocalGitHub for dependency injection.
 """
 
 import json
@@ -15,7 +15,7 @@ from erk.cli.commands.exec.scripts.discover_reviews import (
 )
 from erk.review.models import ParsedReview, ReviewFrontmatter
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 
 
 def _make_review(
@@ -130,7 +130,7 @@ class TestCreateMatrix:
 
 def test_discover_reviews_with_matching_files(tmp_path: Path) -> None:
     """Test successful discovery when reviews match changed files."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_changed_files={123: ["src/main.py", "tests/test_main.py"]},
     )
 
@@ -167,7 +167,7 @@ Review Python code.
 def test_discover_reviews_no_matching_files(tmp_path: Path) -> None:
     """Test discovery when no reviews match changed files."""
     # Changed files are all JavaScript, no Python
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_changed_files={123: ["src/app.js", "lib/utils.js"]},
     )
 
@@ -204,7 +204,7 @@ Review Python code.
 def test_discover_reviews_empty_pr(tmp_path: Path) -> None:
     """Test discovery when PR has no changed files."""
     # PR with no changed files returns empty list
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_changed_files={123: []},
     )
 
@@ -239,7 +239,7 @@ Test.
 
 def test_discover_reviews_disabled_reviews(tmp_path: Path) -> None:
     """Test that disabled reviews are excluded but reported."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_changed_files={123: ["file.py"]},
     )
 
@@ -277,7 +277,7 @@ This review is disabled.
 def test_discover_reviews_multiple_reviews_partial_match(tmp_path: Path) -> None:
     """Test discovery with multiple reviews where only some match."""
     # Only Python files changed
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_changed_files={123: ["src/main.py", "lib/utils.py"]},
     )
 
@@ -331,7 +331,7 @@ JavaScript review.
 
 def test_discover_reviews_matrix_format(tmp_path: Path) -> None:
     """Test that matrix output is correctly formatted for GitHub Actions."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_changed_files={123: ["any/file.txt"]},
     )
 
@@ -385,7 +385,7 @@ Review B.
 def test_discover_reviews_no_reviews_directory(tmp_path: Path) -> None:
     """Test behavior when reviews directory doesn't exist."""
     # Don't create any reviews directory
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_changed_files={123: ["file.py"]},
     )
 
@@ -407,7 +407,7 @@ def test_discover_reviews_no_reviews_directory(tmp_path: Path) -> None:
 
 def test_discover_reviews_custom_reviews_dir(tmp_path: Path) -> None:
     """Test using custom reviews directory."""
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         pr_changed_files={123: ["src/main.py"]},
     )
 

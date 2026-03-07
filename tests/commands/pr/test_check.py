@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.impl_folder import get_impl_dir
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -46,7 +46,7 @@ erk pr checkout 123
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
                     number=123,
@@ -103,7 +103,7 @@ This PR adds a feature.
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
                     number=123,
@@ -141,7 +141,7 @@ def test_pr_check_fails_when_no_pr_exists(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # No PR for this branch
-        github = FakeGitHub(prs={})
+        github = FakeLocalGitHub(prs={})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -198,7 +198,7 @@ def test_pr_check_handles_empty_pr_body(tmp_path: Path) -> None:
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
                     number=123,
@@ -276,7 +276,7 @@ erk pr checkout 123
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 "plnd/add-feature-01-04-1234": PullRequestInfo(
                     number=123,
@@ -338,7 +338,7 @@ def test_pr_check_passes_with_bottom_header(tmp_path: Path) -> None:
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
                     number=123,
@@ -397,7 +397,7 @@ def test_pr_check_fails_with_legacy_top_header(tmp_path: Path) -> None:
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 "feature-branch": PullRequestInfo(
                     number=123,
@@ -460,7 +460,7 @@ def test_pr_check_stage_impl_fails_when_impl_context_present(tmp_path: Path) -> 
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 branch: PullRequestInfo(
                     number=123,
@@ -519,7 +519,7 @@ def test_pr_check_stage_impl_passes_when_impl_context_absent(tmp_path: Path) -> 
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 branch: PullRequestInfo(
                     number=123,
@@ -580,7 +580,7 @@ def test_pr_check_stage_impl_all_checks_pass(tmp_path: Path) -> None:
             owner="owner",
             repo="repo",
         )
-        github = FakeGitHub(
+        github = FakeLocalGitHub(
             prs={
                 branch: PullRequestInfo(
                     number=123,

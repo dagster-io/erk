@@ -89,7 +89,7 @@ Use Protocol when:
 from typing import Protocol
 
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.github.abc import GitHub
+from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.graphite.abc import Graphite
 
 
@@ -104,7 +104,7 @@ class GtKit(Protocol):
     def git(self) -> Git: ...
 
     @property
-    def github(self) -> GitHub: ...
+    def github(self) -> LocalGitHub: ...
 
     @property
     def graphite(self) -> Graphite: ...
@@ -123,7 +123,7 @@ class GtKit(Protocol):
 Use ABC when:
 
 1. **Defining implementation contracts** - Classes must explicitly implement
-2. **Creating gateway interfaces** - `Git`, `GitHub`, `Graphite`, etc.
+2. **Creating gateway interfaces** - `Git`, `LocalGitHub`, `Graphite`, etc.
 3. **You want fakes to inherit** - Ensures test fakes implement full interface
 4. **You need runtime checks** - `isinstance()` checks work with ABC
 
@@ -257,7 +257,7 @@ from typing import Protocol
 
 class GtKit(Protocol):
     git: Git
-    github: GitHub
+    github: LocalGitHub
     graphite: Graphite
 ```
 
@@ -279,7 +279,7 @@ class GtKit(Protocol):
     def git(self) -> Git: ...
 
     @property
-    def github(self) -> GitHub: ...
+    def github(self) -> LocalGitHub: ...
 
     @property
     def graphite(self) -> Graphite: ...
@@ -440,7 +440,7 @@ class HasGit(Protocol):
 
 class HasGitHub(Protocol):
     @property
-    def gh(self) -> GitHub: ...
+    def gh(self) -> LocalGitHub: ...
 
 
 class FullContext(Protocol):
@@ -450,7 +450,7 @@ class FullContext(Protocol):
     def git(self) -> Git: ...
 
     @property
-    def gh(self) -> GitHub: ...
+    def gh(self) -> LocalGitHub: ...
 
     @property
     def graphite(self) -> Graphite: ...
@@ -461,7 +461,7 @@ class ErkContext:
     """Main context object - satisfies FullContext without inheritance."""
 
     git: Git
-    gh: GitHub
+    gh: LocalGitHub
     graphite: Graphite
 
 

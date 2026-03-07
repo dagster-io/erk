@@ -19,7 +19,7 @@ from erk_dev.commands.audit_collect.command import (
 from erk_dev.context import ErkDevContext
 from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo
 
 _REPO = Path("/fake/repo")
@@ -502,7 +502,7 @@ def test_cli_produces_valid_json(tmp_path: Path) -> None:
             }
         },
     )
-    github = FakeGitHub(
+    github = FakeLocalGitHub(
         prs={
             "feat-x": _make_pr(900, "OPEN", has_conflicts=False),
         },

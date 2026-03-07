@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from tests.fakes.shell import FakeShell
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -294,7 +294,7 @@ def test_consolidate_detached_head_error() -> None:
         test_ctx = env.build_context(
             use_graphite=True,
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=FakeGraphite(),
             shell=FakeShell(),
             dry_run=False,
@@ -471,7 +471,7 @@ def test_consolidate_preserves_root_worktree_even_when_in_stack() -> None:
         test_ctx = env.build_context(
             use_graphite=True,
             git=git_ops,
-            github=FakeGitHub(),
+            github=FakeLocalGitHub(),
             graphite=graphite_ops,
             shell=FakeShell(),
             cwd=wt2_path,

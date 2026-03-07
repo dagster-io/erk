@@ -9,7 +9,7 @@ read_when:
 tripwires:
   - action: "adding a new method to Git ABC"
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
-  - action: "adding a new method to GitHub ABC"
+  - action: "adding a new method to LocalGitHub ABC"
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
   - action: "adding a new method to Graphite ABC"
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
@@ -33,7 +33,7 @@ tripwires:
 
 # Gateway ABC Implementation Checklist
 
-All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When adding a new method to any gateway, you must implement it in **5 places**:
+All gateway ABCs (Git, LocalGitHub, Graphite) follow the same 5-file pattern. When adding a new method to any gateway, you must implement it in **5 places**:
 
 ## Scope
 
@@ -51,12 +51,12 @@ All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When ad
 
 ## Gateway Locations
 
-| Gateway   | Location                                                |
-| --------- | ------------------------------------------------------- |
-| Git       | `packages/erk-shared/src/erk_shared/gateway/git/`       |
-| GitHub    | `packages/erk-shared/src/erk_shared/gateway/github/`    |
-| Graphite  | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
-| Codespace | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
+| Gateway     | Location                                                |
+| ----------- | ------------------------------------------------------- |
+| Git         | `packages/erk-shared/src/erk_shared/gateway/git/`       |
+| LocalGitHub | `packages/erk-shared/src/erk_shared/gateway/github/`    |
+| Graphite    | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
+| Codespace   | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
 
 ## Simplified Gateway Pattern (3 Files)
 
@@ -117,7 +117,7 @@ def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) ->
 When adding a new method to any gateway ABC:
 
 1. [ ] Add abstract method to `abc.py` with docstring and type hints
-2. [ ] Implement in `real.py` (subprocess for Git, `gh` CLI for GitHub/Graphite)
+2. [ ] Implement in `real.py` (subprocess for Git, `gh` CLI for LocalGitHub/Graphite)
 3. [ ] Implement in `fake.py` with:
    - Constructor parameter for test data (if read method)
    - Mutation tracking list/set (if write method)
@@ -300,7 +300,7 @@ def resolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
 When adding a mutation method to a Fake:
 
 ```python
-class FakeGitHub(GitHub):
+class FakeLocalGitHub(LocalGitHub):
     def __init__(self, ...) -> None:
         # Mutation tracking
         self._resolved_thread_ids: set[str] = set()
@@ -368,12 +368,12 @@ def test_delete_branch_idempotent_when_branch_missing() -> None:
 
 ## Gateway Composition
 
-When one gateway composes another (e.g., GitHub composes GitHubIssues), follow these patterns:
+When one gateway composes another (e.g., LocalGitHub composes GitHubIssues), follow these patterns:
 
 ### ABC: Abstract Property
 
 ```python
-class GitHub(ABC):
+class LocalGitHub(ABC):
     @property
     @abstractmethod
     def issues(self) -> GitHubIssues:
@@ -384,7 +384,7 @@ class GitHub(ABC):
 ### Real: Compose Real + Factory Method
 
 ```python
-class RealGitHub(GitHub):
+class RealLocalGitHub(LocalGitHub):
     def __init__(self, time: Time, repo_info: RepoInfo | None, *, issues: GitHubIssues) -> None:
         self._issues = issues
         # ...
@@ -394,7 +394,7 @@ class RealGitHub(GitHub):
         return self._issues
 
     @classmethod
-    def for_test(cls, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealGitHub":
+    def for_test(cls, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealLocalGitHub":
         """Factory for tests that need Real implementation with sensible defaults."""
         from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
         from erk_shared.gateway.time.fake import FakeTime
@@ -413,7 +413,7 @@ class RealGitHub(GitHub):
 - `foo_gateway` for composed gateway (e.g., `issues_gateway: GitHubIssues`)
 
 ```python
-class FakeGitHub(GitHub):
+class FakeLocalGitHub(LocalGitHub):
     def __init__(
         self,
         *,
@@ -431,8 +431,8 @@ class FakeGitHub(GitHub):
 ### DryRun: Compose DryRun Variant Internally
 
 ```python
-class DryRunGitHub(GitHub):
-    def __init__(self, wrapped: GitHub) -> None:
+class DryRunLocalGitHub(LocalGitHub):
+    def __init__(self, wrapped: LocalGitHub) -> None:
         self._wrapped = wrapped
         self._issues = DryRunGitHubIssues(wrapped.issues)
 
@@ -444,7 +444,7 @@ class DryRunGitHub(GitHub):
 ### Printing: Delegate to Wrapped
 
 ```python
-class PrintingGitHub(GitHub):
+class PrintingLocalGitHub(LocalGitHub):
     @property
     def issues(self) -> GitHubIssues:
         return self._wrapped.issues
@@ -452,7 +452,7 @@ class PrintingGitHub(GitHub):
 
 ## Common Pitfall
 
-**Printing implementations often fall behind** - when adding a new method, verify PrintingGit/PrintingGitHub/PrintingGraphite is updated alongside the other implementations.
+**Printing implementations often fall behind** - when adding a new method, verify PrintingGit/PrintingLocalGitHub/PrintingGraphite is updated alongside the other implementations.
 
 ## Dependency Injection for Testability
 
@@ -605,7 +605,7 @@ Gateways that implement retry logic need Time dependency injection for testabili
 Accept optional `Time` in `__init__` with default to `RealTime()`:
 
 ```python
-class RealGitHub(GitHub):
+class RealLocalGitHub(LocalGitHub):
     def __init__(self, time: Time, repo_info: RepoInfo | None, ...) -> None:
         from erk_shared.gateway.time.real import RealTime
         self._time = time if time is not None else RealTime()

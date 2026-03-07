@@ -66,17 +66,17 @@ See `RealGitHub.update_pr_base_branch()` in `packages/erk-shared/src/erk_shared/
 
 ### Fake.py: Constructor-Configured Simulation
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeGitHub.__init__ -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/fake.py, FakeLocalGitHub.__init__ -->
 
-Fake implementations like `FakeGitHub` (in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`) use constructor params to control error scenarios. Check the `__init__` signature: `merge_should_succeed: bool = True`, `gist_create_error: str | None = None`, `pr_diff_error: str | None = None`.
+Fake implementations like `FakeLocalGitHub` (in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`) use constructor params to control error scenarios. Check the `__init__` signature: `merge_should_succeed: bool = True`, `pr_diff_error: str | None = None`, `workflow_runs_error: str | None = None`.
 
 Tests instantiate fakes with pre-configured failure modes:
 
 ```python
 # Test setup (from test code, not copied from source)
-fake = FakeGitHub(
+fake = FakeLocalGitHub(
     merge_should_succeed=False,
-    gist_create_error="Rate limited"
+    pr_diff_error="Rate limited"
 )
 
 # Method implementation returns discriminant based on constructor param
@@ -152,7 +152,7 @@ Logs the operation, delegates to wrapped implementation, returns whatever the wr
 
 ```python
 # DON'T DO THIS
-class FakeGitHub(GitHub):
+class FakeLocalGitHub(LocalGitHub):
     def merge_pr(...) -> MergeResult | MergeError:
         try:
             # Fakes don't make subprocess calls, so this is pointless
@@ -170,7 +170,7 @@ class FakeGitHub(GitHub):
 
 ```python
 # DON'T DO THIS
-class DryRunGitHub(GitHub):
+class DryRunLocalGitHub(GitHub):
     def merge_pr(...) -> MergeResult | MergeError:
         try:
             self._logger.log(f"Would merge PR #{pr_number}")
@@ -186,7 +186,7 @@ class DryRunGitHub(GitHub):
 
 ```python
 # DON'T DO THIS
-class RealGitHub(GitHub):
+class RealLocalGitHub(LocalGitHub):
     def get_pr_diff(self, pr_number: int) -> str | None:
         try:
             result = run_subprocess([...])

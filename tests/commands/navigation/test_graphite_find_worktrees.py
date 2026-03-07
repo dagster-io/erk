@@ -9,7 +9,7 @@ from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo, find_worktree_for_branch
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.graphite.real import RealGraphite
 from tests.fakes.shell import FakeShell
 from tests.test_utils.graphite_helpers import setup_graphite_stack
@@ -53,7 +53,7 @@ def test_find_worktrees_containing_branch_no_match(tmp_path: Path) -> None:
         global_config=GlobalConfig.test(
             Path("/fake/erks"), use_graphite=False, shell_setup_complete=False
         ),
-        github=FakeGitHub(),
+        github=FakeLocalGitHub(),
         graphite=graphite_ops,
         shell=FakeShell(),
         cwd=tmp_path,
