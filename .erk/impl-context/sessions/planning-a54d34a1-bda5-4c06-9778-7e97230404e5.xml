@@ -1,0 +1,1196 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>Seeing some ANTHROPIC_API_KEY shenanigans when erk is trying t o submit a PR
+
+bmit the PR.
+
+⏺ Bash(erk pr submit 2&gt;&amp;1)
+  ⎿  Error: Exit code 1
+     🚀 Submitting PR...
+
+        Resolving branch and plan context...
+        Committing uncommitted changes...
+        Checking for existing PR...
+     Phase 1: Graphite Submit
+        Running gt submit...
+     Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ✏️  Preparing to submit PRs for the following branches...
+     ▸ plnd/skip-non-uuid-idempotency-03-06-1520 (Update code)
+
+     🚀 Pushing branches to remote...
+
+     📨 Creating/updating PRs...
+     plnd/skip-non-uuid-idempotency-03-06-1520: https://app.graphite.com/github/pr/dagster-io/internal/21439 (updated)
+
+     WARNING: Branch plnd/skip-non-uuid-idempotency-03-06-1520 has been updated remotely. Force submitting local version to remote...
+     WARNING: The following branch has diverged from Graphite's tracking:
+     WARNING: ▸ P19951-handle-update-rollback-f-01-11-2039 (and 1 descendant)
+     WARNING: This can happen when a Git command run outside of Graphite changes the commit history of a branch.
+     WARNING: You can use gt track &lt;branch&gt; to remediate a diverged branch.
+     WARNING: To silence reminders about a diverged branch, untrack it with gt untrack &lt;branch&gt;.
+        Graphite submit completed
+
+        Getting PR info...
+        PR #21439 ready
+
+     Phase 2: Getting diff and plan context
+        Incorporating plan #21439
+
+
+     Phase 3: Generating PR description
+        Reading diff file...
+        Diff loaded (4,131 chars)
+        Analyzing changes with Claude...
+     ANTHROPIC_API_KEY environment variable not set
+     Error: Failed to generate message: ANTHROPIC_API_KEY environment variable not set
+
+     🚀 Submitting PR...
+
+        Resolving branch and plan context...
+        Committing uncommitted changes...
+        Checking for existing PR...
+     Phase 1: Graphite Submit
+        Running gt submit...
+     Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ✏️  Preparing to submit PRs for the following branches...
+     ▸ plnd/skip-non-uuid-idempotency-03-06-1520 (Update code)
+
+     🚀 Pushing branches to remote...
+
+     📨 Creating/updating PRs...
+     plnd/skip-non-uuid-idempotency-03-06-1520: https://app.graphite.com/github/pr/dagster-io/internal/21439 (updated)
+
+     WARNING: Branch plnd/skip-non-uuid-idempotency-03-06-1520 has been updated remotely. Force submitting local version to remote...
+     WARNING: The following branch has diverged from Graphite's tracking:
+     WARNING: ▸ P19951-handle-update-rollback-f-01-11-2039 (and 1 descendant)
+     WARNING: This can happen when a Git command run outside of Graphite changes the commit history of a branch.
+     WARNING: You can use gt track &lt;branch&gt; to remediate a diverged branch.
+     WARNING: To silence reminders about a diverged branch, untrack it with gt untrack &lt;branch&gt;.
+        Graphite submit completed
+
+        Getting PR info...
+        PR #21439 ready
+
+     Phase 2: Getting diff and plan context
+        Incorporating plan #21439
+
+
+     Phase 3: Generating PR description
+        Reading diff file...
+        Diff loaded (4,131 chars)
+        Analyzing changes with Claude...
+     ANTHROPIC_API_KEY environment variable not set
+     Error: Failed to generate message: ANTHROPIC_API_KEY environment variable not set
+
+⏺ The PR was pushed and created successfully (PR #21439), but the auto-generated description failed due to a missing API key. Let me update the PR description
+  manually.6 repliesNewschrockn  [2:26 PM]
+well in the short term you can set the api key
+[2:26 PM]it shoudl fall back to claude code
+daniel  [2:26 PM]
+it did not block me
+[2:26 PM]just seemed odd to need an env var for this one specific claude call when the whole thing is using claude end to end
+schrockn  [2:28 PM]
+to generate pr descriptions, branch slugs, and other lightweight operations i go straight to the anthropic api
+[2:28 PM]because perf
+
+got this feedback. if ANTHROPIC_API_KEY not avaiable we should fallback to invoking claude as a process</user>
+  <usage input_tokens="3" cache_creation_input_tokens="16585" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16585}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore how the Anthropic API is currently used and where the fallback should be added.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16585" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16585}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01CgMpK562Ebpmx3j6MWtpme">
+    <param name="query">select:Agent,Grep,Glob,Read</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16585" cache_read_input_tokens="0" output_tokens="185" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16585, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01CgMpK562Ebpmx3j6MWtpme">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4302" cache_read_input_tokens="16585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4302}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016JCSMBEcvZqnUZY3fYMZLx">
+    <param name="pattern">ANTHROPIC_API_KEY</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4302" cache_read_input_tokens="16585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4302}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016JCSMBEcvZqnUZY3fYMZLx">
+CHANGELOG.md:483:- Fix `erk-remote-setup` GitHub Action to accept either `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` instead of requiring both
+CHANGELOG.md:532:- Fix missing `ANTHROPIC_API_KEY` in pr-address workflow summary step
+.github/actions/erk-remote-setup/action.yml:9:    description: "ANTHROPIC_API_KEY secret"
+.github/actions/erk-remote-setup/action.yml:26:          echo "::error title=Missing Secret::Either ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN must be configured"
+.github/actions/erk-remote-setup/action.yml:53:        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+.github/workflows/ci.yml:227:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/one-shot.yml:94:          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/one-shot.yml:153:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/README.md:40:| `ANTHROPIC_API_KEY`       | Anthropic API authentication (fallback) | `ci`, `code-reviews`, `learn`, `one-shot`, `plan-implement`, `pr-address`, `pr-rebase`, `pr-rewrite` |
+.github/workflows/pr-rewrite.yml:55:          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/pr-rewrite.yml:86:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/learn.yml:58:          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/learn.yml:64:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/pr-address.yml:47:          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/pr-address.yml:88:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/pr-address.yml:182:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/pr-rebase.yml:60:          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/pr-rebase.yml:123:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+src/erk/core/health_checks/anthropic_api_secret.py:14:    - ANTHROPIC_API_KEY: Direct API key (takes precedence)
+src/erk/core/health_checks/anthropic_api_secret.py:28:    api_key_secret = "ANTHROPIC_API_KEY"
+.github/workflows/plan-implement.yml:130:          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/plan-implement.yml:155:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/plan-implement.yml:261:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/plan-implement.yml:373:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/plan-implement.yml:394:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/plan-implement.yml:435:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+.github/workflows/code-reviews.yml:114:          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+src/erk/core/fast_llm.py:22:        api_key = os.environ.get("ANTHROPIC_API_KEY")
+src/erk/core/fast_llm.py:24:            logger.warning("ANTHROPIC_API_KEY environment variable not set")
+src/erk/core/fast_llm.py:25:            return NoApiKey(message="ANTHROPIC_API_KEY environment variable not set")
+
+... [101 lines omitted] ...
+
+docs/learned/ci/github-actions-claude-integration.md:46:| Authentication failed            | Missing `ANTHROPIC_API_KEY`              | Add secret to workflow |
+docs/learned/ci/github-actions-claude-integration.md:58:**Lesson learned (PR #7356):** The `generate-pr-address-summary` step in `pr-address.yml` initially failed silently because `CLAUDE_CODE_OAUTH_TOKEN` was missing from its env block. When adding Claude-dependent steps to workflows, always check whether the exec script calls `require_prompt_executor()` (needs `ANTHROPIC_API_KEY`) or invokes `claude` CLI (needs `CLAUDE_CODE_OAUTH_TOKEN`), or both.
+docs/learned/ci/exec-script-environment-requirements.md:9:    warning: "Ensure workflow step has ANTHROPIC_API_KEY in environment. See exec-script-environment-requirements.md"
+docs/learned/ci/exec-script-environment-requirements.md:11:    warning: "Check workflow environment: ANTHROPIC_API_KEY, GH_TOKEN, CLAUDE_CODE_OAUTH_TOKEN"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01KSNHnPJG3doS7ukgY3qBa5">
+    <param name="pattern">anthropic</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4302" cache_read_input_tokens="16585" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4302, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KSNHnPJG3doS7ukgY3qBa5">
+Found 11 files
+src/erk/cli/commands/doctor.py
+tests/tui/data/test_provider.py
+tests/core/test_fast_llm.py
+src/erk/core/fast_llm.py
+.claude/skills/skill-creator/scripts/run_loop.py
+.claude/skills/skill-creator/scripts/improve_description.py
+src/erk/cli/commands/doctor_workflow.py
+tests/unit/core/test_health_checks_anthropic_api_secret.py
+src/erk/core/health_checks/anthropic_api_secret.py
+src/erk/core/health_checks/__init__.py
+tests/commands/test_create.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GRxPwjsc1Y4qxWHwpifApF">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/fast_llm.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6369" cache_read_input_tokens="20887" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6369}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GRxPwjsc1Y4qxWHwpifApF">
+     1→"""Fast LLM calls via Anthropic SDK.
+     2→
+     3→For lightweight operations (slug generation) where spawning a full
+     4→Claude CLI subprocess is too slow.
+     5→"""
+     6→
+     7→import logging
+     8→import os
+     9→
+    10→from anthropic import Anthropic, APIError
+    11→from anthropic.types import TextBlock
+    12→
+    13→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    14→
+    15→logger = logging.getLogger(__name__)
+    16→
+    17→
+    18→class AnthropicLlmCaller(LlmCaller):
+    19→    def call(
+    20→        self, prompt: str, *, system_prompt: str, max_tokens: int
+    21→    ) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+    22→        api_key = os.environ.get("ANTHROPIC_API_KEY")
+    23→        if api_key is None:
+    24→            logger.warning("ANTHROPIC_API_KEY environment variable not set")
+    25→            return NoApiKey(message="ANTHROPIC_API_KEY environment variable not set")
+    26→        try:
+    27→            client = Anthropic(api_key=api_key)
+    28→            response = client.messages.create(
+    29→                model="claude-haiku-4-5-20251001",
+    30→                max_tokens=max_tokens,
+
+... [11 lines omitted] ...
+
+    36→                return LlmCallFailed(message="Unexpected response type from LLM")
+    38→        except APIError as exc:
+    39→            logger.warning("LLM call failed: %s", exc)
+    40→            return LlmCallFailed(message=str(exc))
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012JLBQBayyjZKvRHgdPE2B3">
+    <param name="pattern">claude.*--print|claude.*-p\b|subprocess.*claude</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6369" cache_read_input_tokens="20887" output_tokens="176" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6369, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012JLBQBayyjZKvRHgdPE2B3">
+src/erk/core/prompt_executor.py:43:from erk_shared.subprocess_utils import build_claude_subprocess_env
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ruc3WZiCbCdBsKVkFJTYhK">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk_shared/core/llm_caller.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="921" cache_read_input_tokens="27256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 921}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ruc3WZiCbCdBsKVkFJTYhK">
+File does not exist. Note: your current working directory is /Users/schrockn/code/erk.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NAWasWEK5pH41SptmYNX3r">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="921" cache_read_input_tokens="27256" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 921, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NAWasWEK5pH41SptmYNX3r">
+&lt;tool_use_error&gt;Cancelled: parallel tool call Read(/Users/schrockn/code/erk/src/erk_shared/…) errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Nzpx8Wi7cvGQ1F4W5tUJLV">
+    <param name="pattern">**/llm_caller.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="28177" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 266}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B6zv54Nk8YuT93JxMZDbSE">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="28177" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 266, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B6zv54Nk8YuT93JxMZDbSE">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudePromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    NoOutputEvent,
+    29→    NoTurnsEvent,
+    30→    PlanNumberEvent,
+
+... [624 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+    53→def format_prompt_error(
+    59→    """Format error message for failed prompt execution.
+    61→    Constructs a structured error message from subprocess failure details.
+    65→        stderr: Standard error output
+    69→        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    71→    error_parts = [f"Exit code {returncode}"]
+    73→        error_parts.append(f"stderr: {stderr.strip()}")
+    76→        error_parts.append(f"stdout: {stdout_preview}")
+    77→    return " | ".join(error_parts)
+   153→                error_msg = f"Claude command {command} failed with exit code {result.returncode}"
+   154→                yield ErrorEvent(message=error_msg)
+   163→        # Handle Popen errors (e.g., claude not found, permission denied)
+   174→        except OSError as e:
+   175→            yield ProcessErrorEvent(
+   176→                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   282→                    diag += "\n  Run 'claude' directly to see hook error messages"
+   300→            yield ProcessErrorEvent(
+   318→                yield ErrorEvent(message=f"Exit code {returncode}")
+   321→        # Enhanced error messages for non-zero exit codes
+   323→            error_msg = f"Claude command {command} failed"
+   324→            error_msg += f"\n  Exit code: {returncode}"
+   325→            error_msg += f"\n  Lines processed: {line_count}"
+   327→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   328→            yield ErrorEvent(message=error_msg)
+   364→        # Parse JSON safely - JSON parsing requires exception handling
+   371→            except json.JSONDecodeError:
+   386→            "is_error": None,
+   456→            result["is_error"] = data.get("is_error", False)
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <tool_result tool="toolu_01Nzpx8Wi7cvGQ1F4W5tUJLV">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FdrMKvFKLcKXKc4uY68XXv">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py</param>
+  </tool_use>
+  <usage input_tokens="8369" cache_creation_input_tokens="294" cache_read_input_tokens="28443" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FdrMKvFKLcKXKc4uY68XXv">
+     1→"""LLM caller ABC and discriminated union result types.
+     2→
+     3→Defines the interface for lightweight LLM calls (e.g., slug generation)
+     4→and the non-ideal state types returned when calls fail.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from dataclasses import dataclass
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class LlmResponse:
+    13→    text: str
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class NoApiKey:
+    18→    message: str
+    19→
+    20→    @property
+    21→    def error_type(self) -&gt; str:
+    22→        return "no-api-key"
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class LlmCallFailed:
+    27→    message: str
+    28→
+    29→    @property
+    30→    def error_type(self) -&gt; str:
+
+... [11 lines omitted] ...
+
+    31→        return "llm-call-failed"
+    38→    ) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0134eKwJyhHDdSzy2iWuPAJE">
+    <param name="pattern">LlmCaller|fast_llm|llm_caller</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="8369" cache_creation_input_tokens="294" cache_read_input_tokens="28443" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 294, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0134eKwJyhHDdSzy2iWuPAJE">
+src/erk/cli/commands/one_shot_dispatch.py:23:from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
+src/erk/cli/commands/one_shot_dispatch.py:208:            result = ctx.llm_caller.call(
+src/erk/cli/commands/objective/plan_cmd.py:27:from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, NoApiKey
+src/erk/cli/commands/objective/plan_cmd.py:47:def _generate_slug(llm_caller: LlmCaller, description: str) -&gt; str:
+src/erk/cli/commands/objective/plan_cmd.py:54:        llm_caller: LLM caller for slug generation
+src/erk/cli/commands/objective/plan_cmd.py:60:    result = llm_caller.call(description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT, max_tokens=50)
+src/erk/cli/commands/objective/plan_cmd.py:282:        slug = _generate_slug(ctx.llm_caller, node.description)
+src/erk/cli/commands/objective/plan_cmd.py:766:    slug = _generate_slug(ctx.llm_caller, target_node.description)
+src/erk/cli/commands/pr/submit_pipeline.py:655:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+src/erk/cli/commands/pr/rewrite_cmd.py:125:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+src/erk/cli/commands/exec/scripts/update_pr_description.py:120:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+src/erk/core/fast_llm.py:13:from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+src/erk/core/fast_llm.py:18:class AnthropicLlmCaller(LlmCaller):
+src/erk/core/context.py:39:from erk_shared.core.fakes import FakeLlmCaller, FakeObjectiveListService, FakePlanListService
+src/erk/core/context.py:40:from erk_shared.core.llm_caller import LlmCaller, LlmResponse
+src/erk/core/context.py:190:        llm_caller=FakeLlmCaller(response=LlmResponse(text="test-slug")),
+src/erk/core/context.py:224:    llm_caller: LlmCaller | None = None,
+src/erk/core/context.py:387:    if llm_caller is None:
+src/erk/core/context.py:388:        llm_caller = FakeLlmCaller(response=LlmResponse(text="test-slug"))
+src/erk/core/context.py:437:        llm_caller=llm_caller,
+src/erk/core/context.py:651:    from erk.core.fast_llm import AnthropicLlmCaller
+src/erk/core/context.py:653:    llm_caller = AnthropicLlmCaller()
+src/erk/core/context.py:702:        llm_caller=llm_caller,
+src/erk/core/commit_message_generator.py:19:from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+src/erk/core/commit_message_generator.py:73:    Uses LlmCaller for fast, direct API access instead of spawning
+src/erk/core/commit_message_generator.py:77:    def __init__(self, llm_caller: LlmCaller, *, time: Time) -&gt; None:
+src/erk/core/commit_message_generator.py:78:        self._llm_caller = llm_caller
+src/erk/core/commit_message_generator.py:141:                self._llm_caller.call(user_prompt, system_prompt=system_prompt, max_tokens=4096)
+  </tool_result>
+  <assistant>Now let me check how callers handle `NoApiKey` and see the commit message generator's handling:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10197" cache_read_input_tokens="28737" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10197}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014W1tLTk4hQZEHz64uCLqGd">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10197" cache_read_input_tokens="28737" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10197}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014W1tLTk4hQZEHz64uCLqGd">
+     1→"""Commit message generation via Anthropic API.
+     2→
+     3→This module provides commit message generation for PR submissions,
+     4→using direct Anthropic API calls to analyze diffs and generate descriptive messages.
+     5→
+     6→The commit message prompt is loaded from the shared prompt file at:
+     7→packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→import logging
+    13→import threading
+    14→from collections.abc import Generator
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING
+    18→
+    19→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    20→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    21→from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+    22→from erk_shared.gateway.time.abc import Time
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.core.plan_context_provider import PlanContext
+    26→
+    27→logger = logging.getLogger(__name__)
+    28→
+    29→_PROGRESS_INTERVAL_SECONDS = 2.0
+    30→
+
+... [281 lines omitted] ...
+
+    61→        error_message: Error description if generation failed
+    67→    error_message: str | None
+   104→                    error_message=f"Diff file not found: {request.diff_file}",
+   117→                    error_message="Diff file is empty",
+   137→        result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
+   160→                    error_message="LLM call completed without result",
+   167→        if isinstance(result, (NoApiKey, LlmCallFailed)):
+   173→                    error_message=result.message,
+   187→                error_message=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EFLngjJbcWRdqLpn6Jo887">
+    <param name="file_path">/Users/schrockn/code/erk/tests/core/test_fast_llm.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10197" cache_read_input_tokens="28737" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10197, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EFLngjJbcWRdqLpn6Jo887">
+     1→"""Tests for fast_llm module."""
+     2→
+     3→import pytest
+     4→
+     5→from erk.core.fast_llm import AnthropicLlmCaller
+     6→from erk_shared.core.fakes import FakeLlmCaller
+     7→from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse, NoApiKey
+     8→
+     9→
+    10→def test_fake_returns_configured_response() -&gt; None:
+    11→    """FakeLlmCaller returns configured LlmResponse."""
+    12→    caller = FakeLlmCaller(response=LlmResponse(text="my-slug"))
+    13→    result = caller.call("generate slug", system_prompt="system", max_tokens=50)
+    14→    assert isinstance(result, LlmResponse)
+    15→    assert result.text == "my-slug"
+    16→
+    17→
+    18→def test_fake_returns_no_api_key() -&gt; None:
+    19→    """FakeLlmCaller returns NoApiKey when configured."""
+    20→    caller = FakeLlmCaller(response=NoApiKey(message="no key"))
+    21→    result = caller.call("generate slug", system_prompt="system", max_tokens=50)
+    22→    assert isinstance(result, NoApiKey)
+    23→    assert result.message == "no key"
+    24→    assert result.error_type == "no-api-key"
+    25→
+    26→
+    27→def test_fake_returns_llm_call_failed() -&gt; None:
+    28→    """FakeLlmCaller returns LlmCallFailed when configured."""
+    29→    caller = FakeLlmCaller(response=LlmCallFailed(message="timeout"))
+    30→    result = caller.call("generate slug", system_prompt="system", max_tokens=50)
+
+... [13 lines omitted] ...
+
+    31→    assert isinstance(result, LlmCallFailed)
+    33→    assert result.error_type == "llm-call-failed"
+  </tool_result>
+  <assistant>Now let me check how the `claude` CLI is invoked for simple prompts and how `build_claude_subprocess_env` works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8926" cache_read_input_tokens="38934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8926}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DvhVUHqRzCNmZfXHUf1v1u">
+    <param name="pattern">build_claude_subprocess_env</param>
+    <param name="path">/Users/schrockn/code/erk/packages</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8926" cache_read_input_tokens="38934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8926}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DvhVUHqRzCNmZfXHUf1v1u">
+Found 5 files
+packages/erk-shared/src/erk_shared/subprocess_utils.py
+packages/erk-shared/tests/unit/test_subprocess_utils.py
+packages/erk-shared/src/erk_shared/learn/extraction/llm_distillation.py
+packages/erk-shared/src/erk_shared/gateway/shell/real.py
+packages/erk-dev/src/erk_dev/commands/slash_command/command.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EiRZWkj3CpLpXHJYzxtu5F">
+    <param name="pattern">class FakeLlmCaller</param>
+    <param name="path">/Users/schrockn/code/erk/packages</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8926" cache_read_input_tokens="38934" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8926, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EiRZWkj3CpLpXHJYzxtu5F">
+packages/erk-shared/src/erk_shared/core/fakes.py:324:class FakeLlmCaller(LlmCaller):
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-325-    """Fake LlmCaller that returns pre-configured responses.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-326-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-327-    Supports a single response or a queue of responses for sequential calls.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-328-    Records all calls for test assertions.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-329-    """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-330-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-331-    def __init__(
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-332-        self,
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-333-        *,
+packages/erk-shared/src/erk_shared/core/fakes.py-334-        response: LlmResponse | NoApiKey | LlmCallFailed,
+packages/erk-shared/src/erk_shared/core/fakes.py-335-        responses: list[LlmResponse | NoApiKey | LlmCallFailed] | None = None,
+packages/erk-shared/src/erk_shared/core/fakes.py-336-    ) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-337-        self.response = response
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-338-        self._responses = list(responses) if responses is not None else None
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/fakes.py-339-        self._response_index = 0
+  </tool_result>
+  <assistant>Now let me look at where `AnthropicLlmCaller` is instantiated and what callers do with `NoApiKey`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="47860" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1211}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017qAGVnTHh93MaTu3f9AZSJ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/context.py</param>
+    <param name="offset">640</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="47860" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1211, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017qAGVnTHh93MaTu3f9AZSJ">
+   640→    # Note: DryRunGitHub composes DryRunGitHubIssues internally,
+   641→    # but we still wrap issues separately for ctx.issues backward compatibility
+   642→    # Note: DryRunGitHub composes DryRunGitHubIssues internally for github.issues
+   643→    if dry_run:
+   644→        git = DryRunGit(git)
+   645→        graphite = DryRunGraphite(graphite)
+   646→        if graphite_branch_ops is not None:
+   647→            graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
+   648→        github = DryRunGitHub(github)
+   649→
+   650→    # 10. Create LLM caller for lightweight operations (slug generation)
+   651→    from erk.core.fast_llm import AnthropicLlmCaller
+   652→
+   653→    llm_caller = AnthropicLlmCaller()
+   654→
+   655→    # 11. Create claude installation and prompt executor
+   656→    from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
+   657→    from erk_shared.gateway.agent_launcher.real import RealAgentLauncher
+   658→    from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
+   659→
+   660→    real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
+   661→    real_agent_launcher: AgentLauncher = RealAgentLauncher()
+   662→    real_agent_docs: AgentDocs = RealAgentDocs()
+   663→    if dry_run:
+   664→        real_agent_docs = DryRunAgentDocs(real_agent_docs)
+   665→    prompt_executor = create_prompt_executor(
+   666→        global_config=global_config,
+   667→        console=console,
+   668→    )
+   669→
+
+... [40 lines omitted] ...
+  </tool_result>
+  <assistant>I now have a clear picture. Let me check how `execute_prompt` works to understand the Claude CLI fallback pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="49071" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1310}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013x2JnPnTNbTxJcooiqF6eG">
+    <param name="pattern">execute_prompt|require_prompt_executor</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="49071" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1310, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013x2JnPnTNbTxJcooiqF6eG">
+Found 11 files
+src/erk/cli/commands/exec/scripts/ci_generate_summaries.py
+src/erk/cli/commands/exec/scripts/run_review.py
+src/erk/core/prompt_executor.py
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py
+src/erk/core/branch_slug_generator.py
+src/erk/core/plan_duplicate_checker.py
+src/erk/core/plan_relevance_checker.py
+src/erk/core/codex_prompt_executor.py
+src/erk/cli/commands/exec/scripts/validate_claude_credentials.py
+src/erk/cli/commands/exec/scripts/generate_pr_address_summary.py
+  </tool_result>
+  <assistant>Now I have enough context. The approach is clear:
+
+1. `AnthropicLlmCaller` in `fast_llm.py` uses the Anthropic SDK directly for speed
+2. When `ANTHROPIC_API_KEY` is missing, it returns `NoApiKey` 
+3. The fix: instead of returning `NoApiKey`, fall back to invoking `claude --print` as a subprocess
+
+Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="50381" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 367}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01XHqDuAeh5QxfExvCoWdMiF">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="50381" output_tokens="176" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 367, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01XHqDuAeh5QxfExvCoWdMiF">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01EshyvV1YutyMPzJEc6t7QA">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="570" cache_read_input_tokens="50748" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 570, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01EshyvV1YutyMPzJEc6t7QA">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="741" cache_read_input_tokens="51318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 741}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_016uqQrMAXjzHKBc7BNakBho">
+    <param name="file_path">/Users/schrockn/.claude/plans/composed-meandering-cookie.md</param>
+    <param name="content"># Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable
+
+## Context
+
+When `e...[truncated 1731 chars]...` to verify tests pass
+- Run `uv run ty check src/erk/core/fast_llm.py` for type checking
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="741" cache_read_input_tokens="51318" output_tokens="1406" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 741, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016uqQrMAXjzHKBc7BNakBho">
+File created successfully at: /Users/schrockn/.claude/plans/composed-meandering-cookie.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_019fhewo8hgjJucBMVwAiYad">
+    <param name="plan"># Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable
+
+## Context
+
+When `e...[truncated 1731 chars]...` to verify tests pass
+- Run `uv run ty check src/erk/core/fast_llm.py` for type checking
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1432" cache_read_input_tokens="52059" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1432, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019fhewo8hgjJucBMVwAiYad">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/composed-meandering-cookie.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id a54d34a1-bda5-4c06-9778-7e97230404e5 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_016U3Zvv3uNmGL2nQNGb4qaf">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="53491" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 682, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_016U3Zvv3uNmGL2nQNGb4qaf">
+
+  </tool_result>
+  <assistant>
+
+# Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable
+
+## Context
+
+When `erk pr submit` generates PR descriptions, it uses `AnthropicLlmCaller` which calls the Anthropic API directly for speed. If `ANTHROPIC_API_KEY` is not set, it returns `NoApiKey`, which propagates as an error. This blocks PR description generation even though the user is running inside Claude Code, which has its own authentication. The fix: fall back to invoking `claude --print` as a subprocess when the API key isn't available.
+
+## Changes
+
+### 1. Add Claude CLI fallback in `src/erk/core/fast_llm.py`
+
+When `ANTHROPIC_API_KEY` is not set, instead of returning `NoApiKey`, invoke `claude --print` with the prompt via subprocess:
+
+- Check `shutil.which("claude")` to confirm CLI is available
+- If not available, return `NoApiKey` as before (true dead end)
+- If available, run `claude --print --no-session-persistence --model claude-haiku-4-5-20251001 --output-format text --system-prompt &lt;system_prompt&gt; &lt;prompt&gt;` via `subprocess.run`
+- Use `build_claude_subprocess_env()` for the env (same as `ClaudePromptExecutor`)
+- On success, return `LlmResponse(text=...)`
+- On failure, return `LlmCallFailed(message=...)`
+- Log a debug message noting the fallback
+
+### 2. Update tests in `tests/core/test_fast_llm.py`
+
+- Update `test_anthropic_llm_caller_returns_no_api_key_without_env` — it should now only return `NoApiKey` when both the API key is missing AND `claude` CLI is unavailable
+- Add test: no API key + claude available → falls back to CLI (mock `subprocess.run` and `shutil.which`)
+- Add test: no API key + claude not available → returns `NoApiKey`
+
+## Files to modify
+
+- `src/erk/core/fast_llm.py` — add CLI fallback logic
+- `tests/core/test_fast_llm.py` — update and add tests
+
+## Verification
+
+- Run `uv run pytest tests/core/test_fast_llm.py` to verify tests pass
+- Run `uv run ty check src/erk/core/fast_llm.py` for type checking
+
+---</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="54173" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_0177FMJRBHfRecDqfiZ9s4e7">
+    <param name="questions">[{'question': '📋 Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable\nCurr...[truncated 371 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="54173" output_tokens="804" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0177FMJRBHfRecDqfiZ9s4e7">
+User has answered your questions: "📋 Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Save as planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01KGdHEn6ijaQ78HsH1bL8BX">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2200" cache_read_input_tokens="55506" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2200, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01KGdHEn6ijaQ78HsH1bL8BX">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01C9LWZFqR1AKxG4HuB2eG3G">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="57706" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C9LWZFqR1AKxG4HuB2eG3G">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="a54d34a1-bda5-4c06-9778-7e97230404e5" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="a54d34a1-bda5-4c06-9778-7e97230404e5" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "a54d34a1-bda5-4c06-9778-7e97230404e5" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "a54d34a1-bda5-4c06-9778-7e97230404e5" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "a54d34a1-bda5-4c06-9778-7e97230404e5" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "a54d34a1-bda5-4c06-9778-7e97230404e5" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll save this plan as a draft PR. Let me generate the slug and summary, then run the save command.
+
+**Branch slug:** `fallback-claude-cli-llm`
+
+**Plan summary:** When ANTHROPIC_API_KEY is not set, AnthropicLlmCaller currently returns a NoApiKey error, blocking PR description generation. This change adds a fallback that invokes the Claude CLI subprocess instead, so users running inside Claude Code can still generate descriptions without a separate API key.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2292" cache_read_input_tokens="58274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2292}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_018UukZisQA1LFH7UpAvjPCw">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2292" cache_read_input_tokens="58274" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_018UukZisQA1LFH7UpAvjPCw">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Dzdxc7B6E7TQmrFTABsuMy">
+    <param name="command">erk exec plan-save --format json --session-id="a54d34a1-bda5-4c06-9778-7e97230404e5" --bra...[truncated 234 chars]...rs running inside Claude Code can still generate descriptions without a separate API key."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3338" cache_read_input_tokens="60566" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3338, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Dzdxc7B6E7TQmrFTABsuMy">
+{"success": true, "plan_number": 8864, "plan_url": "https://github.com/dagster-io/erk/pull/8864", "title": "[erk-plan] Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable", "branch_name": "plnd/fallback-claude-cli-llm-03-06-1435", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/a54d34a1-bda5-4c06-9778-7e97230404e5/plan_snapshots/000001-c5e68739"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8864: https://github.com/dagster-io/erk/pull/8864
+
+Now pushing the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="63904" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 483}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LGV4YN3m4aBwUixhBRbo9u">
+    <param name="command">erk exec upload-impl-session --session-id "a54d34a1-bda5-4c06-9778-7e97230404e5" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="63904" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 483, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LGV4YN3m4aBwUixhBRbo9u">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01PVqZCrtmfCvB88uDEJ4GA1">
+    <param name="plan"># Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable
+
+## Context
+
+When `e...[truncated 1731 chars]...` to verify tests pass
+- Run `uv run ty check src/erk/core/fast_llm.py` for type checking
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="184" cache_read_input_tokens="64387" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 184, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PVqZCrtmfCvB88uDEJ4GA1">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8864 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8864:
+  In current wt:    source "$(erk br co --for-plan 8864 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8864 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8864 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8864 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8864:
+  In current wt:  erk br co --for-plan 8864
+  In new wt:      erk br co --new-slot --for-plan 8864
+
+Dispatch plan #8864:
+  CLI command:    erk pr dispatch 8864
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8864 saved successfully.
+
+**Implement plan #8864:**
+```
+In current wt:    source "$(erk br co --for-plan 8864 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8864 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8864 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8864 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8864:**
+```
+In current wt:  erk br co --for-plan 8864
+In new wt:      erk br co --new-slot --for-plan 8864
+```
+
+**Dispatch plan #8864:**
+```
+CLI command:    erk pr dispatch 8864
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="64571" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 420, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "a54d34a1-bda5-4c06-9778-7e97230404e5" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan in this conversation is #8864. Let me dispatch it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="812" cache_read_input_tokens="64991" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 812}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T3CSZ1r52qw54ZEp3Urqwg">
+    <param name="command">erk pr dispatch 8864</param>
+    <param name="description">Dispatch plan #8864 for remote AI implementation</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="812" cache_read_input_tokens="64991" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 812, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T3CSZ1r52qw54ZEp3Urqwg">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8864...
+
+✓ All 1 plan(s) validated
+
+  #8864: [erk-plan] Plan: Fall back to Claude CLI when ANTHROPIC_API_KEY is unavailable
+
+Dispatching PR #8864...
+
+Fetching plan content...
+Syncing branch: plnd/fallback-claude-cli-llm-03-06-1435
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <assistant>Plan #8864 dispatched successfully.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8864
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22784870674</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="684" cache_read_input_tokens="65803" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 684}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JCH18ARtnNJdDSbHDhBirp">
+    <param name="command">erk exec marker delete --session-id "a54d34a1-bda5-4c06-9778-7e97230404e5" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker to allow new plans in this session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="684" cache_read_input_tokens="65803" output_tokens="181" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 684, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JCH18ARtnNJdDSbHDhBirp">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>The remote workflow is now running. It will implement the fallback logic in `fast_llm.py` and open an implementation PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="66487" output_tokens="32" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
