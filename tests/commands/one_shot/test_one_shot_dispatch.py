@@ -34,7 +34,7 @@ def test_dispatch_happy_path() -> None:
         dry_run=False,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None
@@ -102,7 +102,7 @@ def test_dispatch_with_extra_inputs() -> None:
         dry_run=False,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None
@@ -141,7 +141,7 @@ def test_dispatch_dry_run() -> None:
         dry_run=True,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is None
@@ -179,7 +179,7 @@ def test_dispatch_with_pre_generated_slug_skips_llm() -> None:
         dry_run=False,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None
@@ -216,7 +216,7 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
         dry_run=False,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None
@@ -259,7 +259,7 @@ def test_dispatch_explicit_ref_is_passed_to_workflow() -> None:
         dry_run=False,
         ref="custom-ref",
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None

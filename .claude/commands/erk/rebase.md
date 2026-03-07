@@ -55,6 +55,7 @@ e. **Stage the resolution** - `git add <file>`
 
 7. **Verify completion** - Check git status and recent commit history to confirm success
 
-8. **Push changes** - After rebase, the branch will have diverged from origin. Push the rebased branch:
-   - For Graphite users: `gt submit` (or `gt ss`)
-   - For git-only users: `git push --force-with-lease`
+8. **Ask user about pushing** - After rebase, the branch will have diverged from origin. Use `AskUserQuestion` to ask the user how they'd like to proceed, presenting these options:
+   - **Push with Graphite**: `gt submit --no-interactive`
+   - **Push with git**: `git push --force-with-lease`
+   - **Do nothing**: skip pushing (user will handle manually)
