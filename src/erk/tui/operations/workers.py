@@ -126,18 +126,18 @@ class BackgroundWorkersMixin:
     def _cmux_checkout_async(
         self: ErkDashApp, op_id: str, pr_number: int, branch: str, *, teleport: bool
     ) -> None:
-        """Create cmux workspace, checkout PR, and focus the workspace.
+        """Create cmux workspace to open PR and focus the workspace.
 
         Args:
             op_id: Operation identifier for status bar tracking
-            pr_number: The PR number to checkout
+            pr_number: The PR number to open
             branch: The PR head branch name (used to rename and focus the workspace)
             teleport: If True, use teleport mode (heavyweight with sync)
         """
         command = [
             "erk",
             "exec",
-            "cmux-checkout-workspace",
+            "cmux-open-pr",
             "--pr",
             str(pr_number),
             "--branch",

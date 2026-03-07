@@ -1136,7 +1136,7 @@ class TestCmuxCheckoutAsync:
     async def test_cmux_checkout_runs_correct_command(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_cmux_checkout_async should run cmux-checkout-workspace with correct args."""
+        """_cmux_checkout_async should run cmux-open-pr with correct args."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -1174,7 +1174,7 @@ class TestCmuxCheckoutAsync:
             assert captured_popen_calls[0] == [
                 "erk",
                 "exec",
-                "cmux-checkout-workspace",
+                "cmux-open-pr",
                 "--pr",
                 "456",
                 "--branch",

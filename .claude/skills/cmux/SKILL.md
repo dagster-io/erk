@@ -193,19 +193,22 @@ erk config get cmux_integration
 erk config set cmux_integration true
 ```
 
-### `erk exec cmux-checkout-workspace`
+### `erk exec cmux-open-pr`
 
-Creates a cmux workspace that checks out a PR and syncs with trunk:
+Creates a cmux workspace that opens a PR with checkout or teleport mode:
 
 ```bash
-erk exec cmux-checkout-workspace --pr 8152
-erk exec cmux-checkout-workspace --pr 8152 --branch "my-branch"
+erk exec cmux-open-pr --pr 8152
+erk exec cmux-open-pr --pr 8152 --branch "my-branch"
+erk exec cmux-open-pr --pr 8152 --mode teleport
 ```
 
 What it does:
 
 1. Auto-detects PR head branch via `gh pr view --json headRefName` (if `--branch` omitted)
-2. Creates workspace running: `source "$(erk pr teleport <pr> --new-slot --script --sync)"`
+2. Creates workspace with:
+   - **checkout mode** (default): `source "$(erk pr checkout <pr> --script)"`
+   - **teleport mode**: `source "$(erk pr teleport <pr> --new-slot --script --sync)"`
 3. Renames workspace to the branch name
 4. Outputs JSON: `{"success": true, "pr_number": N, "branch": "...", "workspace_name": "..."}`
 
@@ -214,7 +217,7 @@ What it does:
 When `cmux_integration` is enabled, the erk dash TUI command palette exposes:
 
 - **cmux checkout** (action) -- Creates a cmux workspace for the selected plan's PR
-- **copy cmux checkout** (copy) -- Copies the cmux checkout command to clipboard
+- **copy cmux checkout** (copy) -- Copies the cmux open command to clipboard
 
 Both require a plan with `pr_number` and `pr_head_branch`.
 
