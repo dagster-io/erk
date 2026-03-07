@@ -10,9 +10,10 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.one_shot_dispatch import (
+from erk.cli.commands.one_shot import _get_remote_github
+from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
-    dispatch_one_shot,
+    dispatch_one_shot_remote,
 )
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.parsing import construct_workflow_run_url
@@ -55,7 +56,7 @@ def run_smoke_test(
 ) -> SmokeTestResult | SmokeTestError:
     """Dispatch a smoke test through the production one-shot code path.
 
-    Delegates to dispatch_one_shot() to create a branch, PR with proper
+    Delegates to dispatch_one_shot_remote() to create a branch, PR with proper
     plan-header metadata, and trigger the one-shot workflow — exactly
     as a real one-shot dispatch would.
 
@@ -70,6 +71,11 @@ def run_smoke_test(
         return SmokeTestError(step="validation", message="Not in a git repository")
     repo: RepoContext = ctx.repo
 
+    if repo.github is None:
+        return SmokeTestError(step="validation", message="No GitHub remote configured")
+
+    owner, repo_name = repo.github.owner, repo.github.repo
+
     params = OneShotDispatchParams(
         prompt=SMOKE_TEST_PROMPT,
         model=None,
@@ -79,19 +85,27 @@ def run_smoke_test(
 
     ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
     try:
-        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=ref)
+        remote = _get_remote_github(ctx)
+        result = dispatch_one_shot_remote(
+            remote=remote,
+            owner=owner,
+            repo=repo_name,
+            params=params,
+            dry_run=False,
+            ref=ref,
+            time_gateway=ctx.time,
+            llm_caller=ctx.llm_caller,
+        )
     except SystemExit as exc:
         return SmokeTestError(step="dispatch", message=f"Exit code {exc.code}")
     except (click.ClickException, RuntimeError, ValueError, KeyError) as exc:
         return SmokeTestError(step="dispatch", message=str(exc))
 
     if result is None:
-        return SmokeTestError(step="dispatch", message="dispatch_one_shot returned None")
+        return SmokeTestError(step="dispatch", message="dispatch_one_shot_remote returned None")
 
     # Compute run URL from result
-    run_url: str | None = None
-    if repo.github is not None:
-        run_url = construct_workflow_run_url(repo.github.owner, repo.github.repo, result.run_id)
+    run_url = construct_workflow_run_url(owner, repo_name, result.run_id)
 
     return SmokeTestResult(
         branch_name=result.branch_name,

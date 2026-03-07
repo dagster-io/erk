@@ -15,9 +15,10 @@ from erk.cli.commands.objective.check_cmd import (
     validate_objective,
 )
 from erk.cli.commands.objective_helpers import get_objective_for_branch
-from erk.cli.commands.one_shot_dispatch import (
+from erk.cli.commands.one_shot import _get_remote_github
+from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
-    dispatch_one_shot,
+    dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.github_parsing import parse_issue_identifier
@@ -254,6 +255,14 @@ def _handle_all_unblocked(
     """Dispatch one-shot workflows for all unblocked pending nodes."""
     resolved = _resolve_all_unblocked(ctx, issue_ref=issue_ref)
 
+    # Validate repo context for owner/repo
+    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+        raise click.ClickException(
+            "Cannot determine target repository.\n"
+            "Run from inside a git repository with a GitHub remote."
+        )
+    owner, repo_name = ctx.repo.github.owner, ctx.repo.github.repo
+
     # Normalize model name
     model = normalize_model_name(model)
 
@@ -269,6 +278,7 @@ def _handle_all_unblocked(
     successful_dispatches: list[tuple[str, int]] = []
 
     ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+    remote = _get_remote_github(ctx)
 
     for node, phase_name in resolved.nodes:
         prompt = (
@@ -291,7 +301,16 @@ def _handle_all_unblocked(
             slug=slug,
         )
 
-        dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)
+        dispatch_result = dispatch_one_shot_remote(
+            remote=remote,
+            owner=owner,
+            repo=repo_name,
+            params=params,
+            dry_run=dry_run,
+            ref=ref,
+            time_gateway=ctx.time,
+            llm_caller=ctx.llm_caller,
+        )
 
         if dispatch_result is not None:
             successful_dispatches.append((node.id, dispatch_result.pr_number))
@@ -744,6 +763,14 @@ def _handle_one_shot(
                 )
             target_node, phase_name = found
 
+    # Validate repo context for owner/repo
+    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+        raise click.ClickException(
+            "Cannot determine target repository.\n"
+            "Run from inside a git repository with a GitHub remote."
+        )
+    owner, repo_name = ctx.repo.github.owner, ctx.repo.github.repo
+
     # Normalize model name
     model = normalize_model_name(model)
 
@@ -775,13 +802,22 @@ def _handle_one_shot(
         slug=slug,
     )
 
-    dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)
+    remote = _get_remote_github(ctx)
+
+    dispatch_result = dispatch_one_shot_remote(
+        remote=remote,
+        owner=owner,
+        repo=repo_name,
+        params=params,
+        dry_run=dry_run,
+        ref=ref,
+        time_gateway=ctx.time,
+        llm_caller=ctx.llm_caller,
+    )
 
     # After successful dispatch, immediately mark node as "planning" with draft PR
     if dispatch_result is not None:
-        # repo is guaranteed to be RepoContext here:
-        # - use_next path: _resolve_next validates repo
-        # - non-use_next path: repo is assigned above
+        # repo is guaranteed to be RepoContext here (validated above)
         assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
         user_output("Updating objective roadmap...")
         _update_objective_node(

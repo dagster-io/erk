@@ -80,6 +80,7 @@ from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.http.auth import fetch_github_token_or_none
 from erk_shared.gateway.http.real import RealHttpClient
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -228,6 +229,7 @@ def context_for_test(
     repo: RepoContext | NoRepoSentinel | None = None,
     repo_info: RepoInfo | None = None,
     package_info: ErkPackageInfo | None = None,
+    remote_github: RemoteGitHub | None = None,
     health_check_runner: HealthCheckRunner | None = None,
     dry_run: bool = False,
     debug: bool = False,
@@ -443,6 +445,7 @@ def context_for_test(
         package_info=package_info,
         health_check_runner=health_check_runner,
         http_client=FakeHttpClient(),
+        remote_github=remote_github,
         dry_run=dry_run,
         debug=debug,
     )

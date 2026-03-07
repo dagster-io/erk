@@ -17,11 +17,12 @@ from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 
 
 class TestRunSmokeTest:
     def test_dispatches_through_production_one_shot_path(self) -> None:
-        """Smoke test dispatches through dispatch_one_shot production code path."""
+        """Smoke test dispatches through dispatch_one_shot_remote production code path."""
         repo_root = Path("/fake/repo")
         git = FakeGit(
             git_common_dirs={repo_root: repo_root / ".git"},
@@ -33,10 +34,18 @@ class TestRunSmokeTest:
             authenticated=True,
             auth_username="testuser",
         )
+        remote = FakeRemoteGitHub(
+            authenticated_user="testuser",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-99",
+        )
 
         ctx = ErkContext.for_test(
             git=git,
             github=github,
+            remote_github=remote,
             repo_root=repo_root,
             repo_info=RepoInfo(owner="test-owner", name="test-repo"),
         )
@@ -50,37 +59,31 @@ class TestRunSmokeTest:
         assert result.run_url is not None
         assert "test-owner" in result.run_url
 
-        # Verify branch was created with plnd/ prefix
-        assert len(git.branch.created_branches) == 1
-        created = git.branch.created_branches[0]
-        assert created[1].startswith("plnd/smoke-test-")
+        # Verify branch was created via RemoteGitHub
+        assert len(remote.created_refs) == 1
+        ref = remote.created_refs[0]
+        assert ref.ref.startswith("refs/heads/plnd/smoke-test-")
 
         # Verify commit was made
-        assert len(git.commit.branch_commits) == 1
-
-        # Verify push
-        assert len(git.remote.pushed_branches) == 1
+        assert len(remote.created_file_commits) == 1
 
         # Verify PR created with draft=True
-        assert len(github.created_prs) == 1
-        _branch, _title, _body, _base, draft = github.created_prs[0]
-        assert draft is True
+        assert len(remote.created_pull_requests) == 1
+        assert remote.created_pull_requests[0].draft is True
 
         # Verify PR body contains plan-header metadata (production path)
-        assert "erk:metadata-block" in _body
+        assert "erk:metadata-block" in remote.created_pull_requests[0].body
 
-        # Verify labels: production path adds both erk-pr and erk-plan
-        pr_labels = [label for (_pr_num, label) in github.added_labels]
-        assert "erk-pr" in pr_labels
-        assert "erk-plan" in pr_labels
+        # Verify labels added
+        assert len(remote.added_labels) == 1
+        assert remote.added_labels[0].labels == ("erk-pr", "erk-plan")
 
         # Verify workflow triggered
-        assert len(github.triggered_workflows) == 1
-        workflow, inputs, _ref = github.triggered_workflows[0]
-        assert workflow == "one-shot.yml"
-        assert inputs["branch_name"].startswith("plnd/smoke-test-")
-        assert inputs["submitted_by"] == "testuser"
-        assert inputs["plan_backend"] == "planned_pr"
+        assert len(remote.dispatched_workflows) == 1
+        wf = remote.dispatched_workflows[0]
+        assert wf.workflow == "one-shot.yml"
+        assert wf.inputs["submitted_by"] == "testuser"
+        assert wf.inputs["plan_backend"] == "planned_pr"
 
     def test_returns_error_when_not_in_repo(self) -> None:
         """Smoke test returns error for NoRepoSentinel."""

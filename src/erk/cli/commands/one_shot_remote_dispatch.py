@@ -1,25 +1,22 @@
-"""Remote dispatch logic for one-shot execution without a local git clone.
+"""Dispatch logic for one-shot execution via RemoteGitHub REST API.
 
 Uses RemoteGitHub gateway to create branches, commit files, create PRs,
-and dispatch workflows entirely via the GitHub REST API.
+and dispatch workflows entirely via the GitHub REST API. This is the
+canonical dispatch path for all one-shot commands.
 """
 
 import time
+from dataclasses import dataclass
 from datetime import UTC
 
 import click
 
-from erk.cli.commands.one_shot_dispatch import (
-    ONE_SHOT_WORKFLOW,
-    OneShotDispatchParams,
-    OneShotDispatchResult,
-    generate_branch_name,
-)
 from erk.core.branch_slug_generator import (
     BRANCH_SLUG_SYSTEM_PROMPT,
     _postprocess_slug,
 )
 from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
+from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
@@ -31,11 +28,76 @@ from erk_shared.gateway.http.abc import HttpError
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import (
+    format_branch_timestamp_suffix,
     generate_planned_pr_branch_name,
     sanitize_worktree_name,
 )
 from erk_shared.output.output import format_duration, user_output
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+
+ONE_SHOT_WORKFLOW = "one-shot.yml"
+
+
+@dataclass(frozen=True)
+class OneShotDispatchParams:
+    """Parameters for dispatching a one-shot workflow."""
+
+    prompt: str
+    model: str | None
+    extra_workflow_inputs: dict[str, str]
+    slug: str | None
+
+
+@dataclass(frozen=True)
+class OneShotDispatchResult:
+    """Result of a successful one-shot dispatch."""
+
+    pr_number: int
+    run_id: str
+    branch_name: str
+
+
+def generate_branch_name(
+    prompt: str,
+    *,
+    time: Time,
+    prompt_executor: PromptExecutor | None,
+    slug: str | None,
+) -> str:
+    """Generate a branch name from the prompt.
+
+    Format: oneshot-{slug}-{MM-DD-HHMM}
+
+    When slug is provided, uses it directly (no LLM call). When
+    prompt_executor is provided, uses LLM to generate a concise slug
+    from the prompt. When None (e.g., dry-run mode), falls back to
+    sanitize_worktree_name.
+
+    Args:
+        prompt: The task description
+        time: Time gateway for deterministic timestamps
+        prompt_executor: PromptExecutor for LLM slug generation, or None to skip
+        slug: Pre-generated slug to use directly, or None to generate one
+
+    Returns:
+        Branch name string
+    """
+    if slug is not None:
+        title = slug
+    elif prompt_executor is not None:
+        from erk.core.branch_slug_generator import generate_branch_slug
+
+        title = generate_branch_slug(prompt_executor, prompt)
+    else:
+        title = prompt
+
+    sanitized = sanitize_worktree_name(title)
+    prefix = "oneshot-"
+    max_slug_len = 31 - len(prefix)
+    if len(sanitized) > max_slug_len:
+        sanitized = sanitized[:max_slug_len].rstrip("-")
+    timestamp = format_branch_timestamp_suffix(time.now())
+    return f"{prefix}{sanitized}{timestamp}"
 
 
 def dispatch_one_shot_remote(

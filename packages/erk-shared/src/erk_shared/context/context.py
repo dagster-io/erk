@@ -51,6 +51,7 @@ from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.http.abc import HttpClient
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
@@ -122,6 +123,11 @@ class ErkContext:
 
     # HTTP client for GitHub REST/GraphQL API
     http_client: HttpClient | None = None
+
+    # RemoteGitHub gateway for one-shot dispatch (REST API path)
+    # In production: None (constructed from http_client when needed)
+    # In tests: FakeRemoteGitHub injected for dependency injection
+    remote_github: RemoteGitHub | None = None
 
     # Mode flags
     dry_run: bool = False
@@ -214,6 +220,7 @@ class ErkContext:
         prompt_executor: PromptExecutor | None = None,
         llm_caller: LlmCaller | None = None,
         plan_store: PlanBackend | None = None,
+        remote_github: RemoteGitHub | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
@@ -258,6 +265,7 @@ class ErkContext:
             prompt_executor=prompt_executor,
             llm_caller=llm_caller,
             plan_store=plan_store,
+            remote_github=remote_github,
             debug=debug,
             repo_root=repo_root,
             cwd=cwd,

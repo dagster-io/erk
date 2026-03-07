@@ -3,8 +3,10 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.commands.one_shot_dispatch import OneShotDispatchParams
-from erk.cli.commands.one_shot_remote_dispatch import dispatch_one_shot_remote
+from erk.cli.commands.one_shot_remote_dispatch import (
+    OneShotDispatchParams,
+    dispatch_one_shot_remote,
+)
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.time.fake import FakeTime
 
