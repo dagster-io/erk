@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "plan_id": 8902,
+  "sessions": [
+    {
+      "session_id": "4eb4862b-92c2-4b59-a519-0b92ca4623f7",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-07T12:03:28.259247+00:00",
+      "files": [
+        "planning-4eb4862b-92c2-4b59-a519-0b92ca4623f7-4eb4862b-92c2-4b59-a519-0b92ca4623f7-part1.xml",
+        "planning-4eb4862b-92c2-4b59-a519-0b92ca4623f7-4eb4862b-92c2-4b59-a519-0b92ca4623f7-part2.xml",
+        "planning-4eb4862b-92c2-4b59-a519-0b92ca4623f7-4eb4862b-92c2-4b59-a519-0b92ca4623f7-part3.xml"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1084 @@
+<session>
+  <meta branch="plnd/O8832-rename-github-to-loc-03-06-1802" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:objective-plan&lt;/command-message&gt;
+&lt;command-name&gt;/erk:objective-plan&lt;/command-name&gt;
+&lt;command-args&gt;8832&lt;/command-args&gt;</user>
+  <user># /erk:objective-plan
+
+Create an implementation plan for a specific node in an objective's dependency graph.
+
+## Usage
+
+```bash
+/erk:objective-plan 3679
+/erk:objective-plan 3679 --node 2.1
+/erk:objective-plan https://github.com/owner/repo/issues/3679
+/erk:objective-plan  # prompts for objective reference
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Check for Known Node (Fast Path)
+
+Parse `8832` for `--node &lt;node-id&gt;`. If `--node` is present along with an issue number:
+
+**Invoke the inner skill immediately** via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;
+```
+
+This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+
+**STOP here** — do not proceed to the steps below.
+
+### Step 1: Resolve Objective Reference
+
+Strip `--node` from `8832` if present, then run:
+
+```bash
+erk exec resolve-objective-ref 8832
+```
+
+**Interpret the JSON result:**
+
+- If `"resolved": true` with `"source": "branch_name"` or `"source": "plan_metadata"`: Inform user "Using objective #N from {source}. Run with explicit argument to override."
+- If `"resolved": true` with `"source": "argument"`: Use the `objective_number` directly.
+- If `"resolved": false`: Use AskUserQuestion to ask "What objective issue should I work from?"
+
+### Step 2: Fetch and Set Up Objective Context
+
+Run:
+
+```bash
+erk exec objective-plan-setup &lt;objective-number&gt; --session-id "4eb4862b-92c2-4b59-a519-0b92ca4623f7"
+```
+
+**Interpret the JSON result:**
+
+- If `"success": false` with `"error": "not_found"`: Report error and exit.
+- If `"success": false` with `"error": "is_plan"`: Redirect to `/erk:plan-implement`.
+- If `"success": false` with `"error": "validation_error"`: Report error and exit.
+- If `"success": true`: Continue with the roadmap data.
+
+Display any `"warnings"` to the user.
+
+### Step 3: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 4: Display Roadmap and Prompt User
+
+Display the roadmap table from the `roadmap.phases` data in the JSON output.
+
+Then use AskUserQuestion to ask which node to plan:
+
+```
+Which node should I create a plan for?
+- Node 1A.1: &lt;description&gt; (Recommended) ← first pending node without plan in progress
+- Node 1A.2: &lt;description&gt;
+- Node 2B.1: &lt;description&gt; (plan in progress, #456) ← shown but not recommended
+- (Other - specify node number or description)
+```
+
+**Filtering rules (based on node `status` field from phases):**
+
+- **Show as options:** Nodes with status `"pending"`
+- **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
+- **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
+
+**Recommendation rule:** Use `roadmap.next_node` from the JSON as the recommended option. If `next_node` is null, no node is recommended.
+
+If all nodes are complete or have plans in progress, report appropriately:
+
+- All complete: "All roadmap nodes are complete! Consider closing the objective."
+- All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
+
+### Step 5: Invoke Inner Skill
+
+After the user selects a node, invoke the inner skill via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;selected-node-id&gt;
+```
+
+The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
+
+---
+
+## Output Format
+
+- **Start:** "Loading objective #&lt;number&gt;..."
+- **After parsing:** Display roadmap nodes with status
+- **After selection:** "Creating plan for node &lt;step-id&gt;: &lt;description&gt;"
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| No pending nodes                        | Report all nodes complete, suggest closing                       |
+| Invalid argument format                 | Prompt for valid issue number                                    |
+| Roadmap not parseable                   | Ask user to specify which node to plan                           |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+- **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
+
+## Post-Plan Behavior
+
+**CRITICAL: Objective plans must ALWAYS be saved as PRs.** When the exit-plan-mode hook presents save-or-implement options, ALWAYS proceed with "Create a plan PR" by running `/erk:plan-save`. Do NOT offer to implement directly — objective node plans require PR tracking for the objective's roadmap status to work correctly.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15785" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15785}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Loading objective #8832...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15785" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15785}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_015wCLCBopaqFSejvvY3MZck">
+    <param name="query">select:Bash,Skill,AskUserQuestion</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15785" cache_read_input_tokens="0" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15785, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015wCLCBopaqFSejvvY3MZck">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XzRccjfcNLtQpi8djeK8qq">
+    <param name="command">erk exec resolve-objective-ref 8832</param>
+    <param name="description">Resolve objective reference for #8832</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5010" cache_read_input_tokens="15785" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5010, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XzRccjfcNLtQpi8djeK8qq">
+{"resolved": true, "objective_number": 8832, "source": "argument"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Tk4w3wF6jRuVLui8nUdERF">
+    <param name="command">erk exec objective-plan-setup 8832 --session-id "4eb4862b-92c2-4b59-a519-0b92ca4623f7"</param>
+    <param name="description">Fetch and set up objective context for #8832</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="121" cache_read_input_tokens="20795" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 121, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tk4w3wF6jRuVLui8nUdERF">
+{"success": true, "objective": {"number": 8832, "title": "Objective: Decouple CLI Commands from Git Repo Requirement", "state": "OPEN", "labels": ["erk-objective"]}, "roadmap": {"phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "slug": "http-client-always", "description": "Always create HttpClient in context (remove git-repo guard)", "status": "done", "pr": "#8835", "depends_on": []}, {"id": "1.2", "slug": "remote-github-module", "description": "Create RemoteGitHub gateway package (abc/real/fake) with HttpClient-based GitHub operations that take explicit owner/repo params instead of repo_root Path", "status": "done", "pr": "#8835", "depends_on": ["1.1"]}, {"id": "1.3", "slug": "one-shot-repo-flag", "description": "Add --repo flag to one-shot command with remote dispatch path", "status": "done", "pr": "#8835", "depends_on": ["1.2"]}, {"id": "1.4", "slug": "no-repo-infrastructure", "description": "Create @no_repo_required decorator and sentinel gateway infrastructure. Add NoRepoGit/NoRepoGitHub sentinel implementations (following GraphiteDisabled pattern) that raise descriptive errors when repo-dependent operations are called outside a repo context. Wire sentinels into context construction when isinstance(repo, NoRepoSentinel). The decorator marks Click commands as not requiring a git repo and is inspectable via command.no_repo_required attribute. All commands converted in phases 2 and 3 must use @no_repo_required and route through RemoteGitHub instead of the local subprocess-based GitHub gateway.", "status": "in_progress", "pr": "#8880", "depends_on": ["1.3"]}, {"id": "1.5", "slug": "canonical-remote-one-shot", "description": "Make RemoteGitHub the canonical one-shot dispatch path: eliminate the parallel local git dispatch code (one_shot_dispatch.py dispatch_one_shot), unify onto the REST API path (one_shot_remote_dispatch.py), delete the old local dispatch module. Apply @no_repo_required to one-shot command. When --repo is not passed, extract owner/repo from ctx.repo.github and still use RemoteGitHub.", "status": "in_progress", "pr": "#8883", "depends_on": ["1.4"]}, {"id": "1.6", "slug": "rename-github-to-local", "description": "Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub to clarify it is the subprocess-based local-repo gateway (vs RemoteGitHub REST API gateway). Mechanical bulk rename across ~50 files.", "status": "in_progress", "pr": "#8888", "depends_on": ["1.5"]}, {"id": "1.7", "slug": "rename-github-issues-to-local", "description": "Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues to LocalGitHubIssues/RealLocalGitHubIssues/FakeLocalGitHubIssues/DryRunLocalGitHubIssues. Same mechanical LibCST bulk rename as 1.6, applied to the issues sub-gateway (~142 files).", "status": "pending", "pr": null, "depends_on": ["1.6"]}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "slug": "pr-read-commands", "description": "Convert pr read commands to @no_repo_required with --repo flag: pr list/dash, pr view, pr check, pr log, pr close, pr duplicate-check. Each command routes through RemoteGitHub when --repo is provided or when no local repo is present.", "status": "pending", "pr": null, "depends_on": ["1.7"]}, {"id": "2.2", "slug": "objective-read-commands", "description": "Convert objective read commands to @no_repo_required with --repo flag: objective list, objective view, objective check, objective close. Same pattern as 2.1.", "status": "pending", "pr": null, "depends_on": ["2.1"]}, {"id": "2.3", "slug": "discover-repo-refactor", "description": "Refactor discover_repo_context to accept explicit owner/repo as alternative to git discovery, enabling commands to resolve repo identity from --repo flag without a local clone", "status": "pending", "pr": null, "depends_on": ["2.2"]}]}, {"number": 3, "suffix": "", "name": "Phase 3", "nodes": [{"id": "3.1", "slug": "pr-create-remote", "description": "Convert pr create to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub", "status": "pending", "pr": null, "depends_on": ["2.3"]}, {"id": "3.2", "slug": "pr-dispatch-remote", "description": "Convert pr dispatch to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub", "status": "pending", "pr": null, "depends_on": ["3.1"]}, {"id": "3.3", "slug": "launch-remote", "description": "Convert launch to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub", "status": "pending", "pr": null, "depends_on": ["3.2"]}, {"id": "3.4", "slug": "objective-plan-remote", "description": "Convert objective plan --one-shot to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub", "status": "pending", "pr": null, "depends_on": ["3.3"]}]}], "summary": {"total_nodes": 14, "pending": 8, "planning": 0, "done": 3, "in_progress": 3, "blocked": 0, "skipped": 0}, "next_node": {"id": "1.7", "slug": "rename-github-issues-to-local", "description": "Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues to LocalGitHubIssues/RealLocalGitHubIssues/FakeLocalGitHubIssues/DryRunLocalGitHubIssues. Same mechanical LibCST bulk rename as 1.6, applied to the issues sub-gateway (~142 files).", "phase": "Phase 1", "status": "pending"}, "all_complete": false}, "validation": {"passed": true, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": true, "description": "No orphaned done statuses (done steps have PR references)"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "objective-header has objective_comment_id"}, {"passed": true, "description": "PR references use '#' prefix"}]}, "marker_created": true, "warnings": []}
+  </tool_result>
+  <tool_use name="Skill" id="toolu_018NYyZQDuHV5464ejicU4eD">
+    <param name="skill">objective</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1980" cache_read_input_tokens="20916" output_tokens="52" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1980, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018NYyZQDuHV5464ejicU4eD">
+Launching skill: objective
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective
+
+# Objective Skill
+
+## Overview
+
+Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
+erk-plans (single executable implementations), objectives track progress across related work and
+capture lessons learned along the way.
+
+**Scope range:**
+
+- Small: Feature requiring 2-3 related PRs
+- Medium: Refactor spanning several plans
+- Large: Long-running strategic direction emitting many plans
+
+## Objective vs Erk-Plan
+
+| Aspect   | Erk-Plan                         | Objective                           |
+| -------- | -------------------------------- | ----------------------------------- |
+| Purpose  | Single executable implementation | Coordinate 2+ related plans/PRs     |
+| Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
+| Body     | Machine-parseable metadata       | Human-readable markdown             |
+| Comments | Session context dumps            | Action logs + lessons               |
+| Label    | `erk-plan`                       | `erk-objective`                     |
+| Tooling  | `erk pr dispatch/implement`      | Manual updates via comments         |
+
+## Key Design Principles
+
+1. **Human-first** - Plain markdown, no machine-generated metadata
+2. **Incremental capture** - Each action gets its own comment
+3. **Lessons as first-class** - Every action comment includes lessons learned
+4. **Clear roadmap** - Status visible at a glance in the body
+5. **Body stays current via reconciliation** - After every PR landing, agents audit prose sections against what was actually implemented and correct stale information
+6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
+7. **One PR per phase** - Each phase is sized for a coherent single PR
+8. **Always shippable** - System remains functional after each merged PR
+9. **Body is source of truth** - Body always contains complete current state; comments are the changelog
+10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
+11. **Context over code** - Provide references to patterns, not prescriptive implementations
+12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
+
+## Quick Reference
+
+### Creating an Objective
+
+```bash
+gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat &lt;&lt;'EOF'
+# Objective: [Title]
+
+&gt; [1-2 sentence summary]
+
+## Goal
+
+[What success looks like - concrete end state]
+
+## Design Decisions
+
+1. **[Decision name]**: [What was decided]
+
+## Roadmap
+
+### Phase 1: [Name] Steelthread (1 PR)
+
+Minimal vertical slice proving the concept works.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | [Minimal infrastructure] | pending | |
+| 1.2 | [Wire into one command] | pending | |
+
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 2: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | [Extend to remaining commands] | pending | |
+| 2.2 | [Full test coverage] | pending | |
+
+**Test:** [Full acceptance criteria]
+
+EOF
+)"
+```
+
+### Logging an Action
+
+Post an action comment after completing work. See [format.md](references/format.md#action-comment-template) for full template.
+
+```bash
+gh issue comment &lt;issue-number&gt; --body "$(cat &lt;&lt;'EOF'
+## Action: [Brief title]
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Node:** 1.2
+### What Was Done
+### Lessons Learned
+### Roadmap Updates
+EOF
+)"
+```
+
+After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
+
+### Viewing an Objective
+
+View an objective's dependency graph, dependencies, and next node:
+
+```bash
+# CLI
+erk objective view &lt;issue-number&gt;
+
+# Slash command (in-session)
+/local:objective-view &lt;issue-number&gt;
+```
+
+### Spawning an Erk-Plan
+
+To implement a specific roadmap node, create an erk-plan that references the objective:
+
+```bash
+erk pr create --file plan.md --title "Implement [node description]"
+```
+
+## Workflow Summary
+
+1. **Create objective** - When starting multi-plan work
+2. **Inspect progress** - View dependency graph and next node
+3. **Log actions** - After completing each significant piece of work
+4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
+5. **Spawn erk-plans** - For individual implementation nodes
+6. **Close** - When goal achieved or abandoned (proactively ask when all nodes done)
+
+## Resources
+
+### references/
+
+- `format.md` - Complete templates, examples, and update patterns
+- `workflow.md` - Creating objectives, spawning plans, steelthread structuring
+- `updating.md` - Quick reference for the two-step update workflow
+- `closing.md` - Closing triggers and procedures
+</user>
+  <assistant>
+
+Here's the roadmap for objective #8832 — **Decouple CLI Commands from Git Repo Requirement**:
+
+### Phase 1
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Always create HttpClient in context | done | #8835 |
+| 1.2 | Create RemoteGitHub gateway package | done | #8835 |
+| 1.3 | Add --repo flag to one-shot command | done | #8835 |
+| 1.4 | @no_repo_required decorator and sentinel infrastructure | in_progress | #8880 |
+| 1.5 | Make RemoteGitHub the canonical one-shot dispatch path | in_progress | #8883 |
+| 1.6 | Rename GitHub ABC to LocalGitHub | in_progress | #8888 |
+| **1.7** | **Rename GitHubIssues → LocalGitHubIssues (~142 files)** | **pending** | |
+
+### Phase 2
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | Convert pr read commands to @no_repo_required | pending | |
+| 2.2 | Convert objective read commands to @no_repo_required | pending | |
+| 2.3 | Refactor discover_repo_context for explicit owner/repo | pending | |
+
+### Phase 3
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 3.1 | Convert pr create to @no_repo_required | pending | |
+| 3.2 | Convert pr dispatch to @no_repo_required | pending | |
+| 3.3 | Convert launch to @no_repo_required | pending | |
+| 3.4 | Convert objective plan --one-shot to @no_repo_required | pending | |</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1359" cache_read_input_tokens="22896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1359}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GvhisiqGf9N7cE8qTHuUcQ">
+    <param name="questions">[{'question': 'Which node should I create a plan for?', 'header': 'Node', 'options': [{'la...[truncated 677 chars]...er/repo as alternative to git discovery for --repo flag support'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1359" cache_read_input_tokens="22896" output_tokens="782" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GvhisiqGf9N7cE8qTHuUcQ">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). To tell you how to proceed, the user said:
+The user wants to clarify these questions.
+    This means they may have additional information, context or questions for you.
+    Take their response into account and then reformulate the questions if appropriate.
+    Start by asking them what they would like to clarify.
+
+    Questions asked:
+- "Which node should I create a plan for?"
+  (No answer provided)
+  </tool_result>
+  <assistant>What would you like to clarify about the node selection?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="24255" output_tokens="15" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 936, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>how many methods are on GithubIssues</user>
+  <usage input_tokens="3" cache_creation_input_tokens="183" cache_read_input_tokens="25191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 183}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01UdHG7nuqZHmPnPgpWEvy6J">
+    <param name="query">select:Grep</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="183" cache_read_input_tokens="25191" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 183, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UdHG7nuqZHmPnPgpWEvy6J">
+
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RVay4N9xMe22vWZn3Fcr7e">
+    <param name="pattern">class GitHubIssues\b</param>
+    <param name="path">src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1102" cache_read_input_tokens="25374" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1102}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RVay4N9xMe22vWZn3Fcr7e">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HYSQR7zgdbNfRUj3puSASr">
+    <param name="pattern">class GitHub.?Issues</param>
+    <param name="path">src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="227" cache_read_input_tokens="26476" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 227, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HYSQR7zgdbNfRUj3puSASr">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EXhKo7me9WQKEwmNF9cbLe">
+    <param name="pattern">class.*GitHubIssues</param>
+    <param name="path">src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="110" cache_read_input_tokens="26703" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 110, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EXhKo7me9WQKEwmNF9cbLe">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018nuDZfgvboFkkzsiiRKi4u">
+    <param name="pattern">GitHubIssues</param>
+    <param name="path">src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="113" cache_read_input_tokens="26813" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 113, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018nuDZfgvboFkkzsiiRKi4u">
+src/erk/cli/commands/init/main.py:46:from erk_shared.gateway.github.issues.abc import GitHubIssues
+src/erk/cli/commands/init/main.py:47:from erk_shared.gateway.github.issues.real import RealGitHubIssues
+src/erk/cli/commands/init/main.py:327:    github_issues: GitHubIssues,
+src/erk/cli/commands/init/main.py:334:        github_issues: GitHubIssues interface for label operations
+src/erk/cli/commands/init/main.py:370:    github_issues = RealGitHubIssues(target_repo=plans_repo, time=RealTime())
+src/erk/cli/commands/objective/check_cmd.py:13:from erk_shared.gateway.github.issues.abc import GitHubIssues
+src/erk/cli/commands/objective/check_cmd.py:72:    github_issues: GitHubIssues,
+src/erk/cli/commands/objective/plan_cmd.py:29:from erk_shared.gateway.github.issues.abc import GitHubIssues
+src/erk/cli/commands/objective/plan_cmd.py:343:    issues: GitHubIssues,
+src/erk/cli/commands/objective/plan_cmd.py:390:    issues: GitHubIssues,
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <assistant>The ABC is in `erk_shared`. Let me check there.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="26926" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 505}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_011pYA9A8MPyKcGH1JgyoRQE">
+    <param name="query">select:Read</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="26926" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 505, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011pYA9A8MPyKcGH1JgyoRQE">
+
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SWM1ffkBoksqXZeuqutugi">
+    <param name="pattern">abstractmethod</param>
+    <param name="path">src/erk_shared/gateway/github/issues/abc.py</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="780" cache_read_input_tokens="27431" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 780, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SWM1ffkBoksqXZeuqutugi">
+&lt;tool_use_error&gt;Path does not exist: src/erk_shared/gateway/github/issues/abc.py. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01BvwiwPt2f8YqncipTfMPs4">
+    <param name="query">select:Glob</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="28211" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 194, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BvwiwPt2f8YqncipTfMPs4">
+
+  </tool_result>
+  <tool_use name="Glob" id="toolu_019NZmmfDwWpBjNA4p4VVdKE">
+    <param name="pattern">**/gateway/github/issues/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="384" cache_read_input_tokens="28405" output_tokens="62" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 384, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019NZmmfDwWpBjNA4p4VVdKE">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NDXzBEmdeVHdjM6a3fbHPS">
+    <param name="pattern">def \w+</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="28789" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 126, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NDXzBEmdeVHdjM6a3fbHPS">
+23:    def create_issue(
+43:    def issue_exists(self, repo_root: Path, number: int) -&gt; bool:
+59:    def get_issue(self, repo_root: Path, number: int) -&gt; IssueInfo | IssueNotFound:
+75:    def add_comment(self, repo_root: Path, number: int, body: str) -&gt; int:
+92:    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -&gt; None:
+109:    def list_issues(
+134:    def get_issue_comments(self, repo_root: Path, number: int) -&gt; list[str]:
+150:    def get_comment_by_id(self, repo_root: Path, comment_id: int) -&gt; str:
+166:    def get_issue_comments_with_urls(self, repo_root: Path, number: int) -&gt; list[IssueComment]:
+182:    def ensure_label_exists(
+199:    def label_exists(self, repo_root: Path, label: str) -&gt; bool:
+215:    def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -&gt; None:
+229:    def remove_label_from_issue(self, repo_root: Path, issue_number: int, label: str) -&gt; None:
+243:    def close_issue(self, repo_root: Path, number: int) -&gt; None:
+256:    def get_current_username(self) -&gt; str | None:
+269:    def get_prs_referencing_issue(
+291:    def add_reaction_to_comment(
+314:    def update_issue_title(self, repo_root: Path, number: int, title: str) -&gt; None:
+328:    def update_comment(
+  </tool_result>
+  <assistant>**GitHubIssues has 18 abstract methods:**
+
+1. `create_issue`
+2. `issue_exists`
+3. `get_issue`
+4. `add_comment`
+5. `update_issue_body`
+6. `list_issues`
+7. `get_issue_comments`
+8. `get_comment_by_id`
+9. `get_issue_comments_with_urls`
+10. `ensure_label_exists`
+11. `label_exists`
+12. `ensure_label_on_issue`
+13. `remove_label_from_issue`
+14. `close_issue`
+15. `get_current_username`
+16. `get_prs_referencing_issue`
+17. `add_reaction_to_comment`
+18. `update_issue_title`
+19. `update_comment`
+
+Correction — **19 methods**. That's a sizable ABC, which means node 1.7 will touch implementations in Real, Fake, and DryRun variants plus all call sites across ~142 files.
+
+Would you like to proceed with selecting node 1.7, or did you want to ask about something else before choosing?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="28915" output_tokens="283" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 591, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>let's leave this rename to later. I want to do a deeper reorg fo the core local github at some point and doing this beforehand would be thrahsy. Lets skip this entirely updates the objective accordingly</user>
+  <usage input_tokens="3" cache_creation_input_tokens="593" cache_read_input_tokens="29506" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 593}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll update the objective to skip node 1.7. Let me fetch the current issue body first, then update it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="593" cache_read_input_tokens="29506" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 593}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017vLhKrjaTeGwajyf16qyfV">
+    <param name="command">gh issue view 8832 --json body --jq '.body' 2&gt;&amp;1 | head -200</param>
+    <param name="description">Fetch objective #8832 issue body</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="593" cache_read_input_tokens="29506" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 593, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017vLhKrjaTeGwajyf16qyfV">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;objective-header&lt;/summary&gt;
+
+```yaml
+
+created_at: '2026-03-06T05:03:40.709189+00:00'
+created_by: schrockn
+objective_comment_id: 4011633841
+slug: decouple-cli-from-git-repo
+
+```
+
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:objective-header --&gt;
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+```yaml
+schema_version: '4'
+nodes:
+- id: '1.1'
+  slug: http-client-always
+  description: Always create HttpClient in context (remove git-repo guard)
+  status: done
+  pr: '#8835'
+
+... [96 lines omitted] ...
+
+    pattern) that raise descriptive errors when repo-dependent operations are called
+  </tool_result>
+  <assistant>Now I'll update the roadmap to mark 1.7 as skipped, update dependencies for 2.1 to point to 1.6 instead, and post an action comment.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1702" cache_read_input_tokens="30099" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1702}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NUgxrjFKHAJdPDg4n4Lbrn">
+    <param name="command">gh issue view 8832 --json body --jq '.body' &gt; /tmp/obj-8832-body.txt</param>
+    <param name="description">Save issue body to temp file for editing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1702" cache_read_input_tokens="30099" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1702, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NUgxrjFKHAJdPDg4n4Lbrn">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JucU4c8W1SJ8ciPubYr7xr">
+    <param name="file_path">/tmp/obj-8832-body.txt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="31801" output_tokens="63" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 172, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JucU4c8W1SJ8ciPubYr7xr">
+     1→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     2→&lt;!-- erk:metadata-block:objective-header --&gt;
+     3→&lt;details&gt;
+     4→&lt;summary&gt;objective-header&lt;/summary&gt;
+     5→
+     6→```yaml
+     7→
+     8→created_at: '2026-03-06T05:03:40.709189+00:00'
+     9→created_by: schrockn
+    10→objective_comment_id: 4011633841
+    11→slug: decouple-cli-from-git-repo
+    12→
+    13→```
+    14→
+    15→&lt;/details&gt;
+    16→&lt;!-- /erk:metadata-block:objective-header --&gt;
+    17→
+    18→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    19→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    20→&lt;details&gt;
+    21→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    22→
+    23→```yaml
+    24→schema_version: '4'
+    25→nodes:
+    26→- id: '1.1'
+    27→  slug: http-client-always
+    28→  description: Always create HttpClient in context (remove git-repo guard)
+    29→  status: done
+    30→  pr: '#8835'
+
+... [99 lines omitted] ...
+
+    46→    pattern) that raise descriptive errors when repo-dependent operations are called
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01SKGTUpT3SKScsCnHffjHMA">
+    <param name="query">select:Edit</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1916" cache_read_input_tokens="31973" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1916, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SKGTUpT3SKScsCnHffjHMA">
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012b2HMcJf7TjG7bxhDE8omV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/tmp/obj-8832-body.txt</param>
+    <param name="old_string">  status: pending
+  pr: null
+- id: '2.1'</param>
+    <param name="new_string">  status: skipped
+  pr: null
+- id: '2.1'</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="545" cache_read_input_tokens="33889" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 545, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012b2HMcJf7TjG7bxhDE8omV">
+The file /tmp/obj-8832-body.txt has been updated successfully.
+  </tool_result>
+  <assistant>Now update the issue body and post an action comment.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="34434" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 187}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HPWSydUg9o4sNRmkXEbQ5Z">
+    <param name="command">gh issue edit 8832 --body-file /tmp/obj-8832-body.txt</param>
+    <param name="description">Update objective #8832 body with node 1.7 marked as skipped</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="34434" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 187, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HPWSydUg9o4sNRmkXEbQ5Z">
+https://github.com/dagster-io/erk/issues/8832
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PWYvt4bdZeNLQcYoygohdD">
+    <param name="command">gh issue comment 8832 --body "$(cat &lt;&lt;'EOF'
+## Action: Skip node 1.7 (rename-github-issues...[truncated 519 chars]...2 nodes (2.1+) can proceed after 1.6 lands; they don't depend on the issues rename.
+EOF
+)"</param>
+    <param name="description">Post action comment explaining why node 1.7 is skipped</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="167" cache_read_input_tokens="34621" output_tokens="329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 167, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PWYvt4bdZeNLQcYoygohdD">
+https://github.com/dagster-io/erk/issues/8832#issuecomment-4016914372
+  </tool_result>
+  <assistant>Done. Updated objective #8832:
+- Node 1.7 marked as **skipped** in the roadmap
+- Action comment posted explaining the rationale (deeper reorg planned, rename would be throwaway work)
+- Phase 2 nodes can proceed once 1.6 lands — they don't depend on the issues rename
+
+Want to continue and plan a Phase 2 node, or something else?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="479" cache_read_input_tokens="34788" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 479, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;objective&lt;/command-message&gt;
+&lt;command-name&gt;/objective&lt;/command-name&gt;
+&lt;command-args&gt;you should have re-rendered the roadmap table when you marked the status as skipp&lt;/command-args&gt;</user>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective
+
+# Objective Skill
+
+## Overview
+
+Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
+erk-plans (single executable implementations), objectives track progress across related work and
+capture lessons learned along the way.
+
+**Scope range:**
+
+- Small: Feature requiring 2-3 related PRs
+- Medium: Refactor spanning several plans
+- Large: Long-running strategic direction emitting many plans
+
+## Objective vs Erk-Plan
+
+| Aspect   | Erk-Plan                         | Objective                           |
+| -------- | -------------------------------- | ----------------------------------- |
+| Purpose  | Single executable implementation | Coordinate 2+ related plans/PRs     |
+| Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
+| Body     | Machine-parseable metadata       | Human-readable markdown             |
+| Comments | Session context dumps            | Action logs + lessons               |
+| Label    | `erk-plan`                       | `erk-objective`                     |
+| Tooling  | `erk pr dispatch/implement`      | Manual updates via comments         |
+
+## Key Design Principles
+
+1. **Human-first** - Plain markdown, no machine-generated metadata
+2. **Incremental capture** - Each action gets its own comment
+3. **Lessons as first-class** - Every action comment includes lessons learned
+4. **Clear roadmap** - Status visible at a glance in the body
+5. **Body stays current via reconciliation** - After every PR landing, agents audit prose sections against what was actually implemented and correct stale information
+6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
+7. **One PR per phase** - Each phase is sized for a coherent single PR
+8. **Always shippable** - System remains functional after each merged PR
+9. **Body is source of truth** - Body always contains complete current state; comments are the changelog
+10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
+11. **Context over code** - Provide references to patterns, not prescriptive implementations
+12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
+
+## Quick Reference
+
+### Creating an Objective
+
+```bash
+gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat &lt;&lt;'EOF'
+# Objective: [Title]
+
+&gt; [1-2 sentence summary]
+
+## Goal
+
+[What success looks like - concrete end state]
+
+## Design Decisions
+
+1. **[Decision name]**: [What was decided]
+
+## Roadmap
+
+### Phase 1: [Name] Steelthread (1 PR)
+
+Minimal vertical slice proving the concept works.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | [Minimal infrastructure] | pending | |
+| 1.2 | [Wire into one command] | pending | |
+
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 2: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | [Extend to remaining commands] | pending | |
+| 2.2 | [Full test coverage] | pending | |
+
+**Test:** [Full acceptance criteria]
+
+EOF
+)"
+```
+
+### Logging an Action
+
+Post an action comment after completing work. See [format.md](references/format.md#action-comment-template) for full template.
+
+```bash
+gh issue comment &lt;issue-number&gt; --body "$(cat &lt;&lt;'EOF'
+## Action: [Brief title]
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Node:** 1.2
+### What Was Done
+### Lessons Learned
+### Roadmap Updates
+EOF
+)"
+```
+
+After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
+
+### Viewing an Objective
+
+View an objective's dependency graph, dependencies, and next node:
+
+```bash
+# CLI
+erk objective view &lt;issue-number&gt;
+
+# Slash command (in-session)
+/local:objective-view &lt;issue-number&gt;
+```
+
+### Spawning an Erk-Plan
+
+To implement a specific roadmap node, create an erk-plan that references the objective:
+
+```bash
+erk pr create --file plan.md --title "Implement [node description]"
+```
+
+## Workflow Summary
+
+1. **Create objective** - When starting multi-plan work
+2. **Inspect progress** - View dependency graph and next node
+3. **Log actions** - After completing each significant piece of work
+4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
+5. **Spawn erk-plans** - For individual implementation nodes
+6. **Close** - When goal achieved or abandoned (proactively ask when all nodes done)
+
+## Resources
+
+### references/
+
+- `format.md` - Complete templates, examples, and update patterns
+- `workflow.md` - Creating objectives, spawning plans, steelthread structuring
+- `updating.md` - Quick reference for the two-step update workflow
+- `closing.md` - Closing triggers and procedures
+
+
+ARGUMENTS: you should have re-rendered the roadmap table when you marked the status as skipp</user>
+  <assistant>
+
+You're right — I should have re-rendered the roadmap table after updating the status. Here's the current state:
+
+### Phase 1
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | Always create HttpClient in context | done | #8835 |
+| 1.2 | Create RemoteGitHub gateway package | done | #8835 |
+| 1.3 | Add --repo flag to one-shot command | done | #8835 |
+| 1.4 | @no_repo_required decorator and sentinel infrastructure | in_progress | #8880 |
+| 1.5 | Make RemoteGitHub the canonical one-shot dispatch path | in_progress | #8883 |
+| 1.6 | Rename GitHub ABC to LocalGitHub | in_progress | #8888 |
+| 1.7 | Rename GitHubIssues → LocalGitHubIssues | **skipped** | |
+
+### Phase 2
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | Convert pr read commands to @no_repo_required | pending | |
+| 2.2 | Convert objective read commands to @no_repo_required | pending | |
+| 2.3 | Refactor discover_repo_context for explicit owner/repo | pending | |
+
+### Phase 3
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 3.1 | Convert pr create to @no_repo_required | pending | |
+| 3.2 | Convert pr dispatch to @no_repo_required | pending | |
+| 3.3 | Convert launch to @no_repo_required | pending | |
+| 3.4 | Convert objective plan --one-shot to @no_repo_required | pending | |
+
+**Summary:** 3 done, 3 in progress, 1 skipped, 7 pending. Next actionable node is **2.1** (once 1.6 lands).</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1609" cache_read_input_tokens="35267" output_tokens="500" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1609, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>meaning you should have updated the issue description as well with the re-rendered table. we should do that whenever we mutate the objective node graph</user>
+  <assistant>
+
+You're right — the objective body should contain the human-readable roadmap table in addition to the machine-readable YAML. Let me check if there's a prose roadmap section in the body that I missed updating.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="689" cache_read_input_tokens="36876" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 689}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014MWYFbkJNh9nJVNL8MSQML">
+    <param name="command">gh issue view 8832 --json body --jq '.body' | wc -l</param>
+    <param name="description">Check length of objective body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="689" cache_read_input_tokens="36876" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 689, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014MWYFbkJNh9nJVNL8MSQML">
+     129
+  </tool_result>
+  <assistant>The body only has the metadata blocks (header + roadmap YAML) — there's no prose roadmap table section. Should I add a human-readable roadmap table section to the issue body? That way it renders nicely when viewing the issue on GitHub, rather than requiring people to expand the YAML details block.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="37565" output_tokens="69" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 157, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>it is there</user>
+  <assistant>
+
+I see — the body has a rendered markdown roadmap table that I didn't update. The YAML got updated but the prose table still shows 1.7 as "pending". Let me fetch the full body and fix it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1780" cache_read_input_tokens="37722" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1780}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Pi7yx7EnAV6HaPGbau6n2k">
+    <param name="command">gh issue view 8832 --json body --jq '.body' &gt; /tmp/obj-8832-body.txt</param>
+    <param name="description">Re-fetch objective body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1780" cache_read_input_tokens="37722" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1780, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pi7yx7EnAV6HaPGbau6n2k">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01C7zNgHM2q27mPmNo9e7gV4">
+    <param name="file_path">/tmp/obj-8832-body.txt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="39502" output_tokens="63" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 319, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C7zNgHM2q27mPmNo9e7gV4">
+     1→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     2→&lt;!-- erk:metadata-block:objective-header --&gt;
+     3→&lt;details&gt;
+     4→&lt;summary&gt;objective-header&lt;/summary&gt;
+     5→
+     6→```yaml
+     7→
+     8→created_at: '2026-03-06T05:03:40.709189+00:00'
+     9→created_by: schrockn
+    10→objective_comment_id: 4011633841
+    11→slug: decouple-cli-from-git-repo
+    12→
+    13→```
+    14→
+    15→&lt;/details&gt;
+    16→&lt;!-- /erk:metadata-block:objective-header --&gt;
+    17→
+    18→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    19→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    20→&lt;details&gt;
+    21→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    22→
+    23→```yaml
+    24→schema_version: '4'
+    25→nodes:
+    26→- id: '1.1'
+    27→  slug: http-client-always
+    28→  description: Always create HttpClient in context (remove git-repo guard)
+    29→  status: done
+    30→  pr: '#8835'
+
+... [100 lines omitted] ...
+
+    46→    pattern) that raise descriptive errors when repo-dependent operations are called
+  </tool_result>
+  <assistant>The body only has the metadata blocks — no prose section. The prose roadmap table I see in the screenshot must be rendered from a different part. Let me check if there's content in the objective comment (referenced by `objective_comment_id: 4011633841`).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1921" cache_read_input_tokens="39821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1921}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0157zHLtfVxcEMDKabNBmEMz">
+    <param name="command">gh api repos/dagster-io/erk/issues/8832 --jq '.body' | grep -n "Roadmap\|Phase\|Node\|1\.7" | head -30</param>
+    <param name="description">Search for roadmap table in full issue body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1921" cache_read_input_tokens="39821" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1921, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0157zHLtfVxcEMDKabNBmEMz">
+70:- id: '1.7'
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HtRXkT5hbkGqCsoFe3pkkB">
+    <param name="command">gh api repos/dagster-io/erk/issues/comments/4011633841 --jq '.body' | head -80</param>
+    <param name="description">Fetch objective comment body (prose content)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41742" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HtRXkT5hbkGqCsoFe3pkkB">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-body --&gt;
+&lt;details open&gt;
+&lt;summary&gt;&lt;strong&gt;Objective&lt;/strong&gt;&lt;/summary&gt;
+
+# Objective: Decouple CLI Commands from Git Repo Requirement
+
+Many erk CLI commands require being in a git repository but only use it to identify the GitHub owner/repo for API calls. By adding an optional `--repo owner/repo` flag, these commands can run from anywhere with just `gh` authentication.
+
+## Goal
+
+Any erk command that primarily interacts with the GitHub API can run from any directory when given `--repo owner/repo`. Commands that genuinely need local git state (worktree management, implementation, landing) continue to require a repo. The end state:
+
+```bash
+# From any directory, no git repo needed:
+cd /tmp
+erk one-shot --repo schrockn/erk "fix the typo in README"
+erk pr list --repo schrockn/erk
+erk objective list --repo schrockn/erk
+erk pr dispatch --repo schrockn/erk 123
+```
+
+When inside a git repo, `--repo` is optional — owner/repo is auto-discovered from git remote as today. When outside a git repo, `--repo` is required. Error message when missing: "Not in a git repository. Use --repo owner/repo to specify."
+
+## Design Decisions
+
+- **`-R`/`--repo` as optional flag per command** (not global): Only commands that support remote operation get the flag. Matches `gh` CLI convention. When in a git repo without `--repo`, behavior is unchanged.
+- **HttpClient for remote operations**: Use the existing `HttpClient` (httpx-based) for all GitHub API calls in remote mode, bypassing the `gh api` subprocess calls that require git context for `{owner}/{repo}` template resolution.
+- **`remote_github/` gateway package**: New 3-file gateway package (`abc.py`, `real.py`, `fake.py`) with HttpClient-based GitHub operations that take explicit `owner`/`repo` params instead of `repo_root: Path`. Shared across all converted commands.
+- **In-repo behavior unchanged**: When running inside a git repo without `--repo`, all existing code paths are preserved. Zero behavior change for current users.
+
+... [50 lines omitted] ...
+
+| 1.4 | Create @no_repo_required decorator and sentinel gateway infrastructure. Add NoRepoGit/NoRepoGitHub sentinel implementations (following GraphiteDisabled pattern) that raise descriptive errors when repo-dependent operations are called outside a repo context. Wire sentinels into context construction when isinstance(repo, NoRepoSentinel). The decorator marks Click commands as not requiring a git repo and is inspectable via command.no_repo_required attribute. All commands converted in phases 2 and 3 must use @no_repo_required and route through RemoteGitHub instead of the local subprocess-based GitHub gateway. | in-progress | #8880 |
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Found it — the prose roadmap table lives in the **objective comment** (comment ID `4011633841`), not the issue body. Let me fetch the full comment, update node 1.7 to "skipped", and push the update.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1883" cache_read_input_tokens="42056" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1883}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011Lq6SHL4Zfh93Ewq4vwPVz">
+    <param name="command">gh api repos/dagster-io/erk/issues/comments/4011633841 --jq '.body' &gt; /tmp/obj-8832-comment.txt</param>
+    <param name="description">Save full objective comment to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1883" cache_read_input_tokens="42056" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1883, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011Lq6SHL4Zfh93Ewq4vwPVz">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CfbLAVpwEwGPhXR1u1kdBy">
+    <param name="command">grep -n "1\.7\|pending\|skipped" /tmp/obj-8832-comment.txt | head -20</param>
+    <param name="description">Find node 1.7 line in the comment</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="43939" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 194, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CfbLAVpwEwGPhXR1u1kdBy">
+44:| 1.7 | Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues to LocalGitHubIssues/RealLocalGitHubIssues/FakeLocalGitHubIssues/DryRunLocalGitHubIssues. Same mechanical LibCST bulk rename as 1.6, applied to the issues sub-gateway (~142 files). | pending | - |
+49:| 2.1 | Convert pr read commands to @no_repo_required with --repo flag: pr list/dash, pr view, pr check, pr log, pr close, pr duplicate-check. Each command routes through RemoteGitHub when --repo is provided or when no local repo is present. | pending | - |
+50:| 2.2 | Convert objective read commands to @no_repo_required with --repo flag: objective list, objective view, objective check, objective close. Same pattern as 2.1. | pending | - |
+51:| 2.3 | Refactor discover_repo_context to accept explicit owner/repo as alternative to git discovery, enabling commands to resolve repo identity from --repo flag without a local clone | pending | - |
+56:| 3.1 | Convert pr create to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub | pending | - |
+57:| 3.2 | Convert pr dispatch to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub | pending | - |
+58:| 3.3 | Convert launch to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub | pending | - |
+59:| 3.4 | Convert objective plan --one-shot to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub | pending | - |
+75:  status: pending
+80:  status: pending
+85:  status: pending
+91:  status: pending
+97:  status: pending
+103:  status: pending
+108:  status: pending
+113:  status: pending
+118:  status: pending
+123:  status: pending
+  </tool_result>
+  <assistant>The comment has both a prose roadmap table (line 44) and its own copy of the YAML. I need to update both in this comment.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="646" cache_read_input_tokens="44133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 646}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0182gbTKaE2VBQ6K4R7morne">
+    <param name="file_path">/tmp/obj-8832-comment.txt</param>
+    <param name="offset">42</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="646" cache_read_input_tokens="44133" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 646, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0182gbTKaE2VBQ6K4R7morne">
+    42→| 1.5 | Make RemoteGitHub the canonical one-shot dispatch path: eliminate the parallel local git dispatch code (one_shot_dispatch.py dispatch_one_shot), unify onto the REST API path (one_shot_remote_dispatch.py), delete the old local dispatch module. Apply @no_repo_required to one-shot command. When --repo is not passed, extract owner/repo from ctx.repo.github and still use RemoteGitHub. | in-progress | #8883 |
+    43→| 1.6 | Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub to clarify it is the subprocess-based local-repo gateway (vs RemoteGitHub REST API gateway). Mechanical bulk rename across ~50 files. | in-progress | #8888 |
+    44→| 1.7 | Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues to LocalGitHubIssues/RealLocalGitHubIssues/FakeLocalGitHubIssues/DryRunLocalGitHubIssues. Same mechanical LibCST bulk rename as 1.6, applied to the issues sub-gateway (~142 files). | pending | - |
+    45→
+    46→### Phase 2: Read-only plan and objective commands (0 PR)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01C3qmWuhhb4dJTAxHiwGU8j">
+    <param name="replace_all">False</param>
+    <param name="file_path">/tmp/obj-8832-comment.txt</param>
+    <param name="old_string">| 1.7 | Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues to LocalG...[truncated 77 chars]...LibCST bulk rename as 1.6, applied to the issues sub-gateway (~142 files). | pending | - |</param>
+    <param name="new_string">| 1.7 | ~~Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues to Loca...[truncated 81 chars]...bCST bulk rename as 1.6, applied to the issues sub-gateway (~142 files).~~ | skipped | - |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="44779" output_tokens="344" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 486, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C3qmWuhhb4dJTAxHiwGU8j">
+The file /tmp/obj-8832-comment.txt has been updated successfully.
+  </tool_result>
+  <assistant>Now update the YAML block in the comment too.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="392" cache_read_input_tokens="45265" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 392}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UBGQ2YECCwRdLChUGXCydv">
+    <param name="file_path">/tmp/obj-8832-comment.txt</param>
+    <param name="offset">87</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="392" cache_read_input_tokens="45265" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 392, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UBGQ2YECCwRdLChUGXCydv">
+    87→- id: '2.1'
+    88→  slug: pr-read-commands
+    89→  description: Add --repo flag to pr list/dash, pr view, pr check, pr log, pr close,
+    90→    pr duplicate-check
+    91→  status: pending
+    92→  pr: null
+    93→- id: '2.2'
+    94→  slug: objective-read-commands
+    95→  description: Add --repo flag to objective list, objective view, objective check,
+    96→    objective close
+  </tool_result>
+  <tool_use name="Read" id="toolu_016TtaNLVTFQGRqvM4SPwBsN">
+    <param name="file_path">/tmp/obj-8832-comment.txt</param>
+    <param name="offset">80</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="45657" output_tokens="97" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 250, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016TtaNLVTFQGRqvM4SPwBsN">
+    80→  status: pending
+    81→  pr: null
+    82→- id: '1.3'
+    83→  slug: one-shot-repo-flag
+    84→  description: Add --repo flag to one-shot command with remote dispatch path
+    85→  status: pending
+    86→  pr: null
+    87→- id: '2.1'
+    88→  slug: pr-read-commands
+    89→  description: Add --repo flag to pr list/dash, pr view, pr check, pr log, pr close,
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G38H1E4XzsPMRDneRyQQwr">
+    <param name="command">grep -n "1\.7\|rename-github-issues" /tmp/obj-8832-comment.txt</param>
+    <param name="description">Find YAML node 1.7 in comment</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="45907" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 348, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G38H1E4XzsPMRDneRyQQwr">
+44:| 1.7 | ~~Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues to LocalGitHubIssues/RealLocalGitHubIssues/FakeLocalGitHubIssues/DryRunLocalGitHubIssues. Same mechanical LibCST bulk rename as 1.6, applied to the issues sub-gateway (~142 files).~~ | skipped | - |
+  </tool_result>
+</session>

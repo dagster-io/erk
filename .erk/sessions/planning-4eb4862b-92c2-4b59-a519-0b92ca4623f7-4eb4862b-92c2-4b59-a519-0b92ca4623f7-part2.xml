@@ -1,0 +1,701 @@
+<session>
+  <meta branch="plnd/O8832-rename-github-to-loc-03-06-1802" />
+  <meta model="claude-opus-4-6" />
+  <assistant>The YAML in this comment is an older version that doesn't have node 1.7. The comment's YAML only goes up to 1.3, then jumps to 2.1. This is a stale copy — the authoritative YAML is in the issue body (which I already updated). Let me just push the prose table update.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="46255" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 243}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011dSNwvHKBLRvH8tz4CxFJt">
+    <param name="command">gh api repos/dagster-io/erk/issues/comments/4011633841 -X PATCH -f body="$(cat /tmp/obj-8832-comment.txt)"</param>
+    <param name="description">Update objective comment with skipped status for node 1.7</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="46255" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 243, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011dSNwvHKBLRvH8tz4CxFJt">
+{"url":"https://api.github.com/repos/dagster-io/erk/issues/comments/4011633841","html_url":"https://github.com/dagster-io/erk/issues/8832#issuecomment-4011633841","issue_url":"https://api.github.com/repos/dagster-io/erk/issues/8832","id":4011633841,"node_id":"IC_kwDOPxC3hc7vHKyx","user":{"login":"schrockn","id":28738937,"node_id":"MDQ6VXNlcjI4NzM4OTM3","avatar_url":"https://avatars.githubusercontent.com/u/28738937?v=4","gravatar_id":"","url":"https://api.github.com/users/schrockn","html_url":"https://github.com/schrockn","followers_url":"https://api.github.com/users/schrockn/followers","following_url":"https://api.github.com/users/schrockn/following{/other_user}","gists_url":"https://api.github.com/users/schrockn/gists{/gist_id}","starred_url":"https://api.github.com/users/schrockn/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/schrockn/subscriptions","organizations_url":"https://api.github.com/users/schrockn/orgs","repos_url":"https://api.github.com/users/schrockn/repos","events_url":"https://api.github.com/users/schrockn/events{/privacy}","received_events_url":"https://api.github.com/users/schrockn/received_events","type":"User","user_view_type":"public","site_admin":false},"created_at":"2026-03-06T13:03:42Z","updated_at":"2026-03-07T16:56:06Z","body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-body --&gt;\n&lt;details open&gt;\n&lt;summary&gt;&lt;strong&gt;Objective&lt;/strong&gt;&lt;/summary&gt;\n\n# Objective: Decouple CLI Commands from Git Repo Requirement\n\nMany erk CLI commands require being in a git repository but only use it to identify the GitHub owner/repo for API calls. By adding an optional `--repo owner/repo` flag, these commands can run from anywhere with just `gh` authentication.\n\n## Goal\n\nAny erk command that primarily interacts with the GitHub API can run from any directory when given `--repo owner/repo`. Commands that genuinely need local git state (worktree management, implementation, landing) continue to require a repo. The end state:\n\n```bash\n# From any directory, no git repo needed:\ncd /tmp\nerk one-shot --repo schrockn/erk \"fix the typo in README\"\nerk pr list --repo schrockn/erk\nerk objective list --repo schrockn/erk\nerk pr dispatch --repo schrockn/erk 123\n```\n\nWhen inside a git repo, `--repo` is optional — owner/repo is auto-discovered from git remote as today. When outside a git repo, `--repo` is required. Error message when missing: \"Not in a git repository. Use --repo owner/repo to specify.\"\n\n## Design Decisions\n\n- **`-R`/`--repo` as optional flag per command** (not global): Only commands that support remote operation get the flag. Matches `gh` CLI convention. When in a git repo without `--repo`, behavior is unchanged.\n- **HttpClient for remote operations**: Use the existing `HttpClient` (httpx-based) for all GitHub API calls in remote mode, bypassing the `gh api` subprocess calls that require git context for `{owner}/{repo}` template resolution.\n- **`remote_github/` gateway package**: New 3-file gateway package (`abc.py`, `real.py`, `fake.py`) with HttpClient-based GitHub operations that take explicit `owner`/`repo` params instead of `repo_root: Path`. Shared across all converted commands.\n- **In-repo behavior unchanged**: When running inside a git repo without `--repo`, all existing code paths are preserved. Zero behavior change for current users.\n\n## Roadmap\n\n&lt;!-- erk:roadmap-table --&gt;\n### Phase 1: Steelthread: one-shot outside git repos (6 PR)\n| Node | Description | Status | PR |\n|------|-------------|--------|----|\n| 1.1 | Always create HttpClient in context (remove git-repo guard) | done | #8835 |\n| 1.2 | Create RemoteGitHub gateway package (abc/real/fake) with HttpClient-based GitHub operations that take explicit owner/repo params instead of repo_root Path | done | #8835 |\n| 1.3 | Add --repo flag to one-shot command with remote dispatch path | done | #8835 |\n| 1.4 | Create @no_repo_required decorator and sentinel gateway infrastructure. Add NoRepoGit/NoRepoGitHub sentinel implementations (following GraphiteDisabled pattern) that raise descriptive errors when repo-dependent operations are called outside a repo context. Wire sentinels into context construction when isinstance(repo, NoRepoSentinel). The decorator marks Click commands as not requiring a git repo and is inspectable via command.no_repo_required attribute. All commands converted in phases 2 and 3 must use @no_repo_required and route through RemoteGitHub instead of the local subprocess-based GitHub gateway. | in-progress | #8880 |\n| 1.5 | Make RemoteGitHub the canonical one-shot dispatch path: eliminate the parallel local git dispatch code (one_shot_dispatch.py dispatch_one_shot), unify onto the REST API path (one_shot_remote_dispatch.py), delete the old local dispatch module. Apply @no_repo_required to one-shot command. When --repo is not passed, extract owner/repo from ctx.repo.github and still use RemoteGitHub. | in-progress | #8883 |\n| 1.6 | Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub to clarify it is the subprocess-based local-repo gateway (vs RemoteGitHub REST API gateway). Mechanical bulk rename across ~50 files. | in-progress | #8888 |\n| 1.7 | ~~Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues to LocalGitHubIssues/RealLocalGitHubIssues/FakeLocalGitHubIssues/DryRunLocalGitHubIssues. Same mechanical LibCST bulk rename as 1.6, applied to the issues sub-gateway (~142 files).~~ | skipped | - |\n\n### Phase 2: Read-only plan and objective commands (0 PR)\n| Node | Description | Status | PR |\n|------|-------------|--------|----|\n| 2.1 | Convert pr read commands to @no_repo_required with --repo flag: pr list/dash, pr view, pr check, pr log, pr close, pr duplicate-check. Each command routes through RemoteGitHub when --repo is provided or when no local repo is present. | pending | - |\n| 2.2 | Convert objective read commands to @no_repo_required with --repo flag: objective list, objective view, objective check, objective close. Same pattern as 2.1. | pending | - |\n| 2.3 | Refactor discover_repo_context to accept explicit owner/repo as alternative to git discovery, enabling commands to resolve repo identity from --repo flag without a local clone | pending | - |\n\n### Phase 3: Remaining dispatch commands (0 PR)\n| Node | Description | Status | PR |\n|------|-------------|--------|----|\n| 3.1 | Convert pr create to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub | pending | - |\n| 3.2 | Convert pr dispatch to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub | pending | - |\n| 3.3 | Convert launch to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub | pending | - |\n| 3.4 | Convert objective plan --one-shot to @no_repo_required with --repo flag and remote dispatch path via RemoteGitHub | pending | - |\n&lt;!-- /erk:roadmap-table --&gt;\n\n**Test:** cd /tmp &amp;&amp; erk pr create --repo owner/repo -f plan.md creates plan. erk pr dispatch --repo owner/repo 123 dispatches.\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '4'\nnodes:\n- id: '1.1'\n  slug: http-client-always\n  description: Always create HttpClient in context (remove git-repo guard)\n  status: pending\n  pr: null\n- id: '1.2'\n  slug: remote-github-module\n  description: Create remote_github.py module with HttpClient-based GitHub operations\n  status: pending\n  pr: null\n- id: '1.3'\n  slug: one-shot-repo-flag\n  description: Add --repo flag to one-shot command with remote dispatch path\n  status: pending\n  pr: null\n- id: '2.1'\n  slug: pr-read-commands\n  description: Add --repo flag to pr list/dash, pr view, pr check, pr log, pr close,\n    pr duplicate-check\n  status: pending\n  pr: null\n- id: '2.2'\n  slug: objective-read-commands\n  description: Add --repo flag to objective list, objective view, objective check,\n    objective close\n  status: pending\n  pr: null\n- id: '2.3'\n  slug: discover-repo-refactor\n  description: Refactor discover_repo_context to accept explicit owner/repo as alternative\n    to git discovery\n  status: pending\n  pr: null\n- id: '3.1'\n  slug: pr-create-remote\n  description: Add --repo flag to pr create with remote dispatch path\n  status: pending\n  pr: null\n- id: '3.2'\n  slug: pr-dispatch-remote\n  description: Add --repo flag to pr dispatch with remote dispatch path\n  status: pending\n  pr: null\n- id: '3.3'\n  slug: launch-remote\n  description: Add --repo flag to launch with remote dispatch path\n  status: pending\n  pr: null\n- id: '3.4'\n  slug: objective-plan-remote\n  description: Add --repo flag to objective plan --one-shot with remote dispatch path\n  status: pending\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;\n\n## Exploration Notes\n\n**Current architecture**: `create_context()` in `src/erk/core/context.py` creates `RepoContext | NoRepoSentinel` via `discover_repo_or_sentinel()`. Commands check for `NoRepoSentinel` or call `discover_repo_context()` which raises `FileNotFoundError`. The `HttpClient` was previously only created when in a repo — PR #8835 removed that guard, so `HttpClient` is now always created when a GitHub token is available.\n\n**Key bottleneck**: The GitHub gateway (`RealGitHub`) uses `gh api repos/{owner}/{repo}/...` commands that require git context for template resolution. The `HttpClient` already exists and can make direct REST API calls with explicit URLs -- no git context needed.\n\n**One-shot workflow insight**: The CI workflow (`one-shot.yml`) already writes the prompt from the workflow input if `.erk/impl-context/prompt.md` isn't on the branch (lines 110-116). So local git plumbing (branch create, commit prompt, push) can be replaced entirely with GitHub API calls.\n\n**Commands NOT in scope** (genuinely need local git): `wt *`, `pr checkout`, `pr teleport`, `stack move`, `implement`, `land`, `status`, `init`, `config set` (repo-specific settings).\n\n## Related Documentation\n\n- Skills to load: `dignified-python`, `fake-driven-testing`\n- Key files: `src/erk/core/context.py`, `src/erk/core/repo_discovery.py`, `src/erk/cli/commands/one_shot_dispatch.py`, `packages/erk-shared/src/erk_shared/gateway/http/abc.py`\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-body --&gt;","author_association":"MEMBER","pin":null,"reactions":{"url":"https://api.github.com/repos/dagster-io/erk/issues/comments/4011633841/reactions","total_count":0,"+1":0,"-1":0,"laugh":0,"hooray":0,"confused":0,"heart":0,"rocket":0,"eyes":0},"performed_via_github_app":null}
+  </tool_result>
+  <assistant>Done. Updated the objective comment's prose roadmap table — node 1.7 now shows as **skipped** with strikethrough text. Both the issue body YAML and the comment's rendered table are now in sync.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3605" cache_read_input_tokens="46498" output_tokens="51" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3605, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>are the instructions to update this NOT part of the objective skill?
+
+I want the roadmap table to rerender any time we update the header</user>
+  <usage input_tokens="3" cache_creation_input_tokens="237" cache_read_input_tokens="50103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 237}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the objective skill's reference docs for update guidance.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="237" cache_read_input_tokens="50103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 237}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01FScLWk8znXS9CvtJDcHKHV">
+    <param name="pattern">.claude/skills/objective/references/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="237" cache_read_input_tokens="50103" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 237, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FScLWk8znXS9CvtJDcHKHV">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective/references/closing.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective/references/updating.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective/references/workflow.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective/references/format.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TxMxhCWqvUG1ZTb625CTJL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective/references/updating.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="50340" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 309, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TxMxhCWqvUG1ZTb625CTJL">
+     1→# Updating an Objective
+     2→
+     3→See [format.md](format.md) for:
+     4→
+     5→- **Action Comment Template** - What to include in update comments
+     6→- **When to Update** - Triggers for updating vs waiting
+     7→- **Update Examples** - Real examples of the two-step workflow
+     8→
+     9→## Quick Summary
+    10→
+    11→The two-step pattern applies to ALL objective changes, not just completions:
+    12→
+    13→| Change Type        | Comment                                               | Body Update           |
+    14→| ------------------ | ----------------------------------------------------- | --------------------- |
+    15→| Complete a node    | "Action: Completed X"                                 | Status → done, add PR |
+    16→| Add context        | "Action: Added X"                                     | Add section to body   |
+    17→| Refine decision    | "Action: Refined X"                                   | Update decision text  |
+    18→| Add phase          | "Action: Added Phase X"                               | Add phase to roadmap  |
+    19→| Hit blocker        | "Action: Identified blocker"                          | Status → blocked      |
+    20→| Reconcile after PR | "Action: [Title]" with Body Reconciliation subsection | Update stale sections |
+    21→
+    22→**Why both steps?**
+    23→
+    24→- Comment = changelog (when/why things changed)
+    25→- Body = source of truth (current complete state)
+    26→
+    27→Comment first (captures the moment), then body (reflects new state).
+    28→
+  </tool_result>
+  <tool_use name="Read" id="toolu_014dtzhRjLGayFMbRh7q4hdr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective/references/format.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="50649" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014dtzhRjLGayFMbRh7q4hdr">
+     1→# Objective Format Reference
+     2→
+     3→Complete templates and examples for objective issues.
+     4→
+     5→## Contents
+     6→
+     7→- [Issue Body Template](#issue-body-template)
+     8→- [Action Comment Template](#action-comment-template)
+     9→  - [When to Update](#when-to-update)
+    10→  - [What to Update in Issue Body](#what-to-update-in-issue-body)
+    11→- [Example: Steelthread-Structured Objective](#example-steelthread-structured-objective)
+    12→- [Common Patterns](#common-patterns)
+    13→- [Update Examples](#update-examples)
+    14→- [Programmatic Roadmap Operations](#programmatic-roadmap-operations)
+    15→
+    16→## Issue Body Template
+    17→
+    18→The issue body represents the **current state** of the objective. Update it as progress is made.
+    19→
+    20→```markdown
+    21→# Objective: [Title]
+    22→
+    23→&gt; [1-2 sentence summary of what this objective achieves]
+    24→
+    25→## Goal
+    26→
+    27→[What success looks like - concrete end state. Be specific about deliverables.]
+    28→
+    29→## Design Decisions
+    30→
+
+... [548 lines omitted] ...
+
+    72→[What methods/components need what behavior, error message requirements]
+   139→- ✅ "Action: Refined error message requirements"
+   188→- Added error message requirements
+   571→| `validation_errors` | array        | List of parsing or format issues                                  |
+  </tool_result>
+  <assistant>The skill docs cover the two-step pattern (comment + body update) and mention updating roadmap tables, but they don't explicitly say "re-render the prose roadmap table in the objective comment when you update the YAML roadmap in the issue body." The `erk exec update-objective-node` command at line 575 might handle this — let me check.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6169" cache_read_input_tokens="51146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6169}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GFNBPEh9zQYSDTbQ7BStJt">
+    <param name="command">erk exec update-objective-node -h 2&gt;&amp;1</param>
+    <param name="description">Check update-objective-node help</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6169" cache_read_input_tokens="51146" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6169, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GFNBPEh9zQYSDTbQ7BStJt">
+Usage: erk exec update-objective-node [OPTIONS] ISSUE_NUMBER
+
+  Update node PR cells in an objective's roadmap table.
+
+Options:
+  --node TEXT                     Node ID(s) to update (e.g., '1.3')
+                                  [required]
+  --pr TEXT                       PR reference (e.g., '#456', or '' to clear).
+                                  Omit to preserve existing.
+  --status [pending|planning|done|in_progress|blocked|skipped]
+                                  Explicit status to set (default: infer from
+                                  PR value)
+  --include-body                  Include the fully-mutated issue body in JSON
+                                  output as 'updated_body'
+  -h, --help                      Show this message and exit.
+  </tool_result>
+  <assistant>So there IS a programmatic tool (`erk exec update-objective-node`) that handles this — I should have used it instead of manually editing the YAML. Let me check if it updates both the issue body YAML and the comment's prose table.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="57315" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 475}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LPqywAEtLLCNfCHbNsvLwV">
+    <param name="command">erk exec update-objective-node 8832 --node 1.7 --status skipped --include-body 2&gt;&amp;1 | head -5</param>
+    <param name="description">Test update-objective-node on node 1.7</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="57315" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 475, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LPqywAEtLLCNfCHbNsvLwV">
+{"success": true, "issue_number": 8832, "node_id": "1.7", "previous_pr": null, "new_pr": null, "url": "https://github.com/dagster-io/erk/issues/8832", "updated_body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-03-06T05:03:40.709189+00:00'\ncreated_by: schrockn\nobjective_comment_id: 4011633841\nslug: decouple-cli-from-git-repo\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '4'\nnodes:\n- id: '1.1'\n  slug: http-client-always\n  description: Always create HttpClient in context (remove git-repo guard)\n  status: done\n  pr: '#8835'\n- id: '1.2'\n  slug: remote-github-module\n  description: Create RemoteGitHub gateway package (abc/real/fake) with HttpClient-based\n    GitHub operations that take explicit owner/repo params instead of repo_root Path\n  status: done\n  pr: '#8835'\n- id: '1.3'\n  slug: one-shot-repo-flag\n  description: Add --repo flag to one-shot command with remote dispatch path\n  status: done\n  pr: '#8835'\n- id: '1.4'\n  slug: no-repo-infrastructure\n  description: Create @no_repo_required decorator and sentinel gateway infrastructure.\n    Add NoRepoGit/NoRepoGitHub sentinel implementations (following GraphiteDisabled\n    pattern) that raise descriptive errors when repo-dependent operations are called\n    outside a repo context. Wire sentinels into context construction when isinstance(repo,\n    NoRepoSentinel). The decorator marks Click commands as not requiring a git repo\n    and is inspectable via command.no_repo_required attribute. All commands converted\n    in phases 2 and 3 must use @no_repo_required and route through RemoteGitHub instead\n    of the local subprocess-based GitHub gateway.\n  status: in_progress\n  pr: '#8880'\n- id: '1.5'\n  slug: canonical-remote-one-shot\n  description: 'Make RemoteGitHub the canonical one-shot dispatch path: eliminate\n    the parallel local git dispatch code (one_shot_dispatch.py dispatch_one_shot),\n    unify onto the REST API path (one_shot_remote_dispatch.py), delete the old local\n    dispatch module. Apply @no_repo_required to one-shot command. When --repo is not\n    passed, extract owner/repo from ctx.repo.github and still use RemoteGitHub.'\n  status: in_progress\n  pr: '#8883'\n- id: '1.6'\n  slug: rename-github-to-local\n  description: Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub to clarify\n    it is the subprocess-based local-repo gateway (vs RemoteGitHub REST API gateway).\n    Mechanical bulk rename across ~50 files.\n  status: in_progress\n  pr: '#8888'\n- id: '1.7'\n  slug: rename-github-issues-to-local\n  description: Rename GitHubIssues/RealGitHubIssues/FakeGitHubIssues/DryRunGitHubIssues\n    to LocalGitHubIssues/RealLocalGitHubIssues/FakeLocalGitHubIssues/DryRunLocalGitHubIssues.\n    Same mechanical LibCST bulk rename as 1.6, applied to the issues sub-gateway (~142\n    files).\n  status: skipped\n  pr: null\n- id: '2.1'\n  slug: pr-read-commands\n  description: 'Convert pr read commands to @no_repo_required with --repo flag: pr\n    list/dash, pr view, pr check, pr log, pr close, pr duplicate-check. Each command\n    routes through RemoteGitHub when --repo is provided or when no local repo is present.'\n  status: pending\n  pr: null\n- id: '2.2'\n  slug: objective-read-commands\n  description: 'Convert objective read commands to @no_repo_required with --repo flag:\n    objective list, objective view, objective check, objective close. Same pattern\n    as 2.1.'\n  status: pending\n  pr: null\n- id: '2.3'\n  slug: discover-repo-refactor\n  description: Refactor discover_repo_context to accept explicit owner/repo as alternative\n    to git discovery, enabling commands to resolve repo identity from --repo flag\n    without a local clone\n  status: pending\n  pr: null\n- id: '3.1'\n  slug: pr-create-remote\n  description: Convert pr create to @no_repo_required with --repo flag and remote\n    dispatch path via RemoteGitHub\n  status: pending\n  pr: null\n- id: '3.2'\n  slug: pr-dispatch-remote\n  description: Convert pr dispatch to @no_repo_required with --repo flag and remote\n    dispatch path via RemoteGitHub\n  status: pending\n  pr: null\n- id: '3.3'\n  slug: launch-remote\n  description: Convert launch to @no_repo_required with --repo flag and remote dispatch\n    path via RemoteGitHub\n  status: pending\n  pr: null\n- id: '3.4'\n  slug: objective-plan-remote\n  description: Convert objective plan --one-shot to @no_repo_required with --repo\n    flag and remote dispatch path via RemoteGitHub\n  status: pending\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;\n\n\n"}
+  </tool_result>
+  <assistant>OK so `erk exec update-objective-node` updates the **issue body YAML** but does NOT update the **objective comment's prose roadmap table**. That's the gap — the prose table in the comment still needs a separate update.
+
+To answer your question: **No, the objective skill docs don't explicitly instruct agents to re-render the prose roadmap table in the objective comment when mutating node status.** The docs mention updating "roadmap tables" but don't call out the two-location problem (issue body YAML vs. comment prose table).
+
+I should add this to the skill. The rule would be:
+
+&gt; When mutating objective node status, use `erk exec update-objective-node` for the issue body YAML, then also update the prose roadmap table in the objective comment (identified by `objective_comment_id` in the header metadata). Both must stay in sync.
+
+Want me to update the objective skill docs (likely `updating.md` or `format.md`) with this requirement?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1821" cache_read_input_tokens="57790" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1821, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>Yes make a plan to do that. There shoudl also be an erk objective check that validates that the roadmap and the header are in sync. This should be called in any flow that muates the objecitve</user>
+  <usage input_tokens="3" cache_creation_input_tokens="1621" cache_read_input_tokens="59611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1621}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01VEXNHjFayPAyjNYs8fxPdB">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1621" cache_read_input_tokens="59611" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1621, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VEXNHjFayPAyjNYs8fxPdB">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_016fjMFoyXxSWXcZt8JoCFyj">
+    <param name="description">Explore objective check validation</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 816 chars]...Be thorough - check src/erk/cli/commands/objective/, src/erk/exec/, and any related files.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2374" cache_read_input_tokens="61232" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2374}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PnYUDyjmL8gWEhWxsq9Nif">
+    <param name="description">Explore objective skill docs</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 810 chars]... check afterward?
+- Is there already any mention of syncing the prose table with the YAML?</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2374" cache_read_input_tokens="61232" output_tokens="649" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2374, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PnYUDyjmL8gWEhWxsq9Nif">
+Perfect! Now I have comprehensive understanding of the objective skill documentation structure. Let me create a summary document for the user.
+
+## Summary: Objective Skill Documentation Structure and Roadmap Table Re-Rendering
+
+Based on my exploration of the objective skill documentation, here's what I found:
+
+### Current Documentation Structure
+
+**Main Objective Skill** (`.claude/skills/objective/SKILL.md`):
+- Overview of objectives vs erk-plans
+- 12 key design principles
+- Quick reference for common operations
+- References to 4 detailed reference files
+
+**Reference Files** (`.claude/skills/objective/references/`):
+1. **workflow.md** - Creating objectives, spawning plans, resuming work, steelthread structuring
+2. **updating.md** - Two-step update pattern (comment first, body second)
+3. **format.md** - Complete templates, examples, action comment format, update patterns
+4. **closing.md** - Proactive closing triggers and procedures
+
+### Key Learned Documentation
+
+Located in `docs/learned/objectives/`:
+- **roadmap-format-versioning.md** - Current 4-column canonical format and versioning strategy
+- **roadmap-mutation-patterns.md** - Surgical vs full-body update patterns, when to use each
+- **roadmap-mutation-semantics.md** - Write-time status computation vs parse-time inference
+- **objective-roadmap-check.md** - Semantic validation beyond structural parsing
+- **objective-create-workflow.md** - 3-layer pipeline for objective creation
+- **roadmap-parser-api.md** - Shared parser functions and their consumers
+
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016fjMFoyXxSWXcZt8JoCFyj">
+Perfect! Now I have a comprehensive understanding. Let me compile the final report:
+
+## Summary
+
+Based on my thorough exploration of the codebase and documentation, here are the answers to your four questions:
+
+### 1. The `erk objective check` command
+
+**File Path:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/objective/check_cmd.py`
+
+**Function:** `validate_objective()` (lines 71-218) and CLI command `check_objective()` (lines 221-249)
+
+**Current Validations (7 checks):**
+1. **erk-objective label** — Issue must have the label (line 101)
+2. **Roadmap parses successfully** — Structural validation via `parse_roadmap()` (line 108)
+3. **Status/PR consistency** — Steps with PR references must have status in `[in_progress, done, planning, skipped]` (lines 148-163)
+4. **No orphaned done statuses** — `done` steps must have a PR reference (lines 165-174)
+5. **Sequential phase numbering** — Phase keys must be strictly ordered (lines 176-183)
+6. **v2 format integrity** — `objective-header` must have `objective_comment_id` (lines 185-192)
+7. **PR reference format** — PR cells must use `#` prefix like `#123` (lines 194-203)
+
+The command supports both human-readable `[PASS]/[FAIL]` output (default) and JSON output via `--json-output` flag.
+
+---
+
+### 2. The `erk exec update-objective-node` script
+
+**File Path:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/exec/scripts/update_objective_node.py`
+
+**What it does:**
+
+... [81 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1479" cache_creation_input_tokens="2732" cache_read_input_tokens="63606" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2732}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good findings. The exec scripts already re-render the comment table — my mistake was manually editing the YAML instead of using `erk exec update-objective-node`. But there's no validation check to catch when they drift. Let me read the key implementation files.</assistant>
+  <usage input_tokens="1479" cache_creation_input_tokens="2732" cache_read_input_tokens="63606" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2732}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C9dujiaM9ExGXtqU7WHckB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/objective/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1479" cache_creation_input_tokens="2732" cache_read_input_tokens="63606" output_tokens="494" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2732, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C9dujiaM9ExGXtqU7WHckB">
+     1→"""Validate an objective's format and roadmap consistency."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.alias import alias
+    10→from erk.cli.core import discover_repo_context
+    11→from erk.cli.github_parsing import parse_issue_identifier
+    12→from erk.core.context import ErkContext, RepoContext
+    13→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    14→from erk_shared.gateway.github.issues.types import IssueNotFound
+    15→from erk_shared.gateway.github.metadata.core import (
+    16→    find_metadata_block,
+    17→    has_metadata_block,
+    18→)
+    19→from erk_shared.gateway.github.metadata.dependency_graph import (
+    20→    DependencyGraph,
+    21→    build_graph,
+    22→    compute_graph_summary,
+    23→    find_graph_next_node,
+    24→    phases_from_graph,
+    25→)
+    26→from erk_shared.gateway.github.metadata.roadmap import (
+    27→    parse_roadmap,
+    28→    serialize_phases,
+    29→)
+    30→from erk_shared.gateway.github.metadata.types import BlockKeys
+
+... [292 lines omitted] ...
+
+    38→    """Validation completed (may have passed or failed checks).
+    43→        failed_count: Number of failed checks
+    44→        graph: Dependency graph of roadmap nodes (empty if parsing failed)
+    47→        validation_errors: Parser-level warnings from roadmap parsing
+    53→    failed_count: int
+    57→    validation_errors: list[str]
+    62→class ObjectiveValidationError:
+    65→    error: str
+    68→ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+    91→        ObjectiveValidationError if unable to complete validation
+    98→        return ObjectiveValidationError(error=f"Issue #{issue_number} not found")
+   108→    phases, validation_errors = parse_roadmap(issue.body)
+   115→        failed_count = sum(1 for passed, _ in checks if not passed)
+   117→            passed=failed_count == 0,
+   119→            failed_count=failed_count,
+   123→            validation_errors=[],
+   130→        # Block exists but failed to parse
+   131→        checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
+   132→        failed_count = sum(1 for passed, _ in checks if not passed)
+   136→            failed_count=failed_count,
+   140→            validation_errors=validation_errors,
+   207→    failed_count = sum(1 for passed, _ in checks if not passed)
+   210→        passed=failed_count == 0,
+   212→        failed_count=failed_count,
+   216→        validation_errors=validation_errors,
+   254→    if isinstance(result, ObjectiveValidationError):
+   259→                    "error": result.error,
+   278→                "validation_errors": result.validation_errors,
+   289→    if isinstance(result, ObjectiveValidationError):
+   291→            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.error}"
+   315→        check_word = "checks" if result.failed_count &gt; 1 else "check"
+   318→                f"Objective validation failed ({result.failed_count} {check_word} failed)", fg="red"
+  </tool_result>
+  <assistant>Now let me read the roadmap module to understand `rerender_comment_roadmap` and the table parsing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6261" cache_read_input_tokens="66338" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6261}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M4aTxs27oAQqSmueTQXbtN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">700</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6261" cache_read_input_tokens="66338" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6261, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M4aTxs27oAQqSmueTQXbtN">
+   700→    end_idx = text.find(ROADMAP_TABLE_MARKER_END, start_idx)
+   701→    if end_idx == -1:
+   702→        return None
+   703→
+   704→    content_start = start_idx + len(ROADMAP_TABLE_MARKER_START)
+   705→    section = text[content_start:end_idx]
+   706→    return (section, start_idx, end_idx + len(ROADMAP_TABLE_MARKER_END))
+   707→
+   708→
+   709→def rerender_comment_roadmap(issue_body: str, comment_body: str) -&gt; str | None:
+   710→    """Deterministically re-render the roadmap tables in a comment from YAML source of truth.
+   711→
+   712→    Parses the roadmap YAML from the issue body, enriches phase names from the
+   713→    comment's markdown headers, renders new tables, and splices them into the
+   714→    comment's marker-bounded section.
+   715→
+   716→    This replaces all per-node regex patching (``_replace_table_in_text``).
+   717→
+   718→    Args:
+   719→        issue_body: The objective issue body containing the ``objective-roadmap``
+   720→            metadata block (YAML source of truth).
+   721→        comment_body: The objective-body comment containing the rendered
+   722→            markdown tables bounded by ``&lt;!-- erk:roadmap-table --&gt;`` markers.
+   723→
+   724→    Returns:
+   725→        Updated comment body with re-rendered tables, or None if no roadmap
+   726→        block or no markers found.
+   727→    """
+   728→    raw_blocks = extract_raw_metadata_blocks(issue_body)
+   729→    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
+
+... [27 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check what parsing utilities exist for extracting node data from the prose table vs YAML:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="72599" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1047}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012PnM3HAUH3QmTUSUW9WWAX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">470</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1047" cache_read_input_tokens="72599" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1047, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012PnM3HAUH3QmTUSUW9WWAX">
+   470→
+   471→    # Block exists — try to parse it
+   472→    roadmap_block = matching_blocks[0]
+   473→    steps = parse_roadmap_frontmatter(roadmap_block.body)
+   474→
+   475→    if steps is not None:
+   476→        phases = group_nodes_by_phase(steps)
+   477→        phases = enrich_phase_names(body, phases)
+   478→        return (phases, [])
+   479→
+   480→    # Block exists but failed to parse — legacy/broken format
+   481→    return ([], [_LEGACY_FORMAT_ERROR])
+   482→
+   483→
+   484→def _format_depends_on(depends_on: tuple[str, ...] | None) -&gt; str:
+   485→    """Format depends_on for table display.
+   486→
+   487→    None or empty tuple renders as ``-``, non-empty tuple as comma-separated IDs.
+   488→    """
+   489→    if not depends_on:
+   490→        return "-"
+   491→    return ", ".join(depends_on)
+   492→
+   493→
+   494→def render_roadmap_tables(phases: list[RoadmapPhase]) -&gt; str:
+   495→    """Render phases as markdown tables matching the objective-body display format.
+   496→
+   497→    Format per phase:
+   498→        ### Phase {number}{suffix}: {name} ({N} PR)
+   499→        | Node | Description | Status | PR |
+
+... [50 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now I have a clear picture. Let me also quickly check the existing tests for check_cmd:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1177" cache_read_input_tokens="73646" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1177}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_016TuginyXVUrjY2tZnuxcEY">
+    <param name="pattern">**/test*check*objective*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1177" cache_read_input_tokens="73646" output_tokens="82" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016TuginyXVUrjY2tZnuxcEY">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01WP41yqC6wqcgSnyMJWumeU">
+    <param name="pattern">**/test*objective*check*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="195" cache_read_input_tokens="74823" output_tokens="59" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 195, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WP41yqC6wqcgSnyMJWumeU">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PHJ5tozZtxnTf1aMpHFJAN">
+    <param name="pattern">validate_objective|check_objective</param>
+    <param name="path">tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="74" cache_read_input_tokens="75018" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 74, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PHJ5tozZtxnTf1aMpHFJAN">
+Found 5 files
+tests/unit/cli/commands/objective/test_check_cmd.py
+tests/tui/screens/test_launch_screen.py
+tests/tui/app/test_async_operations.py
+tests/tui/commands/test_registry.py
+tests/core/utils/test_naming.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RJ7zAea2v5s3LyStJQoCjW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="75092" output_tokens="96" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 188, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RJ7zAea2v5s3LyStJQoCjW">
+     1→"""Unit tests for erk objective check command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.objective.check_cmd import (
+    10→    ObjectiveValidationError,
+    11→    ObjectiveValidationSuccess,
+    12→    check_objective,
+    13→    validate_objective,
+    14→)
+    15→from erk_shared.context.context import ErkContext
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueInfo
+    19→
+    20→
+    21→def _make_issue(
+    22→    number: int,
+    23→    title: str,
+    24→    body: str,
+    25→    *,
+    26→    labels: list[str] | None = None,
+    27→) -&gt; IssueInfo:
+    28→    """Create a test IssueInfo."""
+    29→    now = datetime.now(UTC)
+    30→    return IssueInfo(
+
+... [782 lines omitted] ...
+
+   109→    assert result.exit_code == 0, f"Failed: {result.output}"
+   126→    assert result.exit_code == 0, f"Failed: {result.output}"
+   201→    assert result.exit_code == 0, f"Failed: {result.output}"
+   207→    assert output["validation_errors"] == []
+   256→    """Test that a non-existent issue returns an error."""
+   284→    assert "999" in output["error"]
+   449→def test_validate_objective_returns_error_for_missing_issue() -&gt; None:
+   450→    """Test that validate_objective returns error type for missing issue."""
+   455→    assert isinstance(result, ObjectiveValidationError)
+   456→    assert "999" in result.error
+   512→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   528→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   554→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   569→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   601→    assert result.exit_code == 0, f"Failed: {result.output}"
+   699→    assert result.exit_code == 0, f"Failed: {result.output}"
+   787→    assert result.exit_code == 0, f"Failed: {result.output}"
+   803→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I have a thorough understanding. The key insight is that `validate_objective` currently only checks the **issue body** — it doesn't fetch or validate the objective comment at all. The new check needs to:
+
+1. Fetch the comment using `objective_comment_id` from the header
+2. Parse node statuses from the prose roadmap table in the comment
+3. Compare them against the YAML source of truth in the issue body
+
+Let me also check how the comment is fetched:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13416" cache_read_input_tokens="75280" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13416}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AiRbDr7Zw3YPr8se7VuVdp">
+    <param name="pattern">get_comment_by_id</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/github/issues</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13416" cache_read_input_tokens="75280" output_tokens="266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13416, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AiRbDr7Zw3YPr8se7VuVdp">
+packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py:150:    def get_comment_by_id(self, repo_root: Path, comment_id: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:85:    def get_comment_by_id(self, repo_root: Path, comment_id: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:87:        return self._wrapped.get_comment_by_id(repo_root, comment_id)
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:338:    def get_comment_by_id(self, repo_root: Path, comment_id: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:308:    def get_comment_by_id(self, repo_root: Path, comment_id: int) -&gt; str:
+
+[Showing results with pagination = limit: 5, offset: 0]
+  </tool_result>
+  <assistant>Now let me check how to parse node statuses from the prose roadmap table — is there existing parsing code for that?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="88696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 662}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CMPaqTMeBmvcA5YkuJZNBx">
+    <param name="pattern">extract_roadmap_table_section|parse.*table|roadmap.*table.*parse</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="88696" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 662, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CMPaqTMeBmvcA5YkuJZNBx">
+686:def extract_roadmap_table_section(text: str) -&gt; tuple[str, int, int] | None:
+742:    marker_section = extract_roadmap_table_section(comment_body)
+  </tool_result>
+  <assistant>Good — there's no existing parser for extracting node data FROM the prose table. But the simpler approach is: instead of parsing the prose table, just re-render it from YAML and compare. If they differ, they're out of sync.
+
+Now I have enough to write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="89358" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 353}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_014TBaonz4fpd6QPRwi4bLXM">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="89358" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 353, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014TBaonz4fpd6QPRwi4bLXM">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01XEeTYb2eVLN6RZt6QuCFpb">
+    <param name="file_path">/Users/schrockn/.claude/plans/serialized-noodling-engelbart.md</param>
+    <param name="content"># Plan: Objective Roadmap Table Sync Validation
+
+## Context
+
+When an agent manually edits ...[truncated 4332 chars]...already fixed the drift manually)
+3. Run `ty` for type checking
+4. Run `ruff` for linting
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="437" cache_read_input_tokens="89711" output_tokens="1378" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 437, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XEeTYb2eVLN6RZt6QuCFpb">
+File created successfully at: /Users/schrockn/.claude/plans/serialized-noodling-engelbart.md
+  </tool_result>
+  <assistant>Let me verify one detail about `FakeGitHubIssues` comment storage before finalizing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="91923" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 91923}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Epdr9TyYqxuTgc8xK7yxv7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py</param>
+    <param name="offset">295</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="91923" cache_read_input_tokens="0" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 91923, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Epdr9TyYqxuTgc8xK7yxv7">
+   295→        if limit is not None:
+   296→            issues = issues[:limit]
+   297→
+   298→        return issues
+   299→
+   300→    def get_issue_comments(self, repo_root: Path, number: int) -&gt; list[str]:
+   301→        """Get comments for issue from fake storage.
+   302→
+   303→        Returns:
+   304→            List of comment bodies, or empty list if no comments exist
+   305→        """
+   306→        return self._comments.get(number, [])
+   307→
+   308→    def get_comment_by_id(self, repo_root: Path, comment_id: int) -&gt; str:
+   309→        """Get a single comment body by ID from fake storage.
+   310→
+   311→        Searches both pre-configured comments (from constructor) and
+   312→        dynamically added comments (from add_comment).
+   313→
+   314→        Raises:
+   315→            RuntimeError: If comment ID not found (simulates gh CLI error)
+   316→        """
+   317→        # First check pre-configured comments in _comments_with_urls
+   318→        for comments_list in self._comments_with_urls.values():
+   319→            for comment in comments_list:
+   320→                if comment.id == comment_id:
+   321→                    return comment.body
+   322→
+   323→        # Then check dynamically added comments
+   324→        for _, body, cid in self._added_comments:
+  </tool_result>
+  <tool_use name="Read" id="toolu_013QskxsdrUhdVs7g3ZWxbFq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="91923" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 535, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013QskxsdrUhdVs7g3ZWxbFq">
+     1→"""In-memory fake implementation of GitHub issues for testing."""
+     2→
+     3→from dataclasses import replace
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.types import (
+     9→    CreateIssueResult,
+    10→    IssueComment,
+    11→    IssueInfo,
+    12→    IssueNotFound,
+    13→    PRReference,
+    14→)
+    15→from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
+    16→
+    17→
+    18→class FakeGitHubIssues(GitHubIssues):
+    19→    """In-memory fake implementation for testing.
+    20→
+    21→    All state is provided via constructor using keyword arguments.
+    22→    """
+    23→
+    24→    def __init__(
+    25→        self,
+    26→        *,
+    27→        issues: dict[int, IssueInfo] | None = None,
+    28→        next_issue_number: int = 1,
+    29→        labels: set[str] | None = None,
+    30→        comments: dict[int, list[str]] | None = None,
+
+... [20 lines omitted] ...
+
+    34→        add_reaction_error: str | None = None,
+    35→        get_comments_error: str | None = None,
+    50→            add_reaction_error: If set, add_reaction_to_comment raises RuntimeError
+  </tool_result>
+  <assistant>Good — `FakeGitHubIssues` accepts `comments_with_urls` which maps issue numbers to `IssueComment` objects (which have `.id` and `.body`). That's how `get_comment_by_id` finds comments. The test will need to seed a comment with the `objective_comment_id` value.
+
+The plan is solid. Let me finalize it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="831" cache_read_input_tokens="92458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 831}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01XKvYYdJTWvhe23jhnY9dGU">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="831" cache_read_input_tokens="92458" output_tokens="169" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 831, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XKvYYdJTWvhe23jhnY9dGU">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_017b39BRhJ4PgUDxh9gRuzah">
+    <param name="plan"># Plan: Objective Roadmap Table Sync Validation
+
+## Context
+
+When an agent manually edits ...[truncated 4332 chars]...already fixed the drift manually)
+3. Run `ty` for type checking
+4. Run `ruff` for linting
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2028" cache_read_input_tokens="93289" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2028, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017b39BRhJ4PgUDxh9gRuzah">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/serialized-noodling-engelbart.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Objective Roadmap Table Sync Validation
+Current context: (wt:erk-slot-04) (br:plnd/O8832-rename-github-to-loc-03-06-1802) (pr:#8888)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/O883"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 4eb4862b-92c2-4b59-a519-0b92ca4623f7 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/serialized-noodling-engelbart.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+</session>
