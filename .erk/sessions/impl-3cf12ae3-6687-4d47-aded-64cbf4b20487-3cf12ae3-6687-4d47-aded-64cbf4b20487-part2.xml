@@ -1009,4 +1009,97 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8922
 }
   </tool_result>
+  <tool_result tool="toolu_019PFAVoFNPW3fw6SWjVvAng">
+{"uploaded": true, "plan_id": 8922}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QNYC6BtSA9PkpbwiA8TqYd">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="128012" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QNYC6BtSA9PkpbwiA8TqYd">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Co48hsvDHxcsKZQ1rdJMDM">
+    <param name="command">ls .erk/impl-context/ 2&gt;/dev/null &amp;&amp; rm -rf .erk/impl-context/plnd--fix-slow-unit-tests-03-07-1647 || echo "No impl-context to clean"</param>
+    <param name="description">Manual cleanup of impl-context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="128327" cache_creation="{'ephemeral_5m_input_tokens': 106, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Co48hsvDHxcsKZQ1rdJMDM">
+plan.md
+plnd--fix-slow-unit-tests-03-07-1647
+ref.json
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CkxV4ocMitWVw779yCeJyW">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/plnd--fix-slow-unit-tests-03-07-1647 /h...[truncated 50 chars]...k/erk/.erk/impl-context/ref.json /home/runner/work/erk/erk/.erk/impl-context/run-info.json</param>
+    <param name="description">Remove impl-context files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="128433" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CkxV4ocMitWVw779yCeJyW">
+
+  </tool_result>
+  <assistant>Now submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="128604" cache_creation="{'ephemeral_5m_input_tokens': 210, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01V2vKyY6GYTE1QvDS7TgJoX">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="128604" cache_creation="{'ephemeral_5m_input_tokens': 210, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V2vKyY6GYTE1QvDS7TgJoX">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8922 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8922
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (33,194 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RxiASTSBJ6tQJzuq6DwfuD">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="128814" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01PGrYB5ai61zqmB5nNp86zA">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="128814" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RxiASTSBJ6tQJzuq6DwfuD">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_result tool="toolu_01PGrYB5ai61zqmB5nNp86zA">
+
+  </tool_result>
 </session>
