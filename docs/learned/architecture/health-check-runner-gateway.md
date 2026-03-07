@@ -52,7 +52,7 @@ Subgroups are defined in `REPO_SUBGROUPS` and `USER_SUBGROUPS` dicts mapping dis
 
 **File:** `src/erk/core/health_checks/managed_artifacts.py`
 
-`_load_artifact_allowlist()` reads `[artifacts].allow_modified` from both:
+The allowlist loader (`managed_artifacts.py:72`) reads `[artifacts].allow_modified` from both:
 
 - `.erk/config.toml` (shared config)
 - `.erk/config.local.toml` (local overrides)
