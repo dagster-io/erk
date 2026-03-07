@@ -1,0 +1,964 @@
+<session>
+  <meta branch="plnd/O8832-rename-github-to-loc-03-06-1802" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8888&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8888` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8888.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11253" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 11253, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DUDJaf3cXLqEYDCxfe9aBW">
+    <param name="command">erk exec setup-impl --issue 8888</param>
+    <param name="description">Set up implementation for plan #8888</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11253" cache_read_input_tokens="17201" cache_creation="{'ephemeral_5m_input_tokens': 11253, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DUDJaf3cXLqEYDCxfe9aBW">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O8832-rename-github-to-loc-03-06-1802", "plan_number": 8888, "plan_url": "https://github.com/dagster-io/erk/pull/8888", "branch": "plnd/O8832-rename-github-to-loc-03-06-1802", "plan_title": "Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8888, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O8832-rename-github-to-loc-03-06-1802', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28454" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UcPYfPQuZw73vzJCzXe6ns">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O8832-rename-github-to-loc-03-06-1802/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28454" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UcPYfPQuZw73vzJCzXe6ns">
+     1→## Summary
+     2→
+     3→Mechanical bulk rename of 5 GitHub gateway ABC classes to clarify that they are the local-repo gateway (requiring a git clone), contrasting with `RemoteGitHub` (REST API-based, no local repo needed).
+     4→
+     5→**Part of Objective #8832, Node 1.6**
+     6→
+     7→### Classes renamed
+     8→
+     9→| Before | After |
+    10→|--------|-------|
+    11→| `GitHub` | `LocalGitHub` |
+    12→| `RealGitHub` | `RealLocalGitHub` |
+    13→| `FakeGitHub` | `FakeLocalGitHub` |
+    14→| `DryRunGitHub` | `DryRunLocalGitHub` |
+    15→| `PrintingGitHub` | `PrintingLocalGitHub` |
+    16→
+    17→### Scope
+    18→
+    19→- **252 files changed** across `src/`, `packages/`, `tests/`, and `docs/learned/`
+    20→- **1630 insertions, 1616 deletions** (net +14 lines from longer names)
+    21→- Class definitions, imports, type annotations, constructor calls, docstrings, comments, and documentation all updated
+    22→- No behavioral changes — purely mechanical rename
+    23→
+    24→### Explicitly unchanged
+    25→
+    26→- `GitHubIssues` / `RealGitHubIssues` / `FakeGitHubIssues` / `DryRunGitHubIssues`
+    27→- `GitHubAdmin` / `RealGitHubAdmin` / `FakeGitHubAdmin`
+    28→- `GitHubChecks`, `GitHubRepoId`, `GitHubRepoLocation`
+    29→- `RemoteGitHub` / `RealRemoteGitHub` / `FakeRemoteGitHub`
+    30→- Variable names (`github`, `fake_github`, `ctx.github`)
+
+... [24 lines omitted] ...
+  </tool_result>
+  <assistant>This plan describes a mechanical bulk rename that has already been completed (all verification checkboxes are checked). Let me check the current state of the branch to understand what's already done.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="893" cache_read_input_tokens="28818" cache_creation="{'ephemeral_5m_input_tokens': 893, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011oW2Yn5ygTGQ9b3JuLJwBQ">
+    <param name="command">git log --oneline -10</param>
+    <param name="description">Check recent commits on branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="893" cache_read_input_tokens="28818" cache_creation="{'ephemeral_5m_input_tokens': 893, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01R37Bgdo65P2wgCG8Todnnh">
+    <param name="command">git diff --stat HEAD~1</param>
+    <param name="description">Check last commit changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="893" cache_read_input_tokens="28818" cache_creation="{'ephemeral_5m_input_tokens': 893, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011oW2Yn5ygTGQ9b3JuLJwBQ">
+8be802be8 Remove plan staging dirs before implementation
+447b0c474 Add plan for PR #8888
+e1fb9f191 Add plan for PR #8888
+f450c4277 Add plan: Plan: Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub
+f07b19979 Move RealRemoteGitHub import to module level
+8770409aa Clean up .erk/impl-context/ (post-implementation)
+85b04d3f9 Add plan for PR #8883
+2bfe50287 WIP: Prepare for PR submission
+1f554a73d Remove .erk/impl-context/ before implementation
+b5408be6e Add plan: Plan: Make RemoteGitHub the Canonical One-Shot Dispatch Path
+  </tool_result>
+  <tool_result tool="toolu_01R37Bgdo65P2wgCG8Todnnh">
+ .erk/impl-context/plan.md  | 48 ----------------------------------------------
+ .erk/impl-context/ref.json | 10 ----------
+ 2 files changed, 58 deletions(-)
+  </tool_result>
+  <assistant>I see - the current branch has the plan setup commits, but the actual rename work hasn't been done yet on this branch. Let me check more carefully what the actual code state is.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="581" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 581, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0159imL96PvYRQbvr12po7h3">
+    <param name="command">git log --oneline --all | head -20</param>
+    <param name="description">Check all branches for context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="581" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 581, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DwYyQtKENeu4ArMAnWQ5N4">
+    <param name="command">git diff origin/master --stat | head -20</param>
+    <param name="description">Check what's different from master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="581" cache_read_input_tokens="29711" cache_creation="{'ephemeral_5m_input_tokens': 581, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DwYyQtKENeu4ArMAnWQ5N4">
+ .../erk-shared/src/erk_shared/context/context.py   |   8 +
+ .../erk-shared/src/erk_shared/context/testing.py   |   3 +
+ src/erk/cli/commands/launch_cmd.py                 |   1 +
+ src/erk/cli/commands/objective/plan_cmd.py         |  50 +-
+ src/erk/cli/commands/one_shot.py                   | 105 ++--
+ src/erk/cli/commands/one_shot_dispatch.py          | 450 -----------------
+ src/erk/cli/commands/one_shot_remote_dispatch.py   |  78 ++-
+ src/erk/core/context.py                            |   3 +
+ src/erk/core/workflow_smoke_test.py                |  30 +-
+ src/erk/tui/actions/palette.py                     |  27 -
+ src/erk/tui/commands/registry.py                   |  17 -
+ src/erk/tui/operations/workers.py                  |  59 ---
+ src/erk/tui/screens/plan_detail_screen.py          |   6 -
+ src/erk/tui/screens/plan_input_screen.py           |  84 ----
+ tests/commands/launch/test_launch_cmd.py           |   1 +
+ tests/commands/objective/test_plan_one_shot.py     | 103 ++--
+ tests/commands/one_shot/test_branch_name.py        |   2 +-
+ tests/commands/one_shot/test_one_shot.py           | 181 +++----
+ tests/commands/one_shot/test_one_shot_dispatch.py  | 550 +++++++++------------
+ .../one_shot/test_one_shot_remote_dispatch.py      |   6 +-
+  </tool_result>
+  <tool_result tool="toolu_0159imL96PvYRQbvr12po7h3">
+8be802be8 Remove plan staging dirs before implementation
+447b0c474 Add plan for PR #8888
+c6a180a7e Remove plan staging dirs before implementation
+ef9f9e79f Add plan for PR #8895
+95a7185a8 Add plan: Audit: Make TUI help screen view-mode-aware
+e94dabcf4 Wire incremental dispatch into TUI with plan input modal (#8887)
+f07b19979 Move RealRemoteGitHub import to module level
+e1fb9f191 Add plan for PR #8888
+8770409aa Clean up .erk/impl-context/ (post-implementation)
+f450c4277 Add plan: Plan: Rename GitHub/RealGitHub ABC to LocalGitHub/RealLocalGitHub
+85b04d3f9 Add plan for PR #8883
+2bfe50287 WIP: Prepare for PR submission
+1f554a73d Remove .erk/impl-context/ before implementation
+b5408be6e Add plan: Plan: Make RemoteGitHub the Canonical One-Shot Dispatch Path
+2f762c3cd Add plan: Plan: No-Repo Infrastructure (Objective #8832, Node 1.4)
+00b12eaa3 Add plan: Learn: Sort command palette menu items alphabetically within each subgroup
+cb5dda26f Auto-fix formatting (docs-sync + ruff + Prettier)
+94957ecbf Sort command palette menu items alphabetically within each subgroup (#8890)
+25b5b3654 Trigger CI workflows
+1e5b90268 Push impl session a476cf23-2df3-426b-b49b-5da6d619adee for plan #8893
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RH38UQbtDViUNSw1qSMHhJ">
+    <param name="command">git diff origin/master --stat | wc -l</param>
+    <param name="description">Count total diffstat lines from master</param>
+  </tool_use>
+  <usage input_tokens="515" cache_creation_input_tokens="737" cache_read_input_tokens="30292" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01VHrpvb6WdEBgM5XUhG1VD5">
+    <param name="pattern">class GitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="515" cache_creation_input_tokens="737" cache_read_input_tokens="30292" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VHrpvb6WdEBgM5XUhG1VD5">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01RH38UQbtDViUNSw1qSMHhJ">
+26
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017yT61MM5pYpEsNJjqUKwDk">
+    <param name="pattern">class (GitHub|RealGitHub|FakeGitHub|DryRunGitHub|PrintingGitHub)\b</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="719" cache_read_input_tokens="31029" cache_creation="{'ephemeral_5m_input_tokens': 719, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01PCwM1MZCfG7doHYYT8v76L">
+    <param name="pattern">class (LocalGitHub|RealLocalGitHub|FakeLocalGitHub|DryRunLocalGitHub|PrintingLocalGitHub)\b</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="719" cache_read_input_tokens="31029" cache_creation="{'ephemeral_5m_input_tokens': 719, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017yT61MM5pYpEsNJjqUKwDk">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01PCwM1MZCfG7doHYYT8v76L">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UCZfomXvBtKLcAhkjyhwh7">
+    <param name="pattern">class.*GitHub</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="31748" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UCZfomXvBtKLcAhkjyhwh7">
+src/erk/status/collectors/github.py:10:class GitHubPRCollector(StatusCollector):
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016gJn8w62m3X5Tb2LzHDzMV">
+    <param name="pattern">class.*(GitHub|LocalGitHub)</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="32201" cache_creation="{'ephemeral_5m_input_tokens': 143, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016gJn8w62m3X5Tb2LzHDzMV">
+packages/erk-shared/src/erk_shared/non_ideal_state.py:132:class GitHubAPIFailed(NonIdealStateMixin):
+packages/erk-shared/src/erk_shared/entity_store/entity.py:14:class GitHubEntity:
+src/erk/status/collectors/github.py:10:class GitHubPRCollector(StatusCollector):
+packages/erk-shared/src/erk_shared/gateway/github_admin/abc.py:1:"""Abstract base class for GitHub Actions admin operations."""
+packages/erk-shared/src/erk_shared/gateway/github_admin/abc.py:25:class GitHubAdmin(ABC):
+packages/erk-shared/src/erk_shared/gateway/github_admin/noop.py:9:class NoopGitHubAdmin(GitHubAdmin):
+packages/erk-shared/src/erk_shared/gateway/github_admin/real.py:12:class RealGitHubAdmin(GitHubAdmin):
+packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py:14:class FakeGitHubAdmin(GitHubAdmin):
+packages/erk-shared/src/erk_shared/gateway/github_admin/printing.py:10:class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
+packages/erk-shared/src/erk_shared/gateway/github/checks.py:22:class GitHubChecks:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:1:"""Abstract base class for GitHub operations."""
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:29:class GitHub(ABC):
+packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py:16:class GitHubIssues(ABC):
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:25:class RealGitHubIssues(GitHubIssues):
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:18:class FakeGitHubIssues(GitHubIssues):
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:16:class DryRunGitHubIssues(GitHubIssues):
+packages/erk-shared/src/erk_shared/gateway/github/types.py:173:class GitHubRepoId:
+packages/erk-shared/src/erk_shared/gateway/github/types.py:189:class GitHubRepoLocation:
+packages/erk-shared/src/erk_shared/gateway/github/real.py:95:class RealGitHub(GitHub):
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:37:class FakeGitHub(GitHub):
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:24:class DryRunGitHub(GitHub):
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:31:class PrintingGitHub(PrintingBase, GitHub):
+packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py:11:class RemoteGitHub(ABC):
+packages/erk-shared/src/erk_shared/gateway/remote_github/real.py:17:class RealRemoteGitHub(RemoteGitHub):
+packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py:87:class FakeRemoteGitHub(RemoteGitHub):
+packages/erk-shared/tests/unit/github/test_issues_fake.py:9:class TestFakeGitHubIssuesComments:
+packages/erk-shared/tests/unit/github/test_issues_fake.py:51:class TestFakeGitHubIssuesReactions:
+tests/commands/admin/test_plan_implement_workflow.py:18:class CommitBeforePRTrackingGitHub(FakeGitHub):
+tests/commands/admin/test_test_workflow.py:15:class CommitBeforePRTrackingGitHub(FakeGitHub):
+packages/erk-statusline/src/erk_statusline/statusline.py:134:class GitHubData(NamedTuple):
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>The old names (`GitHub`, `RealGitHub`, `FakeGitHub`, `DryRunGitHub`, `PrintingGitHub`) still exist in the codebase. The rename hasn't been done yet — the plan just describes what needs to be done. Let me now set up the implementation properly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1527" cache_read_input_tokens="32344" cache_creation="{'ephemeral_5m_input_tokens': 1527, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_016WtP9F4rnyKZdDyNLkZtMx">
+    <param name="todos">[{'content': 'Load relevant documentation and tripwires for gateway/architecture work', 's...[truncated 1176 chars]... submit PR', 'status': 'pending', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1527" cache_read_input_tokens="32344" cache_creation="{'ephemeral_5m_input_tokens': 1527, 'ephemeral_1h_input_tokens': 0}" output_tokens="543" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016WtP9F4rnyKZdDyNLkZtMx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me load the relevant tripwires and documentation for this gateway rename work.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="33871" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NAgjMKrWm7aacSZ5Fx8HXX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="33871" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Gwbu6AdxW3JQb8otqjMCLK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="33871" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XkiQJG8kZh3RNg61a4k8fQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/refactoring/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="33871" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XkiQJG8kZh3RNg61a4k8fQ">
+     1→---
+     2→title: Refactoring Tripwires
+     3→read_when:
+     4→  - "working on refactoring code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from refactoring/*.md frontmatter --&gt;
+    10→
+    11→# Refactoring Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**completing a libcst-refactor batch rename** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. After bulk rename, grep entire codebase for old symbol name. LibCST leave_Name visitor does NOT rename string literals used as dict keys. Subagent may miss files outside its scope.
+    16→
+    17→**completing a refactoring without searching docs/learned/ for stale references** → Read [Post-Refactoring Documentation Audit](post-refactor-documentation-audit.md) first. 64% of review violations come from stale documentation after refactoring. Run the 5-step checklist in post-refactor-documentation-audit.md before marking the task complete.
+    18→
+    19→**completing a rename without checking serialization names** → Read [Systematic Rename Checklist](systematic-rename-checklist.md) first. Serialization names (JSON keys, provider names, YAML values) may need to be preserved for backward compatibility even when code identifiers change. Check all serialization points.
+    20→
+    21→**completing a terminology rename without grepping for string literals** → Read [Systematic Terminology Renames](systematic-terminology-renames.md) first. LibCST leave_Name visitor does NOT rename string literals used as dict keys. After LibCST batch rename, grep for old identifier as string key.
+    22→
+    23→**interleaving file moves and import updates** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. Move ALL files first (git mv), THEN batch-update ALL imports. Interleaving creates intermediate broken states. See gateway-consolidation-checklist.md.
+    24→
+    25→**manually updating imports across 10+ files** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. Use LibCST via the libcst-refactor agent or a one-off script. Manual editing misses call sites and creates partial migration states.
+    26→
+    27→**removing a feature without checking all artifact categories** → Read [Feature Removal Checklist](feature-removal-checklist.md) first. Feature removal leaves scattered artifacts. Use this checklist to verify complete removal across source code, tests, constants, documentation, workflows, CLI commands, and glossary entries.
+    28→
+    29→**renaming a Python package without checking all entry points** → Read [Python Package Rename Checklist](python-package-rename-checklist.md) first. Package renames require updating pyproject.toml scripts, Makefile targets, CI config, and documentation. Use the checklist in python-package-rename-checklist.md.
+    30→
+
+... [17 lines omitted] ...
+
+    35→**using replace_all on lines with trailing comments** → Read [LibCST Systematic Import Refactoring](libcst-systematic-imports.md) first. Edit tool's replace_all removes surrounding whitespace, which can collapse lines and cause SyntaxError.
+  </tool_result>
+  <tool_result tool="toolu_01Gwbu6AdxW3JQb8otqjMCLK">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "adding a new method to Git ABC"
+    11→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    12→  - action: "adding a new method to GitHub ABC"
+    13→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    14→  - action: "adding a new method to Graphite ABC"
+    15→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [772 lines omitted] ...
+
+    31→    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+    42→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   136→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   138→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   140→### Decision: Discriminated Union or Exception?
+   144→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   145→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   146→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   150→- [ ] At least one caller branches on the error and continues with different logic
+   151→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   152→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   156→### Checklist: Use Exceptions When
+   158→- [ ] All callers terminate on failure (extract message and stop)
+   159→- [ ] No caller inspects error type or branches on error content
+   160→- [ ] Use `UserFacingCliError` at CLI boundary
+   166→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   181→**Methods using discriminated unions** (callers branch on error):
+   185→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   186→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   187→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   189→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   191→**Methods using exceptions** (all callers terminate):
+   193→| Method              | Exception      | Why                                                         |
+   195→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   196→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   200→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   207→   - [ ] `real.py` - Return appropriate error types for failure cases
+   209→   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+   212→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   217→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   221→- Updated tests to use `isinstance(result, MergeError)`
+   243→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   251→- When error messages from `get_X()` on missing resources are unclear
+   274→    user_output(f"Error: Issue #{issue_number} not found")
+   353→5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   597→The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   686→**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+   704→1. Run type checker (`ty`) to verify no abstract method errors
+   761→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   763→├── fake.py       # Constructor-injected errors, mutation tracking
+   770→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   771→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   772→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   795→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <tool_result tool="toolu_01NAgjMKrWm7aacSZ5Fx8HXX">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+
+... [353 lines omitted] ...
+
+    41→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    61→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    83→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    91→**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+   103→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+   117→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+   119→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+   127→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   133→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   137→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   151→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   165→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   169→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   181→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   217→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   219→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   221→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   223→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   235→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   237→**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+   251→**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+   269→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+   271→**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
+   283→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   285→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   293→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   301→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   305→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   307→**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
+   311→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   313→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   333→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   335→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   339→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   341→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   359→**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+   371→**writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
+   373→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <assistant>Good. This is a mechanical bulk rename. The refactoring tripwires warn about:
+1. Checking docs/learned/ for stale references after rename
+2. Checking serialization names  
+3. String literals not caught by LibCST
+
+The plan specifies that variable names (`github`, `fake_github`, `ctx.github`) should NOT be changed. Let me use the libcst-refactor agent for this systematic rename, as the tripwires recommend.
+
+Let me first signal that implementation has started, and then start the rename work.</assistant>
+  <usage input_tokens="13387" cache_creation_input_tokens="15550" cache_read_input_tokens="34465" cache_creation="{'ephemeral_5m_input_tokens': 15550, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01GoCqJDYGJ88UG7W48vB3Mj">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="13387" cache_creation_input_tokens="15550" cache_read_input_tokens="34465" cache_creation="{'ephemeral_5m_input_tokens': 15550, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GoCqJDYGJ88UG7W48vB3Mj">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_017YgiiMPFeEuSiBToL8ZAsR">
+    <param name="todos">[{'content': 'Load relevant documentation and tripwires for gateway/architecture work', 's...[truncated 919 chars]... submit PR', 'status': 'pending', 'activeForm': 'Signaling completion and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14001" cache_read_input_tokens="50015" cache_creation="{'ephemeral_5m_input_tokens': 14001, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017YgiiMPFeEuSiBToL8ZAsR">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me first understand the scope by finding all references to each class name that needs to be renamed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="64016" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NzberpaB6cLDtuWpBEwpWH">
+    <param name="pattern">\bGitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="64016" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01By9TLvnhNBx87aAMsyWeUA">
+    <param name="pattern">\bRealGitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="64016" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UZRTbKzMZK42cgfjNkAghT">
+    <param name="pattern">\bFakeGitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="64016" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_017gzjgCnDdXjMMjvYspbD1T">
+    <param name="pattern">\bDryRunGitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="64016" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01CNbL7VCzerNt16eErW1mVt">
+    <param name="pattern">\bPrintingGitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="64016" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017gzjgCnDdXjMMjvYspbD1T">
+src/erk/core/context.py:6
+tests/integration/test_dryrun_integration.py:2
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:1
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:1
+
+Found 10 total occurrences across 4 files.
+  </tool_result>
+  <tool_result tool="toolu_01UZRTbKzMZK42cgfjNkAghT">
+src/erk/core/context.py:7
+packages/erk-shared/src/erk_shared/plan_store/backend.py:1
+packages/erk-shared/src/erk_shared/gateway/gt/fake.py:2
+tests/core/foundation/test_context.py:6
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:3
+packages/erk-shared/src/erk_shared/context/context.py:1
+packages/erk-shared/src/erk_shared/context/testing.py:4
+packages/erk-shared/tests/unit/integrations/pr/test_diff_extraction.py:5
+packages/erk-shared/tests/unit/branch_manager/test_graphite_branch_manager.py:10
+packages/erk-shared/tests/unit/github/test_pr_review_threads.py:11
+packages/erk-shared/tests/unit/github/test_plan_issues.py:14
+tests/core/test_plan_context_provider.py:2
+tests/fakes/context.py:4
+tests/test_utils/context_builders.py:2
+tests/test_utils/plan_helpers.py:8
+tests/test_utils/env_helpers.py:7
+tests/test_utils/builders.py:2
+tests/commands/run/test_logs.py:5
+tests/commands/run/test_list.py:6
+tests/commands/pr/test_submit.py:23
+tests/commands/pr/test_check.py:11
+tests/commands/pr/test_checkout_plan.py:10
+tests/commands/pr/test_list.py:13
+tests/commands/pr/test_dispatch.py:7
+tests/commands/pr/test_checkout_graphite_linking.py:12
+tests/integration/test_dryrun_integration.py:2
+tests/commands/pr/test_checkout.py:23
+tests/commands/pr/test_submit_graphite_disabled.py:3
+tests/commands/pr/test_close.py:6
+tests/commands/pr/test_prepare.py:5
+
+... [136 lines omitted] ...
+
+tests/commands/land/test_branch_errors.py:5
+  </tool_result>
+  <tool_result tool="toolu_01NzberpaB6cLDtuWpBEwpWH">
+1:"""Abstract base class for GitHub operations."""
+29:class GitHub(ABC):
+30:    """Abstract interface for GitHub operations.
+47:        """Update base branch of a PR on GitHub.
+58:        """Update body of a PR on GitHub.
+78:        """Merge a pull request on GitHub.
+86:                     If provided, overrides GitHub's default behavior.
+99:        """Trigger a GitHub Actions workflow via gh CLI.
+108:            The GitHub Actions run ID as a string
+158:            user: Optional GitHub username to filter runs by (maps to --user flag)
+171:            run_id: GitHub Actions run ID
+184:            run_id: GitHub Actions run ID
+203:            run_id: GitHub Actions run ID
+215:        Uses the GitHub REST API to retrieve the comment body.
+219:            comment_id: GitHub comment ID
+232:        """Get PRs linked to issues via GitHub's development references.
+234:        Queries GitHub for PRs that reference issues in their description
+235:        or via GitHub's "Closes #N" linking. Returns a mapping of plan
+239:            location: GitHub repository location (local path + owner/repo identity)
+254:        Queries GitHub Actions for workflow runs and returns the most relevant
+297:        """Check GitHub CLI authentication status.
+300:        This is a LBYL check to validate GitHub CLI authentication before operations
+307:            - hostname: GitHub hostname (e.g., "github.com") or None
+343:        This method fetches the node_id from the GitHub API given a workflow run ID.
+349:            run_id: GitHub Actions run ID (numeric string)
+373:            location: GitHub repository location (local root + repo identity)
+429:        Fetches PRs from GitHub API in a single REST API call.
+464:            location: GitHub repository location
+531:        Uses GitHub REST API with pagination to handle large PRs that may
+659:        Uses GitHub REST API to create a pull request review comment
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01By9TLvnhNBx87aAMsyWeUA">
+src/erk/core/context.py:2
+packages/erk-statusline/src/erk_statusline/context.py:2
+src/erk/core/services/plan_list_service.py:1
+tests/core/operations/test_github.py:15
+packages/erk-shared/src/erk_shared/gateway/gt/real.py:3
+packages/erk-shared/src/erk_shared/gateway/remote_github/real.py:1
+packages/erk-shared/src/erk_shared/gateway/github/real.py:6
+packages/erk-shared/src/erk_shared/gateway/github/__init__.py:1
+packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py:2
+tests/integration/test_helpers.py:1
+tests/integration/test_real_github.py:41
+tests/integration/test_github_graphql.py:8
+tests/integration/test_real_github_pr_enrichment.py:7
+packages/erk-shared/src/erk_shared/context/factories.py:2
+tests/unit/gateways/github/test_parse_check_runs.py:11
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py:1
+tests/unit/gateways/github/test_real.py:22
+
+Found 126 total occurrences across 17 files.
+  </tool_result>
+  <tool_result tool="toolu_01CNbL7VCzerNt16eErW1mVt">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:3
+packages/erk-shared/src/erk_shared/printing/base.py:1
+
+Found 4 total occurrences across 2 files.
+  </tool_result>
+  <assistant>This is a massive rename: ~1270 occurrences of `FakeGitHub` alone across 164 files, plus 126 of `RealGitHub`, 10 of `DryRunGitHub`, 4 of `PrintingGitHub`. The `GitHub` ABC class itself is trickier because `GitHub` is a substring of many other names we DON'T want to rename.
+
+Let me use the libcst-refactor agent for this systematic rename. I'll start with the more specific names first (RealGitHub, FakeGitHub, DryRunGitHub, PrintingGitHub), then handle the ABC class `GitHub` → `LocalGitHub` carefully.
+
+Let me launch multiple parallel libcst-refactor agents for the renames that don't conflict with each other:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5347" cache_read_input_tokens="64394" cache_creation="{'ephemeral_5m_input_tokens': 5347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01K7SPEjqtFh4iUbg7SGSu21">
+    <param name="description">Rename RealGitHub to RealLocalGitHub</param>
+    <param name="prompt">Perform a systematic rename of `RealGitHub` to `RealLocalGitHub` across the entire codebas...[truncated 728 chars]...bRealGitHub\b` references (excluding RealGitHubIssues, RealGitHubAdmin, RealRemoteGitHub).</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5347" cache_read_input_tokens="64394" cache_creation="{'ephemeral_5m_input_tokens': 5347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01RoFbo6fkHUmA7S5HyNFLws">
+    <param name="description">Rename FakeGitHub to FakeLocalGitHub</param>
+    <param name="prompt">Perform a systematic rename of `FakeGitHub` to `FakeLocalGitHub` across the entire codebas...[truncated 728 chars]...bFakeGitHub\b` references (excluding FakeGitHubIssues, FakeGitHubAdmin, FakeRemoteGitHub).</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5347" cache_read_input_tokens="64394" cache_creation="{'ephemeral_5m_input_tokens': 5347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01FujJn4KfX4hurUkfj6rohq">
+    <param name="description">Rename DryRunGitHub and PrintingGitHub</param>
+    <param name="prompt">Perform two systematic renames across the entire codebase at /home/runner/work/erk/erk:
+
+1...[truncated 846 chars]...approach or direct Edit tool. After the rename, grep to confirm zero remaining references.</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5347" cache_read_input_tokens="64394" cache_creation="{'ephemeral_5m_input_tokens': 5347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K7SPEjqtFh4iUbg7SGSu21">
+Async agent launched successfully.
+agentId: af80b11 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01RoFbo6fkHUmA7S5HyNFLws">
+Async agent launched successfully.
+agentId: aeadc47 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01FujJn4KfX4hurUkfj6rohq">
+Async agent launched successfully.
+agentId: a796982 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>While those agents work on the specific class renames, let me prepare for the trickiest rename: `GitHub` → `LocalGitHub` (the ABC class itself). I need to understand exactly which occurrences to change and which to leave alone.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2320" cache_read_input_tokens="69741" cache_creation="{'ephemeral_5m_input_tokens': 2320, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018CKbyQyCgcxatGFu2qsJ4m">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2320" cache_read_input_tokens="69741" cache_creation="{'ephemeral_5m_input_tokens': 2320, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012nuCcNcPo1VuiYuJVajryW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2320" cache_read_input_tokens="69741" cache_creation="{'ephemeral_5m_input_tokens': 2320, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018CKbyQyCgcxatGFu2qsJ4m">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class GitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012nuCcNcPo1VuiYuJVajryW">
+     1→"""GitHub integration utilities.
+     2→
+     3→Import from submodules:
+     4→- abc: GitHub
+     5→- types: PRInfo, PRMergeability, PRState, PullRequestInfo, WorkflowRun
+     6→- metadata: types, schemas, core (metadata block API)
+     7→- parsing: _parse_github_pr_url
+     8→- issues: GitHubIssues, RealGitHubIssues, FakeGitHubIssues, etc.
+     9→- real: RealGitHub
+    10→"""
+    11→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I need to understand the `GitHub` ABC rename carefully. The word `GitHub` appears in many contexts - I need to find ONLY the cases where it refers to the ABC class `GitHub` (from `gateway/github/abc.py`), not `GitHubIssues`, `GitHubAdmin`, `GitHubChecks`, `GitHubRepoId`, `GitHubRepoLocation`, `RemoteGitHub`, etc.
+
+Let me find all the import patterns for the `GitHub` ABC:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1413" cache_read_input_tokens="72061" cache_creation="{'ephemeral_5m_input_tokens': 1413, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+</session>

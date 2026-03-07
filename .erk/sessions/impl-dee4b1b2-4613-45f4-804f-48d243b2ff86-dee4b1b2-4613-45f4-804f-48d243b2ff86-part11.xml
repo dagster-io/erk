@@ -1,0 +1,1089 @@
+<session>
+  <meta source="agent-a777848" />
+  <meta branch="plnd/O8832-rename-github-to-loc-03-06-1802" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_result tool="toolu_011KFR86mbn7zHMRZp8oTPVx">
+    55→```
+    56→
+    57→**Acceptable uses of defaults:**
+    58→
+    59→1. **Truly optional behavior** - Where the default is correct for 95%+ of callers
+    60→2. **Backwards compatibility** - When adding a parameter to existing API (temporary)
+    61→3. **Test helper functions and Fake classes** - Functions in `tests/test_utils/` that exist to reduce test boilerplate are explicitly exempt. These helpers often wrap complex constructors (like `format_plan_header_body`) with sensible defaults, and having many default parameters is their intended purpose—not a code smell. Similarly, **Fake classes** (`FakeGit`, `FakeGitHub`, `FakeGraphite`, etc.) used for testing are exempt since they often have many optional configuration parameters for setting up different test scenarios
+    62→4. **Loop closure capture** - Using `def f(x=x)` to capture the current value of a loop variable is the standard Python idiom for avoiding late-binding closure bugs. This is not a "default" in the API design sense—it's a scoping mechanism.
+    63→
+    64→**When reviewing code with defaults, ask:**
+    65→
+    66→- Do all call sites actually want this default?
+    67→- Would a caller forgetting this parameter cause a bug?
+    68→- Is there a safer design that makes the choice explicit?
+    69→
+    70→---
+    71→
+    72→## Keyword-Only Arguments for Complex Functions
+    73→
+    74→**Functions with 5 or more parameters MUST use keyword-only arguments.**
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EVrC2vpi9dM9Nmobgfx5EJ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/references/api-design.md</param>
+    <param name="old_string">3. **Test helper functions and Fake classes** - Functions in `tests/test_utils/` that exis...[truncated 328 chars]... often have many optional configuration parameters for setting up different test scenarios</param>
+    <param name="new_string">3. **Test helper functions and Fake classes** - Functions in `tests/test_utils/` that exis...[truncated 333 chars]... often have many optional configuration parameters for setting up different test scenarios</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="699" cache_read_input_tokens="80071" cache_creation="{'ephemeral_5m_input_tokens': 699, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EVrC2vpi9dM9Nmobgfx5EJ">
+The file /home/runner/work/erk/erk/.claude/skills/dignified-python/references/api-design.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the other files:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="403" cache_read_input_tokens="80770" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LH1MhbSBoKa315CNj6W4DL">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md</param>
+    <param name="offset">65</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="403" cache_read_input_tokens="80770" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LH1MhbSBoKa315CNj6W4DL">
+    65→
+    66→4. **Write tests first.** Create a test file alongside or in a parallel test directory. Test the happy path, error cases, and edge cases. Mock external dependencies (API calls, file system, subprocess).
+    67→
+    68→   ```python
+    69→   def test_check_pr_status_returns_open_prs(fake_github: FakeGitHub) -&gt; None:
+    70→       fake_github.add_pr(number=42, state="open", title="Add feature")
+    71→       result = invoke_cli(["check-pr-status", "--repo", "myorg/myrepo", "--json"])
+    72→       data = json.loads(result.output)
+    73→       assert data["success"] is True
+    74→       assert len(data["prs"]) == 1
+    75→   ```
+    76→
+    77→5. **Register the command.** Add it to the appropriate CLI group so it's discoverable:
+    78→
+    79→   ```python
+    80→   # In your CLI group file
+    81→   helpers_group.add_command(check_pr_status)
+    82→   ```
+    83→
+    84→6. **Update the prompt.** Replace the mechanical block with a single CLI invocation. The prompt should now focus on interpreting the JSON output and making decisions.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CyLG1Zbr2rFEKXWYZgatHP">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md</param>
+    <param name="old_string">   ```python
+   def test_check_pr_status_returns_open_prs(fake_github: FakeGitHub) -&gt; None...[truncated 168 chars]...t.output)
+       assert data["success"] is True
+       assert len(data["prs"]) == 1
+   ```</param>
+    <param name="new_string">   ```python
+   def test_check_pr_status_returns_open_prs(fake_github: FakeLocalGitHub) -&gt;...[truncated 173 chars]...t.output)
+       assert data["success"] is True
+       assert len(data["prs"]) == 1
+   ```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="640" cache_read_input_tokens="81173" cache_creation="{'ephemeral_5m_input_tokens': 640, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CyLG1Zbr2rFEKXWYZgatHP">
+The file /home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the objective references:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="415" cache_read_input_tokens="81813" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A6zgZzUei24SwaKc2v791e">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/objective/references/format.md</param>
+    <param name="offset">250</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="415" cache_read_input_tokens="81813" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A6zgZzUei24SwaKc2v791e">
+   250→
+   251→| Node | Description                               | Status  | PR  |
+   252→| ---- | ----------------------------------------- | ------- | --- |
+   253→| 3.1  | Create FakeGitHub with just `create_pr()` | pending |     |
+   254→| 3.2  | Wire into PR submission test              | pending |     |
+   255→
+   256→**Test:** PR creation test uses FakeGitHub.
+   257→
+   258→### Phase 4: Complete GitHub Gateway (1 PR)
+   259→
+   260→| Node | Description                      | Status  | PR  |
+   261→| ---- | -------------------------------- | ------- | --- |
+   262→| 4.1  | Add remaining FakeGitHub methods | pending |     |
+   263→| 4.2  | Add DryRunLocalGitHub wrapper         | pending |     |
+   264→
+   265→**Test:** All GitHub gateway tests use FakeGitHub.
+   266→
+   267→## Implementation Context
+   268→
+   269→### Current Architecture
+   270→
+   271→Gateway ABC pattern uses abstract base classes with real and fake implementations.
+   272→See `erk/gateways/git/` for the full pattern.
+   273→
+   274→### Patterns to Follow
+   275→
+   276→- Gateway ABC: `erk/gateways/git/` shows complete pattern
+   277→- Fakes need to track branch state, not just commits
+   278→
+   279→### Technical Requirements
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01948peSwJqDp5SCaLAYRGuj">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/objective/references/format.md</param>
+    <param name="old_string">| Node | Description                               | Status  | PR  |
+| ---- | ------------...[truncated 463 chars]...tHub wrapper         | pending |     |
+
+**Test:** All GitHub gateway tests use FakeGitHub.</param>
+    <param name="new_string">| Node | Description                                      | Status  | PR  |
+| ---- | -----...[truncated 534 chars]...           | pending |     |
+
+**Test:** All LocalGitHub gateway tests use FakeLocalGitHub.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="854" cache_read_input_tokens="82228" cache_creation="{'ephemeral_5m_input_tokens': 854, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01948peSwJqDp5SCaLAYRGuj">
+The file /home/runner/work/erk/erk/.claude/skills/objective/references/format.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UGRXieiDBi35LN5UVdwaHz">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/objective/references/format.md</param>
+    <param name="old_string">### Technical Requirements
+
+- FakeGitHub must implement all methods from GitHub ABC
+- Stat...[truncated 51 chars]...uld use FakeGitHub instead of subprocess mocking
+- One integration test per major workflow</param>
+    <param name="new_string">### Technical Requirements
+
+- FakeLocalGitHub must implement all methods from LocalGitHub ...[truncated 66 chars]...se FakeLocalGitHub instead of subprocess mocking
+- One integration test per major workflow</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="542" cache_read_input_tokens="83082" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UGRXieiDBi35LN5UVdwaHz">
+The file /home/runner/work/erk/erk/.claude/skills/objective/references/format.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PDLmoVttZBeKnzb8nbBQeH">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/objective/references/format.md</param>
+    <param name="offset">410</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="271" cache_read_input_tokens="83624" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PDLmoVttZBeKnzb8nbBQeH">
+   410→## Action: Split authentication node
+   411→
+   412→**Date:** 2025-01-25
+   413→**Phase/Node:** 2.1
+   414→
+   415→### What Was Done
+   416→
+   417→- Started work on FakeGitHub
+   418→- Realized authentication is complex enough to warrant separate node
+   419→
+   420→### Lessons Learned
+   421→
+   422→- OAuth vs PAT handling differs significantly
+   423→- Better to have granular nodes than monolithic ones
+   424→
+   425→### Roadmap Updates
+   426→
+   427→- Node 2.1 split into:
+   428→  - 2.1a: FakeGitHub core (pending)
+   429→  - 2.1b: FakeGitHub authentication (pending)
+   430→```
+   431→
+   432→Then update the issue body to reflect the new structure.
+   433→
+   434→## Update Examples
+   435→
+   436→Real examples of the two-step update workflow in action.
+   437→
+   438→### Completing Multiple Phases at Once
+   439→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018qbwgg6skoH9mGQpDbSt1z">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/objective/references/format.md</param>
+    <param name="old_string">### What Was Done
+
+- Started work on FakeGitHub
+- Realized authentication is complex enoug...[truncated 164 chars]...it into:
+  - 2.1a: FakeGitHub core (pending)
+  - 2.1b: FakeGitHub authentication (pending)</param>
+    <param name="new_string">### What Was Done
+
+- Started work on FakeLocalGitHub
+- Realized authentication is complex ...[truncated 179 chars]... - 2.1a: FakeLocalGitHub core (pending)
+  - 2.1b: FakeLocalGitHub authentication (pending)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="579" cache_read_input_tokens="83895" cache_creation="{'ephemeral_5m_input_tokens': 579, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018qbwgg6skoH9mGQpDbSt1z">
+The file /home/runner/work/erk/erk/.claude/skills/objective/references/format.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the glossary for any references:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="367" cache_read_input_tokens="84474" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013UA92WTV9snEfxe1Ti1MUY">
+    <param name="pattern">\b(FakeGitHub|RealGitHub|GitHub ABC)\b</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="367" cache_read_input_tokens="84474" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013UA92WTV9snEfxe1Ti1MUY">
+830:- Uses `FakeGit`, `FakeGitHub`, etc.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QMesujausRFJsD6uq1LbrE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">- Uses `FakeGit`, `FakeGitHub`, etc.</param>
+    <param name="new_string">- Uses `FakeGit`, `FakeLocalGitHub`, etc.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="290" cache_read_input_tokens="84841" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QMesujausRFJsD6uq1LbrE">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the Erk Context section of the glossary:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="181" cache_read_input_tokens="85131" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SS1uYbFXFZJuwFsupXzE75">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="offset">495</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="181" cache_read_input_tokens="85131" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SS1uYbFXFZJuwFsupXzE75">
+   495→
+   496→A frozen dataclass containing all injected dependencies.
+   497→
+   498→**Purpose**: Dependency injection container passed to all commands. Created at CLI entry point and threaded through the application.
+   499→
+   500→**Key Integration Fields**:
+   501→
+   502→- `git: Git` - Git operations (branch ops via `git.branch` subgateway)
+   503→- `github: GitHub` - GitHub PR operations (issues via `github.issues` property)
+   504→- `github_admin: GitHubAdmin` - GitHub Actions admin operations
+   505→- `graphite: Graphite` - Graphite CLI operations
+   506→- `graphite_branch_ops: GraphiteBranchOps | None` - None when Graphite disabled
+   507→- `console: Console` - TTY detection, user feedback, and confirmation prompts
+   508→- `time: Time` - Time abstraction
+   509→- `shell: Shell` - Shell detection
+   510→- `completion: Completion` - Shell completion generation
+   511→- `script_writer: ScriptWriter` - Activation script generation
+   512→- `plan_store: PlanStore` - Plan storage operations
+   513→- `prompt_executor: PromptExecutor` - Claude CLI execution
+   514→
+   515→**Configuration Fields**:
+   516→
+   517→- `global_config: GlobalConfig | None` - Global configuration (may be None during init)
+   518→- `local_config: LoadedConfig | None` - Merged configuration (repo config + local overrides)
+   519→- `dry_run: bool` - Whether to print operations instead of executing
+   520→
+   521→**Path Fields**:
+   522→
+   523→- `cwd: Path` - Current working directory
+   524→- `repo: RepoContext | NoRepoSentinel` - Repository context
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QVXNqNbteToEpVHXj5WNzF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">**Key Integration Fields**:
+
+- `git: Git` - Git operations (branch ops via `git.branch` su...[truncated 43 chars]... `github.issues` property)
+- `github_admin: GitHubAdmin` - GitHub Actions admin operations</param>
+    <param name="new_string">**Key Integration Fields**:
+
+- `git: Git` - Git operations (branch ops via `git.branch` su...[truncated 48 chars]... `github.issues` property)
+- `github_admin: GitHubAdmin` - GitHub Actions admin operations</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="767" cache_read_input_tokens="85312" cache_creation="{'ephemeral_5m_input_tokens': 767, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QVXNqNbteToEpVHXj5WNzF">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check for any more references in the glossary:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="285" cache_read_input_tokens="86079" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016DeJoUMax1UKY15neLy7F9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="offset">645</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="285" cache_read_input_tokens="86079" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016DeJoUMax1UKY15neLy7F9">
+   645→
+   646→An ABC (Abstract Base Class) defining an interface for an external system (Git, GitHub, Graphite, etc.). Each gateway has a 5-file implementation pattern: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`.
+   647→
+   648→**Related**: [Gateway ABC Implementation](architecture/gateway-abc-implementation.md), [Gateway Inventory](architecture/gateway-inventory.md)
+   649→
+   650→### Real Implementation
+   651→
+   652→Production implementation of a gateway (`Real&lt;Interface&gt;`, e.g., `RealGit`). Instantiated in `create_context()`.
+   653→
+   654→### Fake Implementation
+   655→
+   656→In-memory test implementation (`Fake&lt;Interface&gt;`, e.g., `FakeGit`). All state via constructor, no public setup methods. Located in `tests/fakes/`.
+   657→
+   658→### Dry Run Wrapper
+   659→
+   660→Wraps real implementation, prints messages instead of executing destructive operations (`DryRun&lt;Interface&gt;`, e.g., `DryRunGit`). Used when `--dry-run` flag is passed.
+   661→
+   662→---
+   663→
+   664→## Command-Specific Terms
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016XErrF33LpnPf7aJtJRi9K">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">An ABC (Abstract Base Class) defining an interface for an external system (Git, GitHub, Gr...[truncated 15 chars]...-file implementation pattern: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`.</param>
+    <param name="new_string">An ABC (Abstract Base Class) defining an interface for an external system (Git, LocalGitHu...[truncated 20 chars]...-file implementation pattern: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="628" cache_read_input_tokens="86364" cache_creation="{'ephemeral_5m_input_tokens': 628, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016XErrF33LpnPf7aJtJRi9K">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me search for any remaining references in the documentation that might need updating:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="277" cache_read_input_tokens="86992" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KTT6nvNpnFFRq1Qrz5oab1">
+    <param name="pattern">\bthe GitHub ABC\b</param>
+    <param name="path">docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="277" cache_read_input_tokens="86992" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KTT6nvNpnFFRq1Qrz5oab1">
+No matches found
+  </tool_result>
+  <assistant>Let me search for more patterns to ensure we catch all references:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="267" cache_read_input_tokens="87269" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0164QZGCzPTPJs5B7fBte7Xm">
+    <param name="pattern">GitHub\(ABC\)</param>
+    <param name="path">docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="267" cache_read_input_tokens="87269" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0164QZGCzPTPJs5B7fBte7Xm">
+docs/learned/architecture/gateway-abc-implementation.md:376:class LocalGitHub(ABC):
+  </tool_result>
+  <assistant>Good - that one is already updated. Let me check for import statements that might reference the old names:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="180" cache_read_input_tokens="87536" cache_creation="{'ephemeral_5m_input_tokens': 180, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AoVnMJ7k6S8VtfWwqXGN9H">
+    <param name="pattern">from .*github.*abc import (GitHub|FakeGitHub|RealGitHub)</param>
+    <param name="path">docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="180" cache_read_input_tokens="87536" cache_creation="{'ephemeral_5m_input_tokens': 180, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AoVnMJ7k6S8VtfWwqXGN9H">
+docs/learned/cli/exec-script-patterns.md:85:from erk_shared.gateway.github.issues.abc import GitHubIssues
+docs/learned/cli/exec-script-patterns.md:88:from erk_shared.gateway.github.abc import GitHubIssues
+docs/learned/architecture/protocol-vs-abc.md:92:from erk_shared.gateway.github.abc import GitHub
+docs/learned/architecture/erk-architecture.md:538:from erk_shared.gateway.github.abc import GitHub
+  </tool_result>
+  <assistant>Now let me update these import statements:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="413" cache_read_input_tokens="87716" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0122YsYMu5JzAAXrhYmzTGhs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="offset">85</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="413" cache_read_input_tokens="87716" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0122YsYMu5JzAAXrhYmzTGhs">
+    85→
+    86→### Example: Composite Interface
+    87→
+    88→```python
+    89→from typing import Protocol
+    90→
+    91→from erk_shared.gateway.git.abc import Git
+    92→from erk_shared.gateway.github.abc import GitHub
+    93→from erk_shared.gateway.graphite.abc import Graphite
+    94→
+    95→
+    96→class GtKit(Protocol):
+    97→    """Interface for gt kit operations.
+    98→
+    99→    This Protocol allows ErkContext to be used directly without
+   100→    creating wrapper classes or explicit inheritance.
+   101→    """
+   102→
+   103→    @property
+   104→    def git(self) -&gt; Git: ...
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01YWDukEzxQiYbxmJWw2cKig">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="old_string">```python
+from typing import Protocol
+
+from erk_shared.gateway.git.abc import Git
+from erk...[truncated 220 chars]...pper classes or explicit inheritance.
+    """
+
+    @property
+    def git(self) -&gt; Git: ...</param>
+    <param name="new_string">```python
+from typing import Protocol
+
+from erk_shared.gateway.git.abc import Git
+from erk...[truncated 225 chars]...pper classes or explicit inheritance.
+    """
+
+    @property
+    def git(self) -&gt; Git: ...</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="396" cache_read_input_tokens="88129" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YWDukEzxQiYbxmJWw2cKig">
+The file /home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LyrzVvkDS3fZVEcJuKdnhU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="offset">105</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="483" cache_read_input_tokens="88525" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LyrzVvkDS3fZVEcJuKdnhU">
+   105→
+   106→    @property
+   107→    def github(self) -&gt; GitHub: ...
+   108→
+   109→    @property
+   110→    def graphite(self) -&gt; Graphite: ...
+   111→```
+   112→
+   113→**Source:** `packages/erk-shared/src/erk_shared/gateway/gt/abc.py` (also includes `time` and `branch_manager` properties)
+   114→
+   115→**Why Protocol here?**
+   116→
+   117→- `ErkContext` already has `git`, `github`, and `graphite` attributes
+   118→- No code changes needed to `ErkContext`
+   119→- Any object with these attributes works
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BoprSxLEw8bztSTzJzYArp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="old_string">    @property
+    def github(self) -&gt; GitHub: ...
+
+    @property
+    def graphite(self) -&gt; Graphite: ...</param>
+    <param name="new_string">    @property
+    def github(self) -&gt; LocalGitHub: ...
+
+    @property
+    def graphite(self) -&gt; Graphite: ...</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="377" cache_read_input_tokens="89008" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BoprSxLEw8bztSTzJzYArp">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     @property
+    def github(self) -&gt; GitHub: ...
+
+    @property
+    def graphite(self) -&gt; Graphite: ...&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01X9cnSjsMSwU1J7i5CGJ3Km">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="old_string">    @property
+    def git(self) -&gt; Git: ...
+
+    @property
+    def github(self) -&gt; GitHub:...[truncated 76 chars]...d/src/erk_shared/gateway/gt/abc.py` (also includes `time` and `branch_manager` properties)</param>
+    <param name="new_string">    @property
+    def git(self) -&gt; Git: ...
+
+    @property
+    def github(self) -&gt; LocalGi...[truncated 81 chars]...d/src/erk_shared/gateway/gt/abc.py` (also includes `time` and `branch_manager` properties)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="89385" cache_creation="{'ephemeral_5m_input_tokens': 296, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X9cnSjsMSwU1J7i5CGJ3Km">
+The file /home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check if there are more references in that file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="444" cache_read_input_tokens="89681" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012H347R2idTSvtypgeFF2YJ">
+    <param name="pattern">\bGitHub\b</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="444" cache_read_input_tokens="89681" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012H347R2idTSvtypgeFF2YJ">
+126:2. **Creating gateway interfaces** - `Git`, `GitHub`, `Graphite`, etc.
+260:    github: GitHub
+282:    def github(self) -&gt; GitHub: ...
+443:    def gh(self) -&gt; GitHub: ...
+453:    def gh(self) -&gt; GitHub: ...
+464:    gh: GitHub
+  </tool_result>
+  <assistant>Let me update these remaining references:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="239" cache_read_input_tokens="90125" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Hb2Ms4j6VobNzfrAYmXyFz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="offset">120</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="239" cache_read_input_tokens="90125" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hb2Ms4j6VobNzfrAYmXyFz">
+   120→
+   121→## When to Use ABC
+   122→
+   123→Use ABC when:
+   124→
+   125→1. **Defining implementation contracts** - Classes must explicitly implement
+   126→2. **Creating gateway interfaces** - `Git`, `GitHub`, `Graphite`, etc.
+   127→3. **You want fakes to inherit** - Ensures test fakes implement full interface
+   128→4. **You need runtime checks** - `isinstance()` checks work with ABC
+   129→
+   130→### Example: Gateway Interface
+   131→
+   132→```python
+   133→from abc import ABC, abstractmethod
+   134→from pathlib import Path
+   135→
+   136→
+   137→class Git(ABC):
+   138→    """Abstract interface for git operations."""
+   139→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NMvB6g4X5bwfCCuzAeerq9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="old_string">1. **Defining implementation contracts** - Classes must explicitly implement
+2. **Creating gateway interfaces** - `Git`, `GitHub`, `Graphite`, etc.</param>
+    <param name="new_string">1. **Defining implementation contracts** - Classes must explicitly implement
+2. **Creating gateway interfaces** - `Git`, `LocalGitHub`, `Graphite`, etc.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="503" cache_read_input_tokens="90364" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NMvB6g4X5bwfCCuzAeerq9">
+The file /home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_0146mrBafAJtVNTRj42ts37Z">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="offset">255</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="229" cache_read_input_tokens="90867" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0146mrBafAJtVNTRj42ts37Z">
+   255→from typing import Protocol
+   256→
+   257→
+   258→class GtKit(Protocol):
+   259→    git: Git
+   260→    github: GitHub
+   261→    graphite: Graphite
+   262→```
+   263→
+   264→**Problem:** `ErkContext` is a frozen dataclass with read-only attributes. Bare attribute declarations in Protocol expect read-write access.
+   265→
+   266→### Final Solution: Protocol with @property (Success)
+   267→
+   268→```python
+   269→from typing import Protocol
+   270→
+   271→
+   272→class GtKit(Protocol):
+   273→    """Interface for gt kit operations.
+   274→
+   275→    Uses @property to accept frozen dataclasses with read-only attributes.
+   276→    """
+   277→
+   278→    @property
+   279→    def git(self) -&gt; Git: ...
+   280→
+   281→    @property
+   282→    def github(self) -&gt; GitHub: ...
+   283→
+   284→    @property
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011Qe2TmvJEn3mZe4e4Exrxf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="old_string">class GtKit(Protocol):
+    git: Git
+    github: GitHub
+    graphite: Graphite</param>
+    <param name="new_string">class GtKit(Protocol):
+    git: Git
+    github: LocalGitHub
+    graphite: Graphite</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="565" cache_read_input_tokens="91096" cache_creation="{'ephemeral_5m_input_tokens': 565, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Qe2TmvJEn3mZe4e4Exrxf">
+The file /home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016uQEhL1dnfBHLm7DzqJjHL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="old_string">    @property
+    def git(self) -&gt; Git: ...
+
+    @property
+    def github(self) -&gt; GitHub:...[truncated 170 chars]...Frozen dataclass compatibility preserved
+- Type checker validates structural compatibility</param>
+    <param name="new_string">    @property
+    def git(self) -&gt; Git: ...
+
+    @property
+    def github(self) -&gt; LocalGi...[truncated 175 chars]...Frozen dataclass compatibility preserved
+- Type checker validates structural compatibility</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="315" cache_read_input_tokens="91661" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016uQEhL1dnfBHLm7DzqJjHL">
+The file /home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_016x1f8xgmDs1rYPCs4VjUjf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="offset">440</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="371" cache_read_input_tokens="91976" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016x1f8xgmDs1rYPCs4VjUjf">
+   440→
+   441→class HasGitHub(Protocol):
+   442→    @property
+   443→    def gh(self) -&gt; GitHub: ...
+   444→
+   445→
+   446→class FullContext(Protocol):
+   447→    """Composite interface for operations needing multiple gateways."""
+   448→
+   449→    @property
+   450→    def git(self) -&gt; Git: ...
+   451→
+   452→    @property
+   453→    def gh(self) -&gt; GitHub: ...
+   454→
+   455→    @property
+   456→    def graphite(self) -&gt; Graphite: ...
+   457→
+   458→
+   459→@dataclass(frozen=True)
+   460→class ErkContext:
+   461→    """Main context object - satisfies FullContext without inheritance."""
+   462→
+   463→    git: Git
+   464→    gh: GitHub
+   465→    graphite: Graphite
+   466→
+   467→
+   468→def do_something(ctx: FullContext) -&gt; None:
+   469→    """Accepts ErkContext or any other matching type."""
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VGh87N4jK5yRjbWpHmDTsj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md</param>
+    <param name="old_string">class HasGitHub(Protocol):
+    @property
+    def gh(self) -&gt; GitHub: ...
+
+
+class FullConte...[truncated 293 chars]...es FullContext without inheritance."""
+
+    git: Git
+    gh: GitHub
+    graphite: Graphite</param>
+    <param name="new_string">class HasGitHub(Protocol):
+    @property
+    def gh(self) -&gt; LocalGitHub: ...
+
+
+class Full...[truncated 308 chars]...llContext without inheritance."""
+
+    git: Git
+    gh: LocalGitHub
+    graphite: Graphite</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="476" cache_read_input_tokens="92347" cache_creation="{'ephemeral_5m_input_tokens': 476, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VGh87N4jK5yRjbWpHmDTsj">
+The file /home/runner/work/erk/erk/docs/learned/architecture/protocol-vs-abc.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the erk-architecture.md file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="555" cache_read_input_tokens="92823" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PVC2wbXm9RCTSb7Zmgr8vE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="offset">535</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="555" cache_read_input_tokens="92823" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PVC2wbXm9RCTSb7Zmgr8vE">
+   535→from erk_shared.gateway.git.abc import Git, WorktreeInfo
+   536→from erk_shared.gateway.git.real import RealGit
+   537→from erk_shared.gateway.git.fake import FakeGit
+   538→from erk_shared.gateway.github.abc import GitHub
+   539→```
+   540→
+   541→Gateway `__init__.py` files do not re-export, so always import from the specific submodule.
+   542→
+   543→### Testing All Four Layers
+   544→
+   545→When adding a method to a gateway ABC:
+   546→
+   547→1. **ABC**: Add abstract method signature
+   548→2. **Real**: Implement with subprocess/API calls
+   549→3. **Fake**: Implement with in-memory tracking
+   550→4. **DryRun**: Add no-op wrapper (if gateway has dry-run layer)
+   551→
+   552→**Example workflow:**
+   553→
+   554→```python
+   555→# 1. ABC - Add method signature
+   556→class Git(ABC):
+   557→    @abstractmethod
+   558→    def get_branch_upstream(self, path: Path, branch: str) -&gt; str | None:
+   559→        """Get upstream tracking branch."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DyQGzS5mK51YkTm8ShxizD">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="old_string">from erk_shared.gateway.git.abc import Git, WorktreeInfo
+from erk_shared.gateway.git.real ...[truncated 1 chars]...rk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.abc import GitHub</param>
+    <param name="new_string">from erk_shared.gateway.git.abc import Git, WorktreeInfo
+from erk_shared.gateway.git.real ...[truncated 6 chars]...ared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.abc import LocalGitHub</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="529" cache_read_input_tokens="93378" cache_creation="{'ephemeral_5m_input_tokens': 529, 'ephemeral_1h_input_tokens': 0}" output_tokens="248" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DyQGzS5mK51YkTm8ShxizD">
+The file /home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me do a final comprehensive check for any remaining class references that we might have missed:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="395" cache_read_input_tokens="93907" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XxMotNHkJp7E227na2i4cX">
+    <param name="command">grep -r "class GitHub(" docs/learned .claude --include="*.md" 2&gt;/dev/null | head -20</param>
+    <param name="description">Search for class GitHub( pattern</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="395" cache_read_input_tokens="93907" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XxMotNHkJp7E227na2i4cX">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Tgrz5FRvN4z59apm3HS19w">
+    <param name="command">grep -r "class RealGitHub(" docs/learned .claude --include="*.md" 2&gt;/dev/null | head -20</param>
+    <param name="description">Search for class RealGitHub( pattern</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="146" cache_read_input_tokens="94302" cache_creation="{'ephemeral_5m_input_tokens': 146, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tgrz5FRvN4z59apm3HS19w">
+docs/learned/architecture/gateway-error-boundaries.md:class RealGitHub(GitHub):
+  </tool_result>
+  <assistant>Let me update that file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="248" cache_read_input_tokens="94448" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GEZE4mWLdU6WSCq2BQVCyr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md</param>
+    <param name="offset">0</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="248" cache_read_input_tokens="94448" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GEZE4mWLdU6WSCq2BQVCyr">
+     0→---
+     1→title: Gateway Error Boundaries
+     2→last_audited: "2026-02-15 18:50 PT"
+     3→audit_result: clean
+     4→read_when:
+     5→  - "implementing gateway error handling"
+     6→  - "converting gateway operations to discriminated unions"
+     7→  - "deciding where try/except blocks belong in gateways"
+     8→tripwires:
+     9→  - score: 8
+    10→    action: "try/except in fake.py or dry_run.py"
+    11→    warning: "Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions."
+    12→    context: "The 5-file gateway pattern has clear error boundary responsibilities. Real implementations catch and convert subprocess/system errors. Fakes simulate errors via constructor params. Dry-run always returns success."
+    13→    pattern: "\\btry:|\\bexcept\\s"
+    14→---
+    15→
+    16→# Gateway Error Boundaries
+    17→
+    18→## The Core Principle
+    19→
+    20→In erk's 5-file gateway pattern, **only real.py catches exceptions**. The other four files (abc.py, fake.py, dry_run.py, printing.py) never use try/except — they express failure through different mechanisms.
+    21→
+    22→This separation exists because error boundaries serve different purposes:
+    23→
+    24→- **Real implementations** defend against actual system failures (subprocess crashes, missing files, network timeouts)
+    25→- **Fake implementations** simulate failure modes for testing via constructor configuration
+    26→- **Dry-run implementations** model the success path for validation workflows
+    27→- **Printing implementations** delegate transparently without intercepting errors
+    28→
+    29→## Why This Matters
+
+... [75 lines omitted] ...
+
+    33→When implementing a gateway method that can fail, it's tempting to add try/except blocks to all five files. This feels symmetric — "if real.py catches exceptions, shouldn't fake.py and dry_run.py do the same?"
+    35→**No.** The symmetry is in the _return type_ (discriminated unions), not the error handling mechanism.
+    39→Fakes like `FakeCommandExecutor` (in `packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py`) configure error behavior through constructor params, not try/except. Tests pass in pre-configured discriminants via params like `merge_should_succeed: bool` or `gist_create_error: str | None`.
+    43→Real implementations wrap subprocess calls and file system operations — both sources of runtime exceptions. try/except converts these into discriminated union error types.
+    49→**Why catch exceptions here?**
+    51→1. Subprocess failures are unpredictable (process crashes, command not found, permission denied)
+    52→2. Callers need structured error information (type, message, context) to make branching decisions
+    53→3. LBYL philosophy: check for failure modes and convert to explicit discriminants
+    57→- Subprocess execution failures (`CalledProcessError`, `FileNotFoundError`)
+    58→- System-level errors (disk full, permission denied, network timeouts)
+    63→- Programming errors (AttributeError, TypeError) — these should crash, not be masked as "operation failed"
+    64→- Validation errors that should be caught upstream by caller preconditions
+    70→Fake implementations like `FakeGitHub` (in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`) use constructor params to control error scenarios. Check the `__init__` signature: `merge_should_succeed: bool = True`, `gist_create_error: str | None = None`, `pr_diff_error: str | None = None`.
+    72→Tests instantiate fakes with pre-configured failure modes:
+    78→    gist_create_error="Rate limited"
+    83→# Returns MergeError without try/except
+    88→1. No subprocess calls = no runtime exceptions to catch
+    89→2. Error scenarios are predetermined by test setup, not discovered at runtime
+    95→| File          | Error Mechanism                                    | Uses try/except? |
+    98→| `real.py`     | Catches subprocess/system exceptions               | **Yes**          |
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UUXQWRh4xFCXxrD2NuPw18">
+    <param name="pattern">(class RealGitHub|class FakeGitHub|FakeGitHub\()</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1852" cache_read_input_tokens="94696" cache_creation="{'ephemeral_5m_input_tokens': 1852, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UUXQWRh4xFCXxrD2NuPw18">
+77:fake = FakeGitHub(
+155:class FakeGitHub(GitHub):
+189:class RealGitHub(GitHub):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01USQmcECoX1qEFNnZpfjWXe">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md</param>
+    <param name="offset">70</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="301" cache_read_input_tokens="96548" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="112" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01USQmcECoX1qEFNnZpfjWXe">
+    70→
+    71→Fake implementations like `FakeGitHub` (in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`) use constructor params to control error scenarios. Check the `__init__` signature: `merge_should_succeed: bool = True`, `gist_create_error: str | None = None`, `pr_diff_error: str | None = None`.
+    72→
+    73→Tests instantiate fakes with pre-configured failure modes:
+    74→
+    75→```python
+    76→# Test setup (from test code, not copied from source)
+    77→fake = FakeGitHub(
+    78→    merge_should_succeed=False,
+    79→    gist_create_error="Rate limited"
+    80→)
+    81→
+    82→# Method implementation returns discriminant based on constructor param
+    83→result = fake.merge_pr(repo_root, pr_number, ...)
+    84→# Returns MergeError without try/except
+    85→```
+    86→
+    87→**Why no try/except in fakes?**
+    88→
+    89→1. No subprocess calls = no runtime exceptions to catch
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01J3zkhBSZ54SJXoC91JukUP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md</param>
+    <param name="old_string">Fake implementations like `FakeGitHub` (in `packages/erk-shared/src/erk_shared/gateway/git...[truncated 314 chars]...
+fake = FakeGitHub(
+    merge_should_succeed=False,
+    gist_create_error="Rate limited"
+)</param>
+    <param name="new_string">Fake implementations like `FakeLocalGitHub` (in `packages/erk-shared/src/erk_shared/gatewa...[truncated 324 chars]... = FakeLocalGitHub(
+    merge_should_succeed=False,
+    gist_create_error="Rate limited"
+)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="491" cache_read_input_tokens="96849" cache_creation="{'ephemeral_5m_input_tokens': 491, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J3zkhBSZ54SJXoC91JukUP">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PJfCqAQ3eKNYji63X8wGmK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md</param>
+    <param name="offset">150</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="466" cache_read_input_tokens="97340" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PJfCqAQ3eKNYji63X8wGmK">
+   150→
+   151→### ❌ WRONG: try/except in Fake
+   152→
+   153→```python
+   154→# DON'T DO THIS
+   155→class FakeGitHub(GitHub):
+   156→    def merge_pr(...) -&gt; MergeResult | MergeError:
+   157→        try:
+   158→            # Fakes don't make subprocess calls, so this is pointless
+   159→            if not self._merge_should_succeed:
+   160→                return MergeError(message="Merge failed")
+   161→            return MergeResult()
+   162→        except Exception as e:
+   163→            # What exception would be caught here? None.
+   164→            return MergeError(message=str(e))
+   165→```
+   166→
+   167→**Why wrong:** Fakes have no code that raises exceptions. The try/except adds ceremony without value.
+   168→
+   169→### ❌ WRONG: try/except in Dry Run
+   170→
+   171→```python
+   172→# DON'T DO THIS
+   173→class DryRunLocalGitHub(GitHub):
+   174→    def merge_pr(...) -&gt; MergeResult | MergeError:
+   175→        try:
+   176→            self._logger.log(f"Would merge PR #{pr_number}")
+   177→            return MergeResult()
+   178→        except Exception as e:
+   179→            # Dry run always succeeds, so this never executes
+
+... [25 lines omitted] ...
+
+   180→            return MergeError(message=str(e))
+   183→**Why wrong:** Dry-run models the success path. If an exception occurs, it's a programming error that should crash, not be caught.
+   185→### ❌ WRONG: Catching Exceptions to Return None/False
+   194→        except Exception:
+   195→            return None  # Masks the actual error
+   198→**Why wrong:** Callers can't distinguish "no diff found" from "gh CLI not installed" from "network timeout". Use discriminated unions to preserve error context.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DyULB2JbG2QJguUNcvsCLV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md</param>
+    <param name="old_string">```python
+# DON'T DO THIS
+class FakeGitHub(GitHub):
+    def merge_pr(...) -&gt; MergeResult |...[truncated 261 chars]...at exception would be caught here? None.
+            return MergeError(message=str(e))
+```</param>
+    <param name="new_string">```python
+# DON'T DO THIS
+class FakeLocalGitHub(LocalGitHub):
+    def merge_pr(...) -&gt; Mer...[truncated 271 chars]...at exception would be caught here? None.
+            return MergeError(message=str(e))
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="927" cache_read_input_tokens="97806" cache_creation="{'ephemeral_5m_input_tokens': 927, 'ephemeral_1h_input_tokens': 0}" output_tokens="376" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DyULB2JbG2QJguUNcvsCLV">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017RHzcgxY4qHcSLJg5M2Z2a">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md</param>
+    <param name="old_string">```python
+# DON'T DO THIS
+class RealGitHub(GitHub):
+    def get_pr_diff(self, pr_number: i...[truncated 77 chars]...ult.stdout
+        except Exception:
+            return None  # Masks the actual error
+```</param>
+    <param name="new_string">```python
+# DON'T DO THIS
+class RealLocalGitHub(LocalGitHub):
+    def get_pr_diff(self, pr...[truncated 87 chars]...ult.stdout
+        except Exception:
+            return None  # Masks the actual error
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="420" cache_read_input_tokens="98733" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017RHzcgxY4qHcSLJg5M2Z2a">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me do one final comprehensive search to make sure we've covered everything:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="322" cache_read_input_tokens="99153" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Sz51rUdLZWiMpg5vYwjHWU">
+    <param name="command">find docs/learned .claude -name "*.md" -exec grep -l "class.*GitHub\|FakeGitHub\|RealGitHub\|DryRunGitHub\|PrintingGitHub" {} \; 2&gt;/dev/null | sort -u</param>
+    <param name="description">Find all markdown files with GitHub class references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="322" cache_read_input_tokens="99153" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sz51rUdLZWiMpg5vYwjHWU">
+.claude/commands/local/objective-view.md
+.claude/commands/local/tdd.md
+.claude/skills/dignified-python/references/api-design.md
+.claude/skills/fake-driven-testing/references/anti-patterns.md
+.claude/skills/fake-driven-testing/references/gateway-architecture.md
+.claude/skills/fake-driven-testing/references/quick-reference.md
+docs/learned/architecture/click-context-di-pattern.md
+docs/learned/architecture/discriminated-union-error-handling.md
+docs/learned/architecture/fake-mutation-tracking.md
+docs/learned/architecture/gateway-abc-implementation.md
+docs/learned/architecture/gateway-error-boundaries.md
+docs/learned/architecture/github-admin-gateway.md
+docs/learned/architecture/github-api-retry-mechanism.md
+docs/learned/architecture/github-cli-limits.md
+docs/learned/architecture/github-graphql.md
+docs/learned/architecture/lbyl-gateway-pattern.md
+docs/learned/architecture/plan-backend-migration.md
+docs/learned/architecture/protocol-vs-abc.md
+docs/learned/architecture/test-context-composition.md
+docs/learned/architecture/tripwires.md
+docs/learned/ci/github-commit-indexing-timing.md
+docs/learned/cli/pr-operations.md
+docs/learned/conventions.md
+docs/learned/erk/dispatch-ref-config.md
+docs/learned/glossary.md
+docs/learned/planning/async-learn-local-preprocessing.md
+docs/learned/planning/learn-pipeline-workflow.md
+docs/learned/planning/plan-backend-migration.md
+docs/learned/planning/pr-analysis-pattern.md
+docs/learned/planning/tripwires.md
+
+... [21 lines omitted] ...
+  </tool_result>
+  <assistant>Let me do a quick summary of the updates made and generate a final report:
+
+## Summary
+
+I've successfully searched for and updated references to the old GitHub ABC class names (`GitHub`, `RealGitHub`, `FakeGitHub`, `DryRunGitHub`, `PrintingGitHub`) throughout the documentation files in the erk codebase. 
+
+### Updated Files
+
+**docs/learned/architecture/**
+- `gateway-abc-implementation.md` - Updated all class references in code examples and text
+- `github-interface-patterns.md` - Updated `RealGitHub.get_pr()` references  
+- `gateway-error-boundaries.md` - Updated code examples with class definitions
+- `protocol-vs-abc.md` - Updated import statements and type annotations
+- `erk-architecture.md` - Updated import statement
+
+**docs/learned/testing/**
+- `fake-github-api-reference.md` - Updated title, frontmatter, and all references to `FakeGitHub` → `FakeLocalGitHub`
+- `fake-github-mutation-tracking.md` - Updated title, frontmatter, and class references
+
+**docs/learned/**
+- `glossary.md` - Updated ErkContext field types and gateway examples
+- `conventions.md` - (already correct, no changes needed)
+
+**.claude/skills/**
+- `fake-driven-testing/references/gateway-architecture.md` - Updated backend examples and table
+- `dignified-python/references/api-design.md` - Updated FakeGitHub class examples  
+- `refac-cli-push-down/SKILL.md` - Updated test example
+- `objective/references/format.md` - Updated roadmap examples and text references
+
+### Key Changes Made
+
+1. **Class names**: `GitHub` → `LocalGitHub`, `RealGitHub` → `RealLocalGitHub`, `FakeGitHub` → `FakeLocalGitHub`, etc.
+2. **Import statements**: Updated `from erk_shared.gateway.github.abc import GitHub` to use `LocalGitHub`
+3. **Type annotations**: Updated protocol definitions and dataclass field types
+4. **Code examples**: Updated all code snippets showing class definitions and usage
+5. **Documentation titles**: Updated titles in frontmatter where appropriate
+
+### What Was NOT Changed
+
+As per the instructions, I did NOT change:
+- References to "GitHub" meaning the company/service (e.g., "GitHub API", "GitHub Actions", "GitHub CLI")
+- References to other gateway classes like `GitHubIssues`, `GitHubAdmin`, `GitHubChecks`
+- Variable names like `github`, `fake_github`, `ctx.github`
+- References to `RemoteGitHub` or other unrelated classes
+
+All updates were carefully targeted to only change references to the ABC class that was renamed from `GitHub` to `LocalGitHub`.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1005" cache_read_input_tokens="99475" cache_creation="{'ephemeral_5m_input_tokens': 1005, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>
