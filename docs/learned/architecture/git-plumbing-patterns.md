@@ -55,6 +55,7 @@ See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_
 - Commits plan files directly to the branch using git plumbing (no checkout)
 - Pushes to origin with upstream tracking
 - **Never checks out the plan branch** -- HEAD and working tree remain untouched
+- **Calls `retrack_branch()` after `commit_files_to_branch()`** to prevent Graphite SHA tracking divergence (the branch ref advanced past what `create_branch()` originally tracked). See `plan_save.py:257-260`. Cross-reference: `docs/learned/architecture/git-graphite-quirks.md`
 
 ### Usage in Dispatch
 
