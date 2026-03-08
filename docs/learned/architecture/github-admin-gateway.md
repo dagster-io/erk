@@ -3,7 +3,7 @@ title: GitHub Admin Gateway
 read_when:
   - "working with GitHub repository secrets or admin operations"
   - "adding methods to the GitHubAdmin gateway"
-  - "understanding the 5-place gateway pattern with security-sensitive operations"
+  - "understanding the 4-place gateway pattern with security-sensitive operations"
 tripwires:
   - action: "passing secret values as command-line arguments"
     warning: "Secret values must be passed via stdin (input= parameter) to avoid process list exposure. See github-admin-gateway.md."
@@ -11,21 +11,20 @@ tripwires:
 
 # GitHub Admin Gateway
 
-GitHubAdmin manages GitHub repository administration operations, primarily secrets management. It follows the 5-place gateway pattern.
+GitHubAdmin manages GitHub repository administration operations, primarily secrets management. It follows the 4-place gateway pattern.
 
 ## Location
 
 `packages/erk-shared/src/erk_shared/gateway/github_admin/`
 
-## 5-Place Implementation
+## 4-Place Implementation
 
-| File          | Role                                                    |
-| ------------- | ------------------------------------------------------- |
-| `abc.py`      | Abstract interface defining the contract                |
-| `real.py`     | Production implementation using `gh` CLI                |
-| `fake.py`     | Test double with mutation tracking                      |
-| `noop.py`     | No-op for dry-run mode (reads delegate, mutations skip) |
-| `printing.py` | Verbose wrapper that prints then delegates              |
+| File      | Role                                                    |
+| --------- | ------------------------------------------------------- |
+| `abc.py`  | Abstract interface defining the contract                |
+| `real.py` | Production implementation using `gh` CLI                |
+| `fake.py` | Test double with mutation tracking                      |
+| `noop.py` | No-op for dry-run mode (reads delegate, mutations skip) |
 
 ## Security: stdin for Secrets
 
@@ -53,6 +52,6 @@ The associated CLI command (`erk admin gh-actions-api-key`) follows a display-or
 
 ## Related Topics
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-place implementation checklist
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - 4-place implementation checklist
 - [Fake Mutation Tracking](fake-mutation-tracking.md) - Cross-cutting pattern for test doubles
 - [Subprocess Wrappers](subprocess-wrappers.md) - Wrapper functions for subprocess calls

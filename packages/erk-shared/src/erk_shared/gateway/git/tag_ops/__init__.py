@@ -8,5 +8,4 @@ Import from submodules:
 - real: RealGitTagOps
 - fake: FakeGitTagOps
 - dry_run: DryRunGitTagOps
-- printing: PrintingGitTagOps
 """

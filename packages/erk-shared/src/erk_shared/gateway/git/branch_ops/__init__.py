@@ -9,5 +9,4 @@ Import from submodules:
 - real: RealGitBranchOps
 - fake: FakeGitBranchOps
 - dry_run: DryRunGitBranchOps
-- printing: PrintingGitBranchOps
 """

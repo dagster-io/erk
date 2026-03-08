@@ -8,5 +8,4 @@ Import from submodules:
 - real: RealGitRemoteOps
 - fake: FakeGitRemoteOps
 - dry_run: DryRunGitRemoteOps
-- printing: PrintingGitRemoteOps
 """

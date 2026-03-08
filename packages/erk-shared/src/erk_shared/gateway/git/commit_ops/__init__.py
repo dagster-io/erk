@@ -8,5 +8,4 @@ Import from submodules:
 - real: RealGitCommitOps
 - fake: FakeGitCommitOps
 - dry_run: DryRunGitCommitOps
-- printing: PrintingGitCommitOps
 """

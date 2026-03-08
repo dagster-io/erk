@@ -9,7 +9,7 @@ read_when:
   - "implementing property-based subgateway access"
 tripwires:
   - action: "adding a subgateway property to a gateway ABC"
-    warning: "Must implement property in 5 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway, Printing wrapping with script_mode/dry_run."
+    warning: "Must implement property in 4 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway."
   - action: "creating fake subgateway without shared state"
     warning: "Fake subgateways must share state containers with parent via constructor parameters and call link_mutation_tracking(). Without this, mutations through subgateway won't be visible to parent queries."
 ---
@@ -20,9 +20,9 @@ tripwires:
 
 Gateway hierarchies expose specialized operations through property access on parent gateways. Instead of `ctx.git_branch_ops.create_branch()`, callers write `ctx.git.branch.create_branch()`.
 
-**Why this exists:** As gateways decompose from monoliths into focused subgateways, the access pattern becomes verbose if callers construct subgateways directly. Properties provide a clean API while maintaining the 5-layer gateway architecture (ABC, Real, Fake, DryRun, Printing).
+**Why this exists:** As gateways decompose from monoliths into focused subgateways, the access pattern becomes verbose if callers construct subgateways directly. Properties provide a clean API while maintaining the 4-layer gateway architecture (ABC, Real, Fake, DryRun).
 
-## The 5-Layer Implementation Contract
+## The 4-Layer Implementation Contract
 
 Every subgateway property requires coordinated implementation across all gateway layers. Missing or incorrect implementation in any layer breaks the gateway pattern.
 
@@ -72,17 +72,7 @@ See properties in `DryRunGit` (`packages/erk-shared/src/erk_shared/gateway/git/d
 
 **Why wrap dynamically:** DryRun doesn't store subgateways during construction because the inner gateway might be Real or Fake. Wrapping on property access maintains the wrapper chain regardless of the inner type.
 
-**Read-only subgateways:** When a subgateway contains only queries (no mutations), DryRun and Printing wrappers become pure pass-through delegates. See `GitRepoOps` and `GitStatusOps` as examples — their DryRun variants simply delegate because queries have no side effects to suppress.
-
-### Layer 5: Printing — Wrap with Configuration
-
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/printing.py, PrintingGit properties -->
-
-Printing layer wraps like DryRun but also propagates `script_mode` and `dry_run` configuration flags to the subgateway wrapper.
-
-See properties in `PrintingGit` (`packages/erk-shared/src/erk_shared/gateway/git/printing.py`). Pattern: `return PrintingGitBranchOps(self._wrapped.branch, script_mode=self._script_mode, dry_run=self._dry_run)`.
-
-**Why propagate configuration:** Printing behavior varies by mode. Script mode emits parseable output; human mode adds formatting. Dry-run mode changes prefixes ("Would" vs actual operation). Subgateway wrappers need these flags to match parent printing behavior.
+**Read-only subgateways:** When a subgateway contains only queries (no mutations), DryRun wrappers become pure pass-through delegates. See `GitRepoOps` and `GitStatusOps` as examples — their DryRun variants simply delegate because queries have no side effects to suppress.
 
 ## Before and After Migration
 
@@ -132,9 +122,9 @@ The flattening occurred during Git gateway decomposition (PR #6169 and subsequen
 
 **Symptom:** Type checker errors, `AttributeError` at runtime, or missing wrapper behavior.
 
-**Cause:** Property added to ABC and Real but forgotten in Fake, DryRun, or Printing.
+**Cause:** Property added to ABC and Real but forgotten in Fake or DryRun.
 
-**Fix:** Implement property in all 5 layers. Use checklist below.
+**Fix:** Implement property in all layers. Use checklist below.
 
 ## Implementation Checklist
 
@@ -148,7 +138,6 @@ When adding a subgateway property:
 - [ ] Call `link_mutation_tracking()` on fake subgateway with parent's mutation lists
 - [ ] Add property returning fake instance in Fake
 - [ ] Add property in DryRun wrapping `self._wrapped.subgateway_property`
-- [ ] Add property in Printing wrapping with `script_mode` and `dry_run` flags
 - [ ] Migrate all callsites to use new property path
 - [ ] Add tripwire documenting the new property path
 
@@ -161,7 +150,7 @@ PR #6285 removed 16 such methods from Git ABC, enforcing a **pure facade pattern
 **Why remove convenience methods:**
 
 1. **Clear ownership** — Each operation belongs to exactly one subgateway
-2. **Smaller surface area** — Fewer methods = less to maintain across 5 implementations
+2. **Smaller surface area** — Fewer methods = less to maintain across implementations
 3. **Prevents duplication** — Without convenience methods, there's one obvious call path
 4. **Better discoverability** — IDE autocomplete guides through property hierarchy
 
@@ -169,5 +158,5 @@ PR #6285 removed 16 such methods from Git ABC, enforcing a **pure facade pattern
 
 ## Related
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) — Full 5-layer gateway implementation checklist
+- [Gateway ABC Implementation](gateway-abc-implementation.md) — Full gateway implementation checklist
 - [Gateway Decomposition Phases](gateway-decomposition-phases.md) — Timeline of Git subgateway extractions

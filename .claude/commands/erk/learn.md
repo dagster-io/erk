@@ -611,7 +611,7 @@ PR comment insights are already integrated via the PRCommentAnalyzer agent (Agen
 | What was built            | Documentation needed                                       |
 | ------------------------- | ---------------------------------------------------------- |
 | New CLI command           | Document in `docs/learned/cli/` - usage, flags, examples   |
-| New gateway method        | Add tripwire about ABC implementation (5 places to update) |
+| New gateway method        | Add tripwire about ABC implementation (4 places to update) |
 | New capability            | Update capability system docs, add to glossary             |
 | New config option         | Add to `docs/learned/glossary.md`                          |
 | New exec script           | Document purpose, inputs, outputs                          |

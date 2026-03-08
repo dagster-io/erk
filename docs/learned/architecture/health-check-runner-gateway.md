@@ -18,7 +18,7 @@ A simplified gateway pattern for health check result injection, replacing monkey
 
 ## Gateway Structure
 
-Unlike full gateways (which have 5 files: ABC + Real + Fake + DryRun + Printing), HealthCheckRunner uses a simplified 3-file pattern because health checks are read-only — no dry-run or printing wrappers needed.
+Unlike full gateways (which have 4 files: ABC + Real + Fake + DryRun), HealthCheckRunner uses a simplified 3-file pattern because health checks are read-only — no dry-run wrapper needed.
 
 ### ABC + Real Implementation
 
@@ -61,5 +61,5 @@ Results are merged into a `frozenset`. Locally-modified artifacts in the allowli
 
 ## Related Documentation
 
-- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — full 5-place gateway pattern
+- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — full 4-place gateway pattern
 - [Erk Architecture Patterns](erk-architecture.md) — context integration patterns

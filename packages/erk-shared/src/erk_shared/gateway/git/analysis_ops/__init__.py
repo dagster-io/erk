@@ -7,5 +7,4 @@ Import from submodules:
 - real: RealGitAnalysisOps
 - fake: FakeGitAnalysisOps
 - dry_run: DryRunGitAnalysisOps
-- printing: PrintingGitAnalysisOps
 """

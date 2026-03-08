@@ -9,5 +9,4 @@ Import from submodules:
 - real: RealGraphiteBranchOps
 - fake: FakeGraphiteBranchOps
 - dry_run: DryRunGraphiteBranchOps
-- printing: PrintingGraphiteBranchOps
 """

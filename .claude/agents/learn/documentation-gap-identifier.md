@@ -160,7 +160,7 @@ Assign priority to each item:
 
 | Priority | Criteria                                                                                  |
 | -------- | ----------------------------------------------------------------------------------------- |
-| HIGH     | Gateway methods (require 5-place updates), contradictions to resolve, external API quirks |
+| HIGH     | Gateway methods (require 4-place updates), contradictions to resolve, external API quirks |
 | MEDIUM   | New patterns, CLI commands, architectural decisions                                       |
 | LOW      | Internal helpers, minor config changes, pure refactoring                                  |
 
@@ -216,7 +216,7 @@ Every inventory item MUST appear with a status and rationale:
 | 1 | new_function() | function | NEW_DOC | docs/learned/architecture/foo.md | Establishes new pattern for X |
 | 2 | existing_cmd | CLI | UPDATE_EXISTING | docs/learned/cli/commands.md | Add new flag documentation |
 | 3 | helper_func() | function | SKIP | N/A | Internal helper, no external usage |
-| 4 | Gateway.method() | gateway | TRIPWIRE | tripwires.md | Must update 5 places |
+| 4 | Gateway.method() | gateway | TRIPWIRE | tripwires.md | Must update 4 places |
 
 ## Prioritized Action Items
 

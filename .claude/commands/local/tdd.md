@@ -37,7 +37,7 @@ Determine:
    - Others as needed
 
 4. **Gateway Impact**: Does this feature require a new gateway method?
-   - If YES: You must follow the gateway checklist (5-file implementation)
+   - If YES: You must follow the gateway checklist (4-file implementation)
    - If NO: Proceed with business logic testing
 
 Report your analysis before proceeding.
@@ -143,9 +143,8 @@ If Phase 2 determined a new gateway method is needed, you must complete this BEF
 2. **Real** (`src/erk_shared/<gateway>/real.py`): Implement real behavior
 3. **Fake** (`tests/fakes/<gateway>.py`): Implement fake behavior
 4. **DryRun** (`src/erk_shared/<gateway>/dry_run.py`): Implement dry-run behavior
-5. **Printing** (`src/erk_shared/<gateway>/printing.py`): Implement printing wrapper
 
-After all 5 implementations exist, proceed with business logic testing.
+After all 4 implementations exist, proceed with business logic testing.
 
 ## Enforcement Rules
 

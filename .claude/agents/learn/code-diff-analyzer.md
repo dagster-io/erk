@@ -88,7 +88,7 @@ STATS: +<additions> -<deletions> files: <count>
 ### New Gateway Methods
 | Method | ABC | Documentation Needed |
 |--------|-----|---------------------|
-| ...    | ... | Tripwire (5 places) |
+| ...    | ... | Tripwire (4 places) |
 
 ### Config Changes
 | Change | Impact | Documentation Needed |

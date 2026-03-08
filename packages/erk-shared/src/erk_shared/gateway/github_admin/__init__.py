@@ -5,5 +5,4 @@ Import from submodules:
 - real: RealGitHubAdmin
 - fake: FakeGitHubAdmin
 - noop: NoopGitHubAdmin
-- printing: PrintingGitHubAdmin
 """

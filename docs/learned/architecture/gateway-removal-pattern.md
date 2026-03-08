@@ -60,7 +60,7 @@ Zero matches across all patterns required before proceeding. Even a single refer
 
 ### 2. Delete Implementation Files
 
-Remove all 5 gateway layers in one commit:
+Remove all gateway layers in one commit:
 
 ```bash
 git rm -rf src/erk/gateway/gateway_name/
@@ -83,7 +83,7 @@ git rm -rf tests/integration/test_real_gateway_name.py
 
 ### 4. Remove Gateway Compositions
 
-If the deleted gateway was composed into parent gateways (e.g., a subgateway property on Git or GitHub), remove the composition from **all 5 parent layers:**
+If the deleted gateway was composed into parent gateways (e.g., a subgateway property on Git or GitHub), remove the composition from **all parent layers:**
 
 **ABC layer:**
 
@@ -106,11 +106,7 @@ If the deleted gateway was composed into parent gateways (e.g., a subgateway pro
 
 - Delete property wrapping the subgateway
 
-**Printing layer:**
-
-- Delete property wrapping the subgateway
-
-**Why 5-place removal:** Partial removal causes type checker errors. If the ABC still declares the property but Real doesn't implement it, `ty` reports an unimplemented abstract method. All layers must change atomically.
+**Why multi-place removal:** Partial removal causes type checker errors. If the ABC still declares the property but Real doesn't implement it, `ty` reports an unimplemented abstract method. All layers must change atomically.
 
 ### 5. Update Documentation
 
@@ -138,9 +134,9 @@ Consolidation rationale: ClaudeExecutor and PromptExecutor performed the same fu
 
 1. **Migration phase** (separate PR) — All 7 call sites updated to use `PromptExecutor`
 2. **Verification** — `rg "ClaudeExecutor"` returned zero matches in production code
-3. **Layer deletion** — Removed `src/erk/gateway/claude_executor/` containing abc.py, real.py, fake.py, dry_run.py, printing.py
+3. **Layer deletion** — Removed `src/erk/gateway/claude_executor/` containing abc.py, real.py, fake.py, dry_run.py
 4. **Test deletion** — Removed `tests/unit/gateway/claude_executor/`
-5. **Composition removal** — Deleted `claude_executor` property from ErkContext ABC and all 5 implementations
+5. **Composition removal** — Deleted `claude_executor` property from ErkContext ABC and all implementations
 6. **Test verification** — `make test-unit` passed with zero failures
 
 **Outcome:** 200+ lines of code deleted, one clear path to launch agents remains.
@@ -215,5 +211,5 @@ The error asymmetry heavily favors aggressive deletion.
 
 ## Related Documentation
 
-- [Gateway ABC Implementation](gateway-abc-implementation.md) — 5-layer pattern that gateway removal must fully unwind
+- [Gateway ABC Implementation](gateway-abc-implementation.md) — Multi-layer pattern that gateway removal must fully unwind
 - [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) — Property-based composition that must be deleted when removing subgateways

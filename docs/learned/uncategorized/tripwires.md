@@ -16,7 +16,7 @@ Rules triggered by matching actions in code.
 
 **adding a function with 5+ parameters** → Read [Code Conventions](conventions.md) first. Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures and Click command callbacks.
 
-**adding a new method to Git/GitHub/Graphite ABC** → Read [Universal Tripwires](universal-tripwires.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
+**adding a new method to Git/GitHub/Graphite ABC** → Read [Universal Tripwires](universal-tripwires.md) first. Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py.
 
 **adding file I/O or subprocess calls to class `__init__`** → Read [Universal Tripwires](universal-tripwires.md) first. Keep `__init__` lightweight; use factory methods like `from_config_path()`.
 

@@ -86,5 +86,5 @@ if isinstance(result, PushError):
 
 ## Related Documentation
 
-- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — The 5-place implementation pattern that fakes are part of
+- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — The 4-place implementation pattern that fakes are part of
 - [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — Design decisions for when to use unions vs exceptions

@@ -62,4 +62,4 @@ Properties return `.copy()`.
 ## Related Topics
 
 - [GitHub Admin Gateway](github-admin-gateway.md) - Example implementation
-- [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-place pattern
+- [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 4-place pattern

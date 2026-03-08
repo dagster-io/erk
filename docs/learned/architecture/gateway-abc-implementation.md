@@ -8,13 +8,13 @@ read_when:
   - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
 tripwires:
   - action: "creating a new gateway ABC"
-    warning: "Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py and printing.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not."
+    warning: "Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not."
   - action: "adding a new method to a dry-run-enabled gateway ABC (Git, LocalGitHub, Graphite)"
-    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    warning: "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py."
   - action: "adding a new method to a 3-file gateway ABC"
     warning: "Must implement in 3 places: abc.py, real.py, fake.py."
   - action: "removing an abstract method from a gateway ABC"
-    warning: "Must remove from all implementation files simultaneously (3 or 5 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages."
+    warning: "Must remove from all implementation files simultaneously (3 or 4 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages."
   - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
     warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
     pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
@@ -24,11 +24,11 @@ tripwires:
     warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
     pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
   - action: "changing gateway return type to discriminated union"
-    warning: "Verify all implementations import the new types. For 5-file gateways: abc.py, real.py, fake.py, dry_run.py, printing.py. For 3-file gateways: abc.py, real.py, fake.py."
+    warning: "Verify all implementations import the new types. For 4-file gateways: abc.py, real.py, fake.py, dry_run.py. For 3-file gateways: abc.py, real.py, fake.py."
   - action: "designing error handling for a new gateway method"
     warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
   - action: "adding a new parameter to a gateway ABC method"
-    warning: "All implementations must be updated (3 or 5 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests."
+    warning: "All implementations must be updated (3 or 4 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests."
   - action: "creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or similar mechanism-named gateway"
     warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
 ---
@@ -59,9 +59,9 @@ The default for new gateways is the **3-file pattern**:
 
 Most gateways use this pattern: Cmux, Codespace, AgentLauncher, Browser, Clipboard, Shell, Console, Time, etc.
 
-## Extended Gateway Pattern (5 Files) — Opt-In
+## Extended Gateway Pattern (4 Files) — Opt-In
 
-Only add `dry_run.py` and `printing.py` when the gateway **participates in a user-facing `--dry-run` feature**. These extra files are not free — they add maintenance burden and must be kept in sync with every method change.
+Only add `dry_run.py` when the gateway **participates in a user-facing `--dry-run` feature**. This extra file is not free — it adds maintenance burden and must be kept in sync with every method change.
 
 | Implementation | Purpose                                              |
 | -------------- | ---------------------------------------------------- |
@@ -69,21 +69,21 @@ Only add `dry_run.py` and `printing.py` when the gateway **participates in a use
 | `real.py`      | Production implementation (subprocess/API calls)     |
 | `fake.py`      | Constructor-injected test data (unit tests)          |
 | `dry_run.py`   | Delegates read-only, no-ops mutations (preview mode) |
-| `printing.py`  | Delegates to wrapped, prints mutations (verbose)     |
 
-**Gateways currently opted into 5-file pattern:** Git, LocalGitHub, Graphite, AgentDocs, CiRunner, Http.
+**Gateways currently opted into 4-file pattern:** Git, LocalGitHub, Graphite, AgentDocs.
 
-These gateways have dry-run/printing because they participate in erk's `--dry-run` CLI mode. **Do not add dry_run.py/printing.py to a new gateway unless the gateway is wired into the dry-run context factory.**
+These gateways have dry-run because they participate in erk's `--dry-run` CLI mode. **Do not add dry_run.py to a new gateway unless the gateway is wired into the dry-run context factory.**
 
 ## Gateway Locations
 
-| Gateway     | Pattern | Location                                                |
-| ----------- | ------- | ------------------------------------------------------- |
-| Git         | 5-file  | `packages/erk-shared/src/erk_shared/gateway/git/`       |
-| LocalGitHub | 5-file  | `packages/erk-shared/src/erk_shared/gateway/github/`    |
-| Graphite    | 5-file  | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
-| Cmux        | 3-file  | `packages/erk-shared/src/erk_shared/gateway/cmux/`      |
-| Codespace   | 3-file  | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
+| Gateway     | Pattern | Location                                                 |
+| ----------- | ------- | -------------------------------------------------------- |
+| Git         | 4-file  | `packages/erk-shared/src/erk_shared/gateway/git/`        |
+| LocalGitHub | 4-file  | `packages/erk-shared/src/erk_shared/gateway/github/`     |
+| Graphite    | 4-file  | `packages/erk-shared/src/erk_shared/gateway/graphite/`   |
+| AgentDocs   | 4-file  | `packages/erk-shared/src/erk_shared/gateway/agent_docs/` |
+| Cmux        | 3-file  | `packages/erk-shared/src/erk_shared/gateway/cmux/`       |
+| Codespace   | 3-file  | `packages/erk-shared/src/erk_shared/gateway/codespace/`  |
 
 ## Checklist for New Gateway Methods
 
@@ -95,14 +95,11 @@ When adding a new method to any gateway ABC:
    - Constructor parameter for test data (if read method)
    - Mutation tracking list/set (if write method)
    - Read-only property for test assertions (if write method)
-4. [ ] **Only for 5-file gateways:** Implement in `dry_run.py`:
+4. [ ] **Only for 4-file gateways:** Implement in `dry_run.py`:
    - Read-only methods: delegate to wrapped
    - Mutation methods: no-op, return success value
-5. [ ] **Only for 5-file gateways:** Implement in `printing.py`:
-   - Read-only methods: delegate silently
-   - Mutation methods: print, then delegate
-6. [ ] Add unit tests for Fake behavior
-7. [ ] Add integration tests for Real (if feasible)
+5. [ ] Add unit tests for Fake behavior
+6. [ ] Add integration tests for Real (if feasible)
 
 ## Non-Ideal State Decision Checklist
 
@@ -124,7 +121,7 @@ This checklist helps you choose between discriminated unions and exceptions. For
 - [ ] Error type carries domain-meaningful fields beyond just `message`
 - [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
 - [ ] Type defined as `@dataclass(frozen=True)` in the gateway's `types.py` file
-- [ ] All 5 implementations updated (abc, real, fake, dry_run, printing)
+- [ ] All implementations updated (abc, real, fake, and dry_run for 4-file gateways)
 
 ### Checklist: Use Exceptions When
 
@@ -176,11 +173,10 @@ When changing an existing gateway method's return type (e.g., converting from ex
 
 1. [ ] Define new types in `gateway/{name}/types.py`
 2. [ ] Update ABC signature in `abc.py`
-3. [ ] Update all 5 implementations:
+3. [ ] Update all implementations:
    - [ ] `real.py` - Return appropriate error types for failure cases
    - [ ] `fake.py` - Return union types in test implementation
-   - [ ] `dry_run.py` - Return appropriate success/error based on mode
-   - [ ] `printing.py` - Update signature to return union
+   - [ ] `dry_run.py` - Return appropriate success/error based on mode (4-file gateways only)
 4. [ ] Update all call sites to handle new return type
 5. [ ] Update tests to check `isinstance(result, ErrorType)`
 6. [ ] Verify all imports include new types
@@ -203,10 +199,6 @@ When changing an existing gateway method's return type (e.g., converting from ex
 
 ```python
 # dry_run.py - Delegate to wrapped
-def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
-    return self._wrapped.get_pr(repo_root, pr_number)
-
-# printing.py - Delegate silently
 def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
     return self._wrapped.get_pr(repo_root, pr_number)
 ```
@@ -261,11 +253,6 @@ See [LBYL Gateway Pattern](lbyl-gateway-pattern.md) for complete pattern documen
 # dry_run.py - No-op, return success
 def resolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
     return True  # No actual mutation
-
-# printing.py - Print, then delegate
-def resolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
-    print(f"Resolving thread {thread_id}")
-    return self._wrapped.resolve_review_thread(repo_root, thread_id)
 ```
 
 ## FakeGateway Pattern for Mutations
@@ -317,13 +304,14 @@ def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
 
 See the canonical implementation in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py`.
 
-**5-file verification checklist** for idempotent behavioral changes:
+**Verification checklist** for idempotent behavioral changes:
 
 1. **ABC** (`abc.py`) - Update docstring to document idempotent behavior
 2. **Real** (`real.py`) - Add LBYL check and early return
 3. **Fake** (`fake.py`) - Verify fake already handles idempotency (usually does)
-4. **Integration test** (`tests/integration/test_real_*.py`) - Add test for missing resource case
-5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+4. **DryRun** (`dry_run.py`) - Update if gateway uses 4-file pattern
+5. **Integration test** (`tests/integration/test_real_*.py`) - Add test for missing resource case
+6. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
 
 **Example integration test**:
 
@@ -414,19 +402,6 @@ class DryRunLocalGitHub(LocalGitHub):
         return self._issues
 ```
 
-### Printing: Delegate to Wrapped
-
-```python
-class PrintingLocalGitHub(LocalGitHub):
-    @property
-    def issues(self) -> GitHubIssues:
-        return self._wrapped.issues
-```
-
-## Common Pitfall
-
-**Printing implementations often fall behind** - when adding a new method, verify PrintingGit/PrintingLocalGitHub/PrintingGraphite is updated alongside the other implementations.
-
 ## Dependency Injection for Testability
 
 When adding methods that benefit from testability (lock waiting, retry logic, timeouts), consider injecting dependencies via constructor rather than adding parameters to each method.
@@ -487,8 +462,7 @@ packages/erk-shared/src/erk_shared/gateway/git/
 │   ├── abc.py         # GitBranchOps ABC
 │   ├── real.py
 │   ├── fake.py
-│   ├── dry_run.py
-│   └── printing.py
+│   └── dry_run.py
 ```
 
 ### ABC Composition
@@ -531,9 +505,9 @@ The Git ABC is now a **pure facade** -- it contains ONLY property accessors to s
 When extracting methods to a sub-gateway:
 
 1. [ ] Create sub-gateway directory (`branch_ops/`)
-2. [ ] Implement 5 files: abc.py, real.py, fake.py, dry_run.py, printing.py
+2. [ ] Implement files: abc.py, real.py, fake.py (and dry_run.py for 4-file gateways)
 3. [ ] Add `@property` to main ABC returning sub-gateway
-4. [ ] Update all 5 main gateway implementations to compose sub-gateway
+4. [ ] Update all main gateway implementations to compose sub-gateway
 5. [ ] Create factory method in Fake to link sub-gateway state
 
 ### FakeGit/FakeGraphite Sub-Gateway Linking
@@ -567,7 +541,7 @@ Sub-gateway for worktree operations:
 
 - Git worktree: `packages/erk-shared/src/erk_shared/gateway/git/worktree/`
 
-The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+The worktree sub-gateway follows the same 4-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
 
 ## Time Injection for Retry-Enabled Gateways
 
@@ -632,7 +606,6 @@ This pattern aligns with the [Fake-Driven Testing Architecture](../testing/):
 - **Real**: Layer 5 (Business Logic Integration Tests) - production implementation
 - **Fake**: Layer 4 (Business Logic Tests) - in-memory test double for fast tests
 - **DryRun**: Preview mode for CLI operations
-- **Printing**: Verbose output for debugging
 
 ## ABC Method Removal Pattern
 
@@ -646,17 +619,16 @@ Remove methods that meet ALL these criteria:
 2. **Convenience wrapper** - Method just forwards to a subgateway property (e.g., `git.method()` → `git.subgateway.method()`)
 3. **Dead code** - Not part of the core gateway contract
 
-### 5-Place Synchronization Requirement
+### Synchronization Requirement
 
-When removing a method from an ABC, you MUST remove it from all 5 implementations simultaneously:
+When removing a method from an ABC, you MUST remove it from all implementations simultaneously:
 
-1. `abc.py` - Remove abstract method definition
-2. `real.py` - Remove production implementation
-3. `fake.py` - Remove fake implementation
-4. `dry_run.py` - Remove dry-run implementation
-5. `printing.py` - Remove printing implementation
+- `abc.py` - Remove abstract method definition
+- `real.py` - Remove production implementation
+- `fake.py` - Remove fake implementation
+- `dry_run.py` - Remove dry-run implementation (4-file gateways only)
 
-**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+**Partial removal causes type checker errors** - if you remove from abc.py but forget another implementation, the type checker will complain about missing abstract method implementations.
 
 ### Caller Migration Pattern
 
@@ -713,29 +685,28 @@ Convenience methods accumulate over time as new subgateways are added. Periodica
 
 1. Search for methods that delegate to subgateways
 2. Check for zero production callers
-3. Batch removal in a single PR (maintain 5-file synchronization)
+3. Batch removal in a single PR (maintain synchronization across all implementation files)
 
 ### Reference Implementation
 
-PR #6285: [Remove rebase_onto/rebase_abort from Git ABC and dead convenience methods from PrintingGit](https://github.com/owner/repo/pull/6285)
+PR #6285: [Remove rebase_onto/rebase_abort from Git ABC and dead convenience methods](https://github.com/owner/repo/pull/6285)
 
 This PR demonstrates:
 
-- 5-place synchronization (abc, real, fake, dry_run, printing)
+- Synchronization across all implementation files
 - Caller migration to subgateway properties
 - Verification via grep across packages
 
-## Reference Implementation: Git Remote Ops (5-Place Pattern)
+## Reference Implementation: Git Remote Ops (4-File Pattern)
 
-The `remote_ops/` sub-gateway provides a clean example of the 5-place pattern with discriminated union return types:
+The `remote_ops/` sub-gateway provides a clean example of the 4-file pattern with discriminated union return types:
 
 ```
 packages/erk-shared/src/erk_shared/gateway/git/remote_ops/
 ├── abc.py        # push_to_remote() -> PushResult | PushError
 ├── real.py       # try/except boundary, subprocess calls
 ├── fake.py       # Constructor-injected errors, mutation tracking
-├── dry_run.py    # Returns PushResult() without executing
-└── printing.py   # Logs then delegates
+└── dry_run.py    # Returns PushResult() without executing
 ```
 
 Key patterns demonstrated:

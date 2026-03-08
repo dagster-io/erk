@@ -18,13 +18,13 @@ audit_result: clean
 
 # Codespace Gateway Pattern
 
-The codespace gateway uses a **3-place pattern** (ABC, real, fake) instead of the standard 5-place gateway pattern. This document explains when to omit dry-run and printing implementations — a decision that generalizes to any gateway wrapping process-replacing or inherently remote operations.
+The codespace gateway uses a **3-place pattern** (ABC, real, fake) instead of the standard 4-place gateway pattern. This document explains when to omit dry-run implementations — a decision that generalizes to any gateway wrapping process-replacing or inherently remote operations.
 
-## When to Use 3-Place vs 5-Place
+## When to Use 3-Place vs 4-Place
 
-The standard gateway has 5 implementations (abc, real, fake, dry_run, printing). The 3-place variant drops dry-run and printing. The deciding question: **can you give the user a meaningful preview of the operation?**
+The standard gateway has 4 implementations (abc, real, fake, dry_run). The 3-place variant drops dry-run. The deciding question: **can you give the user a meaningful preview of the operation?**
 
-| Characteristic             | 5-place (standard)                     | 3-place (codespace, agent_launcher)            |
+| Characteristic             | 4-place (standard)                     | 3-place (codespace, agent_launcher)            |
 | -------------------------- | -------------------------------------- | ---------------------------------------------- |
 | Operations are previewable | Yes — can show "would create branch X" | No — process replacement or remote execution   |
 | Dry-run adds value         | Yes — read-only operations still work  | No — no local equivalent to "pretend to SSH"   |
@@ -77,7 +77,7 @@ See `FakeAgentLauncher` in `packages/erk-shared/src/erk_shared/gateway/agent_lau
 ## Related Documentation
 
 - [Codespace Remote Execution](../erk/codespace-remote-execution.md) — bootstrap wrapper, environment setup, debugging failures
-- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) — 5-place pattern, 3-place variant decision criteria
+- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) — 4-place pattern, 3-place variant decision criteria
 - [SSH Command Execution](../architecture/ssh-command-execution.md) — exec vs subprocess, TTY allocation, SSH argument semantics
 - [GitHub CLI Limits](../architecture/github-cli-limits.md) — why `gh codespace start` doesn't work
 - [Composable Remote Commands](../architecture/composable-remote-commands.md) — five-step pattern for adding new remote commands
