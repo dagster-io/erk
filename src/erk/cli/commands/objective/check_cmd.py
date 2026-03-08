@@ -7,7 +7,7 @@ import click
 
 from erk.cli.alias import alias
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
@@ -27,6 +27,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     serialize_phases,
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.output.output import user_output
 
@@ -267,14 +268,14 @@ def validate_objective(
 @click.option(
     "--json-output", "json_mode", is_flag=True, help="Output structured JSON (for programmatic use)"
 )
-@repo_option
+@resolved_repo_option
 @click.pass_obj
 def check_objective(
     ctx: ErkContext,
     objective_ref: str,
     *,
     json_mode: bool,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
     """Validate an objective's format and roadmap consistency.
 
@@ -286,14 +287,13 @@ def check_objective(
 
     Use --json-output for structured JSON output (replaces erk exec objective-roadmap-check).
     """
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
     issue_number = parse_issue_identifier(objective_ref)
 
     result = validate_objective(
         remote,
-        owner=owner,
-        repo=repo_name,
+        owner=repo_id.owner,
+        repo=repo_id.repo,
         issue_number=issue_number,
     )
 

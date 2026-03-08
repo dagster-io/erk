@@ -22,10 +22,10 @@ from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_meta
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.ensure import Ensure, UserFacingCliError
-from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel
-from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.github.types import GitHubRepoId, PRNotFound
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRNotFound
 from erk_shared.output.output import user_output
@@ -352,7 +352,7 @@ def _dispatch_one_shot(
     default=False,
     help="Dispatch workflow from the current branch",
 )
-@repo_option
+@resolved_repo_option
 @click.pass_obj
 def launch(
     ctx: ErkContext,
@@ -366,7 +366,7 @@ def launch(
     file_path: str | None,
     dispatch_ref: str | None,
     ref_current: bool,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
     """Dispatch a GitHub Actions workflow.
 
@@ -411,13 +411,10 @@ def launch(
     - GitHub authentication required (via gh auth login or API token)
     - Required GitHub Actions secrets must be configured
     """
-    # 1. Resolve owner/repo — handles both --repo and local inference
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
-
-    # 2. Get RemoteGitHub instance
+    # 1. Get RemoteGitHub instance
     remote = get_remote_github(ctx)
 
-    # 3. Auth check via remote
+    # 2. Auth check via remote
     is_authenticated, _, _ = remote.check_auth_status()
     if not is_authenticated:
         raise UserFacingCliError(
@@ -426,12 +423,12 @@ def launch(
             "This is required before dispatching workflows."
         )
 
-    # 4. Validate workflow name
+    # 3. Validate workflow name
     _ = _get_workflow_file(workflow_name)
 
     has_local_repo = not isinstance(ctx.repo, NoRepoSentinel)
 
-    # 5. Resolve dispatch ref — local enrichments when available, fallback to default branch
+    # 4. Resolve dispatch ref — local enrichments when available, fallback to default branch
     if ref_current and not has_local_repo:
         raise click.UsageError("--ref-current requires a local git repository")
 
@@ -442,9 +439,9 @@ def launch(
         ref = dispatch_ref
 
     if ref is None:
-        ref = remote.get_default_branch_name(owner=owner, repo=repo_name)
+        ref = remote.get_default_branch_name(owner=repo_id.owner, repo=repo_id.repo)
 
-    # 6. Local enrichment: pr-rebase branch inference when no --pr
+    # 5. Local enrichment: pr-rebase branch inference when no --pr
     inferred_branch: str | None = None
     if workflow_name == "pr-rebase" and pr_number is None:
         if not has_local_repo:
@@ -466,13 +463,13 @@ def launch(
         pr_number = pr_for_branch.number
         inferred_branch = current_branch
 
-    # 7. Local enrichment: plan ID resolution
+    # 6. Local enrichment: plan ID resolution
     plan_id: str | None = None
     if has_local_repo and inferred_branch is not None:
         assert not isinstance(ctx.repo, NoRepoSentinel)
         plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.repo.root, inferred_branch)
 
-    # 8. Dispatch to unified handler
+    # 7. Dispatch to unified handler
     branch_name: str | None = None
     run_id: str | None = None
 
@@ -480,8 +477,8 @@ def launch(
         assert pr_number is not None  # Resolved via --pr or branch inference above
         branch_name, run_id = _dispatch_pr_rebase(
             remote,
-            owner=owner,
-            repo_name=repo_name,
+            owner=repo_id.owner,
+            repo_name=repo_id.repo,
             pr_number=pr_number,
             no_squash=no_squash,
             plan_id=plan_id,
@@ -496,8 +493,8 @@ def launch(
         assert pr_number is not None
         branch_name, run_id = _dispatch_pr_address(
             remote,
-            owner=owner,
-            repo_name=repo_name,
+            owner=repo_id.owner,
+            repo_name=repo_id.repo,
             pr_number=pr_number,
             plan_id=plan_id,
             model=model,
@@ -511,8 +508,8 @@ def launch(
         assert pr_number is not None
         branch_name, run_id = _dispatch_pr_rewrite(
             remote,
-            owner=owner,
-            repo_name=repo_name,
+            owner=repo_id.owner,
+            repo_name=repo_id.repo,
             pr_number=pr_number,
             plan_id=plan_id,
             model=model,
@@ -526,8 +523,8 @@ def launch(
         assert plan_number is not None
         _dispatch_learn(
             remote,
-            owner=owner,
-            repo_name=repo_name,
+            owner=repo_id.owner,
+            repo_name=repo_id.repo,
             issue=plan_number,
             ref=ref,
         )
@@ -551,8 +548,8 @@ def launch(
         assert resolved_prompt is not None
         branch_name, run_id = _dispatch_one_shot(
             remote,
-            owner=owner,
-            repo_name=repo_name,
+            owner=repo_id.owner,
+            repo_name=repo_id.repo,
             pr_number=pr_number,
             prompt=resolved_prompt,
             model=model,
@@ -568,7 +565,7 @@ def launch(
         # Should never reach here due to _get_workflow_file validation
         raise click.UsageError(f"Unknown workflow: {workflow_name}")
 
-    # 9. Post-dispatch: plan metadata update (local repo only)
+    # 8. Post-dispatch: plan metadata update (local repo only)
     if has_local_repo and branch_name is not None and run_id is not None:
         assert not isinstance(ctx.repo, NoRepoSentinel)
         maybe_update_plan_dispatch_metadata(ctx, ctx.repo, branch_name, run_id)

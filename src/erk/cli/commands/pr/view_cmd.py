@@ -5,11 +5,7 @@ from datetime import datetime
 import click
 
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.repo_resolution import (
-    get_remote_github,
-    repo_option,
-    resolve_owner_repo,
-)
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.core.typing_utils import narrow_to_literal
@@ -40,6 +36,7 @@ from erk_shared.gateway.github.parsing import (
     construct_workflow_run_url,
     extract_owner_repo_from_github_url,
 )
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.conversion import github_issue_to_plan
 from erk_shared.plan_store.types import Plan, PlanNotFound
@@ -228,14 +225,14 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
 @click.option("--full", "-f", is_flag=True, help="Show full plan body")
-@repo_option
+@resolved_repo_option
 @click.pass_obj
 def pr_view(
     ctx: ErkContext,
     identifier: str | None,
     *,
     full: bool,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
     """Fetch and display a plan by identifier.
 
@@ -292,10 +289,9 @@ def pr_view(
     if plan_id is None:
         plan_id = str(plan_number)
 
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
 
-    issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
+    issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
     if isinstance(issue, IssueNotFound):
         user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
         raise SystemExit(1)
