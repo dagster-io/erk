@@ -139,6 +139,7 @@ def _apply_json_command(
     cmd.params.append(schema_option)
 
     original_callback = cmd.callback
+    cmd._json_command_original_callback = original_callback  # type: ignore[attr-defined]
     if original_callback is None:
         return cmd
 

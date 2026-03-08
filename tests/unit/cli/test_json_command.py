@@ -1,6 +1,8 @@
 """Tests for @json_command decorator, emit_json, emit_json_result, and --schema flag."""
 
 import json
+import types
+import typing
 from dataclasses import dataclass
 from typing import Any
 from unittest.mock import patch
@@ -513,3 +515,58 @@ def test_schema_with_output_types() -> None:
     doc = json.loads(result.output)
 
     assert "value" in doc["output_schema"]["properties"]
+
+
+# -- output_types validation test --
+
+
+def test_output_types_matches_return_annotation() -> None:
+    """Every @json_command's output_types must match its return annotation."""
+    import click
+
+    from erk.cli.cli import cli
+
+    def _collect_json_commands(group: click.BaseCommand) -> list[click.BaseCommand]:
+        """Recursively collect all commands with _json_command_meta."""
+        result = []
+        if hasattr(group, "_json_command_meta"):
+            result.append(group)
+        if isinstance(group, click.Group):
+            for cmd in group.commands.values():
+                result.extend(_collect_json_commands(cmd))
+        return result
+
+    def _unwrap_return_types(annotation: Any) -> set[type]:
+        """Decompose A | B unions into member types."""
+        origin = typing.get_origin(annotation)
+        if origin is typing.Union or isinstance(annotation, types.UnionType):
+            return set(typing.get_args(annotation))
+        return {annotation}
+
+    commands = _collect_json_commands(cli)
+    assert len(commands) > 0, "No @json_command commands found — check CLI import"
+
+    failures = []
+    for cmd in commands:
+        meta = cmd._json_command_meta  # type: ignore[attr-defined]
+        original_callback = cmd._json_command_original_callback  # type: ignore[attr-defined]
+        if original_callback is None:
+            continue
+
+        hints = typing.get_type_hints(original_callback)
+        return_annotation = hints.get("return", type(None))
+
+        if return_annotation is type(None):
+            # -> None means output_types must be ()
+            if meta.output_types != ():
+                failures.append(f"{cmd.name}: return None but output_types={meta.output_types!r}")
+        else:
+            return_types = _unwrap_return_types(return_annotation)
+            declared_types = set(meta.output_types)
+            if return_types != declared_types:
+                failures.append(
+                    f"{cmd.name}: return annotation types {return_types}"
+                    f" != output_types {declared_types}"
+                )
+
+    assert not failures, "output_types mismatch:\n" + "\n".join(failures)
