@@ -44,15 +44,13 @@ Rules triggered by matching actions in code.
 
 **adding a new field to agent-produced JSON without updating normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Add the field to CANONICAL_FIELDS and any aliases to FIELD_ALIASES in the normalization script. Without this, the field may be stripped during normalization.
 
-**adding a new method to Git ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py.
-
-**adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py.
-
 **adding a new method to HttpClient ABC without implementing in all providers** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. HttpClient follows the gateway pattern. New methods must be added to abc.py, real.py, and fake.py at minimum.
 
-**adding a new method to LocalGitHub ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py.
+**adding a new method to a 3-file gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 3 places: abc.py, real.py, fake.py.
 
-**adding a new parameter to a gateway ABC method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. All implementations must be updated (ABC, Real, Fake, DryRun). Fake may accept but not track new parameters when assertion is not needed for tests.
+**adding a new method to a dry-run-enabled gateway ABC (Git, LocalGitHub, Graphite)** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py.
+
+**adding a new parameter to a gateway ABC method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. All implementations must be updated (3 or 4 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests.
 
 **adding a new setup path to a command with existing cleanup** → Read [Convergence Points Architecture](convergence-points.md) first. Ensure the new path calls the same convergence function. Multiple setup paths must converge at a single cleanup point to prevent resource leaks.
 
@@ -140,7 +138,7 @@ Rules triggered by matching actions in code.
 
 **changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
 
-**changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all implementations import the new types. Missing imports in abc.py, fake.py, or dry_run.py break the gateway pattern.
+**changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all implementations import the new types. For 4-file gateways: abc.py, real.py, fake.py, dry_run.py. For 3-file gateways: abc.py, real.py, fake.py.
 
 **changing permission_mode_to_claude() (or future permission_mode_to_codex()) implementations** → Read [PermissionMode Abstraction](permission-modes.md) first. Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings.
 
@@ -176,13 +174,15 @@ Rules triggered by matching actions in code.
 
 **creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
 
+**creating a new gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not.
+
 **creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
 
 **creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
 
 **creating fake subgateway without shared state** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Fake subgateways must share state containers with parent via constructor parameters and call link_mutation_tracking(). Without this, mutations through subgateway won't be visible to parent queries.
 
-**deleting a gateway after consolidating into another** → Read [Gateway Removal Pattern](gateway-removal-pattern.md) first. Follow complete removal checklist: verify no references, delete all layers, clean up compositions, update docs, run full test suite.
+**deleting a gateway after consolidating into another** → Read [Gateway Removal Pattern](gateway-removal-pattern.md) first. Follow complete removal checklist: verify no references, delete all 5 layers, clean up compositions, update docs, run full test suite.
 
 **designing a new hook or reminder system** → Read [Context Injection Architecture](context-injection-tiers.md) first. Consider the three-tier context architecture and consolidation patterns. Read docs/learned/architecture/context-injection-tiers.md first.
 
@@ -222,7 +222,7 @@ Rules triggered by matching actions in code.
 
 **making N sequential gh api calls in a loop when a single GraphQL query could fetch all data** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern.
 
-**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL implementations (ABC, real, fake, dry_run) AND all call sites AND tests. Incomplete migrations break type safety.
+**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
 
 **migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
 
@@ -260,7 +260,7 @@ Rules triggered by matching actions in code.
 
 **placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
 
-**proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation.
+**proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation.
 
 **querying plans by base label erk-planned-pr instead of type-specific labels** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. Query by type-specific labels (erk-plan, erk-learn) not base label. AND semantics means querying erk-planned-pr + erk-plan returns only items with both, which may silently exclude items.
 
@@ -276,7 +276,7 @@ Rules triggered by matching actions in code.
 
 **removing .erk/impl-context/ during implementation without git rm** → Read [Impl-Context API](impl-context-api.md) first. Use git rm -rf for committed impl-context (Step 2d of plan-implement). The remove_impl_context() function is for filesystem-only removal.
 
-**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 4 places simultaneously: abc.py, real.py, fake.py, dry_run.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from all implementation files simultaneously (3 or 4 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages.
 
 **returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
 
