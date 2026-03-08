@@ -155,7 +155,8 @@ def ensure_worktree_for_branch(
                 f"Suggested action:\n"
                 f"  1. Check git status and resolve any issues\n"
                 f"  2. Manually create branch: git branch --track {branch} {remote_ref}\n"
-                f"  3. Or use: erk wt create --branch {branch}"
+                f"  3. Or use: erk wt create --branch {branch}",
+                error_type="cli_error",
             ) from e
 
     # Branch exists but not checked out - auto-create worktree
@@ -196,7 +197,8 @@ def ensure_worktree_for_branch(
                             f"Options:\n"
                             f"  1. Resume work in existing worktree: erk wt co {name}\n"
                             f"  2. Complete or abort the rebase first, then try again\n"
-                            f"  3. Use a different branch name"
+                            f"  3. Use a different branch name",
+                            error_type="cli_error",
                         )
                     # Different branch: existing error handling
                     raise UserFacingCliError(
@@ -205,14 +207,16 @@ def ensure_worktree_for_branch(
                         f"Cannot create worktree for branch '{branch}' with same name.\n"
                         f"Options:\n"
                         f"  1. Switch to existing worktree: erk wt co {name}\n"
-                        f"  2. Use a different branch name"
+                        f"  2. Use a different branch name",
+                        error_type="cli_error",
                     )
                 # Same branch - return existing path
                 return wt_path, False
         # Path exists but not in worktree list (shouldn't happen, but handle gracefully)
         raise UserFacingCliError(
             f"Directory '{wt_path}' exists but is not a git worktree.\n"
-            f"Please remove or rename the directory and try again."
+            f"Please remove or rename the directory and try again.",
+            error_type="cli_error",
         )
 
     # Create worktree from existing branch

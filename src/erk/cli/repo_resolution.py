@@ -33,7 +33,8 @@ def resolve_owner_repo(
         if "/" not in target_repo or target_repo.count("/") != 1:
             raise UserFacingCliError(
                 f"Invalid --repo format: '{target_repo}'\n"
-                "Expected format: owner/repo (e.g., dagster-io/erk)"
+                "Expected format: owner/repo (e.g., dagster-io/erk)",
+                error_type="cli_error",
             )
         owner, repo_name = target_repo.split("/")
         return (owner, repo_name)
@@ -41,7 +42,8 @@ def resolve_owner_repo(
     if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
         raise UserFacingCliError(
             "Cannot determine target repository.\n"
-            "Use --repo owner/repo or run from inside a git repository."
+            "Use --repo owner/repo or run from inside a git repository.",
+            error_type="cli_error",
         )
     return (ctx.repo.github.owner, ctx.repo.github.repo)
 
@@ -66,7 +68,8 @@ def get_remote_github(ctx: ErkContext) -> RemoteGitHub:
 
     if ctx.http_client is None:
         raise UserFacingCliError(
-            "GitHub authentication required.\nRun 'gh auth login' to authenticate."
+            "GitHub authentication required.\nRun 'gh auth login' to authenticate.",
+            error_type="cli_error",
         )
 
     return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)

@@ -39,11 +39,11 @@ class UserFacingCliError(click.ClickException):
     CliRunner in tests.
 
     Usage:
-        raise UserFacingCliError("Not a GitHub repository")
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError("Not a GitHub repository", error_type="cli_error")
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
     """
 
-    def __init__(self, message: str, *, error_type: str = "cli_error") -> None:
+    def __init__(self, message: str, *, error_type: str) -> None:
         super().__init__(message)
         self.message = message
         self.error_type = error_type
@@ -69,7 +69,7 @@ class Ensure:
             UserFacingCliError: If condition is false
         """
         if not condition:
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
 
     @staticmethod
     def truthy(value: T, error_message: str) -> T:
@@ -87,7 +87,7 @@ class Ensure:
             UserFacingCliError: If value is falsy
         """
         if not value:
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
         return value
 
     @staticmethod
@@ -116,7 +116,7 @@ class Ensure:
             >>> # safe_path is now guaranteed to be Path, not Path | None
         """
         if value is None:
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
         return value
 
     @staticmethod
@@ -180,7 +180,7 @@ class Ensure:
         if not ctx.git.worktree.path_exists(path):
             if error_message is None:
                 error_message = f"Path not found: {path}"
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
 
     @staticmethod
     def not_empty(value: str | list | dict | None, error_message: str) -> None:
@@ -199,7 +199,7 @@ class Ensure:
             >>> Ensure.not_empty(args, "No arguments provided - specify at least one branch")
         """
         if not value:
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
 
     @staticmethod
     def git_worktree_exists(ctx: ErkContext, wt_path: Path, name: str | None = None) -> None:
@@ -241,7 +241,8 @@ class Ensure:
         local_branches = ctx.git.branch.list_local_branches(repo_root)
         if branch not in local_branches:
             raise UserFacingCliError(
-                f"Branch '{branch}' does not exist - Create it first or check the name"
+                f"Branch '{branch}' does not exist - Create it first or check the name",
+                error_type="cli_error",
             )
 
     @staticmethod
@@ -261,7 +262,8 @@ class Ensure:
         """
         if current_path is None:
             raise UserFacingCliError(
-                "Not in a git worktree - Run this command from within a worktree directory"
+                "Not in a git worktree - Run this command from within a worktree directory",
+                error_type="cli_error",
             )
 
     @staticmethod
@@ -292,7 +294,7 @@ class Ensure:
                     error_message = f"Expected 1 argument, got {len(args)}"
                 else:
                     error_message = f"Expected {expected} arguments, got {len(args)}"
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
 
     @staticmethod
     def config_field_set(
@@ -331,7 +333,7 @@ class Ensure:
                     f"Required configuration '{field_name}' not set - "
                     f"Run 'erk config set {field_name} <value>'"
                 )
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
 
     @staticmethod
     def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -> None:
@@ -352,7 +354,7 @@ class Ensure:
         if not path.is_dir():
             if error_message is None:
                 error_message = f"Path is not a directory: {path}"
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
 
     @staticmethod
     def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -> None:
@@ -377,7 +379,7 @@ class Ensure:
             ... )
         """
         if ctx.git.worktree.path_exists(path):
-            raise UserFacingCliError(error_message)
+            raise UserFacingCliError(error_message, error_type="cli_error")
 
     @staticmethod
     def gh_installed() -> None:
@@ -398,7 +400,8 @@ class Ensure:
             raise UserFacingCliError(
                 "GitHub CLI (gh) is not installed\n\n"
                 + "Install it from: https://cli.github.com/\n"
-                + "Then authenticate with: gh auth login"
+                + "Then authenticate with: gh auth login",
+                error_type="cli_error",
             )
 
     @staticmethod
@@ -420,7 +423,8 @@ class Ensure:
             raise UserFacingCliError(
                 "Graphite CLI (gt) is not installed\n\n"
                 + "Install it from: https://withgraphite.com/docs/getting-started\n"
-                + "Or use: npm install -g @withgraphite/graphite-cli"
+                + "Or use: npm install -g @withgraphite/graphite-cli",
+                error_type="cli_error",
             )
 
     @staticmethod
@@ -446,7 +450,7 @@ class Ensure:
         """
         if isinstance(ctx.graphite, GraphiteDisabled):
             error = GraphiteDisabledError(ctx.graphite.reason)
-            raise UserFacingCliError(str(error))
+            raise UserFacingCliError(str(error), error_type="cli_error")
 
     @staticmethod
     def claude_installed() -> None:
@@ -467,7 +471,8 @@ class Ensure:
             raise UserFacingCliError(
                 "Claude CLI is not installed\n\n"
                 + "Install it from: https://claude.ai/download\n"
-                + "Or skip extraction with: erk pr land --no-extract"
+                + "Or skip extraction with: erk pr land --no-extract",
+                error_type="cli_error",
             )
 
     @staticmethod
@@ -494,7 +499,8 @@ class Ensure:
             raise UserFacingCliError(
                 "Graphite CLI (gt) is not authenticated\n\n"
                 + "Authenticate with: gt auth\n\n"
-                + "This is required before submitting branches or creating PRs."
+                + "This is required before submitting branches or creating PRs.",
+                error_type="cli_error",
             )
 
     @staticmethod
@@ -524,7 +530,8 @@ class Ensure:
             raise UserFacingCliError(
                 "GitHub CLI (gh) is not authenticated\n\n"
                 + "Authenticate with: gh auth login\n\n"
-                + "This is required before submitting branches or creating PRs."
+                + "This is required before submitting branches or creating PRs.",
+                error_type="cli_error",
             )
 
     @staticmethod
@@ -579,5 +586,6 @@ class Ensure:
             + "  2. Delete it and let erk create it:\n"
             + f"     git branch -D {branch}\n\n"
             + "  3. Disable Graphite for this repository:\n"
-            + "     erk config set use_graphite false"
+            + "     erk config set use_graphite false",
+            error_type="cli_error",
         )

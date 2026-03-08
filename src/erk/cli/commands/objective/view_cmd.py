@@ -202,33 +202,37 @@ def view_objective(
         if isinstance(ctx.repo, NoRepoSentinel):
             raise UserFacingCliError(
                 "No objective reference provided and no local repository.\n"
-                "Usage: erk objective view <objective_ref>"
+                "Usage: erk objective view <objective_ref>",
+                error_type="cli_error",
             )
         branch = ctx.git.branch.get_current_branch(ctx.repo.root)
         if branch is None:
             raise UserFacingCliError(
                 "No objective reference provided and not on a branch.\n"
-                "Usage: erk objective view <objective_ref>"
+                "Usage: erk objective view <objective_ref>",
+                error_type="cli_error",
             )
         objective_id = get_objective_for_branch(ctx, ctx.repo.root, branch)
         if objective_id is None:
             raise UserFacingCliError(
                 f"No objective reference provided and branch '{branch}' "
                 "is not linked to an objective.\n"
-                "Usage: erk objective view <objective_ref>"
+                "Usage: erk objective view <objective_ref>",
+                error_type="cli_error",
             )
         issue_number = objective_id
 
     # Fetch issue from GitHub
     result = remote.get_issue(owner=owner, repo=repo_name, number=issue_number)
     if isinstance(result, IssueNotFound):
-        raise UserFacingCliError(f"Issue #{issue_number} not found")
+        raise UserFacingCliError(f"Issue #{issue_number} not found", error_type="cli_error")
     issue = result
 
     # Verify erk-objective label
     if "erk-objective" not in issue.labels:
         raise UserFacingCliError(
-            f"Issue #{issue_number} is not an objective (missing erk-objective label)"
+            f"Issue #{issue_number} is not an objective (missing erk-objective label)",
+            error_type="cli_error",
         )
 
     # Parse roadmap from issue body (v2 format only)
@@ -241,7 +245,8 @@ def view_objective(
             raise UserFacingCliError(
                 "This objective uses a legacy format that is no longer supported. "
                 "To migrate, open Claude Code and use /erk:objective-create to "
-                "recreate this objective with the same content."
+                "recreate this objective with the same content.",
+                error_type="cli_error",
             )
         phases, _validation_errors = v2_result
     else:
