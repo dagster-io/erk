@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "plan_id": 8966,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T08:58:40.476418+00:00",
+      "files": [
+        "impl--88da6f62-bb57-48b0-8bdb-772a3b0c8fb1-part1.xml",
+        "impl--88da6f62-bb57-48b0-8bdb-772a3b0c8fb1-part2.xml",
+        "impl--88da6f62-bb57-48b0-8bdb-772a3b0c8fb1-part3.xml",
+        "impl--88da6f62-bb57-48b0-8bdb-772a3b0c8fb1-part4.xml",
+        "impl--88da6f62-bb57-48b0-8bdb-772a3b0c8fb1-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 5,
+      "raw_size_kb": 526,
+      "xml_size_kb": 109,
+      "git_branch": "plnd/fix-auto-close-robust-03-08-0451"
+    }
+  ]
+}
