@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "plan_id": 8947,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T01:42:20.963696+00:00",
+      "files": [
+        "impl--16b46eb6-6621-4f28-b7f6-d23fc295a258-part1.xml",
+        "impl--16b46eb6-6621-4f28-b7f6-d23fc295a258-part2.xml",
+        "impl--16b46eb6-6621-4f28-b7f6-d23fc295a258-part3.xml",
+        "impl--16b46eb6-6621-4f28-b7f6-d23fc295a258-part4.xml",
+        "impl--16b46eb6-6621-4f28-b7f6-d23fc295a258-part5.xml",
+        "impl--16b46eb6-6621-4f28-b7f6-d23fc295a258-part6.xml",
+        "impl--16b46eb6-6621-4f28-b7f6-d23fc295a258-part7.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 13,
+      "raw_size_kb": 1522,
+      "xml_size_kb": 218,
+      "git_branch": "plnd/refactor-live-dangerously-03-07-2026"
+    }
+  ]
+}
