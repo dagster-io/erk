@@ -1,0 +1,685 @@
+<session>
+  <meta source="agent-ac8ce40" />
+  <meta branch="plnd/consolidate-learn-docs-03-08-0908" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>I need to understand two things:
+
+1. How does `build_workspace_test_context` handle Graphite? Does it default to Graphite enabled or disabled? Look at the function signature and defaults in `tests/test_utils/context_builders.py`.
+
+2. How does `FakeGitBranchOps.get_current_branch` handle missing keys in `current_branches` dict? Check `packages/erk-shared/src/erk_shared/gateway/git/fake.py` for the FakeGitBranchOps class.
+
+3. Check if there is a `FakeGraphite` class and how to instantiate it for testing, and check if `is_branch_tracked` on it works properly. Look in `packages/erk-shared/src/erk_shared/gateway/graphite/`.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Report the exact code for each of these so I can write tests correctly.</user>
+  <assistant>I'll help you understand these three aspects of the codebase. Let me start by checking the documentation, then explore the relevant code files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19049" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19049, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XvjHWG25eAqRu9oYbF1AZ1">
+    <param name="pattern">FakeGitBranchOps|build_workspace_test_context|FakeGraphite</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19049" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19049, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Hq5fmP33toeBfbwy9ASFfb">
+    <param name="pattern">docs/learned/testing/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19049" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19049, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XvjHWG25eAqRu9oYbF1AZ1">
+Found 14 files
+docs/learned/testing/tripwires.md
+docs/learned/testing/mock-elimination.md
+docs/learned/testing/monkeypatch-vs-fakes-decision.md
+docs/learned/testing/testing.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/exec-script-batch-testing.md
+docs/learned/testing/fake-github-testing.md
+docs/learned/testing/frozen-dataclass-test-doubles.md
+docs/learned/architecture/test-context-composition.md
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/index.md
+docs/learned/architecture/erk-architecture.md
+docs/learned/architecture/flatten-subgateway-pattern.md
+docs/learned/architecture/gateway-abc-implementation.md
+  </tool_result>
+  <tool_result tool="toolu_01Hq5fmP33toeBfbwy9ASFfb">
+/home/runner/work/erk/erk/docs/learned/testing/admin-command-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md
+/home/runner/work/erk/erk/docs/learned/testing/exec-script-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-mutation-tracking.md
+/home/runner/work/erk/erk/docs/learned/testing/hook-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-api-reference.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md
+/home/runner/work/erk/erk/docs/learned/testing/devrun-agent.md
+/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/command-group-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/erk-package-info-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/env-overrides-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/fake-api-migration-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/frozen-dataclass-test-doubles.md
+/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/gateway-fake-testing-exemplar.md
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md
+/home/runner/work/erk/erk/docs/learned/testing/exec-script-batch-testing.md
+/home/runner/work/erk/erk/docs/learned/testing/alias-verification-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/artifact-distribution-sync.md
+/home/runner/work/erk/erk/docs/learned/testing/cli-test-error-assertions.md
+/home/runner/work/erk/erk/docs/learned/testing/import-conflict-resolution.md
+/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-vs-fakes-decision.md
+/home/runner/work/erk/erk/docs/learned/testing/session-log-fixtures.md
+/home/runner/work/erk/erk/docs/learned/testing/parameter-injection-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/rebase-conflicts.md
+/home/runner/work/erk/erk/docs/learned/testing/test-layer-migration.md
+/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-elimination-checklist.md
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>Let me read the relevant documentation files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1632" cache_read_input_tokens="19049" cache_creation="{'ephemeral_5m_input_tokens': 1632, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WEVXS7oEjVDmcH8XNt1dto">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1632" cache_read_input_tokens="19049" cache_creation="{'ephemeral_5m_input_tokens': 1632, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VQv5U8Y7obqJF3V1m1TEaa">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/test-context-composition.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1632" cache_read_input_tokens="19049" cache_creation="{'ephemeral_5m_input_tokens': 1632, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011dijxPefsWVGNqbs1hUUn5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1632" cache_read_input_tokens="19049" cache_creation="{'ephemeral_5m_input_tokens': 1632, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WEVXS7oEjVDmcH8XNt1dto">
+     1→---
+     2→title: context_for_test() Dual Implementations
+     3→read_when:
+     4→  - "using context_for_test() in tests"
+     5→  - "choosing between erk-shared and src/erk test context"
+     6→  - "debugging TypeError from context_for_test()"
+     7→tripwires:
+     8→  - action: "using context_for_test() with wrong parameter name for issues"
+     9→    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
+    10→---
+    11→
+    12→# context_for_test() Dual Implementations
+    13→
+    14→Two separate `context_for_test()` functions exist in the codebase. They have different parameter names and serve different test scopes.
+    15→
+    16→## erk-shared Implementation
+    17→
+    18→&lt;!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test --&gt;
+    19→
+    20→**Location:** `packages/erk-shared/src/erk_shared/context/testing.py`
+    21→
+    22→**Key parameter:** `github_issues=` (not `issues=`)
+    23→
+    24→Always defaults to PlannedPRBackend. Used for isolated unit tests that only need erk-shared dependencies.
+    25→
+    26→## src/erk Implementation
+    27→
+    28→&lt;!-- Source: src/erk/core/context.py, context_for_test --&gt;
+    29→
+    30→**Location:** `src/erk/core/context.py`
+
+... [22 lines omitted] ...
+
+    46→Using `issues=` with the erk-shared version or `github_issues=` with the src/erk version causes a `TypeError` at runtime. The parameter names are intentionally different due to the different dependency scopes.
+  </tool_result>
+  <tool_result tool="toolu_01VQv5U8Y7obqJF3V1m1TEaa">
+     1→---
+     2→title: Test Context Composition
+     3→read_when:
+     4→  - "using build_workspace_test_context with custom fakes"
+     5→  - "debugging invisible metadata writes in tests"
+     6→  - "understanding issues_explicitly_passed flag"
+     7→tripwires:
+     8→  - action: "creating custom FakeGitHubIssues without passing to test context builder"
+     9→    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+    10→---
+    11→
+    12→# Test Context Composition
+    13→
+    14→When building test contexts with custom fakes, the composition matters — particularly for `FakeGitHubIssues` instances that are shared across multiple consumers.
+    15→
+    16→## The Shared Instance Problem
+    17→
+    18→`build_workspace_test_context()` creates a default `FakeGitHubIssues` if none is passed. If you create your own `FakeGitHubIssues` but don't pass it to the context builder, two separate instances exist:
+    19→
+    20→1. Your instance (which you assert against)
+    21→2. The context builder's internal instance (which `plan_backend` uses)
+    22→
+    23→Metadata writes through `plan_backend` go to instance #2, invisible to your assertions on instance #1.
+    24→
+    25→## Correct Pattern
+    26→
+    27→```python
+    28→def test_metadata_is_written(env: ErkInMemEnv) -&gt; None:
+    29→    issues = FakeGitHubIssues(issues={42: IssueInfo(
+    30→        number=42, title="Plan", body="# Plan\n\nContent", ...
+
+... [28 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011dijxPefsWVGNqbs1hUUn5">
+     1→---
+     2→title: FakeGit Branch Divergence Testing
+     3→read_when:
+     4→  - "testing branch divergence scenarios"
+     5→  - "configuring FakeGit for force-push tests"
+     6→  - "writing tests that involve ahead/behind commit counts"
+     7→tripwires:
+     8→  - action: "testing divergence without setting branch_divergence in FakeGit"
+     9→    warning: "FakeGit.is_branch_diverged_from_remote() returns from the branch_divergence dict. Missing entries return default (not diverged). Set explicit divergence state for each test scenario."
+    10→  - action: "testing branch-scoped impl directory code without configuring FakeGit current_branches"
+    11→    warning: "FakeGit current_branches must be configured when testing resolve_impl_dir(). Without this, resolve_impl_dir() gets the wrong branch and resolves to the wrong directory."
+    12→---
+    13→
+    14→# FakeGit Branch Divergence Testing
+    15→
+    16→## BranchDivergence Type
+    17→
+    18→Defined in `packages/erk-shared/src/erk_shared/gateway/git/abc.py`:
+    19→
+    20→```python
+    21→class BranchDivergence(NamedTuple):
+    22→    is_diverged: bool
+    23→    ahead: int
+    24→    behind: int
+    25→```
+    26→
+    27→## FakeGit Configuration
+    28→
+    29→Constructor injection via dict with `(repo_path, branch_name, remote_name)` keys:
+    30→
+
+... [69 lines omitted] ...
+
+    61→def test_no_commits_ahead_returns_error(tmp_path: Path) -&gt; None:
+    75→    assert isinstance(result, SubmitError)
+    76→    assert result.error_type == "no_commits"
+  </tool_result>
+  <assistant>Good! Now let me look at the actual source files for the three specific items:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3474" cache_read_input_tokens="20681" cache_creation="{'ephemeral_5m_input_tokens': 3474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KVZJZvrVFD7uJ4DNwdDe2M">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3474" cache_read_input_tokens="20681" cache_creation="{'ephemeral_5m_input_tokens': 3474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UwK3HnTBFtLbyjnLibpprU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3474" cache_read_input_tokens="20681" cache_creation="{'ephemeral_5m_input_tokens': 3474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HLk89aLNyXYptPXnQb2UEU">
+    <param name="pattern">packages/erk-shared/src/erk_shared/gateway/graphite/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3474" cache_read_input_tokens="20681" cache_creation="{'ephemeral_5m_input_tokens': 3474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KVZJZvrVFD7uJ4DNwdDe2M">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <tool_result tool="toolu_01UwK3HnTBFtLbyjnLibpprU">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
+    22→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    23→from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    24→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    25→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    26→from erk_shared.gateway.git.commit_ops.fake import (
+    27→    BranchCommitRecord,
+    28→    CommitRecord,
+    29→    FakeGitCommitOps,
+    30→)
+
+... [175 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   135→        delete_branch_raises: dict[str, Exception] | None = None,
+   138→        tracking_branch_failures: dict[str, str] | None = None,
+   149→        add_all_raises: Exception | None = None,
+   150→        fetch_branch_raises: Exception | None = None,
+   151→        pull_branch_raises: Exception | None = None,
+   154→        rebase_continue_raises: Exception | None = None,
+   161→        push_to_remote_error: PushError | None = None,
+   165→        rebase_abort_raises: Exception | None = None,
+   166→        pull_rebase_error: PullRebaseError | None = None,
+   168→        create_branch_error: BranchAlreadyExists | None = None,
+   169→        add_worktree_error: str | None = None,
+   170→        remove_worktree_error: str | None = None,
+   171→        ahead_behind_raises: RuntimeError | None = None,
+   196→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+   200→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+  </tool_result>
+  <tool_result tool="toolu_01HLk89aLNyXYptPXnQb2UEU">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py
+  </tool_result>
+  <assistant>Now let me continue reading FakeGitBranchOps and check the Graphite files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9228" cache_read_input_tokens="24155" cache_creation="{'ephemeral_5m_input_tokens': 9228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011imQFemzdemz9CHuWRw4x7">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9228" cache_read_input_tokens="24155" cache_creation="{'ephemeral_5m_input_tokens': 9228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011cJDMDtnbSeBjmKBpCGGHU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9228" cache_read_input_tokens="24155" cache_creation="{'ephemeral_5m_input_tokens': 9228, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011imQFemzdemz9CHuWRw4x7">
+     1→"""Fake Git branch operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, WorktreeInfo
+     9→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    10→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    11→
+    12→
+    13→class FakeGitBranchOps(GitBranchOps):
+    14→    """In-memory fake implementation of Git branch operations.
+    15→
+    16→    State Management:
+    17→    -----------------
+    18→    This fake maintains mutable state to simulate git's stateful behavior.
+    19→    Operations like create_branch, checkout_branch modify internal state.
+    20→    State changes are visible to subsequent method calls within the same test.
+    21→
+    22→    Mutation Tracking:
+    23→    -----------------
+    24→    This fake tracks mutations for test assertions via read-only properties:
+    25→    - created_branches: Branches created via create_branch()
+    26→    - deleted_branches: Branches deleted via delete_branch()
+    27→    - checked_out_branches: Branches checked out via checkout_branch()
+    28→    - detached_checkouts: Refs checked out via checkout_detached()
+    29→    - created_tracking_branches: Tracking branches created via create_tracking_branch()
+    30→    """
+
+... [125 lines omitted] ...
+
+    48→        delete_branch_raises: dict[str, Exception] | None = None,
+    49→        tracking_branch_failures: dict[str, str] | None = None,
+    50→        create_branch_error: BranchAlreadyExists | None = None,
+    51→        ahead_behind_raises: RuntimeError | None = None,
+    68→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+    69→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+    71→            create_branch_error: If set, create_branch returns this error instead of BranchCreated
+    72→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+    95→        self._tracking_branch_failures = (
+    96→            tracking_branch_failures if tracking_branch_failures is not None else {}
+    98→        self._create_branch_error = create_branch_error
+   117→        Returns create_branch_error if configured, otherwise BranchCreated.
+   119→        if self._create_branch_error is not None:
+   120→            return self._create_branch_error
+   127→        If delete_branch_raises contains a CalledProcessError, it is wrapped in
+   128→        RuntimeError to match run_subprocess_with_context behavior.
+   130→        # Check if we should raise an exception for this branch
+   133→            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
+   134→            if isinstance(exc, subprocess.CalledProcessError):
+   135→                raise RuntimeError(f"Failed to delete branch {branch_name}") from exc
+   150→                    msg = f"fatal: '{branch}' is already checked out at '{wt.path}'"
+  </tool_result>
+  <tool_result tool="toolu_011cJDMDtnbSeBjmKBpCGGHU">
+     1→"""Fake Graphite operations for testing.
+     2→
+     3→FakeGraphite is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→if TYPE_CHECKING:
+    13→    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+    14→
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+    17→from erk_shared.gateway.graphite.abc import Graphite
+    18→from erk_shared.gateway.graphite.types import BranchMetadata
+    19→
+    20→
+    21→class FakeGraphite(Graphite):
+    22→    """In-memory fake implementation of Graphite operations.
+    23→
+    24→    This class has NO public setup methods. All state is provided via constructor
+    25→    using keyword arguments with sensible defaults (empty dicts).
+    26→    """
+    27→
+    28→    def __init__(
+    29→        self,
+    30→        *,
+
+... [175 lines omitted] ...
+
+    31→        submit_branch_raises: Exception | None = None,
+    32→        track_branch_raises: Exception | None = None,
+    33→        retrack_branch_raises: Exception | None = None,
+    34→        squash_branch_raises: Exception | None = None,
+    35→        submit_stack_raises: Exception | None = None,
+    36→        delete_branch_raises: Exception | None = None,
+    47→            submit_branch_raises: Exception to raise when submit_branch() is called
+    48→            track_branch_raises: Exception to raise when track_branch() is called
+    49→            retrack_branch_raises: Exception to raise when retrack_branch() is called
+    50→            squash_branch_raises: Exception to raise when squash_branch() is called
+    51→            submit_stack_raises: Exception to raise when submit_stack() is called
+    52→            delete_branch_raises: Exception to raise when delete_branch() is called
+  </tool_result>
+  <assistant>Now let me get the rest of FakeGitBranchOps and check for `is_branch_tracked`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6016" cache_read_input_tokens="33383" cache_creation="{'ephemeral_5m_input_tokens': 6016, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X6CVpYLbymkj8fCmEBeh6H">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="offset">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6016" cache_read_input_tokens="33383" cache_creation="{'ephemeral_5m_input_tokens': 6016, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016SngHLZtua12GqZ5wQcjBW">
+    <param name="pattern">is_branch_tracked|is_tracked</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6016" cache_read_input_tokens="33383" cache_creation="{'ephemeral_5m_input_tokens': 6016, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X6CVpYLbymkj8fCmEBeh6H">
+   150→                    msg = f"fatal: '{branch}' is already checked out at '{wt.path}'"
+   151→                    raise RuntimeError(msg)
+   152→
+   153→        self._current_branches[cwd] = branch
+   154→        # Update worktree branch in the worktrees list
+   155→        for repo_root, worktrees in self._worktrees.items():
+   156→            for i, wt in enumerate(worktrees):
+   157→                if wt.path.resolve() == cwd.resolve():
+   158→                    self._worktrees[repo_root][i] = WorktreeInfo(
+   159→                        path=wt.path, branch=branch, is_root=wt.is_root
+   160→                    )
+   161→                    break
+   162→        # Track the checkout
+   163→        self._checked_out_branches.append((cwd, branch))
+   164→
+   165→    def checkout_detached(self, cwd: Path, ref: str) -&gt; None:
+   166→        """Checkout a detached HEAD (mutates internal state)."""
+   167→        # Detached HEAD means no branch is checked out (branch=None)
+   168→        self._current_branches[cwd] = None
+   169→        # Update worktree to show detached HEAD state
+   170→        for repo_root, worktrees in self._worktrees.items():
+   171→            for i, wt in enumerate(worktrees):
+   172→                if wt.path.resolve() == cwd.resolve():
+   173→                    self._worktrees[repo_root][i] = WorktreeInfo(
+   174→                        path=wt.path, branch=None, is_root=wt.is_root
+   175→                    )
+   176→                    break
+   177→        # Track the detached checkout
+   178→        self._detached_checkouts.append((cwd, ref))
+   179→
+
+... [194 lines omitted] ...
+
+   183→        if branch in self._tracking_branch_failures:
+   184→            error_msg = self._tracking_branch_failures[branch]
+   185→            raise subprocess.CalledProcessError(
+   186→                returncode=1, cmd=["git", "branch", "--track", branch, remote_ref], stderr=error_msg
+   320→            RuntimeError: If the specified branch doesn't exist
+   324→            error_msg = (
+   325→                f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   328→            raise RuntimeError(error_msg)
+  </tool_result>
+  <tool_result tool="toolu_016SngHLZtua12GqZ5wQcjBW">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py
+packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+  </tool_result>
+  <assistant>Let me check the Graphite branch ops fake:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3919" cache_read_input_tokens="39399" cache_creation="{'ephemeral_5m_input_tokens': 3919, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WFDYD35CoexKEVDSpK2dwd">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3919" cache_read_input_tokens="39399" cache_creation="{'ephemeral_5m_input_tokens': 3919, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WFDYD35CoexKEVDSpK2dwd">
+     1→"""Fake Graphite branch operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+     8→
+     9→
+    10→class FakeGraphiteBranchOps(GraphiteBranchOps):
+    11→    """In-memory fake implementation of Graphite branch operations.
+    12→
+    13→    State Management:
+    14→    -----------------
+    15→    This fake maintains mutable state to simulate Graphite's stateful behavior.
+    16→    Operations like track_branch modify internal state.
+    17→    State changes are visible to subsequent method calls within the same test.
+    18→
+    19→    Mutation Tracking:
+    20→    -----------------
+    21→    This fake tracks mutations for test assertions via read-only properties:
+    22→    - track_branch_calls: Branches tracked via track_branch()
+    23→    - delete_branch_calls: Branches deleted via delete_branch()
+    24→    - submit_branch_calls: Branches submitted via submit_branch()
+    25→    - retrack_branch_calls: Branches re-tracked via retrack_branch()
+    26→    """
+    27→
+    28→    def __init__(
+    29→        self,
+    30→        *,
+
+... [149 lines omitted] ...
+
+    31→        track_branch_raises: Exception | None = None,
+    32→        delete_branch_raises: Exception | None = None,
+    33→        submit_branch_raises: Exception | None = None,
+    34→        retrack_branch_raises: Exception | None = None,
+    40→            track_branch_raises: Exception to raise when track_branch() is called
+    41→            delete_branch_raises: Exception to raise when delete_branch() is called
+    42→            submit_branch_raises: Exception to raise when submit_branch() is called
+    43→            retrack_branch_raises: Exception to raise when retrack_branch() is called
+    61→        Tracks the call and optionally raises configured exception.
+    72→        Tracks the call and optionally raises configured exception.
+    83→        Tracks the call and optionally raises configured exception.
+    93→        Tracks the call and optionally raises configured exception.
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me compile the comprehensive report:
+
+## Summary Report
+
+I've found all three pieces of information you requested. Here are the exact code snippets and details for writing tests correctly:
+
+---
+
+### 1. `build_workspace_test_context` - Graphite Default Behavior
+
+**Location:** `/home/runner/work/erk/erk/tests/test_utils/context_builders.py` (lines 20-81)
+
+**Key Details:**
+- **Default**: Graphite is **DISABLED** by default
+- **Signature:**
+  ```python
+  def build_workspace_test_context(
+      env: ErkInMemEnv | ErkIsolatedFsEnv,
+      *,
+      dry_run: bool = False,
+      use_graphite: bool = False,  # &lt;-- DEFAULTS TO FALSE
+      current_branch: str | None = None,
+      **kwargs,
+  ) -&gt; ErkContext:
+  ```
+
+- **How it works:**
+  - When `use_graphite=False` (default), the function passes this to `env.build_context()` which handles creating `GraphiteDisabled()`
+  - To enable Graphite, either:
+    - Pass `use_graphite=True` to `build_workspace_test_context()`, OR
+    - Use the convenience wrapper `build_graphite_test_context()` which sets `use_graphite=True` automatically
+
+- **Important note** (line 72-73):
+  ```python
+  # Note: Don't set graphite here - let env.build_context handle it
+  # based on use_graphite flag (uses GraphiteDisabled when disabled)
+  ```
+
+---
+
+### 2. `FakeGitBranchOps.get_current_branch` - Missing Key Handling
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py` (lines 292-294)
+
+**Exact Code:**
+```python
+def get_current_branch(self, cwd: Path) -&gt; str | None:
+    """Get the currently checked-out branch."""
+    return self._current_branches.get(cwd)
+```
+
+**How it handles missing keys:**
+- Uses `.get(cwd)` which returns `None` if the key doesn't exist
+- **Does NOT raise KeyError** — missing keys silently return `None`
+- This matches Git's behavior when a worktree's branch state is unknown
+- You must configure the `current_branches` dict during `FakeGitBranchOps` construction if you expect specific branches
+
+**Constructor pattern:**
+```python
+FakeGitBranchOps(
+    current_branches={
+        env.cwd: "feature-branch",  # &lt;-- Configure here
+    }
+)
+```
+
+---
+
+### 3. `FakeGraphite` - `is_branch_tracked` Implementation
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py` (lines 132-137)
+
+**Class:** `FakeGraphiteBranchOps` (not `FakeGraphite`)
+
+**Exact Code:**
+```python
+def is_branch_tracked(self, branch: str) -&gt; bool:
+    """Check if a branch is tracked (for test setup).
+
+    Note: This is a helper method not in the ABC; useful for test validation.
+    """
+    return branch in self._tracked_branches
+```
+
+**How to instantiate and use for testing:**
+
+```python
+from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+
+# Constructor with pre-configured tracked branches
+branch_ops = FakeGraphiteBranchOps(
+    tracked_branches={"main", "feature-1", "feature-2"}
+)
+
+# Test it
+assert branch_ops.is_branch_tracked("feature-1") is True
+assert branch_ops.is_branch_tracked("unknown") is False
+
+# Mutation during test
+branch_ops.track_branch(Path("/repo"), "new-feature", "main")
+assert branch_ops.is_branch_tracked("new-feature") is True
+```
+
+**How it works:**
+- `is_branch_tracked()` checks membership in `self._tracked_branches` (a set)
+- Returns `False` for missing branches (no exception)
+- The set gets mutated by:
+  - `track_branch()` adds branches via `.add()`
+  - `delete_branch()` removes branches via `.discard()` (safe, no error if missing)
+- The full `FakeGraphite` also includes a `FakeGraphiteBranchOps` via the `branch_ops` property
+
+**Full FakeGraphite instantiation:**
+```python
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.types import BranchMetadata
+
+fake_graphite = FakeGraphite(
+    branches={
+        "main": BranchMetadata(name="main", parent=None, children=["feature-1"], 
+                               is_trunk=True, commit_sha="abc123"),
+        "feature-1": BranchMetadata(name="feature-1", parent="main", children=[], 
+                                   is_trunk=False, commit_sha="def456"),
+    }
+)
+
+# Access branch ops
+assert fake_graphite.branch_ops.is_branch_tracked("feature-1") is False  # Not tracked yet
+```
+
+---
+
+### Documentation Context
+
+These patterns are documented in:
+- **Context composition:** `/home/runner/work/erk/erk/docs/learned/architecture/test-context-composition.md`
+- **Git divergence testing:** `/home/runner/work/erk/erk/docs/learned/testing/fake-git-divergence.md`
+- **Context builder signatures:** `/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md`</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2635" cache_read_input_tokens="43318" cache_creation="{'ephemeral_5m_input_tokens': 2635, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
