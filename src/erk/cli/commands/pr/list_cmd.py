@@ -269,7 +269,7 @@ def _pr_list_impl(
         if is_authenticated and username:
             creator = username
 
-    labels = label if label else ("erk-pr", "erk-plan")
+    labels = label if label else ("erk-pr",)
 
     # Determine location root
     if not isinstance(ctx.repo, NoRepoSentinel):
@@ -381,7 +381,7 @@ def _run_interactive_mode(
             creator = username
 
     # Build labels - default to ["erk-plan"]
-    labels = label if label else ("erk-pr", "erk-plan")
+    labels = label if label else ("erk-pr",)
 
     # Create data provider and filters
     location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))

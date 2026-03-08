@@ -30,8 +30,8 @@ class TestViewConfig:
     def test_plans_view_config(self) -> None:
         """PLANS_VIEW has correct configuration."""
         assert PLANS_VIEW.mode == ViewMode.PLANS
-        assert PLANS_VIEW.display_name == "Plans"
-        assert PLANS_VIEW.labels == ("erk-plan",)
+        assert PLANS_VIEW.display_name == "PRs"
+        assert PLANS_VIEW.labels == ("erk-pr",)
         assert PLANS_VIEW.key_hint == "1"
 
     def test_learn_view_config(self) -> None:
@@ -77,7 +77,7 @@ class TestGetViewConfig:
         """get_view_config returns PLANS_VIEW for ViewMode.PLANS."""
         config = get_view_config(ViewMode.PLANS)
         assert config.mode == ViewMode.PLANS
-        assert config.display_name == "Plans"
+        assert config.display_name == "PRs"
 
     def test_returns_learn_config(self) -> None:
         """get_view_config returns LEARN_VIEW for ViewMode.LEARN."""
