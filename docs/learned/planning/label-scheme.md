@@ -17,14 +17,14 @@ Erk uses `erk-pr` as the **base label** on all erk-submitted PRs, with **type-sp
 
 ## Label Taxonomy
 
-| Label              | Purpose                              | Applied To                           |
-| ------------------ | ------------------------------------ | ------------------------------------ |
-| `erk-pr`           | Base label — all erk-submitted PRs   | All plans, learn plans, and code PRs |
+| Label              | Purpose                              | Applied To                                        |
+| ------------------ | ------------------------------------ | ------------------------------------------------- |
+| `erk-pr`           | Base label — all erk-submitted PRs   | All plans, learn plans, and code PRs              |
 | `erk-planned-pr`   | Legacy base label — identifies plans | Historical plans only (no longer applied by code) |
-| `erk-plan`         | Type label — implementation plans    | Regular plans                        |
-| `erk-learn`        | Type label — documentation plans     | Learn plans                          |
-| `erk-objective`    | Separate system — objectives         | Objective issues                     |
-| `erk-consolidated` | Consolidation marker                 | Consolidated learn plans             |
+| `erk-plan`         | Type label — implementation plans    | Regular plans                                     |
+| `erk-learn`        | Type label — documentation plans     | Learn plans                                       |
+| `erk-objective`    | Separate system — objectives         | Objective issues                                  |
+| `erk-consolidated` | Consolidation marker                 | Consolidated learn plans                          |
 
 ## Label Assignment
 
