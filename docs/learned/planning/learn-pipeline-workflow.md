@@ -9,18 +9,18 @@ read_when:
   - adding a new stage to the learn pipeline
 tripwires:
   - action: "adding a new pipeline stage to the async learn pipeline"
-    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
+    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md."
   - action: "changing how sessions are classified as planning vs impl"
     warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
   - action: "modifying how learn materials are committed to a branch"
-    warning: "The CI workflow checks out the learn branch and reads materials from .erk/impl-context/. File names and directory structure must match what learn.yml expects."
+    warning: "The CI workflow checks out the learn branch and reads materials from .erk/sessions/. File names and directory structure must match what learn.yml expects."
 ---
 
 # Learn Pipeline Workflow
 
 ## Purpose
 
-This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Async Learn Local Preprocessing](async-learn-local-preprocessing.md).
+This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Planned PR Context Local Preprocessing](planned-pr-context-local-preprocessing.md).
 
 ## Pipeline Architecture
 
@@ -60,7 +60,7 @@ The async path was designed for the `erk land` flow, where learn runs automatica
 Finds all session logs related to a plan issue by querying GitHub issue metadata for tracked session IDs, then resolving those IDs to local file paths. Three session source types exist:
 
 - **Local sessions** — JSONL files under `~/.claude/projects/<repo>/sessions/`
-- **Branch-based sessions** — preprocessed sessions accumulated on `async-learn/{plan_id}` branches (from local and remote stages)
+- **Branch-based sessions** — preprocessed sessions accumulated on `planned-pr-context/{plan_id}` branches (from local and remote stages)
 - **Legacy artifact sessions** — sessions from older CI runs stored as workflow artifacts
 
 The discovery function also has a **local fallback**: when GitHub has no tracked sessions for a plan, it scans the 10 most recent local sessions as candidates. This handles cases where session tracking was added after implementation began.
@@ -97,19 +97,19 @@ Both review threads (inline code comments) and discussion comments (top-level co
 
 ### Stage 4: Commit Materials to Learn Branch
 
-Commits all learn materials (session XMLs, PR comment JSONs) to a dedicated git branch `async-learn/{plan_id}`. The branch is created from `origin/master`, files are written to `.erk/impl-context/` using git plumbing (`commit_files_to_branch`), and the branch is force-pushed. Force-push enables idempotent re-learn scenarios.
+Commits all learn materials (session XMLs, PR comment JSONs) to a dedicated git branch `planned-pr-context/{plan_id}`. The branch is created from `origin/master`, files are written to `.erk/sessions/` using git plumbing (`commit_files_to_branch`), and the branch is force-pushed. Force-push enables idempotent re-learn scenarios.
 
 This replaced the earlier gist-based transport (removed in commit 12f964cb5) which required delimiter-based file packing and custom upload/download scripts. The git-based approach stores individual files at standard paths, making them visible in GitHub's UI and readable by CI without custom parsing.
 
 ### Stage 5: Workflow Trigger
 
-Triggers `learn.yml` via `workflow_dispatch` with the `learn_branch` (containing materials in `.erk/impl-context/`) and plan ID. The workflow uses concurrency groups (`learn-plan-{plan_id}`) with `cancel-in-progress: true`, so re-triggering learn for the same plan cancels any in-progress run.
+Triggers `learn.yml` via `workflow_dispatch` with the `learn_branch` (containing materials in `.erk/sessions/`) and plan ID. The workflow uses concurrency groups (`learn-plan-{plan_id}`) with `cancel-in-progress: true`, so re-triggering learn for the same plan cancels any in-progress run.
 
 ### Stage 6: Agent Execution
 
 <!-- Source: .github/workflows/learn.yml -->
 
-The GitHub Actions workflow checks out the learn branch (which contains materials under `.erk/impl-context/`), sets up erk, and runs `/erk:learn`. The agent reads materials directly from the filesystem, then orchestrates the multi-agent analysis pipeline described in [Learn Workflow](learn-workflow.md#agent-tier-architecture).
+The GitHub Actions workflow checks out the learn branch (which contains materials under `.erk/sessions/`), sets up erk, and runs `/erk:learn`. The agent reads materials directly from the filesystem, then orchestrates the multi-agent analysis pipeline described in [Learn Workflow](learn-workflow.md#agent-tier-architecture).
 
 The workflow runs with `claude-opus-4-6` as the base model, though individual agents within `/erk:learn` may override to different models for specific steps.
 
@@ -149,7 +149,7 @@ For CI issues (stage 6), use `gh run view <run-id>` to inspect workflow logs.
 
 ## Related Documentation
 
-- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — Direct-call architecture, session classification, preprocessing internals
+- [Planned PR Context Local Preprocessing](planned-pr-context-local-preprocessing.md) — Direct-call architecture, session classification, preprocessing internals
 - [Learn Workflow](learn-workflow.md) — Agent tier architecture, status tracking, /erk:learn skill
 - [Session Preprocessing](../sessions/preprocessing.md) — What preprocessing does to session XML
 - [Learn Plan Land Flow](../cli/learn-plan-land-flow.md) — Integration with PR landing

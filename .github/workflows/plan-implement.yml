@@ -277,7 +277,7 @@ jobs:
             echo "No session found for: $GITHUB_WORKSPACE"
           fi
 
-      - name: Push preprocessed session to async-learn branch
+      - name: Push preprocessed session to planned-pr-context branch
         if: always() && steps.session.outputs.session_id
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}

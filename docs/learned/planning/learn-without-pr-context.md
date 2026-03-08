@@ -25,7 +25,7 @@ Treating missing PR context as an error would block learn from running in these 
 
 The `trigger-async-learn` orchestrator resolves the plan's PR through a chain of lookups: issue → metadata block → branch name → PR. Each step returns `None` on failure, and the entire PR comment-fetching block is gated on the result.
 
-When `_get_pr_for_plan_direct` returns `None`, the orchestrator logs a warning and skips straight to gist upload. No review comments or discussion comments are written to the learn materials directory. The downstream learn agent receives only preprocessed session XML — which still contains all planning rationale, implementation decisions, and tool interactions.
+When `_get_pr_for_plan_direct` returns `None`, the orchestrator logs a warning and skips PR comment fetching. No review comments or discussion comments are written to the learn materials directory. The downstream learn agent receives only preprocessed session XML — which still contains all planning rationale, implementation decisions, and tool interactions.
 
 When a PR _is_ found, the orchestrator fetches two separate comment types via gateway calls (not `gh` CLI):
 
@@ -55,5 +55,5 @@ The learn pipeline must work identically in all cases. The quality difference is
 
 ## Related Documentation
 
-- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — How session materials are prepared before gist upload
+- [Planned PR Context Local Preprocessing](planned-pr-context-local-preprocessing.md) — How preprocessing stores sessions in the planned-pr-context branch
 - [Learn Workflow](learn-workflow.md) — Complete async learn flow and agent tier architecture

@@ -86,7 +86,7 @@ def _fetch_preprocessed_manifest(
     plan_id: str,
     git,
 ) -> dict | None:
-    """Check for preprocessed session manifest on async-learn branch.
+    """Check for preprocessed session manifest on planned-pr-context branch.
 
     Args:
         repo_root: Repository root path.
@@ -96,7 +96,7 @@ def _fetch_preprocessed_manifest(
     Returns:
         Parsed manifest dict if found, None otherwise.
     """
-    session_branch = f"async-learn/{plan_id}"
+    session_branch = f"planned-pr-context/{plan_id}"
     if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
         return None
 
@@ -175,7 +175,7 @@ def _discover_sessions(
     Returns:
         GetLearnSessionsResultDict with all session data
     """
-    # Check for preprocessed manifest on async-learn branch
+    # Check for preprocessed manifest on planned-pr-context branch
     preprocessed_manifest = _fetch_preprocessed_manifest(
         repo_root=repo_root,
         plan_id=plan_id,

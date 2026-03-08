@@ -6,7 +6,7 @@ read_when:
   - "debugging learn status prompts on landing"
 tripwires:
   - action: "adding redundant branch-location guards to learn status checks"
-    warning: "Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via async-learn branches."
+    warning: "Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via planned-pr-context branches."
 ---
 
 # Remote Branch Learn Support
@@ -20,7 +20,7 @@ Remote plan branches (implemented by CI workers) have:
 - `is_current_branch = False` (not checked out locally)
 - `worktree_path = None` (no local worktree)
 
-The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. This is intentional — remote sessions are uploaded to `async-learn/{plan_id}` branches by the CI worker and don't need interactive prompting during land.
+The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. This is intentional — remote sessions are uploaded to `planned-pr-context/{plan_id}` branches by the CI worker and don't need interactive prompting during land.
 
 ## Session Discovery for Remote Branches
 

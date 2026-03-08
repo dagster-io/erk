@@ -71,7 +71,7 @@ def test_cli_missing_session_id() -> None:
 
     result = runner.invoke(
         download_remote_session_command,
-        ["--session-branch", "async-learn/42"],
+        ["--session-branch", "planned-pr-context/42"],
         obj=ErkContext.for_test(),
     )
 
@@ -94,7 +94,7 @@ def test_error_download_fails_when_branch_not_found(tmp_path: Path) -> None:
 
     exit_code, output = _execute_download(
         repo_root=tmp_path,
-        session_branch="async-learn/42",
+        session_branch="planned-pr-context/42",
         session_id="test-session-123",
         git=fake_git,
     )
@@ -104,7 +104,7 @@ def test_error_download_fails_when_branch_not_found(tmp_path: Path) -> None:
     assert "Failed to extract session from branch" in str(output["error"])
 
     # Verify fetch was attempted via FakeGit
-    assert ("origin", "async-learn/42") in fake_git.fetched_branches
+    assert ("origin", "planned-pr-context/42") in fake_git.fetched_branches
 
 
 def test_success_downloads_session_from_branch(tmp_path: Path) -> None:
@@ -113,13 +113,16 @@ def test_success_downloads_session_from_branch(tmp_path: Path) -> None:
     fake_git = FakeGit(
         current_branches={tmp_path: "main"},
         ref_file_contents={
-            ("origin/async-learn/42", ".erk/session/test-session-123.jsonl"): session_content,
+            (
+                "origin/planned-pr-context/42",
+                ".erk/session/test-session-123.jsonl",
+            ): session_content,
         },
     )
 
     exit_code, output = _execute_download(
         repo_root=tmp_path,
-        session_branch="async-learn/42",
+        session_branch="planned-pr-context/42",
         session_id="test-session-123",
         git=fake_git,
     )
@@ -145,7 +148,7 @@ def test_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     # Download attempt (will fail since no ref_file_contents configured)
     exit_code, _output = _execute_download(
         repo_root=tmp_path,
-        session_branch="async-learn/42",
+        session_branch="planned-pr-context/42",
         session_id=session_id,
         git=fake_git,
     )

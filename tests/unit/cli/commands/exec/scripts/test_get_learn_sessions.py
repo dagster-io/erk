@@ -588,7 +588,7 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
 
 
 def test_preprocessed_manifest_none_when_branch_missing(tmp_path: Path) -> None:
-    """preprocessed_manifest is None when async-learn branch doesn't exist on remote."""
+    """preprocessed_manifest is None when planned-pr-context branch doesn't exist on remote."""
     fake_git = FakeGit()
     test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
     fake_issues = FakeGitHubIssues(issues={700: test_issue})
@@ -626,7 +626,7 @@ def test_preprocessed_manifest_none_when_git_show_fails(tmp_path: Path) -> None:
         cwd = Path.cwd()
 
         fake_git = FakeGit(
-            remote_branches={cwd: ["origin/async-learn/700"]},
+            remote_branches={cwd: ["origin/planned-pr-context/700"]},
         )
         test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
         fake_issues = FakeGitHubIssues(issues={700: test_issue})
@@ -673,7 +673,7 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
         cwd = Path.cwd()
 
         fake_git = FakeGit(
-            remote_branches={cwd: ["origin/async-learn/700"]},
+            remote_branches={cwd: ["origin/planned-pr-context/700"]},
         )
         test_issue = create_test_issue(700, "Test Plan #700", "Plan body")
         fake_issues = FakeGitHubIssues(issues={700: test_issue})

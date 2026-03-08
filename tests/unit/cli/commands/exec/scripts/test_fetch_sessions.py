@@ -11,10 +11,10 @@ from erk_shared.gateway.git.fake import FakeGit
 
 
 class TestFetchSessionsBranchNotFound:
-    """Tests for fetch-sessions when the async-learn branch doesn't exist."""
+    """Tests for fetch-sessions when the planned-pr-context branch doesn't exist."""
 
     def test_branch_not_found(self, tmp_path: Path) -> None:
-        """Error when async-learn branch doesn't exist on remote."""
+        """Error when planned-pr-context branch doesn't exist on remote."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         output_dir = tmp_path / "learn"
@@ -77,22 +77,22 @@ class TestFetchSessionsSuccess:
         fake_git = FakeGit(
             current_branches={repo_root: "plan/my-feature"},
             local_branches={repo_root: []},
-            remote_branches={repo_root: ["origin/async-learn/42"]},
+            remote_branches={repo_root: ["origin/planned-pr-context/42"]},
             ref_file_contents={
                 (
-                    "origin/async-learn/42",
+                    "origin/planned-pr-context/42",
                     ".erk/sessions/manifest.json",
                 ): json.dumps(manifest).encode("utf-8"),
                 (
-                    "origin/async-learn/42",
+                    "origin/planned-pr-context/42",
                     ".erk/sessions/planning-abc-123.xml",
                 ): xml_content,
                 (
-                    "origin/async-learn/42",
+                    "origin/planned-pr-context/42",
                     ".erk/sessions/impl-def-456-part1.xml",
                 ): xml_content,
                 (
-                    "origin/async-learn/42",
+                    "origin/planned-pr-context/42",
                     ".erk/sessions/impl-def-456-part2.xml",
                 ): xml_content,
             },
@@ -114,7 +114,7 @@ class TestFetchSessionsSuccess:
         output = json.loads(result.output)
         assert output["success"] is True
         assert output["plan_id"] == 42
-        assert output["session_branch"] == "async-learn/42"
+        assert output["session_branch"] == "planned-pr-context/42"
         assert len(output["files"]) == 3
         assert output["manifest"]["version"] == 1
         assert len(output["manifest"]["sessions"]) == 2
@@ -134,7 +134,7 @@ class TestFetchSessionsManifestNotFound:
         fake_git = FakeGit(
             current_branches={repo_root: "plan/my-feature"},
             local_branches={repo_root: []},
-            remote_branches={repo_root: ["origin/async-learn/42"]},
+            remote_branches={repo_root: ["origin/planned-pr-context/42"]},
             # No ref_file_contents — manifest doesn't exist
         )
         runner = CliRunner()

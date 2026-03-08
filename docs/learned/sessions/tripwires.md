@@ -18,7 +18,7 @@ Rules triggered by matching actions in code.
 
 **assuming a session ID from metadata corresponds to a file on disk** → Read [Session Discovery and Fallback Patterns](discovery-fallback.md) first. Claude Code manages session lifecycle; old sessions may be cleaned up. Always use LBYL discovery before reading.
 
-**assuming sessions are stored locally** → Read [Session Accumulation Architecture](session-accumulation.md) first. Sessions are accumulated on git branches (async-learn/<plan-id>). Use fetch-sessions to download.
+**assuming sessions are stored locally** → Read [Session Accumulation Architecture](session-accumulation.md) first. Sessions are accumulated on git branches (planned-pr-context/<plan-id>). Use fetch-sessions to download.
 
 **checking entry['type'] == 'tool_result' in Claude session JSONL** → Read [Claude Code JSONL Schema Reference](jsonl-schema-reference.md) first. tool_results are content blocks INSIDE user entries, NOT top-level entry types. Check message.content[].type == 'tool_result' within user entries instead. Load session-inspector skill for correct schema.
 

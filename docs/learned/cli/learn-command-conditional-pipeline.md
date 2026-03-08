@@ -8,7 +8,7 @@ read_when:
   - "understanding how preprocessed materials bypass session discovery"
 tripwires:
   - action: "adding session discovery code before checking for preprocessed materials"
-    warning: "Check gist URL first to avoid misleading output. The learn command checks _get_learn_materials_gist_url() BEFORE session discovery. If a gist exists, all session discovery is skipped."
+    warning: "Check learn branch first to avoid misleading output. The learn command checks _get_learn_materials_branch() BEFORE session discovery. If a learn branch exists, all session discovery is skipped."
 ---
 
 # Learn Command Conditional Pipeline
@@ -19,47 +19,37 @@ The `erk learn` command checks for preprocessed materials **before** session dis
 
 <!-- Source: src/erk/cli/commands/learn/learn_cmd.py, learn_cmd -->
 
-The `learn_cmd()` function in `src/erk/cli/commands/learn/learn_cmd.py` checks for a gist URL before session discovery:
+The `learn_cmd()` function in `src/erk/cli/commands/learn/learn_cmd.py` checks for a learn materials branch before session discovery:
 
-1. `_get_learn_materials_gist_url()` → checks plan header for gist_url
-2. If gist exists:
-   - Display "Preprocessed learn materials available" message
+1. `_get_learn_materials_branch()` → checks plan header for `learn_materials_branch`
+2. If branch exists:
+   - Display "Preprocessed learn materials for plan" message with branch name
    - Skip ALL session discovery
-   - Launch with gist_url directly via `_confirm_and_launch()`
-3. If no gist:
+   - Launch `/erk:learn` directly via `prompt_executor.execute_interactive()`
+3. If no branch:
    - Existing flow: discover sessions, display, confirm, launch
 
 ## Why This Order Matters
 
-Without the early gist check, the command would:
+Without the early branch check, the command would:
 
 1. Run session discovery (which may find zero readable sessions)
 2. Display confusing "no sessions found" output
-3. Then somehow still need to use the gist
+3. Then somehow still need to use the preprocessed materials
 
-The early `_get_learn_materials_gist_url()` call short-circuits the entire discovery pipeline, providing a cleaner user experience.
+The early `_get_learn_materials_branch()` call short-circuits the entire discovery pipeline, providing a cleaner user experience.
 
 ## Implementation Details
 
-### \_get_learn_materials_gist_url()
+### \_get_learn_materials_branch()
 
-<!-- Source: src/erk/cli/commands/learn/learn_cmd.py, _get_learn_materials_gist_url -->
+<!-- Source: src/erk/cli/commands/learn/learn_cmd.py, _get_learn_materials_branch -->
 
-See `_get_learn_materials_gist_url()` in `src/erk/cli/commands/learn/learn_cmd.py`. Checks the plan's GitHub issue body for a `learn_materials_gist_url` field in the `plan-header` metadata block. Returns `str | None`.
+See `_get_learn_materials_branch()` in `src/erk/cli/commands/learn/learn_cmd.py:237-257`. Checks the plan's metadata for a `learn_materials_branch` field via `ctx.plan_backend.get_metadata_field()`. Returns `str | None`.
 
-Uses LBYL pattern: checks `isinstance(issue, IssueNotFound)` before accessing issue body.
-
-### \_confirm_and_launch()
-
-<!-- Source: src/erk/cli/commands/learn/learn_cmd.py, _confirm_and_launch -->
-
-See `_confirm_and_launch()` in `src/erk/cli/commands/learn/learn_cmd.py`. Shared by both the gist-exists path and the session-discovery path. Handles:
-
-- Auto-launch with `-i` (interactive) flag
-- User confirmation prompt
-- Interactive Claude execution via `prompt_executor.execute_interactive()`
+Uses LBYL pattern: checks `isinstance(result, PlanNotFound)` and `isinstance(result, str)` before returning the branch name.
 
 ## Related Documentation
 
 - [Learn Pipeline Workflow](../planning/learn-pipeline-workflow.md) — Full pipeline architecture
-- [Async Learn Local Preprocessing](../planning/async-learn-local-preprocessing.md) — How preprocessing creates the gist
+- [Planned PR Context Local Preprocessing](../planning/planned-pr-context-local-preprocessing.md) — How preprocessing stores sessions in the planned-pr-context branch

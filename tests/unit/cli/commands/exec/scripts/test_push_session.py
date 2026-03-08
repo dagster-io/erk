@@ -87,7 +87,7 @@ class TestPushSessionPreprocessingFailed:
 
 
 class TestPushSessionNewBranch:
-    """Tests for push-session when the async-learn branch doesn't exist yet."""
+    """Tests for push-session when the planned-pr-context branch doesn't exist yet."""
 
     def test_creates_branch_and_commits_xml(self, tmp_path: Path) -> None:
         """Session branch created from origin/master with XML files and manifest."""
@@ -125,7 +125,7 @@ class TestPushSessionNewBranch:
         assert result.exit_code == 0, f"Failed: {result.output}"
         output = json.loads(result.output)
         assert output["uploaded"] is True
-        assert output["session_branch"] == "async-learn/42"
+        assert output["session_branch"] == "planned-pr-context/42"
         assert output["session_id"] == "test-session-abc"
         assert output["plan_id"] == 42
         assert output["stage"] == "planning"
@@ -133,17 +133,17 @@ class TestPushSessionNewBranch:
         assert "planning-test-session-abc.xml" in output["files"]
 
         # Verify branch was created from origin/master (not from existing remote)
-        assert any(b == "async-learn/42" for _, b, _, _ in fake_git.created_branches)
+        assert any(b == "planned-pr-context/42" for _, b, _, _ in fake_git.created_branches)
         # Verify the branch was created from origin/master
         assert any(
-            b == "async-learn/42" and sp == "origin/master"
+            b == "planned-pr-context/42" and sp == "origin/master"
             for _, b, sp, _ in fake_git.created_branches
         )
 
         # Verify files committed via plumbing
         assert len(fake_git.branch_commits) == 1
         bc = fake_git.branch_commits[0]
-        assert bc.branch == "async-learn/42"
+        assert bc.branch == "planned-pr-context/42"
         assert ".erk/sessions/planning-test-session-abc.xml" in bc.files
         assert ".erk/sessions/manifest.json" in bc.files
 
@@ -152,12 +152,24 @@ class TestPushSessionNewBranch:
         assert manifest["version"] == 1
         assert manifest["plan_id"] == 42
         assert len(manifest["sessions"]) == 1
-        assert manifest["sessions"][0]["session_id"] == "test-session-abc"
-        assert manifest["sessions"][0]["stage"] == "planning"
-        assert manifest["sessions"][0]["source"] == "local"
+        entry = manifest["sessions"][0]
+        assert entry["session_id"] == "test-session-abc"
+        assert entry["stage"] == "planning"
+        assert entry["source"] == "local"
+
+        # Verify provenance fields are present
+        assert "user_turns" in entry
+        assert "duration_minutes" in entry
+        assert "raw_size_kb" in entry
+        assert "xml_size_kb" in entry
+        assert "git_branch" in entry
+        assert entry["user_turns"] == 0  # test JSONL has no user messages
+        assert entry["git_branch"] == "plan/my-feature"
 
         # Verify force push
-        assert any(pb.branch == "async-learn/42" and pb.force for pb in fake_git.pushed_branches)
+        assert any(
+            pb.branch == "planned-pr-context/42" and pb.force for pb in fake_git.pushed_branches
+        )
 
 
 class TestPushSessionAccumulation:
@@ -188,10 +200,10 @@ class TestPushSessionAccumulation:
         fake_git = FakeGit(
             current_branches={repo_root: "plan/my-feature"},
             local_branches={repo_root: []},
-            remote_branches={repo_root: ["origin/async-learn/42"]},
+            remote_branches={repo_root: ["origin/planned-pr-context/42"]},
             ref_file_contents={
                 (
-                    "origin/async-learn/42",
+                    "origin/planned-pr-context/42",
                     ".erk/sessions/manifest.json",
                 ): existing_manifest.encode("utf-8"),
             },
@@ -224,9 +236,10 @@ class TestPushSessionAccumulation:
         assert output["uploaded"] is True
         assert output["stage"] == "impl"
 
-        # Verify branch was fetched from remote (indicated by creation from origin/async-learn/42)
+        # Verify branch was fetched from remote
+        # (indicated by creation from origin/planned-pr-context/42)
         assert any(
-            b == "async-learn/42" and sp == "origin/async-learn/42"
+            b == "planned-pr-context/42" and sp == "origin/planned-pr-context/42"
             for _, b, sp, _ in fake_git.created_branches
         )
 
@@ -267,10 +280,10 @@ class TestPushSessionIdempotency:
         fake_git = FakeGit(
             current_branches={repo_root: "plan/my-feature"},
             local_branches={repo_root: []},
-            remote_branches={repo_root: ["origin/async-learn/42"]},
+            remote_branches={repo_root: ["origin/planned-pr-context/42"]},
             ref_file_contents={
                 (
-                    "origin/async-learn/42",
+                    "origin/planned-pr-context/42",
                     ".erk/sessions/manifest.json",
                 ): existing_manifest.encode("utf-8"),
             },

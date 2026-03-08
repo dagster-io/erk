@@ -1,4 +1,4 @@
-"""Push a preprocessed session to the async-learn branch with accumulation.
+"""Push a preprocessed session to the planned-pr-context branch with accumulation.
 
 Preprocesses session JSONL to compressed XML and accumulates multiple sessions
 on the same branch across lifecycle stages.
@@ -13,7 +13,7 @@ Usage:
 
 Output:
     Structured JSON output with upload status:
-    {"uploaded": true, "plan_id": 2521, "session_branch": "async-learn/2521", "files": [...]}
+    {"uploaded": true, "plan_id": 2521, "session_branch": "planned-pr-context/2521", "files": [...]}
     {"uploaded": false, "reason": "preprocessing_failed"}
 
 Exit Codes:
@@ -23,6 +23,7 @@ Exit Codes:
 import json
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from datetime import UTC
 from pathlib import Path
 from typing import Literal
@@ -36,7 +37,75 @@ from erk_shared.context.helpers import (
     require_time,
 )
 from erk_shared.gateway.git.abc import Git
+from erk_shared.learn.extraction.session_schema import (
+    iter_jsonl_entries,
+    parse_session_timestamp,
+)
 from erk_shared.plan_store.types import PlanNotFound
+
+
+@dataclass(frozen=True)
+class SessionProvenance:
+    """Lightweight provenance stats computed before preprocessing."""
+
+    user_turns: int
+    duration_minutes: int | None
+    raw_size_kb: int
+
+
+def _has_user_text(message_content: str | list) -> bool:
+    """Check if message content contains non-empty user text."""
+    if isinstance(message_content, list):
+        return any(
+            isinstance(block, dict)
+            and block.get("type") == "text"
+            and block.get("text", "").strip()
+            for block in message_content
+        )
+    if isinstance(message_content, str):
+        return bool(message_content.strip())
+    return False
+
+
+def _compute_session_provenance(session_file: Path) -> SessionProvenance | None:
+    """Compute lightweight provenance stats from a session JSONL file.
+
+    Reads the JSONL to count user turns and compute duration from timestamps.
+    Does not run the full preprocessing pipeline.
+
+    Args:
+        session_file: Path to the session JSONL file.
+
+    Returns:
+        SessionProvenance with stats, or None if the file cannot be read.
+    """
+    if not session_file.exists():
+        return None
+
+    content = session_file.read_text(encoding="utf-8")
+    raw_size_kb = session_file.stat().st_size // 1024
+
+    timestamps: list[float] = []
+    user_turns = 0
+    for entry in iter_jsonl_entries(content):
+        ts = parse_session_timestamp(entry.get("timestamp"))
+        if ts is not None:
+            timestamps.append(ts)
+        if entry.get("type") == "user":
+            msg_content = entry.get("message", {}).get("content", "")
+            if _has_user_text(msg_content):
+                user_turns += 1
+
+    duration_minutes: int | None = None
+    if len(timestamps) >= 2:
+        duration_seconds = max(timestamps) - min(timestamps)
+        duration_minutes = round(duration_seconds / 60)
+
+    return SessionProvenance(
+        user_turns=user_turns,
+        duration_minutes=duration_minutes,
+        raw_size_kb=raw_size_kb,
+    )
 
 
 def _preprocess_session(
@@ -133,15 +202,25 @@ def _build_manifest_entry(
     source: str,
     timestamp: str,
     filenames: list[str],
+    provenance: SessionProvenance | None,
+    xml_size_kb: int | None,
+    git_branch: str | None,
 ) -> dict:
     """Build a manifest entry for a session upload."""
-    return {
+    entry: dict[str, object] = {
         "session_id": session_id,
         "stage": stage,
         "source": source,
         "uploaded_at": timestamp,
         "files": filenames,
     }
+    if provenance is not None:
+        entry["user_turns"] = provenance.user_turns
+        entry["duration_minutes"] = provenance.duration_minutes
+        entry["raw_size_kb"] = provenance.raw_size_kb
+    entry["xml_size_kb"] = xml_size_kb
+    entry["git_branch"] = git_branch
+    return entry
 
 
 def _update_manifest(
@@ -199,7 +278,7 @@ def _update_manifest(
     "--plan-id",
     required=True,
     type=int,
-    help="Plan identifier for the async-learn branch",
+    help="Plan identifier for the planned-pr-context branch",
 )
 @click.pass_context
 def push_session(
@@ -210,10 +289,10 @@ def push_session(
     source: Literal["local", "remote"],
     plan_id: int,
 ) -> None:
-    """Preprocess and push a session to the async-learn branch with accumulation.
+    """Preprocess and push a session to the planned-pr-context branch with accumulation.
 
     Preprocesses the session JSONL to compressed XML, then pushes the XML files
-    to the async-learn/{plan_id} branch, accumulating across lifecycle stages.
+    to the planned-pr-context/{plan_id} branch, accumulating across lifecycle stages.
     Updates the manifest and plan metadata.
 
     Always exits with code 0 (non-critical operation).
@@ -221,6 +300,9 @@ def push_session(
     repo_root = require_repo_root(ctx)
     git = require_git(ctx)
     time = require_time(ctx)
+
+    # Step 0: Compute provenance stats from raw JSONL (before preprocessing)
+    provenance = _compute_session_provenance(session_file)
 
     # Step 1: Preprocess session to XML
     xml_files = _preprocess_session(
@@ -234,7 +316,13 @@ def push_session(
         click.echo(json.dumps({"uploaded": False, "reason": "preprocessing_failed"}))
         return
 
-    session_branch = f"async-learn/{plan_id}"
+    # Compute XML size from generated files
+    xml_size_kb = sum(f.stat().st_size for f in xml_files) // 1024
+
+    # Get the current git branch for provenance
+    git_branch = git.branch.get_current_branch(repo_root)
+
+    session_branch = f"planned-pr-context/{plan_id}"
     timestamp = time.now().replace(tzinfo=UTC).isoformat()
 
     # Step 2: Fetch or create branch
@@ -270,6 +358,9 @@ def push_session(
         source=source,
         timestamp=timestamp,
         filenames=filenames,
+        provenance=provenance,
+        xml_size_kb=xml_size_kb,
+        git_branch=git_branch,
     )
     manifest = _update_manifest(
         existing_manifest=existing_manifest,

@@ -146,7 +146,7 @@ This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_
 
 1. If you copied preprocessed materials from `.erk/impl-context/` in Step 2, skip the "Preprocess Sessions" and "Save PR Comments" subsections. The files are already in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`. Proceed to "Launch Parallel Analysis Agents".
 
-2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the async-learn branch — skip raw session preprocessing:
+2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the planned-pr-context branch — skip raw session preprocessing:
 
 ```bash
 erk exec fetch-sessions --plan-id <plan-number> \

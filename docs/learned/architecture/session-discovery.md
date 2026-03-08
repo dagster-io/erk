@@ -12,7 +12,7 @@ audit_result: clean
 
 # Session Discovery Architecture
 
-Erk discovers Claude Code sessions associated with plans through branch-based storage on `async-learn/{plan_id}` branches, with local filesystem fallback for backwards compatibility.
+Erk discovers Claude Code sessions associated with plans through branch-based storage on `planned-pr-context/{plan_id}` branches, with local filesystem fallback for backwards compatibility.
 
 ## Core Data Structure
 
@@ -29,7 +29,7 @@ See `packages/erk-shared/src/erk_shared/sessions/discovery.py` for the canonical
 
 ## Branch-Based Session Storage
 
-Sessions are preprocessed (JSONL to compressed XML) and accumulated on `async-learn/{plan_id}` branches with manifest-based tracking. Each lifecycle stage (planning, impl, address) appends to the same branch.
+Sessions are preprocessed (JSONL to compressed XML) and accumulated on `planned-pr-context/{plan_id}` branches with manifest-based tracking. Each lifecycle stage (planning, impl, address) appends to the same branch.
 
 ### Plan Header Fields
 
@@ -47,7 +47,7 @@ The plan-header metadata tracks the latest session:
 Sessions are pushed via `erk exec push-session`:
 
 1. Preprocess session JSONL to compressed XML
-2. Push to `async-learn/{plan_id}` branch, accumulating with existing sessions
+2. Push to `planned-pr-context/{plan_id}` branch, accumulating with existing sessions
 3. Update plan-header metadata with session info
 
 The CI workflow (`plan-implement.yml`) pushes sessions after implementation:
@@ -65,7 +65,7 @@ erk exec push-session \
 
 Remote sessions are downloaded via `erk exec fetch-sessions`:
 
-1. Fetch manifest and preprocessed XMLs from the `async-learn/{plan_id}` branch
+1. Fetch manifest and preprocessed XMLs from the `planned-pr-context/{plan_id}` branch
 2. Write XML files to the learn output directory
 3. Return JSON with file list and manifest metadata
 
@@ -75,7 +75,7 @@ Remote sessions are downloaded via `erk exec fetch-sessions`:
 
 Sessions are tracked in the plan issue through:
 
-1. **Plan header branch fields** - `last_session_branch` stores the `async-learn/{plan_id}` branch reference
+1. **Plan header branch fields** - `last_session_branch` stores the `planned-pr-context/{plan_id}` branch reference
 2. **Plan header metadata** - `created_from_session` field stores the planning session ID
 3. **Implementation comments** - `impl-started` and `impl-ended` comments track implementation sessions
 4. **Learn comments** - `learn-invoked` comments track previous learn invocations
@@ -102,10 +102,10 @@ Use `find_local_sessions_for_project()` for this fallback path.
 
 The `SessionSource` ABC provides a uniform interface for session metadata:
 
-| Class                 | Use Case                                                           |
-| --------------------- | ------------------------------------------------------------------ |
-| `LocalSessionSource`  | Sessions from `~/.claude/projects/` on machine                     |
-| `RemoteSessionSource` | Sessions from `async-learn/{plan_id}` branches or legacy artifacts |
+| Class                 | Use Case                                                                  |
+| --------------------- | ------------------------------------------------------------------------- |
+| `LocalSessionSource`  | Sessions from `~/.claude/projects/` on machine                            |
+| `RemoteSessionSource` | Sessions from `planned-pr-context/{plan_id}` branches or legacy artifacts |
 
 Both provide: `source_type`, `session_id`, `run_id` (remote only), and `path`.
 
