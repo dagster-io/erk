@@ -242,19 +242,9 @@ This separation is exactly what agent-friendly CLI needs. The gap is that top-le
 
 ### Exec Script JSON Pattern (Already Working)
 
-`src/erk/cli/script_output.py`:
+<!-- Source: src/erk/cli/script_output.py, exit_with_error -->
 
-```python
-def exit_with_error(error_type: str, message: str) -> NoReturn:
-    error_json = json.dumps(
-        {"success": False, "error_type": error_type, "message": message},
-        indent=2,
-    )
-    click.echo(error_json)
-    raise SystemExit(0)
-```
-
-This is the exact error contract we're extending to top-level commands.
+See `exit_with_error()` in `src/erk/cli/script_output.py`. It serializes `{"success": false, "error_type": ..., "message": ...}` to JSON, emits it via `click.echo()`, and exits 0. This is the exact error contract we're extending to top-level commands.
 
 ### Existing --json Flags (Ad-Hoc)
 
@@ -269,17 +259,9 @@ These prove the pattern works. The infrastructure work extracts the shared decor
 
 ### OneShotDispatchResult (Already Exists)
 
-`src/erk/cli/commands/one_shot_remote_dispatch.py`:
+<!-- Source: src/erk/cli/commands/one_shot_remote_dispatch.py, OneShotDispatchResult -->
 
-```python
-@dataclass(frozen=True)
-class OneShotDispatchResult:
-    pr_number: int
-    run_id: str
-    branch_name: str
-```
-
-The structured data is already computed and returned — it's just not serialized to JSON. The `dispatch_one_shot_remote()` function returns this but `one_shot` Click command ignores the return value.
+See `OneShotDispatchResult` in `src/erk/cli/commands/one_shot_remote_dispatch.py`. It's a frozen dataclass with `pr_number`, `run_id`, and `branch_name` fields. The structured data is already computed and returned — it's just not serialized to JSON. The `dispatch_one_shot_remote()` function returns this but `one_shot` Click command ignores the return value.
 
 ### MCP Server (Thin Wrapper)
 
@@ -305,7 +287,7 @@ The structured data is already computed and returned — it's just not serialize
 
 ## Reference: Google Workspace CLI (gws)
 
-The gws CLI at `/Users/schrockn/code/githubs/googleworkspace/cli` served as the reference implementation. Key architectural insights:
+The [gws CLI](https://github.com/googleworkspace/cli) served as the reference implementation. Key architectural insights:
 
 - **Rust + clap** framework, **Discovery Document-driven**: Single binary works for all Google APIs by reading API schemas at runtime
 - **`--format json|table|yaml|csv`** global flag with JSON as default
