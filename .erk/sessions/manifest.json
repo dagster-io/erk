@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plan_id": 9011,
+  "sessions": [
+    {
+      "session_id": "ec86d0a9-cefc-4068-8bdc-86351f10c1ad",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-08T09:31:19.683383+00:00",
+      "files": [
+        "planning-ec86d0a9-cefc-4068-8bdc-86351f10c1ad-ec86d0a9-cefc-4068-8bdc-86351f10c1ad.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 20,
+      "raw_size_kb": 547,
+      "xml_size_kb": 56,
+      "git_branch": "plnd/dynamic-trunk-detection-03-08-0747"
+    }
+  ]
+}
