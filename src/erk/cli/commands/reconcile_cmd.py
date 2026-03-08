@@ -12,6 +12,7 @@ from rich.table import Table
 from erk.cli.commands.reconcile_pipeline import (
     ReconcileBranchInfo,
     ReconcileResult,
+    StepResult,
     detect_merged_branches,
     process_merged_branch,
 )
@@ -136,36 +137,41 @@ def _display_candidates(candidates: list[ReconcileBranchInfo], *, dry_run: bool)
     click.echo("")
 
 
+def _format_step(name: str, step: StepResult) -> str:
+    """Format a single step result line with color."""
+    if step.status == "done":
+        status_str = click.style("done", fg="green")
+    elif step.status == "skipped":
+        status_str = click.style("skipped", fg="yellow")
+    else:
+        status_str = click.style("FAILED", fg="red")
+
+    line = f"    {name:<12s}{status_str}"
+    if step.reason is not None:
+        line += f"  ({step.reason})"
+    return line
+
+
 def _display_results(results: list[ReconcileResult]) -> None:
-    """Display summary table of reconciliation results."""
+    """Display per-step reconciliation results."""
     click.echo("")
     click.echo(click.style("Reconciliation complete:", bold=True))
-
-    successes = sum(1 for r in results if r.error is None)
-    failures = len(results) - successes
+    click.echo("")
 
     for result in results:
-        if result.error is None:
-            status = click.style("ok", fg="green")
-        else:
-            status = click.style("FAIL", fg="red")
-        parts = [f"  {status}  {result.branch}"]
-        actions: list[str] = []
-        if result.learn_created:
-            actions.append("learn")
-        if result.objective_updated:
-            actions.append("objective")
-        if result.cleaned_up:
-            actions.append("cleanup")
-        if actions:
-            parts.append(f"({', '.join(actions)})")
-        if result.error is not None:
-            parts.append(f"- {result.error}")
-        click.echo(" ".join(parts))
+        click.echo(f"  {result.branch}  #{result.pr_number}")
+        click.echo(_format_step("learn", result.learn))
+        click.echo(_format_step("objective", result.objective))
+        click.echo(_format_step("label", result.label))
+        click.echo(_format_step("cleanup", result.cleanup))
+        click.echo("")
 
-    click.echo("")
+    successes = sum(1 for r in results if not r.has_failure)
+    failures = len(results) - successes
     if failures == 0:
-        click.echo(click.style(f"All {successes} branch(es) reconciled.", fg="green", bold=True))
+        click.echo(
+            click.style(f"{successes} branch(es) reconciled. 0 failed.", fg="green", bold=True)
+        )
     else:
         click.echo(
             click.style(f"{successes} succeeded, {failures} failed.", fg="yellow", bold=True)

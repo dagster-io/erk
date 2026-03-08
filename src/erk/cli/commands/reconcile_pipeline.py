@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 import click
 
@@ -30,6 +31,39 @@ from erk_shared.output.output import user_output
 
 logger = logging.getLogger(__name__)
 
+StepStatus = Literal["done", "skipped", "failed"]
+
+
+@dataclass(frozen=True)
+class StepResult:
+    """Result of a single reconciliation step (learn, objective, label, cleanup)."""
+
+    status: StepStatus
+    reason: str | None  # Required for skipped/failed, None for done
+
+
+def step_done() -> StepResult:
+    """Create a StepResult indicating success."""
+    return StepResult(status="done", reason=None)
+
+
+def step_skipped(*, reason: str) -> StepResult:
+    """Create a StepResult indicating the step was skipped with a reason."""
+    return StepResult(status="skipped", reason=reason)
+
+
+def step_failed(*, reason: str) -> StepResult:
+    """Create a StepResult indicating the step failed with a reason."""
+    return StepResult(status="failed", reason=reason)
+
+
+_LEARN_SKIP_REASONS: dict[str, str] = {
+    "skipped_no_material": "no session material found",
+    "skipped_erk_learn": "plan is an erk-learn (cycle prevention)",
+    "skipped_already_exists": "learn plan already exists",
+    "skipped_config_disabled": "learn plans disabled in config",
+}
+
 
 @dataclass(frozen=True)
 class ReconcileBranchInfo:
@@ -45,13 +79,20 @@ class ReconcileBranchInfo:
 
 @dataclass(frozen=True)
 class ReconcileResult:
-    """Result of processing a single merged branch."""
+    """Result of processing a single merged branch with per-step detail."""
 
     branch: str
-    learn_created: bool
-    objective_updated: bool
-    cleaned_up: bool
-    error: str | None  # None = success
+    pr_number: int
+    learn: StepResult
+    objective: StepResult
+    label: StepResult
+    cleanup: StepResult
+
+    @property
+    def has_failure(self) -> bool:
+        """True if any step failed."""
+        steps = (self.learn, self.objective, self.label, self.cleanup)
+        return any(s.status == "failed" for s in steps)
 
 
 def detect_merged_branches(
@@ -132,7 +173,7 @@ def process_merged_branch(
     dry_run: bool,
     skip_learn: bool,
 ) -> ReconcileResult:
-    """Process a single merged branch: learn PR, objective update, cleanup.
+    """Process a single merged branch: learn PR, objective update, label, cleanup.
 
     Each step is fail-open: errors on one step don't prevent the next.
 
@@ -148,68 +189,118 @@ def process_merged_branch(
     Returns:
         ReconcileResult with per-step outcomes.
     """
-    learn_created = False
-    objective_updated = False
-    cleaned_up = False
-    error: str | None = None
-
+    dry_skip = step_skipped(reason="dry run")
     if dry_run:
         return ReconcileResult(
             branch=info.branch,
-            learn_created=False,
-            objective_updated=False,
-            cleaned_up=False,
-            error=None,
+            pr_number=info.pr_number,
+            learn=dry_skip,
+            objective=dry_skip,
+            label=dry_skip,
+            cleanup=dry_skip,
         )
 
     # 1. Learn PR (fail-open)
-    if not skip_learn and info.plan_id is not None:
-        try:
-            _create_learn_pr_for_merged_branch(
-                ctx,
-                plan_id=info.plan_id,
-                merged_pr_number=info.pr_number,
-                main_repo_root=main_repo_root,
-                cwd=cwd,
-            )
-            learn_created = True
-        except Exception as exc:
-            user_output(
-                click.style("Warning: ", fg="yellow") + f"Learn PR failed for {info.branch}: {exc}"
-            )
+    learn = _run_learn_step(
+        ctx,
+        info=info,
+        main_repo_root=main_repo_root,
+        cwd=cwd,
+        skip_learn=skip_learn,
+    )
 
     # 2. Objective update (fail-open)
-    if info.objective_number is not None:
-        try:
-            run_objective_update_after_land(
-                ctx,
-                objective=info.objective_number,
-                pr=info.pr_number,
-                branch=info.branch,
-                worktree_path=cwd,
-            )
-            objective_updated = True
-        except Exception as exc:
-            user_output(
-                click.style("Warning: ", fg="yellow")
-                + f"Objective update failed for {info.branch}: {exc}"
-            )
+    objective = _run_objective_step(ctx, info=info, cwd=cwd)
 
-    # 3. Cleanup: unassign slot, delete branch, remove worktree
-    try:
-        _cleanup_branch(ctx, info=info, main_repo_root=main_repo_root, repo=repo)
-        cleaned_up = True
-    except Exception as exc:
-        error = f"Cleanup failed for {info.branch}: {exc}"
-        user_output(click.style("Warning: ", fg="yellow") + error)
+    # 3. Label (not yet implemented — Phase 2)
+    label = step_skipped(reason="label stamping not yet implemented")
+
+    # 4. Cleanup: unassign slot, delete branch, remove worktree
+    cleanup = _run_cleanup_step(ctx, info=info, main_repo_root=main_repo_root, repo=repo)
 
     return ReconcileResult(
         branch=info.branch,
-        learn_created=learn_created,
-        objective_updated=objective_updated,
-        cleaned_up=cleaned_up,
-        error=error,
+        pr_number=info.pr_number,
+        learn=learn,
+        objective=objective,
+        label=label,
+        cleanup=cleanup,
     )
+
+
+def _run_learn_step(
+    ctx: ErkContext,
+    *,
+    info: ReconcileBranchInfo,
+    main_repo_root: Path,
+    cwd: Path,
+    skip_learn: bool,
+) -> StepResult:
+    """Run the learn PR creation step."""
+    if skip_learn:
+        return step_skipped(reason="--skip-learn flag")
+    if info.plan_id is None:
+        return step_skipped(reason="no linked plan")
+    try:
+        outcome = _create_learn_pr_for_merged_branch(
+            ctx,
+            plan_id=info.plan_id,
+            merged_pr_number=info.pr_number,
+            main_repo_root=main_repo_root,
+            cwd=cwd,
+        )
+        if outcome == "created":
+            return step_done()
+        skip_reason = _LEARN_SKIP_REASONS.get(outcome, outcome)
+        return step_skipped(reason=skip_reason)
+    except Exception as exc:
+        user_output(
+            click.style("Warning: ", fg="yellow") + f"Learn PR failed for {info.branch}: {exc}"
+        )
+        return step_failed(reason=str(exc))
+
+
+def _run_objective_step(
+    ctx: ErkContext,
+    *,
+    info: ReconcileBranchInfo,
+    cwd: Path,
+) -> StepResult:
+    """Run the objective update step."""
+    if info.objective_number is None:
+        return step_skipped(reason="no linked objective")
+    try:
+        run_objective_update_after_land(
+            ctx,
+            objective=info.objective_number,
+            pr=info.pr_number,
+            branch=info.branch,
+            worktree_path=cwd,
+        )
+        return step_done()
+    except Exception as exc:
+        user_output(
+            click.style("Warning: ", fg="yellow")
+            + f"Objective update failed for {info.branch}: {exc}"
+        )
+        return step_failed(reason=str(exc))
+
+
+def _run_cleanup_step(
+    ctx: ErkContext,
+    *,
+    info: ReconcileBranchInfo,
+    main_repo_root: Path,
+    repo: RepoContext,
+) -> StepResult:
+    """Run the branch/worktree cleanup step."""
+    try:
+        _cleanup_branch(ctx, info=info, main_repo_root=main_repo_root, repo=repo)
+        return step_done()
+    except Exception as exc:
+        msg = f"Cleanup failed for {info.branch}: {exc}"
+        user_output(click.style("Warning: ", fg="yellow") + msg)
+        return step_failed(reason=str(exc))
 
 
 def _cleanup_branch(
