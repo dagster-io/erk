@@ -11,6 +11,8 @@ tripwires:
     warning: "Plan save uses git plumbing (commit_files_to_branch) to commit without checkout. Do NOT add checkout_branch calls. See git-plumbing-patterns.md."
   - action: "adding new git operations that require a branch checkout"
     warning: "When adding new git operations, prefer plumbing (update-ref, commit-tree) over checkout-based workflows. See git-plumbing-patterns.md."
+  - action: "using update_local_ref on a branch that might be checked out"
+    warning: "Use find_worktree_for_branch first. If checked out, use git pull --ff-only instead (updates ref + index + working tree). Ref-only updates on checked-out branches cause index desynchronization."
 ---
 
 # Git Plumbing Patterns
@@ -69,6 +71,17 @@ See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_
 4. Pushes to remote
 5. Triggers GitHub Actions workflow dispatch
 
+### Usage in Incremental Dispatch
+
+<!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py -->
+
+Incremental dispatch uses the same plumbing pattern with an additional Graphite retrack step. After committing files to a branch via `commit_files_to_branch()`, the branch ref advances but Graphite's tracked SHA becomes stale. The fix:
+
+1. Sync local branch ref to remote via `fetch_branch()` + conditional `create_branch(force=True)` or `update_local_ref()`
+2. Commit impl-context files via `commit_files_to_branch()`
+3. Call `branch_manager.retrack_branch()` to update Graphite's tracking SHA
+4. If branch is currently checked out, write files to disk to keep working tree consistent
+
 ## Pattern 2: `update_local_ref` (Advance Branch Pointer)
 
 ### How It Works
@@ -99,13 +112,15 @@ See `update_local_ref()` in `packages/erk-shared/src/erk_shared/gateway/git/bran
 
 <!-- Source: src/erk/cli/commands/pr/dispatch_helpers.py, ensure_trunk_synced -->
 
-`ensure_trunk_synced()` in `src/erk/cli/commands/pr/dispatch_helpers.py` (lines 26-82) uses this pattern to sync the local trunk branch to match remote without a checkout:
+`ensure_trunk_synced()` in `src/erk/cli/commands/pr/dispatch_helpers.py` (lines 26-88) uses this pattern to sync the local trunk branch to match remote without a checkout:
 
 1. Fetches the remote branch
 2. Compares local and remote SHAs
 3. Checks merge-base to determine sync direction
-4. Updates the local ref via `update_local_ref()` (fast-forward only)
-5. Validates worktree is clean if trunk is currently checked out
+4. **Conditional sync based on checkout state**: Uses `find_worktree_for_branch()` to check if trunk is currently checked out. If checked out, uses `pull_branch(ff_only=True)` to update ref + index + working tree. If not checked out, uses `update_local_ref()` for ref-only update.
+5. Error on diverged or ahead states (user has unpushed commits)
+
+The LBYL check with `find_worktree_for_branch()` prevents index desynchronization: a ref-only update on a checked-out branch leaves the index pointing at the old tree, causing staged reverse changes when the user next runs `git status`.
 
 ## Evolution
 

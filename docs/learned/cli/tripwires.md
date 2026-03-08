@@ -22,6 +22,8 @@ Rules triggered by matching actions in code.
 
 **WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-rebase → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
 
+**adding --from-current-branch without handling detached HEAD** → Read [Slot Assign --from-current-branch](slot-assign-from-current-branch.md) first. When the target branch is checked out in another worktree, fall back to detached HEAD checkout. See slot-assign-from-current-branch.md.
+
 **adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
 
 **adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
@@ -103,6 +105,8 @@ Rules triggered by matching actions in code.
 **importing from erk_shared.gateway.{service}.abc when creating exec commands** → Read [Exec Script Patterns](exec-script-patterns.md) first. Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`
 
 **landing a PR without updating associated learn plan status** → Read [Learn Plan Land Flow](learn-plan-land-flow.md) first. Learn plan PRs trigger special execution pipeline steps that update parent plan metadata. Ensure check_learn_status and update_learn_plan steps execute after merge.
+
+**launching Claude for conflict resolution without showing conflicted files first** → Read [Rebase Confirmation Workflow](rebase-confirmation-workflow.md) first. Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md.
 
 **making 5+ sequential gh api subprocess calls in an exec script** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Each gh subprocess costs ~200-300ms. Bundle related API calls into a single exec script invocation or use the HTTP direct API path via PlanListService.
 

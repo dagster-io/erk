@@ -51,6 +51,12 @@ Commands can provide context-aware display names through `get_display_name` on `
 
 When fuzzy search highlighting is present, use `Text.assemble()` to prepend the emoji while preserving Rich text highlighting. See `_format_palette_display()` and `_format_search_display()` in `src/erk/tui/commands/provider.py`.
 
+## Alphabetical Sorting Convention
+
+<!-- Source: src/erk/tui/commands/registry.py -->
+
+Commands in `get_all_commands()` are organized by category group (PLAN ACTIONS, OBJECTIVE ACTIONS, PLAN OPENS, etc.) with commands sorted alphabetically by `description` within each subgroup. When adding new commands, maintain alphabetical order within the relevant category section.
+
 ## Key Files
 
 - `src/erk/tui/commands/types.py` — `CommandCategory` enum, `CommandDefinition` dataclass

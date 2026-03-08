@@ -130,6 +130,32 @@ When `erk land` creates a learn plan, the TUI displays a toast notification. The
 <!-- Source: src/erk/tui/operations/logic.py, extract_learn_plan_number -->
 <!-- Source: src/erk/tui/operations/workers.py, _land_pr_async -->
 
+## Context Branch Session Fetch
+
+<!-- Source: src/erk/cli/commands/land_learn.py, _fetch_xmls_from_context_branch -->
+
+The **primary path** for fetching session XMLs from remote implementations (e.g., codespace or dispatch). When sessions are produced remotely, preprocessed XMLs are uploaded to the `planned-pr-context/{plan_id}` branch.
+
+### `_fetch_xmls_from_context_branch()`
+
+This function in `land_learn.py` fetches session XMLs from the context branch:
+
+1. Checks if `planned-pr-context/{plan_id}` branch exists on remote via `branch_exists_on_remote()`
+2. Fetches the branch with `fetch_branch()`
+3. Reads `.erk/sessions/manifest.json` from the branch ref using `read_file_from_ref()` (no checkout needed)
+4. Iterates manifest entries to read each XML file from `.erk/sessions/`
+5. Returns dict mapping impl-context-relative paths to XML content
+
+The function is lenient — it returns an empty dict on any step failure rather than raising.
+
+### Integration Points
+
+Invoked from `_create_learn_pr_impl()` as the primary path for session discovery:
+
+- `_create_learn_pr_impl()` calls `_fetch_xmls_from_context_branch()` to retrieve remote session XMLs
+- Local session discovery via `_log_session_discovery()` supplements when local JSONL files are also available
+- Both `_create_learn_pr_impl()` and the merged-branch variant use this path when sessions were produced remotely
+
 ## Related Documentation
 
 - [Learn Workflow](../planning/learn-workflow.md) — Full learn pipeline documentation

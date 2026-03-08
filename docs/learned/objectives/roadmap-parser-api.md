@@ -72,7 +72,13 @@ Extracts phase names from markdown headers (e.g., `### Phase 1: Planning`) and r
 
 ### RoadmapNode fields
 
-`RoadmapNode` has six fields: `id`, `description`, `status`, `pr` (`str | None`), `depends_on` (`tuple[str, ...] | None`), and `slug` (`str | None`). The `plan` field was removed (PR #8128) — plan references are no longer tracked in the roadmap. The `pr` field holds a PR reference (e.g., `"#123"`) for both in-progress and landed PRs. The parser reads fields from v2/v3/v4 YAML frontmatter.
+`RoadmapNode` has seven fields: `id`, `description`, `status`, `pr` (`str | None`), `depends_on` (`tuple[str, ...] | None`), `slug` (`str | None`), and `reason` (`str | None`). The `plan` field was removed (PR #8128) — plan references are no longer tracked in the roadmap. The `pr` field holds a PR reference (e.g., `"#123"`) for both in-progress and landed PRs. The `reason` field holds optional text explaining why a node is in a particular state (e.g., why skipped or blocked). The parser reads fields from v2/v3/v4 YAML frontmatter.
+
+### Conditional `reason` rendering
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, render_roadmap_block_inner -->
+
+The `reason` field uses conditional rendering in `render_roadmap_block_inner()`: the field is only included in YAML output when **any** node in the phase has a non-None reason. This keeps the YAML compact when no nodes need reasons, while making it available when any do.
 
 ## Dual-Parser Pattern
 
@@ -85,6 +91,23 @@ Returns `(phases, validation_errors)`. Always returns a tuple. For v2 YAML front
 ### `parse_v2_roadmap(body)` — Strict v2 Parser
 
 Returns `(phases, validation_errors) | None`. Returns `None` when the body is not in v2+ format (no metadata block, no `<details>` wrapper, or schema version not in v2/v3/v4). Use this when the caller needs to distinguish "not v2+ format" from "v2+ format with errors" — for example, commands that should reject legacy format explicitly rather than receiving an error string.
+
+### `add_node_to_frontmatter()`
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, add_node_to_frontmatter -->
+
+`add_node_to_frontmatter()` (line 393) adds a new node to a roadmap phase with auto-assigned node ID. Parameters: `block_content`, `phase`, `description`, `slug`, `status`, `depends_on`, `reason`. If `slug` is not provided, it auto-generates one via `slugify_description()`. Returns `(updated_yaml, assigned_node_id)` or `None` if the phase doesn't exist.
+
+### `slugify_description()`
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, slugify_description -->
+
+`slugify_description()` (line 729) converts a description string to a kebab-case slug: lowercase, replace non-alphanumeric with hyphens, collapse multiple hyphens, strip leading/trailing hyphens.
+
+### Related Exec Commands
+
+- `add-objective-node`: Uses `add_node_to_frontmatter()` to add nodes via CLI
+- `update-objective-node`: Supports `--description`, `--slug`, `--reason` flags for surgical node updates
 
 ## Relationship to Sibling Docs
 

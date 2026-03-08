@@ -14,6 +14,8 @@ Rules triggered by matching actions in code.
 
 **FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
 
+**accessing ctx.git or ctx.repo without checking for NoRepoSentinel** → Read [No-Repo Infrastructure](no-repo-infrastructure.md) first. Commands decorated with @no_repo_required may have sentinel gateways. Check isinstance(ctx.repo, NoRepoSentinel) before repo operations.
+
 **accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
 
 **accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
@@ -220,6 +222,8 @@ Rules triggered by matching actions in code.
 
 **implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.
 
+**importing from erk in erk_shared code** → Read [Circular Import Resolution Pattern](circular-import-resolution.md) first. erk_shared must not import from erk. Move ABCs to erk_shared, keep implementations in erk. See circular-import-resolution.md.
+
 **importing time module or calling time.sleep() or datetime.now()** [pattern: `\bimport time\b|time\.sleep\(|datetime\.now\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic.
 
 **injecting Time dependency into gateway real.py for lock-waiting or retry logic** → Read [Erk Architecture Patterns](erk-architecture.md) first. Accept optional Time in **init** with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/gateway/git/lock.py for pattern.
@@ -276,6 +280,8 @@ Rules triggered by matching actions in code.
 
 **reading plan reference without using read_plan_ref()** → Read [Ref JSON Migration](ref-json-migration.md) first. Use read_plan_ref() which handles the three-file fallback chain: plan-ref.json → ref.json → issue.json (legacy). Manual JSON parsing skips fallback and field mapping.
 
+**registering a branch with Graphite without handling stacked vs non-stacked** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Both stacked PRs (base != trunk, fetch base first) and non-stacked PRs (base = trunk, skip fetch) need Graphite registration. Don't skip registration for non-stacked PRs.
+
 **relying solely on agent-level enforcement for critical rules** → Read [Defense-in-Depth Enforcement](defense-in-depth-enforcement.md) first. Add skill-level and PR-level enforcement layers. Only workflow/CI enforcement is truly reliable.
 
 **removing .erk/impl-context/ during implementation without git rm** → Read [Impl-Context API](impl-context-api.md) first. Use git rm -rf for committed impl-context (Step 2d of plan-implement). The remove_impl_context() function is for filesystem-only removal.
@@ -328,6 +334,8 @@ Rules triggered by matching actions in code.
 
 **using bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. heredocs fail silently with special characters; prefer the Write tool
 
+**using commit_files_to_branch plumbing without retracking** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. After commit_files_to_branch plumbing, always call retrack_branch() to keep Graphite in sync. The branch ref advances but Graphite's tracked SHA becomes stale.
+
 **using gh api or gh api graphql to fetch or resolve PR review threads** → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality.
 
 **using gh codespace start** [pattern: `gh\s+codespace\s+start`] → Read [GitHub CLI Limits](github-cli-limits.md) first. gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead.
@@ -377,6 +385,8 @@ Rules triggered by matching actions in code.
 **using two-dot syntax (branch..HEAD) in git diff** → Read [Git Operation Patterns](git-operation-patterns.md) first. git diff comparisons MUST use three-dot (branch...HEAD) to diff from merge-base. Two-dot is correct for git rev-list but WRONG for git diff.
 
 **using unquoted heredoc delimiters (<<EOF) when the body contains $, \, or backticks** [pattern: `<<\s*EOF\b`] → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. bash silently expands them
+
+**using update_local_ref on a branch that might be checked out** → Read [Git Plumbing Patterns](git-plumbing-patterns.md) first. Use find_worktree_for_branch first. If checked out, use git pull --ff-only instead (updates ref + index + working tree). Ref-only updates on checked-out branches cause index desynchronization.
 
 **using wildcard imports in the orchestrator **init**.py** → Read [Monolith-to-Subpackage Refactoring Pattern](monolith-to-subpackage-pattern.md) first. Use explicit imports for every submodule function. The import list doubles as a module index.
 
