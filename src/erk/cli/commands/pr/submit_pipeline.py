@@ -478,7 +478,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
                 ),
                 details={"branch": state.branch_name},
             )
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
 
     # Check for existing PR or create new one
     existing_pr = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)

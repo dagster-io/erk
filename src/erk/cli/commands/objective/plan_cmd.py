@@ -17,6 +17,7 @@ from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk.cli.commands.one_shot import _get_remote_github
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
+    OneShotDispatchResult,
     dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
@@ -323,7 +324,7 @@ def _handle_all_unblocked(
             prompt_executor=ctx.prompt_executor,
         )
 
-        if dispatch_result is not None:
+        if isinstance(dispatch_result, OneShotDispatchResult):
             successful_dispatches.append((node.id, dispatch_result.pr_number))
             dispatched_count += 1
 
@@ -847,7 +848,7 @@ def _handle_one_shot(
     )
 
     # After successful dispatch, immediately mark node as "planning" with draft PR
-    if dispatch_result is not None:
+    if isinstance(dispatch_result, OneShotDispatchResult):
         # repo is guaranteed to be RepoContext here (validated above)
         user_output("Updating objective roadmap...")
         _update_objective_node(

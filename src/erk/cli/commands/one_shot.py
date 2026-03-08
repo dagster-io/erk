@@ -19,10 +19,13 @@ import click
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
+    OneShotDispatchResult,
+    OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.ensure import Ensure, UserFacingCliError
+from erk.cli.json_output import emit_json, json_output
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.real import RealRemoteGitHub
@@ -49,12 +52,14 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
 
     if ctx.http_client is None:
         raise UserFacingCliError(
-            "GitHub authentication required.\nRun 'gh auth login' to authenticate."
+            "GitHub authentication required.\nRun 'gh auth login' to authenticate.",
+            error_type="auth_required",
         )
 
     return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
 
 
+@json_output
 @click.command("one-shot")
 @click.argument("prompt", required=False, default=None)
 @click.option(
@@ -112,6 +117,7 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
 def one_shot(
     ctx: ErkContext,
     *,
+    json_mode: bool,
     prompt: str | None,
     file_path: str | None,
     model: str | None,
@@ -155,10 +161,8 @@ def one_shot(
     assert prompt is not None  # type narrowing after guard
 
     # Validate prompt is non-empty
-    Ensure.invariant(
-        len(prompt.strip()) > 0,
-        "Prompt must not be empty",
-    )
+    if len(prompt.strip()) == 0:
+        raise UserFacingCliError("Prompt must not be empty", error_type="invalid_input")
 
     # Normalize model name
     model = normalize_model_name(model)
@@ -177,14 +181,16 @@ def one_shot(
         if "/" not in target_repo or target_repo.count("/") != 1:
             raise UserFacingCliError(
                 f"Invalid --repo format: '{target_repo}'\n"
-                "Expected format: owner/repo (e.g., dagster-io/erk)"
+                "Expected format: owner/repo (e.g., dagster-io/erk)",
+                error_type="invalid_repo",
             )
         owner, repo_name = target_repo.split("/")
     else:
         if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
             raise UserFacingCliError(
                 "Cannot determine target repository.\n"
-                "Use --repo owner/repo or run from inside a git repository."
+                "Use --repo owner/repo or run from inside a git repository.",
+                error_type="cli_error",
             )
         owner, repo_name = ctx.repo.github.owner, ctx.repo.github.repo
 
@@ -198,7 +204,7 @@ def one_shot(
 
     remote = _get_remote_github(ctx)
 
-    dispatch_one_shot_remote(
+    result = dispatch_one_shot_remote(
         remote=remote,
         owner=owner,
         repo=repo_name,
@@ -208,3 +214,30 @@ def one_shot(
         time_gateway=ctx.time,
         prompt_executor=ctx.prompt_executor,
     )
+
+    if json_mode:
+        if isinstance(result, OneShotDryRunResult):
+            emit_json(
+                {
+                    "dry_run": True,
+                    "branch_name": result.branch_name,
+                    "prompt": result.prompt,
+                    "target": result.target,
+                    "pr_title": result.pr_title,
+                    "base_branch": result.base_branch,
+                    "submitted_by": result.submitted_by,
+                    "model": result.model,
+                    "workflow": result.workflow,
+                }
+            )
+        elif isinstance(result, OneShotDispatchResult):
+            emit_json(
+                {
+                    "dry_run": False,
+                    "pr_number": result.pr_number,
+                    "pr_url": f"https://github.com/{owner}/{repo_name}/pull/{result.pr_number}",
+                    "run_id": result.run_id,
+                    "run_url": f"https://github.com/{owner}/{repo_name}/actions/runs/{result.run_id}",
+                    "branch_name": result.branch_name,
+                }
+            )

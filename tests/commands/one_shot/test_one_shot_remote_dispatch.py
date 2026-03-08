@@ -5,6 +5,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
+    OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
@@ -120,7 +121,12 @@ def test_remote_dispatch_dry_run() -> None:
         prompt_executor=None,
     )
 
-    assert result is None
+    assert isinstance(result, OneShotDryRunResult)
+    assert result.prompt == "fix the bug"
+    assert result.target == "test-owner/test-repo"
+    assert result.base_branch == "main"
+    assert result.submitted_by == "test-user"
+    assert result.workflow == "one-shot.yml"
 
     # Verify no mutations occurred
     assert len(remote.created_refs) == 0
