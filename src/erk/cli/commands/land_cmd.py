@@ -1507,6 +1507,12 @@ def _execute_land(
     help="Preserve the local branch and its slot assignment after landing.",
 )
 @click.option(
+    "--stack",
+    "stack_flag",
+    is_flag=True,
+    help="Land the entire Graphite stack bottom-up.",
+)
+@click.option(
     "--skip-learn",
     "skip_learn",
     is_flag=True,
@@ -1524,6 +1530,7 @@ def land(
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
+    stack_flag: bool,
     skip_learn: bool,
 ) -> None:
     """Merge PR and clean up branch.
@@ -1531,13 +1538,15 @@ def land(
     By default, merges the PR and cleans up the branch directly (no source
     command needed). Use --down to navigate to trunk after landing, or --up
     to navigate to a child branch. Both --down and --up produce a source
-    command for shell navigation.
+    command for shell navigation. Use --stack to land an entire Graphite
+    stack bottom-up.
 
     \b
     Usage:
       erk land              # Merge + cleanup directly (no navigation)
       erk land --down       # Merge + cleanup + navigate to trunk
       erk land --up         # Merge + cleanup + navigate to child branch
+      erk land --stack      # Land entire Graphite stack bottom-up
       erk land 123          # Land PR #123
       erk land <url>        # Land PR by GitHub URL
       erk land <branch>     # Land PR for branch
@@ -1547,6 +1556,7 @@ def land(
     - PR's base branch must be trunk
 
     Note: --up and --down are mutually exclusive. --up requires Graphite.
+    --stack is mutually exclusive with --up, --down, and target argument.
     """
     # Replace context with appropriate wrappers based on flags.
     #
@@ -1571,10 +1581,34 @@ def land(
         "--up navigates to child branch, --down navigates to trunk.",
     )
 
+    Ensure.invariant(
+        not (stack_flag and (up_flag or down_flag)),
+        "--stack is mutually exclusive with --up and --down.",
+    )
+
+    Ensure.invariant(
+        not (stack_flag and target is not None),
+        "--stack cannot be combined with a target argument.",
+    )
+
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    # Dispatch to stack landing if --stack flag is set
+    if stack_flag:
+        from erk.cli.commands.land_stack import execute_land_stack
+
+        execute_land_stack(
+            ctx,
+            repo=repo,
+            force=force,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            skip_learn=skip_learn,
+        )
+        return
 
     # Run validation pipeline (resolve target, validate PR, gather confirmations)
     initial_state = make_initial_state(
