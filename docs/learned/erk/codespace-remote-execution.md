@@ -68,7 +68,7 @@ The `&&`-chain means the actual error appears in terminal output, but knowing _w
 
 The `connect` command injects an optional `checkout_prefix` into the bootstrap sequence when a local branch is detected. This ensures the codespace checks out the same branch as the local machine:
 
-The `connect_codespace()` function conditionally builds a `checkout_prefix` string when a local branch is detected: it constructs a `git fetch origin <branch> && git checkout <branch> &&` prefix that ensures the codespace is on the same branch as the local machine.
+When a local branch is detected, the command builds a checkout prefix that fetches and checks out that branch. See the checkout prefix construction in `src/erk/cli/commands/codespace/connect_cmd.py`.
 
 The prefix is injected into both shell and non-shell modes. In shell mode, the full sequence becomes `{cd_prefix}{checkout_prefix}{export_prefix}exec bash -l`. In non-shell mode: `{cd_prefix}{checkout_prefix}{export_prefix}{setup} && {claude_cmd}`.
 

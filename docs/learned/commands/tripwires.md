@@ -18,6 +18,8 @@ Rules triggered by matching actions in code.
 
 **creating commands that delegate to subagents** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. NEVER omit Task from allowed-tools if the command delegates to subagents
 
+**hardcoding 'master' or 'main' as branch name in a command or skill** → Read [Dynamic Trunk Detection](dynamic-trunk-detection.md) first. Use dynamic trunk detection: `TRUNK=$(erk exec detect-trunk-branch | jq -r '.trunk_branch')`. Hardcoded branch names break portability across repos.
+
 **hardcoding a choice in a command where user should decide** → Read [Skill and Command Patterns](skill-patterns.md) first. use AskUserQuestion to present options. Commands should empower user decisions, not make them.
 
 **modifying collateral finding categories or auto-apply behavior in audit-doc** → Read [Audit-Doc Design Decisions](audit-doc.md) first. CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction
@@ -27,3 +29,5 @@ Rules triggered by matching actions in code.
 **using CLAUDE_SESSION_ID in hooks or Python code** → Read [Session ID Substitution](session-id-substitution.md) first. CLAUDE_SESSION_ID is NOT an environment variable — it is a string substitution performed by Claude Code's skill/command loader. Treating it as an env var in hooks or Python code will silently produce an empty string.
 
 **writing allowed-tools frontmatter** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. Commands and agents use DIFFERENT allowed-tools syntax — check the format section
+
+**writing git diff/merge-base/reset against a literal branch name in .claude/ files** → Read [Dynamic Trunk Detection](dynamic-trunk-detection.md) first. Use dynamic trunk detection: `TRUNK=$(erk exec detect-trunk-branch | jq -r '.trunk_branch')`. Hardcoded branch names break portability across repos.

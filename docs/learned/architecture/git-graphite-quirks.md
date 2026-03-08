@@ -419,7 +419,7 @@ branch_manager = require_branch_manager(ctx)
 branch_manager.retrack_branch(repo_root, branch_name)
 ```
 
-**Where Applied**: `src/erk/cli/commands/exec/scripts/incremental_dispatch.py` line 133
+**Where Applied**: `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
 
 ## Adding New Quirks
 

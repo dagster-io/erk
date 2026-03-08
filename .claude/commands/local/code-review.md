@@ -13,10 +13,11 @@ Run all applicable code reviews locally, replicating the CI review experience fr
 **Get changed files:**
 
 ```bash
-git diff --name-only $(git merge-base master HEAD)...HEAD
+TRUNK=$(erk exec detect-trunk-branch | jq -r '.trunk_branch')
+git diff --name-only $(git merge-base "$TRUNK" HEAD)...HEAD
 ```
 
-If no changed files, report "No changes found relative to master" and stop.
+If no changed files, report "No changes found relative to trunk" and stop.
 
 **Read review definitions:**
 
@@ -64,7 +65,7 @@ You are running a local code review. Your task:
 
 1. Read the review definition file: `.erk/reviews/<review-name>.md`
 2. Follow the review instructions, with these adaptations for local execution:
-   - Instead of `gh pr diff`, use: `git diff $(git merge-base master HEAD)...HEAD`
+   - Instead of `gh pr diff`, use: `TRUNK=$(erk exec detect-trunk-branch | jq -r '.trunk_branch') && git diff $(git merge-base "$TRUNK" HEAD)...HEAD`
    - Skip ALL PR-interaction steps (posting comments, fetching existing comments, summary comments, activity logs)
    - Skip any steps about checking for existing review markers or comments
 3. Write your findings to `.erk/scratch/<run-id>/<review-name>.md` using the Write tool

@@ -192,7 +192,8 @@ Next steps (see RELEASING.md for full details):
    echo "{version}" > .erk/required-erk-uv-tool-version
 2. Squash, commit, and tag:
    uv sync && git add -A
-   git reset --soft master
+   TRUNK=$(erk exec detect-trunk-branch | jq -r '.trunk_branch')
+   git reset --soft "$TRUNK"
    git commit -m "Release {version}"
    erk-dev release-tag
 3. Run CI locally: make all-ci
