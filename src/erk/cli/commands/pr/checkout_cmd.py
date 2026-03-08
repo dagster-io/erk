@@ -22,6 +22,7 @@ from erk.cli.commands.checkout_helpers import (
     ensure_branch_has_worktree,
     navigate_and_display_checkout,
 )
+from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
@@ -271,7 +272,7 @@ def _checkout_pr(
             remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{pr.base_ref_name}")
             local_sha = ctx.git.branch.get_branch_head(repo.root, pr.base_ref_name)
             if remote_sha is not None and remote_sha != local_sha:
-                ctx.git.branch.update_local_ref(repo.root, pr.base_ref_name, remote_sha)
+                sync_branch_to_sha(ctx, repo.root, pr.base_ref_name, remote_sha)
 
         ctx.console.info("Rebasing onto base branch...")
         rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")

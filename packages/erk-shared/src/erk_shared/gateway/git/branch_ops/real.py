@@ -427,6 +427,14 @@ class RealGitBranchOps(GitBranchOps):
             cwd=repo_root,
         )
 
+    def reset_hard(self, cwd: Path, target_ref: str) -> None:
+        """Reset the current branch to a target ref, updating index and working tree."""
+        run_subprocess_with_context(
+            cmd=["git", "reset", "--hard", target_ref],
+            operation_context=f"reset to '{target_ref[:8]}'",
+            cwd=cwd,
+        )
+
     def get_branch_commits_with_authors(
         self, repo_root: Path, branch: str, trunk: str, *, limit: int
     ) -> list[dict[str, str]]:

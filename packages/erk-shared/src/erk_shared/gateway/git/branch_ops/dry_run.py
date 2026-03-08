@@ -62,6 +62,10 @@ class DryRunGitBranchOps(GitBranchOps):
         """No-op for updating local ref in dry-run mode."""
         user_output(f"[DRY RUN] Would run: git update-ref refs/heads/{branch} {target_sha[:8]}")
 
+    def reset_hard(self, cwd: Path, target_ref: str) -> None:
+        """No-op for reset --hard in dry-run mode."""
+        user_output(f"[DRY RUN] Would run: git reset --hard {target_ref[:8]}")
+
     # ============================================================================
     # Query Operations (pass-through delegation)
     # ============================================================================

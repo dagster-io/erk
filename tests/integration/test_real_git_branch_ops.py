@@ -246,6 +246,56 @@ def test_update_local_ref_advances_branch_pointer(
     assert result.stdout.strip() == head_sha
 
 
+def test_reset_hard_syncs_working_tree_and_ref(
+    git_branch_ops: GitBranchOpsSetup,
+) -> None:
+    """Test that reset_hard moves HEAD and syncs working tree to target commit."""
+    branch_ops, git, repo = git_branch_ops
+
+    # Arrange: Create a second commit on main
+    (repo / "second.txt").write_text("second commit", encoding="utf-8")
+    subprocess.run(["git", "add", "second.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Second commit"], cwd=repo, check=True)
+
+    head_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    # Get the first commit SHA
+    first_sha = subprocess.run(
+        ["git", "rev-list", "--max-parents=0", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    # Checkout a feature branch at the first commit (no second.txt)
+    subprocess.run(["git", "checkout", "-b", "feature-branch", first_sha], cwd=repo, check=True)
+    assert not (repo / "second.txt").exists()
+
+    # Act: reset_hard to the second commit
+    branch_ops.reset_hard(repo, head_sha)
+
+    # Assert: HEAD points to the second commit
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == head_sha
+
+    # Assert: Working tree contains the file from the second commit
+    assert (repo / "second.txt").exists()
+    assert (repo / "second.txt").read_text(encoding="utf-8") == "second commit"
+
+
 def test_get_all_branch_heads_returns_all_branches(
     git_branch_ops: GitBranchOpsSetup,
 ) -> None:

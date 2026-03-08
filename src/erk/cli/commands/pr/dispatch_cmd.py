@@ -8,7 +8,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.commands.slot.common import is_placeholder_branch
@@ -234,7 +234,7 @@ def _dispatch_planned_pr_plan(
     else:
         remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{branch_name}")
         if remote_sha is not None:
-            ctx.git.branch.update_local_ref(repo.root, branch_name, remote_sha)
+            sync_branch_to_sha(ctx, repo.root, branch_name, remote_sha)
 
     # Commit impl-context files directly to branch (no checkout required)
     user_output("Committing plan to branch...")

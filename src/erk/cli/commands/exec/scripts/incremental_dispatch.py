@@ -14,7 +14,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
-from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import DISPATCH_WORKFLOW_NAME
 from erk_shared.context.helpers import (
@@ -108,7 +108,7 @@ def incremental_dispatch(
     else:
         remote_sha = git.branch.get_branch_head(repo_root, f"origin/{branch_name}")
         if remote_sha is not None:
-            git.branch.update_local_ref(repo_root, branch_name, remote_sha)
+            sync_branch_to_sha(erk_ctx, repo_root, branch_name, remote_sha)
 
     # Build and commit impl-context files to branch
     user_output("Committing plan to branch...")

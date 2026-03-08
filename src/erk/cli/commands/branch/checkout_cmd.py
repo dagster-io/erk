@@ -19,6 +19,7 @@ from erk.cli.commands.checkout_helpers import (
     script_error_handler,
 )
 from erk.cli.commands.completions import complete_branch_names
+from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
 from erk.cli.commands.slot.common import (
     allocate_slot_for_branch,
     update_slot_assignment_tip,
@@ -385,7 +386,7 @@ def _rebase_and_track_for_plan(
             remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch}")
             local_sha = ctx.git.branch.get_branch_head(repo_root, parent_branch)
             if remote_sha is not None and remote_sha != local_sha:
-                ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)
+                sync_branch_to_sha(ctx, repo_root, parent_branch, remote_sha)
 
         user_output("Rebasing onto base branch...")
         rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{parent_branch}")
