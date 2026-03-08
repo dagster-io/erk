@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+import asyncio
 import subprocess
 from unittest.mock import patch
 
 import pytest
 
-from erk_mcp.server import _run_erk, create_mcp, one_shot, plan_list, plan_view
+from erk_mcp.server import (
+    JsonCommandTool,
+    _build_json_command_tools,
+    _run_erk,
+    _run_erk_json,
+    create_mcp,
+    plan_list,
+    plan_view,
+)
 
 
 class TestRunErk:
@@ -127,26 +136,128 @@ class TestPlanView:
         assert isinstance(args[2], str)
 
 
-class TestOneShot:
-    """Tests for one_shot MCP tool."""
+class TestRunErkJson:
+    """Tests for _run_erk_json subprocess wrapper."""
 
-    @patch("erk_mcp.server._run_erk")
-    def test_passes_prompt_to_erk(self, mock_run_erk: patch) -> None:
-        mock_run_erk.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="PR: https://github.com/...", stderr=""
+    @patch("erk_mcp.server.subprocess.run")
+    def test_pipes_json_stdin_with_json_flag(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["erk", "one-shot", "--json"],
+            returncode=0,
+            stdout='{"success": true}',
+            stderr="",
         )
 
-        result = one_shot(prompt="Fix the bug in auth")
+        result = _run_erk_json("one-shot", {"prompt": "Fix bug"})
 
-        assert result == "PR: https://github.com/..."
-        mock_run_erk.assert_called_once_with(["one-shot", "Fix the bug in auth"])
+        assert result == '{"success": true}'
+        mock_run.assert_called_once_with(
+            ["erk", "one-shot", "--json"],
+            input='{"prompt": "Fix bug"}',
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-    @patch("erk_mcp.server._run_erk")
-    def test_propagates_runtime_error(self, mock_run_erk: patch) -> None:
-        mock_run_erk.side_effect = RuntimeError("erk one-shot failed (exit 1): timeout")
+    @patch("erk_mcp.server.subprocess.run")
+    def test_returns_stdout_on_nonzero_exit(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["erk", "one-shot", "--json"],
+            returncode=1,
+            stdout='{"success": false, "error_type": "auth_required"}',
+            stderr="",
+        )
 
-        with pytest.raises(RuntimeError, match="timeout"):
-            one_shot(prompt="Do something")
+        result = _run_erk_json("one-shot", {"prompt": "Do something"})
+
+        assert result == '{"success": false, "error_type": "auth_required"}'
+
+
+class TestJsonCommandTool:
+    """Tests for JsonCommandTool dynamic MCP tool."""
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_filters_none_values(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"success": true}', stderr=""
+        )
+        tool = JsonCommandTool(
+            name="test_tool",
+            cli_command="test-cmd",
+            description="Test",
+            parameters={"type": "object", "properties": {"a": {"type": "string"}}},
+        )
+
+        asyncio.run(tool.run({"prompt": "hello", "model": None}))
+
+        call_args = mock_run.call_args
+        assert call_args[1]["input"] == '{"prompt": "hello"}'
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_keeps_false_booleans(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"success": true}', stderr=""
+        )
+        tool = JsonCommandTool(
+            name="test_tool",
+            cli_command="test-cmd",
+            description="Test",
+            parameters={"type": "object", "properties": {"a": {"type": "string"}}},
+        )
+
+        asyncio.run(tool.run({"prompt": "hello", "dry_run": False}))
+
+        call_args = mock_run.call_args
+        assert call_args[1]["input"] == '{"prompt": "hello", "dry_run": false}'
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_passes_through_truthy_values(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"success": true}', stderr=""
+        )
+        tool = JsonCommandTool(
+            name="test_tool",
+            cli_command="test-cmd",
+            description="Test",
+            parameters={"type": "object", "properties": {"a": {"type": "string"}}},
+        )
+
+        asyncio.run(tool.run({"prompt": "hello", "model": "opus", "dry_run": True}))
+
+        call_args = mock_run.call_args
+        assert call_args[1]["input"] == '{"prompt": "hello", "model": "opus", "dry_run": true}'
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_uses_correct_cli_command(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"success": true}', stderr=""
+        )
+        tool = JsonCommandTool(
+            name="my_tool",
+            cli_command="my-command",
+            description="Test",
+            parameters={"type": "object", "properties": {"x": {"type": "string"}}},
+        )
+
+        asyncio.run(tool.run({"x": "val"}))
+
+        mock_run.assert_called_once_with(
+            ["erk", "my-command", "--json"],
+            input='{"x": "val"}',
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_discovered_tools_include_one_shot(self) -> None:
+        tools = _build_json_command_tools()
+        tool_names = {t.name for t in tools}
+        assert "one_shot" in tool_names
+
+    def test_one_shot_tool_has_correct_cli_command(self) -> None:
+        tools = _build_json_command_tools()
+        one_shot_tool = [t for t in tools if t.name == "one_shot"][0]
+        assert one_shot_tool.cli_command == "one-shot"
 
 
 class TestCreateMcp:
@@ -167,8 +278,6 @@ class TestCreateMcp:
         assert server.name == DEFAULT_MCP_NAME
 
     def test_registers_expected_tools(self) -> None:
-        import asyncio
-
         server = create_mcp()
         tools = asyncio.run(server.list_tools())
         tool_names = {t.name for t in tools}

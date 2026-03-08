@@ -26,13 +26,14 @@ packages/erk-mcp/
 
 The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp>=2.0`) and is a thin wrapper that delegates to the `erk` CLI.
 
-## The `_run_erk()` Wrapper
+## CLI Wrappers
 
-<!-- Source: packages/erk-mcp/src/erk_mcp/server.py, _run_erk -->
+<!-- Source: packages/erk-mcp/src/erk_mcp/server.py -->
 
-All tools delegate to the erk CLI via `_run_erk()`. See `_run_erk()` in `packages/erk-mcp/src/erk_mcp/server.py` for the implementation.
+Two internal wrappers in `server.py` delegate to the erk CLI:
 
-Non-zero exit codes raise `RuntimeError` with the stderr message. MCP clients receive this as a tool error.
+- **Standard wrapper** — Runs `erk <args>`, raises `RuntimeError` on non-zero exit. Used by hand-written tools (`plan_list`, `plan_view`).
+- **JSON wrapper** — Runs `erk <command> --json`, pipes params as JSON stdin. Does NOT raise on non-zero exit — `--json` guarantees structured error output flows through to the agent. Used by `JsonCommandTool`.
 
 ## MCP Tools
 
@@ -42,19 +43,61 @@ Three tools are registered:
 | ----------- | ------------------------ | --------------------------------------------- |
 | `plan_list` | `erk exec dash-data`     | List plans with status, labels, metadata      |
 | `plan_view` | `erk exec get-plan-info` | View a specific plan's metadata and body      |
-| `one_shot`  | `erk one-shot <prompt>`  | Submit a task for autonomous remote execution |
+| `one_shot`  | `erk one-shot --json`    | Submit a task for autonomous remote execution |
 
-### `plan_list(state: str | None = None) -> str`
+### `plan_list`
 
-Returns structured JSON from the erk dashboard. The optional `state` parameter filters by `"open"` or `"closed"`.
+<!-- Source: packages/erk-mcp/src/erk_mcp/server.py -->
 
-### `plan_view(plan_id: int) -> str`
+Returns structured JSON from the erk dashboard. Optional state filter (`"open"` or `"closed"`).
 
-Returns plan title, state, labels, and full markdown body for the given plan ID. Uses `--include-body` flag.
+### `plan_view`
 
-### `one_shot(prompt: str) -> str`
+<!-- Source: packages/erk-mcp/src/erk_mcp/server.py -->
 
-Dispatches a task for fully autonomous execution: creates a branch, draft PR, and triggers a GitHub Actions workflow. Returns after dispatch (~10-30s) with PR and workflow run URLs.
+Returns plan title, state, labels, and full markdown body for a given plan ID.
+
+### `one_shot` (auto-discovered via `@mcp_exposed`)
+
+Dispatches a task for fully autonomous execution via `erk one-shot --json`. Returns structured JSON with `success` field. On success: `pr_number`, `pr_url`, `run_url`, `branch_name`. With `dry_run`: preview without executing. On error: `error_type` and message.
+
+Parameters are auto-derived from Click parameters via `command_input_schema()` — no separate schema class needed.
+
+## Auto-Discovery from Click Command Tree
+
+<!-- Source: src/erk/cli/mcp_exposed.py, packages/erk-mcp/src/erk_mcp/server.py -->
+
+CLI commands decorated with both `@json_command` and `@mcp_exposed` are automatically discovered and registered as MCP tools. One source of truth (Click parameters), two interfaces (CLI and MCP).
+
+### Adding a new MCP tool
+
+1. Add `@mcp_exposed(name="tool_name", description="...")` above `@json_command` on the Click command
+2. Done — `create_mcp()` walks the Click tree and registers it automatically
+
+```python
+@mcp_exposed(name="one_shot", description="Submit a task for...")
+@json_command(exclude_json_input=..., output_types=...)
+@click.command("one-shot")
+```
+
+### How it works
+
+- `@mcp_exposed` attaches MCP metadata (name, description) to the Click command
+- `discover_mcp_commands(cli)` walks the Click tree finding decorated commands
+- `command_input_schema(cmd)` derives JSON Schema from Click parameters
+- `JsonCommandTool` wraps each discovered command as a FastMCP `Tool`
+
+`JsonCommandTool.run()` filters out `None` values, then pipes the remaining params as JSON to the CLI.
+
+### Parity tests
+
+<!-- Source: tests/unit/cli/ -->
+
+Parity tests enforce:
+
+- Every `@mcp_exposed` command is registered as an MCP tool
+- Each tool's schema matches the Click-derived schema
+- No orphaned tools exist without a corresponding `@mcp_exposed` command
 
 ## Configuration
 
