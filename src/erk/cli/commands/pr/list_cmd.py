@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.text import Text
 
 from erk.cli.core import discover_repo_context
+from erk.cli.json_output import emit_json, json_output
 from erk.cli.repo_resolution import (
     get_remote_github,
     repo_option,
@@ -21,6 +22,7 @@ from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.tui.app import ErkDashApp
 from erk.tui.data.real_provider import RealPlanDataProvider
+from erk.tui.data.serialization import serialize_plan_row
 from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.logic import sort_plans
 from erk.tui.sorting.types import SortKey, SortState
@@ -253,6 +255,7 @@ def _pr_list_impl(
     all_users: bool,
     sort: str,
     target_repo: str | None,
+    json_mode: bool,
 ) -> None:
     owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
 
@@ -313,6 +316,9 @@ def _pr_list_impl(
         rows = [r for r in rows if strip_rich_markup(r.lifecycle_display).startswith(stage)]
 
     if not rows:
+        if json_mode:
+            emit_json({"plans": [], "count": 0})
+            return
         user_output("No plans found matching the criteria.")
         return
 
@@ -324,6 +330,10 @@ def _pr_list_impl(
     else:
         sort_key = SortKey.PLAN_ID
         rows = sort_plans(rows, sort_key)
+
+    if json_mode:
+        emit_json({"plans": [serialize_plan_row(r) for r in rows], "count": len(rows)})
+        return
 
     table = _build_static_table(rows, show_pr_column=False)
 
@@ -440,6 +450,7 @@ def _run_interactive_mode(
     app.run()
 
 
+@json_output
 @click.command("list")
 @pr_filter_options
 @repo_option
@@ -455,6 +466,7 @@ def pr_list(
     all_users: bool,
     sort: str,
     target_repo: str | None,
+    json_mode: bool,
 ) -> None:
     """List plans as a static table.
 
@@ -472,6 +484,7 @@ def pr_list(
         erk pr list --stage impl         # Filter by lifecycle stage
         erk pr list --sort activity      # Sort by recent branch activity
         erk pr list --repo owner/repo    # Remote mode (no local git required)
+        erk pr list --json               # JSON output for agents
     """
     _pr_list_impl(
         ctx,
@@ -483,6 +496,7 @@ def pr_list(
         all_users=all_users,
         sort=sort,
         target_repo=target_repo,
+        json_mode=json_mode,
     )
 
 
