@@ -1,0 +1,1166 @@
+<session>
+  <meta branch="plnd/apply-erk-pr-label-03-08-0718" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="6f3cc3e0-2e22-4a07-9b8a-f8f371b9b60a" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="6f3cc3e0-2e22-4a07-9b8a-f8f371b9b60a" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="6f3cc3e0-2e22-4a07-9b8a-f8f371b9b60a" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="6f3cc3e0-2e22-4a07-9b8a-f8f371b9b60a" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15440" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15440}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15440" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15440}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EQ53D67TamKgEYkpLuSRpg">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from branch/impl-context</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15440" cache_read_input_tokens="9738" output_tokens="269" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15440, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EQ53D67TamKgEYkpLuSRpg">
+Found existing impl dir for plan #9000, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/.erk/impl-context/plnd--apply-erk-pr-label-03-08-0718", "plan_number": 9000, "plan_url": "https://github.com/dagster-io/erk/pull/9000", "branch": "plnd/apply-erk-pr-label-03-08-0718", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9000, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="25178" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cq9SZy9gVusWx6Ls97LX8y">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/.erk/impl-context/plnd--apply-erk-pr-label-03-08-0718/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="25178" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 447, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cq9SZy9gVusWx6Ls97LX8y">
+     1→# Apply `erk-pr` Label to All Erk-Submitted PRs
+     2→
+     3→## Context
+     4→
+     5→The `erk-pr` label is applied to plan PRs but NOT to non-plan code PRs submitted through erk. This means code PRs like #8992 don't appear in the dash. The fix is simple: apply `erk-pr` to code PRs too via the submit pipeline, and make the dash's "Planned PRs" view query `erk-pr` (showing all erk PRs — both plans and code PRs).
+     6→
+     7→## Changes
+     8→
+     9→### 1. Apply `erk-pr` to non-plan code PRs in submit pipeline
+    10→
+    11→**`src/erk/cli/commands/pr/submit_pipeline.py`**:
+    12→
+    13→Add a new pipeline step `label_code_pr` after `push_and_create_pr` in both `_push_and_create_pipeline()` and `_submit_pipeline()`:
+    14→
+    15→```python
+    16→def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    17→    """Add erk-pr label to non-plan code PRs."""
+    18→    if state.plan_context is not None:
+    19→        return state  # Plan PRs already get erk-pr via plan creation
+    20→    if state.pr_number is None:
+    21→        return state
+    22→    add_labels_resilient(
+    23→        ctx.github, time=ctx.time, repo_root=state.repo_root,
+    24→        pr_number=state.pr_number, labels=(ERK_PR_LABEL,),
+    25→    )
+    26→    return state
+    27→```
+    28→
+    29→Import `ERK_PR_LABEL` from `erk.cli.constants` (already partially imported in this file).
+    30→
+
+... [34 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="25625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read all the relevant source files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="25625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Px5HQUkUBRfbq6bjQSarf3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="25625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Px5HQUkUBRfbq6bjQSarf3">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.cli.repo_resolution import get_remote_github
+    30→from erk.core.commit_message_generator import CommitMessageGenerator
+
+... [1074 lines omitted] ...
+
+    34→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   120→class SubmitError:
+   121→    """Error result from a pipeline step."""
+   124→    error_type: str
+   133→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   136→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   149→        return SubmitError(
+   151→            error_type="no_branch",
+   165→        except ValueError as e:
+   166→            return SubmitError(
+   168→                error_type="issue_linkage_mismatch",
+   211→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   231→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   241→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   253→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   270→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   277→    # but the first submit attempt failed before pushing.
+   299→            return SubmitError(
+   301→                error_type="remote_diverged",
+   331→    except RuntimeError as e:
+   332→        error_str = str(e)
+   333→        if "restack" in error_str.lower():
+   334→            return SubmitError(
+   336→                error_type="graphite_restack_required",
+   345→        return SubmitError(
+   347→            error_type="graphite_submit_failed",
+   348→            message=f"Graphite submit failed: {e}",
+   360→        return SubmitError(
+   362→            error_type="pr_not_found",
+   391→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   399→        return SubmitError(
+   401→            error_type="github_auth_failed",
+   411→        return SubmitError(
+   413→            error_type="no_commits",
+   431→        if isinstance(pull_result, PullRebaseError):
+   432→            return SubmitError(
+   434→                error_type="rebase_failed",
+   436→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   437→                    f"Error: {pull_result.message}\n\n"
+   447→        return SubmitError(
+   449→            error_type="branch_diverged",
+   468→    if isinstance(push_result, PushError):
+   470→            return SubmitError(
+   472→                error_type="branch_diverged",
+   481→        raise UserFacingCliError(push_result.message)
+   491→                return SubmitError(
+   493→                    error_type="parent_branch_no_pr",
+   565→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   571→        return SubmitError(
+   573→            error_type="no_base_branch",
+   601→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   611→        return SubmitError(
+   613→            error_type="no_repo",
+   632→) -&gt; SubmitState | SubmitError:
+   645→    if isinstance(diff_result, SubmitError):
+   647→    if isinstance(plan_result, SubmitError):
+   659→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   666→        return SubmitError(
+   668→            error_type="no_diff_file",
+   669→            message="Failed to extract diff for AI analysis",
+   690→        return SubmitError(
+   692→            error_type="ai_generation_failed",
+   693→            message=f"Failed to generate message: {msg_result.error_message}",
+   706→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   748→    except RuntimeError as e:
+   749→        error_msg = str(e).lower()
+   750→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   754→        return SubmitError(
+   756→            error_type="graphite_enhance_failed",
+   757→            message=f"Graphite enhancement failed: {e}",
+   774→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   781→        return SubmitError(
+   783→            error_type="no_pr_number",
+   856→        except OSError as e:
+   858→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   886→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   912→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   953→            except ValueError:
+  1007→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1012→        except Exception as e:
+  1014→            return SubmitError(
+  1016→                error_type="unhandled_exception",
+  1017→                message=f"Unexpected error in {step_name}: {e}",
+  1021→        if isinstance(result, SubmitError):
+  1043→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1044→    """Run the submit pipeline, returning final state or first error."""
+  1048→        except Exception as e:
+  1050→            return SubmitError(
+  1052→                error_type="unhandled_exception",
+  1053→                message=f"Unexpected error in {step_name}: {e}",
+  1057→        if isinstance(result, SubmitError):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ko75RQN8ub4t3evgrM1GNB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/tui/views/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="25625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ko75RQN8ub4t3evgrM1GNB">
+     1→"""View mode types for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from enum import Enum, auto
+     7→
+     8→
+     9→class ViewMode(Enum):
+    10→    """Available view modes for the dashboard."""
+    11→
+    12→    PLANS = auto()
+    13→    LEARN = auto()
+    14→    OBJECTIVES = auto()
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class ViewConfig:
+    19→    """Configuration for a specific view mode.
+    20→
+    21→    Attributes:
+    22→        mode: The view mode this config describes
+    23→        display_name: Human-readable name for the view
+    24→        labels: GitHub labels to use when fetching data
+    25→        key_hint: Key binding hint (e.g., "1", "2", "3")
+    26→        exclude_labels: Labels to exclude from results (client-side filtering
+    27→            applied before expensive enrichment). Empty tuple means no exclusion.
+    28→    """
+    29→
+    30→    mode: ViewMode
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YJRddz5osqbaEqNJtvB6yi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/tui/app.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="25625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YJRddz5osqbaEqNJtvB6yi">
+     1→"""Main Textual application for erk dash interactive mode."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→import time
+     7→from collections.abc import Iterator
+     8→from datetime import datetime
+     9→from pathlib import Path
+    10→
+    11→from textual import on
+    12→from textual.app import App, ComposeResult, SystemCommand
+    13→from textual.binding import Binding
+    14→from textual.containers import Container
+    15→from textual.screen import Screen
+    16→from textual.widgets import Header, Input, Label
+    17→
+    18→from erk.tui.actions.filter_actions import FilterActionsMixin
+    19→from erk.tui.actions.navigation import NavigationActionsMixin
+    20→from erk.tui.actions.palette import PaletteActionsMixin
+    21→from erk.tui.commands.provider import MainListCommandProvider
+    22→from erk.tui.data.provider_abc import PlanDataProvider
+    23→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    24→from erk.tui.filtering.logic import filter_plans
+    25→from erk.tui.filtering.types import FilterMode, FilterState
+    26→from erk.tui.operations.logic import build_github_url
+    27→from erk.tui.operations.streaming import StreamingOperationsMixin
+    28→from erk.tui.operations.workers import BackgroundWorkersMixin
+    29→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    30→from erk.tui.sorting.logic import sort_plans
+
+... [512 lines omitted] ...
+
+   237→        except Exception as e:
+   238→            # GitHub API failure, network error, etc.
+   239→            self.notify(f"Failed to load plans: {e}", severity="error", timeout=5)
+   365→            if severity in ("information", "warning", "error"):
+   507→                    self.notify("Clipboard unavailable", severity="error", timeout=2)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01V66bEysnXaAdChE6hNwoca">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="25625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V66bEysnXaAdChE6hNwoca">
+     1→"""Serialize plan dashboard data to JSON for external consumers.
+     2→
+     3→Usage:
+     4→    erk exec dash-data [--state open|closed] [--label LABEL] [--limit N]
+     5→        [--show-prs/--no-show-prs] [--show-runs/--no-show-runs]
+     6→        [--run-state STATE] [--creator USER]
+     7→
+     8→Output:
+     9→    JSON with {success, plans, count}
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (missing repo info, API error)
+    14→"""
+    15→
+    16→import dataclasses
+    17→import json
+    18→from datetime import datetime
+    19→from typing import Any
+    20→
+    21→import click
+    22→
+    23→from erk.cli.core import discover_repo_context
+    24→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    25→from erk.tui.data.real_provider import RealPlanDataProvider
+    26→from erk.tui.data.types import PlanFilters, PlanRowData
+    27→from erk_shared.context.helpers import require_context
+    28→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
+    29→
+    30→
+
+... [83 lines omitted] ...
+
+    76→            json.dumps({"success": False, "error": "Could not determine repository owner/name"})
+    87→        click.echo(json.dumps({"success": False, "error": "GitHub authentication not available"}))
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GyWEhZTD1VYoPYrhuJ5Rs5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="25625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GyWEhZTD1VYoPYrhuJ5Rs5">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from pathlib import Path
+     6→from typing import ParamSpec, TypeVar
+     7→
+     8→import click
+     9→from rich.console import Console
+    10→from rich.table import Table
+    11→from rich.text import Text
+    12→
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.cli.repo_resolution import (
+    15→    get_remote_github,
+    16→    repo_option,
+    17→    resolve_owner_repo,
+    18→)
+    19→from erk.core.context import ErkContext
+    20→from erk.core.display_utils import strip_rich_markup
+    21→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    22→from erk.tui.app import ErkDashApp
+    23→from erk.tui.data.real_provider import RealPlanDataProvider
+    24→from erk.tui.data.types import PlanFilters, PlanRowData
+    25→from erk.tui.sorting.logic import sort_plans
+    26→from erk.tui.sorting.types import SortKey, SortState
+    27→from erk_shared.context.types import NoRepoSentinel
+    28→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    29→from erk_shared.gateway.clipboard.real import RealClipboard
+    30→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+
+... [512 lines omitted] ...
+
+    90→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   261→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   308→    if timings is not None and timings.warnings:
+   309→        for warning in timings.warnings:
+   310→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   371→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   393→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_use name="Read" id="toolu_014asRkaDT3kPguYKikHjNJb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/planning/label-scheme.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1203" cache_read_input_tokens="25625" output_tokens="614" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1203, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014asRkaDT3kPguYKikHjNJb">
+     1→---
+     2→title: Plan Label Assignment Scheme
+     3→read_when:
+     4→  - "understanding how plans and learn issues are labeled"
+     5→  - "working with erk-planned-pr, erk-plan, or erk-learn labels"
+     6→  - "debugging label filtering in TUI or CLI views"
+     7→tripwires:
+     8→  - action: "querying plans using only the erk-planned-pr base label"
+     9→    warning: "Use type-specific labels (erk-plan, erk-learn) for queries. The base label erk-planned-pr is for identification, not filtering. See github-graphql-label-semantics.md for AND-logic issues."
+    10→  - action: "backfilling labels on existing issues without considering updated_at side effects"
+    11→    warning: "GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users."
+    12→---
+    13→
+    14→# Plan Label Assignment Scheme
+    15→
+    16→Erk uses a two-label scheme for plans: a **base label** for universal identification and a **type-specific label** for filtering and routing.
+    17→
+    18→## Label Taxonomy
+    19→
+    20→| Label              | Purpose                           | Applied To                |
+    21→| ------------------ | --------------------------------- | ------------------------- |
+    22→| `erk-planned-pr`   | Base label — identifies all plans | All plans and learn plans |
+    23→| `erk-plan`         | Type label — implementation plans | Regular plans             |
+    24→| `erk-learn`        | Type label — documentation plans  | Learn plans               |
+    25→| `erk-objective`    | Separate system — objectives      | Objective issues          |
+    26→| `erk-consolidated` | Consolidation marker              | Consolidated learn plans  |
+    27→
+    28→## Two-Label Assignment
+    29→
+    30→When `PlannedPRBackend.create_plan()` creates a new issue:
+
+... [41 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="36798" cache_read_input_tokens="26828" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 36798}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the constants file for `ERK_PR_LABEL`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="36798" cache_read_input_tokens="26828" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 36798}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MVw3qcPf9wtydULUEBUK3a">
+    <param name="pattern">ERK_PR_LABEL</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/constants.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="36798" cache_read_input_tokens="26828" output_tokens="228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 36798, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MVw3qcPf9wtydULUEBUK3a">
+54:ERK_PR_LABEL = "erk-pr"
+  </tool_result>
+  <assistant>Good. Now let me also check if `ERK_PR_LABEL` is already imported in submit_pipeline.py - I see it imports `PLANNED_PR_TITLE_PREFIX` from `erk.cli.constants` but not `ERK_PR_LABEL`. I also see `add_labels_resilient` is already imported. Let me now signal started and begin implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="63626" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VJQF5DM1wQXMErgGsavXxe">
+    <param name="command">erk exec impl-signal started --session-id="6f3cc3e0-2e22-4a07-9b8a-f8f371b9b60a" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="63626" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 255, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VJQF5DM1wQXMErgGsavXxe">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9000
+}
+  </tool_result>
+  <assistant>Now implementing all 5 changes from the plan.
+
+**Phase 1: Add `label_code_pr` step to submit pipeline**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="63881" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 246}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0168AwycqHsTEUTQBqcZR22Y">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">from erk.cli.constants import PLANNED_PR_TITLE_PREFIX</param>
+    <param name="new_string">from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="63881" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 246, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0168AwycqHsTEUTQBqcZR22Y">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `label_code_pr` function. I'll add it after `push_and_create_pr` and before `extract_diff`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="64127" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 284}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RKXK47d4yxeRjX3aSxEEj7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:</param>
+    <param name="new_string">def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    "...[truncated 375 chars]...tate
+
+
+def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="64127" output_tokens="382" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RKXK47d4yxeRjX3aSxEEj7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait — the plan says to add `label_code_pr` after `push_and_create_pr` in both pipelines. But `label_code_pr` checks `state.plan_context` which is only populated by `fetch_plan_context` which runs *after* `push_and_create_pr`. In `_push_and_create_pipeline`, `plan_context` would always be `None` since it's never fetched there. Let me re-read the plan more carefully.
+
+Actually, looking at the plan again: `label_code_pr` checks `state.plan_context is not None` — plan_context gets set in `fetch_plan_context` step. But in `_push_and_create_pipeline()`, there's no `fetch_plan_context` step, so `plan_context` would always be `None`, meaning it would always try to label. That's actually fine for `_push_and_create_pipeline` since it's the quick pipeline.
+
+But for `_submit_pipeline`, the `label_code_pr` step needs to come *after* `fetch_plan_context` to correctly detect plan PRs. Let me look at the pipeline order more carefully...
+
+Actually, looking at the submit pipeline: `push_and_create_pr` → `extract_diff_and_fetch_plan_context` → `generate_description` → ... The plan context is fetched concurrently with the diff extraction. So I should place `label_code_pr` after `extract_diff_and_fetch_plan_context` in the submit pipeline.
+
+But wait — actually, in the `_push_and_create_pipeline`, `plan_context` is always `None` (never fetched), so `label_code_pr` would label every PR including plan PRs. That's not ideal. But plan PRs already have `erk-pr` via plan creation, and `add_labels_resilient` is idempotent, so double-labeling is harmless.
+
+Actually, let me reconsider. The plan says to check `state.plan_context is not None`. In `_push_and_create_pipeline`, `plan_context` is always `None`, so it would always label. But there's also `state.plan_id` which IS populated by `prepare_state`. I can use that instead for a more accurate check. Let me use `plan_id` since it's available in both pipelines:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="462" cache_read_input_tokens="64411" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 462}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WSQXMksXWqMUEPxdumY2oF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    "...[truncated 289 chars]...
+        pr_number=state.pr_number,
+        labels=(ERK_PR_LABEL,),
+    )
+    return state</param>
+    <param name="new_string">def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    "...[truncated 284 chars]...
+        pr_number=state.pr_number,
+        labels=(ERK_PR_LABEL,),
+    )
+    return state</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="462" cache_read_input_tokens="64411" output_tokens="1018" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 462, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WSQXMksXWqMUEPxdumY2oF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add `label_code_pr` to both pipelines:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1190" cache_read_input_tokens="64873" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1190}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LtT22j4LwMa9j8ADTe4K9o">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">@cache
+def _push_and_create_pipeline() -&gt; tuple[SubmitStep, ...]:
+    return (
+        pre...[truncated 22 chars]...t,
+        commit_wip,
+        capture_existing_pr_body,
+        push_and_create_pr,
+    )</param>
+    <param name="new_string">@cache
+def _push_and_create_pipeline() -&gt; tuple[SubmitStep, ...]:
+    return (
+        pre...[truncated 45 chars]...        capture_existing_pr_body,
+        push_and_create_pr,
+        label_code_pr,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1190" cache_read_input_tokens="64873" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1190, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LtT22j4LwMa9j8ADTe4K9o">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JLX2Sk8fBCnCMer8Mz8ELh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">@cache
+def _submit_pipeline() -&gt; tuple[SubmitStep, ...]:
+    return (
+        prepare_stat...[truncated 176 chars]...     enhance_with_graphite,
+        finalize_pr,
+        link_pr_to_objective_nodes,
+    )</param>
+    <param name="new_string">@cache
+def _submit_pipeline() -&gt; tuple[SubmitStep, ...]:
+    return (
+        prepare_stat...[truncated 199 chars]...     enhance_with_graphite,
+        finalize_pr,
+        link_pr_to_objective_nodes,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="66063" output_tokens="392" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 380, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JLX2Sk8fBCnCMer8Mz8ELh">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 2: Rename "Planned PRs" to "PRs" in dash and query `erk-pr`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="66443" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 453}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015TRP39WRqTDcWqBY8XN9Bq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/tui/views/types.py</param>
+    <param name="old_string">PLANS_VIEW = ViewConfig(
+    mode=ViewMode.PLANS,
+    display_name="Plans",
+    labels=("erk-plan",),
+    key_hint="1",
+    exclude_labels=("erk-learn",),
+)</param>
+    <param name="new_string">PLANS_VIEW = ViewConfig(
+    mode=ViewMode.PLANS,
+    display_name="PRs",
+    labels=("erk-pr",),
+    key_hint="1",
+    exclude_labels=("erk-learn",),
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="66443" output_tokens="296" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 453, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015TRP39WRqTDcWqBY8XN9Bq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/tui/views/types.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the "Planned PRs" override in `app.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="66896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 354}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PTbyqzMmVYdNqcWMpvUNQ3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/tui/app.py</param>
+    <param name="old_string">    def _display_name_for_view(self, mode: ViewMode) -&gt; str:
+        """Get the display na...[truncated 162 chars]....PLANS:
+            return "Planned PRs"
+        return get_view_config(mode).display_name</param>
+    <param name="new_string">    def _display_name_for_view(self, mode: ViewMode) -&gt; str:
+        """Get the display na...[truncated 94 chars]...         Display name string
+        """
+        return get_view_config(mode).display_name</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="66896" output_tokens="334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 354, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PTbyqzMmVYdNqcWMpvUNQ3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/tui/app.py has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 3: Update `dash_data.py` default labels**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="67250" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 390}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WQjCaeCAuwGZW4Ph2ZVFFJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+    <param name="old_string">@click.option("--label", multiple=True, default=("erk-pr", "erk-plan"))</param>
+    <param name="new_string">@click.option("--label", multiple=True, default=("erk-pr",))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="67250" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 390, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WQjCaeCAuwGZW4Ph2ZVFFJ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/dash_data.py has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 4: Update `pr list` default labels**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="67640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 279}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01613SFgQGn7uWPY2JhiiaR9">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    labels = label if label else ("erk-pr", "erk-plan")</param>
+    <param name="new_string">    labels = label if label else ("erk-pr",)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="67640" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 279, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01613SFgQGn7uWPY2JhiiaR9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/pr/list_cmd.py has been updated. All occurrences of '    labels = label if label else ("erk-pr", "erk-plan")' were successfully replaced with '    labels = label if label else ("erk-pr",)'.
+  </tool_result>
+  <assistant>**Phase 5: Update label scheme documentation**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="67919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 413}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ATWa3f9C9fxPwCNxme4wxt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/planning/label-scheme.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="67919" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ATWa3f9C9fxPwCNxme4wxt">
+     1→---
+     2→title: Plan Label Assignment Scheme
+     3→read_when:
+     4→  - "understanding how plans and learn issues are labeled"
+     5→  - "working with erk-planned-pr, erk-plan, or erk-learn labels"
+     6→  - "debugging label filtering in TUI or CLI views"
+     7→tripwires:
+     8→  - action: "querying plans using only the erk-planned-pr base label"
+     9→    warning: "Use type-specific labels (erk-plan, erk-learn) for queries. The base label erk-planned-pr is for identification, not filtering. See github-graphql-label-semantics.md for AND-logic issues."
+    10→  - action: "backfilling labels on existing issues without considering updated_at side effects"
+    11→    warning: "GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users."
+    12→---
+    13→
+    14→# Plan Label Assignment Scheme
+    15→
+    16→Erk uses a two-label scheme for plans: a **base label** for universal identification and a **type-specific label** for filtering and routing.
+    17→
+    18→## Label Taxonomy
+    19→
+    20→| Label              | Purpose                           | Applied To                |
+    21→| ------------------ | --------------------------------- | ------------------------- |
+    22→| `erk-planned-pr`   | Base label — identifies all plans | All plans and learn plans |
+    23→| `erk-plan`         | Type label — implementation plans | Regular plans             |
+    24→| `erk-learn`        | Type label — documentation plans  | Learn plans               |
+    25→| `erk-objective`    | Separate system — objectives      | Objective issues          |
+    26→| `erk-consolidated` | Consolidation marker              | Consolidated learn plans  |
+    27→
+    28→## Two-Label Assignment
+    29→
+    30→When `PlannedPRBackend.create_plan()` creates a new issue:
+
+... [41 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KNqixZY3FAGqccsfSNFjny">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/planning/label-scheme.md</param>
+    <param name="old_string">---
+title: Plan Label Assignment Scheme
+read_when:
+  - "understanding how plans and learn ...[truncated 3024 chars]... label filters
+- [Glossary: Learn Plan](../glossary.md#learn-plan) — Learn plan definition</param>
+    <param name="new_string">---
+title: PR and Plan Label Assignment Scheme
+read_when:
+  - "understanding how plans, co...[truncated 3322 chars]... label filters
+- [Glossary: Learn Plan](../glossary.md#learn-plan) — Learn plan definition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1205" cache_read_input_tokens="68332" output_tokens="1956" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1205, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KNqixZY3FAGqccsfSNFjny">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/planning/label-scheme.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me write tests for the `label_code_pr` step. Let me find existing submit pipeline tests first.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2012" cache_read_input_tokens="69537" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2012}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_0191zDB1n2wu3otyMGRxvPgo">
+    <param name="pattern">tests/**/test_submit_pipeline*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2012" cache_read_input_tokens="69537" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2012, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0191zDB1n2wu3otyMGRxvPgo">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TKLwHzZvQN18oh1SCZ9dN1">
+    <param name="pattern">submit_pipeline</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="101" cache_read_input_tokens="71549" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 101, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TKLwHzZvQN18oh1SCZ9dN1">
+Found 14 files
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff_and_fetch_plan_context.py
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py
+tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py
+tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+  </tool_result>
+  <assistant>Each pipeline step has its own test file. Let me look at an existing one to understand the testing pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="71650" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 480}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TuGL6h29UWPCrsuxNm5YXJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="71650" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 480, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TuGL6h29UWPCrsuxNm5YXJ">
+     1→"""Unit tests for cleanup_impl_for_submit pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    cleanup_impl_for_submit,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→
+    12→
+    13→def _make_state(
+    14→    *,
+    15→    cwd: Path,
+    16→    repo_root: Path | None = None,
+    17→    branch_name: str = "feature",
+    18→) -&gt; SubmitState:
+    19→    return SubmitState(
+    20→        cwd=cwd,
+    21→        repo_root=repo_root if repo_root is not None else cwd,
+    22→        branch_name=branch_name,
+    23→        parent_branch="main",
+    24→        trunk_branch="main",
+    25→        use_graphite=True,
+    26→        force=False,
+    27→        debug=False,
+    28→        session_id="test-session",
+    29→        skip_description=False,
+    30→        quiet=False,
+
+... [84 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the pattern. Let me also check how `FakeGitHub` handles `add_labels` to understand the fake.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5893" cache_read_input_tokens="72130" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5893}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UbLNzchwjz3S8nXrbymFwq">
+    <param name="pattern">add_labels_resilient|add_labels</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk_shared/gateway/github/label_ops.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5893" cache_read_input_tokens="72130" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5893, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UbLNzchwjz3S8nXrbymFwq">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk_shared/gateway/github/label_ops.py. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017yYBaVRHiiWvftMjefFxra">
+    <param name="pattern">add_labels_resilient</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk_shared</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="78023" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 395, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017yYBaVRHiiWvftMjefFxra">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk_shared. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GQE7GAyDvAfSPqZxqcWoyJ">
+    <param name="command">find /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14 -path "*/erk_shared" -type d 2&gt;/dev/null | head -5</param>
+    <param name="description">Find erk_shared directory location</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="78418" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 233, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GQE7GAyDvAfSPqZxqcWoyJ">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/tests/erk_shared
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/tests/packages/erk_shared
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Vt3b9ehEwR4zMYRcgNPjRg">
+    <param name="pattern">def add_labels_resilient</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="78651" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 245, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vt3b9ehEwR4zMYRcgNPjRg">
+packages/erk-shared/src/erk_shared/gateway/github/label_ops.py:28:def add_labels_resilient(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01S3SEU9HLPsK4E3VPxdykHt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/label_ops.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="78896" output_tokens="102" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 179, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S3SEU9HLPsK4E3VPxdykHt">
+     1→"""Resilient label addition using the GitHub gateway with retry."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import logging
+     6→from dataclasses import dataclass
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.github.abc import LocalGitHub
+    10→from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
+    11→from erk_shared.gateway.github.transient_errors import is_transient_error
+    12→from erk_shared.gateway.time.abc import Time
+    13→
+    14→_logger = logging.getLogger(__name__)
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class AddLabelsResult:
+    19→    """Result from adding labels to a PR."""
+    20→
+    21→    success: bool
+    22→    pr_number: int
+    23→    added_labels: list[str]
+    24→    failed_labels: list[str]
+    25→    errors: dict[str, str]
+    26→
+    27→
+    28→def add_labels_resilient(
+    29→    github: LocalGitHub,
+    30→    *,
+
+... [45 lines omitted] ...
+
+    36→    """Add labels to a PR with retry on transient errors. Never raises."""
+    39→    failed: dict[str, str] = {}
+    47→            except RuntimeError as e:
+    48→                if is_transient_error(str(e)):
+    55→                failed[label] = result.reason
+    56→                _logger.warning(
+    57→                    "Failed to add label '%s' to PR #%d after retries: %s",
+    64→        except RuntimeError as e:
+    65→            failed[label] = str(e)
+    66→            _logger.warning("Failed to add label '%s' to PR #%d: %s", label, pr_number, e)
+    69→        success=len(failed) == 0,
+    72→        failed_labels=list(failed.keys()),
+    73→        errors=failed,
+  </tool_result>
+  <assistant>Now I need to check how FakeGitHub implements `add_label_to_pr` to understand what assertions I can make in tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="79075" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 982}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013G4nb4v1AqwqZkM7WqVdX7">
+    <param name="pattern">add_label_to_pr</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*fake*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="79075" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 982, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013G4nb4v1AqwqZkM7WqVdX7">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/fake.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01KHgkFSkvY2zpU2Gmyaudy8">
+    <param name="pattern">add_label_to_pr|added_labels</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="213" cache_read_input_tokens="80057" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 213, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KHgkFSkvY2zpU2Gmyaudy8">
+176-        self._check_auth_status_calls: list[None] = []
+177-        self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
+178-        self._pr_labels: dict[int, set[str]] = {}
+179:        self._added_labels: list[tuple[int, str]] = []
+180-        self._pr_review_threads = pr_review_threads or {}
+181-        self._pr_check_runs: dict[int, list[PRCheckRun]] = pr_check_runs or {}
+182-        self._resolved_thread_ids: set[str] = set()
+--
+866-        """
+867-        return self._pr_changed_files.get(pr_number, [])
+868-
+869:    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -&gt; None:
+870-        """Record label addition in mutation tracking list and update internal state."""
+871-        if label in self._add_label_errors:
+872-            raise RuntimeError(self._add_label_errors[label])
+873:        self._added_labels.append((pr_number, label))
+874-        if pr_number not in self._pr_labels:
+875-            self._pr_labels[pr_number] = set()
+876-        self._pr_labels[pr_number].add(label)
+--
+891-        return label in self._pr_labels[pr_number]
+892-
+893-    @property
+894:    def added_labels(self) -&gt; list[tuple[int, str]]:
+895-        """Read-only access to tracked label additions for test assertions.
+896-
+897-        Returns list of (pr_number, label) tuples.
+898-        """
+899:        return self._added_labels
+900-
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me also check what `context_for_test` provides and how `FakeTime` works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="80270" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 664}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CqXbaLXs8px9RMKxWdtx14">
+    <param name="pattern">def context_for_test</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/core/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="80270" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 664, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CqXbaLXs8px9RMKxWdtx14">
+207:def context_for_test(
+208-    *,
+209-    git: Git | None = None,
+210-    github: LocalGitHub | None = None,
+211-    github_admin: GitHubAdmin | None = None,
+212-    issues: GitHubIssues | None = None,
+213-    plan_store: PlanBackend | None = None,
+214-    graphite: Graphite | None = None,
+215-    console: Console | None = None,
+216-    shell: Shell | None = None,
+217-    codespace: Codespace | None = None,
+218-    cmux: Cmux | None = None,
+219-    agent_launcher: AgentLauncher | None = None,
+220-    agent_docs: AgentDocs | None = None,
+221-    completion: Completion | None = None,
+222-    time: Time | None = None,
+223-    erk_installation: ErkInstallation | None = None,
+224-    script_writer: ScriptWriter | None = None,
+225-    plan_list_service: PlanListService | None = None,
+226-    objective_list_service: ObjectiveListService | None = None,
+227-    codespace_registry: CodespaceRegistry | None = None,
+228-    claude_installation: ClaudeInstallation | None = None,
+229-    prompt_executor: PromptExecutor | None = None,
+230-    cwd: Path | None = None,
+231-    global_config: GlobalConfig | None = None,
+232-    local_config: LoadedConfig | None = None,
+233-    repo: RepoContext | NoRepoSentinel | None = None,
+234-    repo_info: RepoInfo | None = None,
+235-    package_info: ErkPackageInfo | None = None,
+236-    remote_github: RemoteGitHub | None = None,
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now I have enough context. Let me write the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="80934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 669}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01M2Ykj5NHAVWjdXwZc1ykgq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/tests/unit/cli/commands/pr/submit_pipeline/test_label_code_pr.py</param>
+    <param name="content">"""Unit tests for label_code_pr pipeline step."""
+
+from pathlib import Path
+
+from erk.cli....[truncated 2144 chars]...result, SubmitState)
+    assert result is state
+    assert fake_github.added_labels == []
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="80934" output_tokens="926" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 669, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
