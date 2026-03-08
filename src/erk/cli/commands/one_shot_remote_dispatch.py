@@ -53,6 +53,20 @@ class OneShotDispatchResult:
     branch_name: str
 
 
+@dataclass(frozen=True)
+class OneShotDryRunResult:
+    """Result of a dry-run one-shot dispatch (preview only, no mutations)."""
+
+    branch_name: str
+    prompt: str
+    target: str
+    pr_title: str
+    base_branch: str
+    submitted_by: str
+    model: str | None
+    workflow: str
+
+
 def generate_branch_name(
     prompt: str,
     *,
@@ -106,7 +120,7 @@ def dispatch_one_shot_remote(
     ref: str | None,
     time_gateway: Time,
     prompt_executor: PromptExecutor | None,
-) -> OneShotDispatchResult | None:
+) -> OneShotDispatchResult | OneShotDryRunResult:
     """Execute the full remote dispatch sequence for a one-shot workflow.
 
     Creates branch, commits prompt file, creates draft PR, and dispatches
@@ -123,8 +137,7 @@ def dispatch_one_shot_remote(
         prompt_executor: PromptExecutor for slug generation, or None
 
     Returns:
-        OneShotDispatchResult with pr_number, run_id, branch_name,
-        or None in dry-run mode
+        OneShotDispatchResult on success, OneShotDryRunResult in dry-run mode
     """
     # Get authenticated user
     submitted_by = remote.get_authenticated_user()
@@ -162,7 +175,16 @@ def dispatch_one_shot_remote(
         if params.extra_workflow_inputs:
             for key, value in params.extra_workflow_inputs.items():
                 user_output(f"Extra input: {key}={value}")
-        return None
+        return OneShotDryRunResult(
+            branch_name=branch_name,
+            prompt=params.prompt,
+            target=f"{owner}/{repo}",
+            pr_title=pr_title,
+            base_branch=trunk,
+            submitted_by=submitted_by,
+            model=params.model,
+            workflow=ONE_SHOT_WORKFLOW,
+        )
 
     # --- Summary block ---
     user_output(click.style("Dispatching one-shot (remote)...", bold=True))
