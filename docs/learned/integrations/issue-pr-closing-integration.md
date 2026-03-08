@@ -8,7 +8,7 @@ read_when:
 tripwires:
   - action: "putting Closes keyword in PR title or commit message"
     warning: "GitHub only processes closing keywords in the PR body. Title and commit message references are ignored."
-  - action: "using issue number from .erk/impl-context/plan-ref.json for a checkout footer"
+  - action: "using plan number from .erk/impl-context/plan-ref.json for a checkout footer"
     warning: "The checkout footer requires the PR number, not the plan number. These are different values — the plan is the source, the PR is the implementation."
   - action: "resolving plan number from a single source without checking for mismatches"
     warning: "Both .erk/impl-context/plan-ref.json and branch name may contain plan numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong plan."
