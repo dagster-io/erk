@@ -1,0 +1,1058 @@
+<session>
+  <meta source="agent-a320bd7" />
+  <meta branch="plnd/O9009-add-pr-json-output-03-08-1044" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find test files and patterns for the `erk pr list` and `erk pr view` CLI commands. Specifically:
+
+1. Look in `tests/` for any existing test files for `pr/list_cmd.py` and `pr/view_cmd.py`
+2. Find the test directory structure under `tests/unit/cli/commands/pr/` or similar
+3. Find examples of how the project tests Click CLI commands using CliRunner and fakes
+4. Look for how `RealPlanDataProvider` is faked in tests
+5. Find the `FakePlanDataProvider` or similar test doubles
+6. Check `tests/unit/cli/` for existing test patterns with the `@json_output` decorator
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find test files and patterns for the `erk pr list` and `erk pr view` CLI commands. Let me start by checking the documentation, then explore the codebase systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6030" cache_read_input_tokens="12959" cache_creation="{'ephemeral_5m_input_tokens': 6030, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XwrVRyao16QcdJXvhvoKQS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6030" cache_read_input_tokens="12959" cache_creation="{'ephemeral_5m_input_tokens': 6030, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FewPnotFBj6H2TGWGeY8PJ">
+    <param name="pattern">pr list|pr view|CliRunner|PlanDataProvider</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="type">md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6030" cache_read_input_tokens="12959" cache_creation="{'ephemeral_5m_input_tokens': 6030, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XwrVRyao16QcdJXvhvoKQS">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FewPnotFBj6H2TGWGeY8PJ">
+Found 62 files
+docs/learned/tui/tripwires.md
+docs/learned/tui/architecture.md
+docs/learned/tui/column-addition-pattern.md
+docs/learned/tui/dashboard-columns.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/dual-handler-pattern.md
+docs/learned/tui/filter-pipeline.md
+docs/learned/tui/frozen-dataclass-field-management.md
+docs/learned/tui/index.md
+docs/learned/tui/stacked-pr-indicator.md
+docs/learned/textual/testing.md
+docs/learned/testing/testing.md
+docs/learned/testing/tripwires.md
+docs/learned/testing/hook-testing.md
+docs/learned/testing/integration-test-speed.md
+docs/learned/testing/rebase-conflicts.md
+docs/learned/testing/backend-testing-composition.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/env-overrides-pattern.md
+docs/learned/testing/exec-script-batch-testing.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/reference/github-actions-api.md
+docs/learned/pr-operations/pr-creation-patterns.md
+docs/learned/pr-operations/pr-submission-workflow.md
+docs/learned/pr-operations/tripwires.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/tripwire-worthiness-criteria.md
+docs/learned/planning/plan-id-semantics.md
+docs/learned/planning/plan-mismatch-recovery.md
+
+... [33 lines omitted] ...
+
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/ci/ci-failure-summarization.md
+  </tool_result>
+  <assistant>Now let me read the testing and CLI documentation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2239" cache_read_input_tokens="18989" cache_creation="{'ephemeral_5m_input_tokens': 2239, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EfacKqFYaW5bUSC93175p1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2239" cache_read_input_tokens="18989" cache_creation="{'ephemeral_5m_input_tokens': 2239, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WGJ81dgtiR2cgMYwKKdd3L">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/index.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2239" cache_read_input_tokens="18989" cache_creation="{'ephemeral_5m_input_tokens': 2239, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01UoSDsFY3r8HQvJYGZSVoRL">
+    <param name="pattern">tests/unit/cli/commands/pr/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2239" cache_read_input_tokens="18989" cache_creation="{'ephemeral_5m_input_tokens': 2239, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EfacKqFYaW5bUSC93175p1">
+     1→---
+     2→title: CLI Testing Patterns
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk CLI commands"
+     7→  - "using ErkContext.for_test()"
+     8→  - "testing Click commands with context"
+     9→tripwires:
+    10→  - action: "testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner"
+    11→    warning: "CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it."
+    12→    score: 7
+    13→  - action: "renaming a user-facing string in CLI output and updating related test assertions"
+    14→    warning: "Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout."
+    15→    score: 6
+    16→  - action: "passing mix_stderr parameter to CliRunner"
+    17→    warning: "Click 8.3.1 CliRunner no longer accepts mix_stderr parameter. Use CliRunner() or CliRunner(env={}) instead."
+    18→---
+    19→
+    20→# CLI Testing Patterns
+    21→
+    22→This document covers testing patterns specific to erk CLI commands that use `ErkContext` for dependency injection.
+    23→
+    24→## Overview
+    25→
+    26→Erk CLI commands use Click's context system (`@click.pass_context`) to receive dependencies. Testing these commands requires passing a test context via the `obj` parameter to `CliRunner.invoke()`.
+    27→
+    28→## The ErkContext.for_test() Pattern
+    29→
+    30→`ErkContext.for_test()` is the canonical factory method for creating test contexts with fake dependencies.
+
+... [491 lines omitted] ...
+
+   148→### Pattern 4: Testing Error Handling
+   150→When testing error paths:
+   166→    # Assert: Command exits with error
+   356→- [ ] Test both success and error paths
+  </tool_result>
+  <tool_result tool="toolu_01WGJ81dgtiR2cgMYwKKdd3L">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Cli Documentation
+     5→
+     6→- **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
+     7→- **[agent-friendly-cli.md](agent-friendly-cli.md)** — adding --json flag to a CLI command, creating or modifying MCP tools, implementing structured JSON output for CLI commands, working on agent-friendly CLI patterns, implementing erk schema command
+     8→- **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
+     9→- **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, CI fails with exec reference check error
+    10→- **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output
+    11→- **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
+    12→- **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
+    13→- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk pr teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
+    14→- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior
+    15→- **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
+    16→- **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input
+    17→- **[click-framework-conventions.md](click-framework-conventions.md)** — adding Click options to erk CLI commands, understanding default=None convention in Click options, distinguishing 'not provided' from 'empty string' in CLI arguments
+    18→- **[click-patterns.md](click-patterns.md)** — implementing CLI options with complex behavior, creating flags that optionally accept values, designing CLI flags with default behaviors
+    19→- **[code-review-filtering.md](code-review-filtering.md)** — debugging false positives in code review, understanding keyword-only parameter exceptions, working with ABC/Protocol method validation
+    20→- **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, handling codespace name resolution with optional defaults, bypassing GitHub API endpoint bugs
+    21→- **[command-deletion-patterns.md](command-deletion-patterns.md)** — deleting a CLI command or command group, removing dead code after a feature deletion, identifying vestigial features for removal
+    22→- **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
+    23→- **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
+    24→- **[command-promotion.md](command-promotion.md)** — promoting a nested CLI command to top-level, moving a command from a group to the root CLI, reorganizing CLI command hierarchy
+    25→- **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
+    26→- **[commands/pr-diverge-fix.md](commands/pr-diverge-fix.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
+    27→- **[commands/pr-prepare.md](commands/pr-prepare.md)** — setting up impl-context for an existing PR, preparing a worktree for plan implementation, working with erk pr prepare
+    28→- **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
+    29→- **[commands/reconcile.md](commands/reconcile.md)** — cleaning up branches whose PRs have been merged, reconciling branches merged outside erk land, working with erk reconcile
+    30→- **[commands/update-objective-node.md](commands/update-objective-node.md)** — working with objective roadmap tables, updating step PR references
+
+... [56 lines omitted] ...
+
+    33→- **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
+    34→- **[erk-docs-check.md](erk-docs-check.md)** — validating documentation frontmatter and structure, debugging CI failures in documentation checks, understanding how erk docs check works
+    36→- **[error-detection-patterns.md](error-detection-patterns.md)** — classifying errors from subprocess stderr output, detecting specific failure modes from external tool output, adding new SubmitError error_type based on error text
+    37→- **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError, writing actionable error messages for pipeline failures
+    42→- **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
+    56→- **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
+    59→- **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub, working with .erk/impl-context/ folders, debugging plan execution failures
+    64→- **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding the Graphite-first vs core submit dispatch
+    68→- **[session-management.md](session-management.md)** — adding session ID to a new exec script or hook, debugging 'session ID required' errors, deciding whether a command should require or optionally accept session ID, understanding how session ID flows from Claude Code to erk
+  </tool_result>
+  <tool_result tool="toolu_01UoSDsFY3r8HQvJYGZSVoRL">
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/__init__.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff_and_fetch_plan_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_lifecycle_update.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_helpers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_shared.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py
+  </tool_result>
+  <assistant>Now let me search for the actual pr list and pr view command files and their tests:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11687" cache_read_input_tokens="21228" cache_creation="{'ephemeral_5m_input_tokens': 11687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01VvpzzaKjkfFuFGiR5aTX3X">
+    <param name="pattern">src/erk/cli/commands/pr/*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11687" cache_read_input_tokens="21228" cache_creation="{'ephemeral_5m_input_tokens': 11687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013JjypHunWMCXy9HwpBvGjZ">
+    <param name="pattern">list_cmd|view_cmd</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11687" cache_read_input_tokens="21228" cache_creation="{'ephemeral_5m_input_tokens': 11687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013JjypHunWMCXy9HwpBvGjZ">
+Found 28 files
+tests/unit/commands/wt/test_list_helpers.py
+tests/unit/cli/test_alias.py
+tests/unit/cli/test_aliases.py
+tests/unit/cli/test_graphite_command.py
+tests/unit/cli/commands/objective/test_list_cmd_helpers.py
+tests/unit/cli/commands/objective/test_view_cmd.py
+tests/integration/test_dryrun_integration.py
+tests/commands/test_top_level_commands.py
+tests/commands/run/test_list.py
+tests/commands/cc/test_session_list.py
+tests/artifacts/test_cli.py
+src/erk/cli/commands/wt/__init__.py
+src/erk/cli/commands/run/__init__.py
+src/erk/cli/commands/run/list_cmd.py
+src/erk/cli/commands/slot/__init__.py
+src/erk/cli/commands/stack/__init__.py
+src/erk/cli/commands/pr/__init__.py
+src/erk/cli/commands/objective/__init__.py
+src/erk/cli/commands/init/capability/__init__.py
+src/erk/cli/commands/init/capability/list_cmd.py
+src/erk/cli/commands/doctor_workflow.py
+src/erk/cli/commands/cc/session/__init__.py
+src/erk/cli/commands/cc/session/show_cmd.py
+src/erk/cli/commands/codespace/__init__.py
+src/erk/cli/commands/artifact/group.py
+src/erk/cli/commands/artifact/list_cmd.py
+src/erk/cli/commands/branch/__init__.py
+src/erk/cli/cli.py
+  </tool_result>
+  <tool_result tool="toolu_01VvpzzaKjkfFuFGiR5aTX3X">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/parse_pr_reference.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/replan_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rebase_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py
+  </tool_result>
+  <assistant>Perfect! Now let me read the list_cmd.py and view_cmd.py files:</assistant>
+  <usage input_tokens="463" cache_creation_input_tokens="1039" cache_read_input_tokens="32915" cache_creation="{'ephemeral_5m_input_tokens': 1039, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Joz5ULiLJTh4NtAp5BvAsT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="463" cache_creation_input_tokens="1039" cache_read_input_tokens="32915" cache_creation="{'ephemeral_5m_input_tokens': 1039, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V51v5qT5MVB7hsE9tdg6oM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="463" cache_creation_input_tokens="1039" cache_read_input_tokens="32915" cache_creation="{'ephemeral_5m_input_tokens': 1039, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012NjPCGsihxtij2MfHRL6nb">
+    <param name="pattern">tests/unit/cli/commands/pr/test_list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="463" cache_creation_input_tokens="1039" cache_read_input_tokens="32915" cache_creation="{'ephemeral_5m_input_tokens': 1039, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01DV5sZgup3jF9bEbHAVRxgm">
+    <param name="pattern">tests/unit/cli/commands/pr/test_view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="463" cache_creation_input_tokens="1039" cache_read_input_tokens="32915" cache_creation="{'ephemeral_5m_input_tokens': 1039, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Joz5ULiLJTh4NtAp5BvAsT">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from pathlib import Path
+     6→from typing import ParamSpec, TypeVar
+     7→
+     8→import click
+     9→from rich.console import Console
+    10→from rich.table import Table
+    11→from rich.text import Text
+    12→
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.cli.json_output import emit_json, json_output
+    15→from erk.cli.repo_resolution import (
+    16→    get_remote_github,
+    17→    repo_option,
+    18→    resolve_owner_repo,
+    19→)
+    20→from erk.core.context import ErkContext
+    21→from erk.core.display_utils import strip_rich_markup
+    22→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    23→from erk.tui.app import ErkDashApp
+    24→from erk.tui.data.real_provider import RealPlanDataProvider
+    25→from erk.tui.data.serialization import serialize_plan_row
+    26→from erk.tui.data.types import PlanFilters, PlanRowData
+    27→from erk.tui.sorting.logic import sort_plans
+    28→from erk.tui.sorting.types import SortKey, SortState
+    29→from erk_shared.context.types import NoRepoSentinel
+    30→from erk_shared.gateway.browser.real import RealBrowserLauncher
+
+... [531 lines omitted] ...
+
+    92→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   264→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   311→    if timings is not None and timings.warnings:
+   312→        for warning in timings.warnings:
+   313→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   381→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   403→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_result tool="toolu_01V51v5qT5MVB7hsE9tdg6oM">
+     1→"""Command to fetch and display a single plan."""
+     2→
+     3→from datetime import datetime
+     4→
+     5→import click
+     6→
+     7→from erk.cli.ensure import UserFacingCliError
+     8→from erk.cli.github_parsing import parse_issue_identifier
+     9→from erk.cli.json_output import emit_json, json_output
+    10→from erk.cli.repo_resolution import (
+    11→    get_remote_github,
+    12→    repo_option,
+    13→    resolve_owner_repo,
+    14→)
+    15→from erk.core.context import ErkContext
+    16→from erk_shared.context.types import NoRepoSentinel
+    17→from erk_shared.core.typing_utils import narrow_to_literal
+    18→from erk_shared.gateway.github.issues.types import IssueNotFound
+    19→from erk_shared.gateway.github.metadata.schemas import (
+    20→    BRANCH_NAME,
+    21→    CREATED_BY,
+    22→    CREATED_FROM_SESSION,
+    23→    LAST_DISPATCHED_AT,
+    24→    LAST_DISPATCHED_RUN_ID,
+    25→    LAST_LEARN_SESSION,
+    26→    LAST_LOCAL_IMPL_AT,
+    27→    LAST_LOCAL_IMPL_EVENT,
+    28→    LAST_LOCAL_IMPL_SESSION,
+    29→    LAST_LOCAL_IMPL_USER,
+    30→    LAST_REMOTE_IMPL_AT,
+
+... [400 lines omitted] ...
+
+   268→                click.style("Error: ", fg="red")
+   277→                click.style("Error: ", fg="red")
+   287→                click.style("Error: ", fg="red")
+   305→        raise UserFacingCliError(
+   306→            f"Plan #{plan_id} not found", error_type="not_found"
+  </tool_result>
+  <tool_result tool="toolu_012NjPCGsihxtij2MfHRL6nb">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01DV5sZgup3jF9bEbHAVRxgm">
+No files found
+  </tool_result>
+  <assistant>So there are no existing test files for pr/list_cmd.py and pr/view_cmd.py. Let me search for how the @json_output decorator works and examine test patterns for similar commands:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="14065" cache_read_input_tokens="33954" cache_creation="{'ephemeral_5m_input_tokens': 14065, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VXVWW4GcNCuJndw2VCNF2D">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/json_output.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14065" cache_read_input_tokens="33954" cache_creation="{'ephemeral_5m_input_tokens': 14065, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_013PGRDSnbexkxEmCWR9gobP">
+    <param name="pattern">tests/unit/cli/commands/objective/test_view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14065" cache_read_input_tokens="33954" cache_creation="{'ephemeral_5m_input_tokens': 14065, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cvu3nJ3qhHtGYuSVBJS7YE">
+    <param name="command">find /home/runner/work/erk/erk/tests -name "test_*.py" -path "*/cli/commands/*" | head -15</param>
+    <param name="description">Find test files in cli commands directory</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14065" cache_read_input_tokens="33954" cache_creation="{'ephemeral_5m_input_tokens': 14065, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VXVWW4GcNCuJndw2VCNF2D">
+     1→"""JSON output decorator for CLI commands.
+     2→
+     3→Adds a --json flag to Click commands and handles error serialization.
+     4→Commands handle success JSON inline via emit_json(); the decorator only
+     5→handles the error path uniformly by catching UserFacingCliError.
+     6→"""
+     7→
+     8→import json
+     9→from typing import Any
+    10→
+    11→import click
+    12→
+    13→from erk.cli.ensure import UserFacingCliError
+    14→
+    15→
+    16→def json_output(cmd: click.Command) -&gt; click.Command:
+    17→    """Add --json flag and JSON error handling to a Click command.
+    18→
+    19→    Must be applied ABOVE @click.command (i.e., listed above it in the
+    20→    decorator stack). This is because decorators are applied bottom-to-top,
+    21→    so @json_output runs AFTER @click.command creates the Command object.
+    22→
+    23→    When --json is passed:
+    24→    - UserFacingCliError is caught and serialized as JSON to stdout
+    25→    - SystemExit and other exceptions pass through unchanged
+    26→
+    27→    When --json is not passed:
+    28→    - Delegates to the original callback unchanged
+    29→
+    30→    Usage:
+
+... [57 lines omitted] ...
+
+    60→        except UserFacingCliError as exc:
+    61→            error_data = {
+    63→                "error_type": exc.error_type,
+    66→            click.echo(json.dumps(error_data))
+  </tool_result>
+  <tool_result tool="toolu_013PGRDSnbexkxEmCWR9gobP">
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01Cvu3nJ3qhHtGYuSVBJS7YE">
+/home/runner/work/erk/erk/tests/cli/commands/split/test_plan.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/test_create_plans_repo_labels.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_backend_utils.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_remove_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_add_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_list_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/test_detect_backends.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_admin_github_pr_setting.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/wt/test_create_from_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_list_cmd_helpers.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_remove_cmd.py
+  </tool_result>
+  <assistant>Now let me look at test_view_cmd.py from the objective module as a reference example:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2008" cache_read_input_tokens="48019" cache_creation="{'ephemeral_5m_input_tokens': 2008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ah9idD65Pjec2dXd2CGhrZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2008" cache_read_input_tokens="48019" cache_creation="{'ephemeral_5m_input_tokens': 2008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QTt9xUC268WeWkSWrBLmmS">
+    <param name="command">grep -r "FakePlanDataProvider\|RealPlanDataProvider" /home/runner/work/erk/erk/tests --include="*.py" | head -10</param>
+    <param name="description">Find uses of plan data providers in tests</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2008" cache_read_input_tokens="48019" cache_creation="{'ephemeral_5m_input_tokens': 2008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ah9idD65Pjec2dXd2CGhrZ">
+     1→"""Unit tests for erk objective view command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.objective.view_cmd import view_objective
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo
+    11→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    12→from tests.test_utils.env_helpers import erk_inmem_env
+    13→from tests.test_utils.output_helpers import strip_ansi
+    14→
+    15→
+    16→def _make_remote(issues: dict[int, IssueInfo]) -&gt; FakeRemoteGitHub:
+    17→    """Create a FakeRemoteGitHub from an issue dict."""
+    18→    return FakeRemoteGitHub(
+    19→        authenticated_user="test-user",
+    20→        default_branch_name="main",
+    21→        default_branch_sha="abc123",
+    22→        next_pr_number=1,
+    23→        dispatch_run_id="run-1",
+    24→        issues=issues,
+    25→        issue_comments=None,
+    26→        pr_references=None,
+    27→    )
+    28→
+    29→
+    30→def _make_issue(
+
+... [838 lines omitted] ...
+
+    62→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   111→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   144→        assert result.exit_code == 0, f"Failed: {result.output}"
+   166→        assert result.exit_code == 0, f"Failed: {result.output}"
+   171→    """Test error when issue not found."""
+   184→        assert "Error:" in result.output
+   190→    """Test error when issue missing erk-objective label."""
+   209→        assert "Error:" in result.output
+   246→        assert result.exit_code == 0, f"Failed: {result.output}"
+   270→        assert result.exit_code == 0, f"Failed: {result.output}"
+   289→        assert result.exit_code == 0, f"Failed: {result.output}"
+   307→        assert result.exit_code == 0, f"Failed: {result.output}"
+   329→        assert result.exit_code == 0, f"Failed: {result.output}"
+   353→        assert result.exit_code == 0, f"Failed: {result.output}"
+   411→        assert result.exit_code == 0, f"Failed: {result.output}"
+   433→        assert result.exit_code == 0, f"Failed: {result.output}"
+   456→        assert result.exit_code == 0, f"Failed: {result.output}"
+   479→        assert result.exit_code == 0, f"Failed: {result.output}"
+   505→        assert result.exit_code == 0, f"Failed: {result.output}"
+   531→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   588→        assert result.exit_code == 0, f"Failed: {result.output}"
+   612→        assert result.exit_code == 0, f"Failed: {result.output}"
+   636→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   696→        assert result.exit_code == 0, f"Failed: {result.output}"
+   714→        assert result.exit_code == 0, f"Failed: {result.output}"
+   735→        assert result.exit_code == 0, f"Failed: {result.output}"
+   755→        assert result.exit_code == 0, f"Failed: {result.output}"
+   777→        assert result.exit_code == 0, f"Failed: {result.output}"
+   806→        assert result.exit_code == 0, f"Failed: {result.output}"
+   842→        assert result.exit_code == 0, f"Failed: {result.output}"
+   847→    """Test error when no ref provided and branch is not linked to an objective."""
+  </tool_result>
+  <tool_result tool="toolu_01QTt9xUC268WeWkSWrBLmmS">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:) -&gt; RealPlanDataProvider:
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:    """Create a RealPlanDataProvider with mocked services."""
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:    return RealPlanDataProvider(
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:    """Tests for routing logic in RealPlanDataProvider.fetch_plans()."""
+/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py:from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py:        provider = FakePlanDataProvider(
+/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py:        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py:        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py:        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+  </tool_result>
+  <assistant>Now let me look for FakePlanDataProvider and examine how real-world tests use these providers:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="16857" cache_read_input_tokens="50027" cache_creation="{'ephemeral_5m_input_tokens': 16857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01LpFRgnradkCzxGGCaD5L9U">
+    <param name="pattern">**/fake.py</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk_shared/gateway/plan_data_provider</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16857" cache_read_input_tokens="50027" cache_creation="{'ephemeral_5m_input_tokens': 16857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YZ3Pd8p62AhB2pZu4yKi84">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16857" cache_read_input_tokens="50027" cache_creation="{'ephemeral_5m_input_tokens': 16857, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LpFRgnradkCzxGGCaD5L9U">
+&lt;tool_use_error&gt;Directory does not exist: /home/runner/work/erk/erk/src/erk_shared/gateway/plan_data_provider&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01YZ3Pd8p62AhB2pZu4yKi84">
+     1→"""Tests for PlanDetailScreen modal."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    10→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    11→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    12→from erk_shared.gateway.plan_service.fake import FakePlanService
+    13→
+    14→
+    15→class TestPlanDetailScreen:
+    16→    """Tests for PlanDetailScreen modal."""
+    17→
+    18→    @pytest.mark.asyncio
+    19→    async def test_space_opens_detail_screen(self) -&gt; None:
+    20→        """Pressing space opens the plan detail modal."""
+    21→        provider = FakePlanDataProvider(
+    22→            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_title="Test PR")]
+    23→        )
+    24→        filters = PlanFilters.default()
+    25→        app = ErkDashApp(
+    26→            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+    27→        )
+    28→
+    29→        async with app.run_test() as pilot:
+    30→            await pilot.pause()
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me find where FakePlanDataProvider is defined:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1807" cache_read_input_tokens="66884" cache_creation="{'ephemeral_5m_input_tokens': 1807, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0176hG1MbjVJgXPgG2jTW3e5">
+    <param name="command">find /home/runner/work/erk/erk -name "fake.py" -path "*plan_data_provider*" 2&gt;/dev/null</param>
+    <param name="description">Find FakePlanDataProvider definition file</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1807" cache_read_input_tokens="66884" cache_creation="{'ephemeral_5m_input_tokens': 1807, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0176hG1MbjVJgXPgG2jTW3e5">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py
+  </tool_result>
+  <assistant>Perfect! Now let me read that file:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="213" cache_read_input_tokens="68691" cache_creation="{'ephemeral_5m_input_tokens': 213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CcVsZxAkDwGtptNgch4CEz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="213" cache_read_input_tokens="68691" cache_creation="{'ephemeral_5m_input_tokens': 213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TDKyZkYMtKTrxjf1B3yHKW">
+    <param name="command">grep -r "@json_output" /home/runner/work/erk/erk/tests --include="*.py" -l | head -5</param>
+    <param name="description">Find tests that test @json_output decorator</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="213" cache_read_input_tokens="68691" cache_creation="{'ephemeral_5m_input_tokens': 213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CcVsZxAkDwGtptNgch4CEz">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.provider_abc import PlanDataProvider
+     7→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     8→from erk.tui.sorting.types import BranchActivity
+     9→from erk_shared.gateway.browser.abc import BrowserLauncher
+    10→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    11→from erk_shared.gateway.clipboard.abc import Clipboard
+    12→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    13→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [125 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    84→            RuntimeError: If fetch_error is set
+    87→        if self._fetch_error is not None:
+    88→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <tool_result tool="toolu_01TDKyZkYMtKTrxjf1B3yHKW">
+
+  </tool_result>
+  <assistant>Let me search for test examples that actually use the @json_output decorator and emit_json:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2466" cache_read_input_tokens="68904" cache_creation="{'ephemeral_5m_input_tokens': 2466, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016eyzjh59dC9cFkyZ8GRCVT">
+    <param name="command">grep -r "emit_json\|--json" /home/runner/work/erk/erk/tests --include="*.py" -l | head -10</param>
+    <param name="description">Find tests that check JSON output</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2466" cache_read_input_tokens="68904" cache_creation="{'ephemeral_5m_input_tokens': 2466, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016eyzjh59dC9cFkyZ8GRCVT">
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_impl_init.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py
+/home/runner/work/erk/erk/tests/unit/test_subprocess_utils.py
+/home/runner/work/erk/erk/tests/unit/core/test_codex_prompt_executor.py
+/home/runner/work/erk/erk/tests/commands/objective/test_remote_paths.py
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py
+/home/runner/work/erk/erk/tests/commands/pr/test_log.py
+/home/runner/work/erk/erk/tests/tui/app/test_async_operations.py
+  </tool_result>
+  <assistant>Let me check one of those command tests to see the pattern:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="473" cache_read_input_tokens="71370" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QxCCryY9e8kfPh7o9f4xAT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_log.py</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="473" cache_read_input_tokens="71370" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QxCCryY9e8kfPh7o9f4xAT">
+     1→"""Tests for plan log command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.cli import cli
+     9→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    10→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    11→from erk_shared.gateway.github.issues.types import IssueInfo
+    12→from erk_shared.gateway.github.metadata.core import (
+    13→    create_implementation_status_block,
+    14→    create_plan_block,
+    15→    create_submission_queued_block,
+    16→    create_workflow_started_block,
+    17→    render_metadata_block,
+    18→)
+    19→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    20→from erk_shared.gateway.time.fake import FakeTime
+    21→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    22→from erk_shared.plan_store.types import Plan, PlanState
+    23→from tests.test_utils.context_builders import build_workspace_test_context
+    24→from tests.test_utils.env_helpers import erk_inmem_env
+    25→from tests.test_utils.plan_helpers import (
+    26→    create_plan_store_with_plans,
+    27→    issue_info_to_pr_details,
+    28→)
+    29→
+    30→
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>Let me continue reading test_log.py to see the JSON testing pattern:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4105" cache_read_input_tokens="71843" cache_creation="{'ephemeral_5m_input_tokens': 4105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JyvKGPBE7hWvchoUkEcf29">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_log.py</param>
+    <param name="offset">120</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4105" cache_read_input_tokens="71843" cache_creation="{'ephemeral_5m_input_tokens': 4105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E51L8PLWSarctcZuFrEGJP">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/tui/data/ | grep -E "\.py$"</param>
+    <param name="description">List TUI data provider files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4105" cache_read_input_tokens="71843" cache_creation="{'ephemeral_5m_input_tokens': 4105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JyvKGPBE7hWvchoUkEcf29">
+   120→
+   121→    runner = CliRunner()
+   122→    with erk_inmem_env(runner) as env:
+   123→        ctx = build_workspace_test_context(
+   124→            env,
+   125→            plan_store=store,
+   126→            issues=fake_issues,
+   127→            remote_github=_make_fake_remote(issue, [comment1, comment2, comment3]),
+   128→        )
+   129→
+   130→        # Act
+   131→        result = runner.invoke(cli, ["pr", "log", "42"], obj=ctx)
+   132→
+   133→        # Assert
+   134→        assert result.exit_code == 0
+   135→        assert "Plan #42 Event Timeline" in result.output
+   136→
+   137→        # Verify chronological order (plan created → queued → workflow started)
+   138→        output_lines = result.output.split("\n")
+   139→
+   140→        # Find event lines (lines with timestamps)
+   141→        event_lines = [line for line in output_lines if "[2024-" in line]
+   142→
+   143→        assert len(event_lines) == 3
+   144→
+   145→        # Verify order by checking timestamps
+   146→        assert "12:30:00" in event_lines[0]  # Plan created first
+   147→        assert "12:32:00" in event_lines[1]  # Queued second
+   148→        assert "12:35:00" in event_lines[2]  # Workflow started third
+   149→
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01E51L8PLWSarctcZuFrEGJP">
+-rw-r--r--  1 runner runner    51 Mar  8 14:45 __init__.py
+-rw-r--r--  1 runner runner 12368 Mar  8 14:45 fake_provider.py
+-rw-r--r--  1 runner runner  1980 Mar  8 14:45 provider_abc.py
+-rw-r--r--  1 runner runner 27543 Mar  8 14:45 real_provider.py
+-rw-------  1 runner runner  1073 Mar  8 14:49 serialization.py
+-rw-r--r--  1 runner runner  9289 Mar  8 14:45 types.py
+  </tool_result>
+  <assistant>Now let me check the serialization.py and look at how serialization works:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1925" cache_read_input_tokens="75948" cache_creation="{'ephemeral_5m_input_tokens': 1925, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BnWnseDadqEKzJfz7UddPx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/serialization.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1925" cache_read_input_tokens="75948" cache_creation="{'ephemeral_5m_input_tokens': 1925, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Vz7hudrtFyBT3drQZ3atnW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1925" cache_read_input_tokens="75948" cache_creation="{'ephemeral_5m_input_tokens': 1925, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BnWnseDadqEKzJfz7UddPx">
+     1→"""Shared serialization for PlanRowData to JSON-compatible dicts.
+     2→
+     3→Used by both the dash-data exec script and the pr list --json command
+     4→to ensure consistent output shapes.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from datetime import datetime
+     9→from typing import Any
+    10→
+    11→from erk.tui.data.types import PlanRowData
+    12→
+    13→
+    14→def serialize_plan_row(row: PlanRowData) -&gt; dict[str, Any]:
+    15→    """Convert PlanRowData to JSON-serializable dict.
+    16→
+    17→    Handles datetime fields (to ISO 8601 strings) and tuple fields
+    18→    (log_entries, objective_deps_plans) to lists for JSON compatibility.
+    19→    """
+    20→    data = dataclasses.asdict(row)
+    21→    for key in ("last_local_impl_at", "last_remote_impl_at", "updated_at", "created_at"):
+    22→        if isinstance(data[key], datetime):
+    23→            data[key] = data[key].isoformat()
+    24→    # Convert log_entries tuple of tuples to list of lists
+    25→    data["log_entries"] = [list(entry) for entry in row.log_entries]
+    26→    # Convert objective_deps_plans tuple of tuples to list of lists
+    27→    data["objective_deps_plans"] = [list(entry) for entry in row.objective_deps_plans]
+    28→    return data
+    29→
+
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Vz7hudrtFyBT3drQZ3atnW">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import datetime
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk.core.display_utils import (
+     8→    format_relative_time,
+     9→    format_workflow_outcome,
+    10→    format_workflow_run_id,
+    11→    get_workflow_run_state,
+    12→)
+    13→from erk.core.pr_utils import select_display_pr
+    14→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    15→from erk.tui.data.provider_abc import PlanDataProvider
+    16→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    17→from erk.tui.sorting.types import BranchActivity
+    18→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    19→from erk_shared.gateway.github.metadata.core import (
+    20→    extract_objective_slug,
+    21→)
+    22→from erk_shared.gateway.github.metadata.dependency_graph import (
+    23→    _TERMINAL_STATUSES,
+    24→    build_graph,
+    25→    build_state_sparkline,
+    26→    compute_graph_summary,
+    27→    find_graph_next_node,
+    28→)
+    29→from erk_shared.gateway.github.metadata.roadmap import (
+    30→    parse_roadmap,
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have enough information. Let me compile a comprehensive report of my findings.
+
+## Summary
+
+I've completed a thorough exploration of test files and patterns for the `erk pr list` and `erk pr view` CLI commands. Here are my findings:
+
+### 1. **No Existing Test Files**
+- **`/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_list_cmd.py`** - Does NOT exist
+- **`/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_view_cmd.py`** - Does NOT exist
+
+However, there are related test files in the pr commands directory:
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_helpers.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_shared.py`
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py`
+- `/home/runner/work/erk/erk/tests/commands/pr/test_log.py` (command test pattern example)
+
+### 2. **CLI Command Test Pattern**
+
+From **`/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md`**, the canonical pattern is:
+
+```python
+from click.testing import CliRunner
+from erk_shared.context.context import ErkContext
+
+def test_command() -&gt; None:
+    # Arrange: Create fakes
+    fake_gh = FakeGitHubIssues()
+    runner = CliRunner()
+
+    # Act: Invoke command with test context
+    result = runner.invoke(
+        my_command,
+        ["--arg", "value"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    # Assert
+    assert result.exit_code == 0
+```
+
+Key points from documentation:
+- **Always use `ErkContext.for_test()`** as the factory method
+- **Pass context via `obj=` parameter** to `runner.invoke()`
+- **CRITICAL CliRunner Tripwire**: Environment variables leak from ambient shell; use `CliRunner(env={})` to isolate
+
+### 3. **@json_output Decorator Pattern**
+
+From **`/home/runner/work/erk/erk/src/erk/cli/json_output.py`**:
+
+```python
+@json_output
+@click.command("my-cmd")
+@click.pass_obj
+def my_cmd(ctx, *, json_mode: bool, ...):
+    """Command docstring."""
+    if json_mode:
+        emit_json({"key": "value"})  # Adds success=True automatically
+        return
+    # Normal human output
+```
+
+Key points:
+- **Decorator applied ABOVE @click.command** (decorators apply bottom-to-top)
+- **json_mode parameter** automatically added by decorator
+- **emit_json()** automatically adds `"success": True`
+- **Error handling**: `UserFacingCliError` caught and serialized as JSON with `error_type`
+
+### 4. **JSON Output Testing Pattern**
+
+From **`/home/runner/work/erk/erk/tests/commands/pr/test_log.py`** (lines 151-212):
+
+```python
+def test_log_json_output() -&gt; None:
+    """Test log command with --json flag outputs valid JSON."""
+    # ... Arrange ...
+    
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        ctx = build_workspace_test_context(env, ...)
+        
+        # Act - pass --json flag
+        result = runner.invoke(cli, ["pr", "log", "42", "--json"], obj=ctx)
+        
+        # Assert
+        assert result.exit_code == 0
+        
+        # Parse and validate JSON
+        events = json.loads(result.output)
+        assert isinstance(events, list)
+        assert events[0]["event_type"] == "plan-created"
+```
+
+### 5. **RealPlanDataProvider and Serialization**
+
+From **`/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`** (lines 288-309):
+
+```python
+provider = RealPlanDataProvider(
+    ctx,
+    location=location,
+    http_client=http_client,
+)
+
+filters = PlanFilters(
+    labels=labels,
+    state=effective_state,
+    # ... other filters ...
+)
+
+rows, timings = provider.fetch_plans(filters)
+
+if json_mode:
+    emit_json({"plans": [serialize_plan_row(r) for r in rows], "count": len(rows)})
+```
+
+From **`/home/runner/work/erk/erk/src/erk/tui/data/serialization.py`**:
+```python
+def serialize_plan_row(row: PlanRowData) -&gt; dict[str, Any]:
+    """Convert PlanRowData to JSON-serializable dict.
+    
+    Handles datetime fields (to ISO 8601 strings) and tuple fields
+    (log_entries, objective_deps_plans) to lists for JSON compatibility.
+    """
+    data = dataclasses.asdict(row)
+    for key in ("last_local_impl_at", "last_remote_impl_at", "updated_at", "created_at"):
+        if isinstance(data[key], datetime):
+            data[key] = data[key].isoformat()
+    data["log_entries"] = [list(entry) for entry in row.log_entries]
+    data["objective_deps_plans"] = [list(entry) for entry in row.objective_deps_plans]
+    return data
+```
+
+### 6. **FakePlanDataProvider (for TUI Testing)**
+
+From **`/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`** (lines 16-92):
+
+The fake is specifically for TUI testing, not CLI command testing. Usage from **`/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py`**:
+
+```python
+from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+
+def test_space_opens_detail_screen(self) -&gt; None:
+    provider = FakePlanDataProvider(
+        plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_title="Test PR")]
+    )
+    filters = PlanFilters.default()
+    app = ErkDashApp(
+        provider=provider, 
+        service=FakePlanService(), 
+        filters=filters, 
+        refresh_interval=0
+    )
+```
+
+**Important**: This is for TUI app testing (with Textual), not for CLI command testing.
+
+### 7. **Reference Examples for Similar View Commands**
+
+From **`/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py`** - a similar single-item view command with JSON support:
+
+- Lines 465-489: JSON output test using `--json-output` flag
+- Lines 830-862: Testing with branch inference
+- Uses `FakeRemoteGitHub` and `FakeGitHubIssues` for remote operations
+- Pattern: `runner.invoke(view_objective, ["100"], obj=test_ctx)`
+
+### 8. **Test Directory Structure**
+
+From **`/home/runner/work/erk/erk/tests/AGENTS.md`** and **`/home/runner/work/erk/erk/tests/commands/CLAUDE.md`**:
+
+- Test files should use **plain `def test_*()` functions**, not test classes
+- Context construction: Use `env.build_context()` helper instead of manual GlobalConfig
+- Pattern: `with erk_inmem_env(runner) as env: test_ctx = env.build_context(...)`
+
+### 9. **Key Absolute File Paths**
+
+All implementation and test infrastructure files:
+
+- **Command implementation**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`
+- **Command implementation**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py`
+- **JSON output decorator**: `/home/runner/work/erk/erk/src/erk/cli/json_output.py`
+- **Serialization helper**: `/home/runner/work/erk/erk/src/erk/tui/data/serialization.py`
+- **Plan data provider (real)**: `/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py`
+- **Plan data provider (fake)**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`
+- **Documentation (CLI testing)**: `/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md`
+- **Documentation (testing patterns)**: `/home/runner/work/erk/erk/docs/learned/testing/testing.md`
+- **Reference test (similar view command)**: `/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py`
+- **Reference test (similar command)**: `/home/runner/work/erk/erk/tests/commands/pr/test_log.py`
+
+### 10. **Why pr list/view Tests Don't Exist Yet**
+
+This is a READ-ONLY exploration task, but based on the code structure, tests are being added as part of the PR #9016 plan for adding `--json` flag support to `erk pr list` and `erk pr view`. The current code already has the decorator and serialization in place, but the tests need to be written.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="3817" cache_read_input_tokens="77873" cache_creation="{'ephemeral_5m_input_tokens': 3817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

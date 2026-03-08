@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "plan_id": 9016,
+  "sessions": [
+    {
+      "session_id": "45fbf1f8-8da3-40f2-b11c-5d767c15f834",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T15:01:00.779309+00:00",
+      "files": [
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part1.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part10.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part2.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part3.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part4.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part5.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part6.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part7.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part8.xml",
+        "impl-45fbf1f8-8da3-40f2-b11c-5d767c15f834-45fbf1f8-8da3-40f2-b11c-5d767c15f834-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 15,
+      "raw_size_kb": 978,
+      "xml_size_kb": 328,
+      "git_branch": "plnd/O9009-add-pr-json-output-03-08-1044"
+    }
+  ]
+}

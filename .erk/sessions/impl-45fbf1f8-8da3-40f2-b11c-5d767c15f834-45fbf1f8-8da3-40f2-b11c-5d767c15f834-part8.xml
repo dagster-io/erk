@@ -1,0 +1,258 @@
+<session>
+  <meta source="agent-aa759da" />
+  <meta branch="plnd/O9009-add-pr-json-output-03-08-1044" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <tool_result tool="toolu_01VjAmv5SxMJdfY2EBj8vCcs">
+   443→@click.command("list")
+   444→@pr_filter_options
+   445→@repo_option
+   446→@click.pass_obj
+   447→def pr_list(
+   448→    ctx: ErkContext,
+   449→    *,
+   450→    label: tuple[str, ...],
+   451→    state: str | None,
+   452→    run_state: str | None,
+   453→    stage: str | None,
+   454→    limit: int | None,
+   455→    all_users: bool,
+   456→    sort: str,
+   457→    target_repo: str | None,
+   458→) -&gt; None:
+   459→    """List plans as a static table.
+   460→
+   461→    By default, shows only plans created by you. Use --all-users (-A)
+   462→    to show plans from all users.
+   463→
+   464→    Examples:
+   465→        erk pr list                      # Your plans only
+   466→        erk pr list --all-users          # All users' plans
+   467→        erk pr list -A                   # All users' plans (short form)
+   468→        erk pr list --state open
+   469→        erk pr list --label erk-plan --label bug
+   470→        erk pr list --limit 10
+   471→        erk pr list --run-state in_progress
+   472→        erk pr list --stage impl         # Filter by lifecycle stage
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016dk7jUjYpiAmWw4WGXq7MW">
+     1→"""Serialize plan dashboard data to JSON for external consumers.
+     2→
+     3→Usage:
+     4→    erk exec dash-data [--state open|closed] [--label LABEL] [--limit N]
+     5→        [--show-prs/--no-show-prs] [--show-runs/--no-show-runs]
+     6→        [--run-state STATE] [--creator USER]
+     7→
+     8→Output:
+     9→    JSON with {success, plans, count}
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (missing repo info, API error)
+    14→"""
+    15→
+    16→import dataclasses
+    17→import json
+    18→from datetime import datetime
+    19→from typing import Any
+    20→
+    21→import click
+    22→
+    23→from erk.cli.core import discover_repo_context
+    24→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    25→from erk.tui.data.real_provider import RealPlanDataProvider
+    26→from erk.tui.data.types import PlanFilters, PlanRowData
+    27→from erk_shared.context.helpers import require_context
+    28→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
+    29→
+    30→
+
+... [75 lines omitted] ...
+
+    76→            json.dumps({"success": False, "error": "Could not determine repository owner/name"})
+    87→        click.echo(json.dumps({"success": False, "error": "GitHub authentication not available"}))
+  </tool_result>
+  <tool_result tool="toolu_01WNmTsE3REHgKUAPF3LdFoD">
+228:@click.command("view")
+233:def pr_view(
+  </tool_result>
+  <assistant>Excellent! Now I have enough information to compile the comprehensive report. Let me do one final check on the ensure.py file to see if error_type was already added:</assistant>
+  <usage input_tokens="1470" cache_creation_input_tokens="1188" cache_read_input_tokens="72371" cache_creation="{'ephemeral_5m_input_tokens': 1188, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017GxVmVBQDM5vJbJFTdmhmf">
+    <param name="command">grep -n "error_type" /home/runner/work/erk/erk/src/erk/cli/ensure.py | head -10</param>
+    <param name="description">Check if error_type exists in ensure.py</param>
+  </tool_use>
+  <usage input_tokens="1470" cache_creation_input_tokens="1188" cache_read_input_tokens="72371" cache_creation="{'ephemeral_5m_input_tokens': 1188, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013WKkPNS7s5Pn9jicfyKMSx">
+    <param name="command">grep -A 5 "class UserFacingCliError" /home/runner/work/erk/erk/src/erk/cli/ensure.py | head -15</param>
+    <param name="description">Check UserFacingCliError definition</param>
+  </tool_use>
+  <usage input_tokens="1470" cache_creation_input_tokens="1188" cache_read_input_tokens="72371" cache_creation="{'ephemeral_5m_input_tokens': 1188, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013WKkPNS7s5Pn9jicfyKMSx">
+class UserFacingCliError(click.ClickException):
+    """Exception for user-facing CLI errors with styled output.
+
+    Extends click.ClickException so Click catches it automatically at every
+    level (groups, subgroups, commands) and converts it to a styled error
+    message + exit code 1. Works correctly with both production CLI and
+  </tool_result>
+  <tool_result tool="toolu_017GxVmVBQDM5vJbJFTdmhmf">
+
+  </tool_result>
+  <assistant>Perfect! Now let me compile the comprehensive report:
+
+## Summary Report: `@json_output` Decorator Pattern and JSON Output Infrastructure
+
+### Key Findings
+
+#### 1. **Documentation Status: YES - Fully Documented**
+The `@json_output` decorator pattern is thoroughly documented in:
+- **File:** `/home/runner/work/erk/erk/docs/learned/cli/agent-friendly-cli.md`
+- **Status:** Clean, audit_result: clean, last_audited: 2026-02-16
+- **Tripwires:** Lines 10-19 contain critical patterns for using `@json_output`
+
+#### 2. **PR #9013 Status: IMPLEMENTED BUT ON DIFFERENT BRANCH**
+**Commit:** `8a3cdbc87` - "Implement @json_output decorator and structured JSON output for one-shot command"
+- **Status:** This commit exists in the git history but is on a different branch
+- **Current Branch:** `plnd/O9009-add-pr-json-output-03-08-1044` (for PR #9016)
+- **Related Branch:** The implementation is reachable via `git log --all`
+- **Date:** Sun Mar 8 14:19:06 2026
+
+#### 3. **Implementation Details from PR #9013**
+
+**Core Files Added/Modified:**
+
+1. **NEW: `/src/erk/cli/json_output.py`** (86 lines)
+   - `@json_output` decorator function
+   - `emit_json()` helper function for success results
+   - Adds `--json` flag to Click commands
+   - Handles `UserFacingCliError` serialization to JSON
+   - Exits with code 0 in JSON mode (even for errors)
+
+2. **MODIFIED: `/src/erk/cli/ensure.py`**
+   - Added `error_type` kwarg to `UserFacingCliError.__init__`
+   - Default value: `"cli_error"` for backward compatibility
+   - Allows 49+ existing call sites to work without modification
+
+3. **MODIFIED: `/src/erk/cli/commands/one_shot.py`**
+   - Applied `@json_output` decorator above `@click.command`
+   - Added `json_mode: bool` parameter
+   - JSON output branches for both dispatch success and dry-run scenarios
+   - Replaced `Ensure.invariant` with `UserFacingCliError` raises for error classification
+
+4. **NEW: `/src/erk/cli/commands/one_shot_remote_dispatch.py`**
+   - Added `OneShotDryRunResult` dataclass for dry-run JSON serialization
+   - Returns structured result instead of `None` from dry-run path
+
+#### 4. **Decorator Implementation Details**
+
+From `/src/erk/cli/json_output.py`:
+
+```python
+def json_output(cmd: click.Command) -&gt; click.Command:
+    """Add --json flag and JSON error handling to a Click command.
+    
+    Must be applied ABOVE @click.command (decorator stack order matters).
+    
+    When --json is passed:
+    - UserFacingCliError caught and serialized as JSON to stdout
+    - SystemExit and other exceptions pass through unchanged
+    - Always exits 0 (even for errors)
+    
+    When --json is not passed:
+    - Delegates to original callback unchanged
+    """
+```
+
+**Key Behaviors:**
+- Appends `click.Option(["--json", "json_mode"])` to command params
+- Wraps callback to intercept errors in JSON mode
+- Error JSON format: `{"success": false, "error_type": "...", "message": "..."}`
+- Success JSON format: `{"success": true, ...command-specific fields...}`
+
+#### 5. **Current Branch Status: PR #9016 (Depends on PR #9013)**
+
+**File:** `/home/runner/work/erk/erk/.erk/impl-context/plan.md`
+- **Plan:** "Add --json to erk pr list and erk pr view"
+- **Part of Objective:** #9009, Node 2.1 (pr-read-json)
+- **Dependency:** Requires PR #9013 (the `@json_output` decorator)
+- **PR Status:** `github-draft-pr` at https://github.com/dagster-io/erk/pull/9016
+
+**Implementation Plan for PR #9016:**
+1. Add `@json_output` to `pr_list` command
+2. Add `@json_output` to `pr_view` command
+3. Extract `_serialize_plan_row()` to shared module
+4. Add tests for JSON output branches
+
+#### 6. **References to JSON Output in Current Codebase**
+
+**Already Using JSON Output:**
+- `/src/erk/cli/commands/exec/scripts/impl_init.py` (line 130)
+  - Uses `--json` parameter with `json_output=True` default
+  - Outputs JSON with `valid`, `has_plan_tracking`, `related_docs` fields
+  
+- `/src/erk/cli/commands/exec/scripts/dash_data.py` (lines 31-45)
+  - `_serialize_plan_row()` function handles datetime and tuple serialization
+  - Outputs JSON with `success`, `plans`, `count` fields
+
+- `/src/erk/core/codex_prompt_executor.py` (line 53)
+  - References `json_output: bool` parameter in `build_codex_exec_args()`
+  - Maps to `--json` flag for Codex CLI
+
+#### 7. **Related Documentation**
+
+From `/docs/learned/cli/agent-friendly-cli.md`:
+
+**Tripwires (Critical Patterns):**
+
+| Action | Tripwire Warning |
+|--------|------------------|
+| "adding --json flag without @json_output" | Use shared decorator from `src/erk/cli/json_output.py` |
+| "returning non-zero exit code with --json" | JSON mode must exit 0; errors communicated via JSON |
+| "naming flag --json-output instead of --json" | Standardized flag name is `--json` |
+| "emitting human text to stdout with --json" | Stdout must contain only JSON; human output to stderr |
+| "parsing human CLI output in MCP tools" | Call with `--json` and parse structured JSON |
+
+**Output Contract:**
+```json
+{
+  "success": true,
+  "dry_run": true,
+  "branch": "...",
+  "prompt": "...",
+  "target": "owner/repo"
+}
+```
+
+#### 8. **Test Coverage**
+
+From PR #9013 commit details:
+
+- `tests/unit/cli/test_json_output.py` - 121 lines
+  - Tests flag handling, error serialization, exception passthrough
+- `tests/commands/one_shot/test_one_shot_json.py` - 211 lines
+  - Integration tests for success, dry-run, error cases
+- Updated existing tests in:
+  - `tests/commands/one_shot/test_one_shot_dispatch.py`
+  - `tests/commands/one_shot/test_one_shot_remote_dispatch.py`
+  - `tests/core/workflow_smoke_test.py`
+
+### File Locations Summary
+
+**Absolute Paths:**
+- Documentation: `/home/runner/work/erk/erk/docs/learned/cli/agent-friendly-cli.md`
+- Plan for PR #9016: `/home/runner/work/erk/erk/.erk/impl-context/plan.md`
+- Plan reference: `/home/runner/work/erk/erk/.erk/impl-context/ref.json`
+- Existing exec script JSON: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_init.py`
+- Existing serializer: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py`
+- CLI commands (to be updated): 
+  - `/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py`
+  - `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py`
+
+**Commit References:**
+- PR #9013 implementation: `8a3cdbc87`
+- PR #9016 plan addition: `f6b98f731`
+- Merged PR #9014 (documentation): `4651f0d18`</assistant>
+  <usage input_tokens="110" cache_creation_input_tokens="1886" cache_read_input_tokens="73559" cache_creation="{'ephemeral_5m_input_tokens': 1886, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>

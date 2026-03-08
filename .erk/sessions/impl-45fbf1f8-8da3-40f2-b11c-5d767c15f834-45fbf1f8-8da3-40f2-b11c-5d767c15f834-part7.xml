@@ -1,0 +1,1076 @@
+<session>
+  <meta source="agent-aa759da" />
+  <meta branch="plnd/O9009-add-pr-json-output-03-08-1044" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search the codebase for any existing `@json_output` decorator pattern or `emit_json` function. Also check if PR #9013 has been merged by looking at the git log or checking if the `erk.cli.json_output` module exists anywhere. Search broadly:
+1. `grep -r "json_output" src/`
+2. `grep -r "emit_json" src/`
+3. Check if there's a `json_output` module anywhere under src/
+4. Check the content of references to json_output in `src/erk/core/codex_prompt_executor.py` and `src/erk/cli/commands/exec/scripts/impl_init.py`
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you search for the `@json_output` decorator pattern and related functionality. Let me start by checking the documentation index and then systematically search the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18986" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18986, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019HUkFK6AmRRihYmeiDVcmU">
+    <param name="pattern">json_output|JSON output</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="type">md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18986" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18986, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_018XxqgREDU6nFp24EKxi9Hm">
+    <param name="pattern">**/json_output*</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18986" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18986, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FdqAPCotUR46QAxsPaZLw9">
+    <param name="pattern">@json_output|emit_json</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18986" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18986, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019HUkFK6AmRRihYmeiDVcmU">
+Found 27 files
+docs/learned/tui/column-addition-pattern.md
+docs/learned/testing/cli-test-error-assertions.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/exec-script-batch-testing.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/reference/index.md
+docs/learned/reference/objective-summary-format.md
+docs/learned/refactoring/systematic-terminology-renames.md
+docs/learned/planning/pr-analysis-pattern.md
+docs/learned/objectives/objective-roadmap-check.md
+docs/learned/objectives/roadmap-parser.md
+docs/learned/erk/pr-feedback-classifier-schema.md
+docs/learned/cli/slash-command-exec-migration.md
+docs/learned/cli/tripwires.md
+docs/learned/cli/objective-commands.md
+docs/learned/cli/output-styling.md
+docs/learned/cli/index.md
+docs/learned/cli/commands/update-objective-node.md
+docs/learned/cli/error-detection-patterns.md
+docs/learned/cli/exec-script-schema-patterns.md
+docs/learned/cli/agent-friendly-cli.md
+docs/learned/cli/batch-exec-commands.md
+docs/learned/ci/github-actions-output-patterns.md
+docs/learned/architecture/index.md
+docs/learned/architecture/agent-schema-enforcement.md
+docs/learned/architecture/cli-binary-ops-pattern.md
+docs/learned/architecture/command-composition.md
+  </tool_result>
+  <tool_result tool="toolu_01FdqAPCotUR46QAxsPaZLw9">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_018XxqgREDU6nFp24EKxi9Hm">
+No files found
+  </tool_result>
+  <assistant>Good start. Let me check the CLI documentation files more closely and search more broadly for any JSON-related patterns:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="780" cache_read_input_tokens="18986" cache_creation="{'ephemeral_5m_input_tokens': 780, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JTji6kt6CKAccSaMmMXU7C">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/index.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="780" cache_read_input_tokens="18986" cache_creation="{'ephemeral_5m_input_tokens': 780, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BxEd8r58qS8NpdrbZLQNGA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/output-styling.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="780" cache_read_input_tokens="18986" cache_creation="{'ephemeral_5m_input_tokens': 780, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QE5JZxh1S6wQmurqBZtAqZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/agent-friendly-cli.md</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="780" cache_read_input_tokens="18986" cache_creation="{'ephemeral_5m_input_tokens': 780, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014NN8ac7METCXSj9MzxC5Ax">
+    <param name="pattern">json|JSON</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="780" cache_read_input_tokens="18986" cache_creation="{'ephemeral_5m_input_tokens': 780, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JTji6kt6CKAccSaMmMXU7C">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Cli Documentation
+     5→
+     6→- **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
+     7→- **[agent-friendly-cli.md](agent-friendly-cli.md)** — adding --json flag to a CLI command, creating or modifying MCP tools, implementing structured JSON output for CLI commands, working on agent-friendly CLI patterns, implementing erk schema command
+     8→- **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
+     9→- **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, CI fails with exec reference check error
+    10→- **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output
+    11→- **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
+    12→- **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
+    13→- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk pr teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
+    14→- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior
+    15→- **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
+    16→- **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input
+    17→- **[click-framework-conventions.md](click-framework-conventions.md)** — adding Click options to erk CLI commands, understanding default=None convention in Click options, distinguishing 'not provided' from 'empty string' in CLI arguments
+    18→- **[click-patterns.md](click-patterns.md)** — implementing CLI options with complex behavior, creating flags that optionally accept values, designing CLI flags with default behaviors
+    19→- **[code-review-filtering.md](code-review-filtering.md)** — debugging false positives in code review, understanding keyword-only parameter exceptions, working with ABC/Protocol method validation
+    20→- **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, handling codespace name resolution with optional defaults, bypassing GitHub API endpoint bugs
+    21→- **[command-deletion-patterns.md](command-deletion-patterns.md)** — deleting a CLI command or command group, removing dead code after a feature deletion, identifying vestigial features for removal
+    22→- **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
+    23→- **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
+    24→- **[command-promotion.md](command-promotion.md)** — promoting a nested CLI command to top-level, moving a command from a group to the root CLI, reorganizing CLI command hierarchy
+    25→- **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
+    26→- **[commands/pr-diverge-fix.md](commands/pr-diverge-fix.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
+    27→- **[commands/pr-prepare.md](commands/pr-prepare.md)** — setting up impl-context for an existing PR, preparing a worktree for plan implementation, working with erk pr prepare
+    28→- **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
+    29→- **[commands/reconcile.md](commands/reconcile.md)** — cleaning up branches whose PRs have been merged, reconciling branches merged outside erk land, working with erk reconcile
+    30→- **[commands/update-objective-node.md](commands/update-objective-node.md)** — working with objective roadmap tables, updating step PR references
+
+... [56 lines omitted] ...
+
+    33→- **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
+    34→- **[erk-docs-check.md](erk-docs-check.md)** — validating documentation frontmatter and structure, debugging CI failures in documentation checks, understanding how erk docs check works
+    36→- **[error-detection-patterns.md](error-detection-patterns.md)** — classifying errors from subprocess stderr output, detecting specific failure modes from external tool output, adding new SubmitError error_type based on error text
+    37→- **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError, writing actionable error messages for pipeline failures
+    42→- **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
+    56→- **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
+    59→- **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub, working with .erk/impl-context/ folders, debugging plan execution failures
+    64→- **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding the Graphite-first vs core submit dispatch
+    68→- **[session-management.md](session-management.md)** — adding session ID to a new exec script or hook, debugging 'session ID required' errors, deciding whether a command should require or optionally accept session ID, understanding how session ID flows from Claude Code to erk
+  </tool_result>
+  <tool_result tool="toolu_01QE5JZxh1S6wQmurqBZtAqZ">
+     1→---
+     2→title: "Agent-Friendly CLI Design Principles"
+     3→read_when:
+     4→  - "adding --json flag to a CLI command"
+     5→  - "creating or modifying MCP tools"
+     6→  - "implementing structured JSON output for CLI commands"
+     7→  - "working on agent-friendly CLI patterns"
+     8→  - "implementing erk schema command"
+     9→tripwires:
+    10→  - action: "adding --json flag to a command without using @json_output decorator"
+    11→    warning: "Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands."
+    12→  - action: "returning non-zero exit code when --json flag is active"
+    13→    warning: "JSON mode must always exit 0. Errors are communicated via {success: false, error_type, message} in stdout JSON, not via exit codes."
+    14→  - action: "naming a JSON output flag --json-output instead of --json"
+    15→    warning: "Standardized flag name is --json (not --json-output). See agent-friendly-cli.md for the naming decision."
+    16→  - action: "emitting human-readable text to stdout when --json is active"
+    17→    warning: "When --json is active, stdout must contain only the JSON result object. Human output goes to stderr via user_output()."
+    18→  - action: "creating an MCP tool that parses human-readable CLI output"
+    19→    warning: "MCP tools must call CLI commands with --json flag and parse structured JSON. Never parse human-readable text output."
+    20→---
+    21→
+    22→# Agent-Friendly CLI Design Principles
+    23→
+    24→Principles and patterns for making erk's CLI agent-friendly — enabling MCP tools, Claude Code skills, and other AI agents to invoke erk commands and parse structured responses.
+    25→
+    26→Derived from analysis of:
+    27→
+    28→- [Justin Poehnelt's "Rewrite Your CLI for AI Agents"](https://justin.poehnelt.com/posts/rewrite-your-cli-for-ai-agents/)
+    29→- The [Google Workspace CLI (gws)](https://github.com/googleworkspace/cli) reference implementation
+    30→- Erk's existing CLI patterns and MCP server
+
+... [318 lines omitted] ...
+
+    44→- Error → `{"success": false, "error_type": "machine_readable", "message": "Human-readable"}` on stdout, exit 0
+    57→- When active + error: catches `UserFacingCliError`, emits structured JSON error, exits 0
+    64→### 2. Structured JSON Errors
+    66→All JSON-mode errors follow the exec script contract:
+    71→  "error_type": "auth_required",
+    78→- `error_type` is machine-readable, snake_case (e.g., `auth_required`, `invalid_argument`, `not_found`)
+    81→- `UserFacingCliError` gains an `error_type` field (default `None` for backwards compat)
+   200→### Error Response
+   205→  "error_type": "snake_case_category",
+   206→  "message": "Human-readable error description"
+   224→3. Errors are communicated in the JSON body, not via exit codes
+   225→4. `error_type` is machine-readable, suitable for switch/match statements
+   248→def exit_with_error(error_type: str, message: str) -&gt; NoReturn:
+   249→    error_json = json.dumps(
+   250→        {"success": False, "error_type": error_type, "message": message},
+   253→    click.echo(error_json)
+   257→This is the exact error contract we're extending to top-level commands.
+   298→| `src/erk/cli/ensure.py`                               | **Modify**: Add `error_type` to `UserFacingCliError`       |
+   302→| `src/erk/cli/script_output.py`                        | Existing JSON error pattern to align with                  |
+   313→- **Structured JSON errors** with `error_type`, `message`, `reason` fields, plus actionable hints (e.g., "enable API at this URL")
+   326→- `src/error.rs` - Structured JSON error handling
+  </tool_result>
+  <tool_result tool="toolu_01BxEd8r58qS8NpdrbZLQNGA">
+     1→---
+     2→title: CLI Output Styling Guide
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "styling CLI output"
+     7→  - "using colors in CLI"
+     8→  - "formatting terminal output"
+     9→tripwires:
+    10→  - action: "using click.confirm() after user_output()"
+    11→    warning: "Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
+    12→  - action: "displaying user-provided text in Rich CLI tables"
+    13→    warning: "Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear."
+    14→  - action: "writing multi-line error messages in Ensure method calls"
+    15→    warning: "Use implicit string concatenation with \\n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \\n\\n (double newline) — Ensure handles spacing."
+    16→  - action: "using Python format strings with :N width specifiers for CLI output containing emoji"
+    17→    warning: "Use Rich tables instead — emoji have variable terminal widths (typically 2 cells) which break fixed-width alignment. See the Rich Tables for Variable-Width Characters section below."
+    18→---
+    19→
+    20→# CLI Output Styling Guide
+    21→
+    22→This guide defines the standard color scheme, emoji conventions, and output abstraction patterns for erk CLI commands.
+    23→
+    24→## Color Conventions
+    25→
+    26→Use consistent colors and styling for CLI output via `click.style()`:
+    27→
+    28→| Element                  | Color            | Bold | Example                                             |
+    29→| ------------------------ | ---------------- | ---- | --------------------------------------------------- |
+    30→| Branch names             | `yellow`         | No   | `click.style(branch, fg="yellow")`                  |
+
+... [934 lines omitted] ...
+
+    39→| Error states             | `red`            | No   | `click.style("Error", fg="red")`                    |
+   114→- The command is long/complex and manual copying would be error-prone
+   137→- Unsupported terminals silently ignore the sequence (no errors)
+   151→- `❌` - Errors/failures
+   378→| Error messages            | `user_output()`    | User info, goes to stderr   |
+   392→user_output(click.style("Error: ", fg="red") + "Branch not found")
+   409→user_output("Warning: This operation is destructive!")
+   422→user_output("Warning: This operation is destructive!")
+   434→user_output("Warning: This operation is destructive!")
+   444→- `src/erk/cli/commands/stack/consolidate_cmd.py` - Uses user_output() for error messages
+   446→## Error Message Guidelines
+   448→Use the `Ensure` class (from `erk.cli.ensure`) for all CLI validation errors. This provides consistent error styling and messaging.
+   450→### Error Message Format
+   452→All error messages should follow these principles:
+   465→**DO NOT** include "Error: " prefix - the `Ensure` class adds it automatically in red.
+   467→### Multi-line Error Messages
+   469→For errors that need both a primary message and remediation context, use implicit string concatenation with `\n`:
+   481→- Line 1: Primary error description (concise, specific)
+   485→**DO NOT** use `\n\n` (double newline) — the Ensure class already handles spacing in its error output formatting.
+   487→This pattern was established in the admin.py migration (PR #6860) and applies to all Ensure method calls where the error benefits from remediation context.
+   493→| `"Configuration file not found at ~/.erk/config.yml - Run 'erk init' to create it"`              | `"Error: Config missing"` |
+   494→| `"Worktree already exists at path {path} - Use --force to overwrite or choose a different name"` | `"Error: Path exists"`    |
+   496→| `"No child branches found - Already at the top of the stack"`                                    | `"Validation failed"`     |
+   500→| Situation            | Error Message Template                                      |
+   508→### UserFacingCliError for Mid-Function Errors
+   510→For errors that occur mid-function where `Ensure` precondition checks don't fit, use `UserFacingCliError`:
+   513→from erk.cli.ensure import UserFacingCliError
+   517→if isinstance(push_result, PushError):
+   518→    raise UserFacingCliError(push_result.message)
+   523→- **Mid-logic errors**: Errors discovered during execution, not preconditions
+   524→- **Discriminated union errors**: When consuming `Result | Error` types from gateway layer
+   525→- **After operations fail**: When an operation returns an error variant
+   530→- `UserFacingCliError`: For errors during execution (e.g., git push fails)
+   531→- Both produce the same styled output (`Error: ` prefix in red)
+   533→- Ensure uses `UserFacingCliError` internally
+   538→- Mid-function operation errors → Raise `UserFacingCliError`
+   539→- Complex multi-step operations → Mix both (Ensure upfront, UserFacingCliError for failures)
+   575→For multi-step validations, use sequential Ensure calls with specific error messages:
+   578→# Multi-condition validation - each check has specific error
+   591→# Validation with early return - fail fast on first error
+   597→**Design Principle:** Prefer simple sequential checks over complex validation abstractions. Each check should have a specific, actionable error message. This aligns with the LBYL (Look Before You Leap) philosophy and makes code easier to understand and debug.
+   599→**Exit Codes:** All Ensure methods use exit code 1 for validation failures. This is consistent across all CLI commands.
+   607→1. **If error has a boolean condition** → Use `Ensure.invariant()`
+   612→       user_output(click.style("Error: ", fg="red") + "Something is wrong")
+   619→2. **If error returns a value when truthy** → Use `Ensure.truthy()`
+   625→       user_output(click.style("Error: ", fg="red") + "No results found")
+   632→3. **If error checks for None specifically** → Use `Ensure.not_none()`
+   638→       user_output(click.style("Error: ", fg="red") + "Value is required")
+   645→4. **If error has no clear condition or needs custom flow** → Keep as direct pattern
+   649→**Pattern: Fallthrough/catch-all errors with no clear boolean condition**
+   651→Some errors occur as the "else" case after multiple checks have been exhausted. There's no meaningful boolean condition to express - the error state IS the remaining case.
+   664→        click.style("Error: ", fg="red")
+   670→**Why not migrate:** Using `Ensure.invariant(True, ...)` or wrapping with an artificial condition would be misleading. The error isn't about a condition being false - it's about reaching a catch-all state.
+   672→**Pattern: Errors with complex multi-line remediation messages**
+   674→When the error message spans multiple lines with detailed instructions, the `Ensure` API may not accommodate the formatting needs cleanly.
+   676→**Pattern: Errors that need conditional additional output before exit**
+   684→1. **Identify the error condition** - Is there a clear boolean/truthy/None check?
+   686→3. **Write the error message** - Follow the Error Message Guidelines (no "Error: " prefix)
+   687→4. **Test behavior is unchanged** - Error should trigger at the same conditions
+   697→    user_output(click.style("Error: ", fg="red") + "Already at the top...")
+   711→- The error message is a single line
+   755→| Action: Failed   | `[red]Failed[/red]`          | Execution failed       |
+   850→This causes columns to appear misaligned whenever emoji are present. The misalignment is silent — code runs without errors but output looks wrong.
+  </tool_result>
+  <tool_result tool="toolu_014NN8ac7METCXSj9MzxC5Ax">
+Found 149 files
+src/erk/tui/jsonl_viewer/__init__.py
+src/erk/tui/jsonl_viewer/app.py
+src/erk/tui/jsonl_viewer/models.py
+src/erk/tui/jsonl_viewer/widgets.py
+src/erk/tui/operations/workers.py
+src/erk/hooks/decorators.py
+src/erk/review/prompt_assembly.py
+src/erk/core/shell.py
+src/erk/core/worktree_pool.py
+src/erk/core/health_checks_dogfooder/legacy_hook_settings.py
+src/erk/core/llm_json.py
+src/erk/core/output_filter.py
+src/erk/core/plan_duplicate_checker.py
+src/erk/core/plan_relevance_checker.py
+src/erk/core/prompt_executor.py
+src/erk/core/repo_discovery.py
+src/erk/core/health_checks/claude_erk_permission.py
+src/erk/core/health_checks/claude_settings.py
+src/erk/core/health_checks/exit_plan_hook.py
+src/erk/core/health_checks/hook_health.py
+src/erk/core/health_checks/hooks_disabled.py
+src/erk/core/health_checks/legacy_slot_naming.py
+src/erk/core/health_checks/user_prompt_hook.py
+src/erk/core/claude_settings.py
+src/erk/core/codex_output_parser.py
+src/erk/core/codex_prompt_executor.py
+src/erk/core/command_log.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/wt/delete_cmd.py
+
+... [120 lines omitted] ...
+  </tool_result>
+  <assistant>Great! I found documentation on the `@json_output` decorator pattern. Let me now search for more specific files and check if the decorator actually exists or was just documented:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="26428" cache_read_input_tokens="19766" cache_creation="{'ephemeral_5m_input_tokens': 26428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VruvUkJ2XGdkPgDa81UHQg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="26428" cache_read_input_tokens="19766" cache_creation="{'ephemeral_5m_input_tokens': 26428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RE6DKQXEsMZAt97samqPJq">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/cli -name "*json*" -type f</param>
+    <param name="description">Find all files with json in name</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="26428" cache_read_input_tokens="19766" cache_creation="{'ephemeral_5m_input_tokens': 26428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AcuJ6sdnRcBDNCStKT8JYr">
+    <param name="pattern">class.*json_output|def.*json_output</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="26428" cache_read_input_tokens="19766" cache_creation="{'ephemeral_5m_input_tokens': 26428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VruvUkJ2XGdkPgDa81UHQg">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01AcuJ6sdnRcBDNCStKT8JYr">
+Found 1 file
+src/erk/cli/commands/exec/scripts/impl_init.py
+  </tool_result>
+  <tool_result tool="toolu_01RE6DKQXEsMZAt97samqPJq">
+/home/runner/work/erk/erk/src/erk/cli/commands/cc/__pycache__/jsonl_cmd.cpython-312.pyc
+/home/runner/work/erk/erk/src/erk/cli/commands/cc/jsonl_cmd.py
+  </tool_result>
+  <assistant>Good! Now let me check the existing files with json_output references and also check git history:</assistant>
+  <usage input_tokens="55" cache_creation_input_tokens="572" cache_read_input_tokens="46194" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013hYLKu2D98ymE7NKENcpZY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_init.py</param>
+  </tool_use>
+  <usage input_tokens="55" cache_creation_input_tokens="572" cache_read_input_tokens="46194" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NjcYW8eguUTCngnkEZgLND">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/codex_prompt_executor.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="55" cache_creation_input_tokens="572" cache_read_input_tokens="46194" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ScrxJo1c75xsaqtSKy6SpJ">
+    <param name="command">git log --oneline --all | grep -i "json\|9013" | head -20</param>
+    <param name="description">Check git log for json output and PR 9013</param>
+  </tool_use>
+  <usage input_tokens="55" cache_creation_input_tokens="572" cache_read_input_tokens="46194" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013hYLKu2D98ymE7NKENcpZY">
+     1→"""Initialize implementation by validating .erk/impl-context/ folder.
+     2→
+     3→This exec command validates .erk/impl-context/ folder for /erk:plan-implement:
+     4→- Validates .erk/impl-context/ folder structure (plan.md exists)
+     5→- Checks for GitHub issue tracking (plan-ref.json)
+     6→- Parses "Related Documentation" section for skills and docs
+     7→
+     8→Usage:
+     9→    erk exec impl-init --json
+    10→
+    11→Output:
+    12→    JSON with validation status and related docs
+    13→    Always outputs JSON (for machine parsing by slash command)
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Validation error
+    18→
+    19→Examples:
+    20→    $ erk exec impl-init --json
+    21→    {"valid": true, "has_plan_tracking": true, ...}
+    22→"""
+    23→
+    24→import json
+    25→import re
+    26→from pathlib import Path
+    27→from typing import NoReturn
+    28→
+    29→import click
+    30→
+
+... [139 lines omitted] ...
+
+    35→def _error_json(error_type: str, message: str) -&gt; NoReturn:
+    36→    """Output error as JSON and exit with code 1."""
+    37→    result = {"valid": False, "error_type": error_type, "message": message}
+    65→            "error_type": "no_impl_folder",
+    73→        _error_json("no_plan_file", f"No plan.md found in {impl_dir.name}/ folder")
+  </tool_result>
+  <tool_result tool="toolu_01NjcYW8eguUTCngnkEZgLND">
+     1→"""Codex CLI prompt execution implementation.
+     2→
+     3→This module provides the CodexCliPromptExecutor implementation that maps erk's
+     4→PromptExecutor ABC to OpenAI's Codex CLI. Codex uses a completely different
+     5→CLI interface and JSONL streaming format from Claude.
+     6→
+     7→See docs/learned/integrations/codex/codex-cli-reference.md for flag mapping.
+     8→See docs/learned/integrations/codex/codex-jsonl-format.md for output format.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import logging
+    14→import os
+    15→import shutil
+    16→import subprocess
+    17→import sys
+    18→import tempfile
+    19→import threading
+    20→from collections.abc import Iterator
+    21→from pathlib import Path
+    22→from typing import TYPE_CHECKING
+    23→
+    24→from erk.core.codex_output_parser import CodexParserState, parse_codex_jsonl_line
+    25→from erk_shared.context.types import permission_mode_to_codex_exec, permission_mode_to_codex_tui
+    26→from erk_shared.core.prompt_executor import (
+    27→    ErrorEvent,
+    28→    ExecutorEvent,
+    29→    NoOutputEvent,
+    30→    NoTurnsEvent,
+
+... [75 lines omitted] ...
+
+    31→    ProcessErrorEvent,
+  </tool_result>
+  <tool_result tool="toolu_01ScrxJo1c75xsaqtSKy6SpJ">
+efc601fa2 Add plan: Plan: Add --json to erk pr list and erk pr view
+547c3bf81 Push impl session 45f87f93-2301-49c7-ae93-33319d07eea8 for plan #9013
+8a3cdbc87 Implement @json_output decorator and structured JSON output for one-shot command
+498b828e3 Push impl session  for plan #9013
+619ac9669 Add plan for PR #9013
+e38345930 Add plan: Plan: @json_output Decorator + Structured Errors + One-Shot JSON
+e386a44c6 Add plan: Learn: Fix changelog-commits JSON output size for agent consumption
+298833493 Fix changelog-commits JSON output size for agent consumption (#9006)
+b07c8d3d3 Add plan: Learn: Add "unexpected end of JSON input" as transient error
+69cad1081 Add "unexpected end of JSON input" as transient error (#8703)
+6234cb13c Add plan: Add "unexpected end of JSON input" as transient error
+2a00c9bea Delete .impl/issue.json legacy support and consolidate to plan-ref.json (#8388)
+58cb68bc4 Update docs to reference .impl/plan-ref.json (with legacy .impl/issue.json fallback) (#8346)
+c02ca1001 Update docs to reference .impl/plan-ref.json (with legacy .impl/issue.json fallback) (#8346)
+423313fff Update docs to reference .impl/plan-ref.json (with legacy .impl/issue.json fallback) (#8346)
+3349b7589 Delete get_branch_issue() dead code and simplify to plan-ref.json (#8269)
+daf9c0975 Delete get_branch_issue() dead code and simplify to plan-ref.json (#8269)
+97b902c37 Add plan: Documentation Plan: Delete get_branch_issue() dead code and simplify to plan-ref.json
+effa09215 Migrate impl test fixtures from issue.json to plan-ref.json format (#8122)
+24a05826b Add plan: Documentation Plan: Remove plan ID encoding from branch names, migrate to plan-ref.json
+  </tool_result>
+  <assistant>Perfect! I found the key commits. Let me check if the `@json_output` decorator module exists and examine related code:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5207" cache_read_input_tokens="46766" cache_creation="{'ephemeral_5m_input_tokens': 5207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WbQhnQsYLeTnBFbstsMito">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/ | grep -E "\.py$|^d"</param>
+    <param name="description">List CLI module files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5207" cache_read_input_tokens="46766" cache_creation="{'ephemeral_5m_input_tokens': 5207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NJFA9RDK3cCyUUcBNKUgGX">
+    <param name="command">git log --oneline --all -n 1 8a3cdbc87</param>
+    <param name="description">Get details on the json_output decorator commit</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5207" cache_read_input_tokens="46766" cache_creation="{'ephemeral_5m_input_tokens': 5207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Ve8QMiCY3zyRabjJcmz27g">
+    <param name="command">git show 8a3cdbc87 --stat</param>
+    <param name="description">Show files changed in json_output decorator commit</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5207" cache_read_input_tokens="46766" cache_creation="{'ephemeral_5m_input_tokens': 5207, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ve8QMiCY3zyRabjJcmz27g">
+commit 8a3cdbc874359413030ce75291f354a5b9d33676
+Author: schrockn &lt;schrockn@users.noreply.github.com&gt;
+Date:   Sun Mar 8 14:19:06 2026 +0000
+
+    Implement @json_output decorator and structured JSON output for one-shot command
+    
+    This PR adds agent-friendly JSON output infrastructure to the CLI, enabling structured machine-readable results alongside human-readable output. The `@json_output` decorator provides uniform error serialization across commands, while `erk one-shot --json` emits detailed dispatch results or dry-run previews.
+    
+    ## Key Changes
+    
+    - Add `@json_output` decorator (`src/erk/cli/json_output.py`) that appends `--json` flag to commands and catches `UserFacingCliError` exceptions, serializing them as JSON when the flag is active
+    - Extend `UserFacingCliError` with optional `error_type` field (default: "cli_error") for classification of error conditions (auth_required, invalid_input, invalid_repo)
+    - Replace dry-run `None` return with `OneShotDryRunResult` dataclass in `dispatch_one_shot_remote`, enabling JSON serialization of preview data
+    - Wire `@json_output` onto `one_shot` command with JSON output branches for both dispatch success and dry-run scenarios, including PR/run URLs
+    - Replace `Ensure.invariant` validation with `UserFacingCliError` raises to enable `error_type` classification
+    
+    &lt;details&gt;
+    &lt;summary&gt;Files Changed&lt;/summary&gt;
+    
+    ### Added (3 files)
+    - `src/erk/cli/json_output.py` - Decorator implementation and `emit_json()` helper for success results
+    - `tests/unit/cli/test_json_output.py` - Unit tests for decorator flag handling, error serialization, and exception passthrough
+    - `tests/commands/one_shot/test_one_shot_json.py` - Integration tests for one-shot JSON output (success, dry-run, error cases)
+    
+    ### Modified (6 files)
+    - `src/erk/cli/ensure.py` - Add `error_type` kwarg to `UserFacingCliError.__init__`
+    - `src/erk/cli/commands/one_shot.py` - Add `@json_output`, JSON output branches, error type annotations
+    - `src/erk/cli/commands/one_shot_remote_dispatch.py` - Add `OneShotDryRunResult` dataclass, return from dry-run path
+    - `src/erk/cli/commands/objective/plan_cmd.py` - Update dry-run checks to use `isinstance(result, OneShotDispatchResult)`
+    - `src/erk/core/workflow_smoke_test.py` - Update dry-run validation to check result type
+
+... [46 lines omitted] ...
+
+    {"success": false, "error_type": "invalid_input", "message": "Prompt must not be empty"}
+    Agents can now parse structured JSON results while human users continue to see formatted console output. Error conditions include `error_type` for programmatic routing.
+    - The `error_type` parameter is optional with sensible default ("cli_error") to avoid requiring updates to ~49 existing `UserFacingCliError` call sites
+  </tool_result>
+  <tool_result tool="toolu_01WbQhnQsYLeTnBFbstsMito">
+drwxr-xr-x  5 runner runner  4096 Mar  8 14:45 .
+drwxr-xr-x 13 runner runner  4096 Mar  8 14:45 ..
+-rw-r--r--  1 runner runner     0 Mar  8 14:45 __init__.py
+drwxr-xr-x  2 runner runner  4096 Mar  8 14:45 __pycache__
+-rw-r--r--  1 runner runner 16678 Mar  8 14:45 activation.py
+-rw-r--r--  1 runner runner  1547 Mar  8 14:45 alias.py
+-rw-r--r--  1 runner runner   785 Mar  8 14:45 capability_check.py
+-rw-r--r--  1 runner runner  9112 Mar  8 14:45 cli.py
+drwxr-xr-x 20 runner runner  4096 Mar  8 14:45 commands
+-rw-r--r--  1 runner runner 12757 Mar  8 14:45 config.py
+-rw-r--r--  1 runner runner  2054 Mar  8 14:45 constants.py
+-rw-r--r--  1 runner runner  2449 Mar  8 14:45 core.py
+-rw-r--r--  1 runner runner   335 Mar  8 14:45 debug.py
+-rw-r--r--  1 runner runner 21731 Mar  8 14:45 ensure.py
+-rw-r--r--  1 runner runner  5275 Mar  8 14:45 ensure_ideal.py
+-rw-r--r--  1 runner runner  3152 Mar  8 14:45 github_parsing.py
+-rw-r--r--  1 runner runner  2683 Mar  8 14:45 graphite.py
+-rw-r--r--  1 runner runner  2677 Mar  8 14:45 graphite_command.py
+-rw-r--r--  1 runner runner 12269 Mar  8 14:45 help_formatter.py
+-rw-r--r--  1 runner runner 18101 Mar  8 14:45 output.py
+drwxr-xr-x  2 runner runner  4096 Mar  8 14:45 prompt_hooks_templates
+-rw-r--r--  1 runner runner  2422 Mar  8 14:45 repo_resolution.py
+-rw-r--r--  1 runner runner  1474 Mar  8 14:45 script_output.py
+-rw-r--r--  1 runner runner  6595 Mar  8 14:45 shell_utils.py
+-rw-r--r--  1 runner runner  3377 Mar  8 14:45 subprocess_utils.py
+-rw-r--r--  1 runner runner  1926 Mar  8 14:45 uvx_detection.py
+  </tool_result>
+  <tool_result tool="toolu_01NJFA9RDK3cCyUUcBNKUgGX">
+dc93f6b05 Remove plan staging dirs before implementation
+  </tool_result>
+  <assistant>Excellent! Now let me check the actual implementation of the `@json_output` decorator:</assistant>
+  <usage input_tokens="1480" cache_creation_input_tokens="1272" cache_read_input_tokens="51973" cache_creation="{'ephemeral_5m_input_tokens': 1272, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XXpQ3aQWeG799oDcoF9wSC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/json_output.py</param>
+  </tool_use>
+  <usage input_tokens="1480" cache_creation_input_tokens="1272" cache_read_input_tokens="51973" cache_creation="{'ephemeral_5m_input_tokens': 1272, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017arZnxyio4TqrgLmjNHyNR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1480" cache_creation_input_tokens="1272" cache_read_input_tokens="51973" cache_creation="{'ephemeral_5m_input_tokens': 1272, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012Y1nMTYvuNmXCah1hffMqV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1480" cache_creation_input_tokens="1272" cache_read_input_tokens="51973" cache_creation="{'ephemeral_5m_input_tokens': 1272, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XXpQ3aQWeG799oDcoF9wSC">
+&lt;tool_use_error&gt;File does not exist.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_017arZnxyio4TqrgLmjNHyNR">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+
+... [75 lines omitted] ...
+
+    33→class UserFacingCliError(click.ClickException):
+    34→    """Exception for user-facing CLI errors with styled output.
+    36→    Extends click.ClickException so Click catches it automatically at every
+    37→    level (groups, subgroups, commands) and converts it to a styled error
+    42→        raise UserFacingCliError("Not a GitHub repository")
+    43→        raise UserFacingCliError(push_result.message)
+    51→        """Display styled error message to stderr."""
+    52→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    56→    """Helper class for asserting invariants with consistent error handling."""
+    59→    def invariant(condition: bool, error_message: str) -&gt; None:
+    60→        """Ensure condition is true, otherwise output styled error and exit.
+    64→            error_message: Error message to display if condition is false.
+    65→                          "Error: " prefix will be added automatically in red.
+    68→            UserFacingCliError: If condition is false
+    71→            raise UserFacingCliError(error_message)
+    74→    def truthy(value: T, error_message: str) -&gt; T:
+    75→        """Ensure value is truthy, otherwise output styled error and exit.
+    79→            error_message: Error message to display if value is falsy.
+    80→                          "Error: " prefix will be added automatically in red.
+    86→            UserFacingCliError: If value is falsy
+    89→            raise UserFacingCliError(error_message)
+    93→    def not_none(value: T | None, error_message: str) -&gt; T:
+    94→        """Ensure value is not None, otherwise output styled error and exit.
+  </tool_result>
+  <tool_result tool="toolu_012Y1nMTYvuNmXCah1hffMqV">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.implement_shared import normalize_model_name
+    20→from erk.cli.commands.one_shot_remote_dispatch import (
+    21→    OneShotDispatchParams,
+    22→    dispatch_one_shot_remote,
+    23→)
+    24→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    25→from erk.cli.ensure import Ensure, UserFacingCliError
+    26→from erk.core.context import ErkContext, NoRepoSentinel
+    27→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    28→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    29→from erk_shared.output.output import user_output
+    30→
+
+... [75 lines omitted] ...
+
+    45→        UserFacingCliError: If no http_client is available
+    51→        raise UserFacingCliError(
+  </tool_result>
+  <assistant>The json_output.py file doesn't exist yet. Let me check if that commit is on the current branch:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4465" cache_read_input_tokens="53245" cache_creation="{'ephemeral_5m_input_tokens': 4465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VQ7ioqYSij6midfp3Rt6SE">
+    <param name="command">git log --oneline | head -10</param>
+    <param name="description">Check current branch commits</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4465" cache_read_input_tokens="53245" cache_creation="{'ephemeral_5m_input_tokens': 4465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016H16yUTpjB5wnxTNkU3ETj">
+    <param name="command">git branch -a | head -10</param>
+    <param name="description">Check git branches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4465" cache_read_input_tokens="53245" cache_creation="{'ephemeral_5m_input_tokens': 4465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XMFUK8WyFdMXNA4noXL1JM">
+    <param name="command">git log --all --oneline --graph | grep -A 5 -B 5 "8a3cdbc87\|json_output"</param>
+    <param name="description">Find json_output decorator commit in all branches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4465" cache_read_input_tokens="53245" cache_creation="{'ephemeral_5m_input_tokens': 4465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VQ7ioqYSij6midfp3Rt6SE">
+dc93f6b05 Remove plan staging dirs before implementation
+f6b98f731 Add plan for PR #9016
+efc601fa2 Add plan: Plan: Add --json to erk pr list and erk pr view
+4651f0d18 Add agent-friendly CLI design principles documentation (#9014)
+4e28ff780 Consolidate documentation from 21 erk-learn plans (#8920)
+166d63639 Improve Graphite rebase handling to skip tracking check when restack is in progress (#9007)
+298833493 Fix changelog-commits JSON output size for agent consumption (#9006)
+f85346d29 Consolidate documentation from 10 erk-learn plans (#8937)
+c3178ba94 Update CHANGELOG for latest feature additions and fixes (#9004)
+ebba4e54f Consolidate learn docs terminology: replace "plan issue" with "plan" (#8995)
+  </tool_result>
+  <tool_result tool="toolu_016H16yUTpjB5wnxTNkU3ETj">
+  master
+* plnd/O9009-add-pr-json-output-03-08-1044
+  remotes/origin/02-08-batch-regen-01-scripts
+  remotes/origin/02-08-batch-regen-02
+  remotes/origin/02-08-batch-regen-03
+  remotes/origin/02-08-batch-regen-04
+  remotes/origin/02-08-batch-regen-05
+  remotes/origin/02-08-batch-regen-06
+  remotes/origin/02-08-batch-regen-07
+  remotes/origin/02-08-batch-regen-08
+  </tool_result>
+  <tool_result tool="toolu_01XMFUK8WyFdMXNA4noXL1JM">
+| * 81fb99e34 Add plan for PR #9014
+| * 510bdb96c Add plan: Plan: Create Agent-Friendly CLI Principles Document
+|/  
+* 4e28ff780 Consolidate documentation from 21 erk-learn plans (#8920)
+| * 5b7280afc Trigger CI workflows
+| * 8a3cdbc87 Implement @json_output decorator and structured JSON output for one-shot command
+| * f2381fcd4 Remove plan staging dirs before implementation
+| * 619ac9669 Add plan for PR #9013
+| * e38345930 Add plan: Plan: @json_output Decorator + Structured Errors + One-Shot JSON
+|/  
+| * 547c3bf81 Push impl session 45f87f93-2301-49c7-ae93-33319d07eea8 for plan #9013
+| * 498b828e3 Push impl session  for plan #9013
+|/  
+| * 635badffa Push impl session a62e6e51-7580-4c1f-b6b7-8be866fac18b for plan #9011
+  </tool_result>
+  <assistant>I can see that commit 8a3cdbc87 (the json_output decorator implementation) is on a different branch. Let me check the current branch and see what PR #9016 is about:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1144" cache_read_input_tokens="57710" cache_creation="{'ephemeral_5m_input_tokens': 1144, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XSLN1bkDkCLhPGd6BsasFc">
+    <param name="command">git log --oneline plnd/O9009-add-pr-json-output-03-08-1044 | head -10</param>
+    <param name="description">Check current branch commits</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1144" cache_read_input_tokens="57710" cache_creation="{'ephemeral_5m_input_tokens': 1144, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UQDiEPH1SYo1LcWfRKhNEf">
+    <param name="command">git show f6b98f731 --stat</param>
+    <param name="description">Show what PR #9016 is about</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1144" cache_read_input_tokens="57710" cache_creation="{'ephemeral_5m_input_tokens': 1144, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0128M9mZ4KJ2Jom549NTR4Vf">
+    <param name="command">git log --all --oneline | grep "9016\|9013\|json_output"</param>
+    <param name="description">Find all commits related to 9016 and 9013</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1144" cache_read_input_tokens="57710" cache_creation="{'ephemeral_5m_input_tokens': 1144, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UQDiEPH1SYo1LcWfRKhNEf">
+commit f6b98f731fdbbd06b0ea080ccdec13032804f17b
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Sun Mar 8 10:45:12 2026 -0400
+
+    Add plan for PR #9016
+
+ .erk/impl-context/ref.json | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+  </tool_result>
+  <tool_result tool="toolu_01XSLN1bkDkCLhPGd6BsasFc">
+dc93f6b05 Remove plan staging dirs before implementation
+f6b98f731 Add plan for PR #9016
+efc601fa2 Add plan: Plan: Add --json to erk pr list and erk pr view
+4651f0d18 Add agent-friendly CLI design principles documentation (#9014)
+4e28ff780 Consolidate documentation from 21 erk-learn plans (#8920)
+166d63639 Improve Graphite rebase handling to skip tracking check when restack is in progress (#9007)
+298833493 Fix changelog-commits JSON output size for agent consumption (#9006)
+f85346d29 Consolidate documentation from 10 erk-learn plans (#8937)
+c3178ba94 Update CHANGELOG for latest feature additions and fixes (#9004)
+ebba4e54f Consolidate learn docs terminology: replace "plan issue" with "plan" (#8995)
+  </tool_result>
+  <tool_result tool="toolu_0128M9mZ4KJ2Jom549NTR4Vf">
+f6b98f731 Add plan for PR #9016
+547c3bf81 Push impl session 45f87f93-2301-49c7-ae93-33319d07eea8 for plan #9013
+8a3cdbc87 Implement @json_output decorator and structured JSON output for one-shot command
+498b828e3 Push impl session  for plan #9013
+619ac9669 Add plan for PR #9013
+e38345930 Add plan: Plan: @json_output Decorator + Structured Errors + One-Shot JSON
+574901634 Add plan: Documentation Plan: Simplify PR checkout to eliminate erk pr sync dependency
+18901632d style: fix CI errors in multiple checks
+901383658 Add plan/objective context to PR summary generation
+901321661 Rename dispatch-erk-queue-git.yml to dispatch-erk-queue.yml
+  </tool_result>
+  <assistant>Perfect! Now let me check if the plan file exists and look at related files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1066" cache_read_input_tokens="58854" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013p2oUVAtwpt8QbrYJomNXo">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plan.md</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1066" cache_read_input_tokens="58854" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019WgVUjvHkdvNJFzxc57qKT">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/ref.json</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1066" cache_read_input_tokens="58854" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PetVfVK79DbNaSsyarBfBT">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">List impl-context folder</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1066" cache_read_input_tokens="58854" cache_creation="{'ephemeral_5m_input_tokens': 1066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013p2oUVAtwpt8QbrYJomNXo">
+     1→# Plan: Add --json to erk pr list and erk pr view
+     2→
+     3→**Part of Objective #9009, Node 2.1 (pr-read-json)**
+     4→**Depends on:** PR #9013 (nodes 1.1-1.3: `@json_output` decorator, structured errors, one-shot JSON)
+     5→
+     6→## Context
+     7→
+     8→Agents consuming `erk pr list` and `erk pr view` currently get human-readable Rich tables and styled text. The underlying data is already available as JSON via exec scripts (`dash-data` and `get-plan-info`), but the CLI commands don't expose it. This plan adds `--json` flags to both commands using the `@json_output` decorator from PR #9013, passing through the existing exec script JSON output.
+     9→
+    10→## Step 1: Add `--json` to `erk pr list`
+    11→
+    12→**File:** `src/erk/cli/commands/pr/list_cmd.py`
+    13→
+    14→Apply `@json_output` decorator to `pr_list` command. When `json_mode=True`, serialize the `PlanRowData` rows to JSON using the existing `_serialize_plan_row()` helper from `dash_data.py` and emit via `emit_json()`.
+    15→
+    16→Changes:
+    17→- Import `json_output`, `emit_json` from `erk.cli.json_output`
+    18→- Import `_serialize_plan_row` from `erk.cli.commands.exec.scripts.dash_data` (or extract to shared location)
+    19→- Add `@json_output` above `@click.command("list")`
+    20→- Add `json_mode: bool` parameter to `pr_list()`
+    21→- Pass `json_mode` into `_pr_list_impl()` (add parameter)
+    22→- In `_pr_list_impl()`, after sorting, if `json_mode`: call `emit_json({"plans": [_serialize_plan_row(r) for r in rows], "count": len(rows)})` and return
+    23→
+    24→**Decision: Reuse `_serialize_plan_row`** — Extract it from `dash_data.py` to a shared module (`src/erk/tui/data/serialization.py`) so both `dash_data.py` and `list_cmd.py` import from the same place. This avoids duplication and keeps the output format identical.
+    25→
+    26→### Output shape (matches `dash-data` exec script):
+    27→```json
+    28→{"success": true, "plans": [{...PlanRowData fields...}], "count": 5}
+    29→```
+    30→
+
+... [90 lines omitted] ...
+
+    78→- `test_json_output_error` — Error serialized as JSON when `--json` active
+    87→- `test_json_output_not_found` — Error JSON for missing plan
+   112→4. Run `erk pr view 99999 --json` and confirm error JSON output
+  </tool_result>
+  <tool_result tool="toolu_019WgVUjvHkdvNJFzxc57qKT">
+     1→{
+     2→  "provider": "github-draft-pr",
+     3→  "plan_id": "9016",
+     4→  "url": "https://github.com/dagster-io/erk/pull/9016",
+     5→  "created_at": "2026-03-08T10:45:12.780246",
+     6→  "synced_at": "2026-03-08T10:45:12.780246",
+     7→  "labels": [],
+     8→  "objective_id": 9009,
+     9→  "node_ids": null
+    10→}
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01PetVfVK79DbNaSsyarBfBT">
+total 28
+drwxr-xr-x 3 runner runner 4096 Mar  8 14:46 .
+drwxr-xr-x 6 runner runner 4096 Mar  8 14:46 ..
+-rw-r--r-- 1 runner runner 5226 Mar  8 14:45 plan.md
+drwxr-xr-x 2 runner runner 4096 Mar  8 14:46 plnd--O9009-add-pr-json-output-03-08-1044
+-rw-r--r-- 1 runner runner  263 Mar  8 14:45 ref.json
+-rw-r--r-- 1 runner runner  105 Mar  8 14:45 run-info.json
+  </tool_result>
+  <assistant>Perfect! Now let me search for where the `@json_output` decorator should be used and check existing references:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3109" cache_read_input_tokens="59920" cache_creation="{'ephemeral_5m_input_tokens': 3109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019cSwjcLYtYUDXYGxbtgbkm">
+    <param name="command">git show 8a3cdbc87:src/erk/cli/json_output.py 2&gt;/dev/null | head -100</param>
+    <param name="description">Show json_output decorator from PR #9013</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3109" cache_read_input_tokens="59920" cache_creation="{'ephemeral_5m_input_tokens': 3109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016B6xZbvHQJgMgaoKG9NbJE">
+    <param name="command">git show 8a3cdbc87:src/erk/cli/commands/one_shot.py 2&gt;/dev/null | grep -A 10 "@json_output"</param>
+    <param name="description">Show how json_output is used in one_shot command</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3109" cache_read_input_tokens="59920" cache_creation="{'ephemeral_5m_input_tokens': 3109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GqN69J6g1WqicBkuPBhYyW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3109" cache_read_input_tokens="59920" cache_creation="{'ephemeral_5m_input_tokens': 3109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GqN69J6g1WqicBkuPBhYyW">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from pathlib import Path
+     6→from typing import ParamSpec, TypeVar
+     7→
+     8→import click
+     9→from rich.console import Console
+    10→from rich.table import Table
+    11→from rich.text import Text
+    12→
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.cli.repo_resolution import (
+    15→    get_remote_github,
+    16→    repo_option,
+    17→    resolve_owner_repo,
+    18→)
+    19→from erk.core.context import ErkContext
+    20→from erk.core.display_utils import strip_rich_markup
+    21→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    22→from erk.tui.app import ErkDashApp
+    23→from erk.tui.data.real_provider import RealPlanDataProvider
+    24→from erk.tui.data.types import PlanFilters, PlanRowData
+    25→from erk.tui.sorting.logic import sort_plans
+    26→from erk.tui.sorting.types import SortKey, SortState
+    27→from erk_shared.context.types import NoRepoSentinel
+    28→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    29→from erk_shared.gateway.clipboard.real import RealClipboard
+    30→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+
+... [125 lines omitted] ...
+
+    90→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+  </tool_result>
+  <tool_result tool="toolu_016B6xZbvHQJgMgaoKG9NbJE">
+@json_output
+@click.command("one-shot")
+@click.argument("prompt", required=False, default=None)
+@click.option(
+    "-f",
+    "--file",
+    "file_path",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="Read prompt from a file instead of a CLI argument",
+)
+  </tool_result>
+  <tool_result tool="toolu_019cSwjcLYtYUDXYGxbtgbkm">
+"""JSON output decorator for CLI commands.
+
+Adds a --json flag to Click commands and handles error serialization.
+Commands handle success JSON inline via emit_json(); the decorator only
+handles the error path uniformly by catching UserFacingCliError.
+"""
+
+import json
+from typing import Any
+
+import click
+
+from erk.cli.ensure import UserFacingCliError
+
+
+def json_output(cmd: click.Command) -&gt; click.Command:
+    """Add --json flag and JSON error handling to a Click command.
+
+    Must be applied ABOVE @click.command (i.e., listed above it in the
+    decorator stack). This is because decorators are applied bottom-to-top,
+    so @json_output runs AFTER @click.command creates the Command object.
+
+    When --json is passed:
+    - UserFacingCliError is caught and serialized as JSON to stdout
+    - SystemExit and other exceptions pass through unchanged
+
+    When --json is not passed:
+    - Delegates to the original callback unchanged
+
+    Usage:
+
+... [56 lines omitted] ...
+
+    # Wrap the callback to intercept errors in JSON mode
+        except UserFacingCliError as exc:
+            error_data = {
+                "error_type": exc.error_type,
+            click.echo(json.dumps(error_data))
+  </tool_result>
+  <assistant>Excellent! Now let me continue reading more of the list_cmd file and check view_cmd as well:</assistant>
+  <usage input_tokens="2090" cache_creation_input_tokens="1243" cache_read_input_tokens="63029" cache_creation="{'ephemeral_5m_input_tokens': 1243, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FQ8ZoTmzCs6UqFj1vC12uB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="limit">250</param>
+    <param name="offset">150</param>
+  </tool_use>
+  <usage input_tokens="2090" cache_creation_input_tokens="1243" cache_read_input_tokens="63029" cache_creation="{'ephemeral_5m_input_tokens': 1243, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015GqybCnXqhD9htTPpdcNAm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="2090" cache_creation_input_tokens="1243" cache_read_input_tokens="63029" cache_creation="{'ephemeral_5m_input_tokens': 1243, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01K9VR5veaoUwV4LkxVqgv7v">
+    <param name="pattern">@click.command.*list|def pr_list</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="2090" cache_creation_input_tokens="1243" cache_read_input_tokens="63029" cache_creation="{'ephemeral_5m_input_tokens': 1243, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FQ8ZoTmzCs6UqFj1vC12uB">
+   150→    table = Table(show_header=True, header_style="bold")
+   151→
+   152→    # Column setup mirrors PlanDataTable._setup_columns()
+   153→    table.add_column("pr", style="cyan", no_wrap=True, width=6)
+   154→    table.add_column("stage", no_wrap=True, width=8)
+   155→    table.add_column("sts", no_wrap=True, width=4)
+   156→    table.add_column("created", no_wrap=True, width=7)
+   157→    table.add_column("obj", no_wrap=True, width=5)
+   158→    table.add_column("loc", no_wrap=True, width=3)
+   159→    table.add_column("branch", no_wrap=True, width=42)
+   160→    table.add_column("run-id", no_wrap=True, width=10)
+   161→    table.add_column("run", no_wrap=True, width=3)
+   162→    table.add_column("author", no_wrap=True, width=9)
+   163→    if show_pr_column:
+   164→        table.add_column("pr", no_wrap=True, width=10)
+   165→    table.add_column("chks", no_wrap=True, width=8)
+   166→    table.add_column("cmts", no_wrap=True, width=5)
+   167→
+   168→    for row in rows:
+   169→        values = _row_to_static_values(row, show_pr_column=show_pr_column)
+   170→        table.add_row(*values)
+   171→
+   172→    return table
+   173→
+   174→
+   175→def _row_to_static_values(
+   176→    row: PlanRowData,
+   177→    *,
+   178→    show_pr_column: bool,
+   179→) -&gt; tuple[str | Text, ...]:
+
+... [225 lines omitted] ...
+
+   261→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   308→    if timings is not None and timings.warnings:
+   309→        for warning in timings.warnings:
+   310→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   371→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   393→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_result tool="toolu_015GqybCnXqhD9htTPpdcNAm">
+     1→"""Command to fetch and display a single plan."""
+     2→
+     3→from datetime import datetime
+     4→
+     5→import click
+     6→
+     7→from erk.cli.github_parsing import parse_issue_identifier
+     8→from erk.cli.repo_resolution import (
+     9→    get_remote_github,
+    10→    repo_option,
+    11→    resolve_owner_repo,
+    12→)
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.context.types import NoRepoSentinel
+    15→from erk_shared.core.typing_utils import narrow_to_literal
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import (
+    18→    BRANCH_NAME,
+    19→    CREATED_BY,
+    20→    CREATED_FROM_SESSION,
+    21→    LAST_DISPATCHED_AT,
+    22→    LAST_DISPATCHED_RUN_ID,
+    23→    LAST_LEARN_SESSION,
+    24→    LAST_LOCAL_IMPL_AT,
+    25→    LAST_LOCAL_IMPL_EVENT,
+    26→    LAST_LOCAL_IMPL_SESSION,
+    27→    LAST_LOCAL_IMPL_USER,
+    28→    LAST_REMOTE_IMPL_AT,
+    29→    LEARN_PLAN_ISSUE,
+    30→    LEARN_PLAN_PR,
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01K9VR5veaoUwV4LkxVqgv7v">
+443:@click.command("list")
+447:def pr_list(
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <assistant>Perfect! Now let me get the actual pr_list function definition and look for the pr_view function:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8099" cache_read_input_tokens="64272" cache_creation="{'ephemeral_5m_input_tokens': 8099, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VjAmv5SxMJdfY2EBj8vCcs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="limit">50</param>
+    <param name="offset">443</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8099" cache_read_input_tokens="64272" cache_creation="{'ephemeral_5m_input_tokens': 8099, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WNmTsE3REHgKUAPF3LdFoD">
+    <param name="command">grep -n "@click.command.*view\|def pr_view" /home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py | head -5</param>
+    <param name="description">Find pr_view command definition</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8099" cache_read_input_tokens="64272" cache_creation="{'ephemeral_5m_input_tokens': 8099, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016dk7jUjYpiAmWw4WGXq7MW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8099" cache_read_input_tokens="64272" cache_creation="{'ephemeral_5m_input_tokens': 8099, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
