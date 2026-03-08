@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import tempfile
 import time
 from pathlib import Path
@@ -22,6 +23,7 @@ from erk_statusline.statusline import (
     PRDetailsResult,
     RepoInfo,
     _categorize_check_buckets,
+    _fetch_active_workflow_runs,
     _fetch_check_runs,
     _fetch_pr_details,
     _fetch_review_thread_counts,
@@ -365,7 +367,7 @@ class TestBuildGhLabel:
     """Test GitHub label building."""
 
     def test_no_pr_returns_wrapped_no_pr_label(self) -> None:
-        """When there's no PR, should return (gh:no-pr) wrapped in parentheses."""
+        """When there's no PR, should return (pr:no-pr) wrapped in parentheses."""
         repo_info = RepoInfo(
             owner="testowner",
             repo="testrepo",
@@ -380,12 +382,12 @@ class TestBuildGhLabel:
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
-        assert result_text.startswith("(gh:")
+        assert result_text.startswith("(pr:")
         assert "no-pr" in result_text
         assert result_text.endswith(")")
 
     def test_with_pr_returns_wrapped_pr_number(self) -> None:
-        """When there's a PR, should return (gh:#123 ...) wrapped in parentheses."""
+        """When there's a PR, should return (pr:#123 ...) wrapped in parentheses."""
         repo_info = RepoInfo(
             owner="testowner",
             repo="testrepo",
@@ -410,7 +412,7 @@ class TestBuildGhLabel:
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
-        assert result_text.startswith("(gh:")
+        assert result_text.startswith("(pr:")
         assert "#123" in result_text
         assert result_text.endswith(")")
 
@@ -440,7 +442,7 @@ class TestBuildGhLabel:
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
-        assert result_text.startswith("(gh:")
+        assert result_text.startswith("(pr:")
         assert "#123" in result_text
         assert "plan:" in result_text
         assert "#456" in result_text
@@ -629,6 +631,62 @@ class TestBuildGhLabel:
         assert "⚠️" not in result_text
         # Should still contain normal PR info
         assert "#123" in result_text
+
+    def test_active_runs_shows_robot_emoji(self) -> None:
+        """When there are active workflow runs, should show robot emoji."""
+        repo_info = RepoInfo(
+            owner="testowner",
+            repo="testrepo",
+            pr_number="123",
+            pr_url="https://app.graphite.dev/github/pr/testowner/testrepo/123/",
+            pr_state="published",
+            has_conflicts=False,
+        )
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(0, 0),
+            from_fallback=False,
+            active_run_count=2,
+        )
+
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+
+        result_text = result.render()
+        assert "\U0001f916" in result_text
+
+    def test_no_active_runs_omits_robot_emoji(self) -> None:
+        """When there are no active workflow runs, should not show robot emoji."""
+        repo_info = RepoInfo(
+            owner="testowner",
+            repo="testrepo",
+            pr_number="123",
+            pr_url="https://app.graphite.dev/github/pr/testowner/testrepo/123/",
+            pr_state="published",
+            has_conflicts=False,
+        )
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(0, 0),
+            from_fallback=False,
+            active_run_count=0,
+        )
+
+        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+
+        result_text = result.render()
+        assert "\U0001f916" not in result_text
 
 
 class TestGetPlanNumber:
@@ -1218,6 +1276,117 @@ class TestFetchReviewThreadCounts:
         assert result == (3, 3)
 
 
+class TestFetchActiveWorkflowRuns:
+    """Test active workflow run fetching."""
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_returns_count_of_matching_runs(self, mock_run: MagicMock) -> None:
+        """Should count runs whose display_title contains :#PR_NUMBER: pattern."""
+        in_progress_response = {
+            "workflow_runs": [
+                {"display_title": "8757:#42:abc123"},
+                {"display_title": "pr-address:#42:def456"},
+                {"display_title": "unrelated-run"},
+            ]
+        }
+        queued_response = {
+            "workflow_runs": [
+                {"display_title": "one-shot:#42:ghi789"},
+            ]
+        }
+        mock_run.side_effect = [
+            MagicMock(returncode=0, stdout=json.dumps(in_progress_response)),
+            MagicMock(returncode=0, stdout=json.dumps(queued_response)),
+        ]
+
+        result = _fetch_active_workflow_runs(
+            owner="owner", repo="repo", pr_number=42, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == 3
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_returns_zero_when_no_matching_runs(self, mock_run: MagicMock) -> None:
+        """Should return 0 when no runs match the PR pattern."""
+        empty_response = {"workflow_runs": []}
+        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(empty_response))
+
+        result = _fetch_active_workflow_runs(
+            owner="owner", repo="repo", pr_number=42, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == 0
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_returns_zero_on_timeout(self, mock_run: MagicMock) -> None:
+        """Should return 0 (partial count) when subprocess times out."""
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="gh", timeout=1.5)
+
+        result = _fetch_active_workflow_runs(
+            owner="owner", repo="repo", pr_number=42, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == 0
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_returns_zero_on_api_failure(self, mock_run: MagicMock) -> None:
+        """Should return 0 when API calls fail."""
+        mock_run.return_value = MagicMock(returncode=1, stdout="")
+
+        result = _fetch_active_workflow_runs(
+            owner="owner", repo="repo", pr_number=42, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == 0
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_excludes_learn_workflow_without_hash_pattern(self, mock_run: MagicMock) -> None:
+        """Should exclude learn.yml runs that don't use :#PR: pattern."""
+        in_progress_response = {
+            "workflow_runs": [
+                {"display_title": "8757:abc123"},  # learn.yml pattern (no #)
+                {"display_title": "pr-address:#42:def456"},  # matches
+            ]
+        }
+        queued_response = {"workflow_runs": []}
+        mock_run.side_effect = [
+            MagicMock(returncode=0, stdout=json.dumps(in_progress_response)),
+            MagicMock(returncode=0, stdout=json.dumps(queued_response)),
+        ]
+
+        result = _fetch_active_workflow_runs(
+            owner="owner", repo="repo", pr_number=42, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == 1
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_multiple_active_runs_counted(self, mock_run: MagicMock) -> None:
+        """Should count all matching runs across both statuses."""
+        in_progress_response = {
+            "workflow_runs": [
+                {"display_title": "plan-impl:#99:a"},
+                {"display_title": "pr-address:#99:b"},
+            ]
+        }
+        queued_response = {
+            "workflow_runs": [
+                {"display_title": "rebase:#99:c"},
+                {"display_title": "rewrite:#99:d"},
+            ]
+        }
+        mock_run.side_effect = [
+            MagicMock(returncode=0, stdout=json.dumps(in_progress_response)),
+            MagicMock(returncode=0, stdout=json.dumps(queued_response)),
+        ]
+
+        result = _fetch_active_workflow_runs(
+            owner="owner", repo="repo", pr_number=99, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == 4
+
+
 class TestBuildCommentCountLabel:
     """Test comment count label building."""
 
@@ -1577,6 +1746,7 @@ class TestFetchGitHubDataViaGateway:
         assert result.pr_number == 0
         assert result.pr_state == ""
 
+    @patch("erk_statusline.statusline._fetch_active_workflow_runs")
     @patch("erk_statusline.statusline._fetch_review_thread_counts")
     @patch("erk_statusline.statusline._fetch_check_runs")
     @patch("erk_statusline.statusline._fetch_pr_details")
@@ -1585,6 +1755,7 @@ class TestFetchGitHubDataViaGateway:
         mock_fetch_details: MagicMock,
         mock_fetch_checks: MagicMock,
         mock_fetch_threads: MagicMock,
+        mock_fetch_runs: MagicMock,
     ) -> None:
         """Should return full GitHubData when PR exists."""
         repo_root = Path("/fake/repo")
@@ -1610,7 +1781,7 @@ class TestFetchGitHubDataViaGateway:
             branch_manager=fake_branch_manager,
         )
 
-        # Mock the REST API calls for checks, mergeable status, and review threads
+        # Mock the REST API calls for checks, mergeable status, review threads, and workflow runs
         mock_fetch_details.return_value = PRDetailsResult(mergeable="MERGEABLE", head_sha="abc123")
         mock_fetch_checks.return_value = [
             {
@@ -1621,6 +1792,7 @@ class TestFetchGitHubDataViaGateway:
             }
         ]
         mock_fetch_threads.return_value = (3, 5)
+        mock_fetch_runs.return_value = 1
 
         result = fetch_github_data_via_gateway(ctx, repo_root, "feature-branch")
 
@@ -1634,6 +1806,7 @@ class TestFetchGitHubDataViaGateway:
         assert len(result.check_contexts) == 1
         assert result.review_thread_counts == (3, 5)
         assert result.from_fallback is False
+        assert result.active_run_count == 1
 
 
 class TestMainSetsGitOptionalLocks:

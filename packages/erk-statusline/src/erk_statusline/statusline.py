@@ -143,6 +143,7 @@ class GitHubData(NamedTuple):
     check_contexts: list[dict[str, str]]  # List of check contexts from statusCheckRollup
     review_thread_counts: tuple[int, int]  # (resolved, total) counts for PR review threads
     from_fallback: bool  # True if PR info came from GitHub API fallback, not Graphite cache
+    active_run_count: int = 0  # Number of active workflow runs for this PR
 
 
 def get_git_root_via_gateway(ctx: StatuslineContext) -> Path | None:
@@ -737,6 +738,94 @@ def _fetch_review_thread_counts(
         return (0, 0)
 
 
+def _fetch_active_workflow_runs(
+    *,
+    owner: str,
+    repo: str,
+    pr_number: int,
+    cwd: str,
+    timeout: float,
+) -> int:
+    """Fetch count of active (in_progress + queued) workflow runs for a PR.
+
+    Matches workflow runs whose display_title contains `:#PR_NUMBER:` which is the
+    naming convention used by erk's remote workflows (plan-implement, pr-address, etc.).
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+        pr_number: Pull request number
+        cwd: Working directory for subprocess
+        timeout: Total timeout budget in seconds shared across both API calls
+
+    Returns:
+        Count of matching active workflow runs. Returns 0 on any error/timeout.
+    """
+    _logger.debug("Fetching active workflow runs: %s/%s #%d", owner, repo, pr_number)
+    start_time = time.time()
+    pattern = f":#{pr_number}:"
+    count = 0
+
+    for status in ("in_progress", "queued"):
+        remaining = timeout - (time.time() - start_time)
+        if remaining <= 0:
+            _logger.debug("Active workflow runs: timeout budget exhausted before %s fetch", status)
+            return count
+
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{owner}/{repo}/actions/runs?status={status}&per_page=20",
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                timeout=remaining,
+            )
+
+            if result.returncode != 0:
+                _logger.debug(
+                    "Active workflow runs %s fetch failed: returncode=%d",
+                    status,
+                    result.returncode,
+                )
+                continue
+
+            data = json.loads(result.stdout)
+            runs = data.get("workflow_runs", [])
+            for run in runs:
+                display_title = run.get("display_title", "")
+                if pattern in display_title:
+                    count += 1
+
+        except subprocess.TimeoutExpired:
+            elapsed = time.time() - start_time
+            _logger.debug(
+                "Active workflow runs timeout during %s fetch after %.2fs",
+                status,
+                elapsed,
+            )
+            return count
+        except (subprocess.SubprocessError, json.JSONDecodeError) as e:
+            _logger.debug("Active workflow runs error during %s fetch: %s", status, e)
+            continue
+
+    elapsed = time.time() - start_time
+    _logger.debug(
+        "Active workflow runs fetched: %s/%s #%d in %.2fs -> %d active",
+        owner,
+        repo,
+        pr_number,
+        elapsed,
+        count,
+    )
+    return count
+
+
 def fetch_github_data_via_gateway(
     ctx: StatuslineContext, repo_root: Path, branch: str
 ) -> GitHubData | None:
@@ -779,6 +868,7 @@ def fetch_github_data_via_gateway(
             check_contexts=[],
             review_thread_counts=(0, 0),
             from_fallback=False,
+            active_run_count=0,
         )
 
     pr_number, pr_state, is_draft, from_fallback = pr_info
@@ -786,13 +876,14 @@ def fetch_github_data_via_gateway(
         "GitHub data fetch: found PR #%d state=%s draft=%s", pr_number, pr_state, is_draft
     )
 
-    # Fetch PR details, check runs, and review threads in parallel
+    # Fetch PR details, check runs, review threads, and workflow runs in parallel
     # Note: check runs uses branch name (not local SHA) which resolves to GitHub's HEAD,
     # avoiding issues when local branch differs from remote (e.g., after Graphite squash)
     cwd = str(ctx.cwd)
     review_thread_counts: tuple[int, int] = (0, 0)
+    active_run_count = 0
     try:
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:
             pr_future = executor.submit(
                 lambda: _fetch_pr_details(
                     owner=owner, repo=repo, pr_number=pr_number, cwd=cwd, timeout=1.5
@@ -806,11 +897,17 @@ def fetch_github_data_via_gateway(
                     owner=owner, repo=repo, pr_number=pr_number, cwd=cwd, timeout=1.5
                 )
             )
+            runs_future = executor.submit(
+                lambda: _fetch_active_workflow_runs(
+                    owner=owner, repo=repo, pr_number=pr_number, cwd=cwd, timeout=1.5
+                )
+            )
 
-            # Wait for all three with combined timeout
+            # Wait for all four with combined timeout
             pr_details = pr_future.result(timeout=2)
             check_contexts = checks_future.result(timeout=2)
             review_thread_counts = threads_future.result(timeout=2)
+            active_run_count = runs_future.result(timeout=2)
         mergeable = pr_details.mergeable
     except TimeoutError:
         # If parallel execution times out, use defaults
@@ -819,17 +916,20 @@ def fetch_github_data_via_gateway(
         mergeable = "UNKNOWN"
         check_contexts = []
         review_thread_counts = (0, 0)
+        active_run_count = 0
 
     elapsed = time.time() - start_time
     resolved, total = review_thread_counts
     _logger.debug(
-        "GitHub data fetch complete: branch=%s pr=%d mergeable=%s checks=%d threads=%d/%d in %.2fs",
+        "GitHub data fetch complete: branch=%s pr=%d mergeable=%s"
+        " checks=%d threads=%d/%d runs=%d in %.2fs",
         branch,
         pr_number,
         mergeable,
         len(check_contexts),
         resolved,
         total,
+        active_run_count,
         elapsed,
     )
 
@@ -843,6 +943,7 @@ def fetch_github_data_via_gateway(
         check_contexts=check_contexts,
         review_thread_counts=review_thread_counts,
         from_fallback=from_fallback,
+        active_run_count=active_run_count,
     )
 
 
@@ -1077,9 +1178,9 @@ def build_gh_label(
 
     Returns:
         TokenSeq for the complete GitHub label like:
-        (gh:#123 plan:#456 obj:#789 st:👀💥 chks:✅ cmts:3/5)
+        (pr:#123 plan:#456 obj:#789 st:👀💥 chks:✅ cmts:3/5 🤖)
     """
-    parts = [Token("(gh:")]
+    parts = [Token("(pr:")]
 
     # Add PR number if available (no hyperlink due to Claude Code alignment bug with OSC 8)
     if repo_info.pr_number and repo_info.pr_url:
@@ -1140,6 +1241,10 @@ def build_gh_label(
         comment_label = build_comment_count_label(github_data)
         if comment_label:
             parts.extend([Token(" cmts:"), Token(comment_label)])
+
+        # Add robot emoji if there are active workflow runs
+        if github_data and github_data.active_run_count > 0:
+            parts.extend([Token(" "), Token("\U0001f916", color=Color.CYAN)])
     else:
         parts.append(Token("no-pr"))
 
