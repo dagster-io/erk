@@ -1,0 +1,968 @@
+<session>
+  <meta branch="plnd/add-reconciled-label-03-06-2115" />
+  <meta model="claude-opus-4-6" />
+  <user>➜  erk-slot-12 git:(plnd/add-reconciled-label-03-06-2115) ✗ git st
+On branch plnd/add-reconciled-label-03-06-2115
+Your branch and 'origin/plnd/add-reconciled-label-03-06-2115' have diverged,
+and have 50 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+        modified:   .claude/agents/libcst-refactor.md
+        modified:   .claude/commands/local/changelog-release.md
+        modified:   .claude/commands/local/code-review.md
+        modified:   .claude/commands/local/review.md
+        modified:   .claude/skills/pr-feedback-classifier/SKILL.md
+        modified:   docs/developer/agentic-engineering-patterns/cli-push-down.md
+        modified:   docs/learned/architecture/git-graphite-quirks.md
+        modified:   docs/learned/architecture/git-plumbing-patterns.md
+        modified:   docs/learned/architecture/index.md
+        modified:   docs/learned/architecture/prompt-executor-patterns.md
+        modified:   docs/learned/architecture/tripwires.md
+        modified:   docs/learned/cli/index.md
+        modified:   docs/learned/cli/land-learn-integration.md
+        modified:   docs/learned/cli/tripwires.md
+        modified:   docs/learned/commands/index.md
+        modified:   docs/learned/commands/tripwires.md
+        modified:   docs/learned/erk-dev/index.md
+        modified:   docs/learned/erk-dev/tripwires.md
+        modified:   docs/learned/erk/codespace-remote-execution.md
+        modified:   docs/learned/objectives/roadmap-parser-api.md
+        modified:   docs/learned/tripwires-index.md
+        modified:   docs/learned/tui/command-palette.md
+        modified:   docs/learned/tui/index.md
+        modified:   docs/learned/tui/keyboard-shortcuts.md
+        modified:   src/erk/cli/commands/pr/rebase_cmd.py
+        modified:   tests/commands/pr/test_rebase.py
+
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+        docs/learned/architecture/circular-import-resolution.md
+        docs/learned/architecture/no-repo-infrastructure.md
+        docs/learned/cli/agent-friendly-cli.md
+        docs/learned/cli/rebase-confirmation-workflow.md
+        docs/learned/cli/slot-assign-from-current-branch.md
+        docs/learned/commands/dynamic-trunk-detection.md
+        docs/learned/erk-dev/audit-collect-command.md
+        docs/learned/tui/view-mode-help.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+➜  erk-slot-12 git:(plnd/add-reconciled-label-03-06-2115) ✗ git diff
+➜  erk-slot-12 git:(plnd/add-reconciled-label-03-06-2115) ✗
+
+i'm confused how we got into this state. seems like this is a git operation gone wrong.
+
+just diagnose don't take any action</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14620" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14620}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me gather some diagnostic information.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14620" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14620}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Q1PZMNtFb2rouD9wnjSTfN">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Show recent local commits</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14620" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14620}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q1PZMNtFb2rouD9wnjSTfN">
+487829fbd Add `erk-reconciled` label for post-merge lifecycle tracking
+298833493 Fix changelog-commits JSON output size for agent consumption (#9006)
+f85346d29 Consolidate documentation from 10 erk-learn plans (#8937)
+c3178ba94 Update CHANGELOG for latest feature additions and fixes (#9004)
+ebba4e54f Consolidate learn docs terminology: replace "plan issue" with "plan" (#8995)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0162xnbt68s3MfQ4xwAgnPeU">
+    <param name="command">git log --oneline origin/plnd/add-reconciled-label-03-06-2115 -3</param>
+    <param name="description">Show remote branch commits</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14620" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14620}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0162xnbt68s3MfQ4xwAgnPeU">
+3e5a9578c Add `erk-reconciled` label for post-merge lifecycle tracking
+43dcec724 Consolidate documentation from 14 erk-learn plans (#8842)
+20f3cd393 Add Check 8 for roadmap table sync validation and update objective skill docs (#8902)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0112DAF7dywRQBFsMQ8PyeAK">
+    <param name="command">git merge-base HEAD origin/plnd/add-reconciled-label-03-06-2115 | head -1</param>
+    <param name="description">Find merge base between local and remote</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14620" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14620}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0112DAF7dywRQBFsMQ8PyeAK">
+43dcec7242d764e570b00fc945e21e5443badc88
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018o1sT9rEaMvNJPTxfjLR2P">
+    <param name="command">git log --oneline origin/master -3</param>
+    <param name="description">Show master branch commits</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14620" cache_read_input_tokens="9738" output_tokens="587" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14620, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018o1sT9rEaMvNJPTxfjLR2P">
+e8f3df109 Consolidate rebase detection and improve trunk branch references in commands (#9011)
+086a0d0cd Replace hardcoded trunk branch with dynamic detection in .claude commands (#9005)
+4651f0d18 Add agent-friendly CLI design principles documentation (#9014)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018xCQfi5RgEsrGX3XWHPhb6">
+    <param name="command">git log --oneline 43dcec724..HEAD | wc -l</param>
+    <param name="description">Count commits since merge base on local</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="24358" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 847}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018xCQfi5RgEsrGX3XWHPhb6">
+      50
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014PCesKjNKPKBASFVDxwQQ9">
+    <param name="command">git log --oneline 43dcec724..origin/plnd/add-reconciled-label-03-06-2115 | wc -l</param>
+    <param name="description">Count commits since merge base on remote</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="24358" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 847}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014PCesKjNKPKBASFVDxwQQ9">
+       1
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DN5stWENKauXsbArDc6zWV">
+    <param name="command">git merge-base HEAD origin/master | head -1</param>
+    <param name="description">Find merge base with master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="24358" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 847}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DN5stWENKauXsbArDc6zWV">
+29883349369bd31c8f954228d4caf0de8d8ef6f8
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01J5Q88CV81o4HtZhCu47AMR">
+    <param name="command">git diff --stat HEAD origin/plnd/add-reconciled-label-03-06-2115 | tail -5</param>
+    <param name="description">Show diff between local and remote branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="24358" output_tokens="335" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 847, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J5Q88CV81o4HtZhCu47AMR">
+ tests/unit/sessions/test_manifest.py               |  71 ---
+ ...est_plan_workflow.py =&gt; test_issue_workflow.py} |  40 +-
+ tests/unit/shared/test_next_steps.py               |   8 +-
+ .../test_forward_references.py                     |   0
+ 405 files changed, 5371 insertions(+), 12157 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XXAkkww1Bhh2LgGdaZys3q">
+    <param name="command">git log --oneline 43dcec724..HEAD --no-merges | head -10</param>
+    <param name="description">Show commits on local since merge base</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="25205" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 575}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XXAkkww1Bhh2LgGdaZys3q">
+487829fbd Add `erk-reconciled` label for post-merge lifecycle tracking
+298833493 Fix changelog-commits JSON output size for agent consumption (#9006)
+f85346d29 Consolidate documentation from 10 erk-learn plans (#8937)
+c3178ba94 Update CHANGELOG for latest feature additions and fixes (#9004)
+ebba4e54f Consolidate learn docs terminology: replace "plan issue" with "plan" (#8995)
+a8f5f010f Harden land child reparenting and add resilient stack landing flow (#8992)
+9d0149ad0 Fix file list indentation in manifest summary table using Rich Padding (#8999)
+23be77559 Remove `shell_integration` config and rename `output_for_shell_integration()` (#8997)
+da2993abc Fix indentation in file list output (#8990)
+21e2ed535 Add --branch option to codespace connect command (#8993)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PhphPJNhPTsqdrbxkk6XQK">
+    <param name="command">git log --oneline --graph 43dcec724..HEAD | head -15</param>
+    <param name="description">Show commit graph since merge base</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="25205" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 575}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PhphPJNhPTsqdrbxkk6XQK">
+* 487829fbd Add `erk-reconciled` label for post-merge lifecycle tracking
+* 298833493 Fix changelog-commits JSON output size for agent consumption (#9006)
+* f85346d29 Consolidate documentation from 10 erk-learn plans (#8937)
+* c3178ba94 Update CHANGELOG for latest feature additions and fixes (#9004)
+* ebba4e54f Consolidate learn docs terminology: replace "plan issue" with "plan" (#8995)
+* a8f5f010f Harden land child reparenting and add resilient stack landing flow (#8992)
+* 9d0149ad0 Fix file list indentation in manifest summary table using Rich Padding (#8999)
+* 23be77559 Remove `shell_integration` config and rename `output_for_shell_integration()` (#8997)
+* da2993abc Fix indentation in file list output (#8990)
+* 21e2ed535 Add --branch option to codespace connect command (#8993)
+* 8fed7a8ca Update CHANGELOG for unreleased changes including launchpad shortcut, config safety settings, and remote objective support (#8994)
+* cc3db5b69 Fix objective auto-close: robust code + prompt solution (#8966)
+* 4b7d7a400 Add remote dispatch support to pr dispatch command (#8983)
+* 9db8a24dd Show per-file metadata in manifest output (#8975)
+* 2a9cafe98 Rename `plan_issues` module to `objective_issues` to align with plan-as-PR terminology (#8974)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014j1fktjaM8GphjKaboQpPs">
+    <param name="command">git diff --name-status HEAD -- src/erk/cli/commands/pr/rebase_cmd.py tests/commands/pr/test_rebase.py</param>
+    <param name="description">Check if modified files differ from HEAD</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="25205" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 575, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014j1fktjaM8GphjKaboQpPs">
+M	src/erk/cli/commands/pr/rebase_cmd.py
+M	tests/commands/pr/test_rebase.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DFiTJoAqR8MHAJjcgYzXNZ">
+    <param name="command">git log --oneline origin/master..HEAD | wc -l</param>
+    <param name="description">Count commits ahead of master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1097" cache_read_input_tokens="25780" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1097}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DFiTJoAqR8MHAJjcgYzXNZ">
+       1
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PNJAW5snXTZg54Tus3938X">
+    <param name="command">git log --oneline HEAD..origin/master | wc -l</param>
+    <param name="description">Count commits master is ahead</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1097" cache_read_input_tokens="25780" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1097}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PNJAW5snXTZg54Tus3938X">
+       5
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013Fz2ok9WfdcUoHEPf14ya3">
+    <param name="command">git diff --stat HEAD -- $(git diff --name-only HEAD) 2&gt;/dev/null | tail -3</param>
+    <param name="description">Check if working tree actually differs from HEAD</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1097" cache_read_input_tokens="25780" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1097, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Fz2ok9WfdcUoHEPf14ya3">
+ src/erk/cli/commands/pr/rebase_cmd.py              | 43 +++++++++-------
+ tests/commands/pr/test_rebase.py                   | 58 +++++++++++++++++++++-
+ 26 files changed, 318 insertions(+), 53 deletions(-)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="26877" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 405}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011FwoikGkA4qenbpKesFYdM">
+    <param name="command">git diff --cached --stat | tail -3</param>
+    <param name="description">Check for staged changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="26877" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 405}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011FwoikGkA4qenbpKesFYdM">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019BX4tFYEJPth3kopNWEZuX">
+    <param name="command">git diff HEAD --stat | tail -5</param>
+    <param name="description">Check working tree vs HEAD</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="26877" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 405}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019BX4tFYEJPth3kopNWEZuX">
+ docs/learned/tui/index.md                          |  1 +
+ docs/learned/tui/keyboard-shortcuts.md             | 10 ++++
+ src/erk/cli/commands/pr/rebase_cmd.py              | 43 +++++++++-------
+ tests/commands/pr/test_rebase.py                   | 58 +++++++++++++++++++++-
+ 26 files changed, 318 insertions(+), 53 deletions(-)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RVNAL6fQard5SVPhuPxT6c">
+    <param name="command">git log --oneline origin/master..origin/plnd/add-reconciled-label-03-06-2115</param>
+    <param name="description">Show what remote branch has vs master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="26877" output_tokens="2027" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RVNAL6fQard5SVPhuPxT6c">
+3e5a9578c Add `erk-reconciled` label for post-merge lifecycle tracking
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012Ws73PAKfAqWbKoCtABk2e">
+    <param name="command">git log --oneline HEAD..origin/master</param>
+    <param name="description">Show what master has that this branch doesn't</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2226" cache_read_input_tokens="27282" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2226}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Ws73PAKfAqWbKoCtABk2e">
+e8f3df109 Consolidate rebase detection and improve trunk branch references in commands (#9011)
+086a0d0cd Replace hardcoded trunk branch with dynamic detection in .claude commands (#9005)
+4651f0d18 Add agent-friendly CLI design principles documentation (#9014)
+4e28ff780 Consolidate documentation from 21 erk-learn plans (#8920)
+166d63639 Improve Graphite rebase handling to skip tracking check when restack is in progress (#9007)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JKJg1XSYwhocAXvUB9PQiE">
+    <param name="command">git log --oneline origin/master..HEAD</param>
+    <param name="description">Show what this branch has that master doesn't</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2226" cache_read_input_tokens="27282" output_tokens="155" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2226, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JKJg1XSYwhocAXvUB9PQiE">
+487829fbd Add `erk-reconciled` label for post-merge lifecycle tracking
+  </tool_result>
+  <assistant>Here's the diagnosis:
+
+## What happened
+
+**The branch was rebased onto a stale master, and the remote wasn't updated.**
+
+### Branch divergence (50 vs 1)
+
+- **Remote branch** `origin/plnd/add-reconciled-label-03-06-2115` has 1 commit (`3e5a9578c`) based on an older master (`43dcec724`)
+- **Local branch** was rebased onto a newer master, so its history now includes ~49 master commits + 1 feature commit (`487829fbd`). That's the "50 vs 1" divergence — it's not 50 real feature commits, it's a rebase that absorbed master history.
+
+The remote was never force-pushed to match the rebased local, so they diverged.
+
+### Dirty working tree (modified files, empty `git diff`)
+
+- `git diff` (working tree vs index) = empty — nothing is staged
+- `git diff --cached` = empty — nothing is staged  
+- `git diff HEAD` = 26 files changed — working tree differs from HEAD
+
+This means the **working tree has uncommitted changes relative to HEAD**, but they aren't staged. The empty `git diff` you saw is correct because `git diff` with no arguments only shows unstaged changes relative to the index. Since the index matches HEAD for these files, the modifications show up in `git status` as "not staged" and in `git diff HEAD` but not in bare `git diff`.
+
+Most of the 26 dirty files are docs/learned/ and .claude/ files — likely changes made in the root worktree or other slots that bled into this worktree's working tree, plus the actual feature changes in `rebase_cmd.py` and `test_rebase.py`.
+
+### Current position relative to master
+
+- Local is **1 commit ahead** of master (the feature commit `487829fbd`)
+- Master is **5 commits ahead** of local (recent merges since this branch was rebased)
+
+### Root cause
+
+Most likely a `gt` restack or `erk pr rebase` ran in this worktree, rebasing the branch onto master, but the result was never pushed. Meanwhile, master continued advancing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="29508" output_tokens="506" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 354, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>i find it likely that is the result of automation code, rather than user error. we have made changes recently that use lower level git primitives to avoid checkouts which has icnreased the risk fo this sort of error</user>
+  <usage input_tokens="3" cache_creation_input_tokens="709" cache_read_input_tokens="29862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 709}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>That makes sense. Let me look at the recent changes involving low-level git primitives.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="709" cache_read_input_tokens="29862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 709}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Y9AzS511jk8Den2gUhcTCU">
+    <param name="command">git log --oneline --all --since="2026-02-15" --grep="checkout" | head -10</param>
+    <param name="description">Find recent commits mentioning checkout</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="709" cache_read_input_tokens="29862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 709}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y9AzS511jk8Den2gUhcTCU">
+e8f3df109 Consolidate rebase detection and improve trunk branch references in commands (#9011)
+086a0d0cd Replace hardcoded trunk branch with dynamic detection in .claude commands (#9005)
+4e28ff780 Consolidate documentation from 21 erk-learn plans (#8920)
+e224e520a Restructure docs around composability layers in Phase 1
+f64e82706 Add plan: Learn: Remove `--sync` from checkout, add `--script` and `--sync` to teleport, rename cmux-checkout-workspace to cmux-open-pr
+a9f29d4bb Add plan: Learn: Refactor cmux_checkout_workspace: mock to fake with Cmux gateway ABC
+17dc3ea7b Add plan: Learn: Rename cmux-checkout-workspace to cmux-open-pr and add --mode flag for checkout/teleport
+5c081a06d Address PR review comments (batch 1/1)
+f85346d29 Consolidate documentation from 10 erk-learn plans (#8937)
+c3178ba94 Update CHANGELOG for latest feature additions and fixes (#9004)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FXU5JufxZXn4DpLewsFery">
+    <param name="pattern">git read-tree|git update-index|git write-tree|git commit-tree|git update-ref|GIT_INDEX_FILE|GIT_WORK_TREE</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="709" cache_read_input_tokens="29862" output_tokens="348" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 709, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FXU5JufxZXn4DpLewsFery">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01VgdzcCL7Bn8KHFUR5HRZGC">
+    <param name="pattern">checkout|read-tree|update-ref|update-index|write-tree|commit-tree</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/gateway</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="30571" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 791}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VgdzcCL7Bn8KHFUR5HRZGC">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/gateway. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018AvKwbZ9A9WWruQk9T5mqQ">
+    <param name="pattern">no.checkout|avoid.*checkout|without.*checkout|plumbing</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="30571" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 791}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018AvKwbZ9A9WWruQk9T5mqQ">
+&lt;tool_use_error&gt;Cancelled: parallel tool call Grep(checkout|read-tree|update-ref|update-ind…) errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Bq74RyXVgzqUoZBxxfdnTQ">
+    <param name="pattern">read-tree|update-index|write-tree|commit-tree|update-ref</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="30571" output_tokens="440" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 791, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bq74RyXVgzqUoZBxxfdnTQ">
+&lt;tool_use_error&gt;Cancelled: parallel tool call Grep(checkout|read-tree|update-ref|update-ind…) errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FRdgeJbozEpcXjpGrcQyMN">
+    <param name="command">ls src/erk/</param>
+    <param name="description">List src/erk directory structure</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="685" cache_read_input_tokens="31362" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 685, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FRdgeJbozEpcXjpGrcQyMN">
+__init__.py
+__main__.py
+__pycache__
+agent_docs
+artifacts
+capabilities
+cli
+core
+data
+hooks
+review
+status
+tui
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LTpwxqwz4zZHEtoHhoSL7f">
+    <param name="pattern">read-tree|update-index|write-tree|commit-tree|update-ref|GIT_INDEX_FILE|GIT_WORK_TREE</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="32047" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 130}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LTpwxqwz4zZHEtoHhoSL7f">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LWSwjpxpQZFzrbsD3WGicL">
+    <param name="pattern">read-tree|update-index|write-tree|commit-tree|update-ref|GIT_INDEX_FILE</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="32047" output_tokens="314" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 130, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LWSwjpxpQZFzrbsD3WGicL">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TCARHWkRaPYRoZi64p7ca3">
+    <param name="pattern">read-tree|update-index|write-tree|commit-tree|update-ref|GIT_INDEX_FILE</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="515" cache_read_input_tokens="32177" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 515, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TCARHWkRaPYRoZi64p7ca3">
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:92:            env["GIT_INDEX_FILE"] = tmp_index
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:96:                cmd=["git", "read-tree", parent_sha],
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:113:                    cmd=["git", "update-index", "--add", "--cacheinfo", cacheinfo],
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:121:                cmd=["git", "write-tree"],
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:129:                cmd=["git", "commit-tree", tree_sha, "-p", parent_sha, "-m", message],
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:136:                cmd=["git", "update-ref", f"refs/heads/{branch}", commit_sha],
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:63:        user_output(f"[DRY RUN] Would run: git update-ref refs/heads/{branch} {target_sha[:8]}")
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:285:        Uses git update-ref to move the branch pointer. This is safe to use
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py:76:            ["git", "merge-tree", "--write-tree", base_branch, head_branch],
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:425:            cmd=["git", "update-ref", f"refs/heads/{branch}", target_sha],
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ETt94jU81F1gT2rRbcQjc6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="offset">70</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="32692" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 706}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ETt94jU81F1gT2rRbcQjc6">
+    70→
+    71→    def commit_files_to_branch(
+    72→        self,
+    73→        cwd: Path,
+    74→        *,
+    75→        branch: str,
+    76→        files: dict[str, str],
+    77→        message: str,
+    78→    ) -&gt; None:
+    79→        """Create a commit on a branch using git plumbing (no checkout)."""
+    80→        # Get parent commit SHA
+    81→        parent_sha = run_subprocess_with_context(
+    82→            cmd=["git", "rev-parse", branch],
+    83→            operation_context=f"resolve branch {branch}",
+    84→            cwd=cwd,
+    85→        ).stdout.strip()
+    86→
+    87→        # Create temporary index file to avoid touching the real index
+    88→        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+    89→        os.close(tmp_fd)
+    90→        try:
+    91→            env = os.environ.copy()
+    92→            env["GIT_INDEX_FILE"] = tmp_index
+    93→
+    94→            # Read parent tree into temp index
+    95→            run_subprocess_with_context(
+    96→                cmd=["git", "read-tree", parent_sha],
+    97→                operation_context="read parent tree into temp index",
+    98→                cwd=cwd,
+    99→                env=env,
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YEpGW32DU2UzxLh5aaiows">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="offset">410</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="32692" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 706, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YEpGW32DU2UzxLh5aaiows">
+   410→        result = subprocess.run(
+   411→            ["git", "log", f"{trunk}..{branch}", "-1", "--format=%aI"],
+   412→            cwd=repo_root,
+   413→            capture_output=True,
+   414→            text=True,
+   415→            check=False,
+   416→        )
+   417→        if result.returncode != 0:
+   418→            return None
+   419→        timestamp = result.stdout.strip()
+   420→        return timestamp if timestamp else None
+   421→
+   422→    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+   423→        """Update a local branch ref to point at a new commit without checkout."""
+   424→        run_subprocess_with_context(
+   425→            cmd=["git", "update-ref", f"refs/heads/{branch}", target_sha],
+   426→            operation_context=f"update local ref '{branch}' to '{target_sha[:8]}'",
+   427→            cwd=repo_root,
+   428→        )
+   429→
+   430→    def get_branch_commits_with_authors(
+   431→        self, repo_root: Path, branch: str, trunk: str, *, limit: int
+   432→    ) -&gt; list[dict[str, str]]:
+   433→        """Get commits on branch not on trunk, with author and timestamp.
+   434→
+   435→        Returns commits unique to the branch (not present on trunk),
+   436→        ordered from newest to oldest.
+   437→        """
+   438→        result = subprocess.run(
+   439→            [
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check what calls these plumbing operations and whether they operate in worktrees.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1853" cache_read_input_tokens="33398" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1853}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SnDxAmeXACJ2LDFUSiNSJy">
+    <param name="pattern">commit_files_to_branch|update_local_ref</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1853" cache_read_input_tokens="33398" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1853, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SnDxAmeXACJ2LDFUSiNSJy">
+src/erk/cli/commands/branch/checkout_cmd.py:388:                ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:282:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:422:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:251:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:61:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py:83:    def commit_files_to_branch(
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:71:    def commit_files_to_branch(
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py:153:    def commit_files_to_branch(
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py:62:    def commit_files_to_branch(
+src/erk/cli/commands/pr/checkout_cmd.py:274:                ctx.git.branch.update_local_ref(repo.root, pr.base_ref_name, remote_sha)
+src/erk/cli/commands/exec/scripts/plan_save.py:250:    git.commit.commit_files_to_branch(
+src/erk/cli/commands/exec/scripts/plan_save.py:258:    # (create_branch tracked position A, but commit_files_to_branch moved to B)
+src/erk/cli/commands/pr/dispatch_helpers.py:29:    Uses fetch + update_local_ref to advance the local trunk branch pointer
+src/erk/cli/commands/pr/dispatch_helpers.py:68:            ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)
+src/erk/cli/commands/pr/dispatch_cmd.py:237:            ctx.git.branch.update_local_ref(repo.root, branch_name, remote_sha)
+src/erk/cli/commands/pr/dispatch_cmd.py:250:    ctx.git.commit.commit_files_to_branch(
+src/erk/cli/commands/exec/scripts/push_session.py:279:    git.commit.commit_files_to_branch(
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:111:            git.branch.update_local_ref(repo_root, branch_name, remote_sha)
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:124:    git.commit.commit_files_to_branch(
+src/erk/cli/commands/exec/scripts/plan_update.py:143:        git.commit.commit_files_to_branch(
+tests/commands/pr/test_checkout_graphite_linking.py:495:        # Parent branch should have been updated via update_local_ref
+tests/integration/test_real_git_commit_ops.py:1:"""Integration tests for RealGitCommitOps.commit_files_to_branch().
+tests/integration/test_real_git_commit_ops.py:3:Tests verify that commit_files_to_branch correctly creates commits on a branch
+tests/integration/test_real_git_commit_ops.py:23:def test_commit_files_to_branch_creates_commit_on_target_branch(tmp_path: Path) -&gt; None:
+tests/integration/test_real_git_commit_ops.py:24:    """Test that commit_files_to_branch creates a commit on the target branch."""
+tests/integration/test_real_git_commit_ops.py:32:    commit_ops.commit_files_to_branch(
+tests/integration/test_real_git_commit_ops.py:60:def test_commit_files_to_branch_does_not_modify_working_tree(tmp_path: Path) -&gt; None:
+tests/integration/test_real_git_commit_ops.py:61:    """Test that commit_files_to_branch does not modify the working tree or HEAD."""
+tests/integration/test_real_git_commit_ops.py:72:    commit_ops.commit_files_to_branch(
+tests/integration/test_real_git_commit_ops.py:103:def test_commit_files_to_branch_with_multiple_files(tmp_path: Path) -&gt; None:
+
+... [38 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Kdca1K1uN1QhLECKxRZR2t">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">220</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3022" cache_read_input_tokens="35251" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3022}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kdca1K1uN1QhLECKxRZR2t">
+   220→    # Fetch plan content via PlanBackend
+   221→    user_output("Fetching plan content...")
+   222→    result = ctx.plan_store.get_plan(repo.root, str(plan_number))
+   223→    if isinstance(result, PlanNotFound):
+   224→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   225→        raise SystemExit(1)
+   226→    plan = result
+   227→
+   228→    # Sync local branch ref to remote (no checkout required)
+   229→    user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
+   230→    ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+   231→    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+   232→    if checked_out_path is None:
+   233→        ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+   234→    else:
+   235→        remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{branch_name}")
+   236→        if remote_sha is not None:
+   237→            ctx.git.branch.update_local_ref(repo.root, branch_name, remote_sha)
+   238→
+   239→    # Commit impl-context files directly to branch (no checkout required)
+   240→    user_output("Committing plan to branch...")
+   241→    files = build_impl_context_files(
+   242→        plan_content=plan.body,
+   243→        plan_id=str(plan_number),
+   244→        url=validated.url,
+   245→        provider="github-draft-pr",
+   246→        objective_id=plan.objective_id,
+   247→        now_iso=ctx.time.now().isoformat(),
+   248→        node_ids=None,
+   249→    )
+
+... [20 lines omitted] ...
+
+   266→        except Exception:
+   267→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GrCpTeDF2zgE9Z7WKcWigt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3022" cache_read_input_tokens="35251" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3022, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GrCpTeDF2zgE9Z7WKcWigt">
+     1→"""Helper functions for dispatch command."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk_shared.output.output import user_output
+     8→
+     9→
+    10→def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -&gt; None:
+    11→    """Raise SystemExit(1) if trunk is checked out in a dirty worktree."""
+    12→    trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+    13→    if trunk_worktree is None:
+    14→        return
+    15→    if not ctx.git.status.has_uncommitted_changes(trunk_worktree):
+    16→        return
+    17→    user_output(
+    18→        click.style("Error: ", fg="red")
+    19→        + f"Worktree at {trunk_worktree} has {trunk} checked out with "
+    20→        f"uncommitted changes.\n\n"
+    21→        f"Please commit or stash changes before running erk pr dispatch."
+    22→    )
+    23→    raise SystemExit(1)
+    24→
+    25→
+    26→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    27→    """Ensure local trunk ref is synced with remote, without requiring checkout.
+    28→
+    29→    Uses fetch + update_local_ref to advance the local trunk branch pointer
+    30→    without needing trunk to be checked out. If trunk IS checked out in a
+
+... [59 lines omitted] ...
+
+    33→    Raises SystemExit(1) on sync failure with clear error message.
+    45→            click.style("Error: ", fg="red")
+    73→            click.style("Error: ", fg="red")
+    82→            click.style("Error: ", fg="red")
+    86→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <assistant>Now I can see the key issue. Let me check the specific case — `update_local_ref` at line 237 of `dispatch_cmd.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2413" cache_read_input_tokens="38273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2413}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014ri6JNwkuuJ1CXCzAadzA9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">228</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2413" cache_read_input_tokens="38273" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014ri6JNwkuuJ1CXCzAadzA9">
+   228→    # Sync local branch ref to remote (no checkout required)
+   229→    user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
+   230→    ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+   231→    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+   232→    if checked_out_path is None:
+   233→        ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+   234→    else:
+   235→        remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{branch_name}")
+   236→        if remote_sha is not None:
+   237→            ctx.git.branch.update_local_ref(repo.root, branch_name, remote_sha)
+   238→
+   239→    # Commit impl-context files directly to branch (no checkout required)
+   240→    user_output("Committing plan to branch...")
+   241→    files = build_impl_context_files(
+   242→        plan_content=plan.body,
+   243→        plan_id=str(plan_number),
+   244→        url=validated.url,
+   245→        provider="github-draft-pr",
+   246→        objective_id=plan.objective_id,
+   247→        now_iso=ctx.time.now().isoformat(),
+   248→        node_ids=None,
+   249→    )
+   250→    ctx.git.commit.commit_files_to_branch(
+   251→        repo.root,
+   252→        branch=branch_name,
+   253→        files=files,
+   254→        message=f"Add plan for PR #{plan_number}",
+   255→    )
+   256→
+   257→    # If branch is checked out, sync index for committed files to avoid stale staged changes
+
+... [15 lines omitted] ...
+
+   266→        except Exception:
+   267→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+   272→    if isinstance(push_result, PushError):
+  </tool_result>
+  <assistant>Here's the diagnosis:
+
+## Root Cause: `update_local_ref` + `commit_files_to_branch` on a checked-out branch
+
+The problem is in the plumbing-based operations that deliberately avoid `git checkout`. There are two interrelated issues:
+
+### 1. `update_local_ref` moves HEAD without updating the working tree
+
+When `update_local_ref` (line 237 of `dispatch_cmd.py`) runs `git update-ref refs/heads/&lt;branch&gt; &lt;sha&gt;` on a branch that's **checked out in a worktree**, it moves the branch pointer (and therefore HEAD in that worktree) without updating the index or working tree. This leaves the worktree's files reflecting the *old* commit while HEAD now points to the *new* commit.
+
+That's exactly what produces your symptoms:
+- `git status` shows files as "modified" (working tree differs from new HEAD)
+- `git diff` shows nothing (working tree matches the index, which also wasn't updated)
+
+### 2. The index sync is incomplete
+
+Lines 257-267 attempt to fix this by running `git checkout HEAD -- &lt;paths&gt;` to sync the impl-context files. But this only syncs the **files that were committed via plumbing** — it doesn't sync the working tree/index for any other files that differ between the old and new HEAD. If the remote sha was a rebased version with different content in docs, src, etc., all those files are now "phantom modified."
+
+### 3. How the 50-vs-1 divergence happened
+
+The remote branch `origin/plnd/add-reconciled-label-03-06-2115` has 1 commit on an old base. A dispatch or similar operation fetched that remote, then used `update_local_ref` to point the local branch at the remote SHA. But somewhere in the process (possibly a separate rebase/restack), the local branch got rebased onto a newer master, creating the 50-commit history. The remote was never force-pushed to match.
+
+### Summary
+
+The core bug: **`update_local_ref` is used on branches that may be checked out in worktrees, and the index/working-tree sync that follows is limited to impl-context files rather than being a full sync.** The `is_branch_checked_out` check at line 231 correctly detects this case, but the remediation at lines 257-267 is insufficient — it only covers the files being committed, not the entire tree delta.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="893" cache_read_input_tokens="40686" output_tokens="568" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 893, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>do you have a recommended fix</user>
+  <usage input_tokens="3" cache_creation_input_tokens="731" cache_read_input_tokens="41579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 731}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Yes. The core issue is `update_local_ref` being used on checked-out branches — it moves the ref via `git update-ref` but doesn't touch the index or working tree. The pattern is already solved correctly in one place: `ensure_trunk_synced` in `dispatch_helpers.py` uses `pull_branch` when the branch is checked out, `update_local_ref` only when it's not.
+
+The fix is to apply that same pattern everywhere `update_local_ref` is called on a branch that might be checked out. Let me check all call sites.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="731" cache_read_input_tokens="41579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 731}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016MuxWrH4tuU3HaTDzyikbh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">375</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="731" cache_read_input_tokens="41579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 731}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016MuxWrH4tuU3HaTDzyikbh">
+   375→        if parent_branch not in local_branches:
+   376→            user_output(f"Fetching base branch '{parent_branch}'...")
+   377→            ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
+   378→            ctx.branch_manager.create_tracking_branch(
+   379→                repo_root, parent_branch, f"origin/{parent_branch}"
+   380→            )
+   381→        else:
+   382→            # Parent exists locally but may be stale after squash/rebase.
+   383→            # Update to match origin so gt track sees consistent history.
+   384→            ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
+   385→            remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch}")
+   386→            local_sha = ctx.git.branch.get_branch_head(repo_root, parent_branch)
+   387→            if remote_sha is not None and remote_sha != local_sha:
+   388→                ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)
+   389→
+   390→        user_output("Rebasing onto base branch...")
+   391→        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{parent_branch}")
+   392→
+   393→        if not rebase_result.success:
+   394→            ctx.git.rebase.rebase_abort(worktree_path)
+   395→            user_output(
+   396→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   397→                f"Run: cd {worktree_path} &amp;&amp; git rebase origin/{parent_branch}"
+   398→            )
+   399→
+   400→    ctx.branch_manager.track_branch(repo_root, branch, parent_branch)
+   401→
+   402→
+   403→@alias("co")
+   404→@click.command("checkout", cls=CommandWithHiddenOptions)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TrhAzX7kYcC6hLQqnjTz47">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">260</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="731" cache_read_input_tokens="41579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 731}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TrhAzX7kYcC6hLQqnjTz47">
+   260→        local_branches = ctx.git.branch.list_local_branches(repo.root)
+   261→        if pr.base_ref_name not in local_branches:
+   262→            ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
+   263→            ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
+   264→            ctx.branch_manager.create_tracking_branch(
+   265→                repo.root, pr.base_ref_name, f"origin/{pr.base_ref_name}"
+   266→            )
+   267→        else:
+   268→            # Parent exists locally but may be stale after squash/rebase.
+   269→            # Update to match origin so gt track sees consistent history.
+   270→            ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
+   271→            remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{pr.base_ref_name}")
+   272→            local_sha = ctx.git.branch.get_branch_head(repo.root, pr.base_ref_name)
+   273→            if remote_sha is not None and remote_sha != local_sha:
+   274→                ctx.git.branch.update_local_ref(repo.root, pr.base_ref_name, remote_sha)
+   275→
+   276→        ctx.console.info("Rebasing onto base branch...")
+   277→        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
+   278→
+   279→        if not rebase_result.success:
+   280→            ctx.git.rebase.rebase_abort(worktree_path)
+   281→            ctx.console.info(
+   282→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   283→                f"Run: cd {worktree_path} &amp;&amp; git rebase origin/{pr.base_ref_name}"
+   284→            )
+   285→
+   286→    # Graphite integration: Track or retrack AFTER rebase completes.
+   287→    # Tracking must happen after rebase so Graphite's cached SHA matches
+   288→    # the post-rebase commit, preventing divergence.
+   289→    should_track_with_graphite = (
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Vxat7bLF51XATFziJYHg9E">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="offset">95</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="731" cache_read_input_tokens="41579" output_tokens="5381" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 731, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vxat7bLF51XATFziJYHg9E">
+    95→    # Ensure trunk is synced
+    96→    repo = erk_ctx.repo
+    97→    if isinstance(repo, NoRepoSentinel):
+    98→        _output_error(output_format, "Not in a git repository")
+    99→        raise SystemExit(1)
+   100→    ensure_trunk_synced(erk_ctx, repo)
+   101→
+   102→    # Sync local branch ref to remote (no checkout required)
+   103→    user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
+   104→    git.remote.fetch_branch(repo_root, "origin", branch_name)
+   105→    checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
+   106→    if checked_out_path is None:
+   107→        git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
+   108→    else:
+   109→        remote_sha = git.branch.get_branch_head(repo_root, f"origin/{branch_name}")
+   110→        if remote_sha is not None:
+   111→            git.branch.update_local_ref(repo_root, branch_name, remote_sha)
+   112→
+   113→    # Build and commit impl-context files to branch
+   114→    user_output("Committing plan to branch...")
+   115→    files = build_impl_context_files(
+   116→        plan_content=plan_content,
+   117→        plan_id=str(pr_number),
+   118→        url=pr_result.url,
+   119→        provider="incremental-dispatch",
+   120→        objective_id=None,
+   121→        now_iso=time.now().isoformat(),
+   122→        node_ids=None,
+   123→    )
+   124→    git.commit.commit_files_to_branch(
+
+... [10 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9108" cache_read_input_tokens="42310" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9108}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me explore one more thing — whether there's already a helper that handles this pattern correctly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9108" cache_read_input_tokens="42310" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9108}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017XGZfoFGHMi3jQMZKuFmtc">
+    <param name="pattern">sync_branch|sync_ref|sync_local</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9108" cache_read_input_tokens="42310" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9108}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017XGZfoFGHMi3jQMZKuFmtc">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GBhZDsQRG1JHjwmN4MbnEF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+    <param name="offset">275</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9108" cache_read_input_tokens="42310" output_tokens="3950" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9108, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GBhZDsQRG1JHjwmN4MbnEF">
+   275→
+   276→        Returns:
+   277→            ISO 8601 timestamp string, or None if no unique commits
+   278→        """
+   279→        ...
+   280→
+   281→    @abstractmethod
+   282→    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+   283→        """Update a local branch ref to point at a new commit without checkout.
+   284→
+   285→        Uses git update-ref to move the branch pointer. This is safe to use
+   286→        when the branch is NOT currently checked out in any worktree. If the
+   287→        branch IS checked out, the working tree will not be updated.
+   288→
+   289→        Args:
+   290→            repo_root: Path to the git repository root
+   291→            branch: Local branch name to update
+   292→            target_sha: Commit SHA to point the branch at
+   293→        """
+   294→        ...
+   295→
+   296→    @abstractmethod
+   297→    def get_branch_commits_with_authors(
+   298→        self, repo_root: Path, branch: str, trunk: str, *, limit: int
+   299→    ) -&gt; list[dict[str, str]]:
+  </tool_result>
+  <assistant>Good — the docstring on `update_local_ref` already says it's only safe when the branch is NOT checked out. The callers are just not respecting that contract. Let me check what `has_uncommitted_changes` and `pull_branch` look like.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4365" cache_read_input_tokens="51418" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4365}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EVS3FhBQNNK8cwtQH8hNGg">
+    <param name="pattern">def has_uncommitted_changes|def pull_branch|def is_branch_checked_out</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4365" cache_read_input_tokens="51418" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4365, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EVS3FhBQNNK8cwtQH8hNGg">
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py:33:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py:52:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py:27:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:95:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py:52:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py:55:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py:52:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py:92:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py:158:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py:42:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py:42:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:157:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+  </tool_result>
+  <assistant>Now I have everything I need. Here's the recommended fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1024" cache_read_input_tokens="55783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1024}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01BBiLyNfzHkBMZscUHkZf12">
+    <param name="file_path">/Users/schrockn/.claude/plans/delegated-orbiting-curry.md</param>
+    <param name="content"># Fix: `update_local_ref` desyncs checked-out worktrees
+
+## Context
+
+When automation code ...[truncated 4856 chars]...g tree stays clean
+3. Verify dirty worktree is properly rejected with clear error message
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1024" cache_read_input_tokens="55783" output_tokens="1684" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1024, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BBiLyNfzHkBMZscUHkZf12">
+File created successfully at: /Users/schrockn/.claude/plans/delegated-orbiting-curry.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01TV6L3wGdacg7b1R1c5xVwT">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1722" cache_read_input_tokens="56807" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1722, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TV6L3wGdacg7b1R1c5xVwT">
+
+  </tool_result>
+  <assistant>
+
+The key insight: `update_local_ref`'s own docstring says it's unsafe on checked-out branches, and the correct pattern (`pull_branch` for checked-out, `update_local_ref` for not) already exists in `ensure_trunk_synced`. The fix is extracting that pattern into a reusable `sync_branch_to_sha` helper and using it at the 4 call sites that currently call `update_local_ref` without checking.
+
+For checked-out branches with uncommitted changes, the helper refuses with a clear error rather than silently desyncing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="58529" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01PdWm6RiikCqxZfVVDqxGmY">
+    <param name="plan"># Fix: `update_local_ref` desyncs checked-out worktrees
+
+## Context
+
+When automation code ...[truncated 4856 chars]...g tree stays clean
+3. Verify dirty worktree is properly rejected with clear error message
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="58529" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PdWm6RiikCqxZfVVDqxGmY">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/delegated-orbiting-curry.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: `update_local_ref` desyncs checked-out worktrees
+Current context: (wt:erk-slot-12) (br:plnd/add-reconciled-label-03-06-2115) (pr:#8891)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/add-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 014adc26-70d6-41f0-8e3a-ffdee80e7114 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/delegated-orbiting-curry.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+</session>

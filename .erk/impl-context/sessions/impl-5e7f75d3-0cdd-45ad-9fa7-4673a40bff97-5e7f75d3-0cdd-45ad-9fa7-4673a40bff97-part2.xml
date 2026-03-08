@@ -1,0 +1,828 @@
+<session>
+  <meta branch="plnd/fix-update-local-ref-desyn-03-08-1419" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_01V3Cu2Fiu52CwvzWDk5rNhm">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+    <param name="old_string">def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -&gt; None:</param>
+    <param name="new_string">def sync_branch_to_sha(
+    ctx: ErkContext, repo_root: Path, branch: str, target_sha: str...[truncated 1268 chars]...ef _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="95593" output_tokens="644" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V3Cu2Fiu52CwvzWDk5rNhm">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_helpers.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_011nm9sjcawJQUcxJyR41gj6">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="724" cache_read_input_tokens="95928" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 724, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011nm9sjcawJQUcxJyR41gj6">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 2: Update dispatch_cmd.py call site**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="96652" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_019XbTEv49qVr6fNvC8KSgKu">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="96652" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019XbTEv49qVr6fNvC8KSgKu">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AGgiuiBauZsA6n36AT6Dyr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced</param>
+    <param name="new_string">from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="96740" output_tokens="198" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 105, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AGgiuiBauZsA6n36AT6Dyr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01C7u38oeKpaGYJ9p8aCB17m">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+    ...[truncated 229 chars]... not None:
+            ctx.git.branch.update_local_ref(repo.root, branch_name, remote_sha)</param>
+    <param name="new_string">    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+    ...[truncated 221 chars]...e_sha is not None:
+            sync_branch_to_sha(ctx, repo.root, branch_name, remote_sha)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="96845" output_tokens="434" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 259, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C7u38oeKpaGYJ9p8aCB17m">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013Mhfvmeh61JFkQcpQkXh2p">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="97104" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 495, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Mhfvmeh61JFkQcpQkXh2p">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 3: Update incremental_dispatch.py call site**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="97599" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_018z8VJj3BFEbRcfD3DUgWnG">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="97599" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018z8VJj3BFEbRcfD3DUgWnG">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UgZx8hoFJrwn8mUQh5Lgxc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="old_string">from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced</param>
+    <param name="new_string">from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="97687" output_tokens="201" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 106, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UgZx8hoFJrwn8mUQh5Lgxc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the `update_local_ref` call. The pattern here uses `git` directly (not `ctx.git`), so I need to adapt — but `sync_branch_to_sha` takes `ctx: ErkContext`. Let me check the context available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="97793" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 265}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SMe5J1GaUbsTw223MwZJLg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="offset">95</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="97793" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 265, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SMe5J1GaUbsTw223MwZJLg">
+    95→    # Ensure trunk is synced
+    96→    repo = erk_ctx.repo
+    97→    if isinstance(repo, NoRepoSentinel):
+    98→        _output_error(output_format, "Not in a git repository")
+    99→        raise SystemExit(1)
+   100→    ensure_trunk_synced(erk_ctx, repo)
+   101→
+   102→    # Sync local branch ref to remote (no checkout required)
+   103→    user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
+   104→    git.remote.fetch_branch(repo_root, "origin", branch_name)
+   105→    checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
+   106→    if checked_out_path is None:
+   107→        git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
+   108→    else:
+   109→        remote_sha = git.branch.get_branch_head(repo_root, f"origin/{branch_name}")
+   110→        if remote_sha is not None:
+   111→            git.branch.update_local_ref(repo_root, branch_name, remote_sha)
+   112→
+   113→    # Build and commit impl-context files to branch
+   114→    user_output("Committing plan to branch...")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="98058" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 566}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, `erk_ctx` is available. I'll use that with `sync_branch_to_sha`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="98058" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 566}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BpVWbcEfHqcsc7UQb51oYq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="old_string">    checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
+    if c...[truncated 213 chars]...a is not None:
+            git.branch.update_local_ref(repo_root, branch_name, remote_sha)</param>
+    <param name="new_string">    checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
+    if c...[truncated 213 chars]...a is not None:
+            sync_branch_to_sha(erk_ctx, repo_root, branch_name, remote_sha)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="98058" output_tokens="503" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 566, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BpVWbcEfHqcsc7UQb51oYq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JBma2HhGGdaU6H6YwfpjeD">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="98624" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 567, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JBma2HhGGdaU6H6YwfpjeD">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 4: Update branch/checkout_cmd.py call site**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="99191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_019qXutZnZfLvEzzhqYxfFgJ">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="99191" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019qXutZnZfLvEzzhqYxfFgJ">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013A4JWRMf3fKPqq1UeMTogB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.checkout_helpers import (
+    display_sync_status,
+    navigate_to_worktree,
+    script_error_handler,
+)</param>
+    <param name="new_string">from erk.cli.commands.checkout_helpers import (
+    display_sync_status,
+    navigate_to_worktree,
+    script_error_handler,
+)
+from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="99279" output_tokens="253" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 107, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013A4JWRMf3fKPqq1UeMTogB">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011RKiv48wUyFhUVnPNRvjYp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">            remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch...[truncated 127 chars]...sha:
+                ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)</param>
+    <param name="new_string">            remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch...[truncated 119 chars]...= local_sha:
+                sync_branch_to_sha(ctx, repo_root, parent_branch, remote_sha)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="99386" output_tokens="344" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011RKiv48wUyFhUVnPNRvjYp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_015r11tNCJ9mM73PWKDgCPR4">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="99700" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015r11tNCJ9mM73PWKDgCPR4">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 5: Update pr/checkout_cmd.py call site**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="100105" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01LxVGC6SRhzHzcTbauJbhX8">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="100105" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LxVGC6SRhzHzcTbauJbhX8">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VQthSrBGeiNyB21AYXbQ3W">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">from erk.cli.ensure import Ensure</param>
+    <param name="new_string">from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+from erk.cli.ensure import Ensure</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="100193" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 107, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VQthSrBGeiNyB21AYXbQ3W">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GWbUvyjJFMRnUNmJc1HX8N">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">            remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{pr.base_ref_n...[truncated 136 chars]...:
+                ctx.git.branch.update_local_ref(repo.root, pr.base_ref_name, remote_sha)</param>
+    <param name="new_string">            remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{pr.base_ref_n...[truncated 128 chars]...ocal_sha:
+                sync_branch_to_sha(ctx, repo.root, pr.base_ref_name, remote_sha)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="100300" output_tokens="368" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 253, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GWbUvyjJFMRnUNmJc1HX8N">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01A28qocuShU3PMkp4JHyC8X">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="429" cache_read_input_tokens="100553" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 429, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A28qocuShU3PMkp4JHyC8X">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 6: Update tests**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="100982" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_016jGsNXAGThsfr2vhouHmdJ">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="100982" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016jGsNXAGThsfr2vhouHmdJ">
+Updated task #6 status
+  </tool_result>
+  <assistant>The existing test `test_dispatch_skips_create_branch_when_branch_is_checked_out` asserts that `update_local_ref` was called. With our change, `sync_branch_to_sha` will call `update_local_ref` only when the branch is NOT checked out. When checked out, it uses `git reset --hard` via subprocess. Since the FakeGit doesn't actually run subprocess, the test needs updating.
+
+Wait — let me re-examine the flow. When the branch IS checked out, `sync_branch_to_sha` calls `run_subprocess_with_context(["git", "reset", "--hard", ...])`. In tests with FakeGit, this subprocess call won't actually happen (it's a real subprocess call). The test would fail.
+
+I need to think about this differently. The test currently verifies `update_local_ref` was called for checked-out branches. With the new code, `sync_branch_to_sha` checks `is_branch_checked_out` → finds the worktree → checks `has_uncommitted_changes` → calls `run_subprocess_with_context`. But `run_subprocess_with_context` is a real subprocess call that will fail in tests.
+
+The plan's `sync_branch_to_sha` uses `run_subprocess_with_context` directly, which isn't injectable. For the dispatch test, the branch is checked out BUT the existing test for dispatch already had `update_local_ref` being called — and the test passes because FakeGit records the call.
+
+Actually, looking more carefully at the dispatch_cmd.py change: the `sync_branch_to_sha` call is inside the `else` branch (when checked out). For dispatch, the `_dispatch_planned_pr_plan` function calls `sync_branch_to_sha` which will try `run_subprocess_with_context`. In tests, this will attempt to run `git reset --hard` in a temp directory, which will fail because there's no actual git repo.
+
+Let me reconsider: the test `test_dispatch_skips_create_branch_when_branch_is_checked_out` has the branch checked out with no uncommitted changes, and the remote SHA is `"remote456"`. The FakeGit will report `has_uncommitted_changes` as False, and `get_branch_head` returns None (branch head not set for the plan branch itself). 
+
+Actually, let me trace through `sync_branch_to_sha` for this test case:
+1. `is_branch_checked_out` → returns `env.cwd` (the worktree path)
+2. `get_branch_head(repo_root, branch)` → looks for `plan_branch` in `branch_heads` → not set, returns None
+3. `local_sha == target_sha` → `None == "remote456"` → False
+4. `has_uncommitted_changes` → False (no file_statuses set)
+5. `run_subprocess_with_context(["git", "reset", "--hard", "remote456"])` → **will fail** in test
+
+So I need to handle this. The cleanest approach is to make `sync_branch_to_sha` use the git gateway for the reset operation instead of raw subprocess. But the plan specifies using `run_subprocess_with_context`. Let me check if there's a `reset_hard` method on the git gateway.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="99" cache_read_input_tokens="101070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 99}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Cxuaf4ppC3h1QP3AGjvHpK">
+    <param name="pattern">reset_hard|def reset</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="99" cache_read_input_tokens="101070" output_tokens="917" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 99, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cxuaf4ppC3h1QP3AGjvHpK">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019WWcAvnz6C2zqQXhi5oGqc">
+    <param name="pattern">def reset</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="101169" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 932, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019WWcAvnz6C2zqQXhi5oGqc">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="102101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 147}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>No `reset_hard` on the git gateway. The plan uses raw `run_subprocess_with_context`, but that's not testable with FakeGit. Per the project's fake-driven architecture, I should add a gateway method. Let me check the branch ops ABC.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="102101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 147}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015TyMBg5s5jpZ2iyeLgeb1d">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="102101" output_tokens="1489" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 147, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015TyMBg5s5jpZ2iyeLgeb1d">
+     1→"""Abstract base class for Git branch operations.
+     2→
+     3→This sub-gateway extracts branch operations from the main Git gateway,
+     4→including both mutation and query operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+    17→
+    18→
+    19→class GitBranchOps(ABC):
+    20→    """Abstract interface for Git branch operations.
+    21→
+    22→    This interface contains both mutation and query operations for branches.
+    23→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def create_branch(
+    28→        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    29→    ) -&gt; BranchCreated | BranchAlreadyExists:
+    30→        """Create a new branch without checking it out.
+
+... [288 lines omitted] ...
+
+    84→            subprocess.CalledProcessError: If git command fails
+   184→            RuntimeError: If the specified branch doesn't exist
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4988" cache_read_input_tokens="102248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4988}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to add a `reset_hard` method to the branch ops gateway to make this testable with FakeGit. Let me check all implementations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4988" cache_read_input_tokens="102248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4988}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EiUc2dXJf1DbB8F8pzedeB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4988" cache_read_input_tokens="102248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4988}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EiUc2dXJf1DbB8F8pzedeB">
+     1→"""Production implementation of Git branch operations using subprocess."""
+     2→
+     3→import re
+     4→import subprocess
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+     8→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+     9→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    10→from erk_shared.gateway.git.lock import wait_for_index_lock
+    11→from erk_shared.gateway.time.abc import Time
+    12→from erk_shared.gateway.time.real import RealTime
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealGitBranchOps(GitBranchOps):
+    17→    """Production implementation of branch operations using subprocess.
+    18→
+    19→    All git operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def __init__(self, time: Time | None = None) -&gt; None:
+    23→        """Initialize RealGitBranchOps with optional Time provider.
+    24→
+    25→        Args:
+    26→            time: Time provider for lock waiting. Defaults to RealTime().
+    27→        """
+    28→        self._time = time if time is not None else RealTime()
+    29→
+    30→    def create_branch(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QjNZjkoM4KwP8WonvXGBND">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4988" cache_read_input_tokens="102248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4988}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QjNZjkoM4KwP8WonvXGBND">
+     1→"""Fake Git branch operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, WorktreeInfo
+     9→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    10→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    11→
+    12→
+    13→class FakeGitBranchOps(GitBranchOps):
+    14→    """In-memory fake implementation of Git branch operations.
+    15→
+    16→    State Management:
+    17→    -----------------
+    18→    This fake maintains mutable state to simulate git's stateful behavior.
+    19→    Operations like create_branch, checkout_branch modify internal state.
+    20→    State changes are visible to subsequent method calls within the same test.
+    21→
+    22→    Mutation Tracking:
+    23→    -----------------
+    24→    This fake tracks mutations for test assertions via read-only properties:
+    25→    - created_branches: Branches created via create_branch()
+    26→    - deleted_branches: Branches deleted via delete_branch()
+    27→    - checked_out_branches: Branches checked out via checkout_branch()
+    28→    - detached_checkouts: Refs checked out via checkout_detached()
+    29→    - created_tracking_branches: Tracking branches created via create_tracking_branch()
+    30→    """
+
+... [338 lines omitted] ...
+
+    48→        delete_branch_raises: dict[str, Exception] | None = None,
+    49→        tracking_branch_failures: dict[str, str] | None = None,
+    50→        create_branch_error: BranchAlreadyExists | None = None,
+    51→        ahead_behind_raises: RuntimeError | None = None,
+    68→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+    69→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+    71→            create_branch_error: If set, create_branch returns this error instead of BranchCreated
+    72→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+    95→        self._tracking_branch_failures = (
+    96→            tracking_branch_failures if tracking_branch_failures is not None else {}
+    98→        self._create_branch_error = create_branch_error
+   117→        Returns create_branch_error if configured, otherwise BranchCreated.
+   119→        if self._create_branch_error is not None:
+   120→            return self._create_branch_error
+   127→        If delete_branch_raises contains a CalledProcessError, it is wrapped in
+   128→        RuntimeError to match run_subprocess_with_context behavior.
+   130→        # Check if we should raise an exception for this branch
+   133→            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
+   134→            if isinstance(exc, subprocess.CalledProcessError):
+   135→                raise RuntimeError(f"Failed to delete branch {branch_name}") from exc
+   150→                    msg = f"fatal: '{branch}' is already checked out at '{wt.path}'"
+   151→                    raise RuntimeError(msg)
+   183→        if branch in self._tracking_branch_failures:
+   184→            error_msg = self._tracking_branch_failures[branch]
+   185→            raise subprocess.CalledProcessError(
+   186→                returncode=1, cmd=["git", "branch", "--track", branch, remote_ref], stderr=error_msg
+   320→            RuntimeError: If the specified branch doesn't exist
+   324→            error_msg = (
+   325→                f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   328→            raise RuntimeError(error_msg)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Xgo9ykdH7fXYuTsTPGn1B8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4988" cache_read_input_tokens="102248" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4988}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xgo9ykdH7fXYuTsTPGn1B8">
+     1→"""No-op Git branch operations wrapper for dry-run mode."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+     6→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+     7→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+     8→from erk_shared.output.output import user_output
+     9→
+    10→
+    11→class DryRunGitBranchOps(GitBranchOps):
+    12→    """No-op wrapper that prevents execution of branch operations.
+    13→
+    14→    This wrapper intercepts branch operations and either returns without
+    15→    executing (for land-stack operations) or prints what would happen.
+    16→
+    17→    Usage:
+    18→        real_ops = RealGitBranchOps()
+    19→        noop_ops = DryRunGitBranchOps(real_ops)
+    20→
+    21→        # Prints message instead of creating branch
+    22→        noop_ops.create_branch(cwd, "feature", "main")
+    23→    """
+    24→
+    25→    def __init__(self, wrapped: GitBranchOps) -&gt; None:
+    26→        """Create a dry-run wrapper around a GitBranchOps implementation.
+    27→
+    28→        Args:
+    29→            wrapped: The GitBranchOps implementation to wrap (usually RealGitBranchOps)
+    30→        """
+
+... [98 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01BVAq6oHXthED9xbHSrr2Jc">
+    <param name="pattern">packages/erk-shared/src/erk_shared/gateway/git/branch_ops/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4988" cache_read_input_tokens="102248" output_tokens="1252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4988, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BVAq6oHXthED9xbHSrr2Jc">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/__init__.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10232" cache_read_input_tokens="107236" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10232}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to add `reset_hard` to the 4-place gateway pattern for testability. Let me also read the real implementation's `update_local_ref` for reference.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10232" cache_read_input_tokens="107236" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10232}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017Kr1GZaXQapP88VRq8d4xL">
+    <param name="pattern">def update_local_ref</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10232" cache_read_input_tokens="107236" output_tokens="306" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10232, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Kr1GZaXQapP88VRq8d4xL">
+422:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+423-        """Update a local branch ref to point at a new commit without checkout."""
+424-        run_subprocess_with_context(
+425-            cmd=["git", "update-ref", f"refs/heads/{branch}", target_sha],
+426-            operation_context=f"update local ref '{branch}' to '{target_sha[:8]}'",
+427-            cwd=repo_root,
+428-        )
+429-
+430-    def get_branch_commits_with_authors(
+431-        self, repo_root: Path, branch: str, trunk: str, *, limit: int
+432-    ) -&gt; list[dict[str, str]]:
+433-        """Get commits on branch not on trunk, with author and timestamp.
+434-
+435-        Returns commits unique to the branch (not present on trunk),
+436-        ordered from newest to oldest.
+437-        """
+  </tool_result>
+  <assistant>Now let me add `reset_hard` to all 4 places. I'll add it right after `update_local_ref` in each file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="117468" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 559}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HVSnx4FtfVsBTdMa1xVWmJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+    <param name="old_string">    @abstractmethod
+    def get_branch_commits_with_authors(</param>
+    <param name="new_string">    @abstractmethod
+    def reset_hard(self, cwd: Path, target_ref: str) -&gt; None:
+        ...[truncated 368 chars]...t to
+        """
+        ...
+
+    @abstractmethod
+    def get_branch_commits_with_authors(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="117468" output_tokens="355" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 559, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HVSnx4FtfVsBTdMa1xVWmJ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012Bpgx3g4QT77TRzMBWBwEE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="old_string">    def get_branch_commits_with_authors(
+        self, repo_root: Path, branch: str, trunk...[truncated 136 chars]...e to the branch (not present on trunk),
+        ordered from newest to oldest.
+        """</param>
+    <param name="new_string">    def reset_hard(self, cwd: Path, target_ref: str) -&gt; None:
+        """Reset the current...[truncated 474 chars]...e to the branch (not present on trunk),
+        ordered from newest to oldest.
+        """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="118027" output_tokens="435" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 425, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012Bpgx3g4QT77TRzMBWBwEE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Qi5ApZrJ2HEYuPiRhiTGh5">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="old_string">    def link_mutation_tracking(</param>
+    <param name="new_string">    def reset_hard(self, cwd: Path, target_ref: str) -&gt; None:
+        """Reset the current...[truncated 612 chars]...
+        """
+        return self._reset_hard_calls.copy()
+
+    def link_mutation_tracking(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="118452" output_tokens="384" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 505, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qi5ApZrJ2HEYuPiRhiTGh5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `_reset_hard_calls` initialization in `__init__`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="118957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ly26AcVREcNJMXAvrAr2PD">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="old_string">        self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)</param>
+    <param name="new_string">        self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
+        self._reset_hard_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="118957" output_tokens="270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 454, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ly26AcVREcNJMXAvrAr2PD">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `link_mutation_tracking` to include `reset_hard_calls`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="119411" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 340}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AL9oUuQ5zoQJVLPcgKvAMM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="offset">279</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="119411" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 340, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AL9oUuQ5zoQJVLPcgKvAMM">
+   279→
+   280→    def link_mutation_tracking(
+   281→        self,
+   282→        created_branches: list[tuple[Path, str, str, bool]],
+   283→        deleted_branches: list[str],
+   284→        checked_out_branches: list[tuple[Path, str]],
+   285→        detached_checkouts: list[tuple[Path, str]],
+   286→        created_tracking_branches: list[tuple[str, str]],
+   287→        updated_refs: list[tuple[Path, str, str]],
+   288→    ) -&gt; None:
+   289→        """Link mutation tracking lists to allow shared tracking with FakeGit.
+   290→
+   291→        This allows FakeGit.deleted_branches (etc.) to see mutations made
+   292→        via FakeGitBranchOps when used via BranchManager.
+   293→
+   294→        Args:
+   295→            created_branches: Reference to FakeGit's created_branches list
+   296→            deleted_branches: Reference to FakeGit's deleted_branches list
+   297→            checked_out_branches: Reference to FakeGit's checked_out_branches list
+   298→            detached_checkouts: Reference to FakeGit's detached_checkouts list
+   299→            created_tracking_branches: Reference to FakeGit's created_tracking_branches list
+   300→            updated_refs: Reference to FakeGit's updated_refs list
+   301→        """
+   302→        self._created_branches = created_branches
+   303→        self._deleted_branches = deleted_branches
+   304→        self._checked_out_branches = checked_out_branches
+   305→        self._detached_checkouts = detached_checkouts
+   306→        self._created_tracking_branches = created_tracking_branches
+   307→        self._updated_refs = updated_refs
+   308→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01L7VtGHVTqDMamC2JqDW6dC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="old_string">    def link_mutation_tracking(
+        self,
+        created_branches: list[tuple[Path, s...[truncated 1206 chars]...ed_tracking_branches = created_tracking_branches
+        self._updated_refs = updated_refs</param>
+    <param name="new_string">    def link_mutation_tracking(
+        self,
+        created_branches: list[tuple[Path, s...[truncated 1381 chars]...       self._updated_refs = updated_refs
+        self._reset_hard_calls = reset_hard_calls</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="864" cache_read_input_tokens="119751" output_tokens="952" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 864, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L7VtGHVTqDMamC2JqDW6dC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add to DryRun:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1022" cache_read_input_tokens="120615" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1022}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01G19L9EH2cP9o4uHC2Hc355">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py</param>
+    <param name="old_string">    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+   ...[truncated 127 chars]...:8]}")
+
+    # ============================================================================</param>
+    <param name="new_string">    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+   ...[truncated 323 chars]...:8]}")
+
+    # ============================================================================</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1022" cache_read_input_tokens="120615" output_tokens="413" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1022, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G19L9EH2cP9o4uHC2Hc355">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update FakeGit to link the `reset_hard_calls` tracking. Let me find where `link_mutation_tracking` is called:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="121637" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 485}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JdtVZPFxLLt8UPPeYEk8Ea">
+    <param name="pattern">link_mutation_tracking</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="121637" output_tokens="190" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JdtVZPFxLLt8UPPeYEk8Ea">
+339-        self._config_gateway.link_state(
+340-            user_names={},
+341-            config_values={},
+342-            git_user_name=git_user_name,
+343-        )
+344:        self._config_gateway.link_mutation_tracking(
+345-            config_sets=self._config_sets_records,
+346-        )
+347-
+348-        # Worktree subgateway
+349-        self._worktree_gateway = FakeWorktree(
+--
+372-            tracking_branch_failures=self._tracking_branch_failures,
+373-            create_branch_error=create_branch_error,
+374-            ahead_behind_raises=ahead_behind_raises,
+375-        )
+376-        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
+377:        self._branch_gateway.link_mutation_tracking(
+378-            created_branches=self._created_branches,
+379-            deleted_branches=self._deleted_branches,
+380-            checked_out_branches=self._checked_out_branches,
+381-            detached_checkouts=self._detached_checkouts,
+382-            created_tracking_branches=self._created_tracking_branches,
+--
+391-            pull_branch_raises=self._pull_branch_raises,
+392-            push_to_remote_error=self._push_to_remote_error,
+393-            pull_rebase_error=self._pull_rebase_error,
+394-        )
+395-        # Link mutation tracking so FakeGit properties see mutations from FakeGitRemoteOps
+396:        self._remote_gateway.link_mutation_tracking(
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KmripCvaXVnWwPubc1NJ3m">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">376</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1152" cache_read_input_tokens="122122" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1152, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KmripCvaXVnWwPubc1NJ3m">
+   376→        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
+   377→        self._branch_gateway.link_mutation_tracking(
+   378→            created_branches=self._created_branches,
+   379→            deleted_branches=self._deleted_branches,
+   380→            checked_out_branches=self._checked_out_branches,
+   381→            detached_checkouts=self._detached_checkouts,
+   382→            created_tracking_branches=self._created_tracking_branches,
+   383→            updated_refs=self._updated_refs,
+   384→        )
+   385→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015LWo9ZKBgzuYqC84N6e8Vy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="old_string">        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps...[truncated 293 chars]...es=self._created_tracking_branches,
+            updated_refs=self._updated_refs,
+        )</param>
+    <param name="new_string">        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps...[truncated 346 chars]...ed_refs=self._updated_refs,
+            reset_hard_calls=self._reset_hard_calls,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="123274" output_tokens="419" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015LWo9ZKBgzuYqC84N6e8Vy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to add `_reset_hard_calls` initialization in FakeGit's `__init__`. Let me find where `_updated_refs` is initialized:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="123575" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 485}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XPwgdfwjPGoK1AXbcTZwYN">
+    <param name="pattern">self._updated_refs"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="123575" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XPwgdfwjPGoK1AXbcTZwYN">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BKwdhXVgXTieEcEvatrRWm">
+    <param name="pattern">self._updated_refs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="124060" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BKwdhXVgXTieEcEvatrRWm">
+314:        self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
+383:            updated_refs=self._updated_refs,
+616:        return self._updated_refs.copy()
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014G7KTgTEfPzh2mYKM5rwMp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="old_string">        self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)</param>
+    <param name="new_string">        self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
+        self._reset_hard_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="462" cache_read_input_tokens="124272" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 462, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014G7KTgTEfPzh2mYKM5rwMp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check if there's a `printing` implementation too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="124734" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 313}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PAQMokvBknsAP6qdwEE4CV">
+    <param name="pattern">class.*GitBranchOps</param>
+    <param name="output_mode">content</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="124734" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 313, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PAQMokvBknsAP6qdwEE4CV">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:19:class GitBranchOps(ABC):
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:11:class DryRunGitBranchOps(GitBranchOps):
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:16:class RealGitBranchOps(GitBranchOps):
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:13:class FakeGitBranchOps(GitBranchOps):
+  </tool_result>
+  <assistant>Good, only 4 implementations (ABC, Real, Fake, DryRun). Now update `sync_branch_to_sha` to use the gateway method instead of raw subprocess:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="125047" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 345}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SZBm8nyih4jfh9iwrARaGY">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+    <param name="old_string">"""Helper functions for dispatch command."""
+
+from pathlib import Path
+
+import click
+
+from...[truncated 1467 chars]...nc checked-out branch '{branch}' to {target_sha[:8]}",
+        cwd=checked_out_path,
+    )</param>
+    <param name="new_string">"""Helper functions for dispatch command."""
+
+from pathlib import Path
+
+import click
+
+from...[truncated 1253 chars]...ync ref + index + working tree
+    ctx.git.branch.reset_hard(checked_out_path, target_sha)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="125047" output_tokens="1112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 345, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SZBm8nyih4jfh9iwrARaGY">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the tests. The existing test `test_dispatch_skips_create_branch_when_branch_is_checked_out` needs to:
+1. Set up `branch_heads` to include the plan branch with a local SHA different from remote
+2. Assert `reset_hard` was called instead of `update_local_ref`
+
+For the incremental dispatch test `test_incremental_dispatch_checked_out_branch`, same pattern.
+
+First, update the dispatch test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1173" cache_read_input_tokens="125392" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1173}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WTwKR4mLSEtRjqyNjeRFqT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">def test_dispatch_skips_create_branch_when_branch_is_checked_out() -&gt; None:
+    """Test th...[truncated 3196 chars]...n_branch}, got: {updated_refs}"
+        )
+
+        assert "Traceback" not in result.output</param>
+    <param name="new_string">def test_dispatch_skips_create_branch_when_branch_is_checked_out() -&gt; None:
+    """Test th...[truncated 3567 chars]...n_branch}, got: {updated_refs}"
+        )
+
+        assert "Traceback" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1173" cache_read_input_tokens="125392" output_tokens="2318" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1173, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WTwKR4mLSEtRjqyNjeRFqT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/commands/pr/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the incremental dispatch test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2374" cache_read_input_tokens="126565" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2374}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,1358 @@
+<session>
+  <meta branch="plnd/fix-update-local-ref-desyn-03-08-1419" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="5e7f75d3-0cdd-45ad-9fa7-4673a40bff97" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="5e7f75d3-0cdd-45ad-9fa7-4673a40bff97" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="5e7f75d3-0cdd-45ad-9fa7-4673a40bff97" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="5e7f75d3-0cdd-45ad-9fa7-4673a40bff97" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15452" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15452}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15452" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15452}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AL797WuaZStCY7jhusc7cN">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up impl context from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15452" cache_read_input_tokens="9738" output_tokens="268" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15452, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AL797WuaZStCY7jhusc7cN">
+Found existing impl dir for plan #9020, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/.erk/impl-context/plnd--fix-update-local-ref-desyn-03-08-1419", "plan_number": 9020, "plan_url": "https://github.com/dagster-io/erk/pull/9020", "branch": "plnd/fix-update-local-ref-desyn-03-08-1419", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9020, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="25190" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 450}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015utaAmJcTicrrmrmtSbEuM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/.erk/impl-context/plnd--fix-update-local-ref-desyn-03-08-1419/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="25190" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 450, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015utaAmJcTicrrmrmtSbEuM">
+     1→# Fix: `update_local_ref` desyncs checked-out worktrees
+     2→
+     3→## Context
+     4→
+     5→When automation code (dispatch, incremental-dispatch, checkout) uses `update_local_ref` on a branch that's checked out in a worktree, it moves the branch pointer via `git update-ref` without updating the index or working tree. This leaves the worktree in a confusing state: `git status` shows phantom modifications, `git diff` is empty, and HEAD no longer matches the working tree.
+     6→
+     7→The `update_local_ref` docstring already documents this limitation ("safe to use when the branch is NOT currently checked out"). The callers aren't respecting the contract.
+     8→
+     9→The correct pattern already exists in `ensure_trunk_synced` (`dispatch_helpers.py:60-68`): use `pull_branch` when checked out, `update_local_ref` when not.
+    10→
+    11→## Fix
+    12→
+    13→### Extract a helper: `sync_branch_to_sha`
+    14→
+    15→Add to `dispatch_helpers.py` (already has `ensure_trunk_synced` as precedent):
+    16→
+    17→```python
+    18→def sync_branch_to_sha(
+    19→    ctx: ErkContext, repo_root: Path, branch: str, target_sha: str
+    20→) -&gt; None:
+    21→    """Move a local branch to target_sha, safely handling checked-out branches.
+    22→
+    23→    When the branch is NOT checked out, uses update_local_ref (fast ref update).
+    24→    When the branch IS checked out, uses 'git reset --hard' in the worktree
+    25→    to atomically sync ref + index + working tree. Refuses if the worktree
+    26→    has uncommitted changes.
+    27→    """
+    28→    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo_root, branch)
+    29→    if checked_out_path is None:
+    30→        ctx.git.branch.update_local_ref(repo_root, branch, target_sha)
+
+... [85 lines omitted] ...
+
+    39→            click.style("Error: ", fg="red")
+   114→3. Verify dirty worktree is properly rejected with clear error message
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2086" cache_read_input_tokens="25640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2086}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me load required skills and read the files to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2086" cache_read_input_tokens="25640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2086}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01GvYXHbM8c4tLLG8Rw4EJmW">
+    <param name="skill">fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2086" cache_read_input_tokens="25640" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2086, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GvYXHbM8c4tLLG8Rw4EJmW">
+Launching skill: fake-driven-testing
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/.claude/skills/fake-driven-testing
+
+# Fake-Driven Testing Architecture for Python
+
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+
+**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+
+## Overview
+
+This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+
+```
+┌─────────────────────────────────────────┐
+│  Layer 5: Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────┤
+│  Layer 4: Business Logic Tests (70%)   │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────┤
+│  Layer 3: Pure Unit Tests (10%)        │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────┤
+│  Layer 2: Integration Sanity Tests (10%)│  ← Fast validation with mocking
+├─────────────────────────────────────────┤
+│  Layer 1: Fake Infrastructure Tests (5%)│  ← Verify test doubles work
+└─────────────────────────────────────────┘
+```
+
+**Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
+
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+
+## Quick Decision: What Should I Read?
+
+**Adding a feature or fixing a bug?**
+→ Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`
+
+**Need to understand where to put a test?**
+→ Read `testing-strategy.md`
+
+**Working with Python-specific patterns?**
+→ Read `python-specific.md`
+
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
+
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
+**Need to implement a specific pattern (CliRunner, builders, etc.)?**
+→ Read `patterns.md`
+
+**Not sure if I'm doing it right?**
+→ Read `anti-patterns.md`
+
+**Just need a quick lookup?**
+→ Read `quick-reference.md`
+
+## When to Read Each Reference Document
+
+### 📖 `gateway-architecture.md`
+
+**Read when**:
+
+- Adding or changing gateway/ABC interfaces
+- Understanding the ABC/Real/Fake/DryRun pattern
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
+
+**Contents**:
+
+- What are gateway classes? (naming: gateways/adapters/providers)
+- The four implementations (ABC, Real, Fake, DryRun)
+- Code examples for each
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
+
+### 📖 `testing-strategy.md`
+
+**Read when**:
+
+- Deciding where to put a test
+- Understanding the five testing layers
+- Need test distribution guidance (5/70/10/10/5 rule)
+- Want to know which layer tests what
+
+**Contents**:
+
+- Layer 1: Unit tests of fakes (verify test infrastructure)
+- Layer 2: Integration sanity tests with mocking (quick validation)
+- Layer 3: Pure unit tests (zero dependencies, isolated testing)
+- Layer 4: Business logic over fakes (majority of tests)
+- Layer 5: Business logic integration tests (smoke tests over real systems)
+- Decision tree: where should my test go?
+- Test distribution examples
+
+### 📖 `python-specific.md`
+
+**Read when**:
+
+- Working with pytest fixtures
+- Need Python mocking patterns
+- Testing Flask/FastAPI/Django applications
+- Understanding Python testing tools
+- Need Python-specific commands
+
+**Contents**:
+
+- pytest fixtures and parametrization
+- Mocking with unittest.mock and pytest-mock
+- Testing web frameworks (Flask, FastAPI, Django)
+- Python testing commands
+- Type hints in tests
+- Python packaging for test utilities
+
+### 📖 `workflows.md`
+
+**Read when**:
+
+- Adding a new feature (step-by-step)
+- Fixing a bug (step-by-step)
+- Adding a gateway method (complete checklist)
+- Changing an interface (what to update)
+- Managing dry-run features
+
+**Contents**:
+
+- Adding a new feature (TDD workflow)
+- Fixing a bug (reproduce → fix → regression test)
+- Adding a gateway method (8-step checklist with examples)
+- Changing an interface (update all layers)
+- Managing dry-run features (wrapping pattern)
+- Testing with builder patterns
+
+### 📖 `patterns.md`
+
+**Read when**:
+
+- Implementing constructor injection for fakes
+- Adding mutation tracking to fakes
+- Using CliRunner for CLI tests
+- Building complex test scenarios with builders
+- Testing dry-run behavior
+- Need code examples of specific patterns
+
+**Contents**:
+
+- Constructor injection (how and why)
+- Mutation tracking properties (read-only access)
+- Using CliRunner (not subprocess)
+- Builder patterns for complex scenarios
+- Simulated environment pattern
+- Error injection pattern
+- Dry-run testing pattern
+
+### 📖 `anti-patterns.md`
+
+**Read when**:
+
+- Unsure if your approach is correct
+- Want to avoid common mistakes
+- Reviewing code for bad patterns
+- Debugging why tests are slow/brittle
+
+**Contents**:
+
+- ❌ Testing speculative features
+- ❌ Hardcoded paths in tests (catastrophic)
+- ❌ Not updating all layers
+- ❌ Using subprocess in unit tests
+- ❌ Complex logic in gateway classes
+- ❌ Fakes with I/O operations
+- ❌ Testing implementation details
+- ❌ Incomplete test coverage for gateways
+
+### 📖 `quick-reference.md`
+
+**Read when**:
+
+- Quick lookup for file locations
+- Finding example tests to reference
+- Looking up common fixtures
+- Need command reference
+- Want test distribution guidelines
+
+**Contents**:
+
+- Decision tree (where to add test)
+- File location map (source + tests)
+- Common fixtures (tmp_path, CliRunner, etc.)
+- Common test patterns (code snippets)
+- Example tests to reference
+- Useful commands (pytest, ty, etc.)
+- Quick checklist for adding gateway methods
+
+## Quick Navigation by Task
+
+### I'm adding a new feature
+
+1. **Quick start**: `quick-reference.md` → Decision tree
+2. **Step-by-step**: `workflows.md#adding-a-new-feature`
+3. **Patterns**: `patterns.md` (CliRunner, builders)
+4. **Avoid**: `anti-patterns.md` (speculative tests, hardcoded paths)
+
+### I'm fixing a bug
+
+1. **Step-by-step**: `workflows.md#fixing-a-bug`
+2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I'm adding/changing a gateway method
+
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
+4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
+
+### I don't know where my test should go
+
+1. **Decision tree**: `quick-reference.md#decision-tree`
+2. **Detailed guide**: `testing-strategy.md`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I need to implement a pattern
+
+1. **All patterns**: `patterns.md`
+2. **Examples**: `quick-reference.md#common-test-patterns`
+
+### I think I'm doing something wrong
+
+1. **Anti-patterns**: `anti-patterns.md`
+2. **Correct approach**: `workflows.md`
+
+## Visual Layer Guide
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 5: Business Logic Integration Tests (5%)               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Real database, filesystem, APIs, actual subprocess        │ │
+│ │ Purpose: Smoke tests, catch integration issues           │ │
+│ │ When: Sparingly, for critical workflows                  │ │
+│ │ Speed: Seconds per test                                   │ │
+│ │ Location: tests/e2e/ or tests/integration/               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 4: Business Logic Tests (70%) ← MOST TESTS HERE       │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
+│ │ Purpose: Test features and business logic extensively    │ │
+│ │ When: For EVERY feature and bug fix                      │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/, tests/services/, tests/commands/  │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 3: Pure Unit Tests (10%)                               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Zero dependencies, no fakes, no mocks                    │ │
+│ │ Purpose: Test isolated utilities and helpers             │ │
+│ │ When: For pure functions, data structures, parsers       │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/                                     │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 2: Integration Sanity Tests (10%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ RealDatabase with mocked connections                     │ │
+│ │ Purpose: Quick validation, catch syntax errors           │ │
+│ │ When: When adding/changing real implementation           │ │
+│ │ Speed: Fast (mocked)                                      │ │
+│ │ Location: tests/integration/test_real_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 1: Fake Infrastructure Tests (5%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Test FakeDatabase itself                                 │ │
+│ │ Purpose: Verify test infrastructure is reliable          │ │
+│ │ When: When adding/changing fake implementation           │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/fakes/test_fake_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Key Principles
+
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
+2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
+3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
+4. **Test what you're building**: No speculative tests, only active work
+5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+
+## Layer Selection Guide
+
+**Distinguishing Layer 3 (Pure Unit) from Layer 4 (Business Logic):**
+
+- **Layer 3 (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+  - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
+  - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
+  - Testing data structures: `LinkedList.append()` without any external dependencies
+
+- **Layer 4 (Business Logic Tests)**: Uses fakes for external dependencies
+  - Testing commands: `create_worktree(fake_git, name="feature")`
+  - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
+  - Testing business logic that coordinates multiple integrations
+
+**If your test imports a Fake\*, it belongs in Layer 4, not Layer 3.**
+
+## Default Testing Strategy
+
+**When in doubt**:
+
+- Write test over fakes (Layer 4) for business logic
+- Write pure unit test (Layer 3) for utilities/helpers with no dependencies
+- Use `pytest` with fixtures
+- Use `tmp_path` fixture (not hardcoded paths)
+- Follow examples in `quick-reference.md`
+
+## Summary
+
+**For quick tasks**: Start with `quick-reference.md`
+
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
+
+**For step-by-step guidance**: Use `workflows.md`
+
+**For implementation details**: Use `patterns.md`
+
+**For validation**: Check `anti-patterns.md`
+
+**For Python specifics**: Check `python-specific.md`
+</user>
+  <tool_use name="Skill" id="toolu_01K4HPKpWxvGA4zFd1xYEB8W">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3861" cache_read_input_tokens="27726" output_tokens="56" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3861, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K4HPKpWxvGA4zFd1xYEB8W">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31587" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read all the files I need to modify.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31587" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AKY1xJZycTP1FFWBzhDLj2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31587" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AKY1xJZycTP1FFWBzhDLj2">
+     1→"""Helper functions for dispatch command."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk_shared.output.output import user_output
+     8→
+     9→
+    10→def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -&gt; None:
+    11→    """Raise SystemExit(1) if trunk is checked out in a dirty worktree."""
+    12→    trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+    13→    if trunk_worktree is None:
+    14→        return
+    15→    if not ctx.git.status.has_uncommitted_changes(trunk_worktree):
+    16→        return
+    17→    user_output(
+    18→        click.style("Error: ", fg="red")
+    19→        + f"Worktree at {trunk_worktree} has {trunk} checked out with "
+    20→        f"uncommitted changes.\n\n"
+    21→        f"Please commit or stash changes before running erk pr dispatch."
+    22→    )
+    23→    raise SystemExit(1)
+    24→
+    25→
+    26→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    27→    """Ensure local trunk ref is synced with remote, without requiring checkout.
+    28→
+    29→    Uses fetch + update_local_ref to advance the local trunk branch pointer
+    30→    without needing trunk to be checked out. If trunk IS checked out in a
+
+... [59 lines omitted] ...
+
+    33→    Raises SystemExit(1) on sync failure with clear error message.
+    45→            click.style("Error: ", fg="red")
+    73→            click.style("Error: ", fg="red")
+    82→            click.style("Error: ", fg="red")
+    86→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SaWaMfkKcF1WvBtwBDsbDN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31587" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SaWaMfkKcF1WvBtwBDsbDN">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.constants import (
+    16→    DISPATCH_WORKFLOW_METADATA_NAME,
+    17→    DISPATCH_WORKFLOW_NAME,
+    18→    ERK_PLAN_LABEL,
+    19→)
+    20→from erk.cli.core import discover_repo_context
+    21→from erk.cli.ensure import Ensure, UserFacingCliError
+    22→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import RepoContext
+    25→from erk_shared.context.types import NoRepoSentinel
+    26→from erk_shared.gateway.git.remote_ops.types import PushError
+    27→from erk_shared.gateway.github.issues.types import IssueNotFound
+    28→from erk_shared.gateway.github.metadata.core import (
+    29→    create_submission_queued_block,
+    30→    render_erk_issue_event,
+
+... [892 lines omitted] ...
+
+   163→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   169→            click.style("Error: ", fg="red")
+   178→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   224→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   266→        except Exception:
+   267→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+   272→    if isinstance(push_result, PushError):
+   273→        raise UserFacingCliError(push_result.message)
+   319→    except Exception as e:
+   321→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   331→    except Exception as e:
+   332→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   363→    except Exception as e:
+   365→            click.style("Warning: ", fg="yellow")
+   366→            + f"Failed to post queued comment: {e}\n"
+   407→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+   412→            click.style("Error: ", fg="red")
+   420→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {issue.state}\n\n"
+   429→            click.style("Error: ", fg="red")
+   480→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   545→    except Exception as e:
+   546→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   578→    except Exception as e:
+   580→            click.style("Warning: ", fg="yellow")
+   581→            + f"Failed to post queued comment: {e}\n"
+   651→            click.style("Error: ", fg="red") + "Plan number(s) required in remote mode.\n\n"
+   744→            click.style("Error: ", fg="red")
+   754→                click.style("Error: ", fg="red")
+   767→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SYjUw1gKveCfpuHqPAFcYH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31587" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SYjUw1gKveCfpuHqPAFcYH">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
+     2→
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
+     5→
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-plan label — just an OPEN PR.
+     9→"""
+    10→
+    11→import json
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    17→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    18→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    19→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    20→from erk_shared.context.helpers import (
+    21→    require_branch_manager,
+    22→    require_context,
+    23→    require_git,
+    24→    require_github,
+    25→    require_repo_root,
+    26→    require_time,
+    27→)
+    28→from erk_shared.context.types import NoRepoSentinel
+    29→from erk_shared.gateway.git.remote_ops.types import PushError
+    30→from erk_shared.gateway.github.parsing import (
+
+... [184 lines omitted] ...
+
+    83→        _output_error(output_format, f"PR #{pr_number} not found")
+    87→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+    98→        _output_error(output_format, "Not in a git repository")
+   147→    if isinstance(push_result, PushError):
+   148→        _output_error(output_format, f"Push failed: {push_result.message}")
+   208→def _output_error(output_format: str, message: str) -&gt; None:
+   209→    """Output error in the requested format."""
+   211→        click.echo(json.dumps({"success": False, "error": message}))
+   213→        user_output(click.style("Error: ", fg="red") + message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KdMP44otPsNCgcEX6sWmEa">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31587" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KdMP44otPsNCgcEX6sWmEa">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.alias import alias
+    16→from erk.cli.commands.checkout_helpers import (
+    17→    display_sync_status,
+    18→    navigate_to_worktree,
+    19→    script_error_handler,
+    20→)
+    21→from erk.cli.commands.completions import complete_branch_names
+    22→from erk.cli.commands.slot.common import (
+    23→    allocate_slot_for_branch,
+    24→    update_slot_assignment_tip,
+    25→)
+    26→from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+    27→from erk.cli.core import discover_repo_context
+    28→from erk.cli.github_parsing import parse_issue_identifier
+    29→from erk.cli.graphite import find_worktrees_containing_branch
+    30→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+
+... [795 lines omitted] ...
+
+    41→    PlanValidationFailed,
+   396→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   450→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   473→    """Implementation body for branch_checkout — separated for error wrapping."""
+   477→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   483→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   487→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   505→            raise click.ClickException(f"Plan #{plan_number} not found")
+   509→        if isinstance(plan_result, PlanValidationFailed):
+   510→            user_output(f"Error: {plan_result.message}")
+   516→        for warning in setup.warnings:
+   517→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   526→            user_output("Error: Could not detect trunk branch.")
+   577→                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+   600→                                f"Error: Branch '{branch}' does not exist.\n"
+   728→            raise click.ClickException(
+   768→            raise click.ClickException(
+   812→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qt4kYUu5zgqUwz3mqMKTt7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31587" output_tokens="451" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qt4kYUu5zgqUwz3mqMKTt7">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.cli.activation import (
+    16→    activation_config_activate_only,
+    17→    ensure_worktree_activate_script,
+    18→    print_activation_instructions,
+    19→)
+    20→from erk.cli.alias import alias
+    21→from erk.cli.commands.checkout_helpers import (
+    22→    ensure_branch_has_worktree,
+    23→    navigate_and_display_checkout,
+    24→)
+    25→from erk.cli.ensure import Ensure
+    26→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    27→from erk.core.context import ErkContext
+    28→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    29→from erk_shared.gateway.github.parsing import (
+    30→    parse_plan_number_from_url,
+
+... [449 lines omitted] ...
+
+    81→        click.style("Error: ", fg="red")
+   158→        ctx.console.error("Not in a git repository")
+   191→        ctx.console.error(
+   199→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
+   282→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   409→        ctx.console.error(
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="35925" cache_read_input_tokens="32478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 35925}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="35925" cache_read_input_tokens="32478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 35925}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PL7cV6FsU6jGvmYDPgC7oJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/commands/pr/test_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="35925" cache_read_input_tokens="32478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 35925}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PL7cV6FsU6jGvmYDPgC7oJ">
+     1→"""Tests for erk pr dispatch command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.abc import WorktreeInfo
+     7→from erk_shared.gateway.git.fake import FakeGit
+     8→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    11→from erk_shared.gateway.github.types import PRDetails
+    12→from erk_shared.gateway.graphite.fake import FakeGraphite
+    13→from erk_shared.gateway.graphite.types import BranchMetadata
+    14→from erk_shared.gateway.time.fake import FakeTime
+    15→from erk_shared.impl_folder import build_plan_ref_json
+    16→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    17→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    18→from tests.test_utils.context_builders import build_workspace_test_context
+    19→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    20→
+    21→
+    22→def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+    23→    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
+    24→
+    25→    Planned-PR plans already have a branch and PR. Dispatch should:
+    26→    - Validate the PR has the erk-plan label and is OPEN
+    27→    - Sync local branch ref to remote and commit impl-context via git plumbing
+    28→    - Trigger workflow with plan_backend="planned_pr" in inputs
+    29→    - NOT create a new branch or PR
+    30→    """
+
+... [528 lines omitted] ...
+
+   136→        # Verify: no warnings, dispatch metadata written successfully
+   137→        assert "Warning:" not in result.output
+   329→    """Test that dispatch with no arguments and no context gives helpful error."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RSvHzkCCRwR5tfxrCQBxqQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="35925" cache_read_input_tokens="32478" output_tokens="1968" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 35925, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RSvHzkCCRwR5tfxrCQBxqQ">
+     1→"""Unit tests for incremental-dispatch command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.context.testing import context_for_test
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.github.types import PRDetails
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→
+    17→
+    18→def _make_pr(number: int, *, state: str = "OPEN", branch: str = "feature-branch") -&gt; PRDetails:
+    19→    return PRDetails(
+    20→        number=number,
+    21→        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+    22→        title=f"Test PR #{number}",
+    23→        body="PR body",
+    24→        state=state,
+    25→        is_draft=False,
+    26→        base_ref_name="main",
+    27→        head_ref_name=branch,
+    28→        is_cross_repository=False,
+    29→        mergeable="MERGEABLE",
+    30→        merge_state_status="CLEAN",
+
+... [182 lines omitted] ...
+
+    63→    assert result.exit_code == 0, f"Failed: {result.output}"
+    91→    """Test error when PR does not exist."""
+   107→    assert "not found" in output["error"]
+   111→    """Test error when PR is not OPEN."""
+   128→    assert "CLOSED" in output["error"]
+   147→    assert result.exit_code == 0, f"Failed: {result.output}"
+   188→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="19422" cache_read_input_tokens="68403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19422}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the FakeGit interface for the methods I'll need.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="19422" cache_read_input_tokens="68403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19422}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JahyUqQfLmtmap8nTgAWZy">
+    <param name="pattern">def is_branch_checked_out</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19422" cache_read_input_tokens="68403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19422}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JahyUqQfLmtmap8nTgAWZy">
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py:92:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-93-        """Check if a branch is already checked out in any worktree.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-94-
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-95-        Args:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-96-            repo_root: Path to the git repository root
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-97-            branch: Branch name to check
+--
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:157:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-158-        """Check if a branch is already checked out in any worktree."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-159-        return self.find_worktree_for_branch(repo_root, branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-160-
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-161-    def is_worktree_clean(self, worktree_path: Path) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-162-        """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
+--
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py:158:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-159-        """Check if a branch is already checked out in any worktree."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-160-        return self.find_worktree_for_branch(repo_root, branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-161-
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-162-    def is_worktree_clean(self, worktree_path: Path) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-163-        """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
+--
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py:42:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-43-        """Check if branch is checked out (read-only, delegates to wrapped)."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-44-        return self._wrapped.is_branch_checked_out(repo_root, branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-45-
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-46-    def is_worktree_clean(self, worktree_path: Path) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-47-        """Check if worktree is clean (read-only, delegates to wrapped)."""
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016WX8orfohpgndKQknZLR1C">
+    <param name="pattern">def has_uncommitted_changes</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19422" cache_read_input_tokens="68403" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 19422, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016WX8orfohpgndKQknZLR1C">
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py:33:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py-34-        """Check if a worktree has uncommitted changes.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py-35-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py-36-        Uses git status --porcelain to detect any uncommitted changes.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py-37-        Returns False if git command fails (worktree might be in invalid state).
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py-38-
+--
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py:27:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py-28-        """Check if a worktree has uncommitted changes."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py-29-        result = subprocess.run(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py-30-            ["git", "status", "--porcelain"],
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py-31-            cwd=cwd,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py-32-            capture_output=True,
+--
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py:52:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py-53-        """Check if a worktree has uncommitted changes."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py-54-        staged, modified, untracked = self._file_statuses.get(cwd, ([], [], []))
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py-55-        return bool(staged or modified or untracked)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py-56-
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py-57-    def get_file_status(self, cwd: Path) -&gt; tuple[list[str], list[str], list[str]]:
+--
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py:42:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py-43-        """Check for uncommitted changes (read-only, delegates to wrapped)."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py-44-        return self._wrapped.has_uncommitted_changes(cwd)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py-45-
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py-46-    def get_file_status(self, cwd: Path) -&gt; tuple[list[str], list[str], list[str]]:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py-47-        """Get file status (read-only, delegates to wrapped)."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3325" cache_read_input_tokens="87825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3325}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how to configure FakeGit's file_statuses for dirty worktree testing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3325" cache_read_input_tokens="87825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3325}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GREa7siSoxcZc3Dn1LQVW8">
+    <param name="pattern">file_statuses</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3325" cache_read_input_tokens="87825" output_tokens="325" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GREa7siSoxcZc3Dn1LQVW8">
+124-        branch_heads: dict[str, str] | None = None,
+125-        commit_messages: dict[str, str] | None = None,
+126-        staged_repos: set[Path] | None = None,
+127:        file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] | None = None,
+128-        ahead_behind: dict[tuple[Path, str], tuple[int, int]] | None = None,
+129-        behind_commit_authors: dict[tuple[Path, str], list[str]] | None = None,
+130-        branch_sync_info: dict[Path, dict[str, BranchSyncInfo]] | None = None,
+--
+183-            branch_heads: Mapping of branch name -&gt; commit SHA
+184-            commit_messages: Mapping of commit SHA -&gt; commit message
+185-            staged_repos: Set of repo roots that should report staged changes
+186:            file_statuses: Mapping of cwd -&gt; (staged, modified, untracked) files
+187-            ahead_behind: Mapping of (cwd, branch) -&gt; (ahead, behind) counts
+188-            behind_commit_authors: Mapping of (cwd, branch) -&gt; list of author names
+189-                for commits on remote but not locally
+--
+247-        self._branch_heads = branch_heads or {}
+248-        self._commit_messages = commit_messages or {}
+249-        self._repos_with_staged_changes: set[Path] = staged_repos or set()
+250:        self._file_statuses = file_statuses or {}
+251-        self._ahead_behind = ahead_behind or {}
+252-        self._behind_commit_authors = behind_commit_authors or {}
+253-        self._branch_sync_info = branch_sync_info or {}
+--
+427-        # Status operations subgateway - linked to FakeGit's state
+428-        self._status_gateway = FakeGitStatusOps(
+429-            staged_repos=self._repos_with_staged_changes,
+430:            file_statuses=self._file_statuses,
+431-            merge_conflicts=self._merge_conflicts,
+432-            conflicted_files=self._conflicted_files,
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now I have everything I need. Let me also quickly check if `run_subprocess_with_context` is importable from the path used in dispatch_cmd.py.
+
+Now let me implement the changes. I'll create todo entries and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1000" cache_read_input_tokens="91150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1000}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_017MmaYwRxdKaeAFT2RLMUBe">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1000" cache_read_input_tokens="91150" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1000, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017MmaYwRxdKaeAFT2RLMUBe">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01NgN5kr3fK6Esqjehrs9RgA">
+    <param name="subject">Add sync_branch_to_sha helper to dispatch_helpers.py</param>
+    <param name="description">Extract helper that safely moves a local branch to target SHA, handling checked-out branches via git reset --hard.</param>
+    <param name="activeForm">Adding sync_branch_to_sha helper</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="92150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NgN5kr3fK6Esqjehrs9RgA">
+Task #1 created successfully: Add sync_branch_to_sha helper to dispatch_helpers.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01SLdmA8YrihdB4yx6DKWWqq">
+    <param name="subject">Update dispatch_cmd.py call site</param>
+    <param name="description">Replace update_local_ref with sync_branch_to_sha in _dispatch_planned_pr_plan.</param>
+    <param name="activeForm">Updating dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="92150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SLdmA8YrihdB4yx6DKWWqq">
+Task #2 created successfully: Update dispatch_cmd.py call site
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XfGBbnE9b9An3xtiy11kgH">
+    <param name="subject">Update incremental_dispatch.py call site</param>
+    <param name="description">Replace update_local_ref with sync_branch_to_sha in incremental_dispatch.</param>
+    <param name="activeForm">Updating incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="92150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XfGBbnE9b9An3xtiy11kgH">
+Task #3 created successfully: Update incremental_dispatch.py call site
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_019Uv8mXBRzrUnmpU2nEoJoe">
+    <param name="subject">Update branch/checkout_cmd.py call site</param>
+    <param name="description">Replace update_local_ref with sync_branch_to_sha in _rebase_and_track_for_plan.</param>
+    <param name="activeForm">Updating branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="92150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Uv8mXBRzrUnmpU2nEoJoe">
+Task #4 created successfully: Update branch/checkout_cmd.py call site
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01G4s5JkBjpkqDuTNBy8LBjN">
+    <param name="subject">Update pr/checkout_cmd.py call site</param>
+    <param name="description">Replace update_local_ref with sync_branch_to_sha in _checkout_pr.</param>
+    <param name="activeForm">Updating pr/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="92150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G4s5JkBjpkqDuTNBy8LBjN">
+Task #5 created successfully: Update pr/checkout_cmd.py call site
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Hy1AmSn5gFgooHadaP5AEW">
+    <param name="subject">Update tests for dispatch and incremental_dispatch</param>
+    <param name="description">Update test assertions and add dirty worktree rejection test.</param>
+    <param name="activeForm">Updating tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="92150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hy1AmSn5gFgooHadaP5AEW">
+Task #6 created successfully: Update tests for dispatch and incremental_dispatch
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01RRMbq3CkdmS4mGkS2zr9JB">
+    <param name="subject">Run CI checks</param>
+    <param name="description">Run tests to verify no regressions.</param>
+    <param name="activeForm">Running CI checks</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1007" cache_read_input_tokens="92150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RRMbq3CkdmS4mGkS2zr9JB">
+Task #7 created successfully: Run CI checks
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KKecxgiAajQUebqmdvFmV8">
+    <param name="command">erk exec impl-signal started --session-id="5e7f75d3-0cdd-45ad-9fa7-4673a40bff97" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1023" cache_read_input_tokens="93157" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1023, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KKecxgiAajQUebqmdvFmV8">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9020
+}
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01JAT5Sesa7o9GzBQXsNZxk5">
+    <param name="query">select:TaskUpdate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="94180" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JAT5Sesa7o9GzBQXsNZxk5">
+
+  </tool_result>
+  <assistant>
+
+**Phase 1: Add `sync_branch_to_sha` helper**</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1145" cache_read_input_tokens="94336" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1145}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01HKugs3vFoy5aonKjQW8uV5">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1145" cache_read_input_tokens="94336" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1145, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HKugs3vFoy5aonKjQW8uV5">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0116Ygyjy29Y7WNq7Wzqmo2Q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+    <param name="old_string">"""Helper functions for dispatch command."""
+
+import click
+
+from erk.core.context import ErkContext
+from erk.core.repo_discovery import RepoContext
+from erk_shared.output.output import user_output</param>
+    <param name="new_string">"""Helper functions for dispatch command."""
+
+from pathlib import Path
+
+import click
+
+from...[truncated 90 chars]...put import user_output
+from erk_shared.subprocess_utils import run_subprocess_with_context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="95481" output_tokens="255" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 112, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0116Ygyjy29Y7WNq7Wzqmo2Q">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/pr/dispatch_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `sync_branch_to_sha` function after the imports and before `_check_trunk_worktree_clean`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="95593" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

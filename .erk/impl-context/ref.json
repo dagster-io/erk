@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Fix: `update_local_ref` desyncs checked-out worktrees"
+}
