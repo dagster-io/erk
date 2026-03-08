@@ -887,6 +887,22 @@ def test_log_learn_pr_files_shows_plan_and_ref(
     assert "ref.json" in captured.err
 
 
+def test_log_learn_pr_files_indentation(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """File lines use 4-space indent (2 more than the header's 2-space indent)."""
+    _log_learn_pr_files(plan_content="# Plan", xml_files={})
+
+    lines = capsys.readouterr().err.splitlines()
+    header_line = next(l for l in lines if "file(s) committed" in l)
+    file_lines = [l for l in lines if "plan.md" in l or "ref.json" in l]
+
+    assert header_line.startswith("  ")  # 2-space indent on header
+    for line in file_lines:
+        assert line.startswith("    ")  # 4-space indent on file entries
+        assert not line.startswith("     ")  # not 5+ spaces
+
+
 def test_log_learn_pr_files_includes_session_xml_files(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
