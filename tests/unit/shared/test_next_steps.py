@@ -40,18 +40,14 @@ class TestPlanNextSteps:
             plan_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.implement_current_wt == (
-            'source "$(erk br co --for-plan 42 --script)" && erk implement'
-        )
+        assert steps.implement_current_wt == "erk br co --for-plan 42 && erk implement"
 
     def test_implement_current_wt_dangerous(self) -> None:
         steps = PlanNextSteps(
             plan_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.implement_current_wt_dangerous == (
-            'source "$(erk br co --for-plan 42 --script)" && erk implement -d'
-        )
+        assert steps.implement_current_wt_dangerous == "erk br co --for-plan 42 && erk implement -d"
 
     def test_checkout_new_slot(self) -> None:
         steps = PlanNextSteps(

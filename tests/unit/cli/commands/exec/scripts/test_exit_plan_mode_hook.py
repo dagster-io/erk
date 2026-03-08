@@ -990,8 +990,7 @@ class TestBuildStep2Message:
     def test_contains_implement_current_wt_command(self) -> None:
         """Step 2 shows implement-in-current-worktree command."""
         message = build_step2_message(plan_number=42, url="")
-        assert "erk br co --for-plan 42 --script" in message
-        assert "erk implement" in message
+        assert "erk br co --for-plan 42 && erk implement" in message
 
     def test_contains_implement_new_wt_command(self) -> None:
         """Step 2 shows implement-in-new-worktree command."""
