@@ -1,0 +1,1158 @@
+<session>
+  <meta source="agent-a993428" />
+  <meta branch="plnd/O8832-launch-no-repo-remot-03-08-1454" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+
+I need to understand how the @no_repo_required pattern works in erk. Specifically:
+
+1. How does the CLI framework know that a command can be run without a repo? Is there a `no_repo_required` marker on the Click command, or a list somewhere?
+2. How does `pr dispatch` get registered to work without a repo?
+3. Search for any `NO_REPO` or `no_repo` string in `src/erk/cli/cli.py` and related context setup code
+4. Check `src/erk/cli/core.py` for how ErkContext is constructed and whether there's something controlling whether NoRepoSentinel is used
+
+Provide the full answer with code references.</user>
+  <assistant>I'll help you understand the `@no_repo_required` pattern in erk. Let me start by checking the documentation and then searching the codebase systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18979" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18979, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BQwMqYx2qkUs9oeA28XSW6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18979" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18979, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014v8G15H6bv4oDhXoeXzYzR">
+    <param name="pattern">no_repo</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18979" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18979, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BQwMqYx2qkUs9oeA28XSW6">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014v8G15H6bv4oDhXoeXzYzR">
+Found 3 files
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/no-repo-infrastructure.md
+docs/learned/architecture/index.md
+  </tool_result>
+  <assistant>Great! There's already documentation on this. Let me read the existing documentation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1405" cache_read_input_tokens="18979" cache_creation="{'ephemeral_5m_input_tokens': 1405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HRaCKgnk3oPRY8Btw5vbDR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/no-repo-infrastructure.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1405" cache_read_input_tokens="18979" cache_creation="{'ephemeral_5m_input_tokens': 1405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018vpjCdQ4vShhGiA9VzXSzc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1405" cache_read_input_tokens="18979" cache_creation="{'ephemeral_5m_input_tokens': 1405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018vpjCdQ4vShhGiA9VzXSzc">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01HRaCKgnk3oPRY8Btw5vbDR">
+     1→---
+     2→title: No-Repo Infrastructure
+     3→read_when:
+     4→  - "adding a command that works outside git repositories"
+     5→  - "using NoRepoSentinel or @no_repo_required"
+     6→  - "implementing remote dispatch without local repo context"
+     7→tripwires:
+     8→  - action: "accessing ctx.git or ctx.repo without checking for NoRepoSentinel"
+     9→    warning: "Commands decorated with @no_repo_required may have sentinel gateways. Check isinstance(ctx.repo, NoRepoSentinel) before repo operations."
+    10→---
+    11→
+    12→# No-Repo Infrastructure
+    13→
+    14→Erk commands normally require a git repository context. The no-repo infrastructure allows specific commands to run outside repositories by providing sentinel gateways that raise user-friendly errors instead of crashing.
+    15→
+    16→## NoRepoSentinel Pattern
+    17→
+    18→Sentinel gateways implement the same ABC interfaces as real gateways but raise `NoRepoError` with guidance when called. This means commands can be wired up normally — the error only fires if the command actually tries to use repo-dependent functionality.
+    19→
+    20→## `@no_repo_required` Decorator
+    21→
+    22→Commands decorated with `@no_repo_required` skip repository detection during context construction. Instead of failing at startup when no repo is found, the context is built with sentinel gateways for repo-dependent services.
+    23→
+    24→## RemoteGitHub Consolidation
+    25→
+    26→&lt;!-- Source: src/erk/cli/commands/one_shot.py --&gt;
+    27→
+    28→The one-shot dispatch command demonstrates the full no-repo pattern. It supports both local repo mode and remote-only mode via `--repo owner/name`:
+    29→
+    30→### Context Injection Pattern
+
+... [25 lines omitted] ...
+
+    35→2. If no `ctx.http_client` available, raise `UserFacingCliError`
+    42→### Error Handling
+  </tool_result>
+  <assistant>Now let me search for the actual implementation in the codebase:</assistant>
+  <usage input_tokens="41" cache_creation_input_tokens="1095" cache_read_input_tokens="20384" cache_creation="{'ephemeral_5m_input_tokens': 1095, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Abw3nZrR1HSEaA647oTQmN">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f | head -20</param>
+    <param name="description">List Python files to understand structure</param>
+  </tool_use>
+  <usage input_tokens="41" cache_creation_input_tokens="1095" cache_read_input_tokens="20384" cache_creation="{'ephemeral_5m_input_tokens': 1095, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FnDBaUViBx6SnBwm5GJ54Q">
+    <param name="pattern">no_repo_required|NO_REPO</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="41" cache_creation_input_tokens="1095" cache_read_input_tokens="20384" cache_creation="{'ephemeral_5m_input_tokens': 1095, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FnDBaUViBx6SnBwm5GJ54Q">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01Abw3nZrR1HSEaA647oTQmN">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/erk_shared/__init__.py
+/home/runner/work/erk/erk/tests/cli/commands/__init__.py
+/home/runner/work/erk/erk/tests/cli/commands/split/test_plan.py
+/home/runner/work/erk/erk/tests/cli/commands/split/__init__.py
+/home/runner/work/erk/erk/tests/cli/__init__.py
+/home/runner/work/erk/erk/tests/unit/test_forward_reference_detection.py
+/home/runner/work/erk/erk/tests/unit/context/test_permission_mode_codex.py
+/home/runner/work/erk/erk/tests/unit/context/test_require_context.py
+/home/runner/work/erk/erk/tests/unit/context/__init__.py
+/home/runner/work/erk/erk/tests/unit/test_pr_footer.py
+/home/runner/work/erk/erk/tests/unit/hierarchy/__init__.py
+/home/runner/work/erk/erk/tests/unit/test_graphite_parsing.py
+/home/runner/work/erk/erk/tests/unit/cli/test_capability_check.py
+/home/runner/work/erk/erk/tests/unit/cli/test_ensure.py
+/home/runner/work/erk/erk/tests/unit/cli/test_shell_utils.py
+  </tool_result>
+  <assistant>Let me search more broadly:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="979" cache_read_input_tokens="21479" cache_creation="{'ephemeral_5m_input_tokens': 979, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NL2NFr5C7pHVaWbWTRqBuw">
+    <param name="pattern">no_repo_required|NO_REPO</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="979" cache_read_input_tokens="21479" cache_creation="{'ephemeral_5m_input_tokens': 979, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RSXnuKGjGyfkDcvNcA36Hg">
+    <param name="pattern">/home/runner/work/erk/erk/src/erk/cli/cli.py</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="979" cache_read_input_tokens="21479" cache_creation="{'ephemeral_5m_input_tokens': 979, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RSXnuKGjGyfkDcvNcA36Hg">
+/home/runner/work/erk/erk/src/erk/cli/cli.py
+  </tool_result>
+  <tool_result tool="toolu_01NL2NFr5C7pHVaWbWTRqBuw">
+No files found
+  </tool_result>
+  <assistant>Let me check the CLI files directly and search for the decorator definition:</assistant>
+  <usage input_tokens="53" cache_creation_input_tokens="403" cache_read_input_tokens="22458" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KwMBX8mt1J4QuJrVsqetfB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/cli.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="53" cache_creation_input_tokens="403" cache_read_input_tokens="22458" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L3R6A8fMqq4XkZEADXCjPf">
+    <param name="command">grep -r "no_repo_required\|@no_repo\|NO_REPO" /home/runner/work/erk/erk/src --include="*.py" | head -30</param>
+    <param name="description">Search for no_repo pattern in src</param>
+  </tool_use>
+  <usage input_tokens="53" cache_creation_input_tokens="403" cache_read_input_tokens="22458" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KwMBX8mt1J4QuJrVsqetfB">
+     1→import logging
+     2→import os
+     3→import sys
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.alias import register_with_aliases
+     9→from erk.cli.capability_check import is_learned_docs_available
+    10→from erk.cli.commands.admin import admin_group
+    11→from erk.cli.commands.artifact.group import artifact_group
+    12→from erk.cli.commands.branch import branch_group
+    13→from erk.cli.commands.cc import cc_group
+    14→from erk.cli.commands.codespace import codespace_group
+    15→from erk.cli.commands.completion import completion_group
+    16→from erk.cli.commands.config import config_group
+    17→from erk.cli.commands.doctor import doctor_cmd
+    18→from erk.cli.commands.doctor_workflow import workflow_group
+    19→from erk.cli.commands.down import down_cmd
+    20→from erk.cli.commands.exec.group import exec_group
+    21→from erk.cli.commands.implement import implement
+    22→from erk.cli.commands.info.release_notes_cmd import release_notes_cmd
+    23→from erk.cli.commands.init import init_group
+    24→from erk.cli.commands.land_cmd import land
+    25→from erk.cli.commands.launch_cmd import launch
+    26→from erk.cli.commands.log_cmd import log_cmd
+    27→from erk.cli.commands.md.group import md_group
+    28→from erk.cli.commands.objective import objective_group
+    29→from erk.cli.commands.one_shot import one_shot
+    30→from erk.cli.commands.pr import pr_group
+
+... [75 lines omitted] ...
+
+    44→    format_version_warning,
+    61→    exceptions are logged but don't break the CLI.
+  </tool_result>
+  <tool_result tool="toolu_01L3R6A8fMqq4XkZEADXCjPf">
+
+  </tool_result>
+  <assistant>The grep returned nothing. Let me check whether the feature exists yet by looking at the plan file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2052" cache_read_input_tokens="22861" cache_creation="{'ephemeral_5m_input_tokens': 2052, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CyVC4DQ8FczFbBJrBMrCAZ">
+    <param name="command">git -C /home/runner/work/erk/erk log --oneline -10</param>
+    <param name="description">Check recent commits</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2052" cache_read_input_tokens="22861" cache_creation="{'ephemeral_5m_input_tokens': 2052, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016vRDLkjjCqhAcdv25raZuo">
+    <param name="command">git -C /home/runner/work/erk/erk branch -a</param>
+    <param name="description">Check branches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2052" cache_read_input_tokens="22861" cache_creation="{'ephemeral_5m_input_tokens': 2052, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CyVC4DQ8FczFbBJrBMrCAZ">
+22ef8fccb Remove plan staging dirs before implementation
+4cb861bfb Add plan for PR #9019
+9c30ed600 Add plan: Plan: Convert `erk launch` to @no_repo_required with --repo flag
+e8f3df109 Consolidate rebase detection and improve trunk branch references in commands (#9011)
+086a0d0cd Replace hardcoded trunk branch with dynamic detection in .claude commands (#9005)
+4651f0d18 Add agent-friendly CLI design principles documentation (#9014)
+4e28ff780 Consolidate documentation from 21 erk-learn plans (#8920)
+166d63639 Improve Graphite rebase handling to skip tracking check when restack is in progress (#9007)
+298833493 Fix changelog-commits JSON output size for agent consumption (#9006)
+f85346d29 Consolidate documentation from 10 erk-learn plans (#8937)
+  </tool_result>
+  <tool_result tool="toolu_016vRDLkjjCqhAcdv25raZuo">
+  master
+* plnd/O8832-launch-no-repo-remot-03-08-1454
+  remotes/origin/02-08-batch-regen-01-scripts
+  remotes/origin/02-08-batch-regen-02
+  remotes/origin/02-08-batch-regen-03
+  remotes/origin/02-08-batch-regen-04
+  remotes/origin/02-08-batch-regen-05
+  remotes/origin/02-08-batch-regen-06
+  remotes/origin/02-08-batch-regen-07
+  remotes/origin/02-08-batch-regen-08
+  remotes/origin/02-08-batch-regen-09
+  remotes/origin/02-08-batch-regen-10
+  remotes/origin/02-08-batch-regen-11
+  remotes/origin/02-08-batch-regen-12
+  remotes/origin/02-08-batch-regen-13
+  remotes/origin/02-08-batch-regen-14
+  remotes/origin/02-08-batch-regen-15
+  remotes/origin/02-08-batch-regen-16
+  remotes/origin/02-08-batch-regen-17
+  remotes/origin/02-08-batch-regen-18
+  remotes/origin/02-08-batch-regen-19
+  remotes/origin/02-08-batch-regen-20
+  remotes/origin/02-08-batch-regen-21
+  remotes/origin/02-08-batch-regen-22
+  remotes/origin/02-08-batch-regen-23
+  remotes/origin/02-08-batch-regen-24
+  remotes/origin/P4444-standardize-slot-terminol-01-07-0725
+  remotes/origin/P4464-phase-2b-create-tutorials-01-07-1633
+  remotes/origin/P4598-reduce-index-lock-errors-01-11-0340
+  remotes/origin/P4719-rich-learn-plan-generatio-01-11-1512
+
+... [544 lines omitted] ...
+  </tool_result>
+  <assistant>Good! I can see we're on a plan branch for implementing `erk launch` with `@no_repo_required`. Let me check the plan file and look at the existing implementation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="14177" cache_read_input_tokens="24913" cache_creation="{'ephemeral_5m_input_tokens': 14177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TAMUZnousuu1R6yEr9Jn6d">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;/dev/null || echo "No impl context"</param>
+    <param name="description">Check implementation context</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14177" cache_read_input_tokens="24913" cache_creation="{'ephemeral_5m_input_tokens': 14177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NU8ci6ThDWqBYsJ8oePFUt">
+    <param name="command">git -C /home/runner/work/erk/erk show 9c30ed600:* 2&gt;&amp;1 | head -5</param>
+    <param name="description">Check plan commit</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="14177" cache_read_input_tokens="24913" cache_creation="{'ephemeral_5m_input_tokens': 14177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TAMUZnousuu1R6yEr9Jn6d">
+total 28
+drwxr-xr-x 3 runner runner 4096 Mar  8 14:56 .
+drwxr-xr-x 6 runner runner 4096 Mar  8 14:56 ..
+-rw-r--r-- 1 runner runner 6078 Mar  8 14:55 plan.md
+drwxr-xr-x 2 runner runner 4096 Mar  8 14:56 plnd--O8832-launch-no-repo-remot-03-08-1454
+-rw-r--r-- 1 runner runner  263 Mar  8 14:55 ref.json
+-rw-r--r-- 1 runner runner  105 Mar  8 14:55 run-info.json
+  </tool_result>
+  <tool_result tool="toolu_01NU8ci6ThDWqBYsJ8oePFUt">
+
+  </tool_result>
+  <assistant>Let me read the plan and then look at the actual implementation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="626" cache_read_input_tokens="39090" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0146vcZY6x2Zcqw5eKnvyW4p">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plan.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="626" cache_read_input_tokens="39090" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W76RunQV7DGTBHT1uPE4vC">
+    <param name="command">find /home/runner/work/erk/erk/src -name "*decorator*" -o -name "*core.py" | grep cli</param>
+    <param name="description">Find CLI core files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="626" cache_read_input_tokens="39090" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0146vcZY6x2Zcqw5eKnvyW4p">
+     1→# Plan: Convert `erk launch` to @no_repo_required with --repo flag
+     2→
+     3→Part of Objective #8832, Node 3.3 (launch-remote)
+     4→
+     5→## Context
+     6→
+     7→The `erk launch` command dispatches GitHub Actions workflows (pr-rebase, pr-address, pr-rewrite, learn, one-shot). It currently requires a local git repo for all operations, even though the actual work is done remotely via GitHub Actions. This prevents using `erk launch` from machines without a local clone (e.g., remote dispatch from a phone, CI, or a different project directory).
+     8→
+     9→The goal is to add a `--repo owner/repo` flag so `erk launch` can work without a local git repository, following the same unified pattern established in node 3.2 (pr dispatch).
+    10→
+    11→## Approach
+    12→
+    13→### 1. Add `get_pr` to RemoteGitHub gateway
+    14→
+    15→The launch command needs PR-specific fields (head_ref_name, base_ref_name, state) that `get_issue()` doesn't provide. Add a `get_pr` method to the RemoteGitHub ABC calling `GET /repos/{owner}/{repo}/pulls/{number}`.
+    16→
+    17→**New file: `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`**
+    18→- `RemotePRInfo` frozen dataclass: number, title, state, url, head_ref_name, base_ref_name, owner, repo, labels
+    19→- `RemotePRNotFound` frozen dataclass: pr_number
+    20→
+    21→**Modify: `packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py`**
+    22→- Add abstract `get_pr(*, owner, repo, number) -&gt; RemotePRInfo | RemotePRNotFound`
+    23→
+    24→**Modify: `packages/erk-shared/src/erk_shared/gateway/remote_github/real.py`**
+    25→- Implement via `GET /repos/{owner}/{repo}/pulls/{number}`
+    26→- Map state: API returns lowercase "open"/"closed" + `merged` bool → "OPEN"/"CLOSED"/"MERGED"
+    27→
+    28→**Modify: `packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py`**
+    29→- Add `prs: dict[int, RemotePRInfo]` constructor parameter
+    30→- Implement `get_pr` returning from dict or `RemotePRNotFound`
+
+... [91 lines omitted] ...
+
+    68→- `--ref-current` in remote mode → error ("--ref-current requires a local git repository")
+  </tool_result>
+  <tool_result tool="toolu_01W76RunQV7DGTBHT1uPE4vC">
+/home/runner/work/erk/erk/src/erk/cli/core.py
+  </tool_result>
+  <assistant>Now let me check the core.py and see where `@no_repo_required` might be defined, and also look for existing patterns in one_shot:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2805" cache_read_input_tokens="39716" cache_creation="{'ephemeral_5m_input_tokens': 2805, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013azpUWgsdQMjPo6SQhCSWg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/core.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2805" cache_read_input_tokens="39716" cache_creation="{'ephemeral_5m_input_tokens': 2805, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TMQ1Ff4zSmuDZDL5Qk5YmS">
+    <param name="command">find /home/runner/work/erk/erk/src -name "*.py" -type f -exec grep -l "no_repo_required\|@no_repo\|NoRepoSentinel" {} \;</param>
+    <param name="description">Find files with NoRepoSentinel or decorator</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2805" cache_read_input_tokens="39716" cache_creation="{'ephemeral_5m_input_tokens': 2805, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013azpUWgsdQMjPo6SQhCSWg">
+     1→from pathlib import Path
+     2→
+     3→from erk.cli.ensure import Ensure
+     4→from erk.core.context import ErkContext
+     5→from erk.core.repo_discovery import RepoContext, discover_repo_or_sentinel
+     6→
+     7→
+     8→def discover_repo_context(ctx: ErkContext, start: Path) -&gt; RepoContext:
+     9→    """Walk up from `start` to find a directory containing `.git`.
+    10→
+    11→    Returns a RepoContext pointing to the repo root and the global worktrees directory
+    12→    for this repository.
+    13→    Raises FileNotFoundError if not inside a git repo.
+    14→
+    15→    Note: Properly handles git worktrees by finding the main repository root,
+    16→    not the worktree's .git file.
+    17→    """
+    18→    if ctx.global_config is None:
+    19→        raise FileNotFoundError("Global config not found. Run 'erk init' to create it.")
+    20→
+    21→    result = discover_repo_or_sentinel(start, ctx.global_config.erk_root, ctx.git)
+    22→    if isinstance(result, RepoContext):
+    23→        return result
+    24→    raise FileNotFoundError(result.message)
+    25→
+    26→
+    27→def worktree_path_for(worktrees_dir: Path, name: str) -&gt; Path:
+    28→    """Return the absolute path for a named worktree within worktrees directory.
+    29→
+    30→    Note: Does not handle 'root' as a special case. Commands that support
+
+... [41 lines omitted] ...
+
+    53→    Raises SystemExit(1) with error message if validation fails.
+  </tool_result>
+  <tool_result tool="toolu_01TMQ1Ff4zSmuDZDL5Qk5YmS">
+/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py
+/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/init/main.py
+/home/runner/work/erk/erk/src/erk/cli/commands/init/capability/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/init/capability/add_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/init/capability/remove_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/wt/current_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/codespace/connect_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/config.py
+/home/runner/work/erk/erk/src/erk/cli/commands/doctor_workflow.py
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/set_pr_description.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_context.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_plan_setup.py
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Let me now read the key files that explain the `@no_repo_required` pattern:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2563" cache_read_input_tokens="42521" cache_creation="{'ephemeral_5m_input_tokens': 2563, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Wg1jNAVM1LmRi46FoPbEpF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/hooks/decorators.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2563" cache_read_input_tokens="42521" cache_creation="{'ephemeral_5m_input_tokens': 2563, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DBFDtTkqy1NfCMhfV2MWaW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2563" cache_read_input_tokens="42521" cache_creation="{'ephemeral_5m_input_tokens': 2563, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wg1jNAVM1LmRi46FoPbEpF">
+     1→"""Decorators for hook commands."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import functools
+     6→import inspect
+     7→import io
+     8→import json
+     9→import os
+    10→import sys
+    11→import traceback
+    12→from collections.abc import Callable
+    13→from contextlib import redirect_stderr, redirect_stdout
+    14→from dataclasses import dataclass
+    15→from datetime import UTC, datetime
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING, TypeVar, cast
+    18→
+    19→if TYPE_CHECKING:
+    20→    import click
+    21→
+    22→from erk_shared.context.types import NoRepoSentinel
+    23→from erk_shared.gateway.console.real import InteractiveConsole
+    24→from erk_shared.hooks.logging import (
+    25→    MAX_STDERR_BYTES,
+    26→    MAX_STDIN_BYTES,
+    27→    MAX_STDOUT_BYTES,
+    28→    truncate_string,
+    29→    write_hook_log,
+    30→)
+
+... [297 lines omitted] ...
+
+   173→    5. Writes log on exit (success or failure)
+   202→        except (json.JSONDecodeError, KeyError, TypeError):
+   225→        error_message: str | None = None
+   234→        except Exception as e:
+   235→            # Uncaught exception
+   237→            exit_status = HookExitStatus.EXCEPTION
+   238→            error_message = f"{type(e).__name__}: {e}"
+   266→                error_message=error_message,
+  </tool_result>
+  <tool_result tool="toolu_01DBFDtTkqy1NfCMhfV2MWaW">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.implement_shared import normalize_model_name
+    20→from erk.cli.commands.one_shot_remote_dispatch import (
+    21→    OneShotDispatchParams,
+    22→    dispatch_one_shot_remote,
+    23→)
+    24→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    25→from erk.cli.ensure import Ensure, UserFacingCliError
+    26→from erk.core.context import ErkContext, NoRepoSentinel
+    27→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    28→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    29→from erk_shared.output.output import user_output
+    30→
+
+... [75 lines omitted] ...
+
+    45→        UserFacingCliError: If no http_client is available
+    51→        raise UserFacingCliError(
+  </tool_result>
+  <assistant>Now let me check for the decorator/pattern in the context creation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5573" cache_read_input_tokens="45084" cache_creation="{'ephemeral_5m_input_tokens': 5573, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LCFbEbrKhPH4qBkwwWBwt1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5573" cache_read_input_tokens="45084" cache_creation="{'ephemeral_5m_input_tokens': 5573, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012BNvxjMRqvzg4EVbzpxVNm">
+    <param name="command">grep -n "no_repo_required\|@no_repo\|NoRepoSentinel" /home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py | head -20</param>
+    <param name="description">Search for no_repo pattern in one_shot</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5573" cache_read_input_tokens="45084" cache_creation="{'ephemeral_5m_input_tokens': 5573, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LCFbEbrKhPH4qBkwwWBwt1">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [175 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012BNvxjMRqvzg4EVbzpxVNm">
+26:from erk.core.context import ErkContext, NoRepoSentinel
+184:        if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+  </tool_result>
+  <assistant>Perfect! Now let me check more of the context.py and look for where the decorator or pattern might be implemented:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3909" cache_read_input_tokens="50657" cache_creation="{'ephemeral_5m_input_tokens': 3909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G6TVpkG1My5GEuYxAgGjKP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="offset">200</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3909" cache_read_input_tokens="50657" cache_creation="{'ephemeral_5m_input_tokens': 3909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AKPkas8okNoJSVoAStGw4v">
+    <param name="command">grep -n "click.command\|@click" /home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py | head -15</param>
+    <param name="description">Check one_shot decorator pattern</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3909" cache_read_input_tokens="50657" cache_creation="{'ephemeral_5m_input_tokens': 3909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G6TVpkG1My5GEuYxAgGjKP">
+   200→        repo_info=None,
+   201→        http_client=FakeHttpClient(),
+   202→        dry_run=dry_run,
+   203→        debug=False,
+   204→    )
+   205→
+   206→
+   207→def context_for_test(
+   208→    *,
+   209→    git: Git | None = None,
+   210→    github: LocalGitHub | None = None,
+   211→    github_admin: GitHubAdmin | None = None,
+   212→    issues: GitHubIssues | None = None,
+   213→    plan_store: PlanBackend | None = None,
+   214→    graphite: Graphite | None = None,
+   215→    console: Console | None = None,
+   216→    shell: Shell | None = None,
+   217→    codespace: Codespace | None = None,
+   218→    cmux: Cmux | None = None,
+   219→    agent_launcher: AgentLauncher | None = None,
+   220→    agent_docs: AgentDocs | None = None,
+   221→    completion: Completion | None = None,
+   222→    time: Time | None = None,
+   223→    erk_installation: ErkInstallation | None = None,
+   224→    script_writer: ScriptWriter | None = None,
+   225→    plan_list_service: PlanListService | None = None,
+   226→    objective_list_service: ObjectiveListService | None = None,
+   227→    codespace_registry: CodespaceRegistry | None = None,
+   228→    claude_installation: ClaudeInstallation | None = None,
+   229→    prompt_executor: PromptExecutor | None = None,
+
+... [275 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AKPkas8okNoJSVoAStGw4v">
+58:@click.command("one-shot")
+59:@click.argument("prompt", required=False, default=None)
+60:@click.option(
+68:@click.option(
+75:@click.option(
+80:@click.option(
+85:@click.option(
+91:@click.option(
+98:@click.option(
+104:@click.option(
+111:@click.pass_obj
+  </tool_result>
+  <assistant>Now let me check the main cli.py file to see how context is created there and look for the no_repo handling:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4981" cache_read_input_tokens="54566" cache_creation="{'ephemeral_5m_input_tokens': 4981, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Puvu29bu1bxm7YZJkoZuUx">
+    <param name="command">grep -n "create_context\|NoRepoSentinel" /home/runner/work/erk/erk/src/erk/cli/cli.py | head -20</param>
+    <param name="description">Search for context creation in main CLI</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4981" cache_read_input_tokens="54566" cache_creation="{'ephemeral_5m_input_tokens': 4981, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TH2YkhuUAhKNz2tocB75sm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/cli.py</param>
+    <param name="offset">100</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4981" cache_read_input_tokens="54566" cache_creation="{'ephemeral_5m_input_tokens': 4981, 'ephemeral_1h_input_tokens': 0}" output_tokens="236" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TH2YkhuUAhKNz2tocB75sm">
+   100→                        click.echo(f"{indent}• {item_text}", file=sys.stderr)
+   101→            else:
+   102→                # Fallback to flat list for releases without categories
+   103→                for item_text, indent_level in release.items:
+   104→                    indent = "    " + ("  " * indent_level)
+   105→                    click.echo(f"{indent}• {item_text}", file=sys.stderr)
+   106→            click.echo(file=sys.stderr)
+   107→
+   108→        click.echo(click.style("  " + "─" * 50, dim=True), file=sys.stderr)
+   109→        click.echo(file=sys.stderr)
+   110→
+   111→        # Prompt user to continue (only if stdin is a TTY)
+   112→        console = InteractiveConsole()
+   113→        if console.is_stdin_interactive():
+   114→            click.pause(info=click.style("  Press Enter to continue...", dim=True), err=True)
+   115→    except click.Abort:
+   116→        # User pressed Ctrl+C or declined - exit gracefully
+   117→        raise SystemExit(0) from None
+   118→    except Exception as e:
+   119→        # Never let release notes break the CLI, but warn so issues can be diagnosed
+   120→        logging.warning("Failed to show version change banner: %s", e)
+   121→
+   122→
+   123→def _show_version_warning() -&gt; None:
+   124→    """Show warning if installed erk version doesn't match repo-required version.
+   125→
+   126→    This is designed to never fail - exceptions are logged but don't break the CLI.
+   127→    """
+   128→    # Skip if user has disabled version checking
+   129→    if os.environ.get("ERK_SKIP_VERSION_CHECK") == "1":
+
+... [109 lines omitted] ...
+
+   154→        # Show warning
+   155→        click.echo(format_version_warning(installed, required), err=True)
+   157→    except Exception as e:
+   159→        logging.warning("Failed to check version: %s", e)
+   174→        _show_version_warning()
+   230→    # UserFacingCliError extends click.ClickException, so Click handles it
+  </tool_result>
+  <tool_result tool="toolu_01Puvu29bu1bxm7YZJkoZuUx">
+41:from erk.core.context import create_context
+178:        ctx.obj = create_context(dry_run=False)
+  </tool_result>
+  <assistant>Now let me look at the `create_context` function to see where the NoRepoSentinel is injected:</assistant>
+  <usage input_tokens="2014" cache_creation_input_tokens="443" cache_read_input_tokens="59547" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NViGuDnf826bkNyBWeHuEB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="offset">500</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="2014" cache_creation_input_tokens="443" cache_read_input_tokens="59547" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NViGuDnf826bkNyBWeHuEB">
+   500→    # Write back to file
+   501→    with pyproject_path.open("w", encoding="utf-8") as f:
+   502→        tomlkit.dump(doc, f)
+   503→
+   504→
+   505→def safe_cwd() -&gt; tuple[Path | None, str | None]:
+   506→    """Get current working directory, detecting if it no longer exists.
+   507→
+   508→    Uses LBYL approach: checks if the operation will succeed before attempting it.
+   509→
+   510→    Returns:
+   511→        tuple[Path | None, str | None]: (path, error_message)
+   512→        - If successful: (Path, None)
+   513→        - If directory deleted: (None, error_message)
+   514→
+   515→    Note:
+   516→        This is an acceptable use of try/except since we're wrapping a third-party
+   517→        API (Path.cwd()) that provides no way to check the condition first.
+   518→    """
+   519→    try:
+   520→        cwd_path = Path.cwd()
+   521→        return (cwd_path, None)
+   522→    except (FileNotFoundError, OSError):
+   523→        return (
+   524→            None,
+   525→            "Current working directory no longer exists",
+   526→        )
+   527→
+   528→
+   529→def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) -&gt; ErkContext:
+
+... [230 lines omitted] ...
+
+   540→        debug: If True, enable debug mode for error handling (default False)
+   552→    cwd_result, error_msg = safe_cwd()
+   554→        assert error_msg is not None
+   555→        # Emit clear error and exit
+   556→        user_output(click.style("Error: ", fg="red") + error_msg)
+   607→        except ValueError:
+  </tool_result>
+  <assistant>Perfect! Now I have the full picture. Let me search for `repo_option` decorator and the pattern for how the @no_repo_required decorator might work:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="6036" cache_read_input_tokens="59990" cache_creation="{'ephemeral_5m_input_tokens': 6036, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FE8AuR7JcQ2mRWx3mhN5cm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6036" cache_read_input_tokens="59990" cache_creation="{'ephemeral_5m_input_tokens': 6036, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KVADJ9zsKomaJiZnNy9ZPg">
+    <param name="command">grep -n "no_repo_required\|@repo_option" /home/runner/work/erk/erk/src/erk/cli/repo_resolution.py</param>
+    <param name="description">Check repo_resolution file</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6036" cache_read_input_tokens="59990" cache_creation="{'ephemeral_5m_input_tokens': 6036, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FE8AuR7JcQ2mRWx3mhN5cm">
+     1→"""Shared --repo infrastructure for CLI commands.
+     2→
+     3→Provides helpers for resolving owner/repo from either a --repo flag
+     4→or local git context, and constructing RemoteGitHub instances.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import UserFacingCliError
+    10→from erk.core.context import ErkContext, NoRepoSentinel
+    11→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    12→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    13→
+    14→
+    15→def resolve_owner_repo(
+    16→    ctx: ErkContext,
+    17→    *,
+    18→    target_repo: str | None,
+    19→) -&gt; tuple[str, str]:
+    20→    """Resolve owner/repo from --repo flag or local git context.
+    21→
+    22→    Args:
+    23→        ctx: ErkContext
+    24→        target_repo: Optional "owner/repo" string from --repo flag
+    25→
+    26→    Returns:
+    27→        Tuple of (owner, repo_name)
+    28→
+    29→    Raises:
+    30→        UserFacingCliError: If owner/repo cannot be determined
+
+... [57 lines omitted] ...
+
+    34→            raise UserFacingCliError(
+    42→        raise UserFacingCliError(
+    62→        UserFacingCliError: If no http_client is available
+    68→        raise UserFacingCliError(
+  </tool_result>
+  <tool_result tool="toolu_01KVADJ9zsKomaJiZnNy9ZPg">
+
+  </tool_result>
+  <assistant>Excellent! Now let me check if there's a `no_repo_required` decorator defined:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1465" cache_read_input_tokens="66026" cache_creation="{'ephemeral_5m_input_tokens': 1465, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0142gFJoH7yrae4xwmgkjvpu">
+    <param name="command">find /home/runner/work/erk/erk/src -name "*.py" -exec grep -l "def no_repo_required\|no_repo_required =" {} \;</param>
+    <param name="description">Search for no_repo_required decorator definition</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1465" cache_read_input_tokens="66026" cache_creation="{'ephemeral_5m_input_tokens': 1465, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CXgYwbfj7cSE5kjSJuXqhd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1465" cache_read_input_tokens="66026" cache_creation="{'ephemeral_5m_input_tokens': 1465, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0142gFJoH7yrae4xwmgkjvpu">
+
+  </tool_result>
+  <tool_result tool="toolu_01CXgYwbfj7cSE5kjSJuXqhd">
+     1→"""Dispatch GitHub Actions workflows via unified interface.
+     2→
+     3→Usage examples:
+     4→    erk launch pr-address --pr 456
+     5→    erk launch pr-rebase --pr 456
+     6→    erk launch pr-rebase --pr 456 --no-squash
+     7→    erk launch plan-implement --issue 789
+     8→    erk launch learn --issue 789
+     9→    erk launch one-shot --pr 456 --prompt "fix the auth bug"
+    10→    erk launch one-shot --pr 456 -f prompt.md
+    11→    erk launch pr-rebase --pr 456 --repo owner/repo   # remote mode
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+    19→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    20→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    21→from erk.cli.ensure import Ensure
+    22→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    25→from erk_shared.gateway.github.types import PRNotFound
+    26→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    27→from erk_shared.gateway.remote_github.types import RemotePRNotFound
+    28→from erk_shared.output.output import user_output
+    29→
+    30→
+
+... [125 lines omitted] ...
+
+    69→        click.UsageError: If workflow name is not recognized
+    73→        raise click.UsageError(
+  </tool_result>
+  <assistant>Good! Now let me continue reading launch_cmd.py to see the main command signature:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2494" cache_read_input_tokens="67491" cache_creation="{'ephemeral_5m_input_tokens': 2494, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XeBsuHZFEVNmzScr5PnGNB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">280</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2494" cache_read_input_tokens="67491" cache_creation="{'ephemeral_5m_input_tokens': 2494, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Fu2yuxYCF6Ve75ztyvn99v">
+    <param name="command">grep -n "^def launch\|^@click" /home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py | head -30</param>
+    <param name="description">Find main launch command</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2494" cache_read_input_tokens="67491" cache_creation="{'ephemeral_5m_input_tokens': 2494, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XeBsuHZFEVNmzScr5PnGNB">
+   280→
+   281→def _dispatch_plan_implement(
+   282→    ctx: ErkContext,
+   283→    repo: RepoContext,
+   284→    *,
+   285→    issue: int,
+   286→    model: str | None,
+   287→) -&gt; None:
+   288→    """Dispatch plan-implement workflow.
+   289→
+   290→    Note: This is a simplified dispatch - the full submission flow
+   291→    (branch creation, PR creation, etc.) is handled by `erk pr dispatch`.
+   292→    This command only dispatches the workflow directly.
+   293→    """
+   294→    raise click.UsageError(
+   295→        "Use 'erk pr dispatch' instead of 'erk workflow launch plan-implement'.\n"
+   296→        "The plan-implement workflow requires branch and PR setup that "
+   297→        "'erk pr dispatch' handles automatically."
+   298→    )
+   299→
+   300→
+   301→def _dispatch_one_shot(
+   302→    ctx: ErkContext,
+   303→    repo: RepoContext,
+   304→    *,
+   305→    pr_number: int,
+   306→    prompt: str,
+   307→    model: str | None,
+   308→    ref: str | None,
+   309→) -&gt; None:
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Fu2yuxYCF6Ve75ztyvn99v">
+716:@click.command("launch")
+717:@click.argument("workflow_name", type=str)
+718:@click.option(
+724:@click.option(
+730:@click.option(
+735:@click.option(
+740:@click.option(
+746:@click.option(
+754:@click.option(
+761:@click.option(
+768:@click.pass_obj
+769:def launch(
+  </tool_result>
+  <assistant>Let me read the actual launch command definition:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2450" cache_read_input_tokens="69985" cache_creation="{'ephemeral_5m_input_tokens': 2450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014RGw1f5GV6dj7svxzNyJiG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">710</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2450" cache_read_input_tokens="69985" cache_creation="{'ephemeral_5m_input_tokens': 2450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014RGw1f5GV6dj7svxzNyJiG">
+   710→            "'erk pr dispatch' handles automatically."
+   711→        )
+   712→    else:
+   713→        raise click.UsageError(f"Unknown workflow: {workflow_name}")
+   714→
+   715→
+   716→@click.command("launch")
+   717→@click.argument("workflow_name", type=str)
+   718→@click.option(
+   719→    "--pr",
+   720→    "pr_number",
+   721→    type=int,
+   722→    help="PR number (required for pr-rebase and pr-address)",
+   723→)
+   724→@click.option(
+   725→    "--plan",
+   726→    "plan_number",
+   727→    type=int,
+   728→    help="Plan number (required for learn)",
+   729→)
+   730→@click.option(
+   731→    "--no-squash",
+   732→    is_flag=True,
+   733→    help="Skip squashing commits before rebase (pr-rebase only)",
+   734→)
+   735→@click.option(
+   736→    "--model",
+   737→    type=str,
+   738→    help="Claude model to use (for workflows that support it)",
+   739→)
+
+... [175 lines omitted] ...
+
+   835→            raise click.UsageError("--ref-current cannot be used in remote mode (no local repo)")
+   856→    _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
+  </tool_result>
+  <assistant>Perfect! Now let me see the _launch_remote function and get the complete picture:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2571" cache_read_input_tokens="72435" cache_creation="{'ephemeral_5m_input_tokens': 2571, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T7H418DzBSruqN2rJ1Ky6y">
+    <param name="command">grep -n "def _launch_remote\|def _launch_local" /home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="description">Find launch helper functions</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2571" cache_read_input_tokens="72435" cache_creation="{'ephemeral_5m_input_tokens': 2571, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SzXf8MR1MiHr2i33GmBCcR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">550</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2571" cache_read_input_tokens="72435" cache_creation="{'ephemeral_5m_input_tokens': 2571, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SzXf8MR1MiHr2i33GmBCcR">
+   550→        owner=owner,
+   551→        repo_name=repo_name,
+   552→        workflow_name="learn",
+   553→        inputs=inputs,
+   554→        ref=ref,
+   555→    )
+   556→
+   557→
+   558→def _dispatch_one_shot_remote(
+   559→    remote: RemoteGitHub,
+   560→    *,
+   561→    owner: str,
+   562→    repo_name: str,
+   563→    pr_number: int,
+   564→    prompt: str,
+   565→    model: str | None,
+   566→    ref: str | None,
+   567→) -&gt; None:
+   568→    """Dispatch one-shot workflow in remote mode."""
+   569→    user_output("Checking PR status...")
+   570→    pr = remote.get_pr(owner=owner, repo=repo_name, number=pr_number)
+   571→    Ensure.invariant(
+   572→        not isinstance(pr, RemotePRNotFound),
+   573→        f"No pull request found with number #{pr_number}",
+   574→    )
+   575→    assert not isinstance(pr, RemotePRNotFound)
+   576→
+   577→    Ensure.invariant(
+   578→        pr.state == "OPEN",
+   579→        f"Cannot run one-shot on {pr.state} PR - only OPEN PRs can be targeted",
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01T7H418DzBSruqN2rJ1Ky6y">
+608:def _launch_remote(
+  </tool_result>
+  <assistant>Perfect! Now I have the complete understanding. Let me create a comprehensive summary document:
+
+Based on my analysis of the erk codebase, here's the complete picture of how the `@no_repo_required` pattern works:
+
+## How `@no_repo_required` Works in Erk
+
+### 1. **No Explicit Decorator - It's a Pattern, Not a Decorator**
+
+There is **no `@no_repo_required` decorator**. Instead, the pattern is implemented through:
+- A `NoRepoSentinel` marker class that replaces the real `RepoContext` when no repo is found
+- Commands checking `isinstance(ctx.repo, NoRepoSentinel)` to decide between local and remote modes
+- Conditional routing to different handler functions
+
+### 2. **The Key Classes and Components**
+
+**File: `/home/runner/work/erk/erk/src/erk/core/context.py`**
+- Line 35: `NoRepoSentinel` is re-exported from `erk_shared.context.types`
+- Line 597: In `create_context()`, the function calls `discover_repo_or_sentinel(cwd, erk_root, git)` which returns either a `RepoContext` or `NoRepoSentinel()`
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py`**
+- `repo_option` (line 75): Click option decorator for the `--repo owner/repo` flag
+- `resolve_owner_repo()` (line 15): Function to resolve owner/repo from either `--repo` flag or local git context
+- `get_remote_github()` (line 49): Factory function to get or construct a `RemoteGitHub`
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py`**
+- Line 767: Uses `@repo_option` decorator to add the `--repo` flag
+- Line 830: The routing logic: `is_remote = target_repo is not None or isinstance(ctx.repo, NoRepoSentinel)`
+
+### 3. **Context Creation: Where NoRepoSentinel Gets Injected**
+
+The process happens in `create_context()` at `/home/runner/work/erk/erk/src/erk/core/context.py`:
+
+```
+Lines 594-597:
+    repo = discover_repo_or_sentinel(cwd, erk_root, git)
+    # Returns NoRepoSentinel() if no .git directory is found
+```
+
+Then at lines 620-635:
+```python
+if isinstance(repo, NoRepoSentinel):
+    local_config = LoadedConfig.test()  # Use test defaults
+else:
+    # Load real config from repo
+```
+
+### 4. **The Launch Command Pattern (Real Implementation)**
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/commands/launch_cmd.py`**
+
+The complete pattern (lines 716-847):
+
+```python
+@click.command("launch")
+@click.argument("workflow_name", type=str)
+# ... many @click.option decorators ...
+@repo_option  # ← Adds --repo flag
+@click.pass_obj
+def launch(
+    ctx: ErkContext,
+    workflow_name: str,
+    *,
+    # ... many parameters ...
+    target_repo: str | None,  # ← From @repo_option
+) -&gt; None:
+    """Dispatch a GitHub Actions workflow."""
+    
+    # Line 830: Routing logic
+    is_remote = target_repo is not None or isinstance(ctx.repo, NoRepoSentinel)
+    
+    if is_remote:
+        # Line 836-847: Call remote handler
+        if ref_current:
+            raise click.UsageError("--ref-current cannot be used in remote mode")
+        _launch_remote(ctx, target_repo=target_repo, workflow_name=workflow_name, ...)
+        return
+    
+    # Line 851: Assert we have a real repo for local mode
+    assert not isinstance(ctx.repo, NoRepoSentinel)
+    repo: RepoContext = ctx.repo
+    # ... local mode handling ...
+```
+
+### 5. **Remote Mode Handlers**
+
+The `_launch_remote()` function (lines 608-714) demonstrates the pattern:
+
+```python
+def _launch_remote(
+    ctx: ErkContext,
+    *,
+    target_repo: str | None,
+    workflow_name: str,
+    ...
+) -&gt; None:
+    """Handle launch command in remote mode (--repo flag or no local repo)."""
+    # Line 622: Resolve owner/repo from either --repo flag or local context
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    # Line 623: Get RemoteGitHub instance
+    remote = get_remote_github(ctx)
+    
+    # Route to workflow-specific remote handlers
+    if workflow_name == "pr-rebase":
+        _dispatch_pr_rebase_remote(remote, owner=owner, repo_name=repo_name, ...)
+    elif workflow_name == "pr-address":
+        _dispatch_pr_address_remote(remote, owner=owner, repo_name=repo_name, ...)
+    # ... etc
+```
+
+### 6. **The NoRepoSentinel Guard Pattern**
+
+From `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py` (lines 41-45):
+
+```python
+if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+    raise UserFacingCliError(
+        "Cannot determine target repository.\n"
+        "Use --repo owner/repo or run from inside a git repository."
+    )
+```
+
+### 7. **How One-Shot Uses the Pattern**
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py`**
+
+The `one_shot` command uses the exact same pattern:
+- Line 26: Imports `NoRepoSentinel`
+- Lines 32-55: Factory function `_get_remote_github()` that gets or constructs `RemoteGitHub`
+- Similar logic to check if in remote mode and route accordingly
+
+### Summary: The Pattern vs. Decorator
+
+The "**@no_repo_required**" terminology is a **conceptual pattern**, not an actual Python decorator:
+
+1. **Detection**: Commands check `isinstance(ctx.repo, NoRepoSentinel)` to detect no-repo mode
+2. **Registration**: No explicit list - each command that supports it implements the check
+3. **Marker**: `NoRepoSentinel` is the sentinel object that marks "no repo found"
+4. **Context injection**: During `create_context()`, `discover_repo_or_sentinel()` injects the sentinel
+5. **Routing**: Commands use conditional logic to route to either local or remote handlers
+6. **Infrastructure**: 
+   - `@repo_option` decorator adds the `--repo` flag
+   - `resolve_owner_repo()` resolves from flag or local context
+   - `get_remote_github()` factory constructs the remote interface
+   - Remote handlers use `RemoteGitHub` ABC methods instead of local `GitHub` methods
+
+The pattern is **not a decorator** but rather a **conditional architecture** where commands that need to work without a repo simply check for `NoRepoSentinel` and conditionally route to remote-capable implementations.</assistant>
+  <usage input_tokens="1834" cache_creation_input_tokens="413" cache_read_input_tokens="75006" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
