@@ -292,9 +292,9 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
                 state.cwd, state.branch_name, "origin"
             )
         if divergence.behind > 0 and not effective_force:
-            ahead_msg = (
-                f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead > 0 else ""
-            )
+            ahead_msg = ""
+            if divergence.ahead > 0:
+                ahead_msg = f" and ahead by {divergence.ahead} commit(s)"
             return SubmitError(
                 phase="push_and_create_pr",
                 error_type="remote_diverged",
