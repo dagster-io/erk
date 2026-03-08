@@ -1,0 +1,532 @@
+<session>
+  <meta branch="plnd/block-impl-context-master-03-08-1502" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="a69fee45-e302-47b7-8b08-201b0bcd89ac" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="a69fee45-e302-47b7-8b08-201b0bcd89ac" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="a69fee45-e302-47b7-8b08-201b0bcd89ac" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="a69fee45-e302-47b7-8b08-201b0bcd89ac" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15422" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15422}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15422" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15422}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SGhvaiZnYePZxm6NnJ34bX">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up impl from current branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15422" cache_read_input_tokens="9738" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15422, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SGhvaiZnYePZxm6NnJ34bX">
+Found existing impl dir for plan #9025, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-20/.erk/impl-context/plnd--block-impl-context-master-03-08-1502", "plan_number": 9025, "plan_url": "https://github.com/dagster-io/erk/pull/9025", "branch": "plnd/block-impl-context-master-03-08-1502", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9025, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="25160" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 413}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011C1RDVBM5FiYqpTruc9P5M">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-20/.erk/impl-context/plnd--block-impl-context-master-03-08-1502/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="25160" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011C1RDVBM5FiYqpTruc9P5M">
+     1→# Block .erk/impl-context/ from merging to master
+     2→
+     3→## Context
+     4→
+     5→`.erk/impl-context/` is intentionally committed on plan branches during `plan-save`, then removed during implementation cleanup. If cleanup is missed, these files can leak into master via PR merge. Currently `.gitignore` prevents accidental local adds, and `check-submission` skips CI when impl-context exists — but nothing **blocks the merge**.
+     6→
+     7→## Approach
+     8→
+     9→Add a new CI job to `ci.yml` that fails if `.erk/impl-context/` exists in the checkout. This job runs independently of `check-submission` (which skips CI) — it's specifically a merge gate.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Add `no-impl-context` job to `.github/workflows/ci.yml`
+    14→
+    15→Insert a new job after `check-submission` (around line 29):
+    16→
+    17→```yaml
+    18→no-impl-context:
+    19→  if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    20→  runs-on: ubuntu-latest
+    21→  timeout-minutes: 5
+    22→  steps:
+    23→    - uses: actions/checkout@v4
+    24→    - name: Ensure .erk/impl-context/ is not in tree
+    25→      run: |
+    26→        if [ -d ".erk/impl-context" ]; then
+    27→          echo "::error::.erk/impl-context/ must be removed before merging. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit &amp;&amp; git push"
+    28→          exit 1
+    29→        fi
+    30→```
+
+... [22 lines omitted] ...
+
+    36→- **Actionable error message** — tells the developer exactly what to run
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01Q6h7gxeePJAKpK3C9na9ty">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="25573" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 915, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q6h7gxeePJAKpK3C9na9ty">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01F4zjPvxTqVxEhbkNmjnSu9">
+    <param name="subject">Add no-impl-context CI job to ci.yml</param>
+    <param name="description">Add a new job to .github/workflows/ci.yml that fails if .erk/impl-context/ exists in the checkout. Skips draft PRs and erk-plan-review labeled PRs.</param>
+    <param name="activeForm">Adding no-impl-context CI job</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="842" cache_read_input_tokens="26488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 842}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F4zjPvxTqVxEhbkNmjnSu9">
+Task #1 created successfully: Add no-impl-context CI job to ci.yml
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01SvFDpdkwrwWLdQqQMYcp48">
+    <param name="subject">Run CI checks</param>
+    <param name="description">Run CI iteratively to verify the change is valid.</param>
+    <param name="activeForm">Running CI checks</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="842" cache_read_input_tokens="26488" output_tokens="233" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 842, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SvFDpdkwrwWLdQqQMYcp48">
+Task #2 created successfully: Run CI checks
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011pkqvT7diysuKebE2Apkko">
+    <param name="command">erk exec impl-signal started --session-id="a69fee45-e302-47b7-8b08-201b0bcd89ac" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="27330" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 325}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NaqsKZqMyvQtQpcwhoA7ET">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-20/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="27330" output_tokens="183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011pkqvT7diysuKebE2Apkko">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9025
+}
+  </tool_result>
+  <tool_result tool="toolu_01NaqsKZqMyvQtQpcwhoA7ET">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: read
+    12→
+    13→concurrency:
+    14→  group: ci-${{ github.head_ref || github.ref }}
+    15→  cancel-in-progress: true
+    16→
+    17→jobs:
+    18→  check-submission:
+    19→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    20→    runs-on: ubuntu-latest
+    21→    timeout-minutes: 5
+    22→    outputs:
+    23→      skip: ${{ steps.check.outputs.skip }}
+    24→    steps:
+    25→      - uses: actions/checkout@v4
+    26→      - name: Check for submission folder
+    27→        id: check
+    28→        uses: ./.github/actions/check-impl-context
+    29→
+    30→  # === Style Checks (parallel) ===
+
+... [200 lines omitted] ...
+
+    86→            echo "::error::Files need formatting or docs are out of sync"
+    96→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   182→  # === CI Failure Summarization (Haiku) ===
+   201→      (needs.format.result == 'failure' ||
+   202→       needs.lint.result == 'failure' ||
+   203→       needs.fix-formatting.result == 'failure' ||
+   204→       needs.docs-check.result == 'failure' ||
+   205→       needs.ty.result == 'failure' ||
+   206→       needs.unit-tests.result == 'failure' ||
+   207→       needs.integration-tests.result == 'failure' ||
+   208→       needs.erk-mcp-tests.result == 'failure')
+   225→      - name: Summarize failures
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_018VDPG1dGCynTWdkX1vZQZA">
+    <param name="query">select:TaskUpdate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3464" cache_read_input_tokens="27655" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3464, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018VDPG1dGCynTWdkX1vZQZA">
+
+  </tool_result>
+  <assistant>
+
+**Phase 1: Add `no-impl-context` job to ci.yml**</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1145" cache_read_input_tokens="31119" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1145}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01B5wLegsNHvuf24WYjUDwxF">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1145" cache_read_input_tokens="31119" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1145, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B5wLegsNHvuf24WYjUDwxF">
+Updated task #1 status
+  </tool_result>
+  <assistant>The plan says to insert the job after `check-submission` (around line 29), independent of it. Let me add it right after `check-submission` and before the style checks section.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="114" cache_read_input_tokens="32264" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 114}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014yLj8GyVX3u9KCoH1XHvrQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-20/.github/workflows/ci.yml</param>
+    <param name="old_string">  # === Style Checks (parallel) ===</param>
+    <param name="new_string">  no-impl-context:
+    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.eve...[truncated 359 chars]...t commit &amp;&amp; git push"
+            exit 1
+          fi
+
+  # === Style Checks (parallel) ===</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="114" cache_read_input_tokens="32264" output_tokens="359" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 114, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014yLj8GyVX3u9KCoH1XHvrQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-20/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01CVp47FergwkC8hVjrrWPnu">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="430" cache_read_input_tokens="32378" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 430, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CVp47FergwkC8hVjrrWPnu">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 2: Run CI checks**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="32808" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01CBbXnkto8qBk8aUVCSNnpu">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="32808" output_tokens="82" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CBbXnkto8qBk8aUVCSNnpu">
+Updated task #2 status
+  </tool_result>
+  <assistant>This is a YAML-only change to a CI workflow file. There's no Python code to lint/test — the main verification is that the YAML is valid.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="100" cache_read_input_tokens="32896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 100}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KPMaAziVFUwpgcbtuoNuT2">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Validate YAML syntax of ci.yml</param>
+    <param name="prompt">Run this command to validate that the ci.yml file is valid YAML:
+
+```
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))" &amp;&amp; echo "YAML is valid"
+```
+
+Report the result.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="100" cache_read_input_tokens="32896" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 100, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KPMaAziVFUwpgcbtuoNuT2">
+Success: The ci.yml file is valid YAML. The Python YAML parser successfully loaded the file without errors.
+agentId: a8a36e01bea2a9432 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13427
+tool_uses: 1
+duration_ms: 2162&lt;/usage&gt;
+  </tool_result>
+  <assistant>YAML is valid. Let me also verify the final file looks correct around the insertion point.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="32996" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 286}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SYWhz2RtVAG5TovhibXDyA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-20/.github/workflows/ci.yml</param>
+    <param name="offset">17</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="32996" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SYWhz2RtVAG5TovhibXDyA">
+    17→jobs:
+    18→  check-submission:
+    19→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    20→    runs-on: ubuntu-latest
+    21→    timeout-minutes: 5
+    22→    outputs:
+    23→      skip: ${{ steps.check.outputs.skip }}
+    24→    steps:
+    25→      - uses: actions/checkout@v4
+    26→      - name: Check for submission folder
+    27→        id: check
+    28→        uses: ./.github/actions/check-impl-context
+    29→
+    30→  no-impl-context:
+    31→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    32→    runs-on: ubuntu-latest
+    33→    timeout-minutes: 5
+    34→    steps:
+    35→      - uses: actions/checkout@v4
+    36→      - name: Ensure .erk/impl-context/ is not in tree
+    37→        run: |
+    38→          if [ -d ".erk/impl-context" ]; then
+    39→            echo "::error::.erk/impl-context/ must be removed before merging. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit &amp;&amp; git push"
+    40→            exit 1
+    41→          fi
+    42→
+    43→  # === Style Checks (parallel) ===
+    44→  format:
+    45→    needs: [check-submission, fix-formatting]
+    46→    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+  </tool_result>
+  <assistant>Looks correct. The `no-impl-context` job:
+- Runs independently (no `needs` dependency on `check-submission`)
+- Skips draft PRs and `erk-plan-review` labeled PRs
+- Checks for `.erk/impl-context` directory and fails with an actionable error message</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="33282" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 619}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Euzf9PLaqLVJWUnp3rKanp">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="33282" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 619, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Euzf9PLaqLVJWUnp3rKanp">
+Updated task #2 status
+  </tool_result>
+  <assistant>Plan execution complete. Now signaling completion and cleaning up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="33901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 162}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017T6iX84zw5wVMrkigDXHnW">
+    <param name="command">erk exec impl-signal ended --session-id="a69fee45-e302-47b7-8b08-201b0bcd89ac" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="33901" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 162}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HctibGSGDPPbjhsXvjTTMi">
+    <param name="command">erk exec upload-impl-session --session-id="a69fee45-e302-47b7-8b08-201b0bcd89ac" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="33901" output_tokens="227" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017T6iX84zw5wVMrkigDXHnW">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9025
+}
+  </tool_result>
+</session>
