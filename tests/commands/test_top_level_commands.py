@@ -140,25 +140,36 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
 
 def test_top_level_view_command_works() -> None:
     """Test that 'erk pr view' command works."""
+    from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+
     # Arrange
-    issue1 = Plan(
-        plan_identifier="123",
+    issue_info = IssueInfo(
+        number=123,
         title="Test Issue",
         body="Issue body content",
-        state=PlanState.OPEN,
+        state="OPEN",
         url="https://github.com/owner/repo/issues/123",
         labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-        objective_id=None,
+        author="test-user",
+    )
+
+    remote_github = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=124,
+        dispatch_run_id="run-1",
+        issues={123: issue_info},
+        issue_comments=None,
+        pr_references=None,
     )
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"123": issue1})
-        ctx = build_workspace_test_context(env, plan_store=store)
+        ctx = build_workspace_test_context(env, remote_github=remote_github)
 
         # Act - Use pr view command
         result = runner.invoke(cli, ["pr", "view", "123"], obj=ctx)
