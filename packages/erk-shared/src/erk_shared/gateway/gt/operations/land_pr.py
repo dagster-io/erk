@@ -60,7 +60,7 @@ def reparent_child_pr_bases_for_land(
             if attempt == 0:
                 ops.time.sleep(0.1)
 
-        if isinstance(verified_pr, PRNotFound):
+        if verified_pr is None or isinstance(verified_pr, PRNotFound):
             return (
                 f"Failed to verify base branch update for child PR #{child_pr.number} "
                 f"[{child_branch}]."

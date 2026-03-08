@@ -76,7 +76,9 @@ def execute_land_stack(
         force=force,
         no_delete=no_delete,
     )
-    _display_stack_summary(plan.entries, no_delete=no_delete, cleanup_confirmed=plan.cleanup_confirmed)
+    _display_stack_summary(
+        plan.entries, no_delete=no_delete, cleanup_confirmed=plan.cleanup_confirmed
+    )
 
     if ctx.dry_run:
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
@@ -169,7 +171,9 @@ def _prepare_stack_land(
         ctx.git.branch.get_current_branch(ctx.cwd),
         "Not currently on a branch (detached HEAD).",
     )
-    current_worktree_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, current_branch)
+    current_worktree_path = ctx.git.worktree.find_worktree_for_branch(
+        main_repo_root, current_branch
+    )
     trunk_branch = ctx.git.branch.detect_trunk_branch(main_repo_root)
     Ensure.invariant(
         current_branch != trunk_branch,
@@ -584,7 +588,8 @@ def _pull_trunk_after_stack_land(
     if current_branch != trunk_branch:
         user_output(
             click.style("Warning: ", fg="yellow")
-            + f"Skipping pull because {main_repo_root} is on '{current_branch}', not '{trunk_branch}'."
+            + f"Skipping pull because {main_repo_root} is on "
+            + f"'{current_branch}', not '{trunk_branch}'."
         )
         return
 
@@ -617,7 +622,10 @@ def _pull_trunk_after_stack_land(
     try:
         ctx.git.remote.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
     except RuntimeError:
-        user_output(click.style("Warning: ", fg="yellow") + "git pull failed (try running manually)")
+        user_output(
+            click.style("Warning: ", fg="yellow")
+            + "git pull failed (try running manually)"
+        )
 
 
 def _write_stack_activation_script_if_needed(
@@ -631,7 +639,11 @@ def _write_stack_activation_script_if_needed(
         return
 
     target_path = ctx.cwd
-    if current_worktree_path is not None and not ctx.git.worktree.path_exists(current_worktree_path):
+    worktree_gone = (
+        current_worktree_path is not None
+        and not ctx.git.worktree.path_exists(current_worktree_path)
+    )
+    if worktree_gone:
         target_path = main_repo_root
 
     script_content = render_activation_script(
