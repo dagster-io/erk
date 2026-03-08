@@ -1,64 +1,115 @@
-# Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees
+# Plan: Convert `erk launch` to @no_repo_required with --repo flag
+
+Part of Objective #8832, Node 3.3 (launch-remote)
 
 ## Context
 
-`erk stack consolidate` fails to detect worktrees that are mid-rebase on a stack branch. When a worktree (e.g., `erk-slot-14`) is in the middle of rebasing `plnd/consolidate-learn-docs-03-07-2145`, git puts it in detached HEAD state but still considers the branch "in use" by that worktree. `git worktree list --porcelain` reports `branch=None` for these worktrees, so `identify_removable_worktrees` skips them entirely. This means `erk stack consolidate` reports "No other worktrees found" while `gt restack` still fails.
+The `erk launch` command dispatches GitHub Actions workflows (pr-rebase, pr-address, pr-rewrite, learn, one-shot). It currently requires a local git repo for all operations, even though the actual work is done remotely via GitHub Actions. This prevents using `erk launch` from machines without a local clone (e.g., remote dispatch from a phone, CI, or a different project directory).
+
+The goal is to add a `--repo owner/repo` flag so `erk launch` can work without a local git repository, following the same unified pattern established in node 3.2 (pr dispatch).
 
 ## Approach
 
-Enhance `RealWorktree.list_worktrees()` to detect rebase state for detached-HEAD worktrees and populate their branch info. This fixes the root cause at the data layer so all consumers (consolidate, `find_worktree_for_branch`, `is_branch_checked_out`) benefit automatically.
+### 1. Add `get_pr` to RemoteGitHub gateway
 
-## Changes
+The launch command needs PR-specific fields (head_ref_name, base_ref_name, state) that `get_issue()` doesn't provide. Add a `get_pr` method to the RemoteGitHub ABC calling `GET /repos/{owner}/{repo}/pulls/{number}`.
 
-### 1. Add `is_rebasing` field to `WorktreeInfo`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/abc.py`
+**New file: `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`**
+- `RemotePRInfo` frozen dataclass: number, title, state, url, head_ref_name, base_ref_name, owner, repo, labels
+- `RemotePRNotFound` frozen dataclass: pr_number
 
-Add `is_rebasing: bool = False` to the frozen dataclass. Backward-compatible default.
+**Modify: `packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py`**
+- Add abstract `get_pr(*, owner, repo, number) -> RemotePRInfo | RemotePRNotFound`
 
-### 2. Detect rebase branches in `RealWorktree.list_worktrees`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py`
+**Modify: `packages/erk-shared/src/erk_shared/gateway/remote_github/real.py`**
+- Implement via `GET /repos/{owner}/{repo}/pulls/{number}`
+- Map state: API returns lowercase "open"/"closed" + `merged` bool → "OPEN"/"CLOSED"/"MERGED"
 
-After parsing porcelain output, for each worktree with `branch=None`:
-1. Read `.git` file in the worktree path to find its git dir (format: `gitdir: <path>`)
-2. For root worktree, the git dir is `<path>/.git/`
-3. Check for `<git_dir>/rebase-merge/head-name` (interactive rebase) or `<git_dir>/rebase-apply/head-name` (non-interactive)
-4. If found, parse branch name (strip `refs/heads/` prefix), set `branch=<name>` and `is_rebasing=True`
+**Modify: `packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py`**
+- Add `prs: dict[int, RemotePRInfo]` constructor parameter
+- Implement `get_pr` returning from dict or `RemotePRNotFound`
 
-Extract a helper `_detect_rebase_branch(worktree_path: Path, is_root: bool) -> str | None` for clarity.
+### 2. Add --repo flag and is_remote routing to launch command
 
-### 3. Skip uncommitted-changes check for mid-rebase worktrees in consolidate
-**File:** `src/erk/cli/commands/stack/consolidate_cmd.py`
+**Modify: `src/erk/cli/commands/launch_cmd.py`**
 
-In the safety check loop (lines 308-321), skip worktrees where `is_rebasing=True`. Mid-rebase worktrees will have dirty state from the interrupted rebase, but force-removal handles cleanup. Add a warning message like "Worktree X is mid-rebase and will be cleaned up".
+Add `@repo_option` decorator and `target_repo` parameter. Replace the `NoRepoSentinel` guard with routing:
 
-### 4. Display "(rebasing)" indicator for mid-rebase worktrees
-**File:** `src/erk/cli/commands/stack/consolidate_cmd.py`
+```python
+is_remote = target_repo is not None or isinstance(ctx.repo, NoRepoSentinel)
+if is_remote:
+    _launch_remote(ctx, workflow_name, target_repo=target_repo, ...)
+else:
+    _launch_local(ctx, workflow_name, ...)
+```
 
-In `_format_consolidation_plan`, append "(rebasing)" to the branch name when the worktree `is_rebasing`.
+- `_launch_local`: extract current body of `launch()` unchanged
+- `_launch_remote`: resolve owner/repo via `resolve_owner_repo()`, get `RemoteGitHub` via `get_remote_github()`, route to per-workflow remote handlers
 
-### 5. Update `FakeWorktree`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`
+### 3. Create remote dispatch handlers
 
-Ensure `WorktreeInfo` construction in the fake passes through `is_rebasing` from test data.
+Each PR-based workflow gets a remote variant:
+- `_dispatch_pr_rebase_remote` — requires `--pr` (no branch inference), calls `remote.get_pr()`, validates OPEN state, calls `_dispatch_workflow_remote()`
+- `_dispatch_pr_address_remote` — same pattern
+- `_dispatch_pr_rewrite_remote` — same pattern
+- `_dispatch_one_shot_remote` — same pattern, uses `remote.get_authenticated_user()` for submitted_by
+- `_dispatch_learn_remote` — simplest: just dispatch with plan_number input, no PR lookup
+- `plan-implement` — remains blocked in both modes
 
-### 6. Update existing test
-**File:** `tests/core/utils/test_consolidation_utils.py`
+### 4. Create `_dispatch_workflow_remote` helper
 
-The test `test_skip_worktrees_with_detached_head` tests that detached HEAD worktrees (no branch) are skipped. This test remains valid - truly detached worktrees (not mid-rebase) should still be skipped. No change needed.
+Remote counterpart to `_dispatch_workflow`:
+- Calls `remote.dispatch_workflow(owner=, repo=, workflow=, ref=, inputs=)`
+- Constructs run URL from owner/repo_name
+- **Skips** `maybe_update_plan_dispatch_metadata` (local-only)
 
-### 7. Add new test for mid-rebase worktree detection
-**File:** `tests/core/utils/test_consolidation_utils.py`
+### 5. Handle ref resolution in remote mode
 
-Add `test_include_rebasing_worktrees_in_removable()` - a worktree with `branch="feat-1"` and `is_rebasing=True` should be included in removable list when `feat-1` is in the stack.
+- `--ref-current` in remote mode → error ("--ref-current requires a local git repository")
+- No `--ref` provided → call `remote.get_default_branch_name(owner=, repo=)` as fallback
+- `--ref` provided → use it directly
+- Skip `ctx.local_config.dispatch_ref` fallback in remote mode
 
-### 8. Add test for rebase branch detection in real worktree
-**File:** `tests/real/test_real_worktree.py` (or appropriate location)
+### 6. Handle auth check in remote mode
 
-Test that `_detect_rebase_branch` correctly parses rebase state files. Use tmp_path to create the expected git directory structure.
+- Remote mode: call `remote.check_auth_status()` directly instead of `Ensure.gh_authenticated(ctx)` which uses local `gh` CLI
+
+## Key differences: remote vs local
+
+| Aspect | Local | Remote |
+|--------|-------|--------|
+| PR lookup | `ctx.github.get_pr(repo.root, number)` | `remote.get_pr(owner=, repo=, number=)` |
+| Workflow dispatch | `ctx.github.trigger_workflow(repo_root, ...)` | `remote.dispatch_workflow(owner=, repo=, ...)` |
+| Plan metadata | `maybe_update_plan_dispatch_metadata(...)` | Skipped |
+| Plan ID | `ctx.plan_backend.resolve_plan_id_for_branch(...)` | Empty string |
+| PR inference from branch | Supported (pr-rebase only) | Not supported, --pr required |
+| Ref fallback | `ctx.local_config.dispatch_ref` | `remote.get_default_branch_name()` |
+| Auth check | `Ensure.gh_authenticated(ctx)` | `remote.check_auth_status()` |
+
+## Files to modify
+
+| File | Change |
+|------|--------|
+| `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py` | **NEW** — RemotePRInfo, RemotePRNotFound |
+| `packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py` | Add abstract `get_pr` |
+| `packages/erk-shared/src/erk_shared/gateway/remote_github/real.py` | Implement `get_pr` via REST API |
+| `packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py` | Add prs dict, implement `get_pr` |
+| `src/erk/cli/commands/launch_cmd.py` | Add --repo, is_remote routing, remote handlers |
+| `tests/commands/launch/test_launch_remote.py` | **NEW** — Remote mode tests |
+
+## Reuse
+
+- `repo_option`, `resolve_owner_repo()`, `get_remote_github()` from `src/erk/cli/repo_resolution.py`
+- `_get_workflow_file()` already exists in launch_cmd.py
+- `WORKFLOW_COMMAND_MAP` from `src/erk/cli/constants.py`
+- `context_for_test(repo=NoRepoSentinel(), remote_github=...)` from `src/erk/core/context.py`
+- Pattern reference: `src/erk/cli/commands/pr/dispatch_cmd.py` (is_remote routing)
+- Pattern reference: `tests/commands/pr/test_remote_paths.py` (remote test structure)
 
 ## Verification
 
-1. Run `uv run pytest tests/core/utils/test_consolidation_utils.py` - existing + new tests pass
-2. Run `uv run pytest tests/real/` - rebase detection test passes
-3. Run `uv run ruff check` and `uv run ty check` - no lint/type errors
-4. Manual: run `erk stack consolidate` in the current scenario (erk-slot-14 mid-rebase) and verify it detects the worktree
+1. Run existing launch tests: `uv run pytest tests/commands/launch/test_launch_cmd.py` — all pass (no regressions)
+2. Run new remote tests: `uv run pytest tests/commands/launch/test_launch_remote.py`
+3. Run type checker on modified files
+4. Run linter on modified files
+5. Manual smoke test: `erk launch pr-rebase --pr 123 --repo dagster-io/erk` (if possible)
