@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Simplify current-wt implement commands to drop unnecessary `source`/`--script`"
+  "plan_id": "8965",
+  "url": "https://github.com/dagster-io/erk/pull/8965",
+  "created_at": "2026-03-07T21:16:10.054064",
+  "synced_at": "2026-03-07T21:16:10.054064",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
