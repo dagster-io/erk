@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Fix objective auto-close logic to handle edge case where auto-match finds no nodes"
+}
