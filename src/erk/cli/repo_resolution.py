@@ -95,9 +95,9 @@ def resolved_repo_option(fn):  # noqa: ANN001, ANN201
 
     @repo_option
     @functools.wraps(fn)
-    def wrapper(*args, target_repo: str | None = None, **kwargs):  # noqa: ANN002, ANN003, ANN202
+    def wrapper(*, target_repo: str | None, **kwargs):  # noqa: ANN003, ANN202
         ctx = click.get_current_context().obj
         owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
-        return fn(*args, repo_id=GitHubRepoId(owner=owner, repo=repo_name), **kwargs)
+        return fn(repo_id=GitHubRepoId(owner=owner, repo=repo_name), **kwargs)
 
     return wrapper
