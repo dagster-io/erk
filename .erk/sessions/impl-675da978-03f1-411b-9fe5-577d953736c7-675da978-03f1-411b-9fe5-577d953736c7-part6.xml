@@ -1,0 +1,967 @@
+<session>
+  <meta source="agent-a25370b" />
+  <meta branch="plnd/audit-gateway-printing-dry-03-07-2033" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Edit these docs/learned/architecture/ files to replace printing/5-file/5-place references. The printing.py gateway variant has been removed from the codebase. The pattern is now:
+- 3-file (default): abc.py, real.py, fake.py
+- 4-file (opt-in for dry-run): abc.py, real.py, fake.py, dry_run.py
+
+Rules:
+- Replace "5-file" with "4-file" when referring to dry-run-enabled gateways
+- Replace "5-place" with "4-place" when referring to dry-run-enabled gateways  
+- Remove "printing.py" from lists of files
+- Remove references to "Printing*" classes (PrintingGit, PrintingLocalGitHub, etc.)
+- Remove sections/lines dedicated solely to printing.py behavior
+- When a list says "abc.py, real.py, fake.py, dry_run.py, printing.py" change to "abc.py, real.py, fake.py, dry_run.py"
+
+Read each file first, then edit. Here are the files and the specific lines to fix:
+
+1. `/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md`
+   - Line 47: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py" → "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py"
+   - Line 49: same pattern
+   - Line 53: same pattern
+   - Line 61: "Must implement property in 5 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway, Printing wrapping with script_mode/dry_run." → "Must implement property in 4 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway."
+   - Line 143: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern." → "Verify all implementations import the new types. Missing imports in abc.py, fake.py, or dry_run.py break the gateway pattern."
+   - Line 175: "Gateways wrap external tools (5-place: abc, real, fake, dry_run, printing)" → "Gateways wrap external tools (4-place: abc, real, fake, dry_run)"
+   - Line 279: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py" → "Must remove from 4 places simultaneously: abc.py, real.py, fake.py, dry_run.py"
+
+2. `/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md`
+   - Line 10: "Gateways wrap external tools (5-place: abc, real, fake, dry_run, printing)" → "Gateways wrap external tools (4-place: abc, real, fake, dry_run)"
+   - Line 23: "5-place implementation pattern" → "4-place implementation pattern"
+   - Line 31: Remove the entire printing.py row from the table
+   - Line 37: Remove "printing.py enables --verbose output" line
+   - Line 43: "full 5-place implementation guide" → "full 4-place implementation guide"
+   - Line 57: "No dry_run.py or printing.py" → "No dry_run.py"
+   - Line 75: "Does it need 5-place implementation?" → "Does it need 4-place implementation?"
+   - Line 81: "5-place implementation pattern" → "4-place implementation pattern"
+
+3. `/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md`
+   - Line 13: "5-file gateway pattern" → "4-file gateway pattern"
+   - Line 21: "5-file gateway pattern" → "4-file gateway pattern"; remove "printing.py" from "other four files" list; change "four" to "three"
+   - Line 102: Remove printing.py row from table
+   - Lines 139+: Remove entire "### printing.py: Transparent Wrapper" section (read the section to see its full extent)
+   - Line 202: "5-file checklist covering abc.py, real.py, fake.py, dry_run.py, printing.py" → "4-file checklist covering abc.py, real.py, fake.py, dry_run.py"
+
+4. `/home/runner/work/erk/erk/docs/learned/architecture/gateway-signature-migration.md`
+   - Line 18: "5-file pattern" → "4-file pattern"
+   - Line 63: Remove "printing.py" line
+   - Line 129: "5-file pattern" → "4-file pattern"
+   - Line 133: "5-place pattern" → "4-place pattern"
+
+5. `/home/runner/work/erk/erk/docs/learned/architecture/gateway-removal-pattern.md`
+   - Line 113: "5-place removal" → "multi-place removal"
+   - Line 141: Remove "printing.py" from list of files
+
+6. `/home/runner/work/erk/erk/docs/learned/architecture/flatten-subgateway-pattern.md`
+   - Line 12: "Must implement property in 5 places..." → "Must implement property in 4 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway."
+   - Lines 79-83: Remove the printing.py source comment and the PrintingGit reference paragraph entirely
+
+7. `/home/runner/work/erk/erk/docs/learned/architecture/gateway-specific-patterns.md`
+   - Line 115: "5-place implementation checklist" → "4-place implementation checklist"
+
+8. `/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md`
+   - Line 419: "5-place implementation pattern" → "4-place implementation pattern"
+
+9. `/home/runner/work/erk/erk/docs/learned/architecture/fake-mutation-tracking.md`
+   - Line 65: "Full 5-place pattern" → "Full 4-place pattern"
+
+10. `/home/runner/work/erk/erk/docs/learned/architecture/http-accelerated-plan-refresh.md`
+    - Line 47: Remove the Printing row from the table
+    - Line 84: "5-place implementation pattern" → "4-place implementation pattern"
+
+11. `/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md`
+    - Line 85: Remove "# or PrintingGit(DryRunGit(...))" comment 
+    - Line 87: Remove "# or PrintingGit(real_git)" comment
+    - Line 396: Remove "printing.py" line from the file listing
+
+12. `/home/runner/work/erk/erk/docs/learned/architecture/git-operation-patterns.md`
+    - Line 121: Remove the printing.py row from the table
+    - Line 148: "5-file gateway pattern" → "4-file gateway pattern"
+
+13. `/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md`
+    - Line 40: "(5 files)" → "(4 files)" (or "3-4 files")
+    - Line 43: "(5 places to update)" → "(3-4 places to update)"
+
+14. `/home/runner/work/erk/erk/docs/learned/architecture/health-check-runner-gateway.md`
+    - Line 21: "5 files: ABC + Real + Fake + DryRun + Printing" → "4 files: ABC + Real + Fake + DryRun"
+    - Line 64: "5-place gateway pattern" → "4-place gateway pattern"
+
+15. `/home/runner/work/erk/erk/docs/learned/architecture/github-admin-gateway.md`
+    - Line 6: "5-place gateway pattern" → "4-place gateway pattern"
+    - Line 14: "5-place gateway pattern" → "4-place gateway pattern"
+    - Line 28: Remove the printing.py row from the table
+    - Line 56: "5-place implementation checklist" → "4-place implementation checklist"
+
+16. `/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md`
+    - Line 126: "5-place implementation pattern" → "4-place implementation pattern"
+
+17. `/home/runner/work/erk/erk/docs/learned/architecture/gateway-inventory.md`
+    - Line 50: Remove "no dry_run.py or printing.py" → "no dry_run.py"
+    - Line 78: Remove "omit dry_run.py and printing.py" → "omit dry_run.py"
+
+18. `/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md`
+    - Line 88: "Gateway ABC (5-place)" → "Gateway ABC (4-place)"
+
+19. `/home/runner/work/erk/erk/docs/learned/architecture/prompt-executor-gateway.md`
+    - Line 188: "Full 5-file gateway pattern" → "Full 4-file gateway pattern"
+
+20. `/home/runner/work/erk/erk/docs/learned/architecture/index.md`
+    - Line 58: "understanding the 5-place gateway pattern" → "understanding the 4-place gateway pattern"
+
+Read each file first, then make the edit. Do ALL 20 files.</user>
+  <assistant>I'll read each file and make the necessary edits to remove references to the printing.py gateway variant and update 5-file/5-place references to 4-file/4-place.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="8985" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 8985, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0129zwnBLVT2ciTkr83tKMQQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8985" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 8985, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0137hQVguEE83LsMBiKJm8BJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8985" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 8985, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TsW441VzcWe9eHwaLEfNei">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8985" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 8985, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0191sJz8hxgmZccKqvuFikBn">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-signature-migration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8985" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 8985, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CN3k49JFHigyvg5Mt6djnV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-removal-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8985" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 8985, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0137hQVguEE83LsMBiKJm8BJ">
+     1→---
+     2→title: Gateway vs Backend ABC Pattern
+     3→read_when:
+     4→  - "creating a new ABC interface"
+     5→  - "deciding between gateway and backend patterns"
+     6→  - "understanding PlanBackend vs Git gateway architecture"
+     7→  - "choosing the right abstraction pattern for a new service"
+     8→tripwires:
+     9→  - action: "creating a new ABC without deciding gateway vs backend pattern"
+    10→    warning: "Read gateway-vs-backend.md first. Gateways wrap external tools (5-place: abc, real, fake, dry_run, printing). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support."
+    11→  - action: "constructing PlannedPRBackend with positional arguments or wrong parameter order"
+    12→    warning: "PlannedPRBackend constructor takes keyword-only gateway dependencies. Check the current __init__ signature — it evolves as gateways are added. Use keyword arguments explicitly."
+    13→last_audited: "2026-02-17 00:00 PT"
+    14→audit_result: clean
+    15→---
+    16→
+    17→# Gateway vs Backend ABC Pattern
+    18→
+    19→Erk uses two distinct ABC patterns for dependency injection. Choosing the wrong one creates unnecessary boilerplate (gateway for business logic) or missing dry-run/printing support (backend for external tools).
+    20→
+    21→## Gateway ABCs: External System Wrappers
+    22→
+    23→Gateways wrap external tools and system calls (subprocess, CLI, HTTP). They follow a **5-place implementation pattern**:
+    24→
+    25→| Place         | Purpose                                     | Example File              |
+    26→| ------------- | ------------------------------------------- | ------------------------- |
+    27→| `abc.py`      | Abstract interface definition               | `gateway/git/abc.py`      |
+    28→| `real.py`     | Production implementation (subprocess)      | `gateway/git/real.py`     |
+    29→| `fake.py`     | In-memory test double with shared state     | `gateway/git/fake.py`     |
+    30→| `dry_run.py`  | Records operations without side effects     | `gateway/git/dry_run.py`  |
+
+... [59 lines omitted] ...
+
+    39→- Error handling uses discriminated unions (not exceptions) in the ABC
+  </tool_result>
+  <tool_result tool="toolu_01TsW441VzcWe9eHwaLEfNei">
+     1→---
+     2→title: Gateway Error Boundaries
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "implementing gateway error handling"
+     7→  - "converting gateway operations to discriminated unions"
+     8→  - "deciding where try/except blocks belong in gateways"
+     9→tripwires:
+    10→  - score: 8
+    11→    action: "try/except in fake.py or dry_run.py"
+    12→    warning: "Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions."
+    13→    context: "The 5-file gateway pattern has clear error boundary responsibilities. Real implementations catch and convert subprocess/system errors. Fakes simulate errors via constructor params. Dry-run always returns success."
+    14→    pattern: "\\btry:|\\bexcept\\s"
+    15→---
+    16→
+    17→# Gateway Error Boundaries
+    18→
+    19→## The Core Principle
+    20→
+    21→In erk's 5-file gateway pattern, **only real.py catches exceptions**. The other four files (abc.py, fake.py, dry_run.py, printing.py) never use try/except — they express failure through different mechanisms.
+    22→
+    23→This separation exists because error boundaries serve different purposes:
+    24→
+    25→- **Real implementations** defend against actual system failures (subprocess crashes, missing files, network timeouts)
+    26→- **Fake implementations** simulate failure modes for testing via constructor configuration
+    27→- **Dry-run implementations** model the success path for validation workflows
+    28→- **Printing implementations** delegate transparently without intercepting errors
+    29→
+    30→## Why This Matters
+
+... [181 lines omitted] ...
+
+    34→When implementing a gateway method that can fail, it's tempting to add try/except blocks to all five files. This feels symmetric — "if real.py catches exceptions, shouldn't fake.py and dry_run.py do the same?"
+    36→**No.** The symmetry is in the _return type_ (discriminated unions), not the error handling mechanism.
+    40→Fakes like `FakeCommandExecutor` (in `packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py`) configure error behavior through constructor params, not try/except. Tests pass in pre-configured discriminants via params like `merge_should_succeed: bool` or `gist_create_error: str | None`.
+    44→Real implementations wrap subprocess calls and file system operations — both sources of runtime exceptions. try/except converts these into discriminated union error types.
+    50→**Why catch exceptions here?**
+    52→1. Subprocess failures are unpredictable (process crashes, command not found, permission denied)
+    53→2. Callers need structured error information (type, message, context) to make branching decisions
+    54→3. LBYL philosophy: check for failure modes and convert to explicit discriminants
+    58→- Subprocess execution failures (`CalledProcessError`, `FileNotFoundError`)
+    59→- System-level errors (disk full, permission denied, network timeouts)
+    64→- Programming errors (AttributeError, TypeError) — these should crash, not be masked as "operation failed"
+    65→- Validation errors that should be caught upstream by caller preconditions
+    71→Fake implementations like `FakeLocalGitHub` (in `packages/erk-shared/src/erk_shared/gateway/github/fake.py`) use constructor params to control error scenarios. Check the `__init__` signature: `merge_should_succeed: bool = True`, `pr_diff_error: str | None = None`, `workflow_runs_error: str | None = None`.
+    73→Tests instantiate fakes with pre-configured failure modes:
+    79→    pr_diff_error="Rate limited"
+    84→# Returns MergeError without try/except
+    89→1. No subprocess calls = no runtime exceptions to catch
+    90→2. Error scenarios are predetermined by test setup, not discovered at runtime
+    96→| File          | Error Mechanism                                    | Uses try/except? |
+    99→| `real.py`     | Catches subprocess/system exceptions               | **Yes**          |
+   108→### real.py: The Exception Boundary
+   110→The only file with try/except blocks. Catches exceptions from subprocess calls and system operations, converts to discriminated union error types.
+   115→2. Check return codes or response data for expected failure modes
+   116→3. Return appropriate discriminant (success or specific error type)
+   117→4. Catch unexpected exceptions and return generic error discriminant
+   121→Methods check constructor params and return discriminants directly. No exception handling because there are no subprocess calls.
+   126→2. Return success or error discriminant based on param
+   137→3. No error handling (failure scenarios aren't modeled in dry-run)
+   141→Logs the operation, delegates to wrapped implementation, returns whatever the wrapped implementation returns. No error handling — errors flow through from the wrapped gateway.
+   147→3. Return the result (success or error discriminant)
+   156→    def merge_pr(...) -&gt; MergeResult | MergeError:
+   160→                return MergeError(message="Merge failed")
+   162→        except Exception as e:
+   163→            # What exception would be caught here? None.
+   164→            return MergeError(message=str(e))
+   167→**Why wrong:** Fakes have no code that raises exceptions. The try/except adds ceremony without value.
+   174→    def merge_pr(...) -&gt; MergeResult | MergeError:
+   178→        except Exception as e:
+   180→            return MergeError(message=str(e))
+   183→**Why wrong:** Dry-run models the success path. If an exception occurs, it's a programming error that should crash, not be caught.
+   185→### ❌ WRONG: Catching Exceptions to Return None/False
+   194→        except Exception:
+   195→            return None  # Masks the actual error
+   198→**Why wrong:** Callers can't distinguish "no diff found" from "gh CLI not installed" from "network timeout". Use discriminated unions to preserve error context.
+   203→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - Return type design for operations that can fail
+  </tool_result>
+  <tool_result tool="toolu_0191sJz8hxgmZccKqvuFikBn">
+     1→---
+     2→title: Gateway Signature Migration
+     3→read_when:
+     4→  - "changing gateway method signatures"
+     5→  - "migrating callers after gateway API changes"
+     6→  - "updating discriminated union return types across call sites"
+     7→last_audited: "2026-02-16 00:00 PT"
+     8→audit_result: clean
+     9→tripwires:
+    10→  - action: "changing a gateway method signature"
+    11→    warning: "Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors."
+    12→  - action: "changing erk_shared function signatures"
+    13→    warning: "Grep all callers across full repo before committing. Missed call sites cause CI failures."
+    14→---
+    15→
+    16→# Gateway Signature Migration
+    17→
+    18→When changing a gateway method signature (especially return types), you must update every implementation and every caller. The gateway's 5-file pattern magnifies the impact—a single method change touches at least 5 files, and typically many more when callers are updated.
+    19→
+    20→## Why This Is Hard
+    21→
+    22→Gateway methods are called from many locations across packages. Unlike single-file refactorings where the IDE finds all usages, gateway changes involve:
+    23→
+    24→1. **Cross-package call sites** — `packages/erk-shared/` gateways called from `src/erk/`
+    25→2. **Multiple implementation variants** — abc, real, fake, dry_run, printing
+    26→3. **Test fixtures and helpers** — tests often construct gateway calls indirectly
+    27→4. **Type checker limitations** — changing the ABC doesn't automatically flag all call sites
+    28→
+    29→The type checker will find missing implementations when you change the ABC, but it won't necessarily flag all callers that need to handle the new return type differently.
+    30→
+
+... [110 lines omitted] ...
+
+    53→**Why ABC first:** The type checker becomes your assistant. Each implementation that doesn't match the new signature shows up as an error.
+    72→- **Add isinstance() checks** for the error variant
+    73→- **Update error handling** to use `.message` property or structured error fields
+    75→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, handle push and pull-rebase errors --&gt;
+    77→See `src/erk/cli/commands/pr/submit_pipeline.py` for examples of migrated callers that check `isinstance(result, PushError)`.
+    79→**Common mistake:** Forgetting test helpers that construct calls indirectly. Grep finds method invocations, but constructor parameters for fakes (`push_to_remote_error=...`) require additional inspection.
+    95→If you're removing a parameter, grep for the parameter name. If you're changing exception handling, grep for the exception type.
+    99→PR #6329 converted `push_to_remote` and `pull_rebase` from exception-based error handling to discriminated unions (`PushResult | PushError`, `PullRebaseResult | PullRebaseError`).
+   107→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushResult, PushError, PullRebaseResult, PullRebaseError --&gt;
+   111→**Key insight:** All callers previously used try/except blocks. The migration required converting each to isinstance checks and extracting error messages from the `.message` property instead of `str(e)`.
+   113→**Test changes:** 3 test files updated from `push_to_remote_raises=RuntimeError(...)` pattern to `push_to_remote_error=PushError(...)`.
+   134→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — Why and when to use return unions instead of exceptions
+  </tool_result>
+  <tool_result tool="toolu_01CN3k49JFHigyvg5Mt6djnV">
+     1→---
+     2→title: Gateway Removal Pattern
+     3→last_audited: "2026-02-15 00:00 PT"
+     4→audit_result: clean
+     5→tripwires:
+     6→  - action: "deleting a gateway after consolidating into another"
+     7→    warning: "Follow complete removal checklist: verify no references, delete all 5 layers, clean up compositions, update docs, run full test suite."
+     8→read_when:
+     9→  - "Consolidating two gateways into one"
+    10→  - "Removing deprecated gateway implementations"
+    11→  - "Refactoring gateway hierarchies"
+    12→---
+    13→
+    14→# Gateway Removal Pattern
+    15→
+    16→## When to Remove a Gateway
+    17→
+    18→Gateway removal follows successful consolidation — when one gateway's functionality has been merged into another and all callers have migrated. Erk's unreleased status means no backward compatibility: deprecated gateways are deleted immediately, not marked for future removal.
+    19→
+    20→**Preconditions for safe removal:**
+    21→
+    22→1. **Zero production references** — No imports, type annotations, or instantiations in `src/erk/` or `packages/erk-shared/`
+    23→2. **Functionality absorbed** — The target gateway provides all capabilities of the deprecated gateway
+    24→3. **Test coverage migrated** — Old gateway's test scenarios now covered by target gateway's tests
+    25→4. **No external dependents** — Erk is private software with no external users
+    26→
+    27→## Why Immediate Deletion
+    28→
+    29→Erk deliberately avoids the deprecation-grace-period pattern common in public libraries:
+    30→
+
+... [195 lines omitted] ...
+
+    31→**No deprecation warnings** — The old gateway vanishes atomically in a single PR. Callers that haven't migrated fail loudly at type check time, not silently at runtime with warnings.
+   113→**Why 5-place removal:** Partial removal causes type checker errors. If the ABC still declares the property but Real doesn't implement it, `ty` reports an unimplemented abstract method. All layers must change atomically.
+   131→**Zero failures required.** Any failure indicates missed references or incomplete cleanup.
+   144→6. **Test verification** — `make test-unit` passed with zero failures
+   191→| Better aligned with discriminated union error handling | Keep                |
+   211→- Type checker errors if you missed a reference (caught immediately, fixed in minutes)
+   214→The error asymmetry heavily favors aggressive deletion.
+  </tool_result>
+  <tool_result tool="toolu_0129zwnBLVT2ciTkr83tKMQQ">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+
+... [365 lines omitted] ...
+
+    43→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    63→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    85→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    93→**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+   105→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+   119→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+   121→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+   129→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   137→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   141→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   155→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   171→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   177→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   189→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   225→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   227→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   229→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   231→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   245→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   247→**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+   261→**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+   279→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+   281→**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
+   293→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   295→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   303→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   311→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   315→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   317→**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
+   321→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   323→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   343→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   345→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   349→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   351→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   371→**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+   383→**writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
+   385→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <assistant>Now let me continue reading the remaining files:</assistant>
+  <usage input_tokens="10194" cache_creation_input_tokens="16233" cache_read_input_tokens="18365" cache_creation="{'ephemeral_5m_input_tokens': 16233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TkQaTfnxf6d1zXRdA2K7PJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/flatten-subgateway-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="10194" cache_creation_input_tokens="16233" cache_read_input_tokens="18365" cache_creation="{'ephemeral_5m_input_tokens': 16233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LEfVTDYhUwFhCsS6qZCfRm">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-specific-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="10194" cache_creation_input_tokens="16233" cache_read_input_tokens="18365" cache_creation="{'ephemeral_5m_input_tokens': 16233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Nye7iREjHMM9rTARMYHWJR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md</param>
+    <param name="limit">50</param>
+    <param name="offset">400</param>
+  </tool_use>
+  <usage input_tokens="10194" cache_creation_input_tokens="16233" cache_read_input_tokens="18365" cache_creation="{'ephemeral_5m_input_tokens': 16233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QWtzzM3hrbFUcYkgUYFjFN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/fake-mutation-tracking.md</param>
+    <param name="limit">30</param>
+    <param name="offset">50</param>
+  </tool_use>
+  <usage input_tokens="10194" cache_creation_input_tokens="16233" cache_read_input_tokens="18365" cache_creation="{'ephemeral_5m_input_tokens': 16233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CHjU2fspgKn6ACJu5Lyrms">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/http-accelerated-plan-refresh.md</param>
+    <param name="limit">50</param>
+    <param name="offset">30</param>
+  </tool_use>
+  <usage input_tokens="10194" cache_creation_input_tokens="16233" cache_read_input_tokens="18365" cache_creation="{'ephemeral_5m_input_tokens': 16233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TkQaTfnxf6d1zXRdA2K7PJ">
+     1→---
+     2→title: Flatten Subgateway Pattern
+     3→last_audited: "2026-02-17 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "creating or migrating subgateways"
+     7→  - "exposing subgateway operations through parent gateway"
+     8→  - "working with gateway hierarchies"
+     9→  - "implementing property-based subgateway access"
+    10→tripwires:
+    11→  - action: "adding a subgateway property to a gateway ABC"
+    12→    warning: "Must implement property in 5 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway, Printing wrapping with script_mode/dry_run."
+    13→  - action: "creating fake subgateway without shared state"
+    14→    warning: "Fake subgateways must share state containers with parent via constructor parameters and call link_mutation_tracking(). Without this, mutations through subgateway won't be visible to parent queries."
+    15→---
+    16→
+    17→# Flatten Subgateway Pattern
+    18→
+    19→## The Pattern
+    20→
+    21→Gateway hierarchies expose specialized operations through property access on parent gateways. Instead of `ctx.git_branch_ops.create_branch()`, callers write `ctx.git.branch.create_branch()`.
+    22→
+    23→**Why this exists:** As gateways decompose from monoliths into focused subgateways, the access pattern becomes verbose if callers construct subgateways directly. Properties provide a clean API while maintaining the 5-layer gateway architecture (ABC, Real, Fake, DryRun, Printing).
+    24→
+    25→## The 5-Layer Implementation Contract
+    26→
+    27→Every subgateway property requires coordinated implementation across all gateway layers. Missing or incorrect implementation in any layer breaks the gateway pattern.
+    28→
+    29→### Layer 1: ABC — TYPE_CHECKING Import Guard
+    30→
+
+... [149 lines omitted] ...
+
+   105→## Common Failure Modes
+   117→**Symptom:** `ImportError: cannot import name 'GitBranchOps' from partially initialized module` at runtime.
+   133→**Symptom:** Type checker errors, `AttributeError` at runtime, or missing wrapper behavior.
+  </tool_result>
+  <tool_result tool="toolu_01LEfVTDYhUwFhCsS6qZCfRm">
+     1→---
+     2→title: Mixed Exception/Union Pattern (Deprecated)
+     3→last_audited: "2026-02-07 21:45 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "considering mixing discriminated unions with exceptions in gateway methods"
+     7→  - "designing operations with both expected failures and cleanup steps"
+     8→  - "reviewing historical gateway error handling experiments"
+     9→tripwires:
+    10→  - action: "mixing discriminated unions with exception-based cleanup in a single method"
+    11→    warning: "This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR."
+    12→---
+    13→
+    14→# Mixed Exception/Union Pattern (Deprecated)
+    15→
+    16→**Status**: This pattern was implemented and then reverted. It is **not currently used** in erk.
+    17→
+    18→This document explains WHY the mixed exception/union pattern was tried and WHY it was abandoned, to prevent future attempts at the same failed approach.
+    19→
+    20→## The Attempted Pattern
+    21→
+    22→In January 2026, we experimented with mixing error handling strategies in a single gateway method:
+    23→
+    24→- **Main operation** returns discriminated union (`WorktreeRemoved | WorktreeRemoveError`)
+    25→- **Cleanup operation** raises exception (`RuntimeError`)
+    26→
+    27→The hypothesis was that this distinguished between "expected failures" (main operation) and "corrupted state" (cleanup failures).
+    28→
+    29→## Why It Was Tried
+    30→
+
+... [92 lines omitted] ...
+
+    33→The `remove_worktree` method had two distinct failure modes:
+    35→1. **Expected failures**: Worktree doesn't exist, is in use, permission denied → could be handled gracefully
+    36→2. **Cleanup failures**: `git worktree prune` fails → indicates repository corruption
+    38→The discriminated union conversion aimed to make expected failures explicit while keeping cleanup failures exceptional.
+    44→&lt;!-- Source: PR #6375 - Convert Worktree add/remove back to exceptions --&gt;
+    50→The discriminated union types (`WorktreeRemoved`, `WorktreeRemoveError`) were **structureless message wrappers**:
+    54→- Callers couldn't distinguish between error types anyway
+    59→### 2. Exception Boundaries Already Exist
+    61→The CLI commands already catch exceptions at natural boundaries (Click command handlers). Moving the try/except from CLI to gateway didn't eliminate exception handling - it just moved it.
+    63→**The lesson**: Exception-based error handling works fine when exceptions are caught at architectural boundaries (CLI layer). Don't convert to discriminated unions just to avoid exceptions.
+    67→Having one method return a union for some errors and raise exceptions for others creates cognitive load:
+    69→- Callers must remember which errors are in the return type and which are exceptions
+    80→Gateway methods use **exceptions for all failures**. See `remove_worktree` in `packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py` — it returns `None` and raises `RuntimeError` on failure. No discriminated union types involved.
+    82→CLI commands catch these exceptions at their natural boundaries (Click command handlers), converting them to `click.ClickException` for user-facing output. See callers in `src/erk/cli/commands/wt/delete_cmd.py` and `src/erk/cli/commands/navigation_helpers.py`.
+    84→This is simpler, less code, and works well when all callers terminate identically on failure — no caller branches on error content or inspects error structure.
+    97→See `docs/learned/architecture/discriminated-union-error-handling.md` for current discriminated union patterns.
+   101→When designing gateway error handling:
+   105→| Single failure mode with message                  | Exception              | No variants to distinguish           |
+   106→| Multiple failure modes, callers don't distinguish | Exception              | Type system overhead without benefit |
+   107→| Multiple failure modes, callers DO distinguish    | Discriminated union    | Type narrowing adds value            |
+   110→**Never mix exceptions and discriminated unions in a single method signature.** Choose one strategy for all error cases.
+   114→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - When and how to use discriminated unions
+  </tool_result>
+  <tool_result tool="toolu_01Nye7iREjHMM9rTARMYHWJR">
+   400→
+   401→```python
+   402→# ✅ Correct: both outcomes are named types
+   403→def validate_slug(slug: str) -&gt; ValidSlug | InvalidSlug:
+   404→    if not valid:
+   405→        return InvalidSlug(reason="bad")
+   406→    return ValidSlug(slug=slug)
+   407→
+   408→# Caller: clear isinstance dispatch
+   409→result = validate_slug(slug)
+   410→if isinstance(result, InvalidSlug):
+   411→    handle_error(result)
+   412→# result is now narrowed to ValidSlug
+   413→```
+   414→
+   415→This pattern was corrected in `validate_objective_slug()` in `naming.py` — previously returned `InvalidObjectiveSlug | None`, now returns `ValidObjectiveSlug | InvalidObjectiveSlug`.
+   416→
+   417→## Related Documentation
+   418→
+   419→- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-place implementation pattern for gateway methods
+   420→- [Erk Architecture Patterns](erk-architecture.md) - Broader architectural context for this pattern
+   421→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01QWtzzM3hrbFUcYkgUYFjFN">
+    50→- `created_branches` — `list[tuple[Path, str, str, bool]]` (cwd, name, start_point, force)
+    51→- `checked_out_branches` — `list[tuple[Path, str]]` (cwd, branch_name)
+    52→
+    53→Properties return `.copy()`.
+    54→
+    55→## Convention
+    56→
+    57→- Use `tuple[...]` types for the record structure (positional fields)
+    58→- Private `list` field with `_` prefix for internal mutation
+    59→- Public `@property` returning `tuple(self._field)` or `self._field.copy()`
+    60→- Assertions check property contents for expected calls
+    61→
+    62→## Related Topics
+    63→
+    64→- [GitHub Admin Gateway](github-admin-gateway.md) - Example implementation
+    65→- [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-place pattern
+    66→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01CHjU2fspgKn6ACJu5Lyrms">
+    30→
+    31→No subprocess overhead. Enables batched and parallel requests. The subprocess fallback path was removed; `http_client` is now a required parameter.
+    32→
+    33→## HttpClient ABC Extensions
+    34→
+    35→The `HttpClient` ABC is defined in `packages/erk-shared/src/erk_shared/gateway/http/abc.py`. See that file for the current method list.
+    36→
+    37→## 5-Place Gateway Implementation
+    38→
+    39→HttpClient follows the standard gateway pattern:
+    40→
+    41→| Place    | File               | Purpose                |
+    42→| -------- | ------------------ | ---------------------- |
+    43→| ABC      | `http/abc.py`      | Interface definition   |
+    44→| Real     | `http/real.py`     | Production HTTP client |
+    45→| Fake     | `http/fake.py`     | In-memory test double  |
+    46→| Dry Run  | `http/dry_run.py`  | No-op for dry-run mode |
+    47→| Printing | `http/printing.py` | Verbose output wrapper |
+    48→
+    49→## Required http_client Parameter
+    50→
+    51→&lt;!-- Source: packages/erk-shared/src/erk_shared/core/plan_list_service.py --&gt;
+    52→&lt;!-- Source: packages/erk-shared/src/erk_shared/core/objective_list_service.py --&gt;
+    53→
+    54→Service methods require `http_client: HttpClient` as a keyword argument (not optional). Both `PlanListService.get_plan_list_data()` and `ObjectiveListService.get_objective_list_data()` take `http_client` as a required parameter and return `PlanListData`.
+    55→
+    56→## CLI Auth Validation Pattern
+    57→
+    58→&lt;!-- Source: src/erk/core/context.py --&gt;
+    59→
+
+... [25 lines omitted] ...
+
+    62→Five CLI entry points validate `ctx.http_client is not None` before calling services, raising `SystemExit(1)` with a styled error if unavailable:
+  </tool_result>
+  <assistant>Let me continue reading more files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="17946" cache_read_input_tokens="34598" cache_creation="{'ephemeral_5m_input_tokens': 17946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VVbsGVLFPgQdNpJwTjt778">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="limit">50</param>
+    <param name="offset">70</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17946" cache_read_input_tokens="34598" cache_creation="{'ephemeral_5m_input_tokens': 17946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FMFrGk6HxCPwhLXwwJQVpH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="limit">50</param>
+    <param name="offset">380</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17946" cache_read_input_tokens="34598" cache_creation="{'ephemeral_5m_input_tokens': 17946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TqxB78amh4MZXrz2JRtv6f">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/git-operation-patterns.md</param>
+    <param name="limit">50</param>
+    <param name="offset">110</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17946" cache_read_input_tokens="34598" cache_creation="{'ephemeral_5m_input_tokens': 17946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016MyfjjTSUbQ4UWnaBscKeA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md</param>
+    <param name="limit">20</param>
+    <param name="offset">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17946" cache_read_input_tokens="34598" cache_creation="{'ephemeral_5m_input_tokens': 17946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VVbsGVLFPgQdNpJwTjt778">
+    70→**SHOULD**: Inject DryRunGit/DryRunLocalGitHub at the context creation level
+    71→
+    72→```python
+    73→# WRONG: Passing dry_run flag through business logic
+    74→def execute_plan(plan, git, dry_run=False):
+    75→    if not dry_run:
+    76→        git.add_worktree(...)
+    77→
+    78→# CORRECT: Rely on injected integration implementation
+    79→def execute_plan(plan, git):
+    80→    # Always execute - behavior depends on git implementation
+    81→    git.add_worktree(...)  # DryRunGit does nothing, RealGit executes
+    82→
+    83→# At the context creation level:
+    84→if dry_run:
+    85→    git = DryRunGit(real_git)  # or PrintingGit(DryRunGit(...))
+    86→else:
+    87→    git = real_git  # or PrintingGit(real_git)
+    88→```
+    89→
+    90→### Pattern 2: CLI Preview Flag (for simple commands)
+    91→
+    92→**Use a simple `--dry-run` CLI flag** when the command has a single, clear action point:
+    93→
+    94→```python
+    95→# ACCEPTABLE: Simple CLI preview for single-action commands
+    96→@click.command()
+    97→@click.option("--dry-run", is_flag=True, help="Show what would be done")
+    98→def slot_repair(ctx: ErkContext, dry_run: bool) -&gt; None:
+    99→    # ... compute what needs to be repaired ...
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FMFrGk6HxCPwhLXwwJQVpH">
+   380→## Gateway Directory Structure
+   381→
+   382→Erk uses a consistent directory structure for all gateways (git, github, graphite, etc). Each gateway follows the ABC/Real/Fake/DryRun pattern.
+   383→
+   384→### Standard Directory Layout
+   385→
+   386→```
+   387→packages/erk-shared/src/erk_shared/
+   388→└── gateway/                           # All gateways live here
+   389→    ├── git/                           # Core git gateway
+   390→    │   ├── __init__.py
+   391→    │   ├── abc.py                     # ABC interface definition
+   392→    │   ├── real.py                    # Production implementation
+   393→    │   ├── fake.py                    # In-memory test implementation
+   394→    │   ├── dry_run.py                 # No-op wrapper for dry-run mode
+   395→    │   ├── lock.py                    # Git lock handling
+   396→    │   └── printing.py                # Wrapper that logs operations
+   397→    ├── github/                        # GitHub API gateway
+   398→    │   ├── __init__.py
+   399→    │   ├── abc.py
+   400→    │   ├── real.py
+   401→    │   ├── fake.py
+   402→    │   └── dry_run.py
+   403→    ├── graphite/                      # Graphite stack operations
+   404→    │   ├── __init__.py
+   405→    │   ├── abc.py
+   406→    │   ├── real.py
+   407→    │   ├── fake.py
+   408→    │   ├── disabled.py
+   409→    │   └── dry_run.py
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01TqxB78amh4MZXrz2JRtv6f">
+   110→
+   111→## The Gateway Error Boundary Pattern
+   112→
+   113→Error handling responsibilities differ by implementation file:
+   114→
+   115→| File          | Error Handling Mechanism                                               | Uses try/except? |
+   116→| ------------- | ---------------------------------------------------------------------- | ---------------- |
+   117→| `real.py`     | Catches subprocess/system exceptions, converts to discriminated unions | **Yes**          |
+   118→| `fake.py`     | Returns error discriminants based on constructor params                | No               |
+   119→| `dry_run.py`  | Always returns success discriminants                                   | No               |
+   120→| `abc.py`      | Defines return type signatures only                                    | No               |
+   121→| `printing.py` | Delegates transparently                                                | No               |
+   122→
+   123→**Why this split?** Real implementations interact with unpredictable external systems. Fake implementations simulate pre-configured failure scenarios for tests. The error boundary belongs at the subprocess interface, not in test infrastructure.
+   124→
+   125→See [Gateway Error Boundaries](gateway-error-boundaries.md) for the complete rationale and implementation patterns.
+   126→
+   127→## Relation to Discriminated Unions
+   128→
+   129→The LBYL pattern with `git show-ref` complements discriminated union error handling:
+   130→
+   131→1. **Pre-check detects expected failures** (branch exists, ref doesn't exist)
+   132→2. **Discriminated unions encode these as type-safe return values** (`BranchCreated | BranchAlreadyExists`)
+   133→3. **try/except catches unexpected failures** (subprocess crash, git not installed)
+   134→4. **Callers use isinstance() checks** for type-safe branching logic
+   135→
+   136→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py, RealGitBranchOps.create_branch --&gt;
+   137→
+   138→Example flow in `RealGitBranchOps.create_branch()`:
+   139→
+
+... [16 lines omitted] ...
+
+   143→- Unexpected failure (process crash) → try/except converts to `RuntimeError`
+   147→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — When to use unions vs exceptions, pattern structure
+   148→- [Gateway Error Boundaries](gateway-error-boundaries.md) — Where try/except belongs in the 5-file gateway pattern
+  </tool_result>
+  <tool_result tool="toolu_016MyfjjTSUbQ4UWnaBscKeA">
+    30→
+    31→| Implementation | Exception Type                  | Source                          |
+    32→| -------------- | ------------------------------- | ------------------------------- |
+    33→| Real           | `RuntimeError`                  | `run_subprocess_with_context()` |
+    34→| Fake           | `subprocess.CalledProcessError` | Direct raise for testing        |
+    35→
+    36→**Solution**: Catch both types in the convenience method. See the `except` clause in `squash_branch_idempotent()` for the pattern.
+    37→
+    38→## Benefits Over Abstract Methods
+    39→
+    40→| Aspect         | Abstract Method (5 files)       | Convenience Method (1 file) |
+    41→| -------------- | ------------------------------- | --------------------------- |
+    42→| Implementation | abc, real, fake, dry_run, print | abc only                    |
+    43→| Maintenance    | High (5 places to update)       | Low (1 place)               |
+    44→| Testing        | Needs fake behavior             | Uses existing primitives    |
+    45→| Use case       | New primitive operation         | Composing existing ops      |
+    46→
+    47→## When NOT to Use
+    48→
+    49→Don't use convenience methods when:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me read the remaining files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3284" cache_read_input_tokens="52544" cache_creation="{'ephemeral_5m_input_tokens': 3284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HiSM8SSUXzNG3RoNP1R5Xf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/health-check-runner-gateway.md</param>
+    <param name="limit">30</param>
+    <param name="offset">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3284" cache_read_input_tokens="52544" cache_creation="{'ephemeral_5m_input_tokens': 3284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014LqX1a8Sq11yyXKQ3CTbHJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/github-admin-gateway.md</param>
+    <param name="limit">30</param>
+    <param name="offset">0</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3284" cache_read_input_tokens="52544" cache_creation="{'ephemeral_5m_input_tokens': 3284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015Jkgr5VaYRFfRW41zxTpVa">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md</param>
+    <param name="limit">30</param>
+    <param name="offset">115</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3284" cache_read_input_tokens="52544" cache_creation="{'ephemeral_5m_input_tokens': 3284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UV7MraGML9TpaHNb66tpfs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-inventory.md</param>
+    <param name="limit">50</param>
+    <param name="offset">40</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3284" cache_read_input_tokens="52544" cache_creation="{'ephemeral_5m_input_tokens': 3284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XNTqhaMXRHL5ET62eJRBBL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="limit">30</param>
+    <param name="offset">75</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3284" cache_read_input_tokens="52544" cache_creation="{'ephemeral_5m_input_tokens': 3284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HiSM8SSUXzNG3RoNP1R5Xf">
+    10→    warning: "Use FakeHealthCheckRunner with constructor-injected results instead. The HealthCheckRunner gateway eliminates all monkeypatch in doctor tests."
+    11→  - action: "modifying artifact allowlist loading without updating both config files"
+    12→    warning: "Allowlist loads from both .erk/config.toml and .erk/config.local.toml, merging results into a frozenset."
+    13→---
+    14→
+    15→# HealthCheckRunner Gateway Pattern
+    16→
+    17→A simplified gateway pattern for health check result injection, replacing monkeypatch in doctor tests.
+    18→
+    19→## Gateway Structure
+    20→
+    21→Unlike full gateways (which have 5 files: ABC + Real + Fake + DryRun + Printing), HealthCheckRunner uses a simplified 3-file pattern because health checks are read-only — no dry-run or printing wrappers needed.
+    22→
+    23→### ABC + Real Implementation
+    24→
+    25→**File:** `src/erk/core/health_checks/runner.py`
+    26→
+    27→- `HealthCheckRunner` ABC with single method: `run_all(ctx, *, check_hooks: bool) -&gt; list[CheckResult]`
+    28→- `RealHealthCheckRunner` delegates to `run_all_checks()` with lazy import to avoid circular dependencies
+    29→
+    30→### Fake Implementation
+    31→
+    32→**File:** `tests/fakes/health_check_runner.py`
+    33→
+    34→- `FakeHealthCheckRunner` accepts `results: list[CheckResult]` at construction
+    35→- `run_all()` returns the pre-configured results (fully deterministic)
+    36→
+    37→### Context Integration
+    38→
+    39→The runner is an optional field on `ErkContext` with a `TYPE_CHECKING` import. The doctor command falls back to calling `run_all_checks()` directly if no runner is injected.
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014LqX1a8Sq11yyXKQ3CTbHJ">
+     0→---
+     1→title: GitHub Admin Gateway
+     2→read_when:
+     3→  - "working with GitHub repository secrets or admin operations"
+     4→  - "adding methods to the GitHubAdmin gateway"
+     5→  - "understanding the 5-place gateway pattern with security-sensitive operations"
+     6→tripwires:
+     7→  - action: "passing secret values as command-line arguments"
+     8→    warning: "Secret values must be passed via stdin (input= parameter) to avoid process list exposure. See github-admin-gateway.md."
+     9→---
+    10→
+    11→# GitHub Admin Gateway
+    12→
+    13→GitHubAdmin manages GitHub repository administration operations, primarily secrets management. It follows the 5-place gateway pattern.
+    14→
+    15→## Location
+    16→
+    17→`packages/erk-shared/src/erk_shared/gateway/github_admin/`
+    18→
+    19→## 5-Place Implementation
+    20→
+    21→| File          | Role                                                    |
+    22→| ------------- | ------------------------------------------------------- |
+    23→| `abc.py`      | Abstract interface defining the contract                |
+    24→| `real.py`     | Production implementation using `gh` CLI                |
+    25→| `fake.py`     | Test double with mutation tracking                      |
+    26→| `noop.py`     | No-op for dry-run mode (reads delegate, mutations skip) |
+    27→| `printing.py` | Verbose wrapper that prints then delegates              |
+    28→
+    29→## Security: stdin for Secrets
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015Jkgr5VaYRFfRW41zxTpVa">
+   115→## Force Parameter Usage Patterns
+   116→
+   117→The `force` parameter in `delete_branch()` controls whether git uses `-D` (force delete, ignores unmerged commits) or `-d` (safe delete, rejects unmerged branches). Callers must explicitly flow `force=force` through all layers — dropping it silently changes deletion behavior.
+   118→
+   119→**When `force=True` is appropriate**: Automated cleanup after a confirmed landing. The merge has already succeeded, so the branch content is safely in trunk. The land pipeline's cleanup functions use `force=True` for this reason.
+   120→
+   121→**When `force=False` is appropriate**: Interactive branch deletion where the user should be warned about unmerged work.
+   122→
+   123→## Related Documentation
+   124→
+   125→- [Branch Manager Decision Tree](branch-manager-decision-tree.md) — When to use `ctx.branch_manager` vs `ctx.git.branch`
+   126→- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-place implementation pattern for gateway ABCs
+   127→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — When to use discriminated unions vs exceptions
+   128→- [Frozen Dataclass Test Doubles](../testing/frozen-dataclass-test-doubles.md) — Testing pattern for FakeBranchManager
+   129→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01UV7MraGML9TpaHNb66tpfs">
+    40→
+    41→- **#6169 phases 3-8**: Extracted branch, worktree, and config operations into dedicated sub-gateways
+    42→- **#6190**: Extracted additional operations
+    43→
+    44→This decomposition keeps each ABC focused and testable.
+    45→
+    46→## AgentLauncher Gateway
+    47→
+    48→**Purpose**: Abstract `os.execvp()` for launching Claude agent processes.
+    49→
+    50→**Pattern**: 3-file simplified gateway (abc.py, real.py, fake.py) — no dry_run.py or printing.py
+    51→
+    52→**Why simplified**: `os.execvp()` replaces the current process with no return (`NoReturn`). There's no return value to simulate in dry-run or print modes.
+    53→
+    54→**Key characteristics**:
+    55→
+    56→- **NoReturn type annotation**: Methods never return (process replacement)
+    57→- **Test strategy**: Fake implementation allows testing without actual process replacement
+    58→- **Integration points**: Used in 3 locations for Claude agent launches
+    59→
+    60→**Implementation files**:
+    61→
+    62→- `abc.py`: Abstract method with NoReturn annotation
+    63→- `real.py`: Calls `os.execvp()` directly
+    64→- `fake.py`: Records call and raises SystemExit for testing
+    65→
+    66→**Code reference**: `packages/erk-shared/src/erk_shared/gateway/agent_launcher/`
+    67→
+    68→**Related**: [Gateway ABC Implementation](gateway-abc-implementation.md) - 3-file simplified pattern section
+    69→
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XNTqhaMXRHL5ET62eJRBBL">
+    75→
+    76→See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`. These typed accessors replace the old `extract_plan_header_*()` functions, taking `plan.header_fields` and a key constant as arguments.
+    77→
+    78→**Key types:**
+    79→
+    80→- `Plan.header_fields: dict[str, object]` — Pre-parsed from plan-header metadata block
+    81→- `Plan.metadata: dict[str, object]` — Provider-specific fields. Issue-backed: `{"number", "author"}`. PR-backed: `{"number", "owner", "repo", "author", "is_draft", "pr_state", "base_ref_name"}`
+    82→- `header_str()`, `header_int()`, `header_datetime()` — Typed accessors with isinstance narrowing
+    83→
+    84→**Canonical conversion points:** `github_issue_to_plan()` (issue-backed) and `pr_details_to_plan()` (PR-backed) in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`
+    85→
+    86→## Related Documentation
+    87→
+    88→- [Gateway vs Backend](gateway-vs-backend.md) - Backend ABC (3-place) vs Gateway ABC (5-place)
+    89→- [Backend Testing Composition](../testing/backend-testing-composition.md) - Testing pattern
+    90→- [`PlanBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference
+    91→- [PR Body Assembly](pr-body-assembly.md) - How `assemble_pr_body()` handles existing_pr_body for dual-backend PR body construction
+    92→- [Draft PR Lifecycle](../planning/draft-pr-lifecycle.md) - Lifecycle stages and body format for draft-PR-backed plans
+    93→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me read the final files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3425" cache_read_input_tokens="55828" cache_creation="{'ephemeral_5m_input_tokens': 3425, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
