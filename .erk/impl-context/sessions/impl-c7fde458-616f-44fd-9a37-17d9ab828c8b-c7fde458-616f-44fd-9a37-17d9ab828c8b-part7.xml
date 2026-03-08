@@ -1,0 +1,228 @@
+<session>
+  <meta source="agent-acca3f0" />
+  <meta branch="plnd/remove-plan-flag-03-08-0106" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read the `_convert_to_plan` and `pr_details_to_plan` functions in `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`. Also find and read `extract_plan_content`. I need to understand what happens when the PR body doesn't contain plan-header metadata — does it error or return a Plan with default/empty values?</user>
+  <assistant>I'll help you understand how these functions handle PR bodies without plan-header metadata. Let me read the relevant code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5932" cache_read_input_tokens="12962" cache_creation="{'ephemeral_5m_input_tokens': 5932, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0155NW7gresonxgmm6r9PBN2">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5932" cache_read_input_tokens="12962" cache_creation="{'ephemeral_5m_input_tokens': 5932, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017AXNGhv5Ks5oJSKuwQagS6">
+    <param name="pattern">**/planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5932" cache_read_input_tokens="12962" cache_creation="{'ephemeral_5m_input_tokens': 5932, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0155NW7gresonxgmm6r9PBN2">
+     1→"""Draft PR implementation of plan storage.
+     2→
+     3→Uses GitHub draft pull requests as the backing store for plans.
+     4→PR body contains the plan-header metadata block followed by plan content.
+     5→The "erk-plan" label identifies plan PRs vs regular draft PRs.
+     6→"""
+     7→
+     8→import logging
+     9→from collections.abc import Mapping
+    10→from datetime import UTC
+    11→from pathlib import Path
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    add_metadata_block,
+    18→    find_metadata_block,
+    19→    has_metadata_block,
+    20→    render_metadata_block,
+    21→    replace_metadata_block_in_body,
+    22→)
+    23→from erk_shared.gateway.github.metadata.plan_header import (
+    24→    format_plan_header_body,
+    25→)
+    26→from erk_shared.gateway.github.metadata.schemas import (
+    27→    CREATED_FROM_SESSION,
+    28→    CREATED_FROM_WORKFLOW_RUN_URL,
+    29→    LEARNED_FROM_ISSUE,
+    30→    OBJECTIVE_ISSUE,
+
+... [691 lines omitted] ...
+
+    47→    PlanHeaderNotFoundError,
+    68→        ValueError: If value cannot be converted to int
+    76→    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+   241→            RuntimeError: If PR not found
+   247→            raise RuntimeError(msg)
+   284→            RuntimeError: If branch_name not in metadata or creation fails
+   288→            raise RuntimeError("branch_name is required in metadata for PlannedPRBackend")
+   370→        # Add labels with retry on transient errors
+   380→                _logger.warning(
+   381→                    "Failed to add labels to PR #%d: %s",
+   383→                    label_result.failed_labels,
+   465→            PlanHeaderNotFoundError: If PR body has no plan-header metadata block
+   466→            RuntimeError: If PR not found or update fails
+   472→            raise RuntimeError(msg)
+   476→            raise PlanHeaderNotFoundError("plan-header block not found in PR body")
+   516→            RuntimeError: If PR not found
+   522→            raise RuntimeError(msg)
+   553→            RuntimeError: If PR not found or update fails
+   559→            raise RuntimeError(msg)
+   582→            RuntimeError: If PR not found
+   588→            raise RuntimeError(msg)
+   608→            RuntimeError: If PR not found
+   614→            raise RuntimeError(msg)
+   633→            RuntimeError: If PR not found
+   639→            raise RuntimeError(msg)
+   696→            RuntimeError: If PR not found
+  </tool_result>
+  <tool_result tool="toolu_017AXNGhv5Ks5oJSKuwQagS6">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+  </tool_result>
+  <assistant>Now let me read the conversion module and planned_pr_lifecycle module to find the other functions:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9194" cache_read_input_tokens="18894" cache_creation="{'ephemeral_5m_input_tokens': 9194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01TQTG2QZATMhUbeEzyE9Pta">
+    <param name="pattern">**/plan_store/conversion.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9194" cache_read_input_tokens="18894" cache_creation="{'ephemeral_5m_input_tokens': 9194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01N4BBaK7tGbiJkQTSKtz6V9">
+    <param name="pattern">**/plan_store/planned_pr_lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9194" cache_read_input_tokens="18894" cache_creation="{'ephemeral_5m_input_tokens': 9194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N4BBaK7tGbiJkQTSKtz6V9">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py
+  </tool_result>
+  <tool_result tool="toolu_01TQTG2QZATMhUbeEzyE9Pta">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_017x8jkqRUs8AUC2bFF2FRKH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/conversion.py</param>
+  </tool_use>
+  <usage input_tokens="68" cache_creation_input_tokens="233" cache_read_input_tokens="28088" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ux8DLURU48kfQiSDcrkECr">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="68" cache_creation_input_tokens="233" cache_read_input_tokens="28088" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017x8jkqRUs8AUC2bFF2FRKH">
+     1→"""Shared conversion helpers for Plan construction from provider-specific types.
+     2→
+     3→Provides single-parse conversions that populate header_fields on Plan,
+     4→eliminating repeated YAML parsing of the plan-header metadata block.
+     5→Also provides typed accessor helpers for reading fields from header_fields.
+     6→"""
+     7→
+     8→from datetime import datetime
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueInfo
+    11→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    12→from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
+    13→from erk_shared.gateway.github.metadata.types import BlockKeys
+    14→from erk_shared.gateway.github.types import PRDetails
+    15→from erk_shared.plan_store.types import Plan, PlanState
+    16→
+    17→
+    18→def github_issue_to_plan(issue: IssueInfo) -&gt; Plan:
+    19→    """Convert a GitHub Issue (e.g. objective) to Plan with pre-parsed header fields.
+    20→
+    21→    Parses the plan-header metadata block once and stores the result
+    22→    in header_fields, avoiding repeated YAML parsing by callers.
+    23→
+    24→    Used for GitHub Issues that carry plan-header metadata, such as
+    25→    objective issues. Not used for draft-PR-backed plans.
+    26→
+    27→    Args:
+    28→        issue: IssueInfo from GraphQL query
+    29→
+    30→    Returns:
+
+... [154 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Ux8DLURU48kfQiSDcrkECr">
+     1→"""Draft PR Lifecycle.
+     2→
+     3→Draft PRs serve as the backing store for plans. Plans evolve through
+     4→lifecycle stages within a single PR.
+     5→
+     6→Branch Files
+     7→------------
+     8→Draft PR branches contain ``{IMPL_CONTEXT_DIR}/plan.md`` and
+     9→``{IMPL_CONTEXT_DIR}/ref.json``, committed before PR creation to avoid
+    10→GitHub's "empty branch" rejection. ``plan.md`` enables inline review
+    11→comments on the plan via the PR's "Files Changed" tab and gets replaced
+    12→when implementation begins. ``ref.json`` carries plan reference metadata
+    13→(provider, objective_id).
+    14→
+    15→Stages
+    16→------
+    17→
+    18→0. One-Shot Dispatch (optional)
+    19→   One-shot creates a draft PR plan and dispatches to GitHub Actions
+    20→   for remote planning + implementation. The workflow updates the
+    21→   PR body through stages 1-3 below.
+    22→
+    23→1. Plan Creation
+    24→   ``plan_save`` / ``PlannedPRBackend.create_plan()`` creates a draft PR.
+    25→   The body contains an optional AI-generated summary followed by the plan
+    26→   content collapsed in a &lt;details&gt; tag, then the plan-header metadata block
+    27→   and a checkout footer. The metadata block is self-delimiting via HTML
+    28→   comment markers, so no separator is needed.
+    29→
+    30→   Body format::
+
+... [146 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me provide you with a comprehensive analysis.
+
+## Summary
+
+When a PR body doesn't contain plan-header metadata, the functions **do not error**. Instead, they **gracefully degrade to empty/default values**:
+
+### `extract_plan_content` (lines 141-171)
+
+This function extracts the plan content from the PR body. When there's no plan-header metadata:
+
+- **Lines 155-161**: First tries to find content wrapped in `&lt;details&gt;&lt;summary&gt;original-plan&lt;/summary&gt;` tags
+- **Lines 164-170**: Falls back to legacy flat format (looks for the `PLAN_CONTENT_SEPARATOR`)
+- **Line 166**: **If neither format is found, returns the entire `pr_body` as-is**
+
+**Behavior without metadata**: Returns the whole PR body as the plan content.
+
+### `pr_details_to_plan` (lines 61-113)
+
+This is the core conversion function. It:
+
+- **Lines 78-82**: Calls `find_metadata_block(pr.body, BlockKeys.PLAN_HEADER)` 
+  - Returns `None` if no metadata block exists
+  - If `None`, leaves `header_fields` as an empty dict (`{}`)
+- **Lines 85-88**: Attempts to extract `objective_id` from the (possibly empty) `header_fields`
+  - If the key is missing or value is not an int, `objective_id` stays `None`
+- **Line 90**: Uses the provided `plan_body` (extracted separately) instead of the full PR body
+- **Returns a Plan object** with:
+  - `header_fields = {}` (empty dict, not an error)
+  - `objective_id = None` (not an error)
+  - All other fields populated from the PR metadata
+
+### `_convert_to_plan` (lines 702-715)
+
+This is the wrapper in `PlannedPRBackend`:
+
+```python
+def _convert_to_plan(self, pr: PRDetails) -&gt; Plan:
+    plan_body = extract_plan_content(pr.body)      # Extracts content safely
+    plan = pr_details_to_plan(pr, plan_body=plan_body)  # Converts with defaults
+    return plan
+```
+
+## Answer to Your Question
+
+**No error is raised.** Instead:
+
+1. If the PR body has **no plan-header metadata block**, `find_metadata_block()` returns `None`
+2. `header_fields` is set to an empty dict `{}`
+3. `objective_id` remains `None`
+4. A valid `Plan` object is returned with:
+   - Empty `header_fields` dict
+   - `objective_id = None`
+   - All other Plan fields populated normally from PR metadata
+
+This is a **permissive design**: the functions assume that legacy PRs or manually-created PRs might not have metadata, and they handle this gracefully by returning defaults rather than erroring.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4889" cache_read_input_tokens="28321" cache_creation="{'ephemeral_5m_input_tokens': 4889, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
