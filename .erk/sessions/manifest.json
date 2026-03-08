@@ -15,6 +15,21 @@
       "raw_size_kb": 441,
       "xml_size_kb": 53,
       "git_branch": "master"
+    },
+    {
+      "session_id": "14623271-afdd-4965-95df-2c5e94af7cea",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T07:11:22.174177+00:00",
+      "files": [
+        "impl-14623271-afdd-4965-95df-2c5e94af7cea-14623271-afdd-4965-95df-2c5e94af7cea-part1.xml",
+        "impl-14623271-afdd-4965-95df-2c5e94af7cea-14623271-afdd-4965-95df-2c5e94af7cea-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 4,
+      "raw_size_kb": 936,
+      "xml_size_kb": 118,
+      "git_branch": "plnd/remove-shell-integration-c-03-08-0705"
     }
   ]
 }
