@@ -588,7 +588,7 @@ def _log_learn_pr_files(
     total_files = len(files) + len(xml_files)
     user_output(f"  \U0001f4e6 {total_files} file(s) committed ({_format_size(total_bytes)}):")
     for path, size in files:
-        user_output(f"     {path}  ({_format_size(size)})")
+        user_output(f"    {path}  ({_format_size(size)})")
 
 
 def _create_learn_pr_impl(
