@@ -24,11 +24,13 @@ from erk.cli.commands.objective.check_cmd import (
     ObjectiveValidationError,
     validate_objective,
 )
-from erk_shared.context.helpers import require_issues, require_repo_root
-from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk.cli.commands.pr.repo_resolution import get_remote_github
+from erk_shared.context.helpers import require_context, require_repo_root
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.dependency_graph import phases_from_graph
 from erk_shared.gateway.github.metadata.roadmap import serialize_phases
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.scratch.scratch import get_scratch_dir
 
 MARKER_EXTENSION = ".marker"
@@ -37,14 +39,16 @@ ERK_PLAN_LABEL = "erk-plan"
 
 def _fetch_and_setup(
     *,
-    github_issues: GitHubIssues,
-    repo_root: Path,
     objective_number: int,
     session_id: str,
+    repo_root: Path,
+    remote: RemoteGitHub,
+    owner: str,
+    repo: str,
 ) -> tuple[dict[str, object], int]:
     """Core setup logic. Returns (result_dict, exit_code)."""
     # Fetch issue
-    issue = github_issues.get_issue(repo_root, objective_number)
+    issue = remote.get_issue(owner=owner, repo=repo, number=objective_number)
     if isinstance(issue, IssueNotFound):
         return (
             {
@@ -78,7 +82,12 @@ def _fetch_and_setup(
     marker_file.write_text(str(objective_number), encoding="utf-8")
 
     # Validate objective (reuse check_cmd logic)
-    validation_result = validate_objective(github_issues, repo_root, objective_number)
+    validation_result = validate_objective(
+        remote,
+        owner=owner,
+        repo=repo,
+        issue_number=objective_number,
+    )
 
     if isinstance(validation_result, ObjectiveValidationError):
         return (
@@ -131,14 +140,32 @@ def objective_plan_setup(ctx: click.Context, objective_number: int, session_id: 
     Creates an objective-context marker and returns structured JSON with
     objective data, roadmap, and validation results.
     """
-    github_issues = require_issues(ctx)
+    erk_ctx = require_context(ctx)
     repo_root = require_repo_root(ctx)
+    remote = get_remote_github(erk_ctx)
+
+    if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "no_repo",
+                    "message": "Cannot determine owner/repo from current context",
+                }
+            )
+        )
+        raise SystemExit(1)
+
+    owner = erk_ctx.repo.github.owner
+    repo_name = erk_ctx.repo.github.repo
 
     result, exit_code = _fetch_and_setup(
-        github_issues=github_issues,
-        repo_root=repo_root,
         objective_number=objective_number,
         session_id=session_id,
+        repo_root=repo_root,
+        remote=remote,
+        owner=owner,
+        repo=repo_name,
     )
     click.echo(json.dumps(result))
     if exit_code != 0:

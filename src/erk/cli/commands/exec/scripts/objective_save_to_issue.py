@@ -30,8 +30,10 @@ from erk.cli.commands.objective.check_cmd import (
     ObjectiveValidationSuccess,
     validate_objective,
 )
+from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk_shared.context.helpers import (
     require_claude_installation,
+    require_context,
     require_cwd,
     require_repo_root,
     require_time,
@@ -39,6 +41,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.plan_issues import create_objective_issue
 from erk_shared.scratch.scratch import get_scratch_dir
 
@@ -211,7 +214,19 @@ def objective_save_to_issue(
     # Optional validation
     validation_data: dict[str, Any] | None = None
     if run_validate:
-        validation_result = validate_objective(github, repo_root, result.plan_number)
+        erk_ctx = require_context(ctx)
+        remote = get_remote_github(erk_ctx)
+        owner = ""
+        repo_name = ""
+        if not isinstance(erk_ctx.repo, NoRepoSentinel) and erk_ctx.repo.github is not None:
+            owner = erk_ctx.repo.github.owner
+            repo_name = erk_ctx.repo.github.repo
+        validation_result = validate_objective(
+            remote,
+            owner=owner,
+            repo=repo_name,
+            issue_number=result.plan_number,
+        )
         if isinstance(validation_result, ObjectiveValidationError):
             validation_data = {
                 "passed": False,

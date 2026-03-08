@@ -17,19 +17,19 @@ Exit Codes:
 """
 
 import json
-from pathlib import Path
 
 import click
 
+from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk_shared.context.helpers import (
+    require_context,
     require_cwd,
     require_git,
     require_github,
-    require_issues,
     require_plan_backend,
     require_repo_root,
 )
-from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_from_comment,
@@ -48,6 +48,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.objective_fetch_context_result import (
     ObjectiveFetchContextErrorDict,
     ObjectiveFetchContextResultDict,
@@ -103,7 +104,13 @@ def _build_roadmap_context(objective_body: str, plan_id: str) -> RoadmapContextD
     )
 
 
-def _fetch_objective_content(issue_body: str, issues: GitHubIssues, repo_root: Path) -> str | None:
+def _fetch_objective_content(
+    issue_body: str,
+    *,
+    remote: RemoteGitHub,
+    owner: str,
+    repo: str,
+) -> str | None:
     """Fetch prose content from the objective's first comment.
 
     Objective prose lives in the first comment's objective-body metadata block,
@@ -118,7 +125,9 @@ def _fetch_objective_content(issue_body: str, issues: GitHubIssues, repo_root: P
     if comment_id is None:
         return None
 
-    comment_body = issues.get_comment_by_id(repo_root, comment_id)
+    comment_body = remote.get_comment_by_id(owner=owner, repo=repo, comment_id=comment_id)
+    if not comment_body:
+        return None
     return extract_objective_from_comment(comment_body)
 
 
@@ -157,10 +166,18 @@ def objective_fetch_context(
     plan_number: int | None,
 ) -> None:
     """Fetch all context for objective update in a single call."""
-    issues = require_issues(ctx)
+    erk_ctx = require_context(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
     plan_backend = require_plan_backend(ctx)
+    remote = get_remote_github(erk_ctx)
+
+    if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
+        click.echo(_error_json("Cannot determine owner/repo from current context"))
+        raise SystemExit(1)
+
+    owner = erk_ctx.repo.github.owner
+    repo_name = erk_ctx.repo.github.repo
 
     # When --plan is provided, do direct plan lookup (skip branch-based discovery)
     if plan_number is not None:
@@ -206,7 +223,7 @@ def objective_fetch_context(
         pr_number = pr_result.number
 
     # Fetch objective issue
-    objective = issues.get_issue(repo_root, objective_number)
+    objective = remote.get_issue(owner=owner, repo=repo_name, number=objective_number)
     if isinstance(objective, IssueNotFound):
         click.echo(_error_json(f"Objective issue #{objective_number} not found"))
         raise SystemExit(1)
@@ -220,7 +237,9 @@ def objective_fetch_context(
     roadmap = _build_roadmap_context(objective.body, plan_id)
 
     # Fetch prose content from the first comment's objective-body block
-    objective_content = _fetch_objective_content(objective.body, issues, repo_root)
+    objective_content = _fetch_objective_content(
+        objective.body, remote=remote, owner=owner, repo=repo_name
+    )
 
     objective_info: ObjectiveInfoDict = {
         "number": objective.number,

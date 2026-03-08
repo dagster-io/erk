@@ -11,6 +11,10 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import RepoInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+
+_TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
 
 VALID_OBJECTIVE_BODY = """\
 # Objective: Test Feature
@@ -72,12 +76,27 @@ def _make_issue(
     )
 
 
+def _make_remote(issues: dict[int, IssueInfo]) -> FakeRemoteGitHub:
+    return FakeRemoteGitHub(
+        authenticated_user="testuser",
+        default_branch_name="master",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues,
+        issue_comments=None,
+        pr_references=None,
+    )
+
+
 def test_success_with_valid_objective(tmp_path: Path) -> None:
     issue = _make_issue(100, "Test Objective", VALID_OBJECTIVE_BODY)
     fake_gh = FakeGitHubIssues(issues={100: issue})
     ctx = ErkContext.for_test(
         github=FakeLocalGitHub(issues_gateway=fake_gh),
+        remote_github=_make_remote({100: issue}),
         repo_root=tmp_path,
+        repo_info=_TEST_REPO_INFO,
     )
 
     runner = CliRunner()
@@ -109,7 +128,9 @@ def test_not_found_error(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues()
     ctx = ErkContext.for_test(
         github=FakeLocalGitHub(issues_gateway=fake_gh),
+        remote_github=_make_remote({}),
         repo_root=tmp_path,
+        repo_info=_TEST_REPO_INFO,
     )
 
     runner = CliRunner()
@@ -130,7 +151,9 @@ def test_is_plan_error(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues(issues={200: issue})
     ctx = ErkContext.for_test(
         github=FakeLocalGitHub(issues_gateway=fake_gh),
+        remote_github=_make_remote({200: issue}),
         repo_root=tmp_path,
+        repo_info=_TEST_REPO_INFO,
     )
 
     runner = CliRunner()
@@ -151,7 +174,9 @@ def test_warning_for_missing_label(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues(issues={300: issue})
     ctx = ErkContext.for_test(
         github=FakeLocalGitHub(issues_gateway=fake_gh),
+        remote_github=_make_remote({300: issue}),
         repo_root=tmp_path,
+        repo_info=_TEST_REPO_INFO,
     )
 
     runner = CliRunner()
@@ -174,7 +199,9 @@ def test_marker_file_created(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues(issues={400: issue})
     ctx = ErkContext.for_test(
         github=FakeLocalGitHub(issues_gateway=fake_gh),
+        remote_github=_make_remote({400: issue}),
         repo_root=tmp_path,
+        repo_info=_TEST_REPO_INFO,
     )
 
     runner = CliRunner()
@@ -197,7 +224,9 @@ def test_roadmap_free_objective(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues(issues={500: issue})
     ctx = ErkContext.for_test(
         github=FakeLocalGitHub(issues_gateway=fake_gh),
+        remote_github=_make_remote({500: issue}),
         repo_root=tmp_path,
+        repo_info=_TEST_REPO_INFO,
     )
 
     runner = CliRunner()

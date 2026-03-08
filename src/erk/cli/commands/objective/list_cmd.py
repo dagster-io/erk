@@ -6,8 +6,7 @@ from rich.markup import escape
 from rich.table import Table
 
 from erk.cli.alias import alias
-from erk.cli.core import discover_repo_context
-from erk.cli.ensure import Ensure
+from erk.cli.commands.pr.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.gateway.github.metadata.core import extract_objective_slug
@@ -21,8 +20,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     find_graph_next_node,
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase, parse_roadmap
-from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
-from erk_shared.output.output import user_output
+from erk_shared.plan_store.conversion import github_issue_to_plan
 from erk_shared.plan_store.types import Plan
 
 _SLUG_MAX_LEN = 50
@@ -138,32 +136,25 @@ def _compute_enriched_fields(plan: Plan) -> dict[str, str]:
 
 @alias("ls")
 @click.command("list")
+@repo_option
 @click.pass_obj
-def list_objectives(ctx: ErkContext) -> None:
+def list_objectives(ctx: ErkContext, *, target_repo: str | None) -> None:
     """List open objectives (GitHub issues with erk-objective label)."""
-    repo = discover_repo_context(ctx, ctx.cwd)
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_remote_github(ctx)
 
-    repo_info = Ensure.not_none(ctx.repo_info, "Not in a GitHub repository")
-    location = GitHubRepoLocation(
-        root=repo.root,
-        repo_id=GitHubRepoId(owner=repo_info.owner, repo=repo_info.name),
-    )
-
-    # Fetch objectives via dedicated service
-    http_client = ctx.http_client
-    if http_client is None:
-        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
-        raise SystemExit(1)
-    plan_data = ctx.objective_list_service.get_objective_list_data(
-        location=location,
+    # Fetch objectives via RemoteGitHub
+    issues = remote.list_issues(
+        owner=owner,
+        repo=repo_name,
+        labels=("erk-objective",),
         state="open",
         limit=None,
-        skip_workflow_runs=True,
         creator=None,
-        http_client=http_client,
     )
+    plans = [github_issue_to_plan(issue) for issue in issues]
 
-    if not plan_data.plans:
+    if not plans:
         click.echo("No open objectives found.", err=True)
         return
 
@@ -178,7 +169,7 @@ def list_objectives(ctx: ErkContext) -> None:
     table.add_column("updated", no_wrap=True)
     table.add_column("created by", no_wrap=True)
 
-    for plan in plan_data.plans:
+    for plan in plans:
         slug = _compute_slug(plan)
         fields = _compute_enriched_fields(plan)
         updated = format_relative_time(plan.updated_at.isoformat()) or "-"

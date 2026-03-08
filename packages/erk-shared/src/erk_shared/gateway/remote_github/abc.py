@@ -188,7 +188,7 @@ class RemoteGitHub(ABC):
         repo: str,
         issue_number: int,
         body: str,
-    ) -> None:
+    ) -> int:
         """Add a comment to an issue or PR.
 
         Args:
@@ -196,6 +196,9 @@ class RemoteGitHub(ABC):
             repo: Repository name
             issue_number: Issue or PR number
             body: Comment body
+
+        Returns:
+            The ID of the created comment
         """
         ...
 
@@ -284,6 +287,64 @@ class RemoteGitHub(ABC):
 
         Returns:
             List of PRReference objects
+        """
+        ...
+
+    @abstractmethod
+    def get_comment_by_id(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        comment_id: int,
+    ) -> str:
+        """Fetch a single comment body by its ID.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            comment_id: Comment ID
+
+        Returns:
+            Comment body string
+        """
+        ...
+
+    @abstractmethod
+    def update_issue_body(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+        body: str,
+    ) -> None:
+        """Update the body of a GitHub issue.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            number: Issue number
+            body: New body content
+        """
+        ...
+
+    @abstractmethod
+    def update_comment(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """Update the body of an existing issue comment.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            comment_id: Comment ID
+            body: New comment body
         """
         ...
 

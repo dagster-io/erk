@@ -2,15 +2,13 @@
 
 import json
 from dataclasses import dataclass
-from pathlib import Path
 
 import click
 
 from erk.cli.alias import alias
-from erk.cli.core import discover_repo_context
+from erk.cli.commands.pr.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.core.context import ErkContext, RepoContext
-from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk.core.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
@@ -29,6 +27,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     serialize_phases,
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
@@ -70,8 +69,10 @@ ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationErro
 
 
 def _check_roadmap_table_sync(
-    github_issues: GitHubIssues,
-    repo_root: Path,
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo: str,
     issue_body: str,
     header_block: MetadataBlock | None,
 ) -> tuple[bool, str] | None:
@@ -87,9 +88,8 @@ def _check_roadmap_table_sync(
     if comment_id is None:
         return None
 
-    try:
-        comment_body = github_issues.get_comment_by_id(repo_root, comment_id)
-    except RuntimeError:
+    comment_body = remote.get_comment_by_id(owner=owner, repo=repo, comment_id=comment_id)
+    if not comment_body:
         return None
 
     rerendered = rerender_comment_roadmap(issue_body, comment_body)
@@ -102,8 +102,10 @@ def _check_roadmap_table_sync(
 
 
 def validate_objective(
-    github_issues: GitHubIssues,
-    repo_root: Path,
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo: str,
     issue_number: int,
 ) -> ObjectiveValidationResult:
     """Validate an objective programmatically.
@@ -116,6 +118,7 @@ def validate_objective(
     5. Phase numbering is sequential
     6. v2 format integrity (objective-header has objective_comment_id)
     7. Plan/PR references use # prefix
+    8. Roadmap table sync
 
     This function does not produce output or raise SystemExit.
 
@@ -126,7 +129,7 @@ def validate_objective(
     checks: list[tuple[bool, str]] = []
 
     # Fetch issue
-    issue = github_issues.get_issue(repo_root, issue_number)
+    issue = remote.get_issue(owner=owner, repo=repo, number=issue_number)
     if isinstance(issue, IssueNotFound):
         return ObjectiveValidationError(error=f"Issue #{issue_number} not found")
 
@@ -236,7 +239,9 @@ def validate_objective(
         checks.append((False, f"Invalid reference format: {invalid_refs[0]}"))
 
     # Check 8: Roadmap table in comment matches YAML source of truth
-    check8 = _check_roadmap_table_sync(github_issues, repo_root, issue.body, header_block)
+    check8 = _check_roadmap_table_sync(
+        remote, owner=owner, repo=repo, issue_body=issue.body, header_block=header_block
+    )
     if check8 is not None:
         checks.append(check8)
 
@@ -262,8 +267,15 @@ def validate_objective(
 @click.option(
     "--json-output", "json_mode", is_flag=True, help="Output structured JSON (for programmatic use)"
 )
+@repo_option
 @click.pass_obj
-def check_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> None:
+def check_objective(
+    ctx: ErkContext,
+    objective_ref: str,
+    *,
+    json_mode: bool,
+    target_repo: str | None,
+) -> None:
     """Validate an objective's format and roadmap consistency.
 
     OBJECTIVE_REF can be an issue number (42) or a full GitHub URL.
@@ -273,13 +285,16 @@ def check_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> 
 
     Use --json-output for structured JSON output (replaces erk exec objective-roadmap-check).
     """
-    if isinstance(ctx.repo, RepoContext):
-        repo = ctx.repo
-    else:
-        repo = discover_repo_context(ctx, ctx.cwd)
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_remote_github(ctx)
     issue_number = parse_issue_identifier(objective_ref)
 
-    result = validate_objective(ctx.issues, repo.root, issue_number)
+    result = validate_objective(
+        remote,
+        owner=owner,
+        repo=repo_name,
+        issue_number=issue_number,
+    )
 
     if json_mode:
         _output_json(result, issue_number)

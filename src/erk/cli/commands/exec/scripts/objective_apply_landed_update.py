@@ -20,7 +20,6 @@ Exit Codes:
 """
 
 import json
-from pathlib import Path
 
 import click
 
@@ -35,23 +34,25 @@ from erk.cli.commands.exec.scripts.update_objective_node import (
     _find_node_refs,
     _replace_node_refs_in_body,
 )
+from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk_shared.context.helpers import (
+    require_context,
     require_cwd,
     require_git,
     require_github,
-    require_issues,
     require_plan_backend,
     require_repo_root,
     require_time,
 )
-from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
 )
 from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
 from erk_shared.gateway.github.metadata.types import BlockKeys
-from erk_shared.gateway.github.types import BodyText, PRNotFound
+from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.objective_apply_landed_update_result import (
     ApplyLandedUpdateErrorDict,
     ApplyLandedUpdateResultDict,
@@ -112,8 +113,10 @@ def _update_nodes_in_body(
 
 
 def _update_comment_table(
-    issues: GitHubIssues,
-    repo_root: Path,
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo: str,
     updated_body: str,
 ) -> None:
     """Re-render the markdown table in the objective-body comment from YAML (v2 format)."""
@@ -123,11 +126,13 @@ def _update_comment_table(
     if objective_comment_id is None:
         return
 
-    comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
+    comment_body = remote.get_comment_by_id(owner=owner, repo=repo, comment_id=objective_comment_id)
     updated_comment = rerender_comment_roadmap(updated_body, comment_body)
 
     if updated_comment is not None and updated_comment != comment_body:
-        issues.update_comment(repo_root, objective_comment_id, updated_comment)
+        remote.update_comment(
+            owner=owner, repo=repo, comment_id=objective_comment_id, body=updated_comment
+        )
 
 
 @click.command(name="objective-apply-landed-update")
@@ -170,11 +175,19 @@ def objective_apply_landed_update(
 
     The PR number is used as the plan number (in erk, the PR IS the plan).
     """
-    issues = require_issues(ctx)
+    erk_ctx = require_context(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
     plan_backend = require_plan_backend(ctx)
     time = require_time(ctx)
+    remote = get_remote_github(erk_ctx)
+
+    if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
+        click.echo(_error_json("Cannot determine owner/repo from current context"))
+        raise SystemExit(1)
+
+    owner = erk_ctx.repo.github.owner
+    repo_name = erk_ctx.repo.github.repo
 
     # --- Discovery: auto-fill branch from git state ---
     if branch_name is None:
@@ -210,7 +223,7 @@ def objective_apply_landed_update(
         objective_number = plan_result.objective_id
 
     # --- Fetch objective issue ---
-    objective = issues.get_issue(repo_root, objective_number)
+    objective = remote.get_issue(owner=owner, repo=repo_name, number=objective_number)
     if isinstance(objective, IssueNotFound):
         click.echo(_error_json(f"Objective #{objective_number} not found"))
         raise SystemExit(1)
@@ -236,7 +249,9 @@ def objective_apply_landed_update(
         ]
 
     # --- Fetch objective prose content ---
-    objective_content = _fetch_objective_content(objective.body, issues, repo_root)
+    objective_content = _fetch_objective_content(
+        objective.body, remote=remote, owner=owner, repo=repo_name
+    )
 
     node_updates: list[NodeUpdateDict] = []
     if matched_steps:
@@ -247,10 +262,12 @@ def objective_apply_landed_update(
         )
 
         # Write updated body to GitHub (single API call)
-        issues.update_issue_body(repo_root, objective_number, BodyText(content=updated_body))
+        remote.update_issue_body(
+            owner=owner, repo=repo_name, number=objective_number, body=updated_body
+        )
 
         # Re-render v2 comment table from updated YAML
-        _update_comment_table(issues, repo_root, updated_body)
+        _update_comment_table(remote, owner=owner, repo=repo_name, updated_body=updated_body)
 
         # Rebuild roadmap from the updated body
         roadmap = _build_roadmap_context(updated_body, plan_id)
@@ -272,7 +289,9 @@ def objective_apply_landed_update(
         body_reconciliation=[],
     )
 
-    action_comment_id = issues.add_comment(repo_root, objective_number, comment_body)
+    action_comment_id = remote.add_issue_comment(
+        owner=owner, repo=repo_name, issue_number=objective_number, body=comment_body
+    )
 
     # --- Emit result ---
     objective_info: ObjectiveInfoDict = {

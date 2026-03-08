@@ -21,6 +21,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk.cli.commands.pr.shared import (
     assemble_pr_body,
     cleanup_diff_file,
@@ -31,7 +32,7 @@ from erk.cli.commands.pr.shared import (
     run_diff_extraction,
 )
 from erk.core.commit_message_generator import CommitMessageGenerator
-from erk.core.context import ErkContext
+from erk.core.context import ErkContext, NoRepoSentinel
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.gateway.github.types import BodyText, PRNotFound
@@ -103,11 +104,15 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
     click.echo(click.style("Phase 3: Fetching plan context", bold=True))
 
     plan_provider = PlanContextProvider(
-        plan_backend=ctx.plan_backend, github_issues=ctx.github_issues
+        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
     )
+    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+        raise click.ClickException("Repository has no GitHub remote configured")
     plan_context = plan_provider.get_plan_context(
         repo_root=discovery.repo_root,
         branch_name=discovery.current_branch,
+        owner=ctx.repo.github.owner,
+        repo=ctx.repo.github.repo,
     )
 
     echo_plan_context_status(plan_context)

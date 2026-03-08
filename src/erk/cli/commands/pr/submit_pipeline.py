@@ -17,6 +17,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk.cli.commands.pr.shared import (
     assemble_pr_body,
     echo_plan_context_status,
@@ -27,7 +28,7 @@ from erk.cli.commands.pr.shared import (
 from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
 from erk.cli.ensure import UserFacingCliError
 from erk.core.commit_message_generator import CommitMessageGenerator
-from erk.core.context import ErkContext
+from erk.core.context import ErkContext, NoRepoSentinel
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
@@ -603,11 +604,22 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
         return state
 
     plan_provider = PlanContextProvider(
-        plan_backend=ctx.plan_backend, github_issues=ctx.github_issues
+        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
     )
+    github_info = ctx.repo.github if not isinstance(ctx.repo, NoRepoSentinel) else None
+    if github_info is None:
+        return SubmitError(
+            phase="plan_context",
+            error_type="no_repo",
+            message="Cannot determine GitHub owner/repo from current context",
+            details={},
+        )
+
     plan_context = plan_provider.get_plan_context(
         repo_root=state.repo_root,
         branch_name=state.branch_name,
+        owner=github_info.owner,
+        repo=github_info.repo,
     )
 
     echo_plan_context_status(plan_context)

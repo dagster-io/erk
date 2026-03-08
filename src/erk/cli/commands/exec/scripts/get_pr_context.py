@@ -17,6 +17,7 @@ import uuid
 
 import click
 
+from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk.cli.commands.pr.shared import (
     discover_branch_context,
     echo_plan_context_status,
@@ -24,6 +25,7 @@ from erk.cli.commands.pr.shared import (
 )
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.types import PRNotFound
 
 
@@ -68,11 +70,15 @@ def get_pr_context(ctx: click.Context, *, debug: bool) -> None:
 
     # Plan context
     plan_provider = PlanContextProvider(
-        plan_backend=erk_ctx.plan_backend, github_issues=erk_ctx.github_issues
+        plan_backend=erk_ctx.plan_backend, remote_github=get_remote_github(erk_ctx)
     )
+    if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
+        raise click.ClickException("Repository has no GitHub remote configured")
     plan_context = plan_provider.get_plan_context(
         repo_root=discovery.repo_root,
         branch_name=discovery.current_branch,
+        owner=erk_ctx.repo.github.owner,
+        repo=erk_ctx.repo.github.repo,
     )
 
     if debug:

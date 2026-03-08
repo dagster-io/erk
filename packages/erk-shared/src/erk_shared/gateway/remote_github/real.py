@@ -209,12 +209,13 @@ class RealRemoteGitHub(RemoteGitHub):
         repo: str,
         issue_number: int,
         body: str,
-    ) -> None:
+    ) -> int:
         """Add a comment to an issue or PR."""
-        self._http.post(
+        response = self._http.post(
             f"repos/{owner}/{repo}/issues/{issue_number}/comments",
             data={"body": body},
         )
+        return response.get("id", 0)
 
     # --- Read operations for PR commands ---
 
@@ -317,6 +318,45 @@ class RealRemoteGitHub(RemoteGitHub):
                 )
             )
         return pr_refs
+
+    def get_comment_by_id(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        comment_id: int,
+    ) -> str:
+        """Fetch a single comment body by its ID via REST API."""
+        response = self._http.get(f"repos/{owner}/{repo}/issues/comments/{comment_id}")
+        return response.get("body", "")
+
+    def update_issue_body(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+        body: str,
+    ) -> None:
+        """Update the body of a GitHub issue via REST API."""
+        self._http.patch(
+            f"repos/{owner}/{repo}/issues/{number}",
+            data={"body": body},
+        )
+
+    def update_comment(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """Update the body of an existing issue comment via REST API."""
+        self._http.patch(
+            f"repos/{owner}/{repo}/issues/comments/{comment_id}",
+            data={"body": body},
+        )
 
     def close_issue(
         self,

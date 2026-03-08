@@ -3,9 +3,9 @@
 import click
 
 from erk.cli.alias import alias
-from erk.cli.core import discover_repo_context
+from erk.cli.commands.pr.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.core.context import ErkContext, RepoContext
+from erk.core.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.output.output import user_output
 
@@ -16,23 +16,27 @@ ERK_OBJECTIVE_LABEL = "erk-objective"
 @click.command("close")
 @click.argument("issue_ref")
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
+@repo_option
 @click.pass_obj
-def close_objective(ctx: ErkContext, issue_ref: str, *, force: bool) -> None:
+def close_objective(
+    ctx: ErkContext,
+    issue_ref: str,
+    *,
+    force: bool,
+    target_repo: str | None,
+) -> None:
     """Close an objective GitHub issue.
 
     ISSUE_REF can be an issue number (42), P-prefixed (P42), or a full GitHub URL.
 
     The issue must have the 'erk-objective' label and be in an open state.
     """
-    # Use ctx.repo if it's a valid RepoContext, otherwise discover
-    if isinstance(ctx.repo, RepoContext):
-        repo = ctx.repo
-    else:
-        repo = discover_repo_context(ctx, ctx.cwd)
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_remote_github(ctx)
     issue_number = parse_issue_identifier(issue_ref)
 
     # Fetch the issue
-    issue = ctx.issues.get_issue(repo.root, issue_number)
+    issue = remote.get_issue(owner=owner, repo=repo_name, number=issue_number)
     if isinstance(issue, IssueNotFound):
         user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
         raise SystemExit(1)
@@ -60,6 +64,6 @@ def close_objective(ctx: ErkContext, issue_ref: str, *, force: bool) -> None:
             raise SystemExit(0)
 
     # Close the issue
-    ctx.issues.close_issue(repo.root, issue_number)
+    remote.close_issue(owner=owner, repo=repo_name, number=issue_number)
 
     user_output(click.style("✓ ", fg="green") + f"Closed objective #{issue_number}: {issue.url}")

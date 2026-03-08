@@ -3,7 +3,7 @@
 Constructor-injected responses for reads, mutation tracking lists for write assertions.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
@@ -86,6 +86,26 @@ class AddedIssueComment:
 
 
 @dataclass(frozen=True)
+class UpdatedIssueBody:
+    """Recorded update_issue_body call."""
+
+    owner: str
+    repo: str
+    number: int
+    body: str
+
+
+@dataclass(frozen=True)
+class UpdatedComment:
+    """Recorded update_comment call."""
+
+    owner: str
+    repo: str
+    comment_id: int
+    body: str
+
+
+@dataclass(frozen=True)
 class ClosedIssue:
     """Recorded close_issue call."""
 
@@ -120,6 +140,7 @@ class FakeRemoteGitHub(RemoteGitHub):
         issues: dict[int, IssueInfo] | None,
         issue_comments: dict[int, list[str]] | None,
         pr_references: dict[int, list[PRReference]] | None,
+        comments_by_id: dict[int, str] | None = None,
     ) -> None:
         """Create FakeRemoteGitHub with configurable responses.
 
@@ -131,6 +152,7 @@ class FakeRemoteGitHub(RemoteGitHub):
             dispatch_run_id: Run ID to return from dispatch_workflow
             issues: Pre-configured issues keyed by number
             issue_comments: Pre-configured comment bodies keyed by issue number
+            comments_by_id: Pre-configured comment bodies keyed by comment ID
             pr_references: Pre-configured PR references keyed by issue number
         """
         self._authenticated_user = authenticated_user
@@ -144,6 +166,7 @@ class FakeRemoteGitHub(RemoteGitHub):
         self._issue_comments: dict[int, list[str]] = (
             issue_comments if issue_comments is not None else {}
         )
+        self._comments_by_id: dict[int, str] = comments_by_id if comments_by_id is not None else {}
         self._pr_references: dict[int, list[PRReference]] = (
             pr_references if pr_references is not None else {}
         )
@@ -156,8 +179,11 @@ class FakeRemoteGitHub(RemoteGitHub):
         self._added_labels: list[AddedLabels] = []
         self._dispatched_workflows: list[DispatchedWorkflow] = []
         self._added_issue_comments: list[AddedIssueComment] = []
+        self._updated_issue_bodies: list[UpdatedIssueBody] = []
+        self._updated_comments: list[UpdatedComment] = []
         self._closed_issues: list[ClosedIssue] = []
         self._closed_prs: list[ClosedPR] = []
+        self._next_comment_id = 1000
 
     # --- Read methods ---
 
@@ -266,10 +292,13 @@ class FakeRemoteGitHub(RemoteGitHub):
         repo: str,
         issue_number: int,
         body: str,
-    ) -> None:
+    ) -> int:
         self._added_issue_comments.append(
             AddedIssueComment(owner=owner, repo=repo, issue_number=issue_number, body=body)
         )
+        comment_id = self._next_comment_id
+        self._next_comment_id += 1
+        return comment_id
 
     # --- Read operations for PR commands ---
 
@@ -324,6 +353,42 @@ class FakeRemoteGitHub(RemoteGitHub):
         number: int,
     ) -> list[PRReference]:
         return list(self._pr_references.get(number, []))
+
+    def get_comment_by_id(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        comment_id: int,
+    ) -> str:
+        return self._comments_by_id.get(comment_id, "")
+
+    def update_issue_body(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+        body: str,
+    ) -> None:
+        self._updated_issue_bodies.append(
+            UpdatedIssueBody(owner=owner, repo=repo, number=number, body=body)
+        )
+        # Also update internal state so subsequent get_issue() calls see the new body
+        if number in self._issues:
+            self._issues[number] = replace(self._issues[number], body=body)
+
+    def update_comment(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        self._updated_comments.append(
+            UpdatedComment(owner=owner, repo=repo, comment_id=comment_id, body=body)
+        )
 
     def close_issue(
         self,
@@ -382,6 +447,16 @@ class FakeRemoteGitHub(RemoteGitHub):
     def added_issue_comments(self) -> list[AddedIssueComment]:
         """Returns list of AddedIssueComment records."""
         return list(self._added_issue_comments)
+
+    @property
+    def updated_issue_bodies(self) -> list[UpdatedIssueBody]:
+        """Returns list of UpdatedIssueBody records."""
+        return list(self._updated_issue_bodies)
+
+    @property
+    def updated_comments(self) -> list[UpdatedComment]:
+        """Returns list of UpdatedComment records."""
+        return list(self._updated_comments)
 
     @property
     def closed_issues(self) -> list[ClosedIssue]:

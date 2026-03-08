@@ -117,7 +117,7 @@ def _make_objective_issue(number: int, body: str) -> IssueInfo:
     )
 
 
-def _make_remote() -> FakeRemoteGitHub:
+def _make_remote(*, issues: dict[int, IssueInfo] | None = None) -> FakeRemoteGitHub:
     """Create a default FakeRemoteGitHub for tests."""
     return FakeRemoteGitHub(
         authenticated_user="testuser",
@@ -125,7 +125,7 @@ def _make_remote() -> FakeRemoteGitHub:
         default_branch_sha="abc123",
         next_pr_number=1,
         dispatch_run_id="run-1",
-        issues=None,
+        issues=issues,
         issue_comments=None,
         pr_references=None,
     )
@@ -146,7 +146,7 @@ def _build_one_shot_context(
     )
     github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
     if remote is None:
-        remote = _make_remote()
+        remote = _make_remote(issues=issues._issues)
 
     return build_workspace_test_context(
         env, git=git, github=github, issues=issues, remote_github=remote
@@ -188,10 +188,11 @@ def test_plan_one_shot_happy_path() -> None:
         )
 
         # Verify objective body was updated: node 1.1 marked as "planning" with draft PR
-        objective_updates = [(num, body) for num, body in issues.updated_bodies if num == 42]
+        objective_updates = [
+            update for update in remote.updated_issue_bodies if update.number == 42
+        ]
         assert len(objective_updates) == 1
-        _, updated_body = objective_updates[0]
-        assert "planning" in updated_body.lower() or "planning" in updated_body
+        assert "planning" in objective_updates[0].body
 
 
 def test_plan_one_shot_repeated_invocation_advances_node() -> None:

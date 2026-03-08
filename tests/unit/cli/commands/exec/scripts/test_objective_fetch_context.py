@@ -13,10 +13,31 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
-from erk_shared.gateway.github.types import PRDetails, PRNotFound
+from erk_shared.gateway.github.types import PRDetails, PRNotFound, RepoInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
+
+_TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
+
+
+def _make_remote(
+    issues: dict[int, IssueInfo] | None = None,
+    *,
+    comments_by_id: dict[int, str] | None = None,
+) -> FakeRemoteGitHub:
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues if issues is not None else {},
+        issue_comments=None,
+        pr_references=None,
+        comments_by_id=comments_by_id,
+    )
 
 
 def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
@@ -208,8 +229,10 @@ class TestObjectiveFetchContext:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote({6423: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -247,8 +270,10 @@ class TestObjectiveFetchContext:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote({6423: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -312,8 +337,10 @@ class TestObjectiveFetchContext:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote({6423: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -350,6 +377,7 @@ class TestObjectiveFetchContext:
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -383,8 +411,10 @@ class TestObjectiveFetchContext:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote(),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -420,6 +450,7 @@ class TestObjectiveFetchContext:
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -440,6 +471,7 @@ class TestObjectiveFetchContext:
                 github=fake_github,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -468,6 +500,7 @@ class TestObjectiveFetchContext:
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -508,6 +541,7 @@ class TestDiscoveryMode:
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -543,8 +577,10 @@ class TestDiscoveryMode:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote({6423: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -586,6 +622,7 @@ class TestDiscoveryMode:
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -643,9 +680,11 @@ class TestDiscoveryMode:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote({6423: objective}),
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -671,6 +710,7 @@ class TestDiscoveryMode:
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -705,6 +745,7 @@ class TestDiscoveryMode:
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -756,6 +797,7 @@ class TestDiscoveryMode:
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -799,8 +841,10 @@ class TestPlannedPRBackend:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote({7419: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -843,8 +887,10 @@ class TestPlannedPRBackend:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote({7419: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -868,6 +914,7 @@ class TestPlannedPRBackend:
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -897,8 +944,10 @@ class TestDirectPlanLookup:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=_make_remote({6423: objective, 6513: plan}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -922,6 +971,7 @@ class TestDirectPlanLookup:
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -953,6 +1003,7 @@ class TestDirectPlanLookup:
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -1000,8 +1051,13 @@ class TestObjectiveContent:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=planned_pr_backend,
+                remote_github=_make_remote(
+                    {6423: objective},
+                    comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+                ),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -1042,6 +1098,7 @@ class TestObjectiveContent:
                 plan_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
