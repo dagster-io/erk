@@ -1,0 +1,839 @@
+<session>
+  <meta source="agent-a800cc5" />
+  <meta branch="plnd/audit-gateway-printing-dry-03-07-2033" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Edit these docs files to replace printing/5-file/5-place references. The printing.py gateway variant has been removed from the codebase. The pattern is now:
+- 3-file (default): abc.py, real.py, fake.py  
+- 4-file (opt-in for dry-run): abc.py, real.py, fake.py, dry_run.py
+
+Rules:
+- Replace "5-file" with "4-file" when referring to dry-run-enabled gateways
+- Replace "5-place" with "4-place" when referring to dry-run-enabled gateways
+- Remove "printing.py" from lists of files
+- Remove references to "Printing*" classes
+- When a list says "abc.py, real.py, fake.py, dry_run.py, printing.py" change to "abc.py, real.py, fake.py, dry_run.py"
+
+Read each file first, then edit.
+
+1. `/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-elimination-checklist.md`
+   - Line 45: "5-file (or 3-file simplified) pattern" → "4-file (or 3-file simplified) pattern"
+
+2. `/home/runner/work/erk/erk/docs/learned/testing/frozen-dataclass-test-doubles.md`
+   - Line 88: "the 5-file pattern" → "the 4-file pattern"
+
+3. `/home/runner/work/erk/erk/docs/learned/testing/gateway-fake-testing-exemplar.md`
+   - Line 89: "The 5-place implementation pattern" → "The 4-place implementation pattern"
+
+4. `/home/runner/work/erk/erk/docs/learned/uncategorized/tripwires.md`
+   - Line 19: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py" → "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py"
+
+5. `/home/runner/work/erk/erk/docs/learned/planning/gateway-consolidation-checklist.md`
+   - Line 25: "5-file pattern (abc/real/fake/dry_run/printing)" → "4-file pattern (abc/real/fake/dry_run)"
+   - Line 28: "full 5-file pattern" → "full 4-file pattern"; "3-file pattern (no dry_run/printing)" → "3-file pattern (no dry_run)"
+   - Line 86: "5-place implementation pattern" → "4-place implementation pattern"
+
+6. `/home/runner/work/erk/erk/docs/learned/gateway/codespace-gateway.md`
+   - Line 21: "5-place gateway pattern" → "4-place gateway pattern"; remove "and printing" from the sentence about omitting them
+   - Line 27: "5-place (standard)" → "4-place (standard)"
+   - Line 80: "5-place pattern, 3-place variant decision criteria" → "4-place pattern, 3-place variant decision criteria"
+
+7. `/home/runner/work/erk/erk/docs/learned/universal-tripwires.md`
+   - Line 12: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py." → "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py."
+   - Line 44: "5-place implementation pattern" → "4-place implementation pattern"
+
+8. `/home/runner/work/erk/erk/docs/learned/refactoring/libcst-systematic-imports.md`
+   - Line 380: "the 5-place pattern" → "the 4-place pattern"
+
+9. `/home/runner/work/erk/erk/docs/learned/cli/incomplete-command-removal.md`
+   - Line 47: "5-place pattern" → "4-place pattern"
+
+10. `/home/runner/work/erk/erk/docs/learned/tui/view-switching.md`
+    - Line 135: "5-place gateway pattern" → "gateway pattern" (this reference is about fetch_plan_content which uses a different count; just remove the "5-place" qualifier)
+
+11. `/home/runner/work/erk/erk/docs/learned/glossary.md`
+    - Line 646: "5-file implementation pattern: abc.py, real.py, fake.py, dry_run.py, printing.py" → "implementation pattern: abc.py, real.py, fake.py (3-file default), plus dry_run.py for dry-run-enabled gateways (4-file)"
+
+12. `/home/runner/work/erk/erk/docs/learned/reviews/development.md` - Read the file first. If it contains printing/5-file references, update them. If not, skip it.
+
+Read each file first, then make the edit. Do ALL files.</user>
+  <assistant>I'll read each file first and then make the necessary edits to replace printing/5-file/5-place references with the updated 3-file/4-file pattern.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013HEtddZNdshjakG8Rn6sQ1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-elimination-checklist.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QW6ifmaabJrivgHxQNjbUD">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/frozen-dataclass-test-doubles.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X6ZiB4cyunxedRbCp1EzVw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/gateway-fake-testing-exemplar.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0132vy83zgiksvKpwcYkpRar">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/uncategorized/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HPfk67UNRYQsfGDHUGCC6a">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/gateway-consolidation-checklist.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016JNhP3mcHbKcM9zMzMdiF9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/gateway/codespace-gateway.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QuxkWGSqV6EWsnsV2yxUjp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/universal-tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RTK8stgt748FNHsoZJbeRM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/refactoring/libcst-systematic-imports.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012RLins3eQtL7D3Dc9SA6TX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/incomplete-command-removal.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FDj6CeMRUo3tw5rsSK9Kax">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-switching.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VTcsMtSDRsdGNFh6gYgGJQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NTLxPUbVbthzwn8G97kvSq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/reviews/development.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7788" cache_read_input_tokens="9380" cache_creation="{'ephemeral_5m_input_tokens': 7788, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013HEtddZNdshjakG8Rn6sQ1">
+     1→---
+     2→title: Monkeypatch Elimination Checklist
+     3→read_when:
+     4→  - "migrating tests from monkeypatch to gateways"
+     5→  - "eliminating subprocess mocks or @patch decorators"
+     6→  - "encountering monkeypatch in existing tests and deciding whether to refactor"
+     7→tripwires:
+     8→  - action: "adding monkeypatch or @patch to a test"
+     9→    warning: "Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md."
+    10→    pattern: "@patch|monkeypatch\\."
+    11→  - action: "using monkeypatch to stub Path.home() or subprocess.run()"
+    12→    warning: "These are the two most common monkeypatch targets. Both have established gateway replacements — ClaudeInstallation/ErkInstallation for paths, specific gateways for subprocess."
+    13→    pattern: "monkeypatch\\.setattr.*Path\\.home|monkeypatch.*subprocess\\.run"
+    14→last_audited: "2026-02-16 14:20 PT"
+    15→audit_result: clean
+    16→---
+    17→
+    18→# Monkeypatch Elimination Checklist
+    19→
+    20→## Why Monkeypatch Is Especially Harmful in Erk
+    21→
+    22→Erk's gateway ABC pattern means every external operation has a type-checked fake. Monkeypatching bypasses this entire system, creating tests that:
+    23→
+    24→- **Couple to implementation, not interface** — a monkeypatch on `subprocess.run(["gh", ...])` breaks when the gateway switches from subprocess to the REST API, even though the behavior is identical
+    25→- **Evade the type checker** — patching attributes that don't exist on the ABC silently succeeds, then silently lies about coverage
+    26→- **Fragment test setup** — each test reinvents its own mock configuration instead of reusing constructor-injected fakes that are centralized and maintained
+    27→
+    28→The gateway fakes already handle the hard parts (configurable success/failure, mutation tracking, assertion helpers). Monkeypatching is always duplicating work that's already done better.
+    29→
+    30→## Mapping Mocked Operations to Gateways
+
+... [86 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QW6ifmaabJrivgHxQNjbUD">
+     1→---
+     2→title: Frozen Dataclass Test Doubles
+     3→read_when:
+     4→  - "implementing a fake for an ABC interface"
+     5→  - "adding mutation tracking to a test double"
+     6→  - "choosing between frozen dataclass fakes and __init__-based fakes"
+     7→  - "writing tests that assert on method call parameters"
+     8→tripwires:
+     9→  - action: "exposing a mutation tracking list directly as a property without copying"
+    10→    warning: "Return list(self._tracked_list) from properties, not self._tracked_list. Direct exposure lets test code accidentally mutate the tracking state."
+    11→  - action: "tracking only the primary argument in a mutation tuple, omitting flags or options"
+    12→    warning: "Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior."
+    13→  - action: "creating a fake that uses __init__ when frozen dataclass would work"
+    14→    warning: "FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses __init__ because it has 30+ constructor params. Choose based on complexity."
+    15→last_audited: "2026-02-08 00:00 PT"
+    16→audit_result: edited
+    17→---
+    18→
+    19→# Frozen Dataclass Test Doubles
+    20→
+    21→Erk's gateway fakes use two distinct patterns for mutation tracking: frozen dataclasses with mutable internals (for simpler fakes) and `__init__`-based classes (for complex fakes). Both patterns serve the same purpose — recording method calls so tests can assert on what happened — but the choice between them has architectural consequences.
+    22→
+    23→## Why Two Patterns Exist
+    24→
+    25→The codebase uses frozen dataclass fakes and `__init__`-based fakes for different situations. The split isn't arbitrary — it reflects a complexity threshold.
+    26→
+    27→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py, FakeBranchManager --&gt;
+    28→
+    29→`FakeBranchManager` uses `@dataclass(frozen=True)` because it has a manageable number of fields (around 15), all with `field(default_factory=...)` defaults. The frozen constraint provides a useful guarantee: field references can't be reassigned after construction, so a mutation tracking list can't be accidentally replaced.
+    30→
+
+... [65 lines omitted] ...
+
+    39→| Field reassignment protection | Yes (`FrozenInstanceError`)                | No                                    |
+    46→This means frozen fakes can track mutations by appending to internal lists while still preventing accidental field replacement. A test can't do `fake._deleted_branches = []` (raises `FrozenInstanceError`), but the fake's own methods can do `self._deleted_branches.append(...)`.
+  </tool_result>
+  <tool_result tool="toolu_01X6ZiB4cyunxedRbCp1EzVw">
+     1→---
+     2→title: Gateway Fake Testing Exemplar
+     3→read_when:
+     4→  - "writing tests for gateway fakes that return discriminated unions"
+     5→  - "deciding whether mutation tracking should occur on error paths"
+     6→  - "implementing a new fake gateway method with error injection"
+     7→tripwires:
+     8→  - action: "creating a fake gateway without constructor-injected error configuration"
+     9→    warning: "Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests."
+    10→  - action: "using truthiness checks or .success on discriminated union results in tests"
+    11→    warning: "Always use isinstance() for type narrowing. Never check bool(result) or result.success — these bypass the type system."
+    12→  - action: "tracking mutations before checking error configuration in a fake method"
+    13→    warning: "Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics."
+    14→---
+    15→
+    16→# Gateway Fake Testing Exemplar
+    17→
+    18→This document captures the cross-cutting design decisions in fake gateway testing — specifically, the three patterns that every fake test must exercise and the subtle tracking-on-error decision that differs between operations.
+    19→
+    20→## Why Fakes Need Their Own Tests
+    21→
+    22→Fakes are production code for tests. A broken fake silently produces false-positive test results across the entire test suite. The `tests/unit/fakes/` directory exists to verify that fakes honor their ABC contracts and that their error-injection and mutation-tracking machinery works correctly.
+    23→
+    24→&lt;!-- Source: tests/unit/fakes/test_fake_git_remote_ops.py --&gt;
+    25→
+    26→See `test_fake_git_remote_ops.py` in `tests/unit/fakes/` for the canonical exemplar.
+    27→
+    28→## Three Required Test Categories Per Operation
+    29→
+    30→Every fake method that returns a discriminated union needs three test categories:
+
+... [66 lines omitted] ...
+
+    35→| **Error injection**   | Constructor-configured error is returned         | Proves failure paths work without modifying fake internals |
+    40→## The Tracking-on-Error Decision
+    42→The most subtle design choice in fake implementation is whether mutation tracking should occur when an error is configured. This is not arbitrary — it follows the real operation's semantics:
+    44→| Operation        | Tracks on error? | Rationale                                                                                                        |
+    52→Compare `FakeGitRemoteOps.push_to_remote()` (early-returns error before tracking) with `FakeGitRemoteOps.pull_rebase()` (tracks first, then checks error) in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py`.
+    54→**When implementing a new fake method**, ask: "If the real operation fails, did a side effect still occur?" If yes, track before checking the error. If no, check the error first and skip tracking.
+    81→if isinstance(result, PushError):
+    85→**Testing only the happy path:** Every discriminated union method needs both success and error tests. A fake that only tests success could silently break error injection for all consumers.
+    90→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — Design decisions for when to use unions vs exceptions
+  </tool_result>
+  <tool_result tool="toolu_0132vy83zgiksvKpwcYkpRar">
+     1→---
+     2→title: Uncategorized Tripwires
+     3→read_when:
+     4→  - "working on uncategorized code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from uncategorized/*.md frontmatter --&gt;
+    10→
+    11→# Uncategorized Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding --force flag to a CLI command** → Read [Code Conventions](conventions.md) first. Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)
+    16→
+    17→**adding a function with 5+ parameters** → Read [Code Conventions](conventions.md) first. Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures and Click command callbacks.
+    18→
+    19→**adding a new method to Git/GitHub/Graphite ABC** → Read [Universal Tripwires](universal-tripwires.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
+    20→
+    21→**adding file I/O or subprocess calls to class `__init__`** → Read [Universal Tripwires](universal-tripwires.md) first. Keep `__init__` lightweight; use factory methods like `from_config_path()`.
+    22→
+    23→**calling os.chdir() in erk code** → Read [Universal Tripwires](universal-tripwires.md) first. After os.chdir(), regenerate context using regenerate_context().
+    24→
+    25→**editing source files directly on master branch** → Read [Code Conventions](conventions.md) first. Never edit source files on master. Even for one-line fixes, use plan-first workflow. Bypasses review, CI gates, and worktree isolation.
+    26→
+    27→**importing time module or calling time.sleep()/datetime.now()** → Read [Universal Tripwires](universal-tripwires.md) first. Use context.time.sleep() and context.time.now() for testability.
+    28→
+    29→**modifying business logic in src/ without adding a test** → Read [Universal Tripwires](universal-tripwires.md) first. Bug fixes require regression tests.
+    30→
+
+... [19 lines omitted] ...
+
+    35→**raising exceptions for expected failure cases** → Read [Universal Tripwires](universal-tripwires.md) first. Use discriminated unions (T | ErrorType) instead.
+    39→**using bare subprocess.run with check=True** → Read [Universal Tripwires](universal-tripwires.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI).
+  </tool_result>
+  <tool_result tool="toolu_01HPfk67UNRYQsfGDHUGCC6a">
+     1→---
+     2→title: Gateway Consolidation Checklist
+     3→last_audited: "2026-02-08 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "moving a gateway package into the gateway/ directory"
+     7→  - "extracting a new gateway from existing code"
+     8→  - "performing large-scale import refactoring across packages"
+     9→tripwires:
+    10→  - action: "moving gateway files without git mv"
+    11→    warning: "Always use git mv to preserve file history. Plain mv + git add loses blame history, making future archaeology harder."
+    12→  - action: "updating imports one file at a time during gateway consolidation"
+    13→    warning: "Use LibCST for systematic import updates. Manual editing misses call sites and creates partial migration states. See docs/learned/refactoring/libcst-systematic-imports.md."
+    14→  - action: "renaming gateway files during a move without checking for non-standard naming"
+    15→    warning: "Source files that don't follow standard naming (e.g., executor.py instead of abc.py) must be renamed to abc.py/real.py/fake.py during the move. The gateway directory convention requires standard file names."
+    16→---
+    17→
+    18→# Gateway Consolidation Checklist
+    19→
+    20→## Context
+    21→
+    22→All gateway packages live under `packages/erk-shared/src/erk_shared/gateway/`. This was not always the case — gateways were originally scattered across domain-specific directories (e.g., TUI commands, CLI utilities). Consolidation into a single `gateway/` tree was done because:
+    23→
+    24→1. **Discoverability** — agents searching for "where is the X gateway?" need one place to look, not a codebase-wide search
+    25→2. **Consistency enforcement** — the 5-file pattern (abc/real/fake/dry_run/printing) is easier to verify when all gateways are siblings
+    26→3. **Import predictability** — `erk_shared.gateway.&lt;name&gt;.abc` is a mechanical derivation from the gateway name, eliminating guesswork
+    27→
+    28→There are currently 27 gateway packages in this directory. Some use the full 5-file pattern, others use a simplified 3-file pattern (no dry_run/printing). Complex domains (Git, GitHub, Graphite) use nested sub-gateways.
+    29→
+    30→## Operation Ordering: Why It Matters
+
+... [63 lines omitted] ...
+
+    51→Moving gateways into sibling directories can surface circular imports that were previously hidden by package boundaries. The symptom is `ImportError: cannot import name 'X' from partially initialized module`.
+    66→For batch operations, LibCST is nearly mandatory — manual import updates across dozens of files are error-prone and slow.
+    78→3. **Verify the `__init__.py`** exists in the new directory — missing it produces `ModuleNotFoundError` that looks like a bad import rather than a missing file
+  </tool_result>
+  <tool_result tool="toolu_016JNhP3mcHbKcM9zMzMdiF9">
+     1→---
+     2→title: Codespace Gateway Pattern
+     3→read_when:
+     4→  - "adding a new codespace SSH operation to the gateway"
+     5→  - "deciding whether a new gateway needs dry-run and printing implementations"
+     6→  - "testing code that uses os.execvp or NoReturn methods"
+     7→  - "choosing between exec_ssh_interactive and run_ssh_command"
+     8→tripwires:
+     9→  - action: "implementing codespace gateway"
+    10→    warning: "Use 3-place pattern (abc, real, fake) without dry-run or print implementations."
+    11→  - action: "adding dry-run or printing implementation for codespace gateway"
+    12→    warning: "Codespace operations are all-or-nothing remote execution. Dry-run and printing don't apply."
+    13→  - action: "adding -t flag to run_ssh_command or omitting it from exec_ssh_interactive"
+    14→    warning: "The -t flag controls TTY allocation. Interactive needs it (rendering); non-interactive breaks with it (buffering). See the two execution modes section."
+    15→last_audited: "2026-02-08 00:00 PT"
+    16→audit_result: clean
+    17→---
+    18→
+    19→# Codespace Gateway Pattern
+    20→
+    21→The codespace gateway uses a **3-place pattern** (ABC, real, fake) instead of the standard 5-place gateway pattern. This document explains when to omit dry-run and printing implementations — a decision that generalizes to any gateway wrapping process-replacing or inherently remote operations.
+    22→
+    23→## When to Use 3-Place vs 5-Place
+    24→
+    25→The standard gateway has 5 implementations (abc, real, fake, dry_run, printing). The 3-place variant drops dry-run and printing. The deciding question: **can you give the user a meaningful preview of the operation?**
+    26→
+    27→| Characteristic             | 5-place (standard)                     | 3-place (codespace, agent_launcher)            |
+    28→| -------------------------- | -------------------------------------- | ---------------------------------------------- |
+    29→| Operations are previewable | Yes — can show "would create branch X" | No — process replacement or remote execution   |
+    30→| Dry-run adds value         | Yes — read-only operations still work  | No — no local equivalent to "pretend to SSH"   |
+
+... [59 lines omitted] ...
+
+    44→The gateway exposes two SSH paths that differ in a single flag (`-t` for TTY allocation), but choosing wrong produces hard-to-diagnose failures:
+    51→**The `-t` flag trap**: `exec_ssh_interactive()` passes `-t` to allocate a pseudo-terminal (required for interactive TUI rendering). `run_ssh_command()` deliberately omits it. Adding `-t` to non-interactive commands causes output buffering issues; omitting it from interactive commands causes terminal rendering failures. Neither failure produces an obvious error message — both manifest as garbled output or hangs.
+    79→- [Codespace Remote Execution](../erk/codespace-remote-execution.md) — bootstrap wrapper, environment setup, debugging failures
+  </tool_result>
+  <tool_result tool="toolu_01QuxkWGSqV6EWsnsV2yxUjp">
+     1→---
+     2→title: Universal Tripwires
+     3→last_audited: "2026-02-17 18:30 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "starting any coding task"
+     7→  - "writing new code in erk"
+     8→tripwires:
+     9→  - action: "using bare subprocess.run with check=True"
+    10→    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI)."
+    11→  - action: "adding a new method to Git/GitHub/Graphite ABC"
+    12→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    13→  - action: "raising exceptions for expected failure cases"
+    14→    warning: "Use discriminated unions (T | ErrorType) instead."
+    15→  - action: "using Path.home() directly in production code"
+    16→    warning: "Use gateway abstractions instead (ClaudeInstallation, ErkInstallation)."
+    17→  - action: "calling os.chdir() in erk code"
+    18→    warning: "After os.chdir(), regenerate context using regenerate_context()."
+    19→  - action: "importing time module or calling time.sleep()/datetime.now()"
+    20→    warning: "Use context.time.sleep() and context.time.now() for testability."
+    21→  - action: "adding file I/O or subprocess calls to class `__init__`"
+    22→    warning: "Keep `__init__` lightweight; use factory methods like `from_config_path()`."
+    23→  - action: "modifying business logic in src/ without adding a test"
+    24→    warning: "Bug fixes require regression tests."
+    25→  - action: "using gh pr diff --name-only in production code"
+    26→    warning: "For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead. See github-cli-limits.md."
+    27→  - action: "passing session IDs via environment variables"
+    28→    warning: "Use CLI flags (--session-id) for context propagation, not environment variables. Erk code never has access to CLAUDE_CODE_SESSION_ID."
+    29→last_audited: "2026-02-16 14:25 PT"
+    30→audit_result: clean
+
+... [25 lines omitted] ...
+
+    45→- [Discriminated Union Error Handling](architecture/discriminated-union-error-handling.md) - Error handling patterns
+  </tool_result>
+  <tool_result tool="toolu_01RTK8stgt748FNHsoZJbeRM">
+     1→---
+     2→title: LibCST Systematic Import Refactoring
+     3→last_audited: "2026-02-16 02:45 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "refactoring imports across many files"
+     7→  - "renaming modules or packages"
+     8→  - "deciding between manual edits and automated refactoring"
+     9→tripwires:
+    10→  - action: "manually updating imports across 10+ files"
+    11→    warning: "Use LibCST via the libcst-refactor agent or a one-off script. Manual editing misses call sites and creates partial migration states."
+    12→  - action: "writing LibCST transformation logic from scratch"
+    13→    warning: "The libcst-refactor agent (.claude/agents/libcst-refactor.md) contains battle-tested patterns, gotchas, and a script template. Load it first."
+    14→  - action: "interleaving file moves and import updates"
+    15→    warning: "Move ALL files first (git mv), THEN batch-update ALL imports. Interleaving creates intermediate broken states. See gateway-consolidation-checklist.md."
+    16→  - action: "running targeted edits after replace_all operations in the same file"
+    17→    warning: "During type migrations, complete all rename operations before attempting targeted edits. replace_all operations change strings that later edits expect to find."
+    18→  - action: "using replace_all on lines with trailing comments"
+    19→    warning: "Edit tool's replace_all removes surrounding whitespace, which can collapse lines and cause SyntaxError."
+    20→  - action: "using replace_all to rename foo to _foo"
+    21→    warning: "Corrupts existing _foo to __foo. Grep for existing underscored forms before applying replace_all renames."
+    22→  - action: "completing a libcst-refactor batch rename"
+    23→    warning: "After bulk rename, grep entire codebase for old symbol name. LibCST leave_Name visitor does NOT rename string literals used as dict keys. Subagent may miss files outside its scope."
+    24→---
+    25→
+    26→# LibCST Systematic Import Refactoring
+    27→
+    28→## When to Use LibCST
+    29→
+    30→LibCST parses Python source into a concrete syntax tree that preserves formatting and comments, making it ideal for mechanical import refactoring. The key question is whether the transformation is worth the tooling overhead.
+
+... [357 lines omitted] ...
+
+    37→| ABC consolidation (type renames + import moves + field renames) | `libcst-refactor` agent      | Multiple transformation types across 40+ files; manual editing is error-prone |
+    40→**The crossover point is ~10 files.** Below that, the time to write and test a transformer exceeds the time to make manual edits. Above that, manual editing becomes the riskier option because missed call sites cause runtime `ImportError`s that may not surface until a specific code path executes.
+  </tool_result>
+  <tool_result tool="toolu_012RLins3eQtL7D3Dc9SA6TX">
+     1→---
+     2→title: Incomplete Command Removal Pattern
+     3→read_when:
+     4→  - "removing a workflow command or CLI entry"
+     5→  - "deprecating or deleting a command from erk"
+     6→  - "cleaning up dead references after removing a feature"
+     7→tripwires:
+     8→  - action: "removing a workflow command or CLI entry"
+     9→    warning: "Read incomplete-command-removal.md first. Search all string references before removing. String-based dispatch maps like WORKFLOW_COMMAND_MAP aren't caught by type checkers."
+    10→---
+    11→
+    12→# Incomplete Command Removal Pattern
+    13→
+    14→When removing a workflow or command, all traces must be removed simultaneously. String-based dispatch maps and configuration references are invisible to type checkers.
+    15→
+    16→## The Problem
+    17→
+    18→Static analysis (ty, mypy, ruff) cannot catch dead references in:
+    19→
+    20→- `WORKFLOW_COMMAND_MAP` string-keyed dictionaries
+    21→- Workflow YAML filenames
+    22→- CLI help text and documentation
+    23→- Slash command files referencing the command
+    24→- Test fixtures and test data
+    25→
+    26→## Real Example: objective-reconcile (PR #6882)
+    27→
+    28→The `objective-reconcile` command was removed. Traces that needed cleanup:
+    29→
+    30→1. `WORKFLOW_COMMAND_MAP` entry in `constants.py`
+
+... [24 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FDj6CeMRUo3tw5rsSK9Kax">
+     1→---
+     2→title: TUI View Switching
+     3→read_when:
+     4→  - "adding a new view mode to the TUI"
+     5→  - "understanding how view switching and caching work"
+     6→  - "debugging data not appearing in a specific view"
+     7→  - "working with PlanBodyScreen content type parameterization"
+     8→tripwires:
+     9→  - action: "adding a new ViewMode without updating VIEW_CONFIGS"
+    10→    warning: "Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime."
+    11→  - action: "using _render() as a method name in Textual widgets"
+    12→    warning: "Textual's LSP reserves _render(). Use _refresh_display() instead (see ViewBar)."
+    13→  - action: "pushing PlanBodyScreen without explicit content_type"
+    14→    warning: "Content type must come from view_mode at push time, not derived inside the screen."
+    15→  - action: "adding labels to ViewConfig.labels expecting OR semantics from GitHub API"
+    16→    warning: "GitHub GraphQL uses AND semantics for label arrays. Multiple labels in a single ViewConfig.labels means items must have ALL listed labels. Use separate views for separate label types. See github-graphql-label-semantics.md."
+    17→  - action: "adding the same label to multiple ViewConfig entries without exclude_labels"
+    18→    warning: "Without exclude_labels, items matching the shared label appear in multiple views. Use exclude_labels for defense-in-depth deduplication (Plans view excludes erk-learn)."
+    19→last_audited: "2026-02-17 00:00 PT"
+    20→audit_result: edited
+    21→---
+    22→
+    23→# TUI View Switching
+    24→
+    25→The TUI supports three views — Plans, Learn, and Objectives — with instant switching via keyboard shortcuts. This document explains the view system architecture, the two-tier filtering strategy, and the caching mechanism that enables sub-millisecond view switches.
+    26→
+    27→## Core Types
+    28→
+    29→&lt;!-- Source: src/erk/tui/views/types.py --&gt;
+    30→
+
+... [120 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NTLxPUbVbthzwn8G97kvSq">
+     1→---
+     2→title: Review Development Guide
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - creating a new code review for CI
+     7→  - adding a new review spec to .erk/reviews/
+     8→  - understanding the end-to-end review creation process
+     9→tripwires:
+    10→  - action: "creating a new review without checking if existing reviews can be extended"
+    11→    warning: "Before creating a new review, check if an existing review type can handle the new checks. See the review types taxonomy for the decision framework."
+    12→  - action: "creating a separate GitHub Actions workflow file for a new review"
+    13→    warning: "Reviews use convention-based discovery from a single workflow. Drop a markdown file in .erk/reviews/ — do NOT create a new .yml workflow."
+    14→---
+    15→
+    16→# Review Development Guide
+    17→
+    18→Erk uses a convention-based review system: a single GitHub Actions workflow discovers and runs review specs defined as markdown files. Creating a new review means writing a markdown file, not a workflow file.
+    19→
+    20→## Why Convention-Based (Not Per-Workflow)
+    21→
+    22→Early reviews each had their own `.github/workflows/review-&lt;name&gt;.yml`. This created maintenance problems: duplicated setup steps, inconsistent boilerplate, and no centralized control over tool permissions or timeout defaults.
+    23→
+    24→&lt;!-- Source: .github/workflows/code-reviews.yml --&gt;
+    25→
+    26→The current system uses one workflow (`code-reviews.yml`) that discovers all `*.md` files in `.erk/reviews/`, parses their frontmatter, matches their `paths` patterns against PR changed files, and runs matching reviews as parallel matrix jobs. Adding a review means dropping a markdown file — the workflow handles discovery, path matching, prompt assembly, and Claude invocation automatically.
+    27→
+    28→&lt;!-- Source: src/erk/review/parsing.py, discover_matching_reviews --&gt;
+    29→&lt;!-- Source: src/erk/review/prompt_assembly.py, assemble_review_prompt --&gt;
+    30→
+
+... [132 lines omitted] ...
+
+    47→This is the most important decision. Creating overlapping reviews wastes CI time and confuses failure attribution.
+  </tool_result>
+  <tool_result tool="toolu_01VTcsMtSDRsdGNFh6gYgGJQ">
+     1→---
+     2→title: Erk Glossary
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "understanding project terminology"
+     7→  - "confused about domain-specific terms"
+     8→  - "working with worktrees, plans, or stacks"
+     9→  - "working with objectives or turns"
+    10→tripwires:
+    11→  - action: "parsing objective roadmap PR column status"
+    12→    warning: "Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan issue), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated."
+    13→---
+    14→
+    15→# Erk Glossary
+    16→
+    17→Definitive terminology reference for the erk project.
+    18→
+    19→**Purpose**: Eliminate confusion about domain-specific terms. When in doubt about terminology, consult this document.
+    20→
+    21→---
+    22→
+    23→## Core Concepts
+    24→
+    25→### activate.sh
+    26→
+    27→A shell script at `.erk/activate.sh` in each worktree that sets up the development environment when sourced.
+    28→
+    29→**Purpose**: Opt-in shell integration. Users explicitly source this script rather than relying on automatic shell manipulation.
+    30→
+
+... [1038 lines omitted] ...
+
+   543→A sentinel class returned when a PR lookup fails, preserving lookup context (branch name, PR number). Uses `isinstance` check (LBYL) instead of exceptions.
+   585→- `style: Literal["info", "success", "warning", "error"]` - Visual style hint (default: "info")
+   737→- `tripwires`: List of action-triggered warnings
+   748→    warning: "Use .erk/scratch/&lt;session-id&gt;/ instead."
+   775→**Format**: Defined in doc frontmatter with `action` (pattern to detect) and `warning` (guidance message).
+   784→    warning: "AI workflow files belong in .erk/scratch/&lt;session-id&gt;/, NOT /tmp/."
+   862→- `erk land` skips the "not learned from" warning for learn plans (they don't need learning)
+   968→- **EAFP**: Easier to Ask for Forgiveness than Permission (exception-based error handling)
+   969→- **LBYL**: Look Before You Leap (check-before-operation error handling)
+  1033→**Purpose**: Break large, complex goals into reviewable, implementable chunks. Instead of tackling "migrate all errors to Ensure class" in one massive PR, an objective evaluates the codebase, identifies a manageable subset of violations, and creates a plan for that subset.
+  </tool_result>
+  <assistant>Now I'll make the edits to all files that need changes:</assistant>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019hZ5iH2SgZoRD1zVxaQRY7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/monkeypatch-elimination-checklist.md</param>
+    <param name="old_string">If the operation doesn't map to an existing gateway, create one before migrating tests. Se...[truncated 14 chars]...architecture/gateway-abc-implementation.md) for the 5-file (or 3-file simplified) pattern.</param>
+    <param name="new_string">If the operation doesn't map to an existing gateway, create one before migrating tests. Se...[truncated 14 chars]...architecture/gateway-abc-implementation.md) for the 4-file (or 3-file simplified) pattern.</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016XZGucRJCo2w1PAMwvbh5M">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/frozen-dataclass-test-doubles.md</param>
+    <param name="old_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-file pattern that fakes implement, including the fake mutation tracking checklist</param>
+    <param name="new_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 4-file pattern that fakes implement, including the fake mutation tracking checklist</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Tgy31TRLLZiY4LpMssmhdo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/gateway-fake-testing-exemplar.md</param>
+    <param name="old_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — The 5-place implementation pattern that fakes are part of</param>
+    <param name="new_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — The 4-place implementation pattern that fakes are part of</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01M6mnku3WGKrKpSgoZTx6qy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/uncategorized/tripwires.md</param>
+    <param name="old_string">**adding a new method to Git/GitHub/Graphite ABC** → Read [Universal Tripwires](universal-tripwires.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.</param>
+    <param name="new_string">**adding a new method to Git/GitHub/Graphite ABC** → Read [Universal Tripwires](universal-tripwires.md) first. Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py.</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KH1Wf1WcpgQK7oiERYJMsC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/gateway-consolidation-checklist.md</param>
+    <param name="old_string">1. **Discoverability** — agents searching for "where is the X gateway?" need one place to ...[truncated 414 chars]...rn (no dry_run/printing). Complex domains (Git, GitHub, Graphite) use nested sub-gateways.</param>
+    <param name="new_string">1. **Discoverability** — agents searching for "where is the X gateway?" need one place to ...[truncated 396 chars]...ile pattern (no dry_run). Complex domains (Git, GitHub, Graphite) use nested sub-gateways.</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AXhsUfZAvgkPses74cs5HG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/gateway-consolidation-checklist.md</param>
+    <param name="old_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-place implementation pattern that consolidated gateways must follow</param>
+    <param name="new_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 4-place implementation pattern that consolidated gateways must follow</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CeAB4yKJBjgnLDSQp5CGyM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/gateway/codespace-gateway.md</param>
+    <param name="old_string">The codespace gateway uses a **3-place pattern** (ABC, real, fake) instead of the standard...[truncated 468 chars]... 5-place (standard)                     | 3-place (codespace, agent_launcher)            |</param>
+    <param name="new_string">The codespace gateway uses a **3-place pattern** (ABC, real, fake) instead of the standard...[truncated 432 chars]... 4-place (standard)                     | 3-place (codespace, agent_launcher)            |</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014mCTGATvd9wGwUFAGDmr2Y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/gateway/codespace-gateway.md</param>
+    <param name="old_string">- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) — 5-place pattern, 3-place variant decision criteria</param>
+    <param name="new_string">- [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) — 4-place pattern, 3-place variant decision criteria</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ABhvRRTsr6bLjiT8Uko1ST">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/universal-tripwires.md</param>
+    <param name="old_string">  - action: "adding a new method to Git/GitHub/Graphite ABC"
+    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."</param>
+    <param name="new_string">  - action: "adding a new method to Git/GitHub/Graphite ABC"
+    warning: "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py."</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0178D5XZBaqo6tMLPesPF8PT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/universal-tripwires.md</param>
+    <param name="old_string">- [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) - 5-place implementation pattern</param>
+    <param name="new_string">- [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) - 4-place implementation pattern</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HDmfTRn4J4kvy7pDrr9qDz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/refactoring/libcst-systematic-imports.md</param>
+    <param name="old_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 5-place pattern that must be updated during consolidation</param>
+    <param name="new_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — the 4-place pattern that must be updated during consolidation</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014Q4BBHQzLeDhMDhCwKNFdp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/incomplete-command-removal.md</param>
+    <param name="old_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — 5-place pattern (similar multi-location removal concern)</param>
+    <param name="new_string">- [Gateway ABC Implementation Checklist](../architecture/gateway-abc-implementation.md) — 4-place pattern (similar multi-location removal concern)</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018mbSKp9bZhzvhyd8mcdKEE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/view-switching.md</param>
+    <param name="old_string">**Symmetric gateway API:** `fetch_plan_content()` and `fetch_objective_content()` follow the 5-place gateway pattern (ABC, real, fake, test helper, tests) with matching extraction functions.</param>
+    <param name="new_string">**Symmetric gateway API:** `fetch_plan_content()` and `fetch_objective_content()` follow the gateway pattern (ABC, real, fake, test helper, tests) with matching extraction functions.</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016fxsZAAhAoRpuZYCkw2kgH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">### Gateway
+
+An ABC (Abstract Base Class) defining an interface for an external system (Gi...[truncated 33 chars]...-file implementation pattern: `abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`.</param>
+    <param name="new_string">### Gateway
+
+An ABC (Abstract Base Class) defining an interface for an external system (Gi...[truncated 72 chars]....py`, `fake.py` (3-file default), plus `dry_run.py` for dry-run-enabled gateways (4-file).</param>
+  </tool_use>
+  <usage input_tokens="2729" cache_creation_input_tokens="35820" cache_read_input_tokens="17168" cache_creation="{'ephemeral_5m_input_tokens': 35820, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019hZ5iH2SgZoRD1zVxaQRY7">
+The file /home/runner/work/erk/erk/docs/learned/testing/monkeypatch-elimination-checklist.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016XZGucRJCo2w1PAMwvbh5M">
+The file /home/runner/work/erk/erk/docs/learned/testing/frozen-dataclass-test-doubles.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Tgy31TRLLZiY4LpMssmhdo">
+The file /home/runner/work/erk/erk/docs/learned/testing/gateway-fake-testing-exemplar.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01M6mnku3WGKrKpSgoZTx6qy">
+The file /home/runner/work/erk/erk/docs/learned/uncategorized/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KH1Wf1WcpgQK7oiERYJMsC">
+The file /home/runner/work/erk/erk/docs/learned/planning/gateway-consolidation-checklist.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AXhsUfZAvgkPses74cs5HG">
+The file /home/runner/work/erk/erk/docs/learned/planning/gateway-consolidation-checklist.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01CeAB4yKJBjgnLDSQp5CGyM">
+The file /home/runner/work/erk/erk/docs/learned/gateway/codespace-gateway.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014mCTGATvd9wGwUFAGDmr2Y">
+The file /home/runner/work/erk/erk/docs/learned/gateway/codespace-gateway.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01ABhvRRTsr6bLjiT8Uko1ST">
+The file /home/runner/work/erk/erk/docs/learned/universal-tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0178D5XZBaqo6tMLPesPF8PT">
+The file /home/runner/work/erk/erk/docs/learned/universal-tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01HDmfTRn4J4kvy7pDrr9qDz">
+The file /home/runner/work/erk/erk/docs/learned/refactoring/libcst-systematic-imports.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014Q4BBHQzLeDhMDhCwKNFdp">
+The file /home/runner/work/erk/erk/docs/learned/cli/incomplete-command-removal.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018mbSKp9bZhzvhyd8mcdKEE">
+The file /home/runner/work/erk/erk/docs/learned/tui/view-switching.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016fxsZAAhAoRpuZYCkw2kgH">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! All 12 files have been successfully updated. Let me verify the changes with a quick grep to confirm no remaining 5-file/5-place references related to printing.py exist:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6683" cache_read_input_tokens="52988" cache_creation="{'ephemeral_5m_input_tokens': 6683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DZxJsfLeKa8Xo6RewAiqj7">
+    <param name="command">grep -r "5-file\|5-place\|printing\.py" /home/runner/work/erk/erk/docs/learned/ --include="*.md" | grep -v "Binary"</param>
+    <param name="description">Search for remaining 5-file/5-place/printing.py references</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6683" cache_read_input_tokens="52988" cache_creation="{'ephemeral_5m_input_tokens': 6683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DZxJsfLeKa8Xo6RewAiqj7">
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-removal-pattern.md:**Why 5-place removal:** Partial removal causes type checker errors. If the ABC still declares the property but Real doesn't implement it, `ty` reports an unimplemented abstract method. All layers must change atomically.
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-removal-pattern.md:3. **Layer deletion** — Removed `src/erk/gateway/claude_executor/` containing abc.py, real.py, fake.py, dry_run.py, printing.py
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-specific-patterns.md:- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-place implementation checklist
+/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md:**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md:- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-place implementation pattern for gateway methods
+/home/runner/work/erk/erk/docs/learned/architecture/fake-mutation-tracking.md:- [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-place pattern
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:    warning: "Read gateway-vs-backend.md first. Gateways wrap external tools (5-place: abc, real, fake, dry_run, printing). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support."
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:Gateways wrap external tools and system calls (subprocess, CLI, HTTP). They follow a **5-place implementation pattern**:
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:| `printing.py` | Wraps another impl with user-visible output | `gateway/git/printing.py` |
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:- `printing.py` enables `--verbose` output without polluting business logic
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:**See:** [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) for the full 5-place implementation guide.
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:- No `dry_run.py` or `printing.py` — business logic doesn't need these
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:| Does it need 5-place implementation?             | Yes     | No      |
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-place implementation pattern
+/home/runner/work/erk/erk/docs/learned/architecture/prompt-executor-gateway.md:- [Gateway ABC Implementation](gateway-abc-implementation.md) - Full 5-file gateway pattern
+/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md:- [Gateway vs Backend](gateway-vs-backend.md) - Backend ABC (3-place) vs Gateway ABC (5-place)
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-signature-migration.md:When changing a gateway method signature (especially return types), you must update every implementation and every caller. The gateway's 5-file pattern magnifies the impact—a single method change touches at least 5 files, and typically many more when callers are updated.
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-signature-migration.md:5. **`printing.py`** — Verbose behavior (log and delegate)
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-signature-migration.md:This keeps each PR focused and testable. However, for gateway ABCs where the 5-file pattern already constrains you, doing it atomically in one PR is often cleaner.
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-signature-migration.md:- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — The 5-place pattern for all gateway changes
+/home/runner/work/erk/erk/docs/learned/architecture/index.md:- **[github-admin-gateway.md](github-admin-gateway.md)** — working with GitHub repository secrets or admin operations, adding methods to the GitHubAdmin gateway, understanding the 5-place gateway pattern with security-sensitive operations
+/home/runner/work/erk/erk/docs/learned/architecture/flatten-subgateway-pattern.md:&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/printing.py, PrintingGit properties --&gt;
+/home/runner/work/erk/erk/docs/learned/architecture/flatten-subgateway-pattern.md:See properties in `PrintingGit` (`packages/erk-shared/src/erk_shared/gateway/git/printing.py`). Pattern: `return PrintingGitBranchOps(self._wrapped.branch, script_mode=self._script_mode, dry_run=self._dry_run)`.
+/home/runner/work/erk/erk/docs/learned/architecture/http-accelerated-plan-refresh.md:| Printing | `http/printing.py` | Verbose output wrapper |
+/home/runner/work/erk/erk/docs/learned/architecture/http-accelerated-plan-refresh.md:- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-place implementation pattern
+/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md:    │   └── printing.py                # Wrapper that logs operations
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md:    context: "The 5-file gateway pattern has clear error boundary responsibilities. Real implementations catch and convert subprocess/system errors. Fakes simulate errors via constructor params. Dry-run always returns success."
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md:In erk's 5-file gateway pattern, **only real.py catches exceptions**. The other four files (abc.py, fake.py, dry_run.py, printing.py) never use try/except — they express failure through different mechanisms.
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md:| `printing.py` | Delegates to wrapped implementation (pass-through) | No               |
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md:### printing.py: Transparent Wrapper
+
+... [11 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md:- [Gateway ABC Implementation](gateway-abc-implementation.md) - 5-file checklist covering abc.py, real.py, fake.py, dry_run.py, printing.py
+/home/runner/work/erk/erk/docs/learned/architecture/git-operation-patterns.md:- [Gateway Error Boundaries](gateway-error-boundaries.md) — Where try/except belongs in the 5-file gateway pattern
+  </tool_result>
+  <assistant>I can see there are more files in the `/home/runner/work/erk/erk/docs/learned/architecture/` directory that still contain 5-file/5-place/printing.py references. Let me read and update the key architecture files that are referenced:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2638" cache_read_input_tokens="59671" cache_creation="{'ephemeral_5m_input_tokens': 2638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JyxvYGy2c4H99imGTgFYCZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2638" cache_read_input_tokens="59671" cache_creation="{'ephemeral_5m_input_tokens': 2638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JyxvYGy2c4H99imGTgFYCZ">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "creating a new gateway ABC"
+    11→    warning: "Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not."
+    12→  - action: "adding a new method to a dry-run-enabled gateway ABC (Git, LocalGitHub, Graphite)"
+    13→    warning: "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py."
+    14→  - action: "adding a new method to a 3-file gateway ABC"
+    15→    warning: "Must implement in 3 places: abc.py, real.py, fake.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from all implementation files simultaneously (3 or 4 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all implementations import the new types. For 4-file gateways: abc.py, real.py, fake.py, dry_run.py. For 3-file gateways: abc.py, real.py, fake.py."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [716 lines omitted] ...
+
+    31→    warning: "All implementations must be updated (3 or 4 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests."
+    33→    warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
+    42→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   106→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   108→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   110→### Decision: Discriminated Union or Exception?
+   114→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   115→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   116→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   120→- [ ] At least one caller branches on the error and continues with different logic
+   121→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   122→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   126→### Checklist: Use Exceptions When
+   128→- [ ] All callers terminate on failure (extract message and stop)
+   129→- [ ] No caller inspects error type or branches on error content
+   130→- [ ] Use `UserFacingCliError` at CLI boundary
+   136→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   151→**Methods using discriminated unions** (callers branch on error):
+   155→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   156→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   157→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   159→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   161→**Methods using exceptions** (all callers terminate):
+   163→| Method              | Exception      | Why                                                         |
+   165→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   166→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   170→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   177→   - [ ] `real.py` - Return appropriate error types for failure cases
+   179→   - [ ] `dry_run.py` - Return appropriate success/error based on mode (4-file gateways only)
+   181→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   186→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   190→- Updated tests to use `isinstance(result, MergeError)`
+   208→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   216→- When error messages from `get_X()` on missing resources are unclear
+   239→    user_output(f"Error: Issue #{issue_number} not found")
+   314→6. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   544→The worktree sub-gateway follows the same 4-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   631→**Partial removal causes type checker errors** - if you remove from abc.py but forget another implementation, the type checker will complain about missing abstract method implementations.
+   649→1. Run type checker (`ty`) to verify no abstract method errors
+   706→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   708→├── fake.py       # Constructor-injected errors, mutation tracking
+   714→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   715→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   716→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   739→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <assistant>I can see that `/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md` is the core gateway document and it already has the correct 3-file/4-file pattern! The file is already accurate and doesn't mention printing.py. The remaining files with 5-file/5-place/printing.py references in the grep results are other architecture docs. Let me check a few more key ones to determine if they need updating based on the current audit status:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="11831" cache_read_input_tokens="62309" cache_creation="{'ephemeral_5m_input_tokens': 11831, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018hC3sjun9RiEfLbP3VU2qe">
+    <param name="command">grep -l "5-file\|5-place\|printing\.py" /home/runner/work/erk/erk/docs/learned/architecture/*.md | head -5</param>
+    <param name="description">Get list of architecture docs with 5-file references</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="11831" cache_read_input_tokens="62309" cache_creation="{'ephemeral_5m_input_tokens': 11831, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018hC3sjun9RiEfLbP3VU2qe">
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md
+/home/runner/work/erk/erk/docs/learned/architecture/fake-mutation-tracking.md
+/home/runner/work/erk/erk/docs/learned/architecture/flatten-subgateway-pattern.md
+  </tool_result>
+  <assistant>Let me check the review development guide since it had a specific reference to the "Five-Place Pattern" section which needs attention:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="383" cache_read_input_tokens="74140" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+</session>
