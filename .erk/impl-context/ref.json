@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Centralize repo resolution infrastructure",
+  "objective_id": 8832,
+  "node_ids": [
+    "2.3"
+  ]
+}
