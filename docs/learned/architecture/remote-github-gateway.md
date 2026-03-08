@@ -73,18 +73,17 @@ See `RealRemoteGitHub` and `FakeRemoteGitHub` in `packages/erk-shared/src/erk_sh
 
 ## Shared `--repo` Infrastructure
 
-`src/erk/cli/commands/pr/repo_resolution.py` provides:
+`src/erk/cli/repo_resolution.py` provides:
 
 | Function                               | Purpose                                      |
 | -------------------------------------- | -------------------------------------------- |
 | `resolve_owner_repo(ctx, target_repo)` | Parse "owner/repo" or extract from local git |
 | `get_remote_github(ctx)`               | Get or construct RemoteGitHub instance       |
-| `is_remote_mode(ctx, target_repo)`     | Check if command should use remote path      |
 | `repo_option`                          | Click `--repo` option decorator              |
 
 ## Remote vs Local Mode
 
-Commands branch on `is_remote_mode()`:
+Commands branch on whether `--repo` was provided:
 
 - **Remote mode** (`--repo` provided or no local git): uses `RemoteGitHub` gateway via REST API
 - **Local mode** (local git available): uses existing `GitHub` gateway via `gh` CLI
