@@ -30,7 +30,6 @@ from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.output.output import user_output
 
 
 @click.command("teleport", cls=CommandWithHiddenOptions)
@@ -217,14 +216,40 @@ def _teleport_new_slot(
     script: bool,
 ) -> None:
     """Teleport into a new worktree slot, force-updating the branch."""
-    # Check if branch already has a worktree
+    # Check if branch already has a worktree — navigate to it instead of erroring
     existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
     if existing_worktree is not None:
-        user_output(
-            f"PR #{pr_number} already has a worktree at "
-            + click.style(str(existing_worktree), fg="cyan", bold=True)
+        navigate_and_display_checkout(
+            ctx,
+            worktree_path=existing_worktree,
+            branch_name=branch_name,
+            script=script,
+            command_name="pr-teleport",
+            already_existed=True,
+            existing_message=(
+                f"PR #{pr_number} branch "
+                + click.style(f"'{branch_name}'", fg="cyan", bold=True)
+                + " is already checked out at {styled_path}"
+            ),
+            new_message="",
+            script_message_existing=f'echo "PR #{pr_number} already checked out at $(pwd)"',
+            script_message_new="",
+            post_cd_commands=None,
         )
-        raise SystemExit(1)
+        if not script:
+            script_path = ensure_worktree_activate_script(
+                worktree_path=existing_worktree,
+                post_create_commands=None,
+            )
+            print_activation_instructions(
+                script_path,
+                source_branch=None,
+                force=False,
+                config=activation_config_activate_only(),
+                copy=True,
+                same_worktree=False,
+            )
+        raise SystemExit(0)
 
     # Fetch and force-update local branch to match remote
     _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
