@@ -38,7 +38,7 @@ Rules triggered by matching actions in code.
 
 **adding click.echo() without sys.stdout.flush() in pipeline commands** → Read [Piped Output Flushing Pattern](piped-output-flushing.md) first. Python buffers stdout when piped. Without explicit flush, users see no output until command completes or buffer fills.
 
-**adding discovery logic outside prepare_state()** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated.
+**adding discovery logic outside prepare_state()** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. All discovery (branch name, plan number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated.
 
 **adding doctor subcommand without invoke_without_command=True** → Read [Doctor Workflow Subcommand](doctor-workflow.md) first. Doctor uses Click group with invoke_without_command=True so bare 'erk doctor' preserves original behavior.
 

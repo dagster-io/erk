@@ -1,33 +1,33 @@
 ---
-title: Issue-PR Linkage Storage Model
+title: Plan-PR Linkage Storage Model
 read_when:
   - "understanding how plans link to PRs"
-  - "debugging why a PR isn't linked to its issue"
+  - "debugging why a PR isn't linked to its plan"
   - "working with .erk/impl-context/plan-ref.json or .erk/impl-context/ref.json"
-  - "creating PRs that close issues"
+  - "creating PRs that close plans"
 last_audited: "2026-02-17 00:00 PT"
 audit_result: clean
 ---
 
-# Issue-PR Linkage Storage Model
+# Plan-PR Linkage Storage Model
 
-This document describes how erk creates and stores the relationship between GitHub issues (plans) and pull requests.
+This document describes how erk creates and stores the relationship between plans and pull requests.
 
 ## Overview
 
 When a plan becomes a PR, erk establishes a linkage that allows:
 
 - `erk pr list` to show which plans have associated PRs
-- PRs to automatically close their source issue when merged
+- PRs to automatically close their source plan when merged
 - The 🔗 indicator to appear for auto-closing PRs
 
 ## How Linkages Are Created
 
 ### Via `erk pr submit`
 
-The primary path for creating issue-PR linkages:
+The primary path for creating plan-PR linkages:
 
-1. Creates branch from plan issue (e.g., `P123-feature-12-11-0948`)
+1. Creates branch from plan (e.g., `P123-feature-12-11-0948`)
 2. Creates `.erk/impl-context/` folder with `ref.json` containing plan reference
 3. Creates draft PR with `Closes #N` in **initial** body
 4. GitHub registers the `CrossReferencedEvent` with `willCloseTarget: true`
@@ -36,7 +36,7 @@ The primary path for creating issue-PR linkages:
 
 ### Via `/erk:pr-submit` or `/erk:git-pr-push`
 
-Slash commands that create PRs read the issue reference from local storage:
+Slash commands that create PRs read the plan reference from local storage:
 
 1. Check for `.erk/impl-context/plan-ref.json` or `.erk/impl-context/ref.json`
 2. If found, append `Closes #N` to PR body
@@ -65,7 +65,7 @@ The primary format (`.erk/impl-context/plan-ref.json`):
 
 `read_plan_ref()` uses a two-level fallback: `plan-ref.json` → `ref.json`.
 
-This file maps the current worktree to its source GitHub issue.
+This file maps the current worktree to its source plan.
 
 - Created by `erk pr submit` (as `.erk/impl-context/`)
 - Created by `erk wt create --from-plan` (as `.erk/impl-context/`)
@@ -87,14 +87,14 @@ See [GitHub Issue-PR Linkage API Patterns](../architecture/github-pr-linkage-api
 
 ### `erk pr list`
 
-Uses GraphQL to query `CrossReferencedEvent` timeline items on each plan issue:
+Uses GraphQL to query `CrossReferencedEvent` timeline items on each plan:
 
-1. Fetches all issues with `erk-plan` label
-2. For each issue, queries timeline for cross-references
+1. Fetches all plans with `erk-plan` label
+2. For each plan, queries timeline for cross-references
 3. Extracts PR info including `willCloseTarget` field
-4. Displays 🔗 indicator for PRs that will close the issue
+4. Displays 🔗 indicator for PRs that will close the plan
 
-**Display format**: `#123 🔗` indicates PR #123 will close the issue when merged.
+**Display format**: `#123 🔗` indicates PR #123 will close the plan when merged.
 
 ### `erk dash`
 
@@ -116,8 +116,8 @@ This timing behavior is documented in [GitHub community discussion #24706](https
 
 ### PR Not Showing in `erk pr list`
 
-1. **No cross-reference exists**: PR body/commits don't mention the issue number
-2. **Wrong issue number**: Check `.erk/impl-context/plan-ref.json` (or `.erk/impl-context/ref.json`) contains correct plan ID
+1. **No cross-reference exists**: PR body/commits don't mention the plan number
+2. **Wrong plan number**: Check `.erk/impl-context/plan-ref.json` (or `.erk/impl-context/ref.json`) contains correct plan ID
 3. **API propagation delay**: Wait a moment and refresh
 
 ### 🔗 Not Appearing (willCloseTarget is False)
@@ -147,7 +147,7 @@ gh pr view --json body -q '.body'
 
 | Purpose                 | Location                                                     |
 | ----------------------- | ------------------------------------------------------------ |
-| Issue reference reading | `packages/erk-shared/src/erk_shared/impl_folder.py`          |
+| Plan reference reading  | `packages/erk-shared/src/erk_shared/impl_folder.py`          |
 | PR creation with Closes | `src/erk/cli/commands/pr/`                                   |
 | PR body footer command  | `src/erk/cli/commands/exec/scripts/get_pr_body_footer.py`    |
 | Timeline event parsing  | `packages/erk-shared/src/erk_shared/gateway/github/real.py`  |
@@ -155,5 +155,5 @@ gh pr view --json body -q '.body'
 
 ## Related Topics
 
-- [GitHub Issue-PR Linkage API Patterns](../architecture/github-pr-linkage-api.md) - API patterns for querying linkages
+- [GitHub Plan-PR Linkage API Patterns](../architecture/github-pr-linkage-api.md) - API patterns for querying linkages
 - [Plan Lifecycle](../planning/lifecycle.md) - Full plan lifecycle from creation to landing

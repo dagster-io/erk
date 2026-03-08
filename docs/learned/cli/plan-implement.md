@@ -4,7 +4,7 @@ last_audited: "2026-02-15 18:50 PT"
 audit_result: clean
 read_when:
   - "understanding the /erk:plan-implement command"
-  - "implementing plans from GitHub issues"
+  - "implementing plans from GitHub"
   - "working with .erk/impl-context/ folders"
   - "debugging plan execution failures"
 tripwires:
@@ -28,8 +28,8 @@ The command follows a priority-based source resolution pattern that determines w
 
 **Priority 1: Explicit argument**
 
-- Issue number → Fetch from GitHub, create branch, setup `.erk/impl-context/`
-- File path → Local plan, create branch from file, no issue tracking
+- Plan number → Fetch from GitHub, create branch, setup `.erk/impl-context/`
+- File path → Local plan, create branch from file, no plan tracking
 - Empty → Fall through to Priority 2
 
 **Priority 2: Existing `.erk/impl-context/` folder**
@@ -39,9 +39,9 @@ The command follows a priority-based source resolution pattern that determines w
 
 **Priority 3: Current plan mode session**
 
-- Save plan to GitHub issue → Setup from new issue → Implement
+- Save plan to GitHub → Setup from new plan → Implement
 
-This priority order prevents destructive operations (saving plans when `.erk/impl-context/` exists) and enables flexible workflow restart.
+This priority order prevents destructive operations (saving plans when `.erk/impl-context/` already exists) and enables flexible workflow restart.
 
 ## `.impl/` vs `.erk/impl-context/` Distinction
 
@@ -84,15 +84,15 @@ Without session push:
 
 With session push:
 
-- Session preprocessed and stored on learn branch (linked to issue)
-- Learn workflow finds session via issue metadata
+- Session preprocessed and stored on learn branch (linked to plan)
+- Learn workflow finds session via plan metadata
 - Local and remote implementations treated uniformly
 
 ### Implementation Pattern
 
 <!-- Source: .claude/commands/erk/plan-implement.md, Step 10b -->
 
-The command uses `capture-session-info` to extract session ID and file path from Claude's project directory, then pushes via `push-session` with issue linking:
+The command uses `capture-session-info` to extract session ID and file path from Claude's project directory, then pushes via `push-session` with plan linking:
 
 See `capture_session_info()` in `src/erk/cli/commands/exec/scripts/capture_session_info.py` for session discovery logic.
 
@@ -100,13 +100,13 @@ See `capture_session_info()` in `src/erk/cli/commands/exec/scripts/capture_sessi
 
 ## Common Failure Patterns
 
-### File-Based Plans Lack Issue Tracking
+### File-Based Plans Lack Plan Tracking
 
-When implementing from a markdown file (not a GitHub issue), `impl-init` returns `has_issue_tracking: false`. This means:
+When implementing from a markdown file (not a GitHub plan), `impl-init` returns `has_plan_tracking: false`. This means:
 
-- No PR-to-issue linking (`get-closing-text` returns empty)
+- No PR-to-plan linking (`get-closing-text` returns empty)
 - No GitHub comments (impl-signal silently no-ops)
-- PR won't auto-close an issue on merge
+- PR won't auto-close a plan on merge
 
 This is **by design** — file-based plans are for throwaway experiments, not tracked work.
 
@@ -115,8 +115,8 @@ This is **by design** — file-based plans are for throwaway experiments, not tr
 When `.erk/impl-context/` already exists and is valid, the command skips directly to implementation. This causes confusion when:
 
 - User expects fresh plan fetch from GitHub (stale `.erk/impl-context/plan.md`)
-- Issue was updated but `.erk/impl-context/` contains old version
-- Branch name doesn't match current issue
+- Plan was updated but `.erk/impl-context/` contains old version
+- Branch name doesn't match current plan
 
 **Solution:** Delete `.erk/impl-context/` folder to force setup phase re-execution.
 
@@ -134,7 +134,7 @@ Different phases have vastly different completion times:
 
 | Phase                 | Typical Duration | Blocking Factor                  |
 | --------------------- | ---------------- | -------------------------------- |
-| Setup (issue fetch)   | 2-5 seconds      | GitHub API latency               |
+| Setup (plan fetch)    | 2-5 seconds      | GitHub API latency               |
 | Setup (branch create) | <1 second        | Local git operation              |
 | Implementation        | 5 mins - 2 hours | Plan complexity, codebase size   |
 | CI verification       | 2-10 minutes     | Test suite size, iteration count |
@@ -166,9 +166,9 @@ git add -f .impl/plan.md  # Force-add ignored file
 git commit -m "Add implementation plan"
 ```
 
-**Why wrong:** `.impl/` is agent working state, not documentation. Plans live in GitHub issues. Forcing gitignored files into commits creates confusion about source of truth.
+**Why wrong:** `.impl/` is agent working state, not documentation. Plans are tracked as GitHub PRs. Forcing gitignored files into commits creates confusion about source of truth.
 
-**Correct:** Link PR body to plan issue (`**Plan:** #123`). Issue is the documentation.
+**Correct:** Link PR body to plan (`**Plan:** #123`). The plan is the documentation.
 
 ## Signal Events and Plan File Lifecycle
 
@@ -178,7 +178,7 @@ The `impl-signal started` command has a side effect that's easy to miss: it dele
 
 This happens because:
 
-1. Plan content has been saved to GitHub issue (permanent storage)
+1. Plan content has been saved to GitHub (permanent storage)
 2. Plan content has been snapshotted to `.erk/scratch/` (backup)
 3. Keeping the file could cause confusion if user tries to re-save
 

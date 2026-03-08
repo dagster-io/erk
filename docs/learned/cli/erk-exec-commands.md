@@ -72,7 +72,7 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 ### Plan Operations
 
-- `get-plan-metadata` - Read plan issue metadata
+- `get-plan-metadata` - Read plan metadata
 - `setup-impl-from-pr` - Prepare .erk/impl-context/ folder
 
 ### Session Operations
@@ -86,14 +86,14 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 #### track-learn-result Status Values
 
-| Status                | Description                            | When Used                     |
-| --------------------- | -------------------------------------- | ----------------------------- |
-| `not_started`         | Learn not yet run                      | Initial state                 |
-| `pending`             | Learn scheduled                        | Waiting for execution         |
-| `completed_no_plan`   | Learn found no documentation gaps      | No changes needed             |
-| `completed_with_plan` | Learn created documentation plan issue | Gaps identified               |
-| `pending_review`      | Learn plan awaiting review             | Plan created, not implemented |
-| `plan_completed`      | Learn plan implemented and merged      | Documentation updated         |
+| Status                | Description                       | When Used                     |
+| --------------------- | --------------------------------- | ----------------------------- |
+| `not_started`         | Learn not yet run                 | Initial state                 |
+| `pending`             | Learn scheduled                   | Waiting for execution         |
+| `completed_no_plan`   | Learn found no documentation gaps | No changes needed             |
+| `completed_with_plan` | Learn created documentation plan  | Gaps identified               |
+| `pending_review`      | Learn plan awaiting review        | Plan created, not implemented |
+| `plan_completed`      | Learn plan implemented and merged | Documentation updated         |
 
 ### Objective Operations
 
@@ -119,7 +119,7 @@ Updates a step's status and/or PR reference. When `--pr` is provided without `--
 ### Implementation Setup Operations
 
 - `setup-impl` - Consolidated implementation setup (orchestrator)
-- `setup-impl-from-pr` - Prepare worktree from a plan issue (called by `setup-impl`)
+- `setup-impl-from-pr` - Prepare worktree from a plan (called by `setup-impl`)
 - `cleanup-impl-context` - Remove `.erk/impl-context/` staging directory
 
 #### setup-impl
@@ -127,21 +127,21 @@ Updates a step's status and/or PR reference. When `--pr` is provided without `--
 Consolidated entry point for implementation setup. Handles all plan sources:
 
 ```bash
-erk exec setup-impl --issue 2521              # From issue number
+erk exec setup-impl --issue 2521              # From plan number
 erk exec setup-impl --file ./my-plan.md       # From local file
 erk exec setup-impl                           # Auto-detect from .erk/impl-context/, branch, or fail
 ```
 
 **What it does:**
 
-1. Detects plan source (issue, file, existing `.erk/impl-context/`, or branch name)
-2. Delegates to `setup-impl-from-pr` for issue-based plans
+1. Detects plan source (plan number, file, existing `.erk/impl-context/`, or branch name)
+2. Delegates to `setup-impl-from-pr` for plan-based implementations
 3. Runs `impl-init` validation
 4. Cleans up `.erk/impl-context/` staging directory (git rm + commit + push)
 
 **Flags:**
 
-- `--issue` - Issue number to fetch plan from
+- `--issue` - Plan number to fetch plan from
 - `--file` - Local markdown file path
 - `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
 
@@ -149,12 +149,12 @@ erk exec setup-impl                           # Auto-detect from .erk/impl-conte
 
 #### setup-impl-from-pr
 
-Creates implementation environment from a plan issue:
+Creates implementation environment from a plan:
 
-1. Fetches plan from GitHub issue
+1. Fetches plan from GitHub
 2. Creates/checks out implementation branch (e.g., `P123-feature-01-15-1430`)
 3. Creates `.erk/impl-context/` folder with plan content
-4. Saves issue reference for PR linking
+4. Saves plan reference for PR linking
 
 **Flags:**
 
@@ -175,15 +175,15 @@ Creates implementation environment from a plan issue:
 Consolidated entry point for implementation setup. Handles all plan sources:
 
 ```bash
-erk exec setup-impl --issue 2521              # From issue number
+erk exec setup-impl --issue 2521              # From plan number
 erk exec setup-impl --file ./my-plan.md       # From local file
 erk exec setup-impl                           # Auto-detect from .erk/impl-context/, branch, or fail
 ```
 
 **What it does:**
 
-1. Detects plan source (issue, file, existing `.erk/impl-context/`, or branch name)
-2. Delegates to `setup-impl-from-pr` for issue-based plans
+1. Detects plan source (plan number, file, existing `.erk/impl-context/`, or branch name)
+2. Delegates to `setup-impl-from-pr` for plan-based implementations
 3. Runs `impl-init` validation
 4. Cleans up `.erk/impl-context/` staging directory (git rm + commit + push)
 

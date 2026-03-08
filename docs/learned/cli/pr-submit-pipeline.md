@@ -11,7 +11,7 @@ tripwires:
   - action: "mutating SubmitState fields directly"
     warning: "SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state."
   - action: "adding discovery logic outside prepare_state()"
-    warning: "All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
+    warning: "All discovery (branch name, plan number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
   - action: "using ctx.invoke() with kwargs that don't match target function parameter names"
     warning: "Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature."
   - action: "calling an external tool that overwrites state without capturing it first"
@@ -26,7 +26,7 @@ The PR submit pipeline is erk's reference implementation of the state threading 
 
 ## Why Linear Pipelines: The Dual-Path Problem
 
-Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, issue linkage validation happened in multiple places, and error handling varied between branches.
+Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, plan linkage validation happened in multiple places, and error handling varied between branches.
 
 Linear pipelines solve this by **deferring the dispatch decision**. Discovery happens once in step 1, then step 3 dispatches internally to Graphite or core flow. Both paths share the same state type and error handling.
 

@@ -21,13 +21,13 @@ Erk provides two workflows for addressing PR review comments using Claude:
 
 ## Decision Matrix
 
-| Factor                       | Local                        | Remote                          |
-| ---------------------------- | ---------------------------- | ------------------------------- |
-| **Branch checkout**          | Required (must be on branch) | Not required                    |
-| **Interactive confirmation** | Yes (via Claude Code)        | No                              |
-| **Error recovery**           | Immediate (fix and retry)    | Check workflow logs             |
-| **Plan metadata tracking**   | Manual                       | Automatic for P{issue} branches |
-| **Best for**                 | Active development           | Queued/async work               |
+| Factor                       | Local                        | Remote                         |
+| ---------------------------- | ---------------------------- | ------------------------------ |
+| **Branch checkout**          | Required (must be on branch) | Not required                   |
+| **Interactive confirmation** | Yes (via Claude Code)        | No                             |
+| **Error recovery**           | Immediate (fix and retry)    | Check workflow logs            |
+| **Plan metadata tracking**   | Manual                       | Automatic for `plnd/` branches |
+| **Best for**                 | Active development           | Queued/async work              |
 
 ## Local Workflow: /erk:pr-address
 
@@ -66,31 +66,31 @@ See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md)
 
 #### What's different in Plan Review Mode
 
-| Aspect                | Code Review Mode       | Plan Review Mode              |
-| --------------------- | ---------------------- | ----------------------------- |
-| **File modified**     | Source code files      | `PLAN-REVIEW-{issue}.md`      |
-| **Sync mechanism**    | Git push only          | Git push + plan sync to issue |
-| **Thread resolution** | Generic acknowledgment | Plan-specific messages        |
-| **Target audience**   | Code reviewers         | Plan reviewers                |
+| Aspect                | Code Review Mode       | Plan Review Mode               |
+| --------------------- | ---------------------- | ------------------------------ |
+| **File modified**     | Source code files      | `PLAN-REVIEW-{plan_number}.md` |
+| **Sync mechanism**    | Git push only          | Git push + plan sync to plan   |
+| **Thread resolution** | Generic acknowledgment | Plan-specific messages         |
+| **Target audience**   | Code reviewers         | Plan reviewers                 |
 
 #### Plan Review Workflow
 
 1. **Fetch feedback**: Get unresolved review comments from PR
-2. **Edit plan file**: Make changes to `PLAN-REVIEW-{issue}.md` based on feedback
+2. **Edit plan file**: Make changes to `PLAN-REVIEW-{plan_number}.md` based on feedback
 3. **Commit changes**: Commit the edited plan file
-4. **Sync to GitHub issue**: Sync changes back to the issue
+4. **Sync to plan**: Sync changes back to the plan
 5. **Resolve threads**: Mark review threads as resolved with plan-specific messages
 
-Plan changes to the local file require `erk exec plan-update` to propagate to the issue.
+Plan changes to the local file require `erk exec plan-update` to propagate to the plan.
 
 #### Why separate sync is needed
 
 Plan review PRs maintain plan content in two locations:
 
-- **PR branch**: `PLAN-REVIEW-{issue}.md` file (for version control)
-- **GitHub issue**: Plan-body comment (for structured review)
+- **PR branch**: `PLAN-REVIEW-{plan_number}.md` file (for version control)
+- **Plan PR**: Plan-body comment (for structured review)
 
-The git push updates the PR, but doesn't update the issue. Running `erk exec plan-update` ensures reviewers see changes in both locations.
+The git push updates the PR, but doesn't update the plan. Running `erk exec plan-update` ensures reviewers see changes in both locations.
 
 #### When Plan Review Mode is used
 
@@ -118,8 +118,8 @@ See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md)
 | Aspect             | Plan Review Mode                    | Plan File Mode                          |
 | ------------------ | ----------------------------------- | --------------------------------------- |
 | **Trigger**        | `erk-plan-review` label             | Git-tracked `.erk/impl-context/plan.md` |
-| **File modified**  | `PLAN-REVIEW-{issue}.md`            | `.erk/impl-context/plan.md`             |
-| **Sync mechanism** | Git push + plan sync to issue       | Git push only (no issue sync)           |
+| **File modified**  | `PLAN-REVIEW-{plan_number}.md`      | `.erk/impl-context/plan.md`             |
+| **Sync mechanism** | Git push + plan sync to plan        | Git push only (no plan sync)            |
 | **PR description** | Updated via `update-pr-description` | Skipped (plan PRs have own format)      |
 | **Push method**    | Graphite submit                     | `git push` directly                     |
 
@@ -151,7 +151,7 @@ erk launch pr-address --pr 123 --model claude-opus-4
 
 ### Plan Dispatch Metadata Tracking
 
-When the branch name follows the `plnd/` prefix pattern (e.g., `plnd/add-feature-03-07-1234`), the command automatically updates the plan issue with dispatch metadata:
+When the branch name follows the `plnd/` prefix pattern (e.g., `plnd/add-feature-03-07-1234`), the command automatically updates the plan with dispatch metadata:
 
 - `last_dispatch_run_id` - The workflow run ID
 - `last_dispatch_node_id` - The workflow run node ID (for GraphQL)
