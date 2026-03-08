@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from anyio import to_thread
+from fastmcp.tools.tool import Tool, ToolResult
+
+from erk.cli.json_schema import command_input_schema
+from erk.cli.mcp_exposed import discover_mcp_commands
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -23,6 +30,52 @@ def _run_erk(args: list[str]) -> subprocess.CompletedProcess[str]:
         stderr = result.stderr.strip()
         raise RuntimeError(f"erk {' '.join(args)} failed (exit {result.returncode}): {stderr}")
     return result
+
+
+def _run_erk_json(command: str, params: dict[str, Any]) -> str:
+    """Run erk command with --json, piping params as JSON stdin."""
+    result = subprocess.run(
+        ["erk", command, "--json"],
+        input=json.dumps(params),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout
+
+
+class JsonCommandTool(Tool):
+    """MCP tool backed by an erk @json_command CLI command.
+
+    Dynamically registers a CLI command as an MCP tool using the command's
+    input schema derived from Click parameters. The tool filters out None
+    values before piping params as JSON to the CLI.
+    """
+
+    cli_command: str
+
+    async def run(self, arguments: dict[str, Any]) -> ToolResult:
+        params = {k: v for k, v in arguments.items() if v is not None}
+        result = await to_thread.run_sync(lambda: _run_erk_json(self.cli_command, params))
+        return self.convert_result(result)
+
+
+def _build_json_command_tools() -> tuple[JsonCommandTool, ...]:
+    """Discover @mcp_exposed commands and build JsonCommandTool instances."""
+    from erk.cli.cli import cli
+
+    tools: list[JsonCommandTool] = []
+    for cmd, meta in discover_mcp_commands(cli):
+        assert cmd.name is not None
+        tools.append(
+            JsonCommandTool(
+                name=meta.name,
+                cli_command=cmd.name,
+                description=meta.description,
+                parameters=command_input_schema(cmd),
+            )
+        )
+    return tuple(tools)
 
 
 def plan_list(state: str | None = None) -> str:
@@ -47,24 +100,15 @@ def plan_view(plan_id: int) -> str:
     return result.stdout
 
 
-def one_shot(prompt: str) -> str:
-    """Submit a task for fully autonomous remote execution.
-
-    Creates a branch, draft PR, and dispatches a GitHub Actions workflow
-    where Claude autonomously explores, plans, implements, and submits.
-
-    Returns after dispatch (~10-30s) with PR and workflow run URLs.
-    """
-    result = _run_erk(["one-shot", prompt])
-    return result.stdout
-
-
 def create_mcp() -> FastMCP:
     """Create and configure the FastMCP server instance."""
     from fastmcp import FastMCP
 
     server = FastMCP(DEFAULT_MCP_NAME)
+    # Hand-written tools (no input schema class yet)
     server.tool()(plan_list)
     server.tool()(plan_view)
-    server.tool()(one_shot)
+    # Auto-discovered @mcp_exposed @json_command tools
+    for tool in _build_json_command_tools():
+        server.add_tool(tool)
     return server
