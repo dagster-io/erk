@@ -35,4 +35,4 @@ Ephemeral CI runners (GitHub Actions) don't benefit from cache pruning:
 
 ## Location
 
-`.github/actions/erk-remote-setup/action.yml` — the `prune-cache: false` setting is in the setup-uv step.
+See the `setup-uv` step in `.github/actions/erk-remote-setup/action.yml`.

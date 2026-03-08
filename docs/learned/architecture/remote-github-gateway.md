@@ -69,8 +69,7 @@ REST API-based GitHub operations without a local git or `gh` CLI dependency. Ena
 
 ## Implementation
 
-- **Real**: `RealRemoteGitHub` uses `HttpClient` for REST API calls and `Time` for polling delays
-- **Fake**: `FakeRemoteGitHub` uses constructor injection for data + mutation tracking lists for assertions
+See `RealRemoteGitHub` and `FakeRemoteGitHub` in `packages/erk-shared/src/erk_shared/gateway/remote_github/`.
 
 ## Shared `--repo` Infrastructure
 
