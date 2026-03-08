@@ -56,6 +56,7 @@ from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
 from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
+from erk.cli.commands.exec.scripts.get_plan_phase import get_plan_phase
 from erk.cli.commands.exec.scripts.get_plans_for_objective import (
     get_plans_for_objective,
 )
@@ -211,6 +212,7 @@ exec_group.add_command(fetch_sessions, name="fetch-sessions")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
 exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
+exec_group.add_command(get_plan_phase, name="get-plan-phase")
 exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
 exec_group.add_command(get_pr_for_plan, name="get-pr-for-plan")
 exec_group.add_command(get_pr_view, name="get-pr-view")

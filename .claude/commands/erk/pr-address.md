@@ -33,9 +33,21 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 ### Phase 0: Mode Detection
 
-Determine the execution mode before any work begins:
+Determine the execution mode before any work begins using the centralized phase detection:
 
-1. **Check for `erk-plan-review` label**:
+1. **Detect plan number from current branch**:
+
+   ```bash
+   PLAN_NUM=$(erk exec detect-plan-from-branch | jq -r 'if .found then .plan_number else empty end')
+   ```
+
+2. **If a plan number was found, get the plan phase**:
+
+   ```bash
+   PHASE=$(erk exec get-plan-phase "$PLAN_NUM" | jq -r '.phase')
+   ```
+
+3. **Check for `erk-plan-review` label** (only when PHASE is "plan"):
 
    ```bash
    gh pr view --json labels -q '.labels[].name' | grep -q '^erk-plan-review$'
@@ -43,15 +55,10 @@ Determine the execution mode before any work begins:
 
    If found → **Plan Review Mode** (existing behavior, see Plan Review Mode section in pr-address-workflows docs)
 
-2. **Check if `.erk/impl-context/plan.md` is git-tracked**:
-
-   ```bash
-   git ls-files --error-unmatch .erk/impl-context/plan.md >/dev/null 2>&1
-   ```
-
-   If found → **Plan File Mode** (see below — skip Phases 1-6 entirely)
-
-3. **Neither** → **Code Review Mode** (continue to Phase 1)
+4. **Route by phase**:
+   - `PHASE == "plan"` (without `erk-plan-review` label) → **Plan File Mode** (see below — skip Phases 1-6 entirely)
+   - `PHASE == "impl"` or no plan detected → **Code Review Mode** (continue to Phase 1)
+   - `PHASE == "merged"` or `PHASE == "closed"` → Display message and exit
 
 ---
 
