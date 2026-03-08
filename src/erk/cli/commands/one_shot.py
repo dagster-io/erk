@@ -19,8 +19,6 @@ import click
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
-    OneShotDispatchResult,
-    OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref

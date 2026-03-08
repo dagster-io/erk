@@ -352,6 +352,7 @@ def test_return_value_ignored_in_non_json_mode() -> None:
             pass
 
 
+
 def test_emit_json_result_with_plain_dataclass() -> None:
     """Plain dataclass uses asdict fallback."""
 
