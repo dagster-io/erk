@@ -1,0 +1,87 @@
+<session>
+  <meta source="agent-ad11b66" />
+  <meta branch="plnd/land-stack-graphite-03-08-0127" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run pytest on the new test file and report results:
+```
+cd /home/runner/work/erk/erk &amp;&amp; python -m pytest tests/unit/cli/commands/land/test_land_stack.py -x -v 2&gt;&amp;1 | head -200
+```</user>
+  <assistant>I'll run pytest on the new test file and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7492" cache_read_input_tokens="4863" cache_creation="{'ephemeral_5m_input_tokens': 7492, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019rmJqzs9ZmmmpzSFJQyXa2">
+    <param name="command">uv run pytest tests/unit/cli/commands/land/test_land_stack.py -x -v 2&gt;&amp;1 | head -200</param>
+    <param name="description">Run pytest on land stack test file</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7492" cache_read_input_tokens="4863" cache_creation="{'ephemeral_5m_input_tokens': 7492, 'ephemeral_1h_input_tokens': 0}" output_tokens="137" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019rmJqzs9ZmmmpzSFJQyXa2">
+   Building erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+Downloading ty (10.3MiB)
+Downloading ruff (10.7MiB)
+Downloading mkdocs (3.7MiB)
+Downloading babel (9.7MiB)
+Downloading aiohttp (1.7MiB)
+Downloading mkdocs-material (8.9MiB)
+Downloading libcst (2.2MiB)
+ Downloaded aiohttp
+ Downloaded mkdocs
+      Built erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+ Downloaded ty
+ Downloaded ruff
+ Downloaded libcst
+ Downloaded babel
+ Downloaded mkdocs-material
+Installed 58 packages in 364ms
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 16 items
+
+tests/unit/cli/commands/land/test_land_stack.py .F
+
+=================================== FAILURES ===================================
+___________________ TestResolveStack.test_requires_graphite ____________________
+
+
+... [49 lines omitted] ...
+
+        """Errors when Graphite is not enabled."""
+error_message = '--stack requires Graphite for stack tracking.\n\nTo enable Graphite: erk config set use_graphite true'
+    def invariant(condition: bool, error_message: str) -&gt; None:
+        """Ensure condition is true, otherwise output styled error and exit.
+            error_message: Error message to display if condition is false.
+                          "Error: " prefix will be added automatically in red.
+            UserFacingCliError: If condition is false
+&gt;           raise UserFacingCliError(error_message)
+E           erk.cli.ensure.UserFacingCliError: --stack requires Graphite for stack tracking.
+src/erk/cli/ensure.py:71: UserFacingCliError
+FAILED tests/unit/cli/commands/land/test_land_stack.py::TestResolveStack::test_requires_graphite - erk.cli.ensure.UserFacingCliError: --stack requires Graphite for stack tracking.
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+========================= 1 failed, 1 passed in 1.78s ==========================
+  </tool_result>
+  <assistant>pytest failed: 1 failed
+
+**Test Results Summary:**
+- Total: 16 collected
+- Passed: 1
+- Failed: 1
+- Stopped at first failure with `-x` flag
+
+**Failure Details:**
+
+**File:** tests/unit/cli/commands/land/test_land_stack.py::TestResolveStack::test_requires_graphite
+
+**Error:** `UserFacingCliError` raised instead of `SystemExit`
+
+The test expects `_resolve_stack()` to raise `SystemExit` when Graphite is disabled, but the actual implementation raises `UserFacingCliError`. The test needs to be updated to expect the correct exception type.
+
+**Code Location:**
+- Test file: `/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_stack.py:107`
+- Implementation: `/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py:136`
+- Exception class: `/home/runner/work/erk/erk/src/erk/cli/ensure.py:71`
+
+The implementation uses `Ensure.invariant()` which raises `UserFacingCliError` for validation failures, but the test fixture is catching `SystemExit`.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1238" cache_read_input_tokens="12355" cache_creation="{'ephemeral_5m_input_tokens': 1238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

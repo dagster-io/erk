@@ -1,0 +1,981 @@
+<session>
+  <meta source="agent-a3a5581" />
+  <meta branch="plnd/land-stack-graphite-03-08-0127" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Perfect! Now I have all the information needed. Let me compile a comprehensive report.
+
+---
+
+## Comprehensive Implementation Guide: `erk land --stack`
+
+Based on my analysis of the codebase, here's everything you need to implement `erk land --stack` to land an entire Graphite stack bottom-up.
+
+### 1. EXISTING LAND COMMAND STRUCTURE
+
+**Location**: `/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py` (1636 lines)
+**Pipeline**: `/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py` (611 lines)
+
+The land command uses a **two-pipeline pattern** separated by a shell script boundary:
+
+- **Validation Pipeline** (CLI process): Resolves target, validates PR, gathers confirmations
+- **Execution Pipeline** (exec script process): Merges PR, creates learn plan, cleans up
+
+#### Key Data Types
+
+```python
+# LandState (frozen dataclass with 21 fields)
+@dataclass(frozen=True)
+class LandState:
+    # CLI inputs (8 fields)
+    cwd: Path
+    force: bool
+    script: bool
+    pull_flag: bool
+    no_delete: bool
+    up_flag: bool
+    dry_run: bool
+    skip_learn: bool
+    target_arg: str | None
+    
+    # Resolved target (9 fields)
+    repo_root: Path
+    main_repo_root: Path
+    branch: str
+    pr_number: int
+    pr_details: PRDetails | None
+    worktree_path: Path | None
+    is_current_branch: bool
+    use_graphite: bool
+    target_child_branch: str | None
+    
+    # Derived (4 fields)
+    objective_number: int | None
+    plan_id: str | None
+    cleanup_confirmed: bool
+    merged_pr_number: int | None
+
+# LandError: Error result with phase, error_type, message, details
+@dataclass(frozen=True)
+class LandError:
+    phase: str
+    error_type: str
+    message: str
+    details: dict[str, str]
+
+# LandTarget: Resolved landing target for a single PR
+@dataclass(frozen=True)
+class LandTarget:
+    branch: str
+    pr_details: PRDetails
+    worktree_path: Path | None
+    is_current_branch: bool
+    use_graphite: bool
+    target_child_branch: str | None
+```
+
+#### Pipeline Steps Pattern
+
+```python
+# Type definition
+LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+
+# All steps follow this signature:
+def step_name(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+    # Mutate state using dataclasses.replace()
+    return dataclasses.replace(state, field=new_value, ...)
+
+# Validation pipeline steps:
+1. resolve_target() - Parse CLI arg, fetch PR details
+2. validate_pr() - Check PR state, base branch, unresolved comments
+3. resolve_plan_id() - Look up plan for branch
+4. gather_confirmations() - Prompt for cleanup confirmation
+5. resolve_objective() - Look up linked objective
+
+# Execution pipeline steps:
+1. merge_pr() - Merge via Graphite or GitHub API
+2. create_learn_pr() - Create learn plan (optional)
+3. cleanup_and_navigate() - Delete branch/worktree, navigate
+```
+
+---
+
+### 2. `execute_land_pr` OPERATION (Single PR)
+
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/gt/operations/land_pr.py`
+
+This is the Graphite-managed single PR landing operation called by `merge_pr()` when `use_graphite=True`.
+
+**Signature**:
+```python
+def execute_land_pr(
+    ops: GtKit,
+    cwd: Path,
+) -&gt; Generator[ProgressEvent | CompletionEvent[LandPrSuccess | LandPrError]]
+```
+
+**What it does** (9 steps):
+1. Get current branch
+2. Get parent branch (Graphite)
+3. Validate parent is trunk
+4. Check PR exists and is OPEN
+5. Validate PR base matches trunk
+6. Find child branches (union of Graphite + GitHub PRs with this branch as base)
+7. Update child PR base branches to trunk (prevent GitHub auto-close)
+8. Merge PR with squash
+9. Delete remote branch
+
+**Critical for `land --stack`**: This shows the child-finding and base-update pattern we need to replicate for each PR in the stack.
+
+---
+
+### 3. GATEWAY INTERFACES
+
+#### 3.1 BranchManager ABC
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py`
+
+```python
+class BranchManager(ABC):
+    @abstractmethod
+    def get_branch_stack(self, repo_root: Path, branch: str) -&gt; list[str] | None:
+        """Get the linear worktree stack for a given branch.
+        
+        For Graphite: Returns the stack from trunk to leaf containing this branch.
+        For Git: Returns None (stacks are a Graphite-only feature).
+        
+        Returns:
+            List of branch names in the stack (ordered trunk to leaf),
+            or None if branch is not tracked/stacks unavailable.
+        """
+        ...
+
+    @abstractmethod
+    def get_parent_branch(self, repo_root: Path, branch: str) -&gt; str | None:
+        """Get parent branch name for a given branch.
+        
+        For Graphite: Returns the parent branch from Graphite's cache.
+        For Git: Returns None (plain Git doesn't track parent relationships).
+        """
+        ...
+
+    @abstractmethod
+    def get_child_branches(self, repo_root: Path, branch: str) -&gt; list[str]:
+        """Get child branch names for a given branch.
+        
+        For Graphite: Returns children from Graphite's cache.
+        For Git: Returns empty list (plain Git doesn't track children).
+        """
+        ...
+
+    # Others: create_branch, delete_branch, checkout_branch, etc.
+```
+
+#### 3.2 Graphite ABC
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py`
+
+```python
+class Graphite(ABC):
+    @abstractmethod
+    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str] | None:
+        """Get the linear worktree stack for a given branch.
+        
+        Builds chain: ancestors down to trunk + descendants up to leaf.
+        
+        Returns:
+            List of branch names in the stack, ordered from trunk to leaf
+            (e.g., ["main", "feature-1", "feature-2", "feature-3"]).
+            Returns None if branch is not tracked by graphite.
+        """
+        ...
+
+    def get_parent_branch(self, git_ops: Git, repo_root: Path, branch: str) -&gt; str | None:
+        """Get parent branch - inherited convenience method."""
+        all_branches = self.get_all_branches(git_ops, repo_root)
+        if branch not in all_branches:
+            return None
+        return all_branches[branch].parent
+
+    def get_child_branches(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str]:
+        """Get child branches - inherited convenience method."""
+        all_branches = self.get_all_branches(git_ops, repo_root)
+        if branch not in all_branches:
+            return []
+        return all_branches[branch].children
+```
+
+#### 3.3 GitHub ABC (Land-Relevant Methods)
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+
+```python
+class LocalGitHub(ABC):
+    @abstractmethod
+    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+        """Update base branch of a PR on GitHub.
+        
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to update
+            new_base: New base branch name
+        """
+        ...
+
+    @abstractmethod
+    def merge_pr(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        squash: bool,
+        verbose: bool,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -&gt; MergeResult | MergeError:
+        """Merge a pull request on GitHub.
+        
+        Returns:
+            MergeResult on success, MergeError on failure
+        """
+        ...
+
+    @abstractmethod
+    def delete_remote_branch(self, repo_root: Path, branch: str) -&gt; bool:
+        """Delete a remote branch via REST API.
+        
+        Returns:
+            True if the branch was deleted or didn't exist,
+            False if deletion failed (e.g., protected branch)
+        """
+        ...
+
+    @abstractmethod
+    def get_open_prs_with_base_branch(
+        self, repo_root: Path, base_branch: str
+    ) -&gt; list[PullRequestInfo]:
+        """Get all open PRs that have the given branch as their base.
+        
+        Used to find child PRs that need their base updated before
+        landing a parent PR (prevents GitHub auto-close on base deletion).
+        
+        Returns:
+            List of PullRequestInfo for open PRs targeting the given base branch.
+            Empty list if no PRs match or on API failure.
+        """
+        ...
+
+    @abstractmethod
+    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+        """Get comprehensive PR details in a single API call.
+        
+        Returns:
+            PRDetails with all PR fields, or PRNotFound if PR doesn't exist
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+        """Get comprehensive PR details for a branch.
+        
+        Returns:
+            PRDetails if a PR exists for the branch, PRNotFound otherwise
+        """
+        ...
+```
+
+#### 3.4 Git ABC (Rebase-Relevant Methods)
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`
+
+```python
+class Git(ABC):
+    @property
+    @abstractmethod
+    def rebase(self) -&gt; GitRebaseOps:
+        """Access rebase operations subgateway."""
+        ...
+
+    @property
+    @abstractmethod
+    def branch(self) -&gt; GitBranchOps:
+        """Access branch operations subgateway."""
+        ...
+
+    @property
+    @abstractmethod
+    def remote(self) -&gt; GitRemoteOps:
+        """Access remote operations subgateway."""
+        ...
+```
+
+The subgateways have methods like:
+- `GitRebaseOps.rebase_branch(repo_root: Path, onto_branch: str) -&gt; RebaseResult`
+- `GitBranchOps.get_current_branch(cwd: Path) -&gt; str | None`
+- `GitRemoteOps.fetch_branch(repo_root: Path, remote: str, branch: str) -&gt; None`
+
+#### 3.5 PRDetails Type
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`
+
+```python
+@dataclass(frozen=True)
+class PRDetails(EnsurableResult):
+    # Identity
+    number: int
+    url: str
+    
+    # Content
+    title: str
+    body: str
+    
+    # State
+    state: str  # "OPEN", "MERGED", "CLOSED"
+    is_draft: bool
+    
+    # Structure
+    base_ref_name: str
+    head_ref_name: str
+    is_cross_repository: bool
+    
+    # Mergeability
+    mergeable: MergeableStatus  # "MERGEABLE", "CONFLICTING", "UNKNOWN"
+    merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY"
+    
+    # Metadata
+    owner: str
+    repo: str
+    labels: tuple[str, ...]
+    created_at: datetime
+    updated_at: datetime
+    author: str
+```
+
+#### 3.6 RebaseResult Type
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`
+
+```python
+@dataclass(frozen=True)
+class RebaseResult:
+    """Result of a git rebase operation.
+    
+    Attributes:
+        success: True if rebase completed without conflicts
+        conflict_files: Tuple of file paths with conflicts (empty if success=True)
+    """
+    success: bool
+    conflict_files: tuple[str, ...]
+```
+
+#### 3.7 MergeError Type
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`
+
+```python
+@dataclass(frozen=True)
+class MergeError:
+    """Error result from merging a PR. Implements NonIdealState."""
+    pr_number: int
+    message: str
+    
+    @property
+    def error_type(self) -&gt; str:
+        return "merge-failed"
+```
+
+---
+
+### 4. FAKE IMPLEMENTATIONS FOR TESTING
+
+#### 4.1 FakeBranchManager (or GitBranchManager mock)
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py`
+
+```python
+class FakeBranchManager(BranchManager):
+    def __init__(
+        self,
+        *,
+        branch_stacks: dict[str, list[str]] | None = None,
+        parent_branches: dict[str, str | None] | None = None,
+        child_branches: dict[str, list[str]] | None = None,
+        # ... other state
+    ):
+        self._branch_stacks = branch_stacks or {}
+        self._parent_branches = parent_branches or {}
+        self._child_branches = child_branches or {}
+    
+    def get_branch_stack(self, repo_root: Path, branch: str) -&gt; list[str] | None:
+        return self._branch_stacks.get(branch)
+    
+    def get_parent_branch(self, repo_root: Path, branch: str) -&gt; str | None:
+        return self._parent_branches.get(branch)
+    
+    def get_child_branches(self, repo_root: Path, branch: str) -&gt; list[str]:
+        return self._child_branches.get(branch, [])
+```
+
+#### 4.2 FakeLocalGitHub
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py` (lines 37-196)
+
+**Constructor parameters** (relevant to land):
+```python
+class FakeLocalGitHub(LocalGitHub):
+    def __init__(
+        self,
+        *,
+        pr_details: dict[int, PRDetails] | None = None,
+        prs_by_branch: dict[str, PRDetails] | None = None,
+        merge_should_succeed: bool = True,
+        pr_update_should_succeed: bool = True,
+        # ... 70+ other parameters
+    ):
+        self._pr_details = pr_details or {}
+        self._prs_by_branch = prs_by_branch or {}
+        self._merge_should_succeed = merge_should_succeed
+        self._pr_update_should_succeed = pr_update_should_succeed
+        self._updated_pr_bases: list[tuple[int, str]] = []
+        self._merged_prs: list[int] = []
+        self._deleted_remote_branches: list[str] = []
+```
+
+**Methods**:
+```python
+def merge_pr(self, ...) -&gt; MergeResult | MergeError:
+    if self._merge_should_succeed:
+        self._merged_prs.append(pr_number)
+        return MergeResult(pr_number=pr_number)
+    else:
+        return MergeError(pr_number=pr_number, message="Merge failed")
+
+def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+    if self._pr_update_should_succeed:
+        self._updated_pr_bases.append((pr_number, new_base))
+
+def delete_remote_branch(self, repo_root: Path, branch: str) -&gt; bool:
+    self._deleted_remote_branches.append(branch)
+    return True
+
+def get_open_prs_with_base_branch(self, repo_root: Path, base_branch: str) -&gt; list[PullRequestInfo]:
+    # Returns filtered list of PRs where base_ref_name == base_branch
+    ...
+```
+
+**Assertions in tests**:
+```python
+assert pr_number in fake_github.merged_prs
+assert (pr_number, new_base) in fake_github.updated_pr_bases
+assert branch in fake_github.deleted_remote_branches
+```
+
+#### 4.3 FakeGit
+**Location**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py` (150+ lines)
+
+**Constructor** (lines 116-150):
+```python
+class FakeGit(Git):
+    def __init__(
+        self,
+        *,
+        worktrees: dict[Path, list[WorktreeInfo]] | None = None,
+        current_branches: dict[Path, str | None] | None = None,
+        default_branches: dict[Path, str] | None = None,
+        trunk_branches: dict[Path, str] | None = None,
+        branch_heads: dict[str, str] | None = None,
+        # ... 30+ other parameters
+    ):
+        # Subgateways (branch, remote, rebase, etc.)
+        self._branch_ops = FakeGitBranchOps(...)
+        self._remote_ops = FakeGitRemoteOps(...)
+        self._rebase_ops = FakeGitRebaseOps(...)
+        # ... other subgateways
+```
+
+**Mutation tracking**:
+```python
+@property
+def deleted_branches(self) -&gt; set[str]:
+    """Branches deleted via delete_branch()"""
+    ...
+
+@property
+def added_worktrees(self) -&gt; list[tuple[Path, str]]:
+    """(path, branch) tuples for worktrees added"""
+    ...
+
+@property
+def checked_out_branches(self) -&gt; list[tuple[Path, str]]:
+    """(path, branch) tuples for branches checked out"""
+    ...
+```
+
+---
+
+### 5. ENSURE PATTERNS
+
+**Location**: `/home/runner/work/erk/erk/src/erk/cli/ensure.py`
+
+```python
+class Ensure:
+    @staticmethod
+    def invariant(condition: bool, error_message: str) -&gt; None:
+        """Ensure condition is true, otherwise output styled error and exit.
+        
+        Raises:
+            UserFacingCliError: If condition is false
+        
+        Usage:
+            Ensure.invariant(pr_details.state == "OPEN", f"PR #{pr_number} is not open")
+            Ensure.invariant(not has_conflicts, "Branch has merge conflicts")
+        """
+        if not condition:
+            raise UserFacingCliError(error_message)
+    
+    @staticmethod
+    def not_none(value: T | None, error_message: str) -&gt; T:
+        """Ensure value is not None, otherwise output styled error and exit.
+        
+        Returns:
+            The value if not None
+        
+        Usage:
+            branch = Ensure.not_none(
+                ctx.git.branch.get_current_branch(cwd),
+                "Not currently on a branch (detached HEAD)"
+            )
+        """
+        ...
+    
+    @staticmethod
+    def truthy(value: T, error_message: str) -&gt; T:
+        """Ensure value is truthy, otherwise output styled error and exit.
+        
+        Usage:
+            children = Ensure.truthy(
+                ctx.branch_manager.get_child_branches(repo_root, current_branch),
+                f"Branch '{current_branch}' has no children"
+            )
+        """
+        ...
+```
+
+---
+
+### 6. CONTEXT TYPE (ErkContext)
+
+**Location**: `/home/runner/work/erk/erk/src/erk/core/context.py`
+
+Key attributes accessed in land:
+```python
+class ErkContext:
+    cwd: Path
+    dry_run: bool
+    
+    # Gateway access
+    git: Git
+    github: LocalGitHub
+    branch_manager: BranchManager
+    graphite: Graphite
+    console: Console
+    script_writer: ScriptWriter
+    plan_backend: PlanBackend
+```
+
+---
+
+### 7. EXISTING LAND TESTS STRUCTURE
+
+**Location**: `/home/runner/work/erk/erk/tests/unit/cli/commands/land/`
+
+Test files include:
+- `test_dry_run.py` - Dry-run mode behavior
+- `test_no_delete_flag.py` - `--no-delete` flag handling
+- `test_cleanup_and_navigate.py` - Cleanup logic by type
+- `test_parse_argument.py` - Argument parsing (PR number, URL, branch)
+- `test_determine_cleanup_type.py` - Cleanup type classification
+- `test_validate_pr_for_landing.py` - PR validation
+- `test_land_learn.py` - Learn plan creation
+- `pipeline/test_merge_pr.py` - Merge pipeline step
+- `pipeline/test_resolve_target.py` - Target resolution
+- `pipeline/test_validate_pr.py` - PR validation step
+- `pipeline/test_run_validation_pipeline.py` - Full validation pipeline
+- `pipeline/test_run_execution_pipeline.py` - Full execution pipeline
+
+**Test pattern** (from `test_merge_pr.py`, lines 74-125):
+```python
+def test_merges_pr_via_github_api(tmp_path: Path) -&gt; None:
+    """merge_pr merges via GitHub API when not using Graphite."""
+    branch = "feature-branch"
+    pr_number = 42
+    
+    pr_details = PRDetails(
+        number=pr_number,
+        url=f"https://github.com/owner/repo/pull/{pr_number}",
+        title="Test PR",
+        body="Test body",
+        state="OPEN",
+        base_ref_name="main",
+        head_ref_name=branch,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        is_draft=False,
+        is_cross_repository=False,
+        owner="owner",
+        repo="repo",
+    )
+    fake_git = FakeGit(default_branches={tmp_path: "main"})
+    fake_github = FakeLocalGitHub(
+        pr_details={pr_number: pr_details},
+        merge_should_succeed=True,
+    )
+    
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+        cwd=tmp_path,
+    )
+    
+    state = LandState(...)  # Execution state
+    result = merge_pr(ctx, state)
+    
+    assert not isinstance(result, LandError)
+    assert result.merged_pr_number == pr_number
+```
+
+---
+
+### 8. HOW TO IMPLEMENT `land --stack`
+
+#### Option A: New Pipeline Step
+
+Add a new step to the **validation pipeline** that builds the stack:
+
+```python
+def resolve_stack(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+    """Resolve the branch stack if --stack flag is set.
+    
+    For Graphite-managed branches, gets the linear stack from trunk to leaf.
+    For non-Graphite branches, returns error.
+    
+    Populates: stack_branches (list of branches to land in order)
+    """
+    if not state.stack_mode:
+        return state
+    
+    # Get stack
+    stack = ctx.branch_manager.get_branch_stack(state.main_repo_root, state.branch)
+    Ensure.invariant(
+        stack is not None,
+        f"Branch '{state.branch}' is not in a Graphite stack.\n"
+        "Use 'erk land' without --stack, or enable Graphite with 'erk config set use_graphite true'."
+    )
+    
+    # Validate only current branch is being landed
+    Ensure.invariant(
+        state.is_current_branch or state.target_arg is not None,
+        "--stack requires landing the current branch.\n"
+        "Use 'erk land --stack' from the leaf branch to land the entire stack."
+    )
+    
+    return dataclasses.replace(state, stack_branches=stack)
+```
+
+#### Option B: Execution Pipeline Loop
+
+Add a loop in the **execution pipeline** that processes each branch:
+
+```python
+def merge_stack(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+    """Merge all branches in the stack bottom-up.
+    
+    For each branch in the stack (starting from bottom):
+    1. Fetch PR details
+    2. Find child PRs and update their base branches
+    3. Merge the PR
+    4. Update parent tracking in Graphite (track_branch)
+    
+    Returns:
+        Updated state with merged_pr_numbers (list)
+    """
+    if not state.stack_branches:
+        # Fall back to single PR merge
+        return merge_pr(ctx, state)
+    
+    merged = []
+    for branch in state.stack_branches[:-1]:  # Exclude leaf (already landed)
+        # Get PR details
+        pr_details = ctx.github.get_pr_for_branch(state.main_repo_root, branch)
+        if isinstance(pr_details, PRNotFound):
+            return LandError(
+                phase="merge_stack",
+                error_type="pr_not_found",
+                message=f"PR not found for branch '{branch}'",
+                details={"branch": branch},
+            )
+        
+        # Find child PRs and update base
+        child_prs = ctx.github.get_open_prs_with_base_branch(
+            state.main_repo_root, branch
+        )
+        # Get parent branch (one level down in stack)
+        idx = state.stack_branches.index(branch)
+        parent_branch = state.stack_branches[idx + 1]
+        
+        for child_pr in child_prs:
+            ctx.github.update_pr_base_branch(
+                state.main_repo_root,
+                child_pr.number,
+                parent_branch,
+            )
+        
+        # Merge PR
+        merge_result = ctx.github.merge_pr(
+            state.main_repo_root,
+            pr_details.number,
+            squash=True,
+            verbose=False,
+            subject=f"{pr_details.title} (#{pr_details.number})",
+            body=pr_details.body,
+        )
+        if isinstance(merge_result, MergeError):
+            return LandError(
+                phase="merge_stack",
+                error_type="merge_failed",
+                message=f"Failed to merge PR #{pr_details.number}\n\n{merge_result.message}",
+                details={"branch": branch, "pr_number": str(pr_details.number)},
+            )
+        
+        # Delete remote branch
+        ctx.github.delete_remote_branch(state.main_repo_root, branch)
+        
+        # Update Graphite tracking for children
+        for child_pr in child_prs:
+            try:
+                ctx.branch_manager.track_branch(
+                    state.main_repo_root,
+                    child_pr.head_branch,
+                    parent_branch,
+                )
+            except Exception:
+                # Fail-open: tracking is not critical
+                pass
+        
+        merged.append(pr_details.number)
+    
+    return dataclasses.replace(state, merged_pr_numbers=merged)
+```
+
+#### Option C: Use execute_land_pr in a Loop
+
+Leverage the existing Graphite operation for Graphite stacks:
+
+```python
+def merge_stack(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+    """Merge Graphite stack using execute_land_pr for each branch."""
+    if not state.stack_branches or not state.use_graphite:
+        return merge_pr(ctx, state)
+    
+    merged = []
+    for branch in state.stack_branches:
+        # Check out branch (in its worktree)
+        worktree = ctx.git.worktree.find_worktree_for_branch(
+            state.main_repo_root, branch
+        )
+        if worktree is None:
+            continue  # Branch not checked out locally, skip
+        
+        # Land this PR using Graphite operation
+        result = render_events(execute_land_pr(ctx, worktree))
+        if isinstance(result, LandPrError):
+            return LandError(
+                phase="merge_stack",
+                error_type="graphite_merge_failed",
+                message=result.message,
+                details={"branch": branch},
+            )
+        merged.append(result.pr_number)
+    
+    return dataclasses.replace(state, merged_pr_numbers=merged)
+```
+
+#### Key Algorithm
+
+**Bottom-up landing of a Graphite stack**:
+
+```
+Input: Stack = [main, feature-1, feature-2, feature-3]
+       Current branch: feature-3
+
+Process bottom-up (excluding leaf which is current):
+  1. Land feature-1:
+     - Get child PRs with base = feature-1 → [PR for feature-2]
+     - Update PR base: feature-2 PR base → main (now parent)
+     - Merge feature-1 PR
+     - Delete remote feature-1
+     - Update Graphite: track feature-2 with parent main
+  
+  2. Land feature-2:
+     - Get child PRs with base = feature-2 → [PR for feature-3]
+     - Update PR base: feature-3 PR base → feature-1 (now parent)
+     - Merge feature-2 PR
+     - Delete remote feature-2
+     - Update Graphite: track feature-3 with parent feature-1
+  
+  3. Land feature-3 (current branch):
+     - Use existing single-PR land logic
+```
+
+---
+
+### 9. CLI FLAG DEFINITION
+
+```python
+@click.command("land", cls=CommandWithHiddenOptions)
+# ... existing options ...
+@click.option(
+    "--stack",
+    "stack_flag",
+    is_flag=True,
+    help="Land entire Graphite stack bottom-up (current branch must be leaf)",
+)
+def land(
+    ctx: ErkContext,
+    *,
+    script: bool,
+    target: str | None,
+    stack_flag: bool,  # NEW
+    up_flag: bool,
+    down_flag: bool,
+    # ...
+):
+    """Merge PR and clean up branch."""
+    # Validate --stack preconditions
+    Ensure.invariant(
+        not (stack_flag and up_flag),
+        "--stack and --up are mutually exclusive.\n"
+        "--stack lands entire stack, --up navigates to child.",
+    )
+    Ensure.invariant(
+        not (stack_flag and target),
+        "--stack only works when landing current branch.\n"
+        "Use 'erk land --stack' from the leaf branch.",
+    )
+    # ... rest of command
+```
+
+---
+
+### 10. TEST EXAMPLE
+
+```python
+def test_lands_graphite_stack_bottom_up(tmp_path: Path) -&gt; None:
+    """land --stack lands entire Graphite stack bottom-up."""
+    # Setup: 3-branch stack: main → feature-1 → feature-2
+    main = "main"
+    feature1 = "feature-1"
+    feature2 = "feature-2"
+    
+    pr1 = PRDetails(number=1, ...)
+    pr2 = PRDetails(number=2, ...)
+    
+    wt_main = WorktreeInfo(path=tmp_path, branch=main)
+    wt1 = WorktreeInfo(path=tmp_path / "wt1", branch=feature1)
+    wt2 = WorktreeInfo(path=tmp_path / "wt2", branch=feature2)
+    
+    fake_git = FakeGit(
+        worktrees={tmp_path: [wt_main, wt1, wt2]},
+        current_branches={tmp_path / "wt2": feature2},
+        default_branches={tmp_path: main},
+    )
+    
+    # Child PR: PR #2 has base feature-1
+    child_pr_info = PullRequestInfo(
+        number=2,
+        state="OPEN",
+        url="...",
+        is_draft=False,
+        title="Feature 2",
+        checks_passing=True,
+        owner="owner",
+        repo="repo",
+        head_branch=feature2,
+        base_ref_name=feature1,
+    )
+    
+    fake_github = FakeLocalGitHub(
+        pr_details={1: pr1, 2: pr2},
+        prs_by_branch={feature1: pr1, feature2: pr2},
+        merge_should_succeed=True,
+    )
+    fake_github._open_prs_by_base = {feature1: [child_pr_info]}
+    
+    # Fake Graphite
+    fake_branch_manager = FakeBranchManager(
+        branch_stacks={
+            feature1: [main, feature1, feature2],
+            feature2: [main, feature1, feature2],
+        },
+    )
+    
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        branch_manager=fake_branch_manager,
+        cwd=tmp_path / "wt2",
+    )
+    
+    # Execute: land --stack from feature-2
+    state = LandState(
+        cwd=tmp_path / "wt2",
+        branch=feature2,
+        pr_number=2,
+        pr_details=pr2,
+        is_current_branch=True,
+        use_graphite=True,
+        stack_branches=[main, feature1, feature2],
+        # ... other fields
+    )
+    
+    result = merge_stack(ctx, state)
+    
+    # Verify landing order: feature-1, then feature-2
+    assert not isinstance(result, LandError)
+    # PR #1 merged first
+    assert 1 in fake_github.merged_prs
+    # PR #2 base updated before merge
+    assert (2, feature1) in fake_github.updated_pr_bases
+    # Both PRs merged
+    assert 2 in fake_github.merged_prs
+```
+
+---
+
+### 11. KEY IMPLEMENTATION NOTES
+
+1. **State Threading**: Use `dataclasses.replace()` to create new state instances - immutability enables replay.
+
+2. **Error Handling**: Return `LandError` with `phase`, `error_type`, `message`, `details` - never raise directly in pipeline steps.
+
+3. **LBYL Pattern**: Check conditions before operations (no try/except for control flow):
+   ```python
+   if isinstance(pr_details, PRNotFound):
+       return LandError(...)
+   ```
+
+4. **Graphite Detection**: Use `ctx.branch_manager.is_graphite_managed()` to check mode.
+
+5. **Child PR Finding**: Union results from both:
+   - `ctx.graphite.get_child_branches()` (Graphite cache)
+   - `ctx.github.get_open_prs_with_base_branch()` (GitHub API)
+
+6. **Base Update Before Merge**: Always update child PR bases BEFORE merging parent to prevent GitHub auto-closing.
+
+7. **Fail-Open on Tracking**: Wrap `track_branch()` in try/except - Graphite tracking failures shouldn't block landing.
+
+8. **Learn Plan Creation**: The `create_learn_pr` step runs after landing - will capture all merged PRs via plan_id lookup.
+
+9. **Testing Pattern**: Use `FakeLocalGitHub`, `FakeGit`, `FakeBranchManager` with constructor injection - no `mock.patch`.
+
+10. **Assertions in Tests**: Use mutation tracking properties:
+    ```python
+    assert pr_number in fake_github.merged_prs
+    assert (pr_number, new_base) in fake_github.updated_pr_bases
+    assert branch in fake_github.deleted_remote_branches
+    ```
+
+This gives you the complete foundation to implement `erk land --stack`. The key insight is that you're adding a loop around the existing single-PR merge logic, with child PR base management before each merge.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2997" cache_read_input_tokens="92895" cache_creation="{'ephemeral_5m_input_tokens': 2997, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "plan_id": 8948,
+  "sessions": [
+    {
+      "session_id": "5973bad2-f902-4f9c-b9d4-5e6090ca152a",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T01:49:38.122431+00:00",
+      "files": [
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part1.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part10.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part11.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part12.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part13.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part14.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part15.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part2.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part3.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part4.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part5.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part6.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part7.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part8.xml",
+        "impl-5973bad2-f902-4f9c-b9d4-5e6090ca152a-5973bad2-f902-4f9c-b9d4-5e6090ca152a-part9.xml"
+      ],
+      "user_turns": 8,
+      "duration_minutes": 19,
+      "raw_size_kb": 1846,
+      "xml_size_kb": 397,
+      "git_branch": "plnd/land-stack-graphite-03-08-0127"
+    }
+  ]
+}
