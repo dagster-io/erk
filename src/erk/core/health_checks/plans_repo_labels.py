@@ -4,7 +4,7 @@ from pathlib import Path
 
 from erk.core.health_checks.models import CheckResult
 from erk_shared.gateway.github.issues.abc import GitHubIssues
-from erk_shared.gateway.github.plan_issues import LabelDefinition, get_required_erk_labels
+from erk_shared.gateway.github.objective_issues import LabelDefinition, get_required_erk_labels
 
 
 def check_plans_repo_labels(

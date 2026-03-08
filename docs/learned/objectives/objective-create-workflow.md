@@ -41,9 +41,9 @@ Accepts JSON via stdin describing phases and steps. Produces a complete v2 YAML 
 
 **`erk exec objective-save-to-issue`** (`src/erk/cli/commands/exec/scripts/objective_save_to_issue.py`)
 
-Takes the assembled objective content and creates the GitHub issue. Delegates to `create_objective_issue()` in `erk_shared.gateway.github.plan_issues`.
+Takes the assembled objective content and creates the GitHub issue. Delegates to `create_objective_issue()` in `erk_shared.gateway.github.objective_issues`.
 
-### Layer 3: `create_objective_issue()` (`packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py`)
+### Layer 3: `create_objective_issue()` (`packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py`)
 
 Assembles the GitHub issue in a 7-step flow:
 
@@ -82,4 +82,4 @@ This uses the `${CLAUDE_SESSION_ID}` substitution available in Claude Code comma
 | Skill template        | `.claude/commands/erk/objective-create.md`                         |
 | Roadmap renderer      | `src/erk/cli/commands/exec/scripts/objective_render_roadmap.py`    |
 | Issue creator         | `src/erk/cli/commands/exec/scripts/objective_save_to_issue.py`     |
-| Shared creation logic | `packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py` |
+| Shared creation logic | `packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py` |

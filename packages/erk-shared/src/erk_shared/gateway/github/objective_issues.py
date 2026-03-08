@@ -3,7 +3,7 @@
 This module contains:
 - create_objective_issue(): Create objective issues with roadmap metadata
 - Label management utilities (definitions, ensuring labels exist)
-- CreatePlanIssueResult: Result type shared by objective issue creation
+- CreateObjectiveIssueResult: Result type shared by objective issue creation
 
 Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
 """
@@ -55,7 +55,7 @@ _LABEL_NO_CHANGES_COLOR = "FFA500"  # Orange - attention needed
 
 
 @dataclass(frozen=True)
-class CreatePlanIssueResult:
+class CreateObjectiveIssueResult:
     """Result of creating a Schema v2 plan issue.
 
     Attributes:
@@ -119,7 +119,7 @@ def create_objective_issue(
     title: str | None,
     extra_labels: list[str] | None,
     slug: str | None,
-) -> CreatePlanIssueResult:
+) -> CreateObjectiveIssueResult:
     """Create objective issue with v2 format: metadata body + content comment.
 
     Objectives use the same pattern as plans:
@@ -137,7 +137,7 @@ def create_objective_issue(
         slug: Optional short kebab-case identifier (validated, not transformed)
 
     Returns:
-        CreatePlanIssueResult with success status and details
+        CreateObjectiveIssueResult with success status and details
 
     Note:
         Does NOT raise exceptions. All errors returned in result.
@@ -145,7 +145,7 @@ def create_objective_issue(
     # Step 1: Get GitHub username
     username = github_issues.get_current_username()
     if username is None:
-        return CreatePlanIssueResult(
+        return CreateObjectiveIssueResult(
             success=False,
             plan_number=None,
             plan_url=None,
@@ -161,7 +161,7 @@ def create_objective_issue(
     if slug is not None:
         slug_result = validate_objective_slug(slug)
         if isinstance(slug_result, InvalidObjectiveSlug):
-            return CreatePlanIssueResult(
+            return CreateObjectiveIssueResult(
                 success=False,
                 plan_number=None,
                 plan_url=None,
@@ -181,7 +181,7 @@ def create_objective_issue(
     # Ensure labels exist
     label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
     if label_errors:
-        return CreatePlanIssueResult(
+        return CreateObjectiveIssueResult(
             success=False,
             plan_number=None,
             plan_url=None,
@@ -213,7 +213,7 @@ def create_objective_issue(
             labels=labels,
         )
     except RuntimeError as e:
-        return CreatePlanIssueResult(
+        return CreateObjectiveIssueResult(
             success=False,
             plan_number=None,
             plan_url=None,
@@ -227,7 +227,7 @@ def create_objective_issue(
         comment_id = github_issues.add_comment(repo_root, result.number, objective_comment)
     except RuntimeError as e:
         # Partial success - issue created but comment failed
-        return CreatePlanIssueResult(
+        return CreateObjectiveIssueResult(
             success=False,
             plan_number=result.number,
             plan_url=result.url,
@@ -248,7 +248,7 @@ def create_objective_issue(
     if rerendered is not None and rerendered != objective_comment:
         github_issues.update_comment(repo_root, comment_id, rerendered)
 
-    return CreatePlanIssueResult(
+    return CreateObjectiveIssueResult(
         success=True,
         plan_number=result.number,
         plan_url=result.url,

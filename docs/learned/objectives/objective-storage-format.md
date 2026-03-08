@@ -41,7 +41,7 @@ This convention is enforced by the schemas in `erk_shared.gateway.github.metadat
 
 ## 7-Step Creation Flow
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py:278-398, create_objective_issue -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py:278-398, create_objective_issue -->
 
 `create_objective_issue()` implements:
 
