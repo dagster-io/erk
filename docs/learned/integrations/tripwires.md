@@ -48,4 +48,4 @@ Rules triggered by matching actions in code.
 
 **using --system-prompt or --allowedTools with codex** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. Codex has no --system-prompt or --allowedTools. Prepend system prompt to user prompt. Tool restriction is not available — this affects execute_prompt() porting.
 
-**using issue number from .erk/impl-context/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the plan number. These are different values — the plan is the source, the PR is the implementation.
+**using plan number from .erk/impl-context/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the plan number. These are different values — the plan is the source, the PR is the implementation.
