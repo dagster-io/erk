@@ -24,6 +24,24 @@
       "raw_size_kb": 978,
       "xml_size_kb": 328,
       "git_branch": "plnd/O9009-add-pr-json-output-03-08-1044"
+    },
+    {
+      "session_id": "03c42d37-5fb1-4fbb-8bd9-b90a3e561389",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T17:23:33.579297+00:00",
+      "files": [
+        "address-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-part1.xml",
+        "address-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-part2.xml",
+        "address-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-part3.xml",
+        "address-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-part4.xml",
+        "address-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-03c42d37-5fb1-4fbb-8bd9-b90a3e561389-part5.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 5,
+      "raw_size_kb": 305,
+      "xml_size_kb": 116,
+      "git_branch": "plnd/O9009-add-pr-json-output-03-08-1044"
     }
   ]
 }
