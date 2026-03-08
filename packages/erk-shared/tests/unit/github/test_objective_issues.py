@@ -1,4 +1,4 @@
-"""Tests for plan_issues.py - objective issue creation and create_plan_draft_pr."""
+"""Tests for objective_issues.py - objective issue creation and create_plan_draft_pr."""
 
 from pathlib import Path
 
@@ -8,8 +8,8 @@ from erk_shared.gateway.branch_manager.fake import FakeBranchManager
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.plan_issues import (
-    CreatePlanIssueResult,
+from erk_shared.gateway.github.objective_issues import (
+    CreateObjectiveIssueResult,
     create_objective_issue,
 )
 from erk_shared.gateway.time.fake import FakeTime
@@ -152,7 +152,7 @@ class TestCreatePlanDraftPRTitleExtraction:
 
 
 class TestCreatePlanDraftPRResultDataclass:
-    """Test CreatePlanDraftPRResult and CreatePlanIssueResult dataclasses."""
+    """Test CreatePlanDraftPRResult and CreateObjectiveIssueResult dataclasses."""
 
     def test_draft_pr_result_is_frozen(self) -> None:
         """Verify result is immutable."""
@@ -169,8 +169,8 @@ class TestCreatePlanDraftPRResultDataclass:
             result.success = False  # type: ignore[misc]
 
     def test_plan_issue_result_is_frozen(self) -> None:
-        """Verify CreatePlanIssueResult is immutable."""
-        result = CreatePlanIssueResult(
+        """Verify CreateObjectiveIssueResult is immutable."""
+        result = CreateObjectiveIssueResult(
             success=True,
             plan_number=1,
             plan_url="https://example.com/1",

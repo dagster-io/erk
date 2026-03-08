@@ -50,7 +50,7 @@ class HandleNoChangesError:
     message: str
 
 
-# Label definition (matches plan_issues.py)
+# Label definition (matches objective_issues.py)
 _LABEL_NO_CHANGES = "no-changes"
 _LABEL_NO_CHANGES_DESC = "Implementation produced no code changes"
 _LABEL_NO_CHANGES_COLOR = "FFA500"

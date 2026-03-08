@@ -45,7 +45,7 @@ from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
-from erk_shared.gateway.github.plan_issues import get_erk_label_definitions
+from erk_shared.gateway.github.objective_issues import get_erk_label_definitions
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
