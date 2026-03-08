@@ -18,6 +18,25 @@
       "raw_size_kb": 597,
       "xml_size_kb": 64,
       "git_branch": "plnd/manifest-per-file-metadata-03-08-0533"
+    },
+    {
+      "session_id": "eaffc06a-1763-4704-ae0c-778a96ab8b99",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T09:43:08.312869+00:00",
+      "files": [
+        "impl-eaffc06a-1763-4704-ae0c-778a96ab8b99-eaffc06a-1763-4704-ae0c-778a96ab8b99-part1.xml",
+        "impl-eaffc06a-1763-4704-ae0c-778a96ab8b99-eaffc06a-1763-4704-ae0c-778a96ab8b99-part2.xml",
+        "impl-eaffc06a-1763-4704-ae0c-778a96ab8b99-eaffc06a-1763-4704-ae0c-778a96ab8b99-part3.xml",
+        "impl-eaffc06a-1763-4704-ae0c-778a96ab8b99-eaffc06a-1763-4704-ae0c-778a96ab8b99-part4.xml",
+        "impl-eaffc06a-1763-4704-ae0c-778a96ab8b99-eaffc06a-1763-4704-ae0c-778a96ab8b99-part5.xml",
+        "impl-eaffc06a-1763-4704-ae0c-778a96ab8b99-eaffc06a-1763-4704-ae0c-778a96ab8b99-part6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 6,
+      "raw_size_kb": 638,
+      "xml_size_kb": 86,
+      "git_branch": "plnd/manifest-per-file-metadata-03-08-0533"
     }
   ]
 }
