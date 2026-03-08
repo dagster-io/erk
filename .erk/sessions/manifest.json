@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "plan_id": 8953,
+  "sessions": [
+    {
+      "session_id": "none",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T01:56:24.026958+00:00",
+      "files": [
+        "impl-none-7fc19510-134e-49f6-8688-8c167863dbbe-part1.xml",
+        "impl-none-7fc19510-134e-49f6-8688-8c167863dbbe-part2.xml",
+        "impl-none-7fc19510-134e-49f6-8688-8c167863dbbe-part3.xml",
+        "impl-none-7fc19510-134e-49f6-8688-8c167863dbbe-part4.xml",
+        "impl-none-7fc19510-134e-49f6-8688-8c167863dbbe-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 8,
+      "raw_size_kb": 1284,
+      "xml_size_kb": 175,
+      "git_branch": "plnd/O8381-fix-doc-plan-issue-t-03-08-0146"
+    }
+  ]
+}
