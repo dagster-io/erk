@@ -5,8 +5,9 @@ Adds a --json flag to Click commands with:
 - JSON input from stdin (when piped, maps keys to Click params)
 - emit_json_result() for structured output via to_json_dict() protocol
 
-Commands handle success JSON inline via emit_json() or emit_json_result();
-the decorator handles error path and input mapping uniformly.
+Commands return a result object with to_json_dict() or as a dataclass;
+the decorator auto-serializes it via emit_json_result() when --json is active.
+Commands may also call emit_json()/emit_json_result() inline and return None.
 """
 
 import dataclasses
@@ -164,7 +165,10 @@ def _apply_json_command(
                 raise SystemExit(1)
 
         try:
-            return original_callback(**kwargs)
+            result = original_callback(**kwargs)
+            if result is not None:
+                emit_json_result(result)
+            return result
         except UserFacingCliError as exc:
             error_data = {
                 "success": False,

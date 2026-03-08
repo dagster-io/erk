@@ -286,6 +286,73 @@ def test_emit_json_result_with_to_json_dict() -> None:
     assert data["custom"] == 42
 
 
+def test_return_value_auto_serialized_in_json_mode() -> None:
+    """Command return value is auto-serialized as JSON when --json is active."""
+
+    @dataclass(frozen=True)
+    class AutoResult:
+        value: int
+
+        def to_json_dict(self) -> dict[str, Any]:
+            return {"doubled": self.value * 2}
+
+    @json_command
+    @click.command("auto-cmd")
+    def auto_cmd(*, json_mode: bool) -> AutoResult:
+        return AutoResult(value=21)
+
+    runner = CliRunner()
+    result = runner.invoke(auto_cmd, ["--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output.strip())
+    assert data["success"] is True
+    assert data["doubled"] == 42
+
+
+def test_return_none_no_output_in_json_mode() -> None:
+    """Returning None in JSON mode emits no JSON (prevents double-output)."""
+
+    @json_command
+    @click.command("none-cmd")
+    def none_cmd(*, json_mode: bool) -> None:
+        # Command that handles JSON inline and returns None
+        pass
+
+    runner = CliRunner()
+    result = runner.invoke(none_cmd, ["--json"])
+    assert result.exit_code == 0
+    assert result.output.strip() == ""
+
+
+def test_return_value_ignored_in_non_json_mode() -> None:
+    """Return value is not serialized when --json is not passed."""
+
+    @dataclass(frozen=True)
+    class IgnoredResult:
+        value: int
+
+        def to_json_dict(self) -> dict[str, Any]:
+            return {"value": self.value}
+
+    @json_command
+    @click.command("ignored-cmd")
+    def ignored_cmd(*, json_mode: bool) -> IgnoredResult:
+        click.echo("human output")
+        return IgnoredResult(value=99)
+
+    runner = CliRunner()
+    result = runner.invoke(ignored_cmd, [])
+    assert result.exit_code == 0
+    assert "human output" in result.output
+    # Should not contain JSON
+    for line in result.output.strip().split("\n"):
+        try:
+            parsed = json.loads(line)
+            assert "success" not in parsed
+        except json.JSONDecodeError:
+            pass
+
+
 def test_emit_json_result_with_plain_dataclass() -> None:
     """Plain dataclass uses asdict fallback."""
 

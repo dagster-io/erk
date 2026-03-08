@@ -23,7 +23,7 @@ from erk.cli.commands.one_shot_remote_dispatch import (
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.ensure import Ensure, UserFacingCliError
-from erk.cli.json_command import emit_json_result, json_command
+from erk.cli.json_command import json_command
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.real import RealRemoteGitHub
@@ -213,5 +213,4 @@ def one_shot(
         prompt_executor=ctx.prompt_executor,
     )
 
-    if json_mode:
-        emit_json_result(result)
+    return result
