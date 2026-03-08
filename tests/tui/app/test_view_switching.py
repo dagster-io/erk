@@ -422,13 +422,13 @@ class TestViewSwitching:
 
 
 def test_display_name_plans_view() -> None:
-    """PLANS view returns 'Planned PRs'."""
+    """PLANS view returns 'PRs'."""
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
     app = ErkDashApp(
         provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
     )
-    assert app._display_name_for_view(ViewMode.PLANS) == "Planned PRs"
+    assert app._display_name_for_view(ViewMode.PLANS) == "PRs"
 
 
 def test_display_name_non_plans_view() -> None:

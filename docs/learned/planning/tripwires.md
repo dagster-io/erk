@@ -62,7 +62,7 @@ Rules triggered by matching actions in code.
 
 **automatically removing .erk/impl-context/ folder** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. NEVER auto-delete .erk/impl-context/ before implementation completes. It belongs to the user for plan-vs-implementation review. Only remove after CI passes.
 
-**backfilling labels on existing issues without considering updated_at side effects** → Read [Plan Label Assignment Scheme](label-scheme.md) first. GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users.
+**backfilling labels on existing issues without considering updated_at side effects** → Read [PR and Plan Label Assignment Scheme](label-scheme.md) first. GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users.
 
 **calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
 
@@ -186,7 +186,7 @@ Rules triggered by matching actions in code.
 
 **pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
 
-**querying plans using only the erk-planned-pr base label** → Read [Plan Label Assignment Scheme](label-scheme.md) first. Use type-specific labels (erk-plan, erk-learn) for queries. The base label erk-planned-pr is for identification, not filtering. See github-graphql-label-semantics.md for AND-logic issues.
+**querying all erk PRs without using the erk-pr base label** → Read [PR and Plan Label Assignment Scheme](label-scheme.md) first. Use erk-pr to query all erk-submitted PRs (plans + code). Use type-specific labels (erk-plan, erk-learn) only when you need to filter to a specific type.
 
 **reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 
