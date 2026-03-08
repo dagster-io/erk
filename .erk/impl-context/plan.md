@@ -1,64 +1,114 @@
-# Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees
+# Fix: `update_local_ref` desyncs checked-out worktrees
 
 ## Context
 
-`erk stack consolidate` fails to detect worktrees that are mid-rebase on a stack branch. When a worktree (e.g., `erk-slot-14`) is in the middle of rebasing `plnd/consolidate-learn-docs-03-07-2145`, git puts it in detached HEAD state but still considers the branch "in use" by that worktree. `git worktree list --porcelain` reports `branch=None` for these worktrees, so `identify_removable_worktrees` skips them entirely. This means `erk stack consolidate` reports "No other worktrees found" while `gt restack` still fails.
+When automation code (dispatch, incremental-dispatch, checkout) uses `update_local_ref` on a branch that's checked out in a worktree, it moves the branch pointer via `git update-ref` without updating the index or working tree. This leaves the worktree in a confusing state: `git status` shows phantom modifications, `git diff` is empty, and HEAD no longer matches the working tree.
 
-## Approach
+The `update_local_ref` docstring already documents this limitation ("safe to use when the branch is NOT currently checked out"). The callers aren't respecting the contract.
 
-Enhance `RealWorktree.list_worktrees()` to detect rebase state for detached-HEAD worktrees and populate their branch info. This fixes the root cause at the data layer so all consumers (consolidate, `find_worktree_for_branch`, `is_branch_checked_out`) benefit automatically.
+The correct pattern already exists in `ensure_trunk_synced` (`dispatch_helpers.py:60-68`): use `pull_branch` when checked out, `update_local_ref` when not.
 
-## Changes
+## Fix
 
-### 1. Add `is_rebasing` field to `WorktreeInfo`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/abc.py`
+### Extract a helper: `sync_branch_to_sha`
 
-Add `is_rebasing: bool = False` to the frozen dataclass. Backward-compatible default.
+Add to `dispatch_helpers.py` (already has `ensure_trunk_synced` as precedent):
 
-### 2. Detect rebase branches in `RealWorktree.list_worktrees`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py`
+```python
+def sync_branch_to_sha(
+    ctx: ErkContext, repo_root: Path, branch: str, target_sha: str
+) -> None:
+    """Move a local branch to target_sha, safely handling checked-out branches.
 
-After parsing porcelain output, for each worktree with `branch=None`:
-1. Read `.git` file in the worktree path to find its git dir (format: `gitdir: <path>`)
-2. For root worktree, the git dir is `<path>/.git/`
-3. Check for `<git_dir>/rebase-merge/head-name` (interactive rebase) or `<git_dir>/rebase-apply/head-name` (non-interactive)
-4. If found, parse branch name (strip `refs/heads/` prefix), set `branch=<name>` and `is_rebasing=True`
+    When the branch is NOT checked out, uses update_local_ref (fast ref update).
+    When the branch IS checked out, uses 'git reset --hard' in the worktree
+    to atomically sync ref + index + working tree. Refuses if the worktree
+    has uncommitted changes.
+    """
+    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo_root, branch)
+    if checked_out_path is None:
+        ctx.git.branch.update_local_ref(repo_root, branch, target_sha)
+        return
 
-Extract a helper `_detect_rebase_branch(worktree_path: Path, is_root: bool) -> str | None` for clarity.
+    local_sha = ctx.git.branch.get_branch_head(repo_root, branch)
+    if local_sha == target_sha:
+        return
 
-### 3. Skip uncommitted-changes check for mid-rebase worktrees in consolidate
-**File:** `src/erk/cli/commands/stack/consolidate_cmd.py`
+    if ctx.git.status.has_uncommitted_changes(checked_out_path):
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Branch '{branch}' is checked out at {checked_out_path} with "
+            f"uncommitted changes.\n\n"
+            f"Please commit or stash changes before proceeding."
+        )
+        raise SystemExit(1)
 
-In the safety check loop (lines 308-321), skip worktrees where `is_rebasing=True`. Mid-rebase worktrees will have dirty state from the interrupted rebase, but force-removal handles cleanup. Add a warning message like "Worktree X is mid-rebase and will be cleaned up".
+    # Atomically sync ref + index + working tree
+    run_subprocess_with_context(
+        cmd=["git", "reset", "--hard", target_sha],
+        operation_context=f"sync checked-out branch '{branch}' to {target_sha[:8]}",
+        cwd=checked_out_path,
+    )
+```
 
-### 4. Display "(rebasing)" indicator for mid-rebase worktrees
-**File:** `src/erk/cli/commands/stack/consolidate_cmd.py`
+### Update call sites
 
-In `_format_consolidation_plan`, append "(rebasing)" to the branch name when the worktree `is_rebasing`.
+**1. `src/erk/cli/commands/pr/dispatch_cmd.py:231-237`** (primary bug)
 
-### 5. Update `FakeWorktree`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`
+```python
+# Before:
+checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+if checked_out_path is None:
+    ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+else:
+    remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{branch_name}")
+    if remote_sha is not None:
+        ctx.git.branch.update_local_ref(repo.root, branch_name, remote_sha)
 
-Ensure `WorktreeInfo` construction in the fake passes through `is_rebasing` from test data.
+# After:
+checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+if checked_out_path is None:
+    ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+else:
+    remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{branch_name}")
+    if remote_sha is not None:
+        sync_branch_to_sha(ctx, repo.root, branch_name, remote_sha)
+```
 
-### 6. Update existing test
-**File:** `tests/core/utils/test_consolidation_utils.py`
+**2. `src/erk/cli/commands/exec/scripts/incremental_dispatch.py:105-111`** (same bug)
 
-The test `test_skip_worktrees_with_detached_head` tests that detached HEAD worktrees (no branch) are skipped. This test remains valid - truly detached worktrees (not mid-rebase) should still be skipped. No change needed.
+Same pattern — replace `update_local_ref` with `sync_branch_to_sha`.
 
-### 7. Add new test for mid-rebase worktree detection
-**File:** `tests/core/utils/test_consolidation_utils.py`
+**3. `src/erk/cli/commands/branch/checkout_cmd.py:388`** (parent branch sync)
 
-Add `test_include_rebasing_worktrees_in_removable()` - a worktree with `branch="feat-1"` and `is_rebasing=True` should be included in removable list when `feat-1` is in the stack.
+Replace `update_local_ref` with `sync_branch_to_sha`. Parent branch (e.g., master) may be checked out in root worktree.
 
-### 8. Add test for rebase branch detection in real worktree
-**File:** `tests/real/test_real_worktree.py` (or appropriate location)
+**4. `src/erk/cli/commands/pr/checkout_cmd.py:274`** (parent branch sync)
 
-Test that `_detect_rebase_branch` correctly parses rebase state files. Use tmp_path to create the expected git directory structure.
+Same as #3.
+
+### Remove redundant partial sync from dispatch_cmd.py
+
+Lines 257-267 (`git checkout HEAD -- <impl_context_paths>`) can be **kept as-is** — after `sync_branch_to_sha` properly syncs the worktree, `commit_files_to_branch` still desyncs the impl-context files specifically, and this existing code handles that delta correctly.
+
+### Tests
+
+- Update `tests/commands/pr/test_dispatch.py` — verify `sync_branch_to_sha` is called instead of raw `update_local_ref` for the checked-out case
+- Add test for dirty worktree rejection
+- Update `tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py` — same pattern
+
+## Files to modify
+
+1. `src/erk/cli/commands/pr/dispatch_helpers.py` — add `sync_branch_to_sha`
+2. `src/erk/cli/commands/pr/dispatch_cmd.py` — use new helper
+3. `src/erk/cli/commands/exec/scripts/incremental_dispatch.py` — use new helper
+4. `src/erk/cli/commands/branch/checkout_cmd.py` — use new helper
+5. `src/erk/cli/commands/pr/checkout_cmd.py` — use new helper
+6. `tests/commands/pr/test_dispatch.py` — update test
+7. `tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py` — update test
 
 ## Verification
 
-1. Run `uv run pytest tests/core/utils/test_consolidation_utils.py` - existing + new tests pass
-2. Run `uv run pytest tests/real/` - rebase detection test passes
-3. Run `uv run ruff check` and `uv run ty check` - no lint/type errors
-4. Manual: run `erk stack consolidate` in the current scenario (erk-slot-14 mid-rebase) and verify it detects the worktree
+1. Run existing tests via devrun to confirm no regressions
+2. Manually test: dispatch a plan to a branch that's checked out in a worktree, verify working tree stays clean
+3. Verify dirty worktree is properly rejected with clear error message
