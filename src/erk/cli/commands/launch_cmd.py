@@ -12,12 +12,16 @@ Usage examples:
     erk launch one-shot --pr 456 --prompt "fix the auth bug"
     erk launch one-shot --pr 456 -f prompt.md
     erk launch pr-rebase --pr 456 --repo owner/repo
+    erk launch consolidate-learn-plans
 """
 
 from pathlib import Path
 
 import click
 
+from erk.cli.commands.consolidate_learn_plans_dispatch import (
+    dispatch_consolidate_learn_plans,
+)
 from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
@@ -28,6 +32,7 @@ from erk.core.repo_discovery import NoRepoSentinel
 from erk_shared.gateway.github.types import GitHubRepoId, PRNotFound
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRNotFound
+from erk_shared.gateway.time.abc import Time
 from erk_shared.output.output import user_output
 
 
@@ -249,6 +254,27 @@ def _dispatch_learn(
     )
 
 
+def _dispatch_consolidate_learn_plans(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo_name: str,
+    model: str | None,
+    ref: str | None,
+    time_gateway: Time,
+) -> None:
+    """Dispatch consolidate-learn-plans workflow with branch + PR creation."""
+    dispatch_consolidate_learn_plans(
+        remote=remote,
+        owner=owner,
+        repo=repo_name,
+        model=model,
+        dry_run=False,
+        ref=ref,
+        time_gateway=time_gateway,
+    )
+
+
 def _dispatch_one_shot(
     remote: RemoteGitHub,
     *,
@@ -373,11 +399,12 @@ def launch(
     WORKFLOW_NAME is the workflow to dispatch. Available workflows:
 
     \b
-      pr-rebase           - Rebase PR with AI-powered conflict resolution
-      pr-address          - Address PR review comments remotely
-      pr-rewrite          - Rebase PR and regenerate AI PR summary
-      learn               - Extract insights from a plan issue
-      one-shot            - Run one-shot workflow against an existing PR
+      pr-rebase                  - Rebase PR with AI-powered conflict resolution
+      pr-address                 - Address PR review comments remotely
+      pr-rewrite                 - Rebase PR and regenerate AI PR summary
+      learn                      - Extract insights from a plan issue
+      one-shot                   - Run one-shot workflow against an existing PR
+      consolidate-learn-plans    - Consolidate open learn plans into one PR
 
     Examples:
 
@@ -554,6 +581,15 @@ def launch(
             prompt=resolved_prompt,
             model=model,
             ref=ref,
+        )
+    elif workflow_name == "consolidate-learn-plans":
+        _dispatch_consolidate_learn_plans(
+            remote,
+            owner=repo_id.owner,
+            repo_name=repo_id.repo,
+            model=model,
+            ref=ref,
+            time_gateway=ctx.time,
         )
     elif workflow_name == "plan-implement":
         raise click.UsageError(

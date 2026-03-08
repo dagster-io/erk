@@ -28,6 +28,9 @@ PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
 # GitHub Actions workflow for one-shot autonomous execution
 ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
 
+# GitHub Actions workflow for consolidating learn plans
+CONSOLIDATE_LEARN_PLANS_WORKFLOW_NAME = "consolidate-learn-plans.yml"
+
 # Workflow command name to actual workflow filename mapping
 # This provides a unified interface via `erk launch <name>`
 WORKFLOW_COMMAND_MAP: dict[str, str] = {
@@ -37,6 +40,7 @@ WORKFLOW_COMMAND_MAP: dict[str, str] = {
     "pr-rewrite": PR_REWRITE_WORKFLOW_NAME,  # pr-rewrite.yml
     "learn": "learn.yml",
     "one-shot": ONE_SHOT_WORKFLOW_NAME,  # one-shot.yml
+    "consolidate-learn-plans": CONSOLIDATE_LEARN_PLANS_WORKFLOW_NAME,
 }
 
 # Workflow names that trigger the autofix workflow
