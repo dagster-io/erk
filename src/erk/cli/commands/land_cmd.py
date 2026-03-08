@@ -5,6 +5,7 @@ It accepts a branch name, PR number, or PR URL as argument.
 
 Usage:
     erk land              # Land current branch's PR
+    erk land --stack      # Land the current Graphite stack
     erk land 123          # Land PR by number
     erk land <url>        # Land PR by URL
     erk land <branch>     # Land PR for branch
@@ -1502,6 +1503,12 @@ def _execute_land(
     help="Skip all confirmation prompts (unresolved comments, worktree deletion)",
 )
 @click.option(
+    "--stack",
+    "stack_flag",
+    is_flag=True,
+    help="Land the current Graphite stack bottom-up.",
+)
+@click.option(
     "--pull/--no-pull",
     "pull_flag",
     default=True,
@@ -1533,6 +1540,7 @@ def land(
     up_flag: bool,
     down_flag: bool,
     force: bool,
+    stack_flag: bool,
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
@@ -1548,6 +1556,7 @@ def land(
     \b
     Usage:
       erk land              # Merge + cleanup directly (no navigation)
+      erk land --stack      # Merge the current Graphite stack bottom-up
       erk land --down       # Merge + cleanup + navigate to trunk
       erk land --up         # Merge + cleanup + navigate to child branch
       erk land 123          # Land PR #123
@@ -1558,7 +1567,8 @@ def land(
     - PR must be open and ready to merge
     - PR's base branch must be trunk
 
-    Note: --up and --down are mutually exclusive. --up requires Graphite.
+    Note: --stack, --up, and --down are mutually exclusive navigation modes.
+    --up and --stack require Graphite.
     """
     # Replace context with appropriate wrappers based on flags.
     #
@@ -1582,11 +1592,40 @@ def land(
         "--up and --down are mutually exclusive.\n"
         "--up navigates to child branch, --down navigates to trunk.",
     )
+    Ensure.invariant(
+        not (stack_flag and up_flag),
+        "--stack and --up are mutually exclusive.\n"
+        "--stack lands the full stack, while --up lands one branch and navigates upward.",
+    )
+    Ensure.invariant(
+        not (stack_flag and down_flag),
+        "--stack and --down are mutually exclusive.\n"
+        "--stack already lands toward trunk and does not support deferred navigation.",
+    )
+    Ensure.invariant(
+        not (stack_flag and target is not None),
+        "Cannot use --stack with a PR, URL, or branch argument.\n"
+        "--stack only works from the currently checked out branch.",
+    )
 
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    if stack_flag:
+        from erk.cli.commands.land_stack import execute_land_stack
+
+        execute_land_stack(
+            ctx,
+            repo=repo,
+            script=script,
+            force=force,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            skip_learn=skip_learn,
+        )
+        return
 
     # Run validation pipeline (resolve target, validate PR, gather confirmations)
     initial_state = make_initial_state(
