@@ -24,6 +24,23 @@
       "raw_size_kb": 628,
       "xml_size_kb": 111,
       "git_branch": "plnd/add-nodes-screen-launchpad-03-07-2047"
+    },
+    {
+      "session_id": "4c11ac67-eca7-4a50-adc1-4583dab98766",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T02:19:41.340573+00:00",
+      "files": [
+        "address-4c11ac67-eca7-4a50-adc1-4583dab98766-4c11ac67-eca7-4a50-adc1-4583dab98766-part1.xml",
+        "address-4c11ac67-eca7-4a50-adc1-4583dab98766-4c11ac67-eca7-4a50-adc1-4583dab98766-part2.xml",
+        "address-4c11ac67-eca7-4a50-adc1-4583dab98766-4c11ac67-eca7-4a50-adc1-4583dab98766-part3.xml",
+        "address-4c11ac67-eca7-4a50-adc1-4583dab98766-4c11ac67-eca7-4a50-adc1-4583dab98766-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 5,
+      "raw_size_kb": 367,
+      "xml_size_kb": 102,
+      "git_branch": "plnd/add-nodes-screen-launchpad-03-07-2047"
     }
   ]
 }
