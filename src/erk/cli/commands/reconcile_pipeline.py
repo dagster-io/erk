@@ -256,14 +256,15 @@ def process_merged_branch(
                 + f"Objective update failed for {info.branch}: {exc}"
             )
 
-    # 3. Stamp reconciled label (fail-open)
-    try:
-        ctx.github.add_label_to_pr(main_repo_root, info.pr_number, ERK_RECONCILED_LABEL)
-    except Exception as exc:
-        user_output(
-            click.style("Warning: ", fg="yellow")
-            + f"Failed to add reconciled label to PR #{info.pr_number}: {exc}"
-        )
+    # 3. Stamp reconciled label only on erk-pr PRs (fail-open)
+    if ctx.github.has_pr_label(main_repo_root, info.pr_number, ERK_PR_LABEL):
+        try:
+            ctx.github.add_label_to_pr(main_repo_root, info.pr_number, ERK_RECONCILED_LABEL)
+        except Exception as exc:
+            user_output(
+                click.style("Warning: ", fg="yellow")
+                + f"Failed to add reconciled label to PR #{info.pr_number}: {exc}"
+            )
 
     # 4. Cleanup: unassign slot, delete branch, remove worktree
     try:

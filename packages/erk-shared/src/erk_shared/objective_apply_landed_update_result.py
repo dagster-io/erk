@@ -31,7 +31,7 @@ class ApplyLandedUpdateResultDict(TypedDict):
     pr: PRInfoDict
     roadmap: RoadmapContextDict
     node_updates: list[NodeUpdateDict]
-    action_comment_id: int
+    action_comment_id: int | None
 
 
 class ApplyLandedUpdateErrorDict(TypedDict):

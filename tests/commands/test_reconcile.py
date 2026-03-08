@@ -755,7 +755,7 @@ def _pr_details_with_labels(
 
 
 def test_process_merged_branch_stamps_reconciled_label() -> None:
-    """process_merged_branch adds erk-reconciled label to the PR."""
+    """process_merged_branch adds erk-reconciled label to PRs with erk-pr label."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         git = FakeGit(
@@ -767,6 +767,7 @@ def test_process_merged_branch_stamps_reconciled_label() -> None:
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
         github = FakeLocalGitHub()
+        github.set_pr_labels(100, {"erk-pr"})
         ctx = env.build_context(git=git, github=github)
 
         info = ReconcileBranchInfo(
