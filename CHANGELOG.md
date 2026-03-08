@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: 18903f484 -->
+<!-- As of: ebba4e54f -->
 
 ### Added
 
@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make TUI help screen view-mode-aware, showing context-sensitive shortcuts for plans vs objectives (433c9c2e)
 - Add Check 8 to `erk objective check` for roadmap table sync validation: detects when the prose roadmap table has drifted from YAML source of truth (20f3cd393)
 - Add "l" keyboard shortcut to launch launchpad from the objective nodes screen in TUI (24981a3ef)
+- Add `--branch/-b` option to `erk codespace connect` to specify which branch to checkout on the codespace (21e2ed535)
+- Add remote dispatch support to `erk pr dispatch` for dispatching implementation to remote repositories (4b7d7a400)
 
 ### Changed
 
@@ -32,11 +34,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace `--dangerous` flag with `live_dangerously` config setting and `--safe` override across CLI commands (ee5b9f186)
 - Enable `erk objective` commands (check, close, list, view) to work without requiring a local repository clone (b219c21b6)
 - Simplify current-worktree commands by removing unnecessary shell activation (76d44ec28)
+- Harden `erk land` with stack landing support (`--stack`), child reparenting verification, and read-after-write checks for resilient PR landing (a8f5f010f)
+- Show per-file metadata in manifest summary output during `erk land` learn pipeline (9db8a24dd)
 
 ### Fixed
 
 - Fix land learn pipeline to fetch remote sessions from planned-pr-context branches when local sessions are missing (2db54844)
 - Fix objective roadmap sync by normalizing comment format to canonical representation (5ec2d82cf)
+- Fix objective auto-close to reliably close objectives when all roadmap nodes are complete (cc3db5b69)
+- Fix `erk pr teleport --new-slot` to navigate to existing worktree instead of erroring when branch is already checked out (9d78e043d)
+- Fix file list indentation in manifest summary table for learn landing output (9d0149ad0)
+
+### Removed
+
+- Remove `shell_integration` config field and rename internal `output_for_shell_integration()` method (23be77559)
 
 ## [0.9.9] - 2026-03-06 16:54 PT
 
