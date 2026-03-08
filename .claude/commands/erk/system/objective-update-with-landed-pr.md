@@ -85,7 +85,7 @@ gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="<upda
 
 ### Step 3: Closing Triggers
 
-Use `roadmap.all_complete` from Step 1 output to determine next action.
+Use `roadmap.all_complete` from Step 1 output as the primary signal. Additionally, if `node_updates` from Step 1 was empty (auto-match found no nodes) AND Step 2 prose reconciliation confirmed all roadmap nodes are now done, treat `all_complete` as `true` for the purposes of this step.
 
 **If `all_complete` is `true`:**
 
