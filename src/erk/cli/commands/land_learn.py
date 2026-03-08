@@ -98,8 +98,13 @@ def _extract_session_ids_from_manifest(manifest: dict) -> list[str]:
     return [s.get("session_id", "") for s in manifest.get("sessions", []) if s.get("session_id")]
 
 
-def _log_session_summary_from_manifest(manifest: dict) -> None:
-    """Print session summary from manifest metadata (no reprocessing)."""
+def _log_session_summary_from_manifest(
+    manifest: dict,
+    *,
+    xml_files: dict[str, str],
+    plan_id: str,
+) -> None:
+    """Print session summary from manifest metadata with per-file sizes."""
     sessions = manifest.get("sessions", [])
     if not sessions:
         return
@@ -133,9 +138,25 @@ def _log_session_summary_from_manifest(manifest: dict) -> None:
             size_str = "-"
         table.add_row(stage, f"{sid[:8]}...", source, turns, duration_str, size_str)
 
-    user_output(f"  Manifest: {len(sessions)} session(s)")
+        # Show per-file sizes under each session
+        for filename in entry.get("files", []):
+            file_size_str = _file_size_from_xml_files(xml_files, filename)
+            table.add_row("", "", "", "", "", f"[dim]{filename}  ({file_size_str})[/dim]")
+
+    user_output(
+        f"  Manifest: planned-pr-context/{plan_id}"
+        f" :: .erk/sessions/manifest.json ({len(sessions)} session(s))"
+    )
     console = Console(stderr=True, force_terminal=True)
     console.print(table)
+
+
+def _file_size_from_xml_files(xml_files: dict[str, str], filename: str) -> str:
+    """Compute human-readable size for a manifest filename from xml_files dict."""
+    for path, content in xml_files.items():
+        if path.endswith(filename):
+            return _format_size(len(content.encode("utf-8")))
+    return "?"
 
 
 def _collect_session_material(
@@ -155,7 +176,7 @@ def _collect_session_material(
 
     if xml_files:
         if manifest is not None:
-            _log_session_summary_from_manifest(manifest)
+            _log_session_summary_from_manifest(manifest, xml_files=xml_files, plan_id=plan_id)
             all_session_ids = _extract_session_ids_from_manifest(manifest)
         else:
             all_session_ids = []
@@ -546,7 +567,11 @@ def _log_learn_pr_files(
     plan_content: str,
     xml_files: dict[str, str],
 ) -> None:
-    """Log the files committed to the learn plan PR with paths and sizes."""
+    """Log the files committed to the learn plan PR with paths and sizes.
+
+    Only shows plan.md and ref.json here — session XML files are already
+    displayed per-session in the manifest summary table.
+    """
     files: list[tuple[str, int]] = []
 
     # plan.md
@@ -557,14 +582,11 @@ def _log_learn_pr_files(
     # Approximate size — exact content constructed by create_plan_draft_pr
     files.append((f"{IMPL_CONTEXT_DIR}/ref.json", 60))
 
-    # Session XML files
-    for path, content in sorted(xml_files.items()):
-        file_bytes = len(content.encode("utf-8"))
-        files.append((path, file_bytes))
-
-    # Log file inventory
-    total_bytes = sum(size for _, size in files)
-    user_output(f"  \U0001f4e6 {len(files)} file(s) committed ({_format_size(total_bytes)}):")
+    # Total includes XML files even though we don't list them individually
+    xml_bytes = sum(len(content.encode("utf-8")) for content in xml_files.values())
+    total_bytes = sum(size for _, size in files) + xml_bytes
+    total_files = len(files) + len(xml_files)
+    user_output(f"  \U0001f4e6 {total_files} file(s) committed ({_format_size(total_bytes)}):")
     for path, size in files:
         user_output(f"     {path}  ({_format_size(size)})")
 
