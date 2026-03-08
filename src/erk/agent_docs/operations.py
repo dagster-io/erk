@@ -20,6 +20,7 @@ from erk.agent_docs.models import (
     CategoryTripwireStats,
     CollectedTripwire,
     DocInfo,
+    Lifecycle,
     SyncResult,
     Tripwire,
     TripwiresIndexValidationResult,
@@ -253,6 +254,37 @@ def validate_agent_doc_frontmatter(
         else:
             audit_result = cast(AuditResult, audit_result_data)
 
+    # Check lifecycle (optional)
+    lifecycle: Lifecycle | None = None
+    lifecycle_data = data.get("lifecycle")
+    if lifecycle_data is not None:
+        if not isinstance(lifecycle_data, str):
+            errors.append("Field 'lifecycle' must be a string")
+        elif lifecycle_data not in get_args(Lifecycle):
+            valid_values = ", ".join(f"'{v}'" for v in get_args(Lifecycle))
+            errors.append(
+                f"Field 'lifecycle' must be one of {valid_values}, got '{lifecycle_data}'"
+            )
+        else:
+            lifecycle = cast(Lifecycle, lifecycle_data)
+
+    # Check promoted_to (optional)
+    promoted_to: str | None = None
+    promoted_to_data = data.get("promoted_to")
+    if promoted_to_data is not None:
+        if not isinstance(promoted_to_data, str):
+            errors.append("Field 'promoted_to' must be a string")
+        elif not promoted_to_data:
+            errors.append("Field 'promoted_to' must not be empty")
+        else:
+            promoted_to = promoted_to_data
+
+    # Cross-validate lifecycle and promoted_to
+    if lifecycle == "promoted" and promoted_to_data is None:
+        errors.append("Field 'promoted_to' is required when lifecycle is 'promoted'")
+    if promoted_to_data is not None and lifecycle != "promoted":
+        errors.append("Field 'promoted_to' is only valid when lifecycle is 'promoted'")
+
     if errors:
         return None, errors
 
@@ -265,6 +297,8 @@ def validate_agent_doc_frontmatter(
         tripwires=tripwires,
         last_audited=last_audited,
         audit_result=audit_result,
+        lifecycle=lifecycle,
+        promoted_to=promoted_to,
     ), []
 
 
@@ -563,6 +597,10 @@ def collect_valid_docs(
         result = validate_agent_doc_content(rel_path, content)
         if not result.is_valid or result.frontmatter is None:
             invalid_count += 1
+            continue
+
+        # Skip promoted docs from index — their content is now in a skill
+        if result.frontmatter.lifecycle == "promoted":
             continue
 
         doc_info = DocInfo(
