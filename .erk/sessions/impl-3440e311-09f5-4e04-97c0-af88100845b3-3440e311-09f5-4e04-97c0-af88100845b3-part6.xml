@@ -1,0 +1,1121 @@
+<session>
+  <meta branch="plnd/O8832-objective-no-repo-cm-03-08-0038" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_01C9WBi8BG37P9Zi8W9EKYQq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py</param>
+    <param name="old_string">    def test_dispatches_each_node(self) -&gt; None:
+        """--all-unblocked dispatches one...[truncated 898 chars]...ne,
+                issue_comments=None,
+                pr_references=None,
+            )</param>
+    <param name="new_string">    def test_dispatches_each_node(self) -&gt; None:
+        """--all-unblocked dispatches one...[truncated 905 chars]...e},
+                issue_comments=None,
+                pr_references=None,
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="114435" cache_creation="{'ephemeral_5m_input_tokens': 593, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C9WBi8BG37P9Zi8W9EKYQq">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012NXkK2JgteMkMeTmnt98AM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py</param>
+    <param name="old_string">    def test_dry_run_shows_preview(self) -&gt; None:
+        """--all-unblocked --dry-run sho...[truncated 890 chars]...ne,
+                issue_comments=None,
+                pr_references=None,
+            )</param>
+    <param name="new_string">    def test_dry_run_shows_preview(self) -&gt; None:
+        """--all-unblocked --dry-run sho...[truncated 897 chars]...e},
+                issue_comments=None,
+                pr_references=None,
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1039" cache_read_input_tokens="115028" cache_creation="{'ephemeral_5m_input_tokens': 1039, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012NXkK2JgteMkMeTmnt98AM">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012MUBKRiF9nSce2PeBMvJ7o">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py</param>
+    <param name="old_string">    def test_updates_objective_nodes_to_planning(self) -&gt; None:
+        """--all-unblocked...[truncated 919 chars]...ne,
+                issue_comments=None,
+                pr_references=None,
+            )</param>
+    <param name="new_string">    def test_updates_objective_nodes_to_planning(self) -&gt; None:
+        """--all-unblocked...[truncated 926 chars]...e},
+                issue_comments=None,
+                pr_references=None,
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="786" cache_read_input_tokens="116067" cache_creation="{'ephemeral_5m_input_tokens': 786, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012MUBKRiF9nSce2PeBMvJ7o">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the `test_plan.py` test. Let me see the full test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="800" cache_read_input_tokens="116853" cache_creation="{'ephemeral_5m_input_tokens': 800, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019ZDPTZjfiCJupVUAe39b5e">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="800" cache_read_input_tokens="116853" cache_creation="{'ephemeral_5m_input_tokens': 800, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019ZDPTZjfiCJupVUAe39b5e">
+     1→"""Tests for objective plan command.
+     2→
+     3→Note: The plan command uses AgentLauncher.launch_interactive() which
+     4→replaces the process. These tests verify behavior up to (but not including)
+     5→the process replacement, using FakeAgentLauncher to track calls.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→from pathlib import Path
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.cli import cli
+    14→from erk.core.context import context_for_test
+    15→from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
+    16→from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
+    17→from erk_shared.gateway.git.fake import FakeGit
+    18→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    19→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    20→from erk_shared.gateway.github.issues.types import IssueInfo
+    21→from tests.test_utils.context_builders import build_workspace_test_context
+    22→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    23→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    24→
+    25→
+    26→def test_plan_shows_error_when_claude_not_installed() -&gt; None:
+    27→    """Test implement shows error when Claude CLI is not installed."""
+    28→    runner = CliRunner()
+    29→
+    30→    launcher = FakeAgentLauncher(
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Edz26dgudwxJRoeUt6adCK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">310</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="888" cache_read_input_tokens="117653" cache_creation="{'ephemeral_5m_input_tokens': 888, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Edz26dgudwxJRoeUt6adCK">
+   310→
+   311→def test_plan_next_with_issue_ref() -&gt; None:
+   312→    """Test --next with explicit ISSUE_REF resolves next pending node and pre-marks."""
+   313→    runner = CliRunner()
+   314→    with erk_isolated_fs_env(runner) as env:
+   315→        env.setup_repo_structure()
+   316→
+   317→        issues = FakeGitHubIssues(
+   318→            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
+   319→        )
+   320→        fake_launcher = FakeAgentLauncher()
+   321→        git = FakeGit(
+   322→            git_common_dirs={env.cwd: env.git_dir},
+   323→            default_branches={env.cwd: "main"},
+   324→            trunk_branches={env.cwd: "main"},
+   325→            current_branches={env.cwd: "main"},
+   326→        )
+   327→        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+   328→        ctx = build_workspace_test_context(
+   329→            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+   330→        )
+   331→
+   332→        result = runner.invoke(
+   333→            cli,
+   334→            ["objective", "plan", "42", "--next"],
+   335→            obj=ctx,
+   336→            catch_exceptions=False,
+   337→        )
+   338→
+   339→        assert result.exit_code == 0
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>I need to add `remote_github` to this test. Let me also check if `FakeRemoteGitHub` is already imported:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="853" cache_read_input_tokens="118541" cache_creation="{'ephemeral_5m_input_tokens': 853, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014eWATaDV6Ww9T5BaNZYWa1">
+    <param name="pattern">FakeRemoteGitHub</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="853" cache_read_input_tokens="118541" cache_creation="{'ephemeral_5m_input_tokens': 853, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014eWATaDV6Ww9T5BaNZYWa1">
+No matches found
+  </tool_result>
+  <assistant>Need to add the import and the remote. Let me also check if there are other tests in this file that might need similar treatment:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="119394" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018p9nzjTgA6CN9X9QxQEbGv">
+    <param name="pattern">build_workspace_test_context"</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="119394" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018p9nzjTgA6CN9X9QxQEbGv">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RashS7ozgcyfPtqRjiaTzc">
+    <param name="pattern">build_workspace_test_context</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="119802" cache_creation="{'ephemeral_5m_input_tokens': 179, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RashS7ozgcyfPtqRjiaTzc">
+21:from tests.test_utils.context_builders import build_workspace_test_context
+175:        ctx = build_workspace_test_context(
+328:        ctx = build_workspace_test_context(
+460:        ctx = build_workspace_test_context(
+491:        ctx = build_workspace_test_context(
+520:        ctx = build_workspace_test_context(
+  </tool_result>
+  <assistant>Let me check all 5 locations to see which ones go through `validate_objective`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="463" cache_read_input_tokens="119981" cache_creation="{'ephemeral_5m_input_tokens': 463, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NoKuDnocYMxe79avNTC1Q5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">155</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="463" cache_read_input_tokens="119981" cache_creation="{'ephemeral_5m_input_tokens': 463, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MpebcH93c3w6vksSqwdfDV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">440</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="463" cache_read_input_tokens="119981" cache_creation="{'ephemeral_5m_input_tokens': 463, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NoKuDnocYMxe79avNTC1Q5">
+   155→    assert fake_launcher.last_call.command == "/erk:objective-plan 123"
+   156→
+   157→
+   158→def test_plan_with_node_flag() -&gt; None:
+   159→    """Test that --node flag pre-marks as planning and launches inner command."""
+   160→    runner = CliRunner()
+   161→    with erk_isolated_fs_env(runner) as env:
+   162→        env.setup_repo_structure()
+   163→
+   164→        issues = FakeGitHubIssues(
+   165→            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
+   166→        )
+   167→        fake_launcher = FakeAgentLauncher()
+   168→        git = FakeGit(
+   169→            git_common_dirs={env.cwd: env.git_dir},
+   170→            default_branches={env.cwd: "main"},
+   171→            trunk_branches={env.cwd: "main"},
+   172→            current_branches={env.cwd: "main"},
+   173→        )
+   174→        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+   175→        ctx = build_workspace_test_context(
+   176→            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+   177→        )
+   178→
+   179→        result = runner.invoke(
+   180→            cli,
+   181→            ["objective", "plan", "42", "--node", "1.1"],
+   182→            obj=ctx,
+   183→            catch_exceptions=False,
+   184→        )
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MpebcH93c3w6vksSqwdfDV">
+   440→    runner = CliRunner()
+   441→    with erk_isolated_fs_env(runner) as env:
+   442→        env.setup_repo_structure()
+   443→
+   444→        # Plan issue #100 linked to objective #42
+   445→        plan_issue = _make_plan_issue(100, objective_issue=42)
+   446→        objective_issue = _make_objective_issue(42, OBJECTIVE_BODY)
+   447→        issues = FakeGitHubIssues(
+   448→            issues={100: plan_issue, 42: objective_issue},
+   449→        )
+   450→
+   451→        fake_launcher = FakeAgentLauncher()
+   452→        # plnd/ branch without O-prefix — cannot resolve objective from branch name
+   453→        git = FakeGit(
+   454→            git_common_dirs={env.cwd: env.git_dir},
+   455→            default_branches={env.cwd: "main"},
+   456→            trunk_branches={env.cwd: "main"},
+   457→            current_branches={env.cwd: "plnd/setup-infra-01-15-1200"},
+   458→        )
+   459→        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+   460→        ctx = build_workspace_test_context(
+   461→            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+   462→        )
+   463→
+   464→        result = runner.invoke(
+   465→            cli,
+   466→            ["objective", "plan", "--next"],
+   467→            obj=ctx,
+   468→        )
+   469→
+
+... [68 lines omitted] ...
+
+   475→    """Test --next with all-done objective errors."""
+   506→    """Test --next without ISSUE_REF on unlinked branch errors."""
+  </tool_result>
+  <assistant>I see the pattern. Any test that invokes `--next` or `--node` with a valid ISSUE_REF goes through `_resolve_next`/`validate_objective` and needs the issue available in `FakeRemoteGitHub`. Tests that fail before reaching `validate_objective` (like branch-not-linked tests) don't need it.
+
+Let me create a helper function and add the import, then fix all the tests that need it. I'll use a `libcst-refactor` agent for this since it's a systematic batch edit across the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2343" cache_read_input_tokens="120444" cache_creation="{'ephemeral_5m_input_tokens': 2343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UPpXhp97d1bzZmzpyjpXPU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">160</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2343" cache_read_input_tokens="120444" cache_creation="{'ephemeral_5m_input_tokens': 2343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UPpXhp97d1bzZmzpyjpXPU">
+   160→    runner = CliRunner()
+   161→    with erk_isolated_fs_env(runner) as env:
+   162→        env.setup_repo_structure()
+   163→
+   164→        issues = FakeGitHubIssues(
+   165→            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
+   166→        )
+   167→        fake_launcher = FakeAgentLauncher()
+   168→        git = FakeGit(
+   169→            git_common_dirs={env.cwd: env.git_dir},
+   170→            default_branches={env.cwd: "main"},
+   171→            trunk_branches={env.cwd: "main"},
+   172→            current_branches={env.cwd: "main"},
+   173→        )
+   174→        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+   175→        ctx = build_workspace_test_context(
+   176→            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+   177→        )
+   178→
+   179→        result = runner.invoke(
+   180→            cli,
+   181→            ["objective", "plan", "42", "--node", "1.1"],
+   182→            obj=ctx,
+   183→            catch_exceptions=False,
+   184→        )
+   185→
+   186→        assert result.exit_code == 0
+   187→        assert fake_launcher.launch_called
+   188→        assert fake_launcher.last_call is not None
+   189→        # Should launch inner command instead of outer
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>I need to understand which tests go through `_resolve_next` (and thus `validate_objective`). The code path is:
+- `--node` with ISSUE_REF: Goes through `_handle_specific_node` which calls `_plan_specific_node` -&gt; calls `validate_objective` at line ~757
+- `--next`: Goes through `_resolve_next` -&gt; calls `validate_objective` at line ~144
+
+Let me check `_handle_specific_node`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="965" cache_read_input_tokens="122787" cache_creation="{'ephemeral_5m_input_tokens': 965, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012zGkMcsAq9f3SvBvCBYZFQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">720</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="965" cache_read_input_tokens="122787" cache_creation="{'ephemeral_5m_input_tokens': 965, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012zGkMcsAq9f3SvBvCBYZFQ">
+   720→
+   721→    # Replace current process with Claude
+   722→    try:
+   723→        ctx.agent_launcher.launch_interactive(config, command=command)
+   724→    except RuntimeError as e:
+   725→        raise click.ClickException(str(e)) from e
+   726→
+   727→
+   728→def _handle_one_shot(
+   729→    ctx: ErkContext,
+   730→    *,
+   731→    issue_ref: str | None,
+   732→    model: str | None,
+   733→    dry_run: bool,
+   734→    node_id: str | None,
+   735→    use_next: bool,
+   736→    dispatch_ref: str | None,
+   737→    ref_current: bool,
+   738→) -&gt; None:
+   739→    """Dispatch objective node via one-shot workflow."""
+   740→    if use_next:
+   741→        resolved = _resolve_next(ctx, issue_ref=issue_ref)
+   742→        issue_number = resolved.issue_number
+   743→        target_node = resolved.node
+   744→        phase_name = resolved.phase_name
+   745→    else:
+   746→        assert issue_ref is not None  # type narrowing: validated in plan_objective
+   747→        # Parse issue identifier
+   748→        issue_number = parse_issue_identifier(issue_ref)
+   749→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Let me look at `_plan_specific_node`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="891" cache_read_input_tokens="123752" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HvCY49SRQ2TSFpw4f6bc8w">
+    <param name="pattern">def _plan_specific_node"</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="891" cache_read_input_tokens="123752" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HvCY49SRQ2TSFpw4f6bc8w">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01P8pG4SiSn5QcZtdXBYzmi5">
+    <param name="pattern">def _plan_specific|--node.*validate|_handle_specific</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="124643" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P8pG4SiSn5QcZtdXBYzmi5">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HEF8casK2QJT64pRhh2fmf">
+    <param name="pattern">def.*node_id|node_id.*validate"</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="124830" cache_creation="{'ephemeral_5m_input_tokens': 389, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HEF8casK2QJT64pRhh2fmf">
+No matches found
+  </tool_result>
+  <assistant>Let me look at the `--node` handling. The test at line 158 uses `--node 1.1`, which routes to what code path?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="125219" cache_creation="{'ephemeral_5m_input_tokens': 160, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Dx5EHfXmnE74JqQ6BgFAvg">
+    <param name="pattern">"node"</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="125219" cache_creation="{'ephemeral_5m_input_tokens': 160, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dx5EHfXmnE74JqQ6BgFAvg">
+No matches found
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PxkHvHoYpCdFsqrCzWW8Wa">
+    <param name="pattern">node</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="449" cache_read_input_tokens="125379" cache_creation="{'ephemeral_5m_input_tokens': 449, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PxkHvHoYpCdFsqrCzWW8Wa">
+1:"""Create a plan from an objective node."""
+8:from erk.cli.commands.exec.scripts.update_objective_node import (
+9:    _replace_node_refs_in_body,
+67:def _find_node_in_phases(
+68:    phases: list[RoadmapPhase], node_id: str
+70:    """Find a node by ID and return it with its phase name.
+74:        node_id: Node ID to find (e.g., "1.1", "2.3")
+80:    node_by_id = {node.id: node for node in graph.nodes}
+81:    node = node_by_id.get(node_id)
+82:    if node is None:
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DSX2WaiE4DdUd7jPeoEz5a">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">640</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="125828" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DSX2WaiE4DdUd7jPeoEz5a">
+   640→    if all_unblocked:
+   641→        _handle_all_unblocked(
+   642→            ctx,
+   643→            issue_ref=issue_ref,
+   644→            model=model,
+   645→            dry_run=dry_run,
+   646→            dispatch_ref=dispatch_ref,
+   647→            ref_current=ref_current,
+   648→        )
+   649→    elif one_shot_mode:
+   650→        _handle_one_shot(
+   651→            ctx,
+   652→            issue_ref=issue_ref,
+   653→            model=model,
+   654→            dry_run=dry_run,
+   655→            node_id=node_id,
+   656→            use_next=use_next,
+   657→            dispatch_ref=dispatch_ref,
+   658→            ref_current=ref_current,
+   659→        )
+   660→    else:
+   661→        _handle_interactive(
+   662→            ctx, issue_ref=issue_ref, dangerous=dangerous, node_id=node_id, use_next=use_next
+   663→        )
+   664→
+   665→
+   666→def _handle_interactive(
+   667→    ctx: ErkContext,
+   668→    *,
+   669→    issue_ref: str | None,
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>I see - the `--node` flag with issue_ref goes through `_handle_interactive` which does NOT call `validate_objective` (it just calls `parse_issue_identifier` and `_mark_node_planning`). Only `--next` goes through `_resolve_next` -&gt; `validate_objective`.
+
+So the tests that use `--node` (without `--next`) don't need `FakeRemoteGitHub`, but the `--next` tests do. Let me identify:
+- `test_plan_with_node_flag` (line 158): Uses `--node 1.1` → no `validate_objective` → no `remote_github` needed
+- `test_plan_next_with_issue_ref` (line 311): Uses `--next` → calls `validate_objective` → **needs remote_github**
+- `test_plan_next_no_pending_nodes` (line 474): Uses `--next` → calls `validate_objective` → **needs remote_github**
+- `test_plan_next_branch_not_linked` (line 505): Uses `--next` without ISSUE_REF → fails before `validate_objective` → probably doesn't need it, but let me verify
+- `test_plan_next_infers_from_branch` (line 440): Uses `--next` without ISSUE_REF → fails at branch resolution → doesn't need it
+
+Wait, let me check `test_plan_with_node_flag`. Looking at the `_handle_interactive` path, the `--node` codepath at line 684-687 does NOT call `validate_objective`, it just marks the node. But it does call `_mark_node_planning` which calls `ctx.issues.get_issue`. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1249" cache_read_input_tokens="126187" cache_creation="{'ephemeral_5m_input_tokens': 1249, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01XFdnramYFvurha9ip4uEFY">
+    <param name="pattern">def _mark_node_planning</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1249" cache_read_input_tokens="126187" cache_creation="{'ephemeral_5m_input_tokens': 1249, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XFdnramYFvurha9ip4uEFY">
+466:def _mark_node_planning(
+467-    issues: GitHubIssues,
+468-    repo_root: Path,
+469-    *,
+470-    issue_number: int,
+471-    node_id: str,
+472-) -&gt; None:
+473-    """Best-effort mark a node as 'planning' in the objective roadmap.
+474-
+475-    Unlike _update_objective_node, this does a status-only update without
+476-    requiring a PR number. Used by the interactive flow to mark nodes
+477-    before launching Claude, so parallel sessions skip them.
+478-
+479-    Silently catches all errors — the inner skill will retry if needed.
+480-    """
+481-    issue = issues.get_issue(repo_root, issue_number)
+482-    if isinstance(issue, IssueNotFound):
+483-        return
+484-
+485-    updated_body = _replace_node_refs_in_body(
+486-        issue.body,
+  </tool_result>
+  <assistant>OK so `_mark_node_planning` uses `issues.get_issue` (the local `GitHubIssues`), not `remote`. So the `--node` tests don't need `FakeRemoteGitHub`.
+
+Now let me fix the `test_plan.py` tests. The ones that need `remote_github`:
+1. `test_plan_next_with_issue_ref` (line 311) - uses `--next`
+2. `test_plan_next_no_pending_nodes` (line 474) - uses `--next`
+
+Let me add the import and fix both tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1042" cache_read_input_tokens="127436" cache_creation="{'ephemeral_5m_input_tokens': 1042, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RT1sYwkhiBeZYqUcJJsYmy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway...[truncated 2 chars]...mport IssueInfo
+from tests.test_utils.context_builders import build_workspace_test_context</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway...[truncated 69 chars]...akeRemoteGitHub
+from tests.test_utils.context_builders import build_workspace_test_context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1042" cache_read_input_tokens="127436" cache_creation="{'ephemeral_5m_input_tokens': 1042, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RT1sYwkhiBeZYqUcJJsYmy">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01REEyCBcChsh4PUCy7mBX1C">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">17</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="128478" cache_creation="{'ephemeral_5m_input_tokens': 445, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01REEyCBcChsh4PUCy7mBX1C">
+    17→from erk_shared.gateway.git.fake import FakeGit
+    18→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    19→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    20→from erk_shared.gateway.github.issues.types import IssueInfo
+    21→from tests.test_utils.context_builders import build_workspace_test_context
+    22→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    23→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    24→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016fyGc8BmBHrzHzWeacXBby">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway...[truncated 2 chars]...mport IssueInfo
+from tests.test_utils.context_builders import build_workspace_test_context</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway...[truncated 69 chars]...akeRemoteGitHub
+from tests.test_utils.context_builders import build_workspace_test_context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="128923" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016fyGc8BmBHrzHzWeacXBby">
+The file /home/runner/work/erk/erk/tests/commands/objective/test_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add a helper function and fix `test_plan_next_with_issue_ref`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="129514" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QQuxJJdyMVpLSRLmE9ax2z">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">312</param>
+    <param name="limit">42</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="129514" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QQuxJJdyMVpLSRLmE9ax2z">
+   312→def test_plan_next_with_issue_ref() -&gt; None:
+   313→    """Test --next with explicit ISSUE_REF resolves next pending node and pre-marks."""
+   314→    runner = CliRunner()
+   315→    with erk_isolated_fs_env(runner) as env:
+   316→        env.setup_repo_structure()
+   317→
+   318→        issues = FakeGitHubIssues(
+   319→            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
+   320→        )
+   321→        fake_launcher = FakeAgentLauncher()
+   322→        git = FakeGit(
+   323→            git_common_dirs={env.cwd: env.git_dir},
+   324→            default_branches={env.cwd: "main"},
+   325→            trunk_branches={env.cwd: "main"},
+   326→            current_branches={env.cwd: "main"},
+   327→        )
+   328→        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+   329→        ctx = build_workspace_test_context(
+   330→            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+   331→        )
+   332→
+   333→        result = runner.invoke(
+   334→            cli,
+   335→            ["objective", "plan", "42", "--next"],
+   336→            obj=ctx,
+   337→            catch_exceptions=False,
+   338→        )
+   339→
+   340→        assert result.exit_code == 0
+   341→        assert fake_launcher.launch_called
+
+... [17 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018zNpqmNPQUsW5Fbu7uBZMB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="old_string">        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+        ctx = ...[truncated 839 chars]... "planning" in updated_body
+
+
+def test_plan_without_node_launches_outer_command() -&gt; None:</param>
+    <param name="new_string">        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+        object...[truncated 1333 chars]... "planning" in updated_body
+
+
+def test_plan_without_node_launches_outer_command() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1062" cache_read_input_tokens="129812" cache_creation="{'ephemeral_5m_input_tokens': 1062, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018zNpqmNPQUsW5Fbu7uBZMB">
+The file /home/runner/work/erk/erk/tests/commands/objective/test_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `test_plan_next_no_pending_nodes`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="849" cache_read_input_tokens="130874" cache_creation="{'ephemeral_5m_input_tokens': 849, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PS31eytgBvickqx2bPJ2xB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">485</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="849" cache_read_input_tokens="130874" cache_creation="{'ephemeral_5m_input_tokens': 849, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PS31eytgBvickqx2bPJ2xB">
+   485→        )
+   486→
+   487→        assert result.exit_code == 1
+   488→        assert "not linked to an objective" in result.output
+   489→
+   490→
+   491→def test_plan_next_no_pending_nodes() -&gt; None:
+   492→    """Test --next with all-done objective errors."""
+   493→    runner = CliRunner()
+   494→    with erk_isolated_fs_env(runner) as env:
+   495→        env.setup_repo_structure()
+   496→
+   497→        issues = FakeGitHubIssues(
+   498→            issues={42: _make_objective_issue(42, OBJECTIVE_ALL_DONE_BODY)},
+   499→        )
+   500→        fake_launcher = FakeAgentLauncher()
+   501→        git = FakeGit(
+   502→            git_common_dirs={env.cwd: env.git_dir},
+   503→            default_branches={env.cwd: "main"},
+   504→            trunk_branches={env.cwd: "main"},
+   505→            current_branches={env.cwd: "main"},
+   506→        )
+   507→        github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+   508→        ctx = build_workspace_test_context(
+   509→            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+   510→        )
+   511→
+   512→        result = runner.invoke(
+   513→            cli,
+   514→            ["objective", "plan", "42", "--next"],
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MfDcZ1hfTzSzfayV1ydgfk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="old_string">def test_plan_next_no_pending_nodes() -&gt; None:
+    """Test --next with all-done objective ...[truncated 614 chars]...        env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+        )</param>
+    <param name="new_string">def test_plan_next_no_pending_nodes() -&gt; None:
+    """Test --next with all-done objective ...[truncated 1082 chars]...ues,
+            agent_launcher=fake_launcher,
+            remote_github=remote,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="845" cache_read_input_tokens="131723" cache_creation="{'ephemeral_5m_input_tokens': 845, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MfDcZ1hfTzSzfayV1ydgfk">
+The file /home/runner/work/erk/erk/tests/commands/objective/test_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="781" cache_read_input_tokens="132568" cache_creation="{'ephemeral_5m_input_tokens': 781, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_016H7ePjzrNX3iQbu3CdijGi">
+    <param name="description">Run objective tests again</param>
+    <param name="prompt">Run the following test commands in /home/runner/work/erk/erk and report ALL results includ...[truncated 160 chars]...commands/objective/ -v --tb=short` (unit tests for objective commands)
+
+Report all output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="781" cache_read_input_tokens="132568" cache_creation="{'ephemeral_5m_input_tokens': 781, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016H7ePjzrNX3iQbu3CdijGi">
+## Test Results Summary
+
+### Test 1: Objective Command Integration Tests (`tests/commands/objective/`)
+
+**Result: 9 failed, 42 passed (51 total) - FAILED**
+
+**Failures in `test_plan_one_shot.py`:**
+
+All 9 failures occur in the same file with identical error: `Error: Issue #42 not found`
+
+Failed tests:
+1. `test_plan_one_shot_happy_path` - Assertion: Command failed with "Issue #42 not found"
+2. `test_plan_one_shot_repeated_invocation_advances_node` - First invocation failed with "Issue #42 not found"
+3. `test_plan_one_shot_auto_detects_next_node` - Command failed with "Issue #42 not found"
+4. `test_plan_one_shot_node_override` - Command failed with "Issue #42 not found"
+5. `test_plan_one_shot_no_pending_nodes` - Expected exit code 0, got 1
+6. `test_plan_one_shot_node_not_found` - Expected "Node '99.1' not found" but got "Issue #42 not found"
+7. `test_plan_one_shot_dry_run` - Expected exit code 0, got 1
+8. `test_plan_one_shot_model_flag` - Command failed with "Issue #42 not found"
+9. `test_plan_one_shot_next_with_issue_ref` - Command failed with "Issue #42 not found"
+
+**Passing test files:**
+- `test_close_objective.py` - 9 passed
+- `test_plan.py` - 17 passed
+- `test_remote_paths.py` - 13 passed
+
+---
+
+### Test 2: Objective Command Unit Tests (`tests/unit/cli/commands/objective/`)
+
+
+... [12 lines omitted] ...
+
+**Root Cause:** The integration test failures all indicate that test fixture issue #42 is not being created or found. All 9 failures stem from the same underlying issue in `test_plan_one_shot.py` where the fixture expects issue #42 to exist, but the command lookup is failing before reaching the actual test logic.
+  </tool_result>
+  <assistant>
+
+Good progress - unit tests all pass, close/remote/plan tests pass. 9 failures remain in `test_plan_one_shot.py`. Same root cause: `validate_objective` now uses `remote.get_issue()` but these tests don't provide `FakeRemoteGitHub`. Let me fix them:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1071" cache_read_input_tokens="133349" cache_creation="{'ephemeral_5m_input_tokens': 1071, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013gkK2hAmHtDPVdEfRzLP1v">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1071" cache_read_input_tokens="133349" cache_creation="{'ephemeral_5m_input_tokens': 1071, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013gkK2hAmHtDPVdEfRzLP1v">
+     1→"""Tests for objective plan --one-shot command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    10→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    11→from erk_shared.gateway.github.issues.types import IssueInfo
+    12→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    13→from tests.test_utils.context_builders import build_workspace_test_context
+    14→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    15→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    16→
+    17→OBJECTIVE_BODY = """# Objective: Add caching
+    18→
+    19→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    20→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    21→&lt;details&gt;
+    22→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    23→
+    24→```yaml
+    25→
+    26→schema_version: '2'
+    27→steps:
+    28→  - id: '1.1'
+    29→    description: Setup infra
+    30→    status: pending
+
+... [529 lines omitted] ...
+
+    67→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   171→            catch_exceptions=False,
+   174→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   217→            catch_exceptions=False,
+   219→        assert result1.exit_code == 0, f"First invocation failed: {result1.output}"
+   231→            catch_exceptions=False,
+   233→        assert result2.exit_code == 0, f"Second invocation failed: {result2.output}"
+   248→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   291→            catch_exceptions=False,
+   294→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   317→            catch_exceptions=False,
+   320→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   343→            catch_exceptions=False,
+   356→    """Test --node with nonexistent node ID errors."""
+   391→            catch_exceptions=False,
+   408→    """Test error when objective issue doesn't exist."""
+   441→            catch_exceptions=False,
+   444→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   452→    """Test --model, --dry-run without --one-shot produce errors."""
+   513→            catch_exceptions=False,
+   516→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <assistant>The issue is clear: `_make_remote()` creates `FakeRemoteGitHub` with `issues=None`, and all tests use `_build_one_shot_context` which calls `_make_remote()` when no remote is provided. The fix is to update `_build_one_shot_context` to pass the issues from `FakeGitHubIssues` into the `FakeRemoteGitHub`.
+
+The cleanest fix is to update `_build_one_shot_context` to extract issues from the `FakeGitHubIssues` and pass them to `FakeRemoteGitHub`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7305" cache_read_input_tokens="134420" cache_creation="{'ephemeral_5m_input_tokens': 7305, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011KmoywkgjZ1Ksei3qcuKH7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py</param>
+    <param name="old_string">def _make_remote() -&gt; FakeRemoteGitHub:
+    """Create a default FakeRemoteGitHub for tests...[truncated 819 chars]...st_context(
+        env, git=git, github=github, issues=issues, remote_github=remote
+    )</param>
+    <param name="new_string">def _make_remote(
+    *, issues: dict[int, IssueInfo] | None = None
+) -&gt; FakeRemoteGitHub:...[truncated 893 chars]...st_context(
+        env, git=git, github=github, issues=issues, remote_github=remote
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7305" cache_read_input_tokens="134420" cache_creation="{'ephemeral_5m_input_tokens': 7305, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011KmoywkgjZ1Ksei3qcuKH7">
+The file /home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait, I'm accessing `issues._issues` which is a private attribute. Let me check if `FakeGitHubIssues` has a public accessor:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1221" cache_read_input_tokens="141725" cache_creation="{'ephemeral_5m_input_tokens': 1221, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01T2nYiiXSBDvSPJtFD4YriB">
+    <param name="pattern">class FakeGitHubIssues</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1221" cache_read_input_tokens="141725" cache_creation="{'ephemeral_5m_input_tokens': 1221, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01T2nYiiXSBDvSPJtFD4YriB">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01N9V6pBRKzVnTeJ4UYAfLjN">
+    <param name="pattern">_issues|issues</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="142946" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N9V6pBRKzVnTeJ4UYAfLjN">
+1:"""In-memory fake implementation of GitHub issues for testing."""
+7:from erk_shared.gateway.github.issues.abc import GitHubIssues
+8:from erk_shared.gateway.github.issues.types import (
+27:        issues: dict[int, IssueInfo] | None = None,
+41:            issues: Mapping of issue number -&gt; IssueInfo
+58:        self._issues = issues or {}
+68:        self._created_issues: list[tuple[str, str, list[str]]] = []
+71:        self._closed_issues: list[int] = []
+79:    def created_issues(self) -&gt; list[tuple[str, str, list[str]]]:
+80:        """Read-only access to created issues for test assertions.
+84:        return self._created_issues
+103:    def closed_issues(self) -&gt; list[int]:
+104:        """Read-only access to closed issues for test assertions.
+108:        return self._closed_issues
+163:        url = f"https://github.com/test-owner/test-repo/issues/{issue_number}"
+166:        # Use configured username as author for created issues
+168:        self._issues[issue_number] = IssueInfo(
+180:        self._created_issues.append((title, body, labels))
+186:        return number in self._issues
+194:        if number not in self._issues:
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <assistant>There's no public accessor for the issues dict. Since `_issues` is a convention (not truly private in Python), and this is test code accessing another test fake, it's acceptable. But there's a cleaner approach - since each test already creates the issues dict before passing to `FakeGitHubIssues`, I can pass those same issues to the remote directly. But the helper `_build_one_shot_context` takes `FakeGitHubIssues` not the raw dict. 
+
+Actually, the approach I have is fine for test code - accessing `._issues` on a fake is common in test utilities. But let me verify the attribute name is correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="754" cache_read_input_tokens="143108" cache_creation="{'ephemeral_5m_input_tokens': 754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Eis94bJRonWvnB1zQUNBrJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py</param>
+    <param name="offset">55</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="754" cache_read_input_tokens="143108" cache_creation="{'ephemeral_5m_input_tokens': 754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Eis94bJRonWvnB1zQUNBrJ">
+    55→                operations. If set, indicates this GitHubIssues instance operates
+    56→                on a different repo (e.g., plans repo).
+    57→        """
+    58→        self._issues = issues or {}
+    59→        self._next_issue_number = next_issue_number
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good, `_issues` is correct. But there's a subtlety - the test `test_plan_one_shot_repeated_invocation_advances_node` modifies the issue body via `issues.update_issue_body()`, so the second invocation reads the updated body. For the remote, the issue dict won't be updated. However, `validate_objective` just needs to find the issue and check it has the label - the node resolution logic actually re-reads from `ctx.issues` (the local `GitHubIssues`). Let me verify by checking the `_handle_one_shot` code path more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="143862" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Q5JwnHEhHc4Phux3bNNdoy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">728</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="143862" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q5JwnHEhHc4Phux3bNNdoy">
+   728→def _handle_one_shot(
+   729→    ctx: ErkContext,
+   730→    *,
+   731→    issue_ref: str | None,
+   732→    model: str | None,
+   733→    dry_run: bool,
+   734→    node_id: str | None,
+   735→    use_next: bool,
+   736→    dispatch_ref: str | None,
+   737→    ref_current: bool,
+   738→) -&gt; None:
+   739→    """Dispatch objective node via one-shot workflow."""
+   740→    if use_next:
+   741→        resolved = _resolve_next(ctx, issue_ref=issue_ref)
+   742→        issue_number = resolved.issue_number
+   743→        target_node = resolved.node
+   744→        phase_name = resolved.phase_name
+   745→    else:
+   746→        assert issue_ref is not None  # type narrowing: validated in plan_objective
+   747→        # Parse issue identifier
+   748→        issue_number = parse_issue_identifier(issue_ref)
+   749→
+   750→        # Validate repo context
+   751→        if isinstance(ctx.repo, NoRepoSentinel):
+   752→            raise click.ClickException("Not in a git repository")
+   753→        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+   754→        repo: RepoContext = ctx.repo
+   755→        if repo.github is None:
+   756→            raise click.ClickException("Repository has no GitHub remote configured")
+   757→
+
+... [65 lines omitted] ...
+
+   768→        if isinstance(result, ObjectiveValidationError):
+   769→            raise click.ClickException(result.error)
+   774→            raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   782→                raise click.ClickException(
+   796→                raise click.ClickException(
+   797→                    f"Internal error: next_node '{result.next_node['id']}' not found"
+   803→        raise click.ClickException(
+  </tool_result>
+  <assistant>I see - so `_handle_one_shot` calls `validate_objective` with `remote.get_issue()` to fetch the issue data and parse the roadmap. For the repeated invocation test, after the first call updates the body via `issues.update_issue_body()`, the second call re-reads from `remote.get_issue()` which returns the stale original body. But the test works because the `FakeGitHubIssues.update_issue_body()` updates `self._issues[number]`, and if I'm sharing the same dict, the remote would see it too.
+
+Wait, no - the `FakeRemoteGitHub` has its own `_issues` dict that's separate. So on second invocation, `remote.get_issue()` returns the old body, and node 1.1 would still be "pending" (not "planning"). This means the test would dispatch 1.1 again instead of 1.2.
+
+Hmm, but actually the test was previously passing when `validate_objective` used `ctx.issues.get_issue()` (which reads the updated body). Now it uses `remote.get_issue()` which has the stale copy. This is a behavioral change.
+
+However, looking more carefully at the test, the second invocation calls `validate_objective` via `_handle_one_shot` -&gt; line 759. This reads the issue from remote. The remote's copy won't have the updated "planning" status. So node 1.1 will still look "pending" and will be chosen again as the next node.
+
+But wait - the `_handle_one_shot` at line 786-799 does: if `node_id is None`, use `result.next_node` from validation. The `result.next_node` is computed from the roadmap YAML, which in the remote's copy still has 1.1 as "pending". So the second invocation would try to dispatch 1.1 again.
+
+This would break the `test_plan_one_shot_repeated_invocation_advances_node` test. Let me think about this...
+
+Actually, the test might still work because after the first invocation updates the issue body via `issues.update_issue_body()`, and `_build_one_shot_context` passes `issues._issues` to the remote - the dict is the same object reference. When `FakeGitHubIssues.update_issue_body` updates `self._issues[42]`, it mutates the dict in place, and `FakeRemoteGitHub._issues` is pointing at the same dict. So the remote would also see the updated body.
+
+Wait, no - the constructor does `self._issues = issues or {}` for `FakeGitHubIssues`, and for `FakeRemoteGitHub` it does `self._issues: dict[int, IssueInfo] = issues if issues is not None else {}`. Let me check if `issues._issues` returns the same dict reference:
+
+Looking at my code: `remote = _make_remote(issues=issues._issues)` - this passes the dict reference directly. Since `FakeRemoteGitHub.__init__` does `self._issues: dict[int, IssueInfo] = issues if issues is not None else {}`, it will use the same dict object. And `FakeGitHubIssues.update_issue_body` does `self._issues[number] = ...` which mutates the dict in-place. So yes, both fakes share the same dict, and mutations are visible to both.
+
+But wait, `IssueInfo` is frozen. `update_issue_body` creates a new `IssueInfo` and replaces the dict entry:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1747" cache_read_input_tokens="144297" cache_creation="{'ephemeral_5m_input_tokens': 1747, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BWH6ncdhv9suVrrnEBvzE3">
+    <param name="pattern">def update_issue_body</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1747" cache_read_input_tokens="144297" cache_creation="{'ephemeral_5m_input_tokens': 1747, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BWH6ncdhv9suVrrnEBvzE3">
+212:    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -&gt; None:
+213-        """Update issue body in fake storage and track mutation.
+214-
+215-        Raises:
+216-            RuntimeError: If issue number not found (simulates gh CLI error)
+217-        """
+218-        if number not in self._issues:
+219-            msg = f"Issue #{number} not found"
+220-            raise RuntimeError(msg)
+221-
+222-        # Resolve body content from BodyFile or BodyText
+223-        if isinstance(body, BodyFile):
+224-            body_content = body.path.read_text(encoding="utf-8")
+225-        elif isinstance(body, BodyText):
+226-            body_content = body.content
+227-        else:
+  </tool_result>
+  <tool_use name="Read" id="toolu_013WnUQKPh3AYWTTyxLGmXdj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py</param>
+    <param name="offset">227</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1208" cache_read_input_tokens="146044" cache_creation="{'ephemeral_5m_input_tokens': 1208, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013WnUQKPh3AYWTTyxLGmXdj">
+   227→        else:
+   228→            # Should never happen with proper typing, but handle gracefully
+   229→            body_content = str(body)
+   230→
+   231→        # Track the update for test assertions
+   232→        self._updated_bodies.append((number, body_content))
+   233→
+   234→        # Update the issue body in-place (creates new IssueInfo with updated body)
+   235→        old_issue = self._issues[number]
+   236→        updated_issue = IssueInfo(
+   237→            number=old_issue.number,
+   238→            title=old_issue.title,
+   239→            body=body_content,  # New body
+   240→            state=old_issue.state,
+   241→            url=old_issue.url,
+   242→            labels=old_issue.labels,
+   243→            assignees=old_issue.assignees,
+   244→            created_at=old_issue.created_at,
+   245→            updated_at=datetime.now(UTC),  # Update timestamp
+   246→            author=old_issue.author,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>It does `self._issues[number] = updated_issue` (replacing the value in the dict). Since both fakes share the same dict object, the remote will also see the updated issue body when `get_issue` is called. This means the shared-dict approach works correctly for the repeated invocation test.
+
+Now let me run the one-shot tests to verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="710" cache_read_input_tokens="147252" cache_creation="{'ephemeral_5m_input_tokens': 710, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01RDu2H4qFMEuY11UoYpPXK6">
+    <param name="description">Run one-shot and all objective tests</param>
+    <param name="prompt">Run these test commands in /home/runner/work/erk/erk and report ALL results. Do NOT fix an...[truncated 167 chars]... --tb=short 2&gt;&amp;1 | tail -60` (all objective tests - just show summary)
+
+Report all output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="710" cache_read_input_tokens="147252" cache_creation="{'ephemeral_5m_input_tokens': 710, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RDu2H4qFMEuY11UoYpPXK6">
+## Test Results
+
+**pytest passed: All objective tests passing**
+
+### Test 1: One-Shot Tests
+- File: `tests/commands/objective/test_plan_one_shot.py`
+- Result: **12 passed in 0.80s**
+
+### Test 2: All Objective Tests
+- Directories: `tests/commands/objective/` and `tests/unit/cli/commands/objective/`
+- Result: **127 passed in 1.67s**
+
+Breakdown of test files:
+- `test_close_objective.py`: 9 passed
+- `test_plan.py`: 17 passed
+- `test_plan_one_shot.py`: 12 passed
+- `test_remote_paths.py`: 13 passed
+- `test_check_cmd.py`: 24 passed
+- `test_list_cmd_helpers.py`: 15 passed
+- `test_plan_cmd.py`: 8 passed
+- `test_view_cmd.py`: 29 passed
+
+All tests are passing with no failures.
+agentId: a884087 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 127 tests pass. Now let me run the full CI suite:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="147962" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01JXDmKkeepbgWzcsxx6etPb">
+    <param name="description">Run full CI checks</param>
+    <param name="prompt">Run the following CI checks in /home/runner/work/erk/erk and report ALL results. Do NOT fi...[truncated 154 chars]...t tests/ -x --timeout=30 -q` (full test suite)
+
+Report all errors, warnings, and failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="147962" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JXDmKkeepbgWzcsxx6etPb">
+## CI Check Results
+
+### 1. Ruff Linting (uv run ruff check src/ tests/)
+**ruff check: PASSED** - All checks passed!
+
+### 2. Ruff Format Check (uv run ruff format --check src/ tests/)
+**ruff format: FAILED** - 2 files need reformatting
+
+Files that would be reformatted:
+- `tests/commands/objective/test_plan_one_shot.py`
+- `tests/unit/cli/commands/objective/test_plan_cmd.py`
+
+Summary: 1,212 files already formatted, 2 files need reformatting
+
+### 3. Type Checking (uv run ty check src/)
+**ty check: PASSED** - All checks passed!
+
+### 4. Test Suite (uv run pytest tests/ -x -q)
+**pytest: FAILED** - 1 test failure
+
+**Failed Test:**
+```
+tests/cli/commands/split/test_plan.py::test_execute_split_plan_creates_worktrees
+```
+
+**Error:**
+```
+AttributeError: 'FakeGit' object has no attribute 'worktree'
+
+Location: src/erk/cli/commands/stack/split_old/plan.py:207
+
+... [15 lines omitted] ...
+
+- **Formatting**: FAILED (2 files need reformatting)
+- **Tests**: FAILED (1 test, AttributeError in FakeGit mock)
+  </tool_result>
+  <assistant>
+
+The formatting issues are from my edits. The test failure in `test_execute_split_plan_creates_worktrees` is unrelated to my changes (it's about `FakeGit.worktree`). Let me fix the formatting:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="915" cache_read_input_tokens="148534" cache_creation="{'ephemeral_5m_input_tokens': 915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011Zg4XvrPGaMoTc6CsEp9YA">
+    <param name="command">uv run ruff format /home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_plan_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Format two test files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="915" cache_read_input_tokens="148534" cache_creation="{'ephemeral_5m_input_tokens': 915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011Zg4XvrPGaMoTc6CsEp9YA">
+2 files reformatted
+  </tool_result>
+  <assistant>Now let me verify the split test failure is pre-existing and not from my changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="798" cache_read_input_tokens="149449" cache_creation="{'ephemeral_5m_input_tokens': 798, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01EgZRoffUusWnkv27tPZs1o">
+    <param name="command">git stash &amp;&amp; uv run pytest tests/cli/commands/split/test_plan.py::test_execute_split_plan_creates_worktrees -x -q 2&gt;&amp;1 | tail -10</param>
+    <param name="description">Check if split test failure is pre-existing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="798" cache_read_input_tokens="149449" cache_creation="{'ephemeral_5m_input_tokens': 798, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EgZRoffUusWnkv27tPZs1o">
+Saved working directory and index state WIP on plnd/O8832-objective-no-repo-cm-03-08-0038: fdc28f2f1 Remove plan staging dirs before implementation
+                branch=branch,
+                ref=None,
+                create_branch=False,
+            )
+E           AttributeError: 'FakeGit' object has no attribute 'worktree'
+
+src/erk/cli/commands/stack/split_old/plan.py:207: AttributeError
+=========================== short test summary info ============================
+FAILED tests/cli/commands/split/test_plan.py::test_execute_split_plan_creates_worktrees - AttributeError: 'FakeGit' object has no attribute 'worktree'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  </tool_result>
+  <assistant>The split test failure is pre-existing - it fails on the stashed (clean) branch too. Let me restore my changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3605" cache_read_input_tokens="150247" cache_creation="{'ephemeral_5m_input_tokens': 3605, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012ojr62cy6BCNXT5ViSNP4c">
+    <param name="command">git stash pop 2&gt;&amp;1</param>
+    <param name="description">Restore stashed changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3605" cache_read_input_tokens="150247" cache_creation="{'ephemeral_5m_input_tokens': 3605, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+</session>

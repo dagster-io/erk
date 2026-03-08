@@ -1,0 +1,720 @@
+<session>
+  <meta source="agent-aa4a56c" />
+  <meta branch="plnd/O8832-objective-no-repo-cm-03-08-0038" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the file `/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py`.
+
+I need to update every call to `env.build_context(issues=fake_gh)` and `env.build_context(issues=fake_gh, current_branch=...)` to also pass `remote_github=_make_remote({NUMBER: issue})` where NUMBER and issue match the test's issue data.
+
+For tests that have no issue (e.g., the "no ref no inference" test at the bottom), pass `remote_github=_make_remote({})`.
+
+The pattern should be:
+- `env.build_context(issues=fake_gh)` → `env.build_context(issues=fake_gh, remote_github=_make_remote({NUMBER: issue}))`
+- `env.build_context(issues=fake_gh, current_branch=...)` → `env.build_context(issues=fake_gh, remote_github=_make_remote({NUMBER: issue}), current_branch=...)`
+- For empty issue tests: `env.build_context(...)` → `env.build_context(..., remote_github=_make_remote({}))`
+
+The helper `_make_remote` is already defined at the top of the file. Make these edits now.</user>
+  <assistant>I'll read the test file first to understand its current structure, then make the required updates.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6139" cache_read_input_tokens="13908" cache_creation="{'ephemeral_5m_input_tokens': 6139, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GpD2dSEyAdj87DDue6Zcmj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6139" cache_read_input_tokens="13908" cache_creation="{'ephemeral_5m_input_tokens': 6139, 'ephemeral_1h_input_tokens': 0}" output_tokens="102" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GpD2dSEyAdj87DDue6Zcmj">
+     1→"""Unit tests for erk objective view command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.objective.view_cmd import view_objective
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo
+    11→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    12→from tests.test_utils.env_helpers import erk_inmem_env
+    13→from tests.test_utils.output_helpers import strip_ansi
+    14→
+    15→
+    16→def _make_remote(issues: dict[int, IssueInfo]) -&gt; FakeRemoteGitHub:
+    17→    """Create a FakeRemoteGitHub from an issue dict."""
+    18→    return FakeRemoteGitHub(
+    19→        authenticated_user="test-user",
+    20→        default_branch_name="main",
+    21→        default_branch_sha="abc123",
+    22→        next_pr_number=1,
+    23→        dispatch_run_id="run-1",
+    24→        issues=issues,
+    25→        issue_comments=None,
+    26→        pr_references=None,
+    27→    )
+    28→
+    29→
+    30→def _make_issue(
+
+... [836 lines omitted] ...
+
+    62→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   111→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   144→        assert result.exit_code == 0, f"Failed: {result.output}"
+   166→        assert result.exit_code == 0, f"Failed: {result.output}"
+   171→    """Test error when issue not found."""
+   184→        assert "Error:" in result.output
+   190→    """Test error when issue missing erk-objective label."""
+   209→        assert "Error:" in result.output
+   246→        assert result.exit_code == 0, f"Failed: {result.output}"
+   270→        assert result.exit_code == 0, f"Failed: {result.output}"
+   289→        assert result.exit_code == 0, f"Failed: {result.output}"
+   307→        assert result.exit_code == 0, f"Failed: {result.output}"
+   329→        assert result.exit_code == 0, f"Failed: {result.output}"
+   353→        assert result.exit_code == 0, f"Failed: {result.output}"
+   411→        assert result.exit_code == 0, f"Failed: {result.output}"
+   433→        assert result.exit_code == 0, f"Failed: {result.output}"
+   456→        assert result.exit_code == 0, f"Failed: {result.output}"
+   479→        assert result.exit_code == 0, f"Failed: {result.output}"
+   505→        assert result.exit_code == 0, f"Failed: {result.output}"
+   531→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   588→        assert result.exit_code == 0, f"Failed: {result.output}"
+   612→        assert result.exit_code == 0, f"Failed: {result.output}"
+   636→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   696→        assert result.exit_code == 0, f"Failed: {result.output}"
+   714→        assert result.exit_code == 0, f"Failed: {result.output}"
+   735→        assert result.exit_code == 0, f"Failed: {result.output}"
+   755→        assert result.exit_code == 0, f"Failed: {result.output}"
+   777→        assert result.exit_code == 0, f"Failed: {result.output}"
+   806→        assert result.exit_code == 0, f"Failed: {result.output}"
+   841→        assert result.exit_code == 0, f"Failed: {result.output}"
+   846→    """Test error when no ref provided and branch is not linked to an objective."""
+  </tool_result>
+  <assistant>Now I'll make the required updates to add `remote_github=_make_remote({NUMBER: issue})` to all `env.build_context()` calls.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="15625" cache_read_input_tokens="20047" cache_creation="{'ephemeral_5m_input_tokens': 15625, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NTjxGaL2U1SuqiorN5MYwi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["100"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 50 chars]...voke(
+            view_objective,
+            ["100"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="15625" cache_read_input_tokens="20047" cache_creation="{'ephemeral_5m_input_tokens': 15625, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NTjxGaL2U1SuqiorN5MYwi">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PxnrnEsx8C3qk88UyaEY3a">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 44 chars]...          ["https://github.com/test/repo/issues/200"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 86 chars]...          ["https://github.com/test/repo/issues/200"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="344" cache_read_input_tokens="35672" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="282" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PxnrnEsx8C3qk88UyaEY3a">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Agoh3sWN9CQ6JCBVHkjSGM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["999"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 40 chars]...voke(
+            view_objective,
+            ["999"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="331" cache_read_input_tokens="36016" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="255" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Agoh3sWN9CQ6JCBVHkjSGM">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015MVwhj7o5R9TbwQHRha9gw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["300"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 50 chars]...voke(
+            view_objective,
+            ["300"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="304" cache_read_input_tokens="36347" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="258" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015MVwhj7o5R9TbwQHRha9gw">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HMfeXjpVnN6QTaccvu6SHv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["400"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 50 chars]...voke(
+            view_objective,
+            ["400"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="36651" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HMfeXjpVnN6QTaccvu6SHv">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011yRxtAt9b3xdqHpBCGcRrP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["500"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 50 chars]...voke(
+            view_objective,
+            ["500"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="307" cache_read_input_tokens="37062" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011yRxtAt9b3xdqHpBCGcRrP">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012RA1NntLrc3qgKedLCNdHb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["600"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 50 chars]...voke(
+            view_objective,
+            ["600"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="306" cache_read_input_tokens="37369" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012RA1NntLrc3qgKedLCNdHb">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BewkQb7zM8boZX45zzeN5R">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["P700"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 51 chars]...oke(
+            view_objective,
+            ["P700"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="410" cache_read_input_tokens="37675" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="260" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BewkQb7zM8boZX45zzeN5R">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014TBFiuJMYABRXWgZgPSvmh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["800"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 50 chars]...voke(
+            view_objective,
+            ["800"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="308" cache_read_input_tokens="38085" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014TBFiuJMYABRXWgZgPSvmh">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016ojK43TaC4Gmn4wPMkby1o">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["900"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 50 chars]...voke(
+            view_objective,
+            ["900"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="306" cache_read_input_tokens="38393" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016ojK43TaC4Gmn4wPMkby1o">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0112GhGreasVX9EkA3TsfTo6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 8 chars]...voke(
+            view_objective,
+            ["950"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 50 chars]...voke(
+            view_objective,
+            ["950"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="410" cache_read_input_tokens="38699" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="258" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0112GhGreasVX9EkA3TsfTo6">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VNr8hioZrSYLtNBCRjTwsf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["1000"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["1000"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="306" cache_read_input_tokens="39109" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="261" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VNr8hioZrSYLtNBCRjTwsf">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01T6TtMCV1yTCJ8LjsdXmh3N">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["1100"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["1100"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="39415" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="261" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T6TtMCV1yTCJ8LjsdXmh3N">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019TT1PfRHemfSCDYj5ZaGM2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["1200"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["1200"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="413" cache_read_input_tokens="39724" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="261" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019TT1PfRHemfSCDYj5ZaGM2">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016ARKiFKksr89bN4ei3xbHp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["1300"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["1300"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="40137" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="261" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016ARKiFKksr89bN4ei3xbHp">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VioUA1VTm9VrhhrV1Ezcri">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["1350"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["1350"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="40446" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="261" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VioUA1VTm9VrhhrV1Ezcri">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016wAjwAfVmneJovSa2jDo46">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 26 chars]...view_objective,
+            ["1400", "--json-output"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 69 chars]...view_objective,
+            ["1400", "--json-output"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="413" cache_read_input_tokens="40755" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016wAjwAfVmneJovSa2jDo46">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01S42tEnBn8wic45QdE44WjU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 26 chars]...view_objective,
+            ["1500", "--json-output"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 69 chars]...view_objective,
+            ["1500", "--json-output"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="319" cache_read_input_tokens="41168" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S42tEnBn8wic45QdE44WjU">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TGvCnAvedppi6eLRG8hsqx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 26 chars]...view_objective,
+            ["1600", "--json-output"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 69 chars]...view_objective,
+            ["1600", "--json-output"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="319" cache_read_input_tokens="41487" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TGvCnAvedppi6eLRG8hsqx">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019Uj3887U2X85aHRc6LhHv8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["1700"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["1700"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="423" cache_read_input_tokens="41806" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Uj3887U2X85aHRc6LhHv8">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DJ2dPpDJfxRhA2CBDCAqWN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["1800"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["1800"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="42229" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="261" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DJ2dPpDJfxRhA2CBDCAqWN">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NB5yjr5H7b1yzu7Hzcift5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["1900"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["1900"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="42538" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="261" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NB5yjr5H7b1yzu7Hzcift5">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015mXf78mZ9XzuBD9EeYPifY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["2000"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["2000"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="413" cache_read_input_tokens="42847" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015mXf78mZ9XzuBD9EeYPifY">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UPqEFwvF7mgLADpAU5k1qN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 9 chars]...oke(
+            view_objective,
+            ["2100"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 52 chars]...oke(
+            view_objective,
+            ["2100"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="43260" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UPqEFwvF7mgLADpAU5k1qN">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GZR2sxqfeXp5j4fofr9Lzm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 26 chars]...view_objective,
+            ["2200", "--json-output"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 69 chars]...view_objective,
+            ["2200", "--json-output"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="43569" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="271" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GZR2sxqfeXp5j4fofr9Lzm">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014y2zWGjrEgDEMLdEwY8pAR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 26 chars]...view_objective,
+            ["2300", "--json-output"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(issues=fake_gh...[truncated 69 chars]...view_objective,
+            ["2300", "--json-output"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="423" cache_read_input_tokens="43878" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="271" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014y2zWGjrEgDEMLdEwY8pAR">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DxCTeGigJsDxLx8xMckMtF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(
+            i...[truncated 115 chars]...iew_objective,
+            [],  # No argument provided
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(
+            i...[truncated 170 chars]...iew_objective,
+            [],  # No argument provided
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="319" cache_read_input_tokens="44301" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DxCTeGigJsDxLx8xMckMtF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018igD3pDHV6XUCqffEXbe8L">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="old_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(
+            c...[truncated 67 chars]...iew_objective,
+            [],  # No argument provided
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">    with erk_inmem_env(runner) as env:
+        test_ctx = env.build_context(
+            r...[truncated 111 chars]...iew_objective,
+            [],  # No argument provided
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="373" cache_read_input_tokens="44620" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="277" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018igD3pDHV6XUCqffEXbe8L">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully updated all the `env.build_context()` calls in the test file. Let me verify the changes by reading the file one more time to ensure all edits were applied correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="429" cache_read_input_tokens="44993" cache_creation="{'ephemeral_5m_input_tokens': 429, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0153Q7VUfhyQJCzW5Gj7DY7z">
+    <param name="command">grep -n "env.build_context" /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="description">Verify all env.build_context calls now include remote_github parameter</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="429" cache_read_input_tokens="44993" cache_creation="{'ephemeral_5m_input_tokens': 429, 'ephemeral_1h_input_tokens': 0}" output_tokens="166" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0153Q7VUfhyQJCzW5Gj7DY7z">
+137:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({100: issue}))
+159:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({200: issue}))
+176:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({}))
+201:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({300: issue}))
+221:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({400: issue}))
+239:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({500: issue}))
+263:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({600: issue}))
+282:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({700: issue}))
+300:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({800: issue}))
+322:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({900: issue}))
+346:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({950: issue}))
+368:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1000: issue}))
+386:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1100: issue}))
+404:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1200: issue}))
+426:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1300: issue}))
+449:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1350: issue}))
+472:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1400: issue}))
+498:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1500: issue}))
+581:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1600: issue}))
+605:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1700: issue}))
+689:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1800: issue}))
+707:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1900: issue}))
+728:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({2000: issue}))
+748:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({2100: issue}))
+770:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({2200: issue}))
+799:        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({2300: issue}))
+831:        test_ctx = env.build_context(
+851:        test_ctx = env.build_context(
+  </tool_result>
+  <assistant>Excellent! All the `env.build_context()` calls have been successfully updated. Let me verify the last two calls (lines 831 and 851) to make sure they're complete:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1101" cache_read_input_tokens="45422" cache_creation="{'ephemeral_5m_input_tokens': 1101, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015EnHGX1Hhm581VcgjVYcKW">
+    <param name="command">sed -n '831,836p' /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="description">Check first multi-line build_context call</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1101" cache_read_input_tokens="45422" cache_creation="{'ephemeral_5m_input_tokens': 1101, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015EnHGX1Hhm581VcgjVYcKW">
+        test_ctx = env.build_context(
+            issues=fake_gh,
+            remote_github=_make_remote({8832: issue}),
+            current_branch="plnd/O8832-rename-thing-03-06-1802",
+        )
+        result = runner.invoke(
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018L8KCZnQeRQRc241whXceY">
+    <param name="command">sed -n '851,855p' /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="description">Check second multi-line build_context call</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="343" cache_read_input_tokens="46523" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018L8KCZnQeRQRc241whXceY">
+        test_ctx = env.build_context(
+            remote_github=_make_remote({}),
+            current_branch="feature-branch",
+        )
+        result = runner.invoke(
+  </tool_result>
+  <assistant>Perfect! All updates have been completed successfully. Let me provide a summary of the changes:
+
+## Summary
+
+I've successfully updated `/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_view_cmd.py` with the following changes:
+
+### Changes Made
+
+1. **Updated 28 test functions** to include the `remote_github` parameter in their `env.build_context()` calls
+
+2. **Pattern Applied:**
+   - For tests with issues: `env.build_context(issues=fake_gh, remote_github=_make_remote({NUMBER: issue}))`
+   - For tests without issues: `env.build_context(remote_github=_make_remote({}))`
+   - For tests with `current_branch`: The `remote_github` parameter was inserted before the `current_branch` parameter
+
+3. **Test Functions Updated:**
+   - `test_view_objective_success()` - Issue 100
+   - `test_view_objective_with_issue_url()` - Issue 200
+   - `test_view_objective_not_found()` - Empty remote
+   - `test_view_objective_missing_label()` - Issue 300
+   - `test_view_objective_empty_roadmap()` - Issue 400
+   - `test_view_objective_displays_summary()` - Issue 500
+   - `test_view_objective_displays_timestamps()` - Issue 600
+   - `test_view_objective_p_prefix()` - Issue 700
+   - `test_view_objective_phase_completion_counts()` - Issue 800
+   - `test_view_objective_status_emojis()` - Issue 900
+   - `test_view_objective_pr_column()` - Issue 950
+   - `test_view_objective_table_only_shows_as_roadmap_free()` - Issue 1000
+   - `test_view_objective_v1_schema_rejected()` - Issue 1100
+   - `test_view_objective_depends_on_column()` - Issue 1200
+   - `test_view_objective_unblocked_annotation()` - Issue 1300
+   - `test_view_objective_unblocked_count_in_summary()` - Issue 1350
+   - `test_view_objective_json_output()` - Issue 1400
+   - `test_view_objective_json_includes_depends_on()` - Issue 1500
+   - `test_view_fan_out_json_shows_multiple_unblocked()` - Issue 1600
+   - `test_view_fan_out_human_shows_unblocked_status()` - Issue 1700
+   - `test_view_planning_status_renders()` - Issue 1800
+   - `test_view_in_flight_line_in_summary()` - Issue 1900
+   - `test_view_planning_count_in_nodes_line()` - Issue 2000
+   - `test_view_multiple_unblocked_nodes_listed()` - Issue 2100
+   - `test_view_json_includes_in_flight_and_pending_unblocked()` - Issue 2200
+   - `test_view_fan_out_json_includes_pending_unblocked()` - Issue 2300
+   - `test_view_objective_inferred_from_branch_name()` - Issue 8832 (with current_branch)
+   - `test_view_objective_no_ref_no_inference()` - Empty remote (with current_branch)
+
+All changes follow the pattern specified, with the `_make_remote()` helper being used to create the appropriate `FakeRemoteGitHub` instances matching each test's issue data.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="172" cache_read_input_tokens="46866" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
