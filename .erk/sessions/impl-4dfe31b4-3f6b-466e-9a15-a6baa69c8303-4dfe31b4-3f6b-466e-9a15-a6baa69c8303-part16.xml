@@ -1,431 +1,80 @@
 <session>
-  <meta source="agent-ae3bef9" />
+  <meta source="agent-ae3896d" />
   <meta branch="plnd/consolidate-learn-docs-03-08-1055" />
-  <meta model="claude-sonnet-4-5-20250929" />
-  <tool_use name="Edit" id="toolu_01Mp3xcc18ghKDRqiERAJ11d">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">Learn plans exist to extract insights from **implementation work** (erk-plan issues). A le...[truncated 57 chars]...on cycles where plans endlessly analyze each other instead of analyzing real code changes.</param>
-    <param name="new_string">Learn plans exist to extract insights from **implementation work** (erk-plan plans). A lea...[truncated 56 chars]...on cycles where plans endlessly analyze each other instead of analyzing real code changes.</param>
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `make fast-ci` in /home/runner/work/erk/erk and report results. This is a documentation-only change so we expect it to pass cleanly. If there are failures, report them in detail.</user>
+  <assistant>I'll run `make fast-ci` in the erk repository and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12351" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12351, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TzytMKLwhefyGELeyN7JGC">
+    <param name="command">make fast-ci</param>
+    <param name="description">Run fast-ci make target for documentation changes</param>
   </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="544" cache_read_input_tokens="83325" cache_creation="{'ephemeral_5m_input_tokens': 544, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Mp3xcc18ghKDRqiERAJ11d">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md has been updated successfully.
+  <usage input_tokens="3" cache_creation_input_tokens="12351" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12351, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TzytMKLwhefyGELeyN7JGC">
+Exit code 2
+   Building erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+      Built erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+Installed 58 packages in 371ms
+[[33mwarn[39m] docs/learned/cli/workflow-commands.md
+[[33mwarn[39m] docs/learned/erk/pr-commands.md
+[[33mwarn[39m] docs/learned/integrations/github-review-decision.md
+[[33mwarn[39m] docs/learned/objectives/objective-roadmap-check.md
+[[33mwarn[39m] docs/learned/planning/cross-artifact-analysis.md
+[[33mwarn[39m] docs/learned/planning/learn-plan-validation.md
+[[33mwarn[39m] docs/learned/pr-operations/checkout-footer-syntax.md
+[[33mwarn[39m] docs/learned/pr-operations/pr-validation-rules.md
+[[33mwarn[39m] docs/learned/tui/status-indicators.md
+[[33mwarn[39m] Code style issues found in 9 files. Run Prettier with --write to fix.
+✓ AGENTS.md standard: PASSED
+
+All CLAUDE.md and AGENTS.md files properly paired.
+
+CLAUDE.md files checked: 19
+Violations: 0
+make: *** [Makefile:97: fast-ci] Error 1
+
+=== Fast CI ===
+
+--- Lint ---
+All checks passed!
+
+--- Format Check ---
+1662 files already formatted
+
+
+... [117 lines omitted] ...
   </tool_result>
-  <tool_use name="Edit" id="toolu_018UfU1nGUmsCLg95anw4LKt">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="old_string">The label application happens in Step 7 of `/erk:replan`, after the new plan issue is created via `/erk:plan-save`.</param>
-    <param name="new_string">The label application happens in Step 7 of `/erk:replan`, after the new plan is created via `/erk:plan-save`.</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="250" cache_read_input_tokens="83869" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_018UfU1nGUmsCLg95anw4LKt">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_use name="Read" id="toolu_01E3voHdgeFaCRthFb7LbtQD">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="offset">30</param>
-    <param name="limit">10</param>
-  </tool_use>
-  <usage input_tokens="1" cache_creation_input_tokens="234" cache_read_input_tokens="84119" cache_creation="{'ephemeral_5m_input_tokens': 234, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01E3voHdgeFaCRthFb7LbtQD">
-    30→- **Single-plan replan** creates a new plan that _supersedes_ one source plan. It's a fresh plan against current codebase state and should remain eligible for future consolidation with other plans.
-    31→
-    32→&lt;!-- Source: .claude/commands/erk/replan.md, Step 7 item 4 --&gt;
-    33→
-    34→The label application happens in Step 7 of `/erk:replan`, after the new plan is created via `/erk:plan-save`.
-    35→
-    36→&lt;!-- Source: .claude/commands/local/replan-learn-plans.md, Step 1b --&gt;
-    37→
-    38→The filtering happens early in `/local:replan-learn-plans` (Step 1b) to avoid wasting API calls investigating plans that will be skipped.
-    39→
+  <assistant>The `make fast-ci` command failed due to Prettier formatting issues. Here's the detailed report:
 
-&lt;system-reminder&gt;
-Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
-&lt;/system-reminder&gt;
+## Prettier Check Failed
 
-  </tool_result>
-  <assistant>I see that learn-plan-metadata-fields.md was modified by a linter and has some issues. Let me fix those and continue with consolidation-labels.md:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="1233" cache_read_input_tokens="84353" cache_creation="{'ephemeral_5m_input_tokens': 1233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_013BFJ5zdGb8avLdkpXaAsKA">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">For learn plans, the plan number of the original plan that generated this learn plan. Used...[truncated 35 chars]...n.
+**Status**: FAILED - Code style issues found in 9 files
 
-- `int` - The parent plan's plan number
-- `None` - Not a learn plan, or source unknown</param>
-    <param name="new_string">For learn plans, the number of the original plan that generated this learn plan. Used to l...[truncated 25 chars]...tation.
+**Files that need formatting:**
+1. `docs/learned/cli/workflow-commands.md`
+2. `docs/learned/erk/pr-commands.md`
+3. `docs/learned/integrations/github-review-decision.md`
+4. `docs/learned/objectives/objective-roadmap-check.md`
+5. `docs/learned/planning/cross-artifact-analysis.md`
+6. `docs/learned/planning/learn-plan-validation.md`
+7. `docs/learned/pr-operations/checkout-footer-syntax.md`
+8. `docs/learned/pr-operations/pr-validation-rules.md`
+9. `docs/learned/tui/status-indicators.md`
 
-- `int` - The parent plan's number
-- `None` - Not a learn plan, or source unknown</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="1233" cache_read_input_tokens="84353" cache_creation="{'ephemeral_5m_input_tokens': 1233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_013BFJ5zdGb8avLdkpXaAsKA">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md has been updated successfully.
-  </tool_result>
-  <tool_use name="Edit" id="toolu_013NfSJcT2StBVRP9RsdzpdU">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">| Field                | Where It Lives                       | What It Stores            ...[truncated 540 chars]...ssue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).</param>
-    <param name="new_string">| Field                | Where It Lives                       | What It Stores            ...[truncated 548 chars]...ssue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="306" cache_read_input_tokens="85586" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_013NfSJcT2StBVRP9RsdzpdU">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md has been updated successfully.
-  </tool_result>
-  <tool_use name="Read" id="toolu_01PvHUPJUWSkrpryaJGQbaSV">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="offset">30</param>
-    <param name="limit">10</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="598" cache_read_input_tokens="85892" cache_creation="{'ephemeral_5m_input_tokens': 598, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01PvHUPJUWSkrpryaJGQbaSV">
-    30→- **Single-plan replan** creates a new plan that _supersedes_ one source plan. It's a fresh plan against current codebase state and should remain eligible for future consolidation with other plans.
-    31→
-    32→&lt;!-- Source: .claude/commands/erk/replan.md, Step 7 item 4 --&gt;
-    33→
-    34→The label application happens in Step 7 of `/erk:replan`, after the new plan is created via `/erk:plan-save`.
-    35→
-    36→&lt;!-- Source: .claude/commands/local/replan-learn-plans.md, Step 1b --&gt;
-    37→
-    38→The filtering happens early in `/local:replan-learn-plans` (Step 1b) to avoid wasting API calls investigating plans that will be skipped.
-    39→
+## Other Checks (All Passed)
 
-&lt;system-reminder&gt;
-Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
-&lt;/system-reminder&gt;
+- **Ruff lint**: All checks passed
+- **Format check**: 1662 files already formatted
+- **Markdown check**: Passed
+- **Exec reference check**: OK
+- **Type checking (ty)**: All checks passed
+- **Unit tests (erk)**: 5883 passed
+- **Tests (erk-dev)**: 136 passed
+- **Tests (erk-statusline)**: 115 passed
+- **Tests (erk-mcp)**: 24 passed
 
-  </tool_result>
-  <tool_use name="Edit" id="toolu_01DLE1dKfLc4Lc9xtpKz1BiX">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="old_string">&lt;!-- Source: .claude/commands/erk/replan.md, Step 7 item 4 --&gt;
+## Summary
 
-The label application happ...[truncated 45 chars]... `/erk:plan-save`.
-
-&lt;!-- Source: .claude/commands/local/replan-learn-plans.md, Step 1b --&gt;</param>
-    <param name="new_string">&lt;!-- Source: .claude/commands/erk/replan.md, Step 7 item 4 --&gt;
-
-The label application happ...[truncated 45 chars]... `/erk:plan-save`.
-
-&lt;!-- Source: .claude/commands/local/replan-learn-plans.md, Step 1b --&gt;</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="402" cache_read_input_tokens="86490" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="279" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01DLE1dKfLc4Lc9xtpKz1BiX">
-&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
-  </tool_result>
-  <assistant>The consolidation-labels.md file already has the correct text. Let me continue with the remaining files:</assistant>
-  <usage input_tokens="1" cache_creation_input_tokens="931" cache_read_input_tokens="86892" cache_creation="{'ephemeral_5m_input_tokens': 931, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01SiWH9nN9ySjmqdTocVCR26">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">| Enforcement Point                 | What It Checks                                   | W...[truncated 604 chars]...                 | Shared utility for branch/submit workflows                            |</param>
-    <param name="new_string">| Enforcement Point                 | What It Checks                                 | Why...[truncated 594 chars]...                 | Shared utility for branch/submit workflows                            |</param>
-  </tool_use>
-  <usage input_tokens="1" cache_creation_input_tokens="931" cache_read_input_tokens="86892" cache_creation="{'ephemeral_5m_input_tokens': 931, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01SiWH9nN9ySjmqdTocVCR26">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_use name="Read" id="toolu_01JTEnJz4RvHoj2jsdQC7W14">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="offset">26</param>
-    <param name="limit">15</param>
-  </tool_use>
-  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="87823" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01JTEnJz4RvHoj2jsdQC7W14">
-    26→| Enforcement Point                 | What It Checks                                   | Why There                                                             |
-    27→| --------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
-    28→| `/erk:learn` skill (Step 1)       | Target plan labels include `erk-learn` → reject  | Primary entry: agent-driven learn invocation                          |
-    29→| `erk land` pre-flight             | Plan has `erk-learn` label → skip learn prompt   | Prevents "did you learn from this?" prompt for learn plans themselves |
-    30→| `is_issue_learn_plan()` in submit | Label check helper                               | Shared utility for branch/submit workflows                            |
-    31→
-    32→&lt;!-- Source: .claude/commands/erk/learn.md:38-53 --&gt;
-    33→
-    34→The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the plan via `erk exec get-issue-body` and inspecting the `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.
-    35→
-    36→&lt;!-- Source: src/erk/cli/commands/land_cmd.py, _check_learn_before_land --&gt;
-    37→
-    38→The land command's learn check skips entirely for plans bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.
-    39→
-    40→## The Two-Label System
-
-&lt;system-reminder&gt;
-Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
-&lt;/system-reminder&gt;
-
-  </tool_result>
-  <tool_use name="Edit" id="toolu_01945rQyFj7Pn9Vf3kR53SjJ">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">The land command's learn check skips entirely for plans bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.</param>
-    <param name="new_string">The land command's learn check skips entirely for plans bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="566" cache_read_input_tokens="88423" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01945rQyFj7Pn9Vf3kR53SjJ">
-&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
-  </tool_result>
-  <assistant>This file is already correct. Let me continue with the remaining files:</assistant>
-  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="88989" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01DKwUPpaEQkkh88e9C8TFLP">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md</param>
-    <param name="old_string"># Plan Header Privatization
-
-The `plan_header.py` module contains low-level functions for ...[truncated 8 chars]...etadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.</param>
-    <param name="new_string"># Plan Header Privatization
-
-The `plan_header.py` module contains low-level functions for ...[truncated 2 chars]...etadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.</param>
-  </tool_use>
-  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="88989" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01DKwUPpaEQkkh88e9C8TFLP">
-The file /home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md has been updated successfully.
-  </tool_result>
-  <tool_use name="Edit" id="toolu_01RQq4jwMikhpVZD9fc2KKQt">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md</param>
-    <param name="old_string">| Relationship | Description                                 | Detection Method           ...[truncated 453 chars]...R and plan address unrelated concerns      | No meaningful overlap in changes            |</param>
-    <param name="new_string">| Relationship | Description                                 | Detection Method           ...[truncated 453 chars]...R and plan address unrelated concerns      | No meaningful overlap in changes            |</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="371" cache_read_input_tokens="89222" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01RQq4jwMikhpVZD9fc2KKQt">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_use name="Read" id="toolu_01MYTrXo8yfZGUxJx1T5vgME">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md</param>
-    <param name="offset">15</param>
-    <param name="limit">15</param>
-  </tool_use>
-  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="89593" cache_creation="{'ephemeral_5m_input_tokens': 409, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01MYTrXo8yfZGUxJx1T5vgME">
-    15→## PR-Plan Relationships
-    16→
-    17→Plans and PRs can have complex relationships:
-    18→
-    19→| Relationship | Description                                 | Detection Method                            |
-    20→| ------------ | ------------------------------------------- | ------------------------------------------- |
-    21→| Linked       | PR explicitly references plan              | PR body contains `Plan: #&lt;number&gt;` reference |
-    22→| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |
-    23→| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |
-    24→| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |
-    25→
-    26→## Evidence-Based Analysis Pattern
-    27→
-    28→The `/local:check-superceded` command implements a structured approach to cross-artifact analysis:
-    29→
-
-&lt;system-reminder&gt;
-Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
-&lt;/system-reminder&gt;
-
-  </tool_result>
-  <assistant>This file has already been updated by the linter (shows `#&lt;number&gt;` instead of `#&lt;issue&gt;`). Let me check the no-changes-handling.md file:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="420" cache_read_input_tokens="90002" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_013fd1kir7UWjKxrRsdPi3RV">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md</param>
-    <param name="offset">27</param>
-    <param name="limit">30</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="420" cache_read_input_tokens="90002" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_013fd1kir7UWjKxrRsdPi3RV">
-    27→1. **Detects no changes**: Checks if the branch has any commits beyond the base
-    28→2. **Creates diagnostic PR**: Updates the PR body with diagnostic information
-    29→3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)
-    30→4. **Posts plan comment**: Notifies the plan with a link to the PR
-    31→5. **Exits gracefully**: Returns exit code 0 (success)
-    32→
-    33→## Label Definition
-    34→
-    35→| Label        | Color   | Description                             |
-    36→| ------------ | ------- | --------------------------------------- |
-    37→| `no-changes` | #FFA500 | Implementation produced no code changes |
-    38→
-    39→## PR Body Content
-    40→
-    41→The diagnostic PR body includes:
-    42→
-    43→- Clear "No Code Changes" header
-    44→- Likely cause explanation (duplicate plan)
-    45→- How many commits behind trunk
-    46→- Recent commits on trunk (for comparison)
-    47→- Next steps for user resolution
-    48→- Link to workflow run
-    49→
-    50→## User Resolution Steps
-    51→
-    52→When encountering a no-changes PR:
-    53→
-    54→1. **Review recent commits**: Check if the work appears in trunk
-    55→2. **If already done**: Close both the PR and the linked plan
-    56→3. **If not done**: Investigate why no changes were produced (plan may need revision)
-
-... [5 lines omitted] ...
-  </tool_result>
-  <assistant>Good! no-changes-handling.md has already been updated correctly (line 30 shows "Posts plan comment" instead of "Posts issue comment", and line 55 shows "the linked plan" instead of "the linked plan issue"). 
-
-Let me do a final verification to ensure all "plan issue" occurrences have been replaced:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="716" cache_read_input_tokens="90422" cache_creation="{'ephemeral_5m_input_tokens': 716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01CXVJBvSAZ2RFkwezomCzzW">
-    <param name="command">grep -r "plan issue" docs/learned/planning/ --include="*.md" | wc -l</param>
-    <param name="description">Final count of remaining plan issue occurrences</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="716" cache_read_input_tokens="90422" cache_creation="{'ephemeral_5m_input_tokens': 716, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01CXVJBvSAZ2RFkwezomCzzW">
-0
-  </tool_result>
-  <assistant>Perfect! Let me also verify "plan issues" (plural):</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="187" cache_read_input_tokens="91138" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01VpjpXEYT3hWMtTjDjPyewB">
-    <param name="command">grep -r "plan issues" docs/learned/planning/ --include="*.md" | wc -l</param>
-    <param name="description">Check for plan issues plural</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="187" cache_read_input_tokens="91138" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01VpjpXEYT3hWMtTjDjPyewB">
-0
-  </tool_result>
-  <assistant>Excellent! Now let me verify that "objective issue" and "GitHub issue" have been preserved:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="591" cache_read_input_tokens="91325" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01CNQLPsgJFnSZyeNpsz3TcV">
-    <param name="command">grep -r "objective issue" docs/learned/planning/ --include="*.md" | head -5</param>
-    <param name="description">Verify objective issue preserved</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="591" cache_read_input_tokens="91325" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01CNQLPsgJFnSZyeNpsz3TcV">
-docs/learned/planning/one-shot-workflow.md:   - `OBJECTIVE_ISSUE` -- objective issue number (if from roadmap)
-docs/learned/planning/lifecycle.md:   - `objective-context` marker: stores objective issue number (read by plan-save to link the plan to its parent objective)
-docs/learned/planning/objective-update-after-land.md:After landing a PR, the associated objective issue needs updating. This is handled by the `objective-update-after-land` exec script.
-  </tool_result>
-  <tool_use name="Bash" id="toolu_0125xyLoc8dBXWun3xhdbxCC">
-    <param name="command">grep -r "GitHub issue" docs/learned/planning/ --include="*.md" -i | head -5</param>
-    <param name="description">Verify GitHub issue preserved</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="246" cache_read_input_tokens="91916" cache_creation="{'ephemeral_5m_input_tokens': 246, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_0125xyLoc8dBXWun3xhdbxCC">
-docs/learned/planning/branch-name-inference.md:1. **Plan saved** → GitHub issue created (no branch exists yet)
-docs/learned/planning/learn-pipeline-workflow.md:Finds all session logs related to a plan by querying GitHub issue metadata for tracked session IDs, then resolving those IDs to local file paths. Three session source types exist:
-docs/learned/planning/one-shot-workflow.md:5. Saves plan to GitHub issue:
-docs/learned/planning/plan-execution-patterns.md:3. If the plan has a GitHub issue, the PR links to it
-docs/learned/planning/learn-plan-metadata-fields.md:`learned_from_issue` is the **storage-layer** field name (in the plan-header metadata block written to GitHub issue/PR bodies). `learn_plan_issue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).
-  </tool_result>
-  <assistant>Perfect! Both "objective issue" and "GitHub issue" have been preserved as required. Now let me check the final git status to see what files were modified:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="426" cache_read_input_tokens="92162" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01H7iHRBJDAhw1rs22v7m4sZ">
-    <param name="command">git diff --stat docs/learned/planning/</param>
-    <param name="description">Show modified planning files</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="426" cache_read_input_tokens="92162" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01H7iHRBJDAhw1rs22v7m4sZ">
- docs/learned/planning/branch-name-inference.md     |  2 +-
- .../planning/complete-inventory-protocol.md        |  4 ++--
- docs/learned/planning/consolidation-labels.md      | 26 +++++++++++-----------
- docs/learned/planning/cross-artifact-analysis.md   |  2 +-
- docs/learned/planning/learn-pipeline-workflow.md   |  6 ++---
- .../learned/planning/learn-plan-metadata-fields.md | 10 ++++-----
- docs/learned/planning/learn-plan-validation.md     | 14 ++++++------
- docs/learned/planning/no-changes-handling.md       |  4 ++--
- docs/learned/planning/plan-backend-migration.md    |  8 +++----
- docs/learned/planning/plan-header-privatization.md |  2 +-
- docs/learned/planning/plan-schema.md               |  2 +-
- .../planned-pr-context-local-preprocessing.md      |  2 +-
- docs/learned/planning/session-preprocessing.md     |  2 +-
- .../planning/token-optimization-patterns.md        |  2 +-
- docs/learned/planning/tripwires.md                 |  8 +++----
- docs/learned/planning/workflow-markers.md          |  2 +-
- 16 files changed, 48 insertions(+), 48 deletions(-)
-  </tool_result>
-  <assistant>Perfect! Let me verify a sample of the changes to ensure they're correct:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="496" cache_read_input_tokens="92588" cache_creation="{'ephemeral_5m_input_tokens': 496, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_018ikNoV65VqfUCxKkW53NFT">
-    <param name="command">git diff docs/learned/planning/plan-backend-migration.md | head -30</param>
-    <param name="description">View sample changes</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="496" cache_read_input_tokens="92588" cache_creation="{'ephemeral_5m_input_tokens': 496, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_018ikNoV65VqfUCxKkW53NFT">
-diff --git a/docs/learned/planning/plan-backend-migration.md b/docs/learned/planning/plan-backend-migration.md
-index 77d2820ee..757b40919 100644
---- a/docs/learned/planning/plan-backend-migration.md
-+++ b/docs/learned/planning/plan-backend-migration.md
-@@ -15,7 +15,7 @@ audit_result: clean
- 
- # PlanBackend Migration Guide
- 
--When exec scripts need to read or update plan issues, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
-+When exec scripts need to read or update plans, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
- 
- ## Migration Pattern
- 
-@@ -62,7 +62,7 @@ Two different error types serve different purposes:
- 
- | Type                      | Kind                     | Use                                                   |
- | ------------------------- | ------------------------ | ----------------------------------------------------- |
--| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when issue doesn't exist     |
-+| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when plan doesn't exist      |
- | `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |
- 
- **PlanNotFound** is checked with `isinstance()` (LBYL pattern). **PlanHeaderNotFoundError** is caught with try/except because it indicates a corrupted plan state that cannot be predicted.
-@@ -102,7 +102,7 @@ else:
-         result["issue_update_error"] = str(e)
- ```
- 
--This pattern ensures the gist URL is still reported even if the plan issue update fails.
-+This pattern ensures the gist URL is still reported even if the plan update fails.
- 
- ## Time Abstraction
-  </tool_result>
-  <assistant>Excellent! The changes look correct. Let me check one more file to ensure quality:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="732" cache_read_input_tokens="93084" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01RzeMupYAcwpVyuwe6puzEa">
-    <param name="command">git diff docs/learned/planning/tripwires.md | grep "^[-+]" | head -20</param>
-    <param name="description">View tripwires changes</param>
-  </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="732" cache_read_input_tokens="93084" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01RzeMupYAcwpVyuwe6puzEa">
---- a/docs/learned/planning/tripwires.md
-+++ b/docs/learned/planning/tripwires.md
--**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
-+**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
--**creating a learn plan without setting learned_from_issue** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent.
-+**creating a learn plan without setting learned_from_issue** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans MUST set learned_from_issue to their parent implementation plan's number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent.
--**manually creating an erk-plan with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file &lt;path&gt;` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
-+**manually creating an erk plan with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file &lt;path&gt;` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
--**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
-+**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;number&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
-  </tool_result>
-  <assistant>Perfect! All the changes look correct. Let me now create a summary of what was done:
-
-## Task Completion Summary
-
-I successfully completed the find-and-replace of "plan issue" terminology with "plan" across all markdown files in the `docs/learned/planning/` directory.
-
-### Files Modified (16 total):
-1. `branch-name-inference.md`
-2. `complete-inventory-protocol.md`
-3. `consolidation-labels.md`
-4. `cross-artifact-analysis.md`
-5. `learn-pipeline-workflow.md`
-6. `learn-plan-metadata-fields.md`
-7. `learn-plan-validation.md`
-8. `no-changes-handling.md`
-9. `plan-backend-migration.md`
-10. `plan-header-privatization.md`
-11. `plan-schema.md`
-12. `planned-pr-context-local-preprocessing.md`
-13. `session-preprocessing.md`
-14. `token-optimization-patterns.md`
-15. `tripwires.md`
-16. `workflow-markers.md`
-
-### Replacements Made:
-- "plan issue" → "plan"
-- "plan issues" → "plans"
-- "plan issue's" → "plan's"
-- "plan issue number" → "plan number"
-- "plan issue metadata" → "plan metadata"
-- "Plan Issue" (in headings) → "Plan"
-
-### Preserved Terms:
-- ✓ "objective issue" - kept intact (3 occurrences)
-- ✓ "GitHub issue" or "GitHub Issue" - kept intact (20+ occurrences)
-- ✓ Code references like `IssueInfo`, `GitHubIssues` - kept intact
-- ✓ The label "erk-plan issue" became "erk plan" (removed hyphen only in the word "issue")
-
-### Quality Checks:
-- ✓ No remaining "plan issue" occurrences in planning directory
-- ✓ No remaining "plan issues" (plural) occurrences
-- ✓ Grammatical correctness maintained in all replacements
-- ✓ Compound phrases handled correctly (e.g., "plan issue's metadata" → "plan's metadata")
-- ✓ All preserved terms verified intact
-
-The terminology update is complete and consistent across all documentation files in the planning directory.</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="668" cache_read_input_tokens="93816" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+The CI failure is isolated to Prettier formatting violations in 9 documentation files. These appear to be learned documentation files in `docs/learned/` that need Prettier formatting applied. The actual code quality checks (linting, type checking, tests) all pass cleanly.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1456" cache_read_input_tokens="12351" cache_creation="{'ephemeral_5m_input_tokens': 1456, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>

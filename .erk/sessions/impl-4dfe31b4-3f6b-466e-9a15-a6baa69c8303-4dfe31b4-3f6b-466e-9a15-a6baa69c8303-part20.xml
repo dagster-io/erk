@@ -1,0 +1,1013 @@
+<session>
+  <meta source="agent-af1f40d" />
+  <meta branch="plnd/consolidate-learn-docs-03-08-1055" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Your task is to do a find-and-replace of "plan issue" terminology in several docs/learned/ markdown files across multiple directories. This is a documentation terminology update.
+
+## Rules:
+1. Replace "plan issue" with "plan" (case-sensitive)
+2. Replace "plan issues" with "plans" (case-sensitive)  
+3. Replace "Plan Issue" with "Plan" when used as a title/heading
+4. Replace "Plan Issues" with "Plans" when used as a title/heading
+5. **PRESERVE** "objective issue" - do NOT change these
+6. **PRESERVE** "GitHub issue" or "GitHub Issue" - do NOT change these
+7. When replacing, ensure the sentence reads grammatically:
+   - "the plan issue" → "the plan"
+   - "a plan issue" → "a plan" 
+   - "plan issue number" → "plan number"
+   - "erk-plan issue" → "erk plan"
+   - "erk-plan issues" → "erk plans"
+   - "plan issue body" → "plan body"
+   - "plan issue metadata" → "plan metadata"
+   - "plan issue closure" → "plan closure"
+
+8. Be careful with compound phrases where "issue" refers to a GitHub issue object (like `IssueInfo`, `GitHubIssues`) - keep those.
+
+## Files to process:
+
+**docs/learned/objectives/**:
+- docs/learned/objectives/research-documentation-integration.md
+- docs/learned/objectives/roadmap-mutation-patterns.md
+- docs/learned/objectives/objective-lifecycle.md
+- docs/learned/objectives/objective-roadmap-check.md
+
+**docs/learned/erk/**:
+- docs/learned/erk/pr-commands.md
+- docs/learned/erk/tripwires.md
+
+**docs/learned/pr-operations/**:
+- docs/learned/pr-operations/plan-embedding-in-pr.md
+- docs/learned/pr-operations/pr-validation-rules.md
+- docs/learned/pr-operations/pr-submit-phases.md
+- docs/learned/pr-operations/checkout-footer-syntax.md
+- docs/learned/pr-operations/tripwires.md
+
+**docs/learned/tui/**:
+- docs/learned/tui/data-contract.md
+- docs/learned/tui/plan-row-data.md
+
+**docs/learned/ci/**:
+- docs/learned/ci/learn-ci-environment-detection.md
+
+**docs/learned/workflows/**:
+- docs/learned/workflows/one-shot-workflow.md
+- docs/learned/workflows/tripwires.md
+
+**docs/learned/configuration/**:
+- docs/learned/configuration/config-layers.md
+
+**docs/learned/reference/**:
+- docs/learned/reference/gastown-analysis.md
+
+**docs/learned/testing/**:
+- docs/learned/testing/fake-github-api-reference.md
+
+**docs/learned/documentation/**:
+- docs/learned/documentation/when-to-switch-pattern.md
+
+Read each file first, then make precise edits. Do NOT create new files. Use the Edit tool.</user>
+  <assistant>I'll help you perform this find-and-replace operation across the markdown files. Let me start by reading all the files to understand their current content.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0137VnSVGwwKNd7eQenQ7bRW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/research-documentation-integration.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K8XiD5oeKNRhnmUAAyyT1S">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/roadmap-mutation-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DYkdfc4yDnuvupqBCd1MSq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KZncLo2NjtaxHX4y41hkv4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-roadmap-check.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CCfWdLAAc6YH8LdswCEmfJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D4a96TaQxsn9qHH4f4LcKT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013ttKxZhgjrGQC5JNiy8Sdx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VzdbhFnqYhHjzQRE3sEfF9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0137NovU6Ht8WAcpxk7uf6pq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012WmKaWV91Rnqk2B458NJ38">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011N3QYgbdHaMR3ZndF951WY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BxcStVGoHTrstU7AnJ2uLS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/data-contract.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01785mAansZ9F4vPL4PiyTCb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NsHygbBhkEnt1Foa7PR1fr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/learn-ci-environment-detection.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0182p1vui4cLvhGrv8xAVBRp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/workflows/one-shot-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018FubgLo68Hcwwd4pvVfF5y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/workflows/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01L6oEd8JSmkKmAzentWthof">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GTKmukUQsWoBaBm9RPATd4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/reference/gastown-analysis.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UDq3LZ67Y4uuDdFGvAiWHz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-github-api-reference.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K8SxkM1g2XsynsbVqyHP3f">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/documentation/when-to-switch-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6575" cache_read_input_tokens="10108" cache_creation="{'ephemeral_5m_input_tokens': 6575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0137VnSVGwwKNd7eQenQ7bRW">
+     1→---
+     2→title: Documentation Capture from Objective Work
+     3→read_when:
+     4→  - "deciding whether objective work should produce learned docs"
+     5→  - "choosing between manual doc capture and the learn workflow during an objective"
+     6→  - "capturing cross-cutting discoveries from multi-plan investigations"
+     7→tripwires:
+     8→  - action: "creating documentation for a pattern discovered during an objective before the pattern is proven in a merged PR"
+     9→    warning: "Only document patterns proven in practice. Speculative patterns from in-progress objectives go stale. Wait until the PR lands and the pattern is validated."
+    10→  - action: "creating a learned doc that rephrases an objective's action comment lessons"
+    11→    warning: "Objectives already capture lessons in action comments. Only create a learned doc when the insight is reusable beyond this specific objective."
+    12→last_audited: "2026-02-08 00:00 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# Documentation Capture from Objective Work
+    17→
+    18→Objectives span multiple plans and sessions, accumulating cross-cutting knowledge that no single plan captures. This document explains when that knowledge should become learned documentation and how to choose between the two capture paths.
+    19→
+    20→## The Core Question: Document or Not?
+    21→
+    22→Not every objective produces documentation. The test is whether the objective revealed **reusable cross-cutting knowledge** — insights spanning multiple code locations that would help future agents on unrelated tasks.
+    23→
+    24→| Discovery type                                     | Document? | Why                                                              |
+    25→| -------------------------------------------------- | --------- | ---------------------------------------------------------------- |
+    26→| Architectural pattern spanning multiple files      | Yes       | Cross-cutting insight that can't live in any single code comment |
+    27→| Tripwire from a mistake that cost significant time | Yes       | Prevents future agents from repeating the lesson                 |
+    28→| Integration pattern between two systems            | Yes       | Connects knowledge agents can't derive from reading one file     |
+    29→| Bug fix specific to this objective                 | No        | Single-artifact knowledge — belongs in a code comment            |
+    30→| Temporary workaround planned for removal           | No        | Will go stale the moment the workaround is removed               |
+
+... [46 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01K8XiD5oeKNRhnmUAAyyT1S">
+     1→---
+     2→title: Roadmap Mutation Patterns
+     3→read_when:
+     4→  - "deciding between surgical vs full-body roadmap updates"
+     5→  - "choosing how to update an objective roadmap after a workflow event"
+     6→  - "understanding race condition risks in roadmap table mutations"
+     7→tripwires:
+     8→  - action: "using full-body update for single-cell changes"
+     9→    warning: "Full-body updates replace the entire table. For single-node PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions."
+    10→  - action: "using surgical update for complete table rewrites"
+    11→    warning: "Surgical updates only change one node. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (system:objective-update-with-landed-pr)."
+    12→  - action: "directly mutating issue body markdown without using either command"
+    13→    warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
+    14→  - action: "using None/empty string interchangeably in update-objective-node parameters"
+    15→    warning: "None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values."
+    16→last_audited: "2026-02-25 18:00 PT"
+    17→audit_result: edited
+    18→---
+    19→
+    20→# Roadmap Mutation Patterns
+    21→
+    22→Erk has two distinct strategies for mutating objective roadmap tables, each optimized for different workflow events. Choosing the wrong one creates race conditions or data loss. This document explains **when to use which** and **why the split exists**.
+    23→
+    24→## Why Two Patterns?
+    25→
+    26→The roadmap table is a 4-column markdown table stored in a GitHub issue comment (`| Node | Description | Status | PR |`). The YAML frontmatter in the issue body is the source of truth; the comment table is a rendered view. Two fundamentally different mutation shapes arise from different workflow events:
+    27→
+    28→- **Single-node updates** (plan saved, PR created): Only the status/PR of one step changes. The YAML frontmatter is updated surgically, then the comment table is deterministically re-rendered from YAML.
+    29→
+    30→- **Full-body rewrites** (PR landed): Landing a PR may trigger structural changes — marking multiple steps done, updating descriptions, or adding narrative text. The `objective-apply-landed-update` command handles batch updates.
+
+... [88 lines omitted] ...
+
+   112→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — LBYL error patterns used by both commands
+  </tool_result>
+  <tool_result tool="toolu_01DYkdfc4yDnuvupqBCd1MSq">
+     1→---
+     2→title: Objective Lifecycle
+     3→category: objectives
+     4→read_when:
+     5→  - "creating or modifying objective lifecycle code"
+     6→  - "understanding how objectives are created, mutated, and closed"
+     7→  - "adding new mutation paths to objective roadmaps"
+     8→  - "working with objective-fetch-context or auto-discovery"
+     9→  - "using --next flag on objective implement"
+    10→tripwires:
+    11→  - action: "adding a new roadmap mutation site without updating this document"
+    12→    warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
+    13→  - action: "updating roadmap step in only one location (frontmatter or table)"
+    14→    warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically."
+    15→  - action: "using erk objective inspect"
+    16→    warning: "inspect command was removed in PR #7385. Use `erk objective view` or `/local:objective-view` instead."
+    17→  - action: "running objective-fetch-context on master without --branch"
+    18→    warning: "Auto-discovery fails on non-plan branches. Pass `--branch` explicitly when on master."
+    19→  - action: "calling update-objective-node or plan-save inside objective-plan workflow without creating roadmap-step marker first"
+    20→    warning: "The roadmap-step marker must be created before entering plan mode. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update. Create the marker immediately after the user selects a node (step 5 of objective-plan), before gathering code context."
+    21→    score: 5
+    22→  - action: "updating objective from multiple concurrent plan completions"
+    23→    warning: "When multiple nodes in an objective complete simultaneously, concurrent updates can race. Check objective state before updating to avoid overwriting recent changes."
+    24→last_audited: "2026-02-17 00:00 PT"
+    25→audit_result: edited
+    26→---
+    27→
+    28→# Objective Lifecycle
+    29→
+    30→This document describes the complete lifecycle of objective issues from creation to closure, including all mutation paths and data flows.
+
+... [510 lines omitted] ...
+
+    39→All objectives use v2 YAML format. `parse_roadmap()` returns a legacy-format error for non-v2 content. Mutations update both the YAML frontmatter and the rendered table atomically via `update-objective-node`.
+   156→  │  → Return ([], [legacy_format_error])
+   164→1. **No `objective-roadmap` block** → valid roadmap-free objective. Returns `([], [])` with no errors.
+   166→3. **Block exists but fails to parse** → legacy/broken format. Returns `([], [legacy_format_error])`.
+   174→There is no table-parsing fallback. Non-v2 content returns an empty phases list with a legacy format error message directing users to recreate the objective.
+  </tool_result>
+  <tool_result tool="toolu_01KZncLo2NjtaxHX4y41hkv4">
+     1→---
+     2→title: Objective Check Command — Semantic Validation
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "validating objective roadmap consistency beyond structure"
+     7→  - "understanding why check command exists separate from parsing"
+     8→  - "adding new validation checks to objective check"
+     9→tripwires:
+    10→  - action: "manually parsing objective roadmap markdown"
+    11→    warning: "Use `erk objective check`. It handles structural parsing, status inference, and semantic validation."
+    12→  - action: "adding structural validation to check_cmd.py"
+    13→    warning: "Structural validation (phase headers, table format) belongs in roadmap.py (packages/erk-shared). check_cmd.py handles semantic validation only."
+    14→  - action: "raising exceptions from validate_objective()"
+    15→    warning: "validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (_output_json, _output_human) raise SystemExit."
+    16→  - action: "checking allowed-status tuples without terminal states"
+    17→    warning: "Always include `done` and `skipped` in allowed-status checks. Omitting terminal states produces false positives for completed nodes."
+    18→---
+    19→
+    20→# Objective Check Command — Semantic Validation
+    21→
+    22→## Why Semantic Validation Is Separate from Parsing
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/objective/check_cmd.py, validate_objective --&gt;
+    25→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap --&gt;
+    26→
+    27→The roadmap parser in `erk_shared.gateway.github.metadata.roadmap` (`packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`) handles **structural** validation: can the markdown be parsed into phases and steps? The check command's `validate_objective()` in `check_cmd.py` adds a **semantic** layer: is the parsed roadmap internally consistent?
+    28→
+    29→This separation exists because structural parsing is shared across consumers — both `erk objective check` and `erk exec update-objective-node` call `parse_roadmap()`. Semantic checks only make sense for read-only validation. Mixing them would force every mutation command to validate consistency before operating, coupling mutation to validation rules and adding unnecessary overhead.
+    30→
+
+... [54 lines omitted] ...
+
+    46→| Sequential phases     | Catches copy-paste errors (duplicate phase numbers, out-of-order phases)                                                                                                                                          |
+    54→The `ObjectiveValidationResult` type alias in `check_cmd.py` is a discriminated union of `ObjectiveValidationSuccess | ObjectiveValidationError`. This distinction captures a three-state outcome that exceptions can't cleanly model:
+    56→1. **Validation couldn't run** (`ObjectiveValidationError`) — issue not found, API failure
+    71→**WRONG: Raising exceptions from `validate_objective()`.**
+    72→The function returns result types, never raises. This enables programmatic callers to inspect results without catching exceptions, and keeps the decision of "what to do with failures" in the presentation layer where it belongs.
+  </tool_result>
+  <tool_result tool="toolu_01CCfWdLAAc6YH8LdswCEmfJ">
+     1→---
+     2→title: "PR Checkout Footer Validation Pattern"
+     3→read_when:
+     4→  - generating or modifying PR body footers
+     5→  - debugging `erk pr check` footer validation failures
+     6→tripwires:
+     7→  - action: "constructing a checkout footer string manually"
+     8→    warning: "Use build_pr_body_footer() from the gateway layer. Manual construction risks format drift from the validator regex."
+     9→  - action: "using issue number in checkout footer instead of PR number"
+    10→    warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .erk/impl-context/plan-ref.json."
+    11→last_audited: "2026-02-16 14:20 PT"
+    12→audit_result: clean
+    13→---
+    14→
+    15→# PR Checkout Footer Validation Pattern
+    16→
+    17→This document covers the cross-package contract between footer generation and validation, and the most common agent mistake when constructing footers. For the full footer format specification, see [PR Footer Format Validation](../architecture/pr-footer-validation.md). For the complete `erk pr check` validation ruleset, see [PR Validation Rules](../pr-operations/pr-validation-rules.md).
+    18→
+    19→## Why Literal Matching, Not Semantic Equivalence
+    20→
+    21→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/pr/submit.py, has_checkout_footer_for_pr --&gt;
+    22→
+    23→The checkout footer validator matches `erk pr checkout &lt;number&gt;` as a literal regex pattern. It does **not** understand command semantics — `erk wt from-pr 123` produces the same result but fails validation.
+    24→
+    25→This is deliberate:
+    26→
+    27→- **Consistency** — Every PR displays the same checkout command format, making footers scannable across dozens of PRs
+    28→- **Parseable** — The literal pattern is trivially greppable by scripts, CI, and future tooling
+    29→- **Canonical command** — `erk pr checkout` is the user-facing command; alternative syntaxes should not appear in PR bodies
+    30→
+
+... [46 lines omitted] ...
+
+    45→**Why this matters:** There is no compile-time or type-level guarantee that these agree. The generator produces a markdown string; the validator applies a regex to it. Changing the generator's output format without updating the validator regex (or vice versa) creates silent failures where `erk pr submit` generates footers that `erk pr check` rejects. The split exists because footer generation is a GitHub concern (PR body construction) while validation is a PR submission concern (pre-flight checks), but it requires manual coordination on any format change.
+    51→The most frequent footer validation failure comes from confusing two different numbers:
+  </tool_result>
+  <tool_result tool="toolu_01D4a96TaQxsn9qHH4f4LcKT">
+     1→---
+     2→title: Erk Tripwires
+     3→read_when:
+     4→  - "working on erk code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from erk/*.md frontmatter --&gt;
+    10→
+    11→# Erk Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding a new call site that passes same_worktree** → Read [Same-Worktree Navigation](same-worktree-navigation.md) first. Use target_path.resolve() == ctx.cwd.resolve() — not string comparison. See same-worktree-navigation.md.
+    16→
+    17→**adding a new cleanup path in land_cmd.py without calling \_ensure_branch_not_checked_out()** → Read [Multi-Path Branch Cleanup in Land](four-path-cleanup.md) first. All cleanup paths must call \_ensure_branch_not_checked_out() before branch deletion. Git refuses to delete branches checked out in any worktree.
+    18→
+    19→**adding a new step to the bootstrap sequence** → Read [Codespace Remote Execution Pattern](codespace-remote-execution.md) first. This affects ALL remote commands. The bootstrap runs on every SSH invocation, so added steps must be idempotent and fast.
+    20→
+    21→**assuming dispatch_ref is project-level config** → Read [dispatch_ref Configuration](dispatch-ref-config.md) first. dispatch_ref is repo-level config (.erk/config.toml), overridable at local level (.erk/config.local.toml). It is not project-level.
+    22→
+    23→**checking thread count without comparing to dash count** → Read [PR Feedback Classifier Schema](pr-feedback-classifier-schema.md) first. Thread count in classifier output must equal erk dash count. Missing threads are silently dropped.
+    24→
+    25→**constructing a checkout footer string manually** → Read [PR Checkout Footer Validation Pattern](pr-commands.md) first. Use build_pr_body_footer() from the gateway layer. Manual construction risks format drift from the validator regex.
+    26→
+    27→**constructing branch names manually** → Read [Branch Naming Conventions](branch-naming.md) first. Use generate_planned_pr_branch_name() for consistent objective ID encoding.
+    28→
+    29→**creating a placeholder branch with ctx.branch_manager.create_branch()** → Read [Placeholder Branches](placeholder-branches.md) first. Placeholder branches must bypass BranchManager. Use ctx.git.branch.create_branch() to avoid Graphite tracking. See branch-manager-decision-tree.md for the full decision framework.
+    30→
+
+... [43 lines omitted] ...
+
+    43→**passing both --ref and --ref-current to a dispatch command** → Read [dispatch_ref Configuration](dispatch-ref-config.md) first. --ref and --ref-current are mutually exclusive. resolve_dispatch_ref() raises UsageError if both are provided.
+  </tool_result>
+  <tool_result tool="toolu_013ttKxZhgjrGQC5JNiy8Sdx">
+     1→---
+     2→title: Plan Embedding in PR Body
+     3→read_when:
+     4→  - "embedding plan content in a PR body"
+     5→  - "debugging missing or malformed plan sections in pull requests"
+     6→  - "modifying how plan context flows through PR submission"
+     7→tripwires:
+     8→  - action: "adding plan HTML to the pr_body variable instead of pr_body_for_github"
+     9→    warning: "Plan embedding uses &lt;details&gt; HTML which must never enter git commit messages. Append only to pr_body_for_github. See pr-body-formatting.md for the two-target pattern."
+    10→last_audited: "2026-02-08 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Plan Embedding in PR Body
+    15→
+    16→## Why Embed Plans
+    17→
+    18→When a PR originates from an erk-plan issue, reviewers need the original plan for context — it explains the _intent_ behind the code, not just the diff. Embedding the plan directly in the PR body means reviewers don't have to chase cross-references to a separate GitHub issue. A collapsible `&lt;details&gt;` section keeps this context available without overwhelming the PR description.
+    19→
+    20→## Data Flow: Plan to PR
+    21→
+    22→Plan content arrives at the PR through a multi-system chain:
+    23→
+    24→1. **Branch name** → `PlanContextProvider` extracts the issue number from the `P{number}-{slug}` convention
+    25→2. **GitHub API** → fetches the plan issue body, then the plan comment containing the actual plan markdown
+    26→3. **Phase 2** of the submit pipeline populates `state.plan_context` (a `PlanContext` with issue number, plan markdown, and optional objective summary) — runs concurrently with diff extraction
+    27→4. **Phase 5** (`finalize_pr`) conditionally appends the plan HTML to the GitHub-only body string
+    28→
+    29→&lt;!-- Source: src/erk/core/plan_context_provider.py, PlanContextProvider.get_plan_context --&gt;
+    30→
+
+... [28 lines omitted] ...
+
+    37→The embedding is **conditional** — `finalize_pr` only appends the plan section when `state.plan_context is not None`. Branches that don't follow the plan naming convention, or plans that fail to fetch, gracefully produce PRs with no plan section. Every step in `PlanContextProvider` returns `None` on failure rather than raising, so the embedding is always best-effort.
+  </tool_result>
+  <tool_result tool="toolu_01VzdbhFnqYhHjzQRE3sEfF9">
+     1→---
+     2→title: PR Validation Rules
+     3→read_when:
+     4→  - "debugging 'erk pr check' failures"
+     5→  - "building or modifying PR submission pipelines"
+     6→  - "generating PR bodies with checkout footers"
+     7→tripwires:
+     8→  - action: "using issue number from .erk/impl-context/plan-ref.json in a checkout footer"
+     9→    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md."
+    10→last_audited: "2026-02-26 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# PR Validation Rules
+    15→
+    16→`erk pr check` enforces structural invariants on every PR: a checkout footer containing the correct PR number. Understanding **why** these checks exist and **where** the data comes from prevents the most common agent mistakes.
+    17→
+    18→## The Checks
+    19→
+    20→&lt;!-- Source: src/erk/cli/commands/pr/check_cmd.py, pr_check --&gt;
+    21→
+    22→See `pr_check()` in `src/erk/cli/commands/pr/check_cmd.py` for the orchestration logic. The command runs checks in sequence:
+    23→
+    24→| Check             | What it validates                                                     | Why it exists                                         |
+    25→| ----------------- | --------------------------------------------------------------------- | ----------------------------------------------------- |
+    26→| Plan-ref presence | `.erk/impl-context/plan-ref.json` exists and contains a valid plan ID | Confirms the PR is linked to a tracked plan           |
+    27→| Checkout footer   | PR body contains `erk pr checkout &lt;pr_number&gt;` with exact number      | Lets reviewers check out the PR into a fresh worktree |
+    28→| Header position   | Plan-header metadata is at bottom, not legacy top position            | Ensures PR body follows current formatting standards  |
+    29→
+    30→## The PR Number vs Issue Number Trap
+
+... [56 lines omitted] ...
+
+    32→This is the single most common validation failure for agents, and it stems from a data source confusion:
+    49→## Debugging Validation Failures
+    57→Common failure modes:
+    70→| `.erk/impl-context/` cleanup | Directory must not exist in the repo | Transient artifacts cause CI formatter failures (Prettier) |
+  </tool_result>
+  <tool_result tool="toolu_0137NovU6Ht8WAcpxk7uf6pq">
+     1→---
+     2→title: PR Submit Workflow Phases
+     3→read_when:
+     4→  - "understanding the erk pr submit workflow"
+     5→  - "debugging PR submission issues"
+     6→  - "working with AI-generated PR descriptions"
+     7→  - "understanding plan context integration in PRs"
+     8→last_audited: "2026-02-16 14:20 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# PR Submit Workflow Phases
+    13→
+    14→The `erk pr submit` command uses a 5-phase workflow to submit PRs with AI-generated descriptions. This document explains each phase and the two-layer architecture.
+    15→
+    16→## Two-Layer Architecture
+    17→
+    18→The workflow has two layers:
+    19→
+    20→1. **Core layer (always runs)**: `git push` + `gh pr create` - works without Graphite
+    21→2. **Graphite layer (optional)**: `gt submit` for stack metadata - runs when Graphite is available and branch is tracked
+    22→
+    23→## Workflow Phases
+    24→
+    25→| Phase | Name                          | Description                                   |
+    26→| ----- | ----------------------------- | --------------------------------------------- |
+    27→| 1     | Creating or Updating PR       | Push changes and create/find PR               |
+    28→| 2     | Getting diff and plan context | Extract diff and fetch plan concurrently      |
+    29→| 3     | Generating PR description     | AI generates title and body via Anthropic API |
+    30→| 4     | Graphite enhancement          | Add stack metadata (if available)             |
+
+... [106 lines omitted] ...
+
+    89→This phase is non-fatal - errors are warnings, not failures.
+  </tool_result>
+  <tool_result tool="toolu_012WmKaWV91Rnqk2B458NJ38">
+     1→---
+     2→title: Checkout Footer Syntax
+     3→read_when:
+     4→  - building or modifying PR body footer content
+     5→  - debugging erk pr check validation failures
+     6→  - working on the submit pipeline or git-pr-push command
+     7→tripwires:
+     8→  - action: "writing checkout footer with issue number from .erk/impl-context/plan-ref.json"
+     9→    warning: "Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures."
+    10→  - action: "writing gh pr checkout in a PR footer"
+    11→    warning: "The checkout footer uses `erk pr checkout &lt;number&gt; --script`, NOT `gh pr checkout`. The footer format has changed."
+    12→---
+    13→
+    14→# Checkout Footer Syntax
+    15→
+    16→## Why the Footer Exists
+    17→
+    18→Every erk PR includes a standardized footer that lets reviewers checkout the PR into a fresh worktree with a single command. This footer is validated by `erk pr check` and generated by multiple code paths (submit pipeline, git-pr-push command, remote implementation workflow).
+    19→
+    20→## The Two-Phase Create-Then-Update Pattern
+    21→
+    22→The footer cannot be included in the initial PR body because **the PR number is not known until `create_pr()` returns**. The footer must contain `erk pr checkout &lt;pr_number&gt;`, creating a chicken-and-egg problem. The solution across all code paths is:
+    23→
+    24→1. Create the PR with body content (including `Closes` reference — see below)
+    25→2. Call `build_pr_body_footer()` with the returned PR number
+    26→3. Append the footer via `update_pr_body()`
+    27→
+    28→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py, build_pr_body_footer --&gt;
+    29→
+    30→See `build_pr_body_footer()` in `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py` for the canonical footer generation.
+
+... [54 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011N3QYgbdHaMR3ZndF951WY">
+     1→---
+     2→title: Pr Operations Tripwires
+     3→read_when:
+     4→  - "working on pr-operations code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from pr-operations/*.md frontmatter --&gt;
+    10→
+    11→# Pr Operations Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding git-only PR logic to a new location** → Read [Git-Only PR Submission Path](pr-submission-workflow.md) first. Two git-only paths already exist (command-level and pipeline-level). Understand why both exist before adding a third. See pr-submission-workflow.md.
+    16→
+    17→**adding plan HTML to the pr_body variable instead of pr_body_for_github** → Read [Plan Embedding in PR Body](plan-embedding-in-pr.md) first. Plan embedding uses &lt;details&gt; HTML which must never enter git commit messages. Append only to pr_body_for_github. See pr-body-formatting.md for the two-target pattern.
+    18→
+    19→**calling create_pr without first checking get_pr_for_branch** → Read [PR Creation Decision Logic](pr-creation-patterns.md) first. Always LBYL-check for an existing PR before creating. Duplicate PRs cause confusion and orphaned state. See pr-creation-patterns.md.
+    20→
+    21→**creating a PR without draft=True in automated workflows** → Read [Draft PR Handling](draft-pr-handling.md) first. All automated erk PR creation uses draft mode. This gates CI costs and prevents premature review. See draft-pr-handling.md.
+    22→
+    23→**editing commit-message-prompt.md in either location** → Read [Template Synchronization](template-synchronization.md) first. Update BOTH copies: .claude/skills/erk-diff-analysis/references/commit-message-prompt.md AND packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md. CI enforces byte-equality.
+    24→
+    25→**investigating an automated reviewer complaint** → Read [Automated Review Handling](automated-review-handling.md) first. Determine if the tool is the authority for that concern. For formatting, prettier is the authority — if prettier passes, dismiss the bot. For type errors, ty is the authority.
+    26→
+    27→**manually resolving bot comments on restructured code without checking pre_existing** → Read [Pre-Existing Bot Comment Detection](pre-existing-detection.md) first. Use the pre_existing classification from pr-feedback-classifier. Pre-existing issues in moved code are auto-resolved in Batch 0 with no code changes.
+    28→
+    29→**passing a flat list of thread IDs to resolve-review-threads** → Read [Resolve Review Threads JSON Format](resolve-review-threads-format.md) first. The input must be a list of objects with thread*id and comment fields, not a flat list of strings. Wrong: ["PRRT*..."] → 'Item at index 0 is not an object'. Correct: [{"thread_id": "PRRT_...", "comment": "..."}]
+    30→
+
+... [25 lines omitted] ...
+
+    31→**silently catching exceptions in PR body updates** → Read [Stub PR Workflow Link](stub-pr-workflow-link.md) first. Use best-effort pattern: try/except with logger.warning(), not silent pass. See one_shot_dispatch.py for the canonical example.
+    47→**writing checkout footer with issue number from .erk/impl-context/plan-ref.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures.
+  </tool_result>
+  <tool_result tool="toolu_01BxcStVGoHTrstU7AnJ2uLS">
+     1→---
+     2→title: TUI Data Contract
+     3→read_when:
+     4→  - "building an alternate frontend consuming plan data"
+     5→  - "adding fields to PlanRowData or PlanDataProvider"
+     6→  - "understanding the display-vs-raw field duality"
+     7→  - "serializing plan data to JSON for external consumers"
+     8→tripwires:
+     9→  - action: "formatting display strings during table render"
+    10→    warning: "Display strings are pre-formatted at fetch time. Add new *_display fields to PlanRowData and format in RealPlanDataProvider._build_row_data(), not in the widget layer."
+    11→  - action: "adding a field to PlanRowData without updating make_plan_row"
+    12→    warning: "The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break."
+    13→  - action: "putting PlanDataProvider ABC in src/erk/tui/"
+    14→    warning: "The ABC lives in erk-shared so provider implementations are co-located in the shared package. External consumers import from erk-shared alongside other shared gateways."
+    15→  - action: "constructing PlanFilters without copying all fields from existing filters"
+    16→    warning: "All fields must be explicitly copied in _load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures."
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# TUI Data Contract
+    22→
+    23→The TUI data layer is designed around a single frozen dataclass (`PlanRowData`) that carries both display-ready strings and raw identifiers. This document explains the design decisions behind the data contract, the cross-package split, and the pitfalls of JSON serialization — things that can't be learned by reading any single source file.
+    24→
+    25→## Why Display and Raw Fields Coexist
+    26→
+    27→&lt;!-- Source: src/erk/tui/data/types.py, PlanRowData --&gt;
+    28→
+    29→`PlanRowData` carries two kinds of fields for the same data. For example, `pr_number` (raw `int | None`) and `pr_display` (pre-formatted `str` like `"#123 👀"`). This is deliberate:
+    30→
+
+... [215 lines omitted] ...
+
+   143→| `run_conclusion` | `str`                              | Yes      | Workflow run conclusion: `"success"`, `"failure"`, `"cancelled"`, etc. |
+   225→Adding a field to `PlanRowData` touches at minimum five places. Missing any one causes test failures or silent data loss:
+  </tool_result>
+  <tool_result tool="toolu_01785mAansZ9F4vPL4PiyTCb">
+     1→---
+     2→title: PlanRowData Field Reference
+     3→read_when:
+     4→  - "writing command availability predicates"
+     5→  - "understanding what data is available for TUI commands"
+     6→  - "checking which PlanRowData fields are nullable"
+     7→last_audited: "2026-02-23 00:15 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# PlanRowData Field Reference
+    12→
+    13→Quick reference for writing command availability predicates and understanding
+    14→`PlanRowData` usage patterns.
+    15→
+    16→## Overview
+    17→
+    18→`PlanRowData` is a frozen dataclass containing all data for a single plan row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
+    19→
+    20→**Location:** `src/erk/tui/data/types.py`
+    21→
+    22→## Field Categories
+    23→
+    24→### Plan Info
+    25→
+    26→| Field        | Type          | Description                   | Nullable?                     |
+    27→| ------------ | ------------- | ----------------------------- | ----------------------------- |
+    28→| `plan_id`    | `int`         | Plan identifier               | Never                         |
+    29→| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
+    30→| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
+
+... [196 lines omitted] ...
+
+    80→| `run_conclusion`    | `str \| None` | Run conclusion: "success", "failure", "cancelled" | Yes                   |
+  </tool_result>
+  <tool_result tool="toolu_01NsHygbBhkEnt1Foa7PR1fr">
+     1→---
+     2→title: CI Environment Detection for Learn Workflow
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "running /erk:learn in CI"
+     7→  - "understanding CI vs interactive mode differences"
+     8→  - "debugging learn workflow in GitHub Actions"
+     9→---
+    10→
+    11→# CI Environment Detection for Learn Workflow
+    12→
+    13→## The Cross-Cutting Pattern
+    14→
+    15→Erk uses **two different CI detection mechanisms** depending on the execution context:
+    16→
+    17→1. **Python code**: Uses `in_github_actions()` from `packages/erk-shared/src/erk_shared/env.py`
+    18→2. **Bash commands/skills**: Uses shell environment variable checks in command text
+    19→
+    20→This bifurcation exists because:
+    21→
+    22→- **Python commands** execute in a Python interpreter with access to imported functions
+    23→- **Slash commands** (like `/erk:learn`) generate bash command strings that Claude executes — they cannot import Python functions
+    24→
+    25→## Why Learn Uses Bash-Based Detection
+    26→
+    27→&lt;!-- Source: .claude/commands/erk/learn.md, CI Detection sections --&gt;
+    28→
+    29→The `/erk:learn` command instructs Claude to run this bash check:
+    30→
+
+... [61 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0182p1vui4cLvhGrv8xAVBRp">
+     1→---
+     2→title: One-Shot Workflow
+     3→read_when:
+     4→  - "using erk one-shot command"
+     5→  - "understanding one-shot remote execution"
+     6→  - "debugging one-shot workflow failures"
+     7→  - "working with one-shot.yml"
+     8→tripwires:
+     9→  - action: "modifying one-shot branch naming convention"
+    10→    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification."
+    11→  - action: "assuming one-shot plan and implementation run in the same Claude session"
+    12→    warning: "They run in separate sessions. The plan is written to `.erk/impl-context/plan.md` and the implementer reads it fresh. No context carries over."
+    13→---
+    14→
+    15→# One-Shot Workflow
+    16→
+    17→This document has been consolidated into [planning/one-shot-workflow.md](../planning/one-shot-workflow.md), which contains the complete reference including skeleton plan pattern, objective integration, registration details, and source code references.
+    18→
+    19→See [planning/one-shot-workflow.md](../planning/one-shot-workflow.md) for all content.
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_018FubgLo68Hcwwd4pvVfF5y">
+     1→---
+     2→title: Workflows Tripwires
+     3→read_when:
+     4→  - "working on workflows code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from workflows/*.md frontmatter --&gt;
+    10→
+    11→# Workflows Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**assuming one-shot plan and implementation run in the same Claude session** → Read [One-Shot Workflow](one-shot-workflow.md) first. They run in separate sessions. The plan is written to `.erk/impl-context/plan.md` and the implementer reads it fresh. No context carries over.
+    16→
+    17→**loading erk-diff-analysis skill more than once per session** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Skills persist for the entire session. Check conversation history for 'erk-diff-analysis' before reloading.
+    18→
+    19→**merging a PR without verifying documentation matches code changes** → Read [Post-PR Validation Checklist](pr-validation.md) first. Check that any new patterns, commands, or architectural decisions are documented in docs/learned/. Run erk docs sync after adding new docs.
+    20→
+    21→**modifying one-shot branch naming convention** → Read [One-Shot Workflow](one-shot-workflow.md) first. Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification.
+    22→
+    23→**running gt sync without committing or stashing working tree changes** → Read [Git Sync State Preservation](git-sync-state-preservation.md) first. gt sync performs a rebase which can silently lose uncommitted changes. Always commit or stash before sync, and verify working tree state after.
+    24→
+    25→**writing a commit message manually for multi-file changes** → Read [Skill-Based Commit Message Generation](commit-messages.md) first. Load the erk-diff-analysis skill first. It produces component-aware, strategically framed messages that become both the commit and PR body.
+    26→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01L6oEd8JSmkKmAzentWthof">
+     1→---
+     2→title: Configuration Layers
+     3→last_audited: "2026-02-17 09:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "understanding the configuration system"
+     7→  - "deciding where to put a configuration setting"
+     8→  - "debugging why a config value isn't taking effect"
+     9→  - "working with LoadedConfig or merge_configs"
+    10→---
+    11→
+    12→# Configuration Layers
+    13→
+    14→Erk uses a layered configuration system where settings are merged from multiple sources.
+    15→
+    16→## Overview
+    17→
+    18→| Layer  | Location                 | Scope       | Versioned | Merge Order |
+    19→| ------ | ------------------------ | ----------- | --------- | ----------- |
+    20→| Global | `~/.erk/config.toml`     | All repos   | No        | N/A         |
+    21→| Repo   | `.erk/config.toml`       | All users   | Yes       | 1st         |
+    22→| Local  | `.erk/config.local.toml` | Single user | No        | 2nd         |
+    23→
+    24→## Layer Details
+    25→
+    26→### Global Config (`~/.erk/config.toml`)
+    27→
+    28→User-wide settings that apply across all repositories.
+    29→
+    30→**Contains:**
+
+... [112 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GTKmukUQsWoBaBm9RPATd4">
+     1→---
+     2→title: Gastown Architecture Analysis
+     3→last_audited: "2026-02-05 20:38 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "learning from parallel agent orchestration systems"
+     7→  - "designing multi-agent coordination"
+     8→  - "understanding propulsion-based agent patterns"
+     9→  - "comparing erk to other agentic systems"
+    10→---
+    11→
+    12→# Gastown Architecture Analysis
+    13→
+    14→&gt; **Point-in-Time Snapshot**
+    15→&gt;
+    16→&gt; - **Commit:** `b158ff27c25efa02ad2a6948a923186a99c6a429`
+    17→&gt; - **Version:** v0.5.0
+    18→&gt; - **Captured:** 2026-01-21
+    19→&gt;
+    20→&gt; Gastown evolves rapidly. This document captures architecture and patterns at a specific point for cross-pollination learning. For current state, consult the Gastown repository directly.
+    21→
+    22→## Executive Summary
+    23→
+    24→Gastown is a multi-agent orchestration system that coordinates AI agents across multiple isolated workspaces ("rigs") within a "town." Unlike polling-based systems, Gastown uses a **propulsion principle** where agents actively drive work forward upon discovering it on their hook, following a "physics over politeness" philosophy.
+    25→
+    26→This document exists to capture learnings from Gastown's parallel approach to agentic engineering, identifying patterns that could strengthen Erk and areas where each system excels.
+    27→
+    28→## Core Philosophy
+    29→
+    30→### Steam Engine Metaphor
+
+... [822 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UDq3LZ67Y4uuDdFGvAiWHz">
+     1→---
+     2→title: FakeLocalGitHub API Reference
+     3→read_when:
+     4→  - "writing tests that need fake GitHub PR or issue data"
+     5→  - "understanding FakeLocalGitHub.create_pr() auto-registration"
+     6→  - "using mutation tracking in LocalGitHub fake tests"
+     7→tripwires:
+     8→  - action: "creating a FakeLocalGitHub PR without checking auto-registration in _pr_details"
+     9→    warning: "FakeLocalGitHub.create_pr() auto-registers the PR in _pr_details. Manually adding to _pr_details after create_pr() causes duplicates."
+    10→  - action: "using context_for_test without matching parameter names to the current API"
+    11→    warning: "context_for_test() parameter names evolve. Check the current function signature before adding new parameters."
+    12→---
+    13→
+    14→# FakeLocalGitHub API Reference
+    15→
+    16→Reference for the FakeLocalGitHub test double used throughout erk's test suite. Covers auto-registration behavior, mutation tracking, and common patterns.
+    17→
+    18→## FakeLocalGitHub.create_pr() Auto-Registration
+    19→
+    20→When `FakeLocalGitHub.create_pr()` is called, it automatically:
+    21→
+    22→1. Creates the PR record
+    23→2. Registers it in `_pr_details` for subsequent `get_pr_details()` calls
+    24→3. Adds it to the open PRs list
+    25→
+    26→Do NOT manually add to `_pr_details` after calling `create_pr()` — this causes duplicate entries.
+    27→
+    28→## Mutation Tracking API
+    29→
+    30→FakeLocalGitHub tracks all mutations for test assertions:
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01K8SxkM1g2XsynsbVqyHP3f">
+     1→---
+     2→title: Planless vs Planning Workflow Decision Framework
+     3→read_when:
+     4→  - "deciding whether to plan or start coding directly"
+     5→  - "realizing mid-task that the scope is larger than expected"
+     6→  - "choosing between erk wt create and plan mode"
+     7→tripwires:
+     8→  - action: "starting a multi-file change without entering plan mode"
+     9→    warning: "If the change touches 5+ files or has uncertain approach, plan first. See the decision matrix in when-to-switch-pattern.md."
+    10→  - action: "continuing to code after discovering scope is larger than expected"
+    11→    warning: "Stop and switch to planning. Mid-task warning signs (uncertainty accumulating, scope creeping, multiple valid approaches) indicate you should plan. See when-to-switch-pattern.md."
+    12→last_audited: "2026-02-16 14:20 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# Planless vs Planning Workflow Decision Framework
+    17→
+    18→Erk supports two workflows — planless (direct coding) and planning (plan-first). This document captures the cross-cutting decision framework for choosing between them and recognizing when to switch mid-task.
+    19→
+    20→For the mechanics of each workflow, see the howto guides: [planless workflow](../../howto/planless-workflow.md) and [local workflow](../../howto/local-workflow.md).
+    21→
+    22→For the mechanics of each workflow, see the planning workflow documentation in `docs/learned/planning/`.
+    23→
+    24→## Why This Decision Matters
+    25→
+    26→Choosing the wrong workflow has asymmetric costs:
+    27→
+    28→- **Planning a trivial change** wastes minutes on overhead (issue creation, `.erk/impl-context/` setup, progress tracking). Low cost.
+    29→- **Skipping planning on a complex change** leads to scope creep, missed edge cases, poor architectural decisions, and potentially hours of wasted implementation. High cost.
+    30→
+
+... [52 lines omitted] ...
+
+    45→## Mid-Task Warning Signs
+    71→**Switch too late:** Realizing deep into implementation that you should have planned means potentially discarding work. The 30-minute check and warning signs above catch this early.
+  </tool_result>
+  <assistant>Now I'll proceed to make the edits. Based on my analysis, I need to:
+
+1. Replace "plan issue" with "plan" 
+2. Replace "plan issues" with "plans"
+3. Replace "Plan Issue" with "Plan" (in titles/headings)
+4. Replace "Plan Issues" with "Plans" (in titles/headings)
+5. Preserve "objective issue", "GitHub issue", and technical terms like `IssueInfo`
+
+Let me start with the edits:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01H4cE1vJ3aHGP2p5V5rJiuz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/research-documentation-integration.md</param>
+    <param name="old_string">After an objective's plan produces a merged PR, `/erk:learn` extracts documentation candid...[truncated 328 chars]...without review. See [Learn Workflow](../planning/learn-workflow.md) for the full pipeline.</param>
+    <param name="new_string">After an objective's plan produces a merged PR, `/erk:learn` extracts documentation candid...[truncated 322 chars]...without review. See [Learn Workflow](../planning/learn-workflow.md) for the full pipeline.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TzmXDtpwvZ56XM6KWadd3m">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/roadmap-mutation-patterns.md</param>
+    <param name="old_string">The roadmap table is a 4-column markdown table stored in a GitHub issue comment (`| Node |...[truncated 538 chars]... adding narrative text. The `objective-apply-landed-update` command handles batch updates.</param>
+    <param name="new_string">The roadmap table is a 4-column markdown table stored in a GitHub issue comment (`| Node |...[truncated 538 chars]... adding narrative text. The `objective-apply-landed-update` command handles batch updates.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KJZP1HQo9DV24VQxCjMfBq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+    <param name="old_string">**Path**: `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`
+
+The `objective-f...[truncated 661 chars]...ve_issue` field)
+4. **PR number**: discovered from branch via `github.get_pr_for_branch()`</param>
+    <param name="new_string">**Path**: `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`
+
+The `objective-f...[truncated 655 chars]...ve_issue` field)
+4. **PR number**: discovered from branch via `github.get_pr_for_branch()`</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EZvtPyMz2qATVuSLLAuteo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md</param>
+    <param name="old_string">**Path**: `.claude/commands/erk/system/objective-update-with-landed-pr.md`
+
+**What it does...[truncated 789 chars]...ms all updates directly (roadmap steps, prose reconciliation, action comment, validation).</param>
+    <param name="new_string">**Path**: `.claude/commands/erk/system/objective-update-with-landed-pr.md`
+
+**What it does...[truncated 789 chars]...ms all updates directly (roadmap steps, prose reconciliation, action comment, validation).</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01P5PS81NKUvnFmvrmpoL8Yo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md</param>
+    <param name="old_string">## Why Embed Plans
+
+When a PR originates from an erk-plan issue, reviewers need the origin...[truncated 200 chars]... `&lt;details&gt;` section keeps this context available without overwhelming the PR description.</param>
+    <param name="new_string">## Why Embed Plans
+
+When a PR originates from an erk plan, reviewers need the original pla...[truncated 194 chars]... `&lt;details&gt;` section keeps this context available without overwhelming the PR description.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XintKmayUK96w787sfqkif">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md</param>
+    <param name="old_string">| Check             | What it validates                                                   ...[truncated 549 chars]...t legacy top position            | Ensures PR body follows current formatting standards  |</param>
+    <param name="new_string">| Check             | What it validates                                                   ...[truncated 549 chars]...t legacy top position            | Ensures PR body follows current formatting standards  |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Jy3HQxoDd4ijwSxzbJoUrz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md</param>
+    <param name="old_string">| Data source                       | Contains              | Use for                     ...[truncated 513 chars]...ble one — but it's the wrong one. The PR number doesn't exist until `create_pr()` returns.</param>
+    <param name="new_string">| Data source                       | Contains        | Use for                           ...[truncated 489 chars]...ble one — but it's the wrong one. The PR number doesn't exist until `create_pr()` returns.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01W6WZQmoZRuAsQ3JXam3EHX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+    <param name="old_string">**Plan context fetching:**
+The `PlanContextProvider` checks for a linked erk-plan issue:
+
+...[truncated 192 chars]...**: Both results are merged into pipeline state and passed to the AI generator in Phase 3.</param>
+    <param name="new_string">**Plan context fetching:**
+The `PlanContextProvider` checks for a linked erk plan:
+
+1. Loo...[truncated 185 chars]...**: Both results are merged into pipeline state and passed to the AI generator in Phase 3.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0155R7KBhdAiuSGschpQRWLn">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+    <param name="old_string">- Uses `CommitMessageGenerator` with `LlmCaller` (direct Anthropic API)
+- Inputs: diff fil...[truncated 143 chars]...iginal intent
+- Include relevant context from the plan
+- Reference objective if applicable</param>
+    <param name="new_string">- Uses `CommitMessageGenerator` with `LlmCaller` (direct Anthropic API)
+- Inputs: diff fil...[truncated 143 chars]...iginal intent
+- Include relevant context from the plan
+- Reference objective if applicable</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01B8wNcPfzRr67uD5bDTxJ2e">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md</param>
+    <param name="old_string">| Source                            | Use for checkout footer?    | Why                   ...[truncated 291 chars]...on` | Never                       | Plan issue number != PR number; validation will fail |</param>
+    <param name="new_string">| Source                            | Use for checkout footer?    | Why                   ...[truncated 273 chars]...ref.json` | Never                       | Plan number != PR number; validation will fail |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LeyrWmhxu9mdHq9Dor5Ldf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md</param>
+    <param name="old_string">```python
+# WRONG: Using issue number
+footer = f"erk pr checkout {issue_data['issue_number']} --script"
+
+# WRONG: Using gh pr checkout (outdated command)
+footer = f"gh pr checkout {pr_number}"
+```</param>
+    <param name="new_string">```python
+# WRONG: Using plan number
+footer = f"erk pr checkout {plan_data['plan_number']} --script"
+
+# WRONG: Using gh pr checkout (outdated command)
+footer = f"gh pr checkout {pr_number}"
+```</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01C76LftxGmSXm2GQmbFbpaB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md</param>
+    <param name="old_string">When `plans_repo` is configured (in `.erk/config.toml`), the closing reference uses cross-...[truncated 39 chars]...3`. The checkout command itself is unaffected — it always uses the local repo's PR number.</param>
+    <param name="new_string">When `plans_repo` is configured (in `.erk/config.toml`), the closing reference uses cross-...[truncated 39 chars]...3`. The checkout command itself is unaffected — it always uses the local repo's PR number.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015EBuwih1uft6yQgTGPfmDw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md</param>
+    <param name="old_string">**Why `Closes` must be in the initial body, not the footer update:** GitHub's `willCloseTa...[truncated 144 chars]...()` body, while the checkout command is appended via a subsequent `update_pr_body()` call.</param>
+    <param name="new_string">**Why `Closes` must be in the initial body, not the footer update:** GitHub's `willCloseTa...[truncated 144 chars]...()` body, while the checkout command is appended via a subsequent `update_pr_body()` call.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01X5ABSVjyXfKNePqrmtfFPh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md</param>
+    <param name="old_string">**using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [P...[truncated 65 chars]...mber (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md.</param>
+    <param name="new_string">**using plan number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [PR...[truncated 58 chars]... PR number (from create_pr return value), NOT the plan number. See pr-validation-rules.md.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01H2hTkdzfWFKNF3fh2xVLwk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md</param>
+    <param name="old_string">**writing checkout footer with issue number from .erk/impl-context/plan-ref.json** → Read ...[truncated 122 chars]...res a PR number. Issue numbers in checkout footers cause erk pr check validation failures.</param>
+    <param name="new_string">**writing checkout footer with plan number from .erk/impl-context/plan-ref.json** → Read [...[truncated 119 chars]...ires a PR number. Plan numbers in checkout footers cause erk pr check validation failures.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012uuv9vSwhAQMdnYcx3Ttyk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/data-contract.md</param>
+    <param name="old_string">| `learn_plan_issue`        | `int`  | Yes      | Plan issue number (for `completed_with_p...[truncated 19 chars]..._closed` | `bool` | Yes      | Whether the learn plan issue is closed                    |</param>
+    <param name="new_string">| `learn_plan_issue`        | `int`  | Yes      | Plan number (for `completed_with_plan` s...[truncated 7 chars]..._issue_closed` | `bool` | Yes      | Whether the learn plan is closed                    |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EiJxfECyhuhvVeyNezf59z">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+    <param name="old_string">| Field                     | Type           | Description                                ...[truncated 924 chars]...`          | Icon-only display for table (e.g., "-", "⟳", "∅")   | Never (dash possible) |</param>
+    <param name="new_string">| Field                     | Type           | Description                                ...[truncated 924 chars]...`          | Icon-only display for table (e.g., "-", "⟳", "∅")   | Never (dash possible) |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="52380" cache_read_input_tokens="16683" cache_creation="{'ephemeral_5m_input_tokens': 52380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

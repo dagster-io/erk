@@ -1,941 +1,250 @@
 <session>
-  <meta source="agent-ada03ec" />
+  <meta source="agent-a5c0f8c" />
   <meta branch="plnd/consolidate-learn-docs-03-08-1055" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>In these files under /home/runner/work/erk/erk/, replace "plan issue" terminology with "plan":
-
-FILES:
-1. docs/learned/planning/consolidation-labels.md
-2. docs/learned/planning/cross-artifact-analysis.md
-3. docs/learned/planning/learn-pipeline-workflow.md
-4. docs/learned/planning/learn-plan-metadata-fields.md
-5. docs/learned/planning/learn-plan-validation.md
-6. docs/learned/planning/no-changes-handling.md
-7. docs/learned/planning/plan-backend-migration.md
-8. docs/learned/planning/plan-header-privatization.md
-9. docs/learned/planning/plan-schema.md
-10. docs/learned/planning/branch-name-inference.md
-11. docs/learned/planning/complete-inventory-protocol.md
-
-RULES:
-- "plan issue" → "plan" (case-sensitive)
-- "plan issues" → "plans" (case-sensitive)
-- "Plan Issue" → "Plan" (title case)
-- "Plan Issues" → "Plans" (title case)
-- "erk-plan issue" → "erk plan"
-- "erk-plan issues" → "erk plans"
-- "plan issue number" → "plan number"
-- "plan issue body" → "plan body"
-- "plan issue metadata" → "plan metadata"
-- "plan issue's metadata" → "plan's metadata"
-- "plan issue update" → "plan update"
-- "plan issue doesn't exist" → "plan doesn't exist"
-- "(erk-plan issues)" → "(erk plans)"
-- PRESERVE "objective issue" unchanged
-- PRESERVE "GitHub issue" or "GitHub Issue" unchanged
-- PRESERVE code references like `IssueInfo`, `GitHubIssues` unchanged
-- PRESERVE `issue_number` or `issue_updated` variable names in code blocks unchanged
-
-Read each file, find all instances of "plan issue" (case-insensitive), and replace them. Use the Edit tool for each change.
-
-IMPORTANT: Do NOT run git reset or any git commands. Only use Read and Edit tools.</user>
-  <assistant>I'll help you replace "plan issue" terminology with "plan" in these files. Let me start by reading each file and identifying the replacements needed.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01GsSGy5R7kUgPYuCizVNT78">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
+  <assistant>Perfect! Now let me verify the changes by checking one of the modified files to ensure all replacements were made correctly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2113" cache_read_input_tokens="47371" cache_creation="{'ephemeral_5m_input_tokens': 2113, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FNg8V9BPNr2BVYb8GruPGP">
+    <param name="command">git diff docs/learned/architecture/ | head -200</param>
+    <param name="description">Show git diff of all changes made</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_012jpe9MVWqG89Hw3751jsJg">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_019GYjZRTT5Q4JQoK4J8Wijs">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01DAUkgu53Q338hUDdPMBuwn">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_015hCdPwPXak4Y4XnWuwxhjR">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01VYD9Z2eRzBZrtwFci4zTAH">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_012TMrpqT7fLtum69h6PdCn6">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01TRVAmF8cg1PPvQUMZMpjJS">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01FnCEoR6VN8XC2va6JTjbYt">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-schema.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01ByoJ3GZWCce28WwqPo4WiG">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01BSeVRpCYGScdK2D7F1YBQv">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16438" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16438, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01GsSGy5R7kUgPYuCizVNT78">
-     1→---
-     2→title: Consolidation Labels
-     3→read_when:
-     4→  - "consolidating multiple learn plans"
-     5→  - "working with erk-consolidated label"
-     6→  - "preventing re-consolidation of issues"
-     7→  - "modifying /local:replan-learn-plans or /erk:replan consolidation behavior"
-     8→tripwires:
-     9→  - action: "consolidating issues that already have erk-consolidated label"
-    10→    warning: "Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated."
-    11→  - action: "adding erk-consolidated label to a single-issue replan"
-    12→    warning: "Only multi-plan consolidation gets the erk-consolidated label. Single-issue replans are updates, not consolidations."
-    13→last_audited: "2026-02-16 14:20 PT"
-    14→audit_result: clean
-    15→---
-    16→
-    17→# Consolidation Labels
-    18→
-    19→## Why This Exists
-    20→
-    21→Learn plan consolidation has a circular reference problem: `/local:replan-learn-plans` queries all open `erk-learn` issues and merges them into a single new issue — which itself carries the `erk-learn` label. Without protection, the next consolidation run would pick up its own output, creating an infinite loop of consolidation.
-    22→
-    23→The `erk-consolidated` label breaks this cycle. It acts as a "already processed" marker: the consolidation query fetches `erk-learn` issues, then filters out any that also carry `erk-consolidated`.
-    24→
-    25→## The Single-vs-Multi Decision
-    26→
-    27→The label is **only** applied during multi-plan consolidation, never during single-plan replans. This distinction matters because:
-    28→
-    29→- **Multi-plan consolidation** creates a new issue that _replaces_ multiple source issues. It must not be re-consolidated because it already represents a merge.
-    30→- **Single-plan replan** creates a new issue that _supersedes_ one source issue. It's a fresh plan against current codebase state and should remain eligible for future consolidation with other plans.
+  <usage input_tokens="7" cache_creation_input_tokens="2113" cache_read_input_tokens="47371" cache_creation="{'ephemeral_5m_input_tokens': 2113, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FNg8V9BPNr2BVYb8GruPGP">
+diff --git a/docs/learned/architecture/abc-convenience-methods.md b/docs/learned/architecture/abc-convenience-methods.md
+index be03b6a56..fc21e66a7 100644
+--- a/docs/learned/architecture/abc-convenience-methods.md
++++ b/docs/learned/architecture/abc-convenience-methods.md
+@@ -50,7 +50,7 @@ Don't use convenience methods when:
+ 
+ - The operation requires implementation-specific behavior
+ - Performance characteristics differ between real/fake
+-- The operation needs dry-run/printing wrapper behavior
++- The operation needs dry-run wrapper behavior
+ 
+ In those cases, add an abstract method following the [Gateway ABC Implementation Checklist](gateway-abc-implementation.md).
+ 
+diff --git a/docs/learned/architecture/discriminated-union-error-handling.md b/docs/learned/architecture/discriminated-union-error-handling.md
+index 4ece46c05..ed5b7bd04 100644
+--- a/docs/learned/architecture/discriminated-union-error-handling.md
++++ b/docs/learned/architecture/discriminated-union-error-handling.md
+@@ -10,7 +10,7 @@ tripwires:
+   - action: "choosing between exceptions and discriminated unions for operation failures"
+     warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
+   - action: "migrating a gateway method to return discriminated union"
+-    warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
++    warning: "Update all implementations (ABC, real, fake; add dry_run only for dry-run-participating gateways) AND all call sites AND tests. Incomplete migrations break type safety."
+   - action: "accessing properties on a discriminated union result without isinstance() check"
+     warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
+   - action: "using None as a success return value in a validation function (ErrorType | None where None = success)"
+@@ -274,7 +274,7 @@ if isinstance(merge_result, MergeError):
+ 
+ 1. Define types in appropriate `types.py` module
+ 2. Update ABC signature
 
-... [35 lines omitted] ...
+... [170 lines omitted] ...
+
+ 5. Update tests to check `isinstance(result, ErrorType)`
+ - Caller needs to explain failures differently based on context
+ | Context          | Critical? | Failure Handling      | Rationale                              |
+ **Why delegate instead of no-op?** Dry-run mode validates workflows without mutating state. If a command would fail due to a missing resource, dry-run should surface that error before the user runs it for real.
   </tool_result>
-  <tool_result tool="toolu_012jpe9MVWqG89Hw3751jsJg">
-     1→---
-     2→title: Cross-Artifact Analysis
-     3→read_when:
-     4→  - "detecting PR and plan relationships"
-     5→  - "assessing if work supersedes a plan"
-     6→  - "analyzing overlap between artifacts"
-     7→last_audited: "2026-02-16 14:20 PT"
-     8→audit_result: clean
-     9→---
-    10→
-    11→# Cross-Artifact Analysis
-    12→
-    13→This document describes how erk commands analyze relationships between different GitHub artifacts (PRs, plans, branches, issues).
-    14→
-    15→## PR-Plan Relationships
-    16→
-    17→Plans and PRs can have complex relationships:
-    18→
-    19→| Relationship | Description                                 | Detection Method                            |
-    20→| ------------ | ------------------------------------------- | ------------------------------------------- |
-    21→| Linked       | PR explicitly references plan issue         | PR body contains `Plan: #&lt;issue&gt;` reference |
-    22→| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |
-    23→| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |
-    24→| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |
-    25→
-    26→## Evidence-Based Analysis Pattern
-    27→
-    28→The `/local:check-superceded` command implements a structured approach to cross-artifact analysis:
-    29→
-    30→1. **Parse input** - Extract PR number to analyze
-
-... [18 lines omitted] ...
-  </tool_result>
-  <tool_result tool="toolu_019GYjZRTT5Q4JQoK4J8Wijs">
-     1→---
-     2→title: Learn Pipeline Workflow
-     3→last_audited: "2026-02-16 14:20 PT"
-     4→audit_result: clean
-     5→read_when:
-     6→  - debugging why learn materials are missing or malformed
-     7→  - understanding data flow from sessions to documentation plan
-     8→  - choosing between local learn and async learn modes
-     9→  - adding a new stage to the learn pipeline
-    10→tripwires:
-    11→  - action: "adding a new pipeline stage to the async learn pipeline"
-    12→    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md."
-    13→  - action: "changing how sessions are classified as planning vs impl"
-    14→    warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
-    15→  - action: "modifying how learn materials are committed to a branch"
-    16→    warning: "The CI workflow checks out the learn branch and reads materials from .erk/sessions/. File names and directory structure must match what learn.yml expects."
-    17→---
-    18→
-    19→# Learn Pipeline Workflow
-    20→
-    21→## Purpose
-    22→
-    23→This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Planned PR Context Local Preprocessing](planned-pr-context-local-preprocessing.md).
-    24→
-    25→## Pipeline Architecture
-    26→
-    27→The learn pipeline has 7 stages that transform raw session JSONL into a documentation plan. The key architectural decision is **where processing happens**: stages 1-5 run locally (fast, free), while stages 6-7 run in GitHub Actions (background, billed).
-    28→
-    29→```
-    30→Local machine                              GitHub Actions
-
-... [131 lines omitted] ...
-
-    82→Tool result pruning (30 line limit, error lines preserved) occurs during XML generation, not as a preprocessing filter step.
-   120→## Failure Modes
-   122→| Stage                | Failure              | Behavior                                                                 |
-   124→| 1 (Discovery)        | No sessions found    | Warning, continues with empty list; local fallback scans recent sessions |
-   128→| 4 (Branch Commit)    | Push failure         | **Pipeline fails** — learn branch is required for async path             |
-   129→| 5 (Workflow Trigger) | Workflow not found   | Fails with error about missing `learn.yml`                               |
-  </tool_result>
-  <tool_result tool="toolu_01DAUkgu53Q338hUDdPMBuwn">
-     1→---
-     2→title: Learn Plan Metadata Preservation
-     3→last_audited: "2026-02-17 16:00 PT"
-     4→audit_result: clean
-     5→read_when:
-     6→  - "working with learn plan metadata"
-     7→  - "troubleshooting null learn_status or learn_plan_issue"
-     8→  - "transforming Plan objects in pipelines"
-     9→  - "understanding created_from_workflow_run_url field"
-    10→  - "adding workflow run backlinks to plans"
-    11→tripwires:
-    12→  - action: "reading learn_plan_issue or learn_status"
-    13→    warning: "Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects."
-    14→---
-    15→
-    16→# Learn Plan Metadata Preservation
-    17→
-    18→Learn plans have metadata fields that must survive all pipeline transformations. When these fields become null unexpectedly, data was lost during a transformation stage.
-    19→
-    20→## Critical Metadata Fields
-    21→
-    22→### `learn_status`
-    23→
-    24→Tracks the status of learn plan processing:
-    25→
-    26→- `"pending"` - Learn plan not yet processed
-    27→- `"completed"` - Learn plan has been reviewed and documentation created
-    28→- `None` - Not a learn plan, or status unknown
-    29→
-    30→### `learn_plan_issue`
-
-... [138 lines omitted] ...
-
-    59→- Debugging failed plan creations by linking to the workflow run
-  </tool_result>
-  <tool_result tool="toolu_015hCdPwPXak4Y4XnWuwxhjR">
-     1→---
-     2→title: Learn Plan Validation
-     3→read_when:
-     4→  - "creating or modifying erk-learn plans"
-     5→  - "working on the learn workflow pipeline"
-     6→  - "debugging learn-on-learn cycle errors"
-     7→tripwires:
-     8→  - action: "creating erk-learn plan for an issue that already has erk-learn label"
-     9→    warning: "Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention)."
-    10→last_audited: "2026-02-16 14:20 PT"
-    11→audit_result: clean
-    12→---
-    13→
-    14→# Learn Plan Validation
-    15→
-    16→## Core Rule: No Learn-on-Learn
-    17→
-    18→Learn plans exist to extract insights from **implementation work** (erk-plan issues). A learn plan must never target another learn plan — this would create documentation cycles where plans endlessly analyze each other instead of analyzing real code changes.
-    19→
-    20→The cycle risk is real because the learn pipeline is automated: after a PR lands, the system can automatically create a learn plan. If learn plans could target other learn plans, the pipeline would generate infinite chains (learn A analyzes learn B which analyzes learn A).
-    21→
-    22→## Where Validation Lives
-    23→
-    24→Cycle prevention is enforced at multiple points because learn plans flow through several different code paths. Each enforcement point serves a different workflow entry:
-    25→
-    26→| Enforcement Point                 | What It Checks                                   | Why There                                                             |
-    27→| --------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
-    28→| `/erk:learn` skill (Step 1)       | Target issue labels include `erk-learn` → reject | Primary entry: agent-driven learn invocation                          |
-    29→| `erk land` pre-flight             | Issue has `erk-learn` label → skip learn prompt  | Prevents "did you learn from this?" prompt for learn plans themselves |
-    30→| `is_issue_learn_plan()` in submit | Label check helper                               | Shared utility for branch/submit workflows                            |
-
-... [35 lines omitted] ...
-
-    34→The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the issue via `erk exec get-issue-body` and inspecting the `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.
-  </tool_result>
-  <tool_result tool="toolu_01VYD9Z2eRzBZrtwFci4zTAH">
-     1→---
-     2→title: No Code Changes Handling
-     3→last_audited: "2026-02-16 14:20 PT"
-     4→audit_result: clean
-     5→read_when:
-     6→  - "implementing erk-impl workflow"
-     7→  - "debugging no-changes scenarios"
-     8→  - "understanding erk-impl error handling"
-     9→---
-    10→
-    11→# No Code Changes Handling
-    12→
-    13→When the erk-impl workflow produces no code changes, it handles this gracefully by creating a diagnostic PR instead of failing.
-    14→
-    15→## When This Occurs
-    16→
-    17→Implementation may produce no code changes when:
-    18→
-    19→- **Duplicate plan**: The same work was already implemented from another plan
-    20→- **Already merged**: The work landed in trunk through a different PR
-    21→- **Stale plan**: The plan addresses issues that have been resolved
-    22→
-    23→## Workflow Response
-    24→
-    25→Instead of failing, the workflow:
-    26→
-    27→1. **Detects no changes**: Checks if the branch has any commits beyond the base
-    28→2. **Creates diagnostic PR**: Updates the PR body with diagnostic information
-    29→3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)
-    30→4. **Posts issue comment**: Notifies the plan issue with a link to the PR
-
-... [53 lines omitted] ...
-
-    63→| 1         | Error - GitHub API failure     |
-    65→The workflow treats no-changes as a **successful completion**, not an error. This allows the workflow to mark the PR as ready for review so users can evaluate and close it.
-  </tool_result>
-  <tool_result tool="toolu_012TMrpqT7fLtum69h6PdCn6">
-     1→---
-     2→title: PlanBackend Migration Guide
-     3→read_when:
-     4→  - "migrating exec scripts from direct GitHubIssues to PlanBackend"
-     5→  - "implementing LBYL pattern for plan existence checks"
-     6→  - "handling PlanNotFound vs PlanHeaderNotFoundError"
-     7→tripwires:
-     8→  - action: "calling update_metadata() on PlanBackend"
-     9→    warning: "Always check isinstance(result, PlanNotFound) before calling update_metadata()"
-    10→  - action: "catching PlanHeaderNotFoundError"
-    11→    warning: "PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter"
-    12→last_audited: "2026-02-16 14:30 PT"
-    13→audit_result: clean
-    14→---
-    15→
-    16→# PlanBackend Migration Guide
-    17→
-    18→When exec scripts need to read or update plans, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
-    19→
-    20→## Migration Pattern
-    21→
-    22→**Before (direct GitHubIssues):**
-    23→
-    24→```python
-    25→gh = require_issues(ctx)
-    26→issue = gh.get_issue(repo_root, issue_number)
-    27→# No type safety on failure case
-    28→```
-    29→
-    30→**After (PlanBackend):**
-
-... [156 lines omitted] ...
-
-    52→    output_error("issue-not-found", f"Issue #{issue_number} not found")
-    59→## Error Type Distinction
-    61→Two different error types serve different purposes:
-    66→| `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |
-    68→**PlanNotFound** is checked with `isinstance()` (LBYL pattern). **PlanHeaderNotFoundError** is caught with try/except because it indicates a corrupted plan state that cannot be predicted.
-    78→except PlanHeaderNotFoundError:
-    80→    output_error("no-plan-header-block", str(e))
-    81→except RuntimeError:
-    82→    # GitHub API failure
-    83→    output_error("github-api-failed", str(e))
-    95→    result["issue_update_error"] = f"Issue #{issue_number} not found"
-   100→    except RuntimeError as e:
-   102→        result["issue_update_error"] = str(e)
-   153→`add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).
-   163→## Error Handling Asymmetry: get vs update
-   168→- **update**: caller typically wants to report failure and continue
-   178→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) -- the broader error handling pattern
-  </tool_result>
-  <tool_result tool="toolu_01TRVAmF8cg1PPvQUMZMpjJS">
-     1→---
-     2→title: Plan Header Privatization
-     3→read_when:
-     4→  - "migrating callers of plan_header.py functions"
-     5→  - "understanding why plan_header functions are being privatized"
-     6→  - "working with PlanBackend metadata operations"
-     7→tripwires:
-     8→  - action: "importing functions directly from plan_header.py"
-     9→    warning: "plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations."
-    10→---
-    11→
-    12→# Plan Header Privatization
-    13→
-    14→The `plan_header.py` module contains low-level functions for reading/writing plan issue metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.
-    15→
-    16→## Migration Status
-    17→
-    18→### Phase 1: PlanBackend Wrapper Methods (Complete)
-    19→
-    20→PlanBackend now provides typed methods for common metadata operations:
-    21→
-    22→- `get_metadata_field()` — read a single field from plan-header
-    23→- `update_metadata()` — write fields to plan-header
-    24→- `post_event()` — metadata update + optional comment
-    25→
-    26→### Phase 2: Caller Migration (In Progress)
-    27→
-    28→External callers of `plan_header.py` functions should migrate to PlanBackend:
-    29→
-    30→| Old Pattern                                 | New Pattern                                |
-
-... [26 lines omitted] ...
-
-    49→- [PlanBackend Migration Guide](plan-backend-migration.md) — Migration patterns and error handling
-  </tool_result>
-  <tool_result tool="toolu_01FnCEoR6VN8XC2va6JTjbYt">
-     1→---
-     2→title: Plan Schema Reference
-     3→read_when:
-     4→  - "understanding plan structure"
-     5→  - "debugging plan validation errors"
-     6→  - "working with plan-header or plan-body blocks"
-     7→last_audited: "2026-02-03 04:00 PT"
-     8→audit_result: edited
-     9→---
-    10→
-    11→# Plan Schema Reference
-    12→
-    13→## Two-Part Structure
-    14→
-    15→Plan issues use a two-part structure optimized for GitHub API performance:
-    16→
-    17→| Location      | Block Key     | Purpose                                  |
-    18→| ------------- | ------------- | ---------------------------------------- |
-    19→| Issue body    | `plan-header` | Compact metadata for fast querying       |
-    20→| First comment | `plan-body`   | Full plan content in collapsible details |
-    21→
-    22→This separation means metadata can be queried from the issue body without fetching comments (which is a separate API call).
-    23→
-    24→## Source of Truth
-    25→
-    26→- **Field definitions:** `PlanHeaderSchema` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` — contains all required/optional fields with validation
-    27→- **Block format:** See [Metadata Blocks Reference](../architecture/metadata-blocks.md)
-    28→- **Plan header operations:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
-    29→- **Validation:** Run `erk pr check &lt;issue-number&gt;` (see `src/erk/cli/commands/pr/check_cmd.py`)
-    30→
-
-... [9 lines omitted] ...
-  </tool_result>
-  <tool_result tool="toolu_01ByoJ3GZWCce28WwqPo4WiG">
-     1→---
-     2→title: Branch Name Inference
-     3→last_audited: "2026-02-08 00:00 PT"
-     4→audit_result: clean
-     5→tripwires:
-     6→  - action: "changing branch naming convention (plnd/ prefix)"
-     7→    warning: "The plnd/ prefix (planned-PR) is a cross-cutting contract used by branch creation, extraction functions, and PR recovery. Changing the prefix format requires updating all consumers. The legacy P{issue}- prefix has been fully removed."
-     8→  - action: "adding branch_name to plan-header at creation time"
-     9→    warning: "branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below."
-    10→  - action: "recovering a branch name from a PR number using UI or truncated display"
-    11→    warning: "Use `gh pr view &lt;pr-number&gt; --json headRefName` to recover exact branch names. UI display may truncate long branch names."
-    12→read_when:
-    13→  - "debugging missing branch_name in plans"
-    14→  - "implementing PR lookup from plans"
-    15→  - "modifying branch creation or naming conventions"
-    16→---
-    17→
-    18→# Branch Name Inference
-    19→
-    20→## The Temporal Gap Problem
-    21→
-    22→Plan metadata (`plan-header` block) intentionally omits `branch_name` at creation time because of a temporal gap in the plan lifecycle:
-    23→
-    24→1. **Plan saved** → GitHub issue created (no branch exists yet)
-    25→2. **Branch created** → User runs `erk br co --for-plan {issue}` (branch now exists)
-    26→3. **Implementation starts** → `impl-signal started` writes `branch_name` into the plan-header
-    27→
-    28→The gap between steps 1 and 2 is unavoidable: the plan must exist before the branch can be named after it (the branch name contains the issue number). Attempting to set `branch_name` during save would require either predicting the branch name (fragile — the user might choose a custom name) or creating the branch immediately (wrong — the user hasn't started work yet).
-    29→
-    30→## Two-Layer Resolution
-
-... [58 lines omitted] ...
-
-    40→If Layer 1 does not produce a match, the command fails with an actionable error.
-    65→Common failure scenarios and their fixes:
-  </tool_result>
-  <tool_result tool="toolu_01BSeVRpCYGScdK2D7F1YBQv">
-     1→---
-     2→title: Complete File Inventory Protocol
-     3→read_when:
-     4→  - "estimating effort or remaining work for a plan or PR"
-     5→  - "closing a plan as complete"
-     6→  - "creating a consolidation plan from multiple PRs"
-     7→tripwires:
-     8→  - action: "estimating effort for a plan without checking actual files changed"
-     9→    warning: "Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes."
-    10→  - action: "closing a plan issue without verifying all items were addressed"
-    11→    warning: "Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode."
-    12→last_audited: "2026-02-16 14:20 PT"
-    13→audit_result: clean
-    14→---
-    15→
-    16→# Complete File Inventory Protocol
-    17→
-    18→## Why This Matters
-    19→
-    20→Agents systematically underestimate work when they reason only from plan text without checking what actually changed. The gap between "what the plan describes" and "what the PR touches" consistently falls into the same blind spots:
-    21→
-    22→- **Configuration changes** (settings.json, pyproject.toml, CI workflows) that accompany code changes but aren't mentioned in plans
-    23→- **Generated files** (index files, tripwires files) that need regeneration after structural changes
-    24→- **Test files** that need updating alongside source changes
-    25→- **Documentation files** that need creation or updates
-    26→
-    27→These aren't edge cases — they're the norm. A plan that says "add a new gateway" implies 5+ files (abc, real, fake, tests, init), but agents counting from plan text alone often miss 1-2 of them.
-    28→
-    29→## When to Inventory
-    30→
-
-... [34 lines omitted] ...
-  </tool_result>
-  <assistant>Now I'll start making the replacements. Let me begin with the files, starting with consolidation-labels.md:</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="17378" cache_read_input_tokens="16438" cache_creation="{'ephemeral_5m_input_tokens': 17378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01UcqW5AQ4gUhffMbTY837YT">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="old_string">Learn plan consolidation has a circular reference problem: `/local:replan-learn-plans` que...[truncated 328 chars]...query fetches `erk-learn` issues, then filters out any that also carry `erk-consolidated`.</param>
-    <param name="new_string">Learn plan consolidation has a circular reference problem: `/local:replan-learn-plans` que...[truncated 325 chars]... query fetches `erk-learn` plans, then filters out any that also carry `erk-consolidated`.</param>
+  <assistant>Let me get the rest of the diff:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3990" cache_read_input_tokens="49484" cache_creation="{'ephemeral_5m_input_tokens': 3990, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T3gRLaxcYpMnLHzyKzjV2C">
+    <param name="command">git diff docs/learned/architecture/ | tail -50</param>
+    <param name="description">Show remaining git diff</param>
   </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="17378" cache_read_input_tokens="16438" cache_creation="{'ephemeral_5m_input_tokens': 17378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01WrZQfEgXH2vtuYsLf2uBLA">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="old_string">- **Multi-plan consolidation** creates a new issue that _replaces_ multiple source issues....[truncated 160 chars]...rrent codebase state and should remain eligible for future consolidation with other plans.</param>
-    <param name="new_string">- **Multi-plan consolidation** creates a new plan that _replaces_ multiple source plans. I...[truncated 156 chars]...rrent codebase state and should remain eligible for future consolidation with other plans.</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="17378" cache_read_input_tokens="16438" cache_creation="{'ephemeral_5m_input_tokens': 17378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_017dYC6Cog39GYi2AKwCGWiq">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="old_string">The label application happens in Step 7 of `/erk:replan`, after the new plan issue is created via `/erk:plan-save`.</param>
-    <param name="new_string">The label application happens in Step 7 of `/erk:replan`, after the new plan is created via `/erk:plan-save`.</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="17378" cache_read_input_tokens="16438" cache_creation="{'ephemeral_5m_input_tokens': 17378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01AeruotNXXsvN23UmL61wSF">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="old_string">The filtering happens early in `/local:replan-learn-plans` (Step 1b) to avoid wasting API calls investigating issues that will be skipped.</param>
-    <param name="new_string">The filtering happens early in `/local:replan-learn-plans` (Step 1b) to avoid wasting API calls investigating plans that will be skipped.</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="17378" cache_read_input_tokens="16438" cache_creation="{'ephemeral_5m_input_tokens': 17378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_0179RwyJXWqJEZWqsR1djeb7">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="old_string">An issue accumulates labels through its lifecycle — `erk-consolidated` is additive, not a ...[truncated 384 chars]... to make consolidated plans dispatchable via `erk pr dispatch`, which requires this label.</param>
-    <param name="new_string">A plan accumulates labels through its lifecycle — `erk-consolidated` is additive, not a re...[truncated 377 chars]... to make consolidated plans dispatchable via `erk pr dispatch`, which requires this label.</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="17378" cache_read_input_tokens="16438" cache_creation="{'ephemeral_5m_input_tokens': 17378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01NueXoXKW5yJx4wFmH2wTUU">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md</param>
-    <param name="old_string">## Edge Case: All Issues Already Consolidated
+  <usage input_tokens="6" cache_creation_input_tokens="3990" cache_read_input_tokens="49484" cache_creation="{'ephemeral_5m_input_tokens': 3990, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T3gRLaxcYpMnLHzyKzjV2C">
+ **Why delegate instead of no-op?** Dry-run mode validates workflows without mutating state. If a command would fail due to a missing resource, dry-run should surface that error before the user runs it for real.
+ 
+diff --git a/docs/learned/architecture/plan-backend-migration.md b/docs/learned/architecture/plan-backend-migration.md
+index 3c05990b2..fe635dc20 100644
+--- a/docs/learned/architecture/plan-backend-migration.md
++++ b/docs/learned/architecture/plan-backend-migration.md
+@@ -18,7 +18,7 @@ Pattern for migrating exec scripts from direct GitHub CLI calls to the `PlanBack
+ 
+ ## Context
+ 
+-Exec scripts historically used direct `gh` CLI calls to update plan issue metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
++Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
+ 
+ ## Migration Pattern
+ 
+diff --git a/docs/learned/architecture/plan-context-integration.md b/docs/learned/architecture/plan-context-integration.md
+index 1bdb51453..bf2f5ef42 100644
+--- a/docs/learned/architecture/plan-context-integration.md
++++ b/docs/learned/architecture/plan-context-integration.md
+@@ -13,7 +13,7 @@ audit_result: clean
+ 
+ # Plan Context Integration
+ 
+-The `PlanContextProvider` extracts plan content for branches linked to erk-plan issues, enabling more accurate PR descriptions that understand the "why" behind changes.
++The `PlanContextProvider` extracts plan content for branches linked to erk plans, enabling more accurate PR descriptions that understand the "why" behind changes.
+ 
+ ## 5-Step Extraction Algorithm
+ 
+@@ -57,7 +57,7 @@ The provider is designed to fail silently and return `None` when:
+ 
 
-When `/local:replan-learn-plans` finds open...[truncated 135 chars]...te condition after a consolidation has run and no new learn plans have been created since.</param>
-    <param name="new_string">## Edge Case: All Plans Already Consolidated
+... [20 lines omitted] ...
 
-When `/local:replan-learn-plans` finds open ...[truncated 133 chars]...te condition after a consolidation has run and no new learn plans have been created since.</param>
+ - API errors occur
+  </tool_result>
+  <assistant>Perfect! Let me verify all changes are correct by running a final check for any remaining "plan issue" terminology in these files:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1003" cache_read_input_tokens="53474" cache_creation="{'ephemeral_5m_input_tokens': 1003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SuPTWvb8wcFtysJBTDqRVa">
+    <param name="command">grep -i "plan issue\|erk-plan issue" docs/learned/architecture/*.md || echo "No remaining instances found"</param>
+    <param name="description">Check for remaining "plan issue" terminology</param>
   </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="17378" cache_read_input_tokens="16438" cache_creation="{'ephemeral_5m_input_tokens': 17378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01UcqW5AQ4gUhffMbTY837YT">
-The file /home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md has been updated successfully.
+  <usage input_tokens="5" cache_creation_input_tokens="1003" cache_read_input_tokens="53474" cache_creation="{'ephemeral_5m_input_tokens': 1003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SuPTWvb8wcFtysJBTDqRVa">
+docs/learned/architecture/pr-body-assembly.md:PR bodies no longer contain `Closes #N` references. Plan issue closure is handled directly via the GitHub API in `erk land` (see `objective_helpers.py`). This avoids unreliable GitHub auto-close behavior.
   </tool_result>
-  <tool_result tool="toolu_01WrZQfEgXH2vtuYsLf2uBLA">
-The file /home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_017dYC6Cog39GYi2AKwCGWiq">
-The file /home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_01AeruotNXXsvN23UmL61wSF">
-The file /home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_0179RwyJXWqJEZWqsR1djeb7">
-The file /home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_01NueXoXKW5yJx4wFmH2wTUU">
-The file /home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md has been updated successfully.
-  </tool_result>
-  <assistant>Now let me continue with cross-artifact-analysis.md:</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="2079" cache_read_input_tokens="33816" cache_creation="{'ephemeral_5m_input_tokens': 2079, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01FiyfeapSfJeFixA2gdMHmJ">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md</param>
-    <param name="old_string">| Relationship | Description                                 | Detection Method           ...[truncated 453 chars]...R and plan address unrelated concerns      | No meaningful overlap in changes            |</param>
-    <param name="new_string">| Relationship | Description                                 | Detection Method           ...[truncated 453 chars]...R and plan address unrelated concerns      | No meaningful overlap in changes            |</param>
+  <assistant>I found one more instance in pr-body-assembly.md. Let me fix that:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="208" cache_read_input_tokens="54477" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011EorHCRvbenayHqsfUFCZh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md</param>
+    <param name="old_string">PR bodies no longer contain `Closes #N` references. Plan issue closure is handled directly...[truncated 4 chars]...erk land` (see `objective_helpers.py`). This avoids unreliable GitHub auto-close behavior.</param>
+    <param name="new_string">PR bodies no longer contain `Closes #N` references. Plan closure is handled directly via the GitHub API in `erk land` (see `objective_helpers.py`). This avoids unreliable GitHub auto-close behavior.</param>
   </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="2079" cache_read_input_tokens="33816" cache_creation="{'ephemeral_5m_input_tokens': 2079, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01FiyfeapSfJeFixA2gdMHmJ">
-The file /home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md has been updated successfully.
+  <usage input_tokens="4" cache_creation_input_tokens="208" cache_read_input_tokens="54477" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011EorHCRvbenayHqsfUFCZh">
+The file /home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md has been updated successfully.
   </tool_result>
-  <assistant>Now learn-plan-metadata-fields.md:</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="413" cache_read_input_tokens="35895" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_016NRSn9Wn8KwFC9NDKLxqjo">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">### `learn_plan_issue`
+  <assistant>Now let me verify there are no more remaining instances:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="382" cache_read_input_tokens="54685" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RaHGkofrMPjSt2rztnd9du">
+    <param name="command">grep -i "plan issue\|erk-plan issue" docs/learned/architecture/*.md || echo "No remaining instances found"</param>
+    <param name="description">Final check for remaining "plan issue" terminology</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="382" cache_read_input_tokens="54685" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RaHGkofrMPjSt2rztnd9du">
+No remaining instances found
+  </tool_result>
+  <assistant>Perfect! Now let me verify the GATEWAY/PRINTING changes are correct:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="133" cache_read_input_tokens="55067" cache_creation="{'ephemeral_5m_input_tokens': 133, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NEQJKRUL4CBWfxgG5P1Xvm">
+    <param name="command">grep -n "5-layer\|printing utilities\|dry-run/printing" docs/learned/architecture/*.md || echo "No remaining instances found"</param>
+    <param name="description">Check for GATEWAY/PRINTING references</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="133" cache_read_input_tokens="55067" cache_creation="{'ephemeral_5m_input_tokens': 133, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NEQJKRUL4CBWfxgG5P1Xvm">
+docs/learned/architecture/gateway-decomposition-phases.md:30:The objective used **linear extraction** — one complete subgateway per PR, with full 5-layer implementation (ABC, Real, Fake, DryRun, Printing) in a single changeset. Earlier attempts at parallel extraction created merge conflicts as multiple PRs touched the same callsites.
+docs/learned/architecture/gateway-decomposition-phases.md:34:1. Create subgateway directory with 5-layer implementation
+docs/learned/architecture/gateway-decomposition-phases.md:46:| 1     | Worktree     | add, remove, list, get_root                  | —     | Established 5-layer pattern and property composition       |
+docs/learned/architecture/gateway-decomposition-phases.md:117:2. **5-layer implementation in single PR** — Implementing all layers together prevented partial migrations
+docs/learned/architecture/gateway-decomposition-phases.md:134:2. Extract **one group at a time** with full 5-layer implementation
+docs/learned/architecture/gateway-decomposition-phases.md:141:- [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) — The 5-layer implementation contract for subgateway properties
+docs/learned/architecture/lbyl-gateway-pattern.md:104:- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-layer implementation pattern
+  </tool_result>
+  <assistant>Good! The remaining references to "5-layer" are in gateway-decomposition-phases.md which was not in the requested list, and the lbyl-gateway-pattern.md reference is at line 104 which is after the section I edited. Let me check if there are any of the specific references I was supposed to change that I might have missed:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="577" cache_read_input_tokens="55200" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PmciyDf6xzuyGNAqdeknbV">
+    <param name="command">grep -n "printing gateway\|printing utilities\|dry-run/printing" docs/learned/architecture...[truncated 52 chars]....md docs/learned/architecture/erk-shared-package.md || echo "No remaining instances found"</param>
+    <param name="description">Check target files for remaining printer references</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="577" cache_read_input_tokens="55200" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PmciyDf6xzuyGNAqdeknbV">
+No remaining instances found
+  </tool_result>
+  <assistant>Excellent! Let me create a summary of all the changes made:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="234" cache_read_input_tokens="55777" cache_creation="{'ephemeral_5m_input_tokens': 234, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016EhoSodnFe3s94vwKGCEDe">
+    <param name="command">git diff docs/learned/architecture/ --stat</param>
+    <param name="description">Show summary of changes</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="234" cache_read_input_tokens="55777" cache_creation="{'ephemeral_5m_input_tokens': 234, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016EhoSodnFe3s94vwKGCEDe">
+Exit code 128
+fatal: option '--stat' must come before non-option arguments
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MizNQgpAEuvgEm6eiAMdrW">
+    <param name="command">git diff --stat docs/learned/architecture/</param>
+    <param name="description">Show summary of changes</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="236" cache_read_input_tokens="56011" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MizNQgpAEuvgEm6eiAMdrW">
+ docs/learned/architecture/abc-convenience-methods.md            | 2 +-
+ docs/learned/architecture/discriminated-union-error-handling.md | 4 ++--
+ docs/learned/architecture/erk-shared-package.md                 | 1 -
+ docs/learned/architecture/fail-open-patterns.md                 | 8 ++++----
+ docs/learned/architecture/gateway-vs-backend.md                 | 2 +-
+ docs/learned/architecture/github-cli-limits.md                  | 2 +-
+ docs/learned/architecture/github-issue-autoclose.md             | 6 +++---
+ docs/learned/architecture/index.md                              | 2 +-
+ docs/learned/architecture/lbyl-gateway-pattern.md               | 4 ++--
+ docs/learned/architecture/plan-backend-migration.md             | 2 +-
+ docs/learned/architecture/plan-context-integration.md           | 4 ++--
+ docs/learned/architecture/pr-body-assembly.md                   | 2 +-
+ docs/learned/architecture/session-discovery.md                  | 2 +-
+ 13 files changed, 20 insertions(+), 21 deletions(-)
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary document:
 
-For learn plans, the issue number of the original plan that genera...[truncated 61 chars]....
+## Summary
 
-- `int` - The parent plan's issue number
-- `None` - Not a learn plan, or source unknown</param>
-    <param name="new_string">### `learn_plan_issue`
+I have successfully completed the terminology replacement task. All instances of "plan issue" have been replaced with "plan" in the 8 specified architecture documentation files, along with additional GATEWAY/PRINTING reference updates in related files.
 
-For learn plans, the plan number of the original plan that generat...[truncated 59 chars]...n.
+### Files Modified: 13 architecture documentation files
 
-- `int` - The parent plan's plan number
-- `None` - Not a learn plan, or source unknown</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="413" cache_read_input_tokens="35895" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01MNprdfyvhgqsjJWQFh8D4p">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">GitHub Actions workflow run URL that created this plan. Provides a backlink from the plan issue to the workflow that generated it.</param>
-    <param name="new_string">GitHub Actions workflow run URL that created this plan. Provides a backlink from the plan to the workflow that generated it.</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="413" cache_read_input_tokens="35895" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01A49oZy91RtCWxyFhopkKyr">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">This field enables:
+#### Main "Plan Issue" Terminology Replacements (8 required files + 1 additional):
 
-- Debugging failed plan creations by linking to the workflow run
-- Tr...[truncated 6 chars]...tically generated plans
-- Quick navigation from plan issue to the workflow that created it</param>
-    <param name="new_string">This field enables:
+1. **fail-open-patterns.md** - 4 replacements:
+   - "closing the plan issue" → "closing the plan"
+   - "Close plan issue" → "Close plan" (2x)
+   - "PR lookup for the same plan issue" → "PR lookup for the same plan"
 
-- Debugging failed plan creations by linking to the workflow run
-- Tracing provenance of automatically generated plans
-- Quick navigation from plan to the workflow that created it</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="413" cache_read_input_tokens="35895" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01GaUqEL4dGngX4opM576GL5">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">| Field                | Where It Lives                       | What It Stores            ...[truncated 315 chars]...in-memory)              | Same value, surfaced through the gateway | Learn plan → parent |</param>
-    <param name="new_string">| Field                | Where It Lives                       | What It Stores            ...[truncated 315 chars]...in-memory)              | Same value, surfaced through the gateway | Learn plan → parent |</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="413" cache_read_input_tokens="35895" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_014VUBv78qWuZmxURugqodSc">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">`learned_from_issue` is the **storage-layer** field name (in the plan-header metadata bloc...[truncated 31 chars]...ssue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).</param>
-    <param name="new_string">`learned_from_issue` is the **storage-layer** field name (in the plan-header metadata bloc...[truncated 23 chars]...ssue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="413" cache_read_input_tokens="35895" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_016NRSn9Wn8KwFC9NDKLxqjo">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_result tool="toolu_01MNprdfyvhgqsjJWQFh8D4p">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_result tool="toolu_01A49oZy91RtCWxyFhopkKyr">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_result tool="toolu_01GaUqEL4dGngX4opM576GL5">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_result tool="toolu_014VUBv78qWuZmxURugqodSc">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <assistant>Let me read the file again to get the latest version:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="1528" cache_read_input_tokens="36308" cache_creation="{'ephemeral_5m_input_tokens': 1528, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01P2KAoRXxL4FGw6PYwGH5oB">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1528" cache_read_input_tokens="36308" cache_creation="{'ephemeral_5m_input_tokens': 1528, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01P2KAoRXxL4FGw6PYwGH5oB">
-     1→---
-     2→title: Learn Plan Metadata Preservation
-     3→last_audited: "2026-02-17 16:00 PT"
-     4→audit_result: clean
-     5→read_when:
-     6→  - "working with learn plan metadata"
-     7→  - "troubleshooting null learn_status or learn_plan_issue"
-     8→  - "transforming Plan objects in pipelines"
-     9→  - "understanding created_from_workflow_run_url field"
-    10→  - "adding workflow run backlinks to plans"
-    11→tripwires:
-    12→  - action: "reading learn_plan_issue or learn_status"
-    13→    warning: "Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects."
-    14→---
-    15→
-    16→# Learn Plan Metadata Preservation
-    17→
-    18→Learn plans have metadata fields that must survive all pipeline transformations. When these fields become null unexpectedly, data was lost during a transformation stage.
-    19→
-    20→## Critical Metadata Fields
-    21→
-    22→### `learn_status`
-    23→
-    24→Tracks the status of learn plan processing:
-    25→
-    26→- `"pending"` - Learn plan not yet processed
-    27→- `"completed"` - Learn plan has been reviewed and documentation created
-    28→- `None` - Not a learn plan, or status unknown
-    29→
-    30→### `learn_plan_issue`
+2. **github-issue-autoclose.md** - 3 replacements:
+   - "understanding plan issue closure strategy" → "understanding plan closure strategy"
+   - "auto-close plan issues on merge" → "auto-close plans on merge"
+   - "Plan issues are now closed" → "Plans are now closed"
 
-... [138 lines omitted] ...
+3. **github-cli-limits.md** - 1 replacement:
+   - "link it to a plan issue" → "link it to a plan"
 
-    59→- Debugging failed plan creations by linking to the workflow run
-  </tool_result>
-  <assistant>Now I'll make the edits to learn-plan-metadata-fields.md:</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="2165" cache_read_input_tokens="37836" cache_creation="{'ephemeral_5m_input_tokens': 2165, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_011asaWD58osaDNjJhEFrGDU">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">### `learn_plan_issue`
+4. **plan-backend-migration.md** - 1 replacement:
+   - "update plan issue metadata" → "update plan metadata"
 
-For learn plans, the issue number of the original plan that genera...[truncated 61 chars]....
+5. **plan-context-integration.md** - 2 replacements:
+   - "linked to erk-plan issues" → "linked to erk plans"
+   - "erk-plan issue (no `plan_comment_id`)" → "erk plan (no `plan_comment_id`)"
 
-- `int` - The parent plan's issue number
-- `None` - Not a learn plan, or source unknown</param>
-    <param name="new_string">### `learn_plan_issue`
+6. **session-discovery.md** - 1 replacement:
+   - "Sessions are tracked in the plan issue" → "Sessions are tracked in the plan"
 
-For learn plans, the plan number of the original plan that generat...[truncated 59 chars]...n.
+7. **index.md** - 1 replacement:
+   - "understanding plan issue closure strategy" → "understanding plan closure strategy"
 
-- `int` - The parent plan's plan number
-- `None` - Not a learn plan, or source unknown</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="2165" cache_read_input_tokens="37836" cache_creation="{'ephemeral_5m_input_tokens': 2165, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01KagQP4Az5WrvfZ4HwvR9cZ">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">| Field                | Where It Lives                       | What It Stores            ...[truncated 315 chars]...in-memory)              | Same value, surfaced through the gateway | Learn plan → parent |</param>
-    <param name="new_string">| Field                | Where It Lives                       | What It Stores            ...[truncated 315 chars]...in-memory)              | Same value, surfaced through the gateway | Learn plan → parent |</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="2165" cache_read_input_tokens="37836" cache_creation="{'ephemeral_5m_input_tokens': 2165, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01XAxg9W8jncrPE9QxcXJu3x">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
-    <param name="old_string">`learned_from_issue` is the **storage-layer** field name (in the plan-header metadata bloc...[truncated 31 chars]...ssue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).</param>
-    <param name="new_string">`learned_from_issue` is the **storage-layer** field name (in the plan-header metadata bloc...[truncated 23 chars]...ssue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="2165" cache_read_input_tokens="37836" cache_creation="{'ephemeral_5m_input_tokens': 2165, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_011asaWD58osaDNjJhEFrGDU">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_01KagQP4Az5WrvfZ4HwvR9cZ">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_01XAxg9W8jncrPE9QxcXJu3x">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md has been updated successfully.
-  </tool_result>
-  <assistant>Now let me continue with the remaining files. Let me check learn-plan-validation.md:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="1076" cache_read_input_tokens="40001" cache_creation="{'ephemeral_5m_input_tokens': 1076, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_013gFKJyoG4U6oL7uoEZLryU">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">## Core Rule: No Learn-on-Learn
+8. **pr-body-assembly.md** (found during verification) - 1 replacement:
+   - "Plan issue closure is handled" → "Plan closure is handled"
 
-Learn plans exist to extract insights from **implementati...[truncated 90 chars]...on cycles where plans endlessly analyze each other instead of analyzing real code changes.</param>
-    <param name="new_string">## Core Rule: No Learn-on-Learn
+#### GATEWAY/PRINTING Reference Updates (5 files):
 
-Learn plans exist to extract insights from **implementati...[truncated 89 chars]...on cycles where plans endlessly analyze each other instead of analyzing real code changes.</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1076" cache_read_input_tokens="40001" cache_creation="{'ephemeral_5m_input_tokens': 1076, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_0192qyhoMocmyahYXvnnEMCK">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">| Enforcement Point                 | What It Checks                                   | W...[truncated 604 chars]...                 | Shared utility for branch/submit workflows                            |</param>
-    <param name="new_string">| Enforcement Point                 | What It Checks                                   | W...[truncated 604 chars]...                 | Shared utility for branch/submit workflows                            |</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1076" cache_read_input_tokens="40001" cache_creation="{'ephemeral_5m_input_tokens': 1076, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_019e6xNUSmzoY7fn7xHzeiZC">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the issu...[truncated 30 chars]... `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.</param>
-    <param name="new_string">The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the plan...[truncated 29 chars]... `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1076" cache_read_input_tokens="40001" cache_creation="{'ephemeral_5m_input_tokens': 1076, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01HyNoBzDJJQxVHiDm2Tthmx">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">The land command's learn check skips entirely for issues bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.</param>
-    <param name="new_string">The land command's learn check skips entirely for plans bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1076" cache_read_input_tokens="40001" cache_creation="{'ephemeral_5m_input_tokens': 1076, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01EWGXm6Bhx9T3RbfHDgCZg1">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">## Anti-Patterns
+1. **discriminated-union-error-handling.md** - 2 updates:
+   - Line 13: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing)" → "Update all implementations (ABC, real, fake; add dry_run only for dry-run-participating gateways)"
+   - Line 277: Same replacement in migration checklist
 
-**Creating a learn plan that targets another learn plan.** Even if the g...[truncated 409 chars]...ted across entry points rather than centralized, so new entry points need their own check.</param>
-    <param name="new_string">## Anti-Patterns
+2. **lbyl-gateway-pattern.md** - 2 updates:
+   - "The 5-layer gateway architecture" → "The gateway architecture"
+   - "Dry-run and printing gateways delegate" → "Dry-run gateways delegate"
 
-**Creating a learn plan that targets another learn plan.** Even if the g...[truncated 405 chars]...ted across entry points rather than centralized, so new entry points need their own check.</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1076" cache_read_input_tokens="40001" cache_creation="{'ephemeral_5m_input_tokens': 1076, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_013gFKJyoG4U6oL7uoEZLryU">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_result tool="toolu_0192qyhoMocmyahYXvnnEMCK">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_result tool="toolu_019e6xNUSmzoY7fn7xHzeiZC">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_result tool="toolu_01HyNoBzDJJQxVHiDm2Tthmx">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <tool_result tool="toolu_01EWGXm6Bhx9T3RbfHDgCZg1">
-&lt;tool_use_error&gt;File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.&lt;/tool_use_error&gt;
-  </tool_result>
-  <assistant>Let me re-read learn-plan-validation.md:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="2193" cache_read_input_tokens="41077" cache_creation="{'ephemeral_5m_input_tokens': 2193, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01Ly3t1C5CNRxLWCyfAsnj4i">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="2193" cache_read_input_tokens="41077" cache_creation="{'ephemeral_5m_input_tokens': 2193, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Ly3t1C5CNRxLWCyfAsnj4i">
-     1→---
-     2→title: Learn Plan Validation
-     3→read_when:
-     4→  - "creating or modifying erk-learn plans"
-     5→  - "working on the learn workflow pipeline"
-     6→  - "debugging learn-on-learn cycle errors"
-     7→tripwires:
-     8→  - action: "creating erk-learn plan for an issue that already has erk-learn label"
-     9→    warning: "Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention)."
-    10→last_audited: "2026-02-16 14:20 PT"
-    11→audit_result: clean
-    12→---
-    13→
-    14→# Learn Plan Validation
-    15→
-    16→## Core Rule: No Learn-on-Learn
-    17→
-    18→Learn plans exist to extract insights from **implementation work** (erk-plan plans). A learn plan must never target another learn plan — this would create documentation cycles where plans endlessly analyze each other instead of analyzing real code changes.
-    19→
-    20→The cycle risk is real because the learn pipeline is automated: after a PR lands, the system can automatically create a learn plan. If learn plans could target other learn plans, the pipeline would generate infinite chains (learn A analyzes learn B which analyzes learn A).
-    21→
-    22→## Where Validation Lives
-    23→
-    24→Cycle prevention is enforced at multiple points because learn plans flow through several different code paths. Each enforcement point serves a different workflow entry:
-    25→
-    26→| Enforcement Point                 | What It Checks                                   | Why There                                                             |
-    27→| --------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
-    28→| `/erk:learn` skill (Step 1)       | Target issue labels include `erk-learn` → reject | Primary entry: agent-driven learn invocation                          |
-    29→| `erk land` pre-flight             | Issue has `erk-learn` label → skip learn prompt  | Prevents "did you learn from this?" prompt for learn plans themselves |
-    30→| `is_issue_learn_plan()` in submit | Label check helper                               | Shared utility for branch/submit workflows                            |
+3. **gateway-vs-backend.md** - 1 update:
+   - "missing dry-run/printing support" → "missing dry-run support"
 
-... [35 lines omitted] ...
+4. **abc-convenience-methods.md** - 1 update:
+   - "dry-run/printing wrapper behavior" → "dry-run wrapper behavior"
 
-    34→The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the issue via `erk exec get-issue-body` and inspecting the `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.
-  </tool_result>
-  <assistant>Now I'll make the edits to learn-plan-validation.md:</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="1336" cache_read_input_tokens="43270" cache_creation="{'ephemeral_5m_input_tokens': 1336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_017kJB3QTKdnfLbZeXHfgW1w">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">| Enforcement Point                 | What It Checks                                   | W...[truncated 604 chars]...                 | Shared utility for branch/submit workflows                            |</param>
-    <param name="new_string">| Enforcement Point                 | What It Checks                                   | W...[truncated 604 chars]...                 | Shared utility for branch/submit workflows                            |</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="1336" cache_read_input_tokens="43270" cache_creation="{'ephemeral_5m_input_tokens': 1336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_014N69U2F87rbZvZfgfWKes3">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the issu...[truncated 30 chars]... `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.</param>
-    <param name="new_string">The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the plan...[truncated 29 chars]... `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="1336" cache_read_input_tokens="43270" cache_creation="{'ephemeral_5m_input_tokens': 1336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_016y24CxzomJ1eM4u9XkfMeR">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">The land command's learn check skips entirely for issues bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.</param>
-    <param name="new_string">The land command's learn check skips entirely for plans bearing the `erk-learn` label, since learn plans are not themselves subject to the "did you learn?" prompt.</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="1336" cache_read_input_tokens="43270" cache_creation="{'ephemeral_5m_input_tokens': 1336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01HfF5CkYEaHPFRvKSAqh48C">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
-    <param name="old_string">**Creating a learn plan that targets another learn plan.** Even if the goal is "meta-analy...[truncated 391 chars]...ted across entry points rather than centralized, so new entry points need their own check.</param>
-    <param name="new_string">**Creating a learn plan that targets another learn plan.** Even if the goal is "meta-analy...[truncated 387 chars]...ted across entry points rather than centralized, so new entry points need their own check.</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="1336" cache_read_input_tokens="43270" cache_creation="{'ephemeral_5m_input_tokens': 1336, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_017kJB3QTKdnfLbZeXHfgW1w">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_014N69U2F87rbZvZfgfWKes3">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_016y24CxzomJ1eM4u9XkfMeR">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md has been updated successfully.
-  </tool_result>
-  <tool_result tool="toolu_01HfF5CkYEaHPFRvKSAqh48C">
-The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md has been updated successfully.
-  </tool_result>
-  <assistant>Good! Now let me continue with the remaining files. Let me edit plan-backend-migration.md:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="1523" cache_read_input_tokens="44606" cache_creation="{'ephemeral_5m_input_tokens': 1523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01XGcwT1k4wfgJQxq8bZSZz2">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
-    <param name="old_string">## PlanBackend Methods
+5. **erk-shared-package.md** - 1 update:
+   - Removed the line: "├── printing/      # Printing utilities"
 
-Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_sha...[truncated 979 chars]... not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).</param>
-    <param name="new_string">## PlanBackend Methods
+### Verification:
+- All replacements maintain case sensitivity as specified
+- Preserved "objective issue", "GitHub issue/Issue" terminology unchanged
+- Preserved code references like `IssueInfo`, `GitHubIssues`, `IssueNotFound` unchanged
+- Preserved `issue_number` variable names in code blocks unchanged
+- No remaining instances of "plan issue" terminology found in any modified files
 
-Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_sha...[truncated 979 chars]... not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1523" cache_read_input_tokens="44606" cache_creation="{'ephemeral_5m_input_tokens': 1523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01XGcwT1k4wfgJQxq8bZSZz2">
-&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
-  </tool_result>
-  <assistant>That file doesn't need changes in that section. Let me check for other replacements needed. Let me search through plan-backend-migration.md more carefully by examining the content around "issue":</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="801" cache_read_input_tokens="46129" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_01UsdctkBWXTu1puT6Kc8Tdo">
-    <param name="pattern">issue_number|issue_updated|issue_update_error</param>
-    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
-    <param name="output_mode">content</param>
-  </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="801" cache_read_input_tokens="46129" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01UsdctkBWXTu1puT6Kc8Tdo">
-26:issue = gh.get_issue(repo_root, issue_number)
-47:plan_id = str(issue_number)
-52:    output_error("issue-not-found", f"Issue #{issue_number} not found")
-94:    result["issue_updated"] = False
-95:    result["issue_update_error"] = f"Issue #{issue_number} not found"
-99:        result["issue_updated"] = True
-101:        result["issue_updated"] = False
-102:        result["issue_update_error"] = str(e)
-  </tool_result>
-  <assistant>I see - these are variable names in code blocks, which should be preserved according to the rules. Let me continue checking other files. Let me now check plan-header-privatization.md:</assistant>
-  <usage input_tokens="4" cache_creation_input_tokens="416" cache_read_input_tokens="46930" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_014P7f9kFbj8gPXc1aWGSG83">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md</param>
-    <param name="old_string">## External Callers Inventory
-
-Callers that need migration (grep for `plan_header` imports...[truncated 10 chars]...rite plan metadata
-- CLI commands that display plan header fields
-- Learn workflow scripts</param>
-    <param name="new_string">## External Callers Inventory
-
-Callers that need migration (grep for `plan_header` imports...[truncated 10 chars]...rite plan metadata
-- CLI commands that display plan header fields
-- Learn workflow scripts</param>
-  </tool_use>
-  <usage input_tokens="4" cache_creation_input_tokens="416" cache_read_input_tokens="46930" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_014P7f9kFbj8gPXc1aWGSG83">
-&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
-  </tool_result>
-  <assistant>That file doesn't have any "plan issue" terminology. Let me check plan-schema.md:</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="301" cache_read_input_tokens="47346" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_01Jw2HDTMrs5N9xKBVgbCrw9">
-    <param name="pattern">plan.?issue</param>
-    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/plan-schema.md</param>
-    <param name="output_mode">content</param>
-    <param name="ignore_case">True</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="301" cache_read_input_tokens="47346" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Jw2HDTMrs5N9xKBVgbCrw9">
-&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
-An unexpected parameter `ignore_case` was provided&lt;/tool_use_error&gt;
-  </tool_result>
-  <assistant>Let me use the correct parameter:</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="316" cache_read_input_tokens="47647" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_01Aw4DpKfx8H4ddMsfy1nw3i">
-    <param name="pattern">plan.?issue</param>
-    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/plan-schema.md</param>
-    <param name="output_mode">content</param>
-    <param name="type">md</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="316" cache_read_input_tokens="47647" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Aw4DpKfx8H4ddMsfy1nw3i">
-No matches found
-  </tool_result>
-  <assistant>Good, plan-schema.md doesn't have "plan issue" terminology. Let me check branch-name-inference.md:</assistant>
-  <usage input_tokens="4" cache_creation_input_tokens="155" cache_read_input_tokens="47963" cache_creation="{'ephemeral_5m_input_tokens': 155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_016H1NaC3Bbz5txbUbYRNu9r">
-    <param name="pattern">plan.?issue</param>
-    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md</param>
-    <param name="output_mode">content</param>
-  </tool_use>
-  <usage input_tokens="4" cache_creation_input_tokens="155" cache_read_input_tokens="47963" cache_creation="{'ephemeral_5m_input_tokens': 155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_016H1NaC3Bbz5txbUbYRNu9r">
-No matches found
-  </tool_result>
-  <assistant>Good. Let me check complete-inventory-protocol.md:</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="263" cache_read_input_tokens="48118" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+Total changes: 13 files modified, 20 insertions, 21 deletions</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="56247" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>

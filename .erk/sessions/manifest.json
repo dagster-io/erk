@@ -5,8 +5,8 @@
     {
       "session_id": "4dfe31b4-3f6b-466e-9a15-a6baa69c8303",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-08T11:15:38.184296+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T11:18:34.480211+00:00",
       "files": [
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part1.xml",
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part10.xml",
@@ -18,7 +18,10 @@
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part16.xml",
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part17.xml",
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part18.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part19.xml",
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part2.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part20.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part21.xml",
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part3.xml",
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part4.xml",
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part5.xml",
@@ -28,9 +31,9 @@
         "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part9.xml"
       ],
       "user_turns": 4,
-      "duration_minutes": 14,
-      "raw_size_kb": 1837,
-      "xml_size_kb": 990,
+      "duration_minutes": 17,
+      "raw_size_kb": 1877,
+      "xml_size_kb": 1012,
       "git_branch": "plnd/consolidate-learn-docs-03-08-1055"
     }
   ]
