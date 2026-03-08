@@ -15,6 +15,20 @@
       "raw_size_kb": 307,
       "xml_size_kb": 29,
       "git_branch": "master"
+    },
+    {
+      "session_id": "6b635ff6-a854-4cfd-a1f8-bea0e3f828b2",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T01:16:35.959870+00:00",
+      "files": [
+        "impl-6b635ff6-a854-4cfd-a1f8-bea0e3f828b2-6b635ff6-a854-4cfd-a1f8-bea0e3f828b2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 75,
+      "xml_size_kb": 27,
+      "git_branch": "plnd/fix-mcp-uv-sources-03-07-2012"
     }
   ]
 }
