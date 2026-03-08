@@ -92,25 +92,30 @@ def rebase(ctx: ErkContext, *, dangerous: bool, safe: bool, target: str | None) 
     graphite_enabled = _is_graphite_enabled(ctx)
 
     if graphite_enabled:
-        branch = ctx.git.branch.get_current_branch(cwd)
-        Ensure.invariant(
-            branch is not None and ctx.graphite.is_branch_tracked(ctx.repo_root, branch),
-            "Current branch is not tracked by Graphite. Track it with: gt track",
-        )
-        click.echo(click.style("Restacking with Graphite...", fg="yellow"))
-        result = subprocess.run(
-            ["gt", "restack", "--no-interactive"],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode == 0:
-            click.echo(click.style("Restack complete!", fg="green", bold=True))
-            return
-        if not ctx.git.rebase.is_rebase_in_progress(cwd):
-            raise click.ClickException(f"gt restack failed:\n{result.stderr}")
-        click.echo(click.style("Restack hit conflicts. Launching Claude...", fg="yellow"))
+        # If a rebase is already in progress (e.g., gt restack hit conflicts),
+        # skip tracking check and go straight to conflict resolution
+        if ctx.git.rebase.is_rebase_in_progress(cwd):
+            click.echo(click.style("Restack in progress. Launching Claude...", fg="yellow"))
+        else:
+            branch = ctx.git.branch.get_current_branch(cwd)
+            Ensure.invariant(
+                branch is not None and ctx.graphite.is_branch_tracked(ctx.repo_root, branch),
+                "Current branch is not tracked by Graphite. Track it with: gt track",
+            )
+            click.echo(click.style("Restacking with Graphite...", fg="yellow"))
+            result = subprocess.run(
+                ["gt", "restack", "--no-interactive"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.returncode == 0:
+                click.echo(click.style("Restack complete!", fg="green", bold=True))
+                return
+            if not ctx.git.rebase.is_rebase_in_progress(cwd):
+                raise click.ClickException(f"gt restack failed:\n{result.stderr}")
+            click.echo(click.style("Restack hit conflicts. Launching Claude...", fg="yellow"))
     else:
         if not ctx.git.rebase.is_rebase_in_progress(cwd):
             if target is None:

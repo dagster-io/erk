@@ -7,7 +7,10 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import RebaseResult
 from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.prompt_executor import FakePromptExecutor
-from tests.test_utils.context_builders import build_workspace_test_context
+from tests.test_utils.context_builders import (
+    build_graphite_test_context,
+    build_workspace_test_context,
+)
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -305,4 +308,57 @@ def test_pr_rebase_conflict_no_conflicted_files_still_confirms() -> None:
         assert result.exit_code == 0
         assert "Conflicted files:" not in result.output
         assert "Launch Claude to resolve conflicts?" in result.output
+        assert len(executor.interactive_calls) == 1
+
+
+def test_pr_rebase_graphite_restack_in_progress_launches_tui() -> None:
+    """Test that gt restack in-progress state bypasses tracking check and launches Claude."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={},  # No current branch = detached HEAD
+            rebase_in_progress=True,
+            conflicted_files=["docs/learned/cli/tripwires.md", "docs/learned/tripwires-index.md"],
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_graphite_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx, input="y\n")
+
+        assert result.exit_code == 0
+        assert "Restack in progress" in result.output
+        assert "Launch Claude to resolve conflicts?" in result.output
+        assert len(executor.interactive_calls) == 1
+        call = executor.interactive_calls[0]
+        assert call[2] == "/erk:pr-rebase"  # command
+
+
+def test_pr_rebase_graphite_restack_in_progress_with_branch_launches_tui() -> None:
+    """Test restack in-progress with valid branch name still bypasses tracking check."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            rebase_in_progress=True,
+            conflicted_files=["file.py"],
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_graphite_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx, input="y\n")
+
+        assert result.exit_code == 0
+        assert "Restack in progress" in result.output
         assert len(executor.interactive_calls) == 1
