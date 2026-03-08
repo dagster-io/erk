@@ -18,6 +18,23 @@
       "raw_size_kb": 527,
       "xml_size_kb": 106,
       "git_branch": "plnd/O8381-rename-plan-issues-m-03-08-0929"
+    },
+    {
+      "session_id": "66b135be-c6f1-4e00-b7da-b61018c0edee",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T10:13:39.829757+00:00",
+      "files": [
+        "address-66b135be-c6f1-4e00-b7da-b61018c0edee-66b135be-c6f1-4e00-b7da-b61018c0edee-part1.xml",
+        "address-66b135be-c6f1-4e00-b7da-b61018c0edee-66b135be-c6f1-4e00-b7da-b61018c0edee-part2.xml",
+        "address-66b135be-c6f1-4e00-b7da-b61018c0edee-66b135be-c6f1-4e00-b7da-b61018c0edee-part3.xml",
+        "address-66b135be-c6f1-4e00-b7da-b61018c0edee-66b135be-c6f1-4e00-b7da-b61018c0edee-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 191,
+      "xml_size_kb": 86,
+      "git_branch": "plnd/O8381-rename-plan-issues-m-03-08-0929"
     }
   ]
 }
