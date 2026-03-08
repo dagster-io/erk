@@ -23,17 +23,17 @@ Plans represent implementation work to be done. Since users interact with plans 
 ```bash
 erk dash          # Display plan dashboard
 erk implement     # Implement a plan in current directory
-erk prepare       # Create a worktree from a plan issue
+erk prepare       # Create a worktree from a plan
 
 # Plan submission operations are under `erk pr`:
 erk pr dispatch   # Submit a plan for remote execution
 
 # Plan creation, view/close/log/replan operations are under `erk pr`:
-erk pr create     # Create a new plan issue
+erk pr create     # Create a new plan
 erk pr view       # View a plan
 erk pr close      # Close a plan
 erk pr log        # View plan execution logs
-erk pr replan     # Replan a plan issue
+erk pr replan     # Replan a plan
 ```
 
 **Why top-level?**
@@ -52,7 +52,7 @@ Only the highest-frequency workflow entry points are at the top level:
 | ----------- | ------------------------------------- | --------- |
 | `dash`      | Display plan dashboard                | Very High |
 | `implement` | Implement a plan in current directory | Very High |
-| `prepare`   | Create a worktree from a plan issue   | High      |
+| `prepare`   | Create a worktree from a plan         | High      |
 
 ### `erk pr` Subcommands
 
@@ -60,12 +60,12 @@ Plan and PR operations are under the `erk pr` group:
 
 | Subcommand        | Description                                    |
 | ----------------- | ---------------------------------------------- |
-| `create`          | Create a new plan issue                        |
+| `create`          | Create a new plan                              |
 | `view`            | View a plan                                    |
 | `close`           | Close a plan                                   |
 | `list`            | List open plans                                |
 | `log`             | View plan execution logs                       |
-| `replan`          | Replan an existing plan issue                  |
+| `replan`          | Replan an existing plan                        |
 | `dispatch`        | Submit a plan for remote execution             |
 | `submit`          | Submit current branch as a pull request        |
 | `address`         | Address PR review comments with AI resolution  |

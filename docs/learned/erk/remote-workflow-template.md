@@ -83,9 +83,9 @@ maybe_update_plan_dispatch_metadata(ctx, repo, branch_name, run_id)
 
 This automatically:
 
-- Extracts plan issue number from `P{number}-*` branch names
+- Extracts plan number from `P{number}-*` branch names
 - Gets workflow run node ID from GitHub API
-- Updates plan-header metadata block on the issue
+- Updates plan-header metadata block on the plan
 - Skips gracefully if any step doesn't apply
 
 ### Workflow Inputs
