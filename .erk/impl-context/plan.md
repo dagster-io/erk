@@ -1,64 +1,63 @@
-# Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees
+# Apply `erk-pr` Label to All Erk-Submitted PRs
 
 ## Context
 
-`erk stack consolidate` fails to detect worktrees that are mid-rebase on a stack branch. When a worktree (e.g., `erk-slot-14`) is in the middle of rebasing `plnd/consolidate-learn-docs-03-07-2145`, git puts it in detached HEAD state but still considers the branch "in use" by that worktree. `git worktree list --porcelain` reports `branch=None` for these worktrees, so `identify_removable_worktrees` skips them entirely. This means `erk stack consolidate` reports "No other worktrees found" while `gt restack` still fails.
-
-## Approach
-
-Enhance `RealWorktree.list_worktrees()` to detect rebase state for detached-HEAD worktrees and populate their branch info. This fixes the root cause at the data layer so all consumers (consolidate, `find_worktree_for_branch`, `is_branch_checked_out`) benefit automatically.
+The `erk-pr` label is applied to plan PRs but NOT to non-plan code PRs submitted through erk. This means code PRs like #8992 don't appear in the dash. The fix is simple: apply `erk-pr` to code PRs too via the submit pipeline, and make the dash's "Planned PRs" view query `erk-pr` (showing all erk PRs — both plans and code PRs).
 
 ## Changes
 
-### 1. Add `is_rebasing` field to `WorktreeInfo`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/abc.py`
+### 1. Apply `erk-pr` to non-plan code PRs in submit pipeline
 
-Add `is_rebasing: bool = False` to the frozen dataclass. Backward-compatible default.
+**`src/erk/cli/commands/pr/submit_pipeline.py`**:
 
-### 2. Detect rebase branches in `RealWorktree.list_worktrees`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py`
+Add a new pipeline step `label_code_pr` after `push_and_create_pr` in both `_push_and_create_pipeline()` and `_submit_pipeline()`:
 
-After parsing porcelain output, for each worktree with `branch=None`:
-1. Read `.git` file in the worktree path to find its git dir (format: `gitdir: <path>`)
-2. For root worktree, the git dir is `<path>/.git/`
-3. Check for `<git_dir>/rebase-merge/head-name` (interactive rebase) or `<git_dir>/rebase-apply/head-name` (non-interactive)
-4. If found, parse branch name (strip `refs/heads/` prefix), set `branch=<name>` and `is_rebasing=True`
+```python
+def label_code_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
+    """Add erk-pr label to non-plan code PRs."""
+    if state.plan_context is not None:
+        return state  # Plan PRs already get erk-pr via plan creation
+    if state.pr_number is None:
+        return state
+    add_labels_resilient(
+        ctx.github, time=ctx.time, repo_root=state.repo_root,
+        pr_number=state.pr_number, labels=(ERK_PR_LABEL,),
+    )
+    return state
+```
 
-Extract a helper `_detect_rebase_branch(worktree_path: Path, is_root: bool) -> str | None` for clarity.
+Import `ERK_PR_LABEL` from `erk.cli.constants` (already partially imported in this file).
 
-### 3. Skip uncommitted-changes check for mid-rebase worktrees in consolidate
-**File:** `src/erk/cli/commands/stack/consolidate_cmd.py`
+### 2. Rename "Planned PRs" to "PRs" in dash and query `erk-pr`
 
-In the safety check loop (lines 308-321), skip worktrees where `is_rebasing=True`. Mid-rebase worktrees will have dirty state from the interrupted rebase, but force-removal handles cleanup. Add a warning message like "Worktree X is mid-rebase and will be cleaned up".
+**`src/erk/tui/views/types.py`** — Change PLANS_VIEW to query `erk-pr` instead of `erk-plan`:
 
-### 4. Display "(rebasing)" indicator for mid-rebase worktrees
-**File:** `src/erk/cli/commands/stack/consolidate_cmd.py`
+```python
+PLANS_VIEW = ViewConfig(
+    mode=ViewMode.PLANS,
+    display_name="PRs",
+    labels=("erk-pr",),
+    key_hint="1",
+    exclude_labels=("erk-learn",),
+)
+```
 
-In `_format_consolidation_plan`, append "(rebasing)" to the branch name when the worktree `is_rebasing`.
+**`src/erk/tui/app.py`** (~line 162) — Remove the "Planned PRs" override in `_display_name_for_view` since `display_name` is now "PRs" directly.
 
-### 5. Update `FakeWorktree`
-**File:** `packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py`
+### 3. Update `dash_data.py` default labels
 
-Ensure `WorktreeInfo` construction in the fake passes through `is_rebasing` from test data.
+**`src/erk/cli/commands/exec/scripts/dash_data.py`** (~line 50): Change default from `("erk-pr", "erk-plan")` to `("erk-pr",)`.
 
-### 6. Update existing test
-**File:** `tests/core/utils/test_consolidation_utils.py`
+### 4. Update `pr list` default labels
 
-The test `test_skip_worktrees_with_detached_head` tests that detached HEAD worktrees (no branch) are skipped. This test remains valid - truly detached worktrees (not mid-rebase) should still be skipped. No change needed.
+**`src/erk/cli/commands/pr/list_cmd.py`** (~lines 272, 384): Change default from `("erk-pr", "erk-plan")` to `("erk-pr",)`.
 
-### 7. Add new test for mid-rebase worktree detection
-**File:** `tests/core/utils/test_consolidation_utils.py`
+### 5. Update label scheme documentation
 
-Add `test_include_rebasing_worktrees_in_removable()` - a worktree with `branch="feat-1"` and `is_rebasing=True` should be included in removable list when `feat-1` is in the stack.
-
-### 8. Add test for rebase branch detection in real worktree
-**File:** `tests/real/test_real_worktree.py` (or appropriate location)
-
-Test that `_detect_rebase_branch` correctly parses rebase state files. Use tmp_path to create the expected git directory structure.
+**`docs/learned/planning/label-scheme.md`**: Update to reflect that `erk-pr` is the base label on ALL erk-submitted PRs (plans + code).
 
 ## Verification
 
-1. Run `uv run pytest tests/core/utils/test_consolidation_utils.py` - existing + new tests pass
-2. Run `uv run pytest tests/real/` - rebase detection test passes
-3. Run `uv run ruff check` and `uv run ty check` - no lint/type errors
-4. Manual: run `erk stack consolidate` in the current scenario (erk-slot-14 mid-rebase) and verify it detects the worktree
+1. `make fast-ci` — all tests pass
+2. `erk pr submit` on a non-plan branch → verify PR gets `erk-pr` label
+3. `erk dash -i` → tab 1 shows "PRs" (not "Planned PRs"), includes both plan and code PRs

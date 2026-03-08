@@ -1,10 +1,4 @@
 {
   "provider": "github-draft-pr",
-  "plan_id": "9011",
-  "url": "https://github.com/dagster-io/erk/pull/9011",
-  "created_at": "2026-03-08T09:32:35.064035",
-  "synced_at": "2026-03-08T09:32:35.064035",
-  "labels": [],
-  "objective_id": null,
-  "node_ids": null
+  "title": "Apply `erk-pr` Label to All Erk-Submitted PRs"
 }
