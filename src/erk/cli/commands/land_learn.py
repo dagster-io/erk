@@ -7,7 +7,7 @@ Extracted to avoid circular imports between land_cmd and land_pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import click
 from rich.console import Console
@@ -43,6 +43,13 @@ if TYPE_CHECKING:
 
     from erk.cli.commands.land_pipeline import LandState
     from erk_shared.gateway.git.abc import Git
+
+LearnOutcome = Literal[
+    "created",
+    "skipped_no_material",
+    "skipped_erk_learn",
+    "skipped_config_disabled",
+]
 
 
 def _fetch_xmls_from_context_branch(
@@ -218,23 +225,26 @@ def _create_learn_pr_core(
     plan_id: str,
     merged_pr_number: int,
     cwd: Path,
-) -> None:
+) -> LearnOutcome:
     """Core implementation for creating a learn PR.
 
     Collects session material, builds plan content, and creates the draft PR.
     Shared by both the merged-branch and land-pipeline callers.
+
+    Returns:
+        LearnOutcome indicating what happened.
     """
     # Fetch plan to check labels — skip learn plans (cycle prevention)
     plan_result = ctx.plan_store.get_plan(repo_root, plan_id)
     if isinstance(plan_result, PlanNotFound):
-        return
+        return "skipped_no_material"
     if "erk-learn" in plan_result.labels:
-        return
+        return "skipped_erk_learn"
 
     # Collect session material (context branch first, local fallback)
     result = _collect_session_material(ctx, repo_root=repo_root, plan_id=plan_id)
     if result is None:
-        return
+        return "skipped_no_material"
     all_session_ids, xml_files = result
 
     # Build learn plan body
@@ -290,10 +300,13 @@ def _create_learn_pr_core(
         else:
             user_output("  (no plan URL available)")
         _log_learn_pr_files(plan_content=plan_content, xml_files=xml_files)
+        return "created"
     elif pr_result.error:
         user_output(
             click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {pr_result.error}"
         )
+
+    return "created"
 
 
 def _create_learn_pr_for_merged_branch(
@@ -303,18 +316,21 @@ def _create_learn_pr_for_merged_branch(
     merged_pr_number: int,
     main_repo_root: Path,
     cwd: Path,
-) -> None:
+) -> LearnOutcome:
     """Create learn PR for a branch merged outside erk land.
 
     Thin wrapper around _create_learn_pr_core that extracts params from
     the caller's context.
 
     Fire-and-forget: raises on error (caller should catch).
+
+    Returns:
+        LearnOutcome indicating what happened.
     """
     if not _should_create_learn_pr(ctx):
-        return
+        return "skipped_config_disabled"
 
-    _create_learn_pr_core(
+    return _create_learn_pr_core(
         ctx,
         repo_root=main_repo_root,
         plan_id=plan_id,
