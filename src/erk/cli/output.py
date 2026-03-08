@@ -392,6 +392,8 @@ class DivergenceFixResult:
 def stream_diverge_fix(
     executor: PromptExecutor,
     worktree_path: Path,
+    *,
+    dangerous: bool,
 ) -> DivergenceFixResult:
     """Stream diverge-fix command via Claude executor with live feedback.
 
@@ -421,7 +423,7 @@ def stream_diverge_fix(
     for event in executor.execute_command_streaming(
         command="/erk:diverge-fix",
         worktree_path=worktree_path,
-        dangerous=True,  # Divergence resolution modifies git state
+        dangerous=dangerous,
         permission_mode="edits",
     ):
         match event:

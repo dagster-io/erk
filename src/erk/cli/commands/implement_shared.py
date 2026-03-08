@@ -89,11 +89,17 @@ def implement_common_options(fn: F) -> F:
         help="Execute commands via subprocess without user interaction",
     )(fn)
     fn = click.option(
+        "--safe",
+        is_flag=True,
+        default=False,
+        help="Disable dangerous mode (overrides live_dangerously config)",
+    )(fn)
+    fn = click.option(
         "-d",
         "--dangerous",
         is_flag=True,
         default=False,
-        help="Skip permission prompts by passing --dangerously-skip-permissions to Claude",
+        help="Force dangerous mode (skip permission prompts)",
     )(fn)
     fn = click.option(
         "--submit",

@@ -17,10 +17,15 @@ from erk.core.context import ErkContext
     "-d",
     "--dangerous",
     is_flag=True,
-    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    help="Force dangerous mode (skip permission prompts).",
+)
+@click.option(
+    "--safe",
+    is_flag=True,
+    help="Disable dangerous mode (permission prompts enabled).",
 )
 @click.pass_obj
-def pr_diverge_fix(ctx: ErkContext, *, dangerous: bool) -> None:
+def pr_diverge_fix(ctx: ErkContext, *, dangerous: bool, safe: bool) -> None:
     """Fix branch divergence with remote.
 
     When gt submit fails with "Branch has been updated remotely", this command
@@ -30,15 +35,19 @@ def pr_diverge_fix(ctx: ErkContext, *, dangerous: bool) -> None:
     Examples:
 
     \b
-      # Fix divergence with remote
-      erk pr diverge-fix --dangerous
-
-    To disable the --dangerous flag requirement:
+      # Fix divergence with remote (dangerous by default)
+      erk pr diverge-fix
 
     \b
-      erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
+      # Fix in safe mode (permission prompts enabled)
+      erk pr diverge-fix --safe
+
+    To disable dangerous mode by default:
+
+    \b
+      erk config set live_dangerously false
     """
-    Ensure.dangerous_flag(ctx, dangerous=dangerous)
+    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)
 
     cwd = ctx.cwd
 
@@ -81,7 +90,7 @@ def pr_diverge_fix(ctx: ErkContext, *, dangerous: bool) -> None:
     click.echo(click.style("Analyzing divergence and invoking Claude...", fg="yellow"))
 
     # Execute diverge fix
-    result = stream_diverge_fix(executor, cwd)
+    result = stream_diverge_fix(executor, cwd, dangerous=effective_dangerous)
 
     if result.requires_interactive:
         raise click.ClickException("Semantic decision requires interactive resolution")

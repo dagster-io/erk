@@ -26,7 +26,12 @@ def _is_graphite_enabled(ctx: ErkContext) -> bool:
     "-d",
     "--dangerous",
     is_flag=True,
-    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    help="Force dangerous mode (skip permission prompts).",
+)
+@click.option(
+    "--safe",
+    is_flag=True,
+    help="Disable dangerous mode (permission prompts enabled).",
 )
 @click.option(
     "--target",
@@ -34,7 +39,7 @@ def _is_graphite_enabled(ctx: ErkContext) -> bool:
     help="Target branch for git rebase (non-Graphite only).",
 )
 @click.pass_obj
-def rebase(ctx: ErkContext, *, dangerous: bool, target: str | None) -> None:
+def rebase(ctx: ErkContext, *, dangerous: bool, safe: bool, target: str | None) -> None:
     """Rebase PR onto base branch with conflict resolution via Claude TUI.
 
     First attempts a mechanical rebase using gt restack (if Graphite is enabled)
@@ -53,24 +58,28 @@ def rebase(ctx: ErkContext, *, dangerous: bool, target: str | None) -> None:
     Examples:
 
     \b
-      # Rebase locally (Graphite enabled)
-      erk pr rebase --dangerous
+      # Rebase locally (dangerous mode is on by default)
+      erk pr rebase
 
     \b
       # Rebase locally (Graphite disabled)
-      erk pr rebase --dangerous --target main
+      erk pr rebase --target main
+
+    \b
+      # Rebase in safe mode (permission prompts enabled)
+      erk pr rebase --safe
 
     \b
       # Resume a rebase that stopped on conflicts
-      git rebase main          # hits conflicts
-      erk pr rebase --dangerous  # Claude resolves them
+      git rebase main      # hits conflicts
+      erk pr rebase        # Claude resolves them
 
-    To disable the --dangerous flag requirement:
+    To disable dangerous mode by default:
 
     \b
-      erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
+      erk config set live_dangerously false
     """
-    Ensure.dangerous_flag(ctx, dangerous=dangerous)
+    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)
 
     cwd = ctx.cwd
     executor = ctx.prompt_executor
@@ -132,7 +141,7 @@ def rebase(ctx: ErkContext, *, dangerous: bool, target: str | None) -> None:
     click.echo("Launching Claude...", err=True)
     executor.execute_interactive(
         worktree_path=cwd,
-        dangerous=dangerous,
+        dangerous=effective_dangerous,
         command="/erk:pr-rebase",
         target_subpath=None,
         model=None,

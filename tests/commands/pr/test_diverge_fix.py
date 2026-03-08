@@ -45,8 +45,8 @@ def test_pr_diverge_fix_success() -> None:
         assert dangerous_flag is True
 
 
-def test_pr_diverge_fix_requires_dangerous_flag() -> None:
-    """Test that command fails when --dangerous flag is not provided (default config)."""
+def test_pr_diverge_fix_succeeds_without_dangerous_flag() -> None:
+    """Test that command succeeds without --dangerous when live_dangerously=True (default)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -69,14 +69,12 @@ def test_pr_diverge_fix_requires_dangerous_flag() -> None:
 
         result = runner.invoke(pr_group, ["diverge-fix"], obj=ctx)
 
-        assert result.exit_code != 0
-        assert "Missing option '--dangerous'" in result.output
-        # Verify error message includes config hint
-        assert "require_dangerous_flag_for_implicitly_dangerous_operations false" in result.output
+        assert result.exit_code == 0
+        assert "Branch synced with remote!" in result.output
 
 
-def test_pr_diverge_fix_skip_dangerous_with_config() -> None:
-    """Test that --dangerous flag is not required when config disables requirement."""
+def test_pr_diverge_fix_safe_flag_disables_dangerous() -> None:
+    """Test that --safe overrides live_dangerously=True and passes dangerous=False."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -95,10 +93,69 @@ def test_pr_diverge_fix_skip_dangerous_with_config() -> None:
 
         executor = FakePromptExecutor(available=True)
 
-        # Create GlobalConfig with require_dangerous_flag_for_implicitly_dangerous_operations=False
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(pr_group, ["diverge-fix", "--safe"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Branch synced with remote!" in result.output
+        # Verify dangerous=False was passed to executor
+        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
+        assert command == "/erk:diverge-fix"
+        assert dangerous_flag is False
+
+
+def test_pr_diverge_fix_dangerous_and_safe_mutually_exclusive() -> None:
+    """Test that --dangerous and --safe together produce an error."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            remote_branches={env.cwd: ["origin/feature-branch", "origin/main"]},
+            branch_divergence={
+                (env.cwd, "feature-branch", "origin"): BranchDivergence(
+                    is_diverged=True, ahead=2, behind=3
+                )
+            },
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(pr_group, ["diverge-fix", "--dangerous", "--safe"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "mutually exclusive" in result.output
+
+
+def test_pr_diverge_fix_live_dangerously_false_runs_safe() -> None:
+    """Test that live_dangerously=False makes command run in safe mode by default."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            remote_branches={env.cwd: ["origin/feature-branch", "origin/main"]},
+            branch_divergence={
+                (env.cwd, "feature-branch", "origin"): BranchDivergence(
+                    is_diverged=True, ahead=2, behind=3
+                )
+            },
+        )
+
+        executor = FakePromptExecutor(available=True)
+
         global_config = GlobalConfig.test(
             env.erk_root,
-            require_dangerous_flag_for_implicitly_dangerous_operations=False,
+            live_dangerously=False,
         )
 
         ctx = build_workspace_test_context(
@@ -108,12 +165,14 @@ def test_pr_diverge_fix_skip_dangerous_with_config() -> None:
             global_config=global_config,
         )
 
-        # Invoke WITHOUT --dangerous flag
         result = runner.invoke(pr_group, ["diverge-fix"], obj=ctx)
 
-        # Should succeed without --dangerous when config disables requirement
         assert result.exit_code == 0
         assert "Branch synced with remote!" in result.output
+        # Verify dangerous=False was passed to executor
+        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
+        assert command == "/erk:diverge-fix"
+        assert dangerous_flag is False
 
 
 def test_pr_diverge_fix_already_in_sync() -> None:

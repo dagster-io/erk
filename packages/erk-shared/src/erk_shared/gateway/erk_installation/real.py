@@ -75,12 +75,7 @@ class RealErkInstallation(ErkInstallation):
             use_graphite=bool(data.get("use_graphite", False)),
             shell_setup_complete=bool(data.get("shell_setup_complete", False)),
             github_planning=bool(data.get("github_planning", True)),
-            require_dangerous_flag_for_implicitly_dangerous_operations=bool(
-                data.get(
-                    "require_dangerous_flag_for_implicitly_dangerous_operations",
-                    True,
-                )
-            ),
+            live_dangerously=bool(data.get("live_dangerously", True)),
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
             prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
             shell_integration=bool(data.get("shell_integration", False)),
@@ -140,9 +135,7 @@ class RealErkInstallation(ErkInstallation):
         doc["use_graphite"] = config.use_graphite
         doc["shell_setup_complete"] = config.shell_setup_complete
         doc["github_planning"] = config.github_planning
-        doc["require_dangerous_flag_for_implicitly_dangerous_operations"] = (
-            config.require_dangerous_flag_for_implicitly_dangerous_operations
-        )
+        doc["live_dangerously"] = config.live_dangerously
         doc["show_hidden_commands"] = config.show_hidden_commands
         doc["prompt_learn_on_land"] = config.prompt_learn_on_land
         doc["shell_integration"] = config.shell_integration

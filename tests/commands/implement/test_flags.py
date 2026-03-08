@@ -197,8 +197,8 @@ def test_implement_with_dangerous_flag_in_script_mode() -> None:
         assert expected_cmd in script_content
 
 
-def test_implement_without_dangerous_flag_in_script_mode() -> None:
-    """Test that script without --dangerous flag does not include --dangerously-skip-permissions."""
+def test_implement_with_safe_flag_in_script_mode() -> None:
+    """Test that --safe flag excludes --dangerously-skip-permissions from generated script."""
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
@@ -211,7 +211,7 @@ def test_implement_without_dangerous_flag_in_script_mode() -> None:
         store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
-        result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
+        result = runner.invoke(implement, ["#42", "--safe", "--script"], obj=ctx)
 
         assert result.exit_code == 0
 

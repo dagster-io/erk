@@ -95,14 +95,9 @@ class GlobalConfigSchema(BaseModel):
         description="Enable GitHub issues integration for planning",
         json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "github_planning"},
     )
-    require_dangerous_flag_for_implicitly_dangerous_operations: bool = Field(
-        description=(
-            "Require --dangerous flag for commands that invoke Claude with skip-permissions"
-        ),
-        json_schema_extra={
-            "level": ConfigLevel.OVERRIDABLE,
-            "cli_key": "require_dangerous_flag_for_implicitly_dangerous_operations",
-        },
+    live_dangerously: bool = Field(
+        description="Default to dangerous mode (skip permission prompts). Use --safe to override.",
+        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "live_dangerously"},
     )
     show_hidden_commands: bool = Field(
         description="Show deprecated/hidden commands in help output",

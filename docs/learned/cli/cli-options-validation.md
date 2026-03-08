@@ -58,24 +58,32 @@ Use `Ensure.*` static methods from `src/erk/cli/ensure.py`. These methods:
 | Branch must exist        | `Ensure.git_branch_exists(ctx, root, branch)`     | Depends on git state                 |
 | Value must be truthy     | `Ensure.truthy(value, "...")`                     | Generic condition check              |
 
-## Centralized Validation: Ensure.dangerous_flag()
+## Centralized Validation: Ensure.resolve_dangerous()
 
-<!-- Source: src/erk/cli/ensure.py, Ensure.dangerous_flag -->
+<!-- Source: src/erk/cli/ensure.py, Ensure.resolve_dangerous -->
 
-The `--dangerous` flag validation is centralized in `Ensure.dangerous_flag(ctx, *, dangerous=bool)`. This static method checks the config key `require_dangerous_flag_for_implicitly_dangerous_operations` and raises `click.UsageError` with a remediation message when the flag is missing.
+The dangerous mode resolution is centralized in `Ensure.resolve_dangerous(ctx, *, dangerous=bool, safe=bool)`. This static method resolves the effective dangerous mode from explicit flags and the `live_dangerously` config key.
 
-Used across three commands that invoke Claude with `--dangerously-skip-permissions`:
+Resolution priority:
+
+1. `--dangerous` and `--safe` are mutually exclusive (raises `UsageError`)
+2. `--dangerous` → True, `--safe` → False
+3. Neither → falls back to `ctx.global_config.live_dangerously` (default: True)
+
+Used across commands that invoke Claude with `--dangerously-skip-permissions`:
 
 - `address_cmd.py`
 - `rebase_cmd.py`
 - `diverge_fix_cmd.py`
+- `implement.py`
 
 ```python
 @click.command()
 @click.option("-d", "--dangerous", is_flag=True)
+@click.option("--safe", is_flag=True)
 @click.pass_obj
-def my_command(ctx: ErkContext, *, dangerous: bool) -> None:
-    Ensure.dangerous_flag(ctx, dangerous=dangerous)
+def my_command(ctx: ErkContext, *, dangerous: bool, safe: bool) -> None:
+    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)
 ```
 
 ## Anti-Pattern: Don't Validate at Both Layers
