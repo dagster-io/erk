@@ -78,7 +78,6 @@ class RealErkInstallation(ErkInstallation):
             live_dangerously=bool(data.get("live_dangerously", True)),
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
             prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
-            shell_integration=bool(data.get("shell_integration", False)),
             cmux_integration=bool(data.get("cmux_integration", False)),
             interactive_agent=interactive_agent,
         )
@@ -138,7 +137,6 @@ class RealErkInstallation(ErkInstallation):
         doc["live_dangerously"] = config.live_dangerously
         doc["show_hidden_commands"] = config.show_hidden_commands
         doc["prompt_learn_on_land"] = config.prompt_learn_on_land
-        doc["shell_integration"] = config.shell_integration
         doc["cmux_integration"] = config.cmux_integration
 
         # Add [interactive-agent] section if any non-default values are set

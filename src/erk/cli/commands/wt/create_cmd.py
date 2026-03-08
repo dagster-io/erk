@@ -977,7 +977,7 @@ def create_wt(
             command_name="create",
             comment=f"cd to {name}",
         )
-        result.output_for_shell_integration()
+        result.output_for_script_handler()
     elif output_json:
         # Output JSON with worktree information
         json_response = _create_json_response(

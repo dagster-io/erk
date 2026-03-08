@@ -1116,7 +1116,7 @@ def test_consolidate_with_name_outputs_script_even_when_branch_delete_fails(
         )
 
         # Key verification: Script path IS output in stdout (before failure)
-        # The script path is output via output_for_shell_integration() and appears in stdout
+        # The script path is output via output_for_script_handler() and appears in stdout
         script_path = list(env.script_writer.written_scripts.keys())[0]
         assert str(script_path) in result.stdout, (
             f"Script path should be in stdout. Script: {script_path}, stdout: {result.stdout}"

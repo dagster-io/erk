@@ -337,7 +337,7 @@ def _setup_impl_for_plan(
             command_name="branch-checkout",
             comment=f"branch checkout --for-plan {setup.plan_number}",
         )
-        result.output_for_shell_integration()
+        result.output_for_script_handler()
         sys.exit(0)
 
     user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
@@ -428,8 +428,7 @@ def branch_checkout(
 ) -> None:
     """Checkout BRANCH by finding and switching to its worktree.
 
-    Prints the activation path for the target worktree. Enable shell integration
-    for automatic navigation: erk config set shell_integration true
+    Prints the activation path for the target worktree.
 
     This command finds which worktree has the specified branch checked out
     and switches to it. If the branch exists but isn't checked out anywhere,

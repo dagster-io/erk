@@ -274,7 +274,7 @@ def branch_create(
                 command_name="branch-create",
                 comment=f"branch create --for-plan {setup.plan_number}",
             )
-            result.output_for_shell_integration()
+            result.output_for_script_handler()
             sys.exit(0)
 
         user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")

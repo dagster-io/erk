@@ -107,10 +107,6 @@ class GlobalConfigSchema(BaseModel):
         description="Prompt about running learn before landing plan PRs",
         json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "prompt_learn_on_land"},
     )
-    shell_integration: bool = Field(
-        description="Enable auto-navigation shell integration (opt-in)",
-        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "shell_integration"},
-    )
     cmux_integration: bool = Field(
         description="Enable cmux workspace creation on PR checkout",
         json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "cmux_integration"},

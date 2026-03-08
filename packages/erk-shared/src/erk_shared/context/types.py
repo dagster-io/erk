@@ -236,7 +236,6 @@ class GlobalConfig:
     live_dangerously: bool = True
     show_hidden_commands: bool = False
     prompt_learn_on_land: bool = True
-    shell_integration: bool = False
     cmux_integration: bool = False
     interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()
 
@@ -250,7 +249,6 @@ class GlobalConfig:
         live_dangerously: bool = True,
         show_hidden_commands: bool = False,
         prompt_learn_on_land: bool = True,
-        shell_integration: bool = False,
         cmux_integration: bool = False,
         interactive_agent: InteractiveAgentConfig | None = None,
     ) -> GlobalConfig:
@@ -263,7 +261,6 @@ class GlobalConfig:
             live_dangerously=live_dangerously,
             show_hidden_commands=show_hidden_commands,
             prompt_learn_on_land=prompt_learn_on_land,
-            shell_integration=shell_integration,
             cmux_integration=cmux_integration,
             interactive_agent=(
                 interactive_agent

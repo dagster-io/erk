@@ -45,7 +45,7 @@ def test(
 
 ### 3. Update Load Logic
 
-In the config loading code (typically `src/erk/cli/config.py` or `src/erk/core/context.py`):
+In the config loading code (`packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`):
 
 ```python
 # LBYL pattern: check before access
@@ -68,9 +68,10 @@ Key fields in GlobalConfig (as of this writing):
 - `use_graphite: bool` — whether to use Graphite for PR management
 - `shell_setup_complete: bool` — shell integration status
 - `github_planning: bool` — GitHub-based planning enabled
+- `live_dangerously: bool` — skip safety confirmations
 - `show_hidden_commands: bool` — expose hidden CLI commands
 - `prompt_learn_on_land: bool` — prompt for learn extraction after landing PRs
-- `shell_integration: bool` — shell integration active
+- `cmux_integration: bool` — enable cmux workspace creation on PR checkout
 - `interactive_agent: InteractiveAgentConfig` — interactive agent settings
 
 ## Related Documentation
