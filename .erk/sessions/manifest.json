@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "plan_id": 8993,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T10:46:41.977365+00:00",
+      "files": [
+        "impl--cfa1cd17-4f64-4015-a716-d48576fce347-part1.xml",
+        "impl--cfa1cd17-4f64-4015-a716-d48576fce347-part2.xml",
+        "impl--cfa1cd17-4f64-4015-a716-d48576fce347-part3.xml",
+        "impl--cfa1cd17-4f64-4015-a716-d48576fce347-part4.xml",
+        "impl--cfa1cd17-4f64-4015-a716-d48576fce347-part5.xml",
+        "impl--cfa1cd17-4f64-4015-a716-d48576fce347-part6.xml",
+        "impl--cfa1cd17-4f64-4015-a716-d48576fce347-part7.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 3,
+      "raw_size_kb": 245,
+      "xml_size_kb": 66,
+      "git_branch": "plnd/add-codespace-branch-opt-03-08-0641"
+    }
+  ]
+}
