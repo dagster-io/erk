@@ -25,10 +25,13 @@ higher-level abstraction that covers ALL the things being mocked together.
 
 Read the test file. For each `patch(...)` call, record:
 
-| Mock target (fully qualified)      | What it simulates      | Return value configured                        |
-| ---------------------------------- | ---------------------- | ---------------------------------------------- |
-| `erk.core.fast_llm.shutil.which`   | CLI availability check | `None` or `"/usr/bin/claude"`                  |
-| `erk.core.fast_llm.subprocess.run` | CLI execution result   | `CompletedProcess(returncode=0, stdout="...")` |
+| Mock target (fully qualified)      | System boundary (tool) | What it simulates      | Return value configured                        |
+| ---------------------------------- | ---------------------- | ---------------------- | ---------------------------------------------- |
+| `erk.core.fast_llm.shutil.which`   | Claude CLI             | CLI availability check | `None` or `"/usr/bin/claude"`                  |
+| `erk.core.fast_llm.subprocess.run` | Claude CLI             | CLI execution result   | `CompletedProcess(returncode=0, stdout="...")` |
+
+The **system boundary** column identifies which gateway should own this mock.
+Multiple mocks with the same system boundary should be covered by a single gateway.
 
 **Group mocks by test**: A single test patching 2-3 things together suggests those
 things form a unit that should be covered by one injectable gateway.
@@ -45,7 +48,7 @@ For each mock group, find the right gateway. **Do not stop at the first match.**
 > just wraps `subprocess.run` is no better than mocking `subprocess.run` directly — it skips
 > the meaningful abstraction layer.
 
-### Step 2a: Identify the system boundary being tested
+### Step 1: Identify the system boundary being tested
 
 Ask: what is the test _actually_ testing? Not "what function is being patched" but
 "what behavior is under test?" Think in terms of the _tool or service_ being interacted
@@ -58,7 +61,33 @@ Examples:
 - Together -> "interact with the Claude CLI" -> gateway is `PromptExecutor` (Claude-specific),
   not `Shell` (subprocess-generic)
 
-### Step 2b: Search for existing gateways at the right abstraction level
+### Step 2: Targeted gateway search
+
+Before broad exploration, do a quick targeted search using the tool names from Phase 1:
+
+```bash
+Grep(pattern="<tool_name>", path="packages/erk-shared/src/erk_shared/gateway/")
+```
+
+If zero hits for a tool → no gateway exists for it. You'll need to create one (see Phase 5).
+If hits → read the matching gateway to assess coverage.
+
+This takes seconds and immediately tells you whether you're in "reuse" or "create" territory.
+
+### Step 3: Check if any mock target is already covered
+
+Before creating anything new, check if existing gateways already cover some of your
+mock targets. A test mocking `subprocess.run(["gh", "pr", "view", ...])` is already
+covered by `LocalGitHub.get_pr()` — no new gateway needed for that mock.
+
+For each system boundary from Phase 1, ask:
+
+- Does an existing gateway already provide this operation?
+- Can the test use the existing fake instead of mocking subprocess?
+
+This often eliminates half the mocks immediately, reducing the scope of new work.
+
+### Step 4: Search for existing gateways at the right abstraction level
 
 Search from highest to lowest. A higher-level gateway is preferable because it
 covers multiple low-level calls as a unit.
@@ -87,7 +116,7 @@ Grep(pattern="shutil.which|subprocess.run|is_available", path="packages/erk-shar
   (FakePromptExecutor, FakeLlmCaller, FakeScriptWriter, etc.)
 - `tests/fakes/` -- erk-specific fakes
 
-### Step 2c: Verify the fake covers what you need
+### Step 5: Verify the fake covers what you need
 
 Read the fake's `__init__` signature. Check:
 
@@ -95,7 +124,25 @@ Read the fake's `__init__` signature. Check:
 - Does the fake record calls for assertion (`calls`, `prompt_calls`, etc.)?
 - Does the fake's `is_available()` return what you need?
 
-If no fake exists at the right level, you'll need to create one (see Phase 4b).
+If no fake exists at the right level, you'll need to create one (see Phase 5).
+
+---
+
+## Decision Fork: Gateway Found vs. New Gateway Needed
+
+After Phase 2, you're in one of two paths:
+
+**Path A: Existing gateway covers all mocks**
+
+- Skip to Phase 3 (plan injection) → Phase 4 (make injectable) → Phase 6 (rewrite tests)
+- This is the fast path. Scope: modify source + rewrite tests.
+
+**Path B: No gateway exists for one or more system boundaries**
+
+- You must create a new gateway before rewriting tests
+- Load the `gateway-abc-implementation` doc (`docs/learned/architecture/gateway-abc-implementation.md`)
+- Follow Phase 5-expanded below
+- Scope is significantly larger: new gateway files + ErkContext wiring + modify source + rewrite tests
 
 ---
 
@@ -110,7 +157,7 @@ Find the class or function that directly calls the mocked thing.
 
 ### Is there already a constructor parameter for this gateway?
 
-- **Yes** -> skip Phase 4a, go to Phase 5
+- **Yes** -> skip Phase 4, go to Phase 6
 - **No** -> plan to add a constructor parameter
 
 ### What's the production wiring?
@@ -124,7 +171,7 @@ Plan what real implementation to wire in:
 
 ---
 
-## Phase 4a: Make source code injectable
+## Phase 4: Make source code injectable
 
 Add the gateway as a constructor parameter. Follow erk's conventions:
 
@@ -161,22 +208,62 @@ from erk.core.prompt_executor import ClaudeCliPromptExecutor
 MyClass(prompt_executor=ClaudeCliPromptExecutor(console=None))
 ```
 
+### Variant: Click command injection (exec scripts)
+
+For Click commands (especially exec scripts), use Click's context system instead of
+constructor injection:
+
+```python
+@click.command(name="my-command")
+@click.pass_context
+def my_command(ctx: click.Context, ...) -> None:
+    github = require_github(ctx)       # existing gateway from context
+    cmux = require_context(ctx).cmux   # new gateway from context
+```
+
+Replace direct system calls with gateway method calls obtained from context.
+See `src/erk/cli/commands/exec/scripts/AGENTS.md` for the full pattern.
+
 ---
 
-## Phase 4b: Create a new fake (only if needed)
+## Phase 5: Create a new gateway (when no suitable gateway exists)
 
-If no suitable fake exists, create one following the 4-place gateway pattern.
-See `fake-driven-testing` skill for full guidance.
+Load `docs/learned/architecture/gateway-abc-implementation.md` for full patterns.
 
-Short version: the fake should:
+### Decide: 3-file or 5-file pattern
 
-- Accept pre-canned responses at construction time
-- Record all calls as `NamedTuple` entries in a list (`self.calls: list[MyCall]`)
-- Expose calls as a read-only property
+- **3-file** (abc, real, fake): For all-or-nothing operations, process replacement,
+  or operations where dry-run/printing don't add value. Examples: Codespace, AgentLauncher.
+- **5-file** (abc, real, fake, dry_run, printing): For gateways with distinct read vs
+  mutation methods where dry-run preview is useful. Examples: Git, LocalGitHub, Graphite.
+
+Most new gateways for mock-to-fake refactoring use the 3-file pattern.
+
+### Gateway creation checklist
+
+1. [ ] Create directory: `packages/erk-shared/src/erk_shared/gateway/<tool_name>/`
+2. [ ] `__init__.py` — empty
+3. [ ] `abc.py` — ABC with abstract methods named after tool operations (not subprocess)
+4. [ ] `real.py` — Production implementation using subprocess calls to the tool
+5. [ ] `fake.py` — Constructor-injected test data, NamedTuple call tracking, read-only properties
+
+### ErkContext wiring checklist
+
+6. [ ] Add `<tool>: <ToolABC>` field to `ErkContext` dataclass
+       (`packages/erk-shared/src/erk_shared/context/context.py`)
+7. [ ] Add `<tool>` parameter to `ErkContext.for_test()` with default `Fake<Tool>(...)`
+8. [ ] Wire `Real<Tool>()` in production context factory
+       (`src/erk/core/context.py`, near other Real\* instantiations)
+
+### Error handling decision
+
+- All callers terminate on failure → raise `RuntimeError`
+- Some callers branch on error → return discriminated union
+  (see Non-Ideal State Decision Checklist in gateway-abc-implementation.md)
 
 ---
 
-## Phase 5: Rewrite the tests
+## Phase 6: Rewrite the tests
 
 For each test that used `patch`:
 
@@ -219,7 +306,7 @@ Note: `monkeypatch.delenv` is a pytest fixture, not `mock.patch` -- it's fine to
 
 ---
 
-## Phase 6: Verify
+## Phase 7: Verify
 
 Run the affected test file:
 

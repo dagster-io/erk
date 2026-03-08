@@ -176,6 +176,8 @@ Rules triggered by matching actions in code.
 
 **creating a new gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not.
 
+**creating a new gateway directory under packages/erk-shared/src/erk_shared/gateway/** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must also wire into ErkContext: add field to context.py dataclass, add parameter to for_test(), and wire Real\* in production factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section.
+
 **creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
 
 **creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
