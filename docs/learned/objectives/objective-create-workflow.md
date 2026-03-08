@@ -77,9 +77,9 @@ This uses the `${CLAUDE_SESSION_ID}` substitution available in Claude Code comma
 
 ## Implementation References
 
-| Component             | File                                                               |
-| --------------------- | ------------------------------------------------------------------ |
-| Skill template        | `.claude/commands/erk/objective-create.md`                         |
-| Roadmap renderer      | `src/erk/cli/commands/exec/scripts/objective_render_roadmap.py`    |
-| Issue creator         | `src/erk/cli/commands/exec/scripts/objective_save_to_issue.py`     |
+| Component             | File                                                                    |
+| --------------------- | ----------------------------------------------------------------------- |
+| Skill template        | `.claude/commands/erk/objective-create.md`                              |
+| Roadmap renderer      | `src/erk/cli/commands/exec/scripts/objective_render_roadmap.py`         |
+| Issue creator         | `src/erk/cli/commands/exec/scripts/objective_save_to_issue.py`          |
 | Shared creation logic | `packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py` |
