@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Structured Per-PR Reconcile Report (Objective #8950, Node 3.1)",
+  "plan_id": "9003",
+  "url": "https://github.com/dagster-io/erk/pull/9003",
+  "created_at": "2026-03-08T11:40:37.386878",
+  "synced_at": "2026-03-08T11:40:37.386878",
+  "labels": [],
   "objective_id": 8950,
-  "node_ids": [
-    "3.1"
-  ]
+  "node_ids": null
 }
