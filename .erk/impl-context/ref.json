@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Apply `erk-pr` Label to All Erk-Submitted PRs"
+}
