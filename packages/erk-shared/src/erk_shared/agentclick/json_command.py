@@ -1,7 +1,7 @@
 """JSON command harness for CLI commands (input + output + schema).
 
 Adds --json and --schema flags to Click commands with:
-- JSON error serialization (catches UserFacingCliError)
+- JSON error serialization (catches click.ClickException with error_type attribute)
 - JSON input from stdin (when piped, maps keys to Click params)
 - emit_json_result() for structured output via to_json_dict() protocol
 - --schema flag to output JSON Schema for input/output/error shapes
@@ -18,8 +18,6 @@ from dataclasses import dataclass
 from typing import Any, overload
 
 import click
-
-from erk.cli.ensure import UserFacingCliError
 
 
 @dataclass(frozen=True)
@@ -63,7 +61,7 @@ def json_command(
 
     When --json is passed:
     - If stdin is piped (not a TTY), reads JSON object and maps keys to kwargs
-    - UserFacingCliError is caught and serialized as JSON to stdout
+    - Any click.ClickException with an error_type attribute is caught and serialized as JSON
     - SystemExit and other exceptions pass through unchanged
 
     When --schema is passed:
@@ -149,7 +147,7 @@ def _apply_json_command(
     def wrapped_callback(**kwargs: Any) -> Any:
         schema_mode = kwargs.pop("schema_mode", False)
         if schema_mode:
-            from erk.cli.json_schema import build_schema_document
+            from erk_shared.agentclick.json_schema import build_schema_document
 
             schema_doc = build_schema_document(cmd)
             click.echo(json.dumps(schema_doc, indent=2))
@@ -214,7 +212,9 @@ def _apply_json_command(
             if result is not None:
                 emit_json_result(result)
             return result
-        except UserFacingCliError as exc:
+        except click.ClickException as exc:
+            if not hasattr(exc, "error_type"):
+                raise
             error_data = {
                 "success": False,
                 "error_type": exc.error_type,

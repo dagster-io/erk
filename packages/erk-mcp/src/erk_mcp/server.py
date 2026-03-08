@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 from anyio import to_thread
 from fastmcp.tools.tool import Tool, ToolResult
 
-from erk.cli.json_schema import command_input_schema
-from erk.cli.mcp_exposed import discover_mcp_commands
+from erk_shared.agentclick.json_schema import command_input_schema
+from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
