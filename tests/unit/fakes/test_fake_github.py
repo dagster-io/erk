@@ -160,13 +160,46 @@ def test_fake_github_ops_full_workflow() -> None:
     # Verify mutations tracked
     assert ops.updated_pr_bases == [(456, "main"), (123, "develop")]
 
-    # Verify configured state unchanged (get_pr returns pr_details which is unchanged)
+    # Verify configured state updated to match the recorded mutations
     pr_123_again = ops.get_pr(sentinel_path(), 123)
     pr_456 = ops.get_pr(sentinel_path(), 456)
     assert not isinstance(pr_123_again, PRNotFound)
     assert not isinstance(pr_456, PRNotFound)
-    assert pr_123_again.base_ref_name == "main"
-    assert pr_456.base_ref_name == "feature-1"
+    assert pr_123_again.base_ref_name == "develop"
+    assert pr_456.base_ref_name == "main"
+
+
+def test_fake_github_ops_update_pr_base_branch_can_simulate_silent_no_op() -> None:
+    """Test update_pr_base_branch can track calls without mutating PR state."""
+    pr_details = {
+        123: PRDetails(
+            number=123,
+            url="https://github.com/repo/pull/123",
+            title="Feature 1",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature-1",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="testowner",
+            repo="testrepo",
+        )
+    }
+    ops = FakeLocalGitHub(
+        pr_details=pr_details,
+        prs_by_branch={"feature-1": pr_details[123]},
+        pr_base_update_should_apply=False,
+    )
+
+    ops.update_pr_base_branch(sentinel_path(), 123, "develop")
+
+    updated = ops.get_pr(sentinel_path(), 123)
+    assert not isinstance(updated, PRNotFound)
+    assert updated.base_ref_name == "main"
+    assert ops.updated_pr_bases == [(123, "develop")]
 
 
 def test_fake_github_ops_merge_pr_single() -> None:

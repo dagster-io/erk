@@ -16,6 +16,64 @@ from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 from erk_shared.stack.validation import validate_parent_is_trunk
 
 
+def get_direct_child_branches_for_land(ops: GtKit, repo_root: Path, branch_name: str) -> list[str]:
+    """Return direct child branches from Graphite and GitHub, preserving order."""
+    graphite_children = ops.graphite.get_child_branches(ops.git, repo_root, branch_name)
+    github_child_prs = ops.github.get_open_prs_with_base_branch(repo_root, branch_name)
+    github_children = [pr.head_branch for pr in github_child_prs if pr.head_branch is not None]
+
+    ordered_children: list[str] = []
+    seen: set[str] = set()
+    for child_branch in [*graphite_children, *github_children]:
+        if child_branch in seen:
+            continue
+        seen.add(child_branch)
+        ordered_children.append(child_branch)
+
+    return ordered_children
+
+
+def reparent_child_pr_bases_for_land(
+    ops: GtKit,
+    repo_root: Path,
+    *,
+    child_branches: list[str],
+    new_base: str,
+) -> str | None:
+    """Update child PR base branches and verify each update took effect.
+
+    Returns:
+        None on success, or an error message when verification fails.
+    """
+    for child_branch in child_branches:
+        child_pr = ops.github.get_pr_for_branch(repo_root, child_branch)
+        if isinstance(child_pr, PRNotFound) or child_pr.state != "OPEN":
+            continue
+
+        ops.github.update_pr_base_branch(repo_root, child_pr.number, new_base)
+
+        verified_pr = None
+        for attempt in range(2):
+            verified_pr = ops.github.get_pr(repo_root, child_pr.number)
+            if not isinstance(verified_pr, PRNotFound) and verified_pr.base_ref_name == new_base:
+                break
+            if attempt == 0:
+                ops.time.sleep(0.1)
+
+        if isinstance(verified_pr, PRNotFound):
+            return (
+                f"Failed to verify base branch update for child PR #{child_pr.number} "
+                f"[{child_branch}]."
+            )
+        if verified_pr.base_ref_name != new_base:
+            return (
+                f"Failed to update child PR #{child_pr.number} [{child_branch}] "
+                f"to base '{new_base}' (still targets '{verified_pr.base_ref_name}')."
+            )
+
+    return None
+
+
 def execute_land_pr(
     ops: GtKit,
     cwd: Path,
@@ -153,30 +211,37 @@ def execute_land_pr(
         )
         return
 
-    # Step 5: Get children branches from both Graphite cache AND GitHub PRs
+    # Step 5: Get direct children from both Graphite cache AND GitHub PRs
     # Graphite's cache may not include branches created without `gt branch create`,
     # or where the PR's base was set differently in GitHub.
     yield ProgressEvent("Getting child branches...")
-    graphite_children = ops.graphite.get_child_branches(ops.git, repo_root, branch_name)
-
-    # Also get any PRs that have this branch as their base (may not be in Graphite)
-    github_child_prs = ops.github.get_open_prs_with_base_branch(repo_root, branch_name)
-    github_child_branches = [
-        pr.head_branch for pr in github_child_prs if pr.head_branch is not None
-    ]
-
-    # Union both sources (deduplicate)
-    all_children = list(set(graphite_children) | set(github_child_branches))
+    all_children = get_direct_child_branches_for_land(ops, repo_root, branch_name)
 
     # Update upstack PR base branches BEFORE merging
     # This prevents GitHub from auto-closing PRs when "Automatically delete head branches"
     # is enabled and GitHub deletes the base branch immediately after merge
     if all_children:
         yield ProgressEvent("Updating upstack PR base branches...")
-        for child_branch in all_children:
-            child_pr = ops.github.get_pr_for_branch(repo_root, child_branch)
-            if not isinstance(child_pr, PRNotFound) and child_pr.state == "OPEN":
-                ops.github.update_pr_base_branch(repo_root, child_pr.number, trunk)
+        error_message = reparent_child_pr_bases_for_land(
+            ops,
+            repo_root,
+            child_branches=all_children,
+            new_base=trunk,
+        )
+        if error_message is not None:
+            yield CompletionEvent(
+                LandPrError(
+                    success=False,
+                    error_type="child-pr-reparent-failed",
+                    message=error_message,
+                    details={
+                        "current_branch": branch_name,
+                        "children": all_children,
+                        "expected_base": trunk,
+                    },
+                )
+            )
+            return
 
     # Re-parent children in Graphite's local tracking BEFORE merging
     # Uses BranchManager abstraction: no-op for GitBranchManager (non-Graphite mode)

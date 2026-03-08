@@ -492,6 +492,43 @@ def _navigate_or_exit(cleanup: CleanupContext) -> None:
         raise SystemExit(0)
 
 
+def _cleanup_landed_branch(cleanup: CleanupContext) -> None:
+    """Run the appropriate cleanup path without navigation or exit behavior."""
+    resolved = determine_cleanup_type(
+        no_delete=cleanup.no_delete,
+        worktree_path=cleanup.worktree_path,
+        pool_json_path=cleanup.repo.pool_json_path,
+        branch=cleanup.branch,
+        repo_root=cleanup.main_repo_root,
+    )
+
+    match resolved.cleanup_type:
+        case CleanupType.NO_DELETE:
+            user_output(
+                click.style("✓", fg="green")
+                + f" Branch '{cleanup.branch}' and slot assignment preserved (--no-delete)"
+            )
+        case CleanupType.NO_WORKTREE:
+            _cleanup_no_worktree(cleanup)
+        case CleanupType.SLOT_ASSIGNED:
+            assert resolved.pool_state is not None
+            assert resolved.assignment is not None
+            _cleanup_slot_with_assignment(
+                cleanup,
+                state=resolved.pool_state,
+                assignment=resolved.assignment,
+            )
+        case CleanupType.SLOT_UNASSIGNED:
+            assert cleanup.worktree_path is not None
+            _cleanup_slot_without_assignment(cleanup, slot_name=cleanup.worktree_path.name)
+        case CleanupType.ROOT_WORKTREE:
+            _cleanup_root_worktree(cleanup)
+        case CleanupType.NON_SLOT:
+            _cleanup_non_slot_worktree(cleanup)
+        case _:
+            assert_never(resolved.cleanup_type)
+
+
 class ParsedArgument(NamedTuple):
     """Result of parsing a land command argument."""
 
@@ -1154,36 +1191,11 @@ def _cleanup_and_navigate(
         cleanup_confirmed=cleanup_confirmed,
     )
 
-    resolved = determine_cleanup_type(
-        no_delete=cleanup.no_delete,
-        worktree_path=cleanup.worktree_path,
-        pool_json_path=repo.pool_json_path,
-        branch=branch,
-        repo_root=main_repo_root,
-    )
+    if cleanup.no_delete:
+        _handle_no_delete(cleanup)
+        return
 
-    match resolved.cleanup_type:
-        case CleanupType.NO_DELETE:
-            _handle_no_delete(cleanup)
-            return
-        case CleanupType.NO_WORKTREE:
-            _cleanup_no_worktree(cleanup)
-        case CleanupType.SLOT_ASSIGNED:
-            assert resolved.pool_state is not None
-            assert resolved.assignment is not None
-            _cleanup_slot_with_assignment(
-                cleanup, state=resolved.pool_state, assignment=resolved.assignment
-            )
-        case CleanupType.SLOT_UNASSIGNED:
-            assert cleanup.worktree_path is not None
-            _cleanup_slot_without_assignment(cleanup, slot_name=cleanup.worktree_path.name)
-        case CleanupType.ROOT_WORKTREE:
-            _cleanup_root_worktree(cleanup)
-        case CleanupType.NON_SLOT:
-            _cleanup_non_slot_worktree(cleanup)
-        case _:
-            assert_never(resolved.cleanup_type)
-
+    _cleanup_landed_branch(cleanup)
     _navigate_or_exit(cleanup)
 
 
