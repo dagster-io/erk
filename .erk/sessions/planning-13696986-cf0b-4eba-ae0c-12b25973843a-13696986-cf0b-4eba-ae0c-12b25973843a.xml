@@ -1,0 +1,578 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>remote: Compressing objects: 100% (21/21), done.
+remote: Total 33 (delta 12), reused 32 (delta 12), pack-reused 0 (from 0)
+Unpacking objects: 100% (33/33), 17.63 KiB | 1.47 MiB/s, done.
+From https://github.com/dagster-io/erk
+   71a8b3401..1acd92799  master                                     -&gt; origin/master
+ + d01af9e48...225b1c102 gh-pages                                   -&gt; origin/gh-pages  (forced update)
+   79f436e64..fdc28f2f1  plnd/O8832-objective-no-repo-cm-03-08-0038 -&gt; origin/plnd/O8832-objective-no-repo-cm-03-08-0038
+ * [new branch]          plnd/canonicalize-session-stora-03-07-1937 -&gt; origin/plnd/canonicalize-session-stora-03-07-1937
+ * [new branch]          plnd/consolidate-session-manife-03-07-1954 -&gt; origin/plnd/consolidate-session-manife-03-07-1954
+   39709be9e..a0b4325db  plnd/refac-cmux-mock-to-fake-03-07-1844    -&gt; origin/plnd/refac-cmux-mock-to-fake-03-07-1844
+Updating 71a8b3401..1acd92799
+Fast-forward
+ packages/erk-shared/src/erk_shared/learn/extraction/session_schema.py |  65 +++++++++++++++++++++++++++++++++++++++++++++++
+ packages/erk-shared/src/erk_shared/sessions/manifest.py               |  43 +++++++++++++++++++++++++++++++
+ src/erk/cli/commands/exec/scripts/fetch_sessions.py                   |  32 ++---------------------
+ src/erk/cli/commands/exec/scripts/get_learn_sessions.py               |  19 ++------------
+ src/erk/cli/commands/exec/scripts/push_session.py                     | 106 +++++-----------------------------------------------------------------------
+ src/erk/cli/commands/land_learn.py                                    | 103 ++++++++++++++------------------------------------------------------------
+ tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py       | 105 +++++++++++++++++++++++++++++++--------------------------------------------
+ tests/unit/cli/commands/land/test_land_learn.py                       |  43 ++++++++++++++++++++-----------
+ tests/unit/learn/test_session_provenance.py                           | 128 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/unit/sessions/test_manifest.py                                  |  71 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 10 files changed, 407 insertions(+), 308 deletions(-)
+ create mode 100644 packages/erk-shared/src/erk_shared/sessions/manifest.py
+ create mode 100644 tests/unit/learn/test_session_provenance.py
+ create mode 100644 tests/unit/sessions/test_manifest.py
+Resolved 133 packages in 1ms
+Uninstalled 47 packages in 179ms
+ - aiofile==3.9.0
+ - authlib==1.6.9
+ - beartype==0.22.9
+ - cachetools==7.0.2
+ - caio==0.9.25
+ - cffi==2.0.0
+ - cryptography==46.0.5
+ - cyclopts==4.6.0
+ - dnspython==2.8.0
+ - docutils==0.22.4
+ - email-validator==2.3.0
+ - erk-mcp==0.1.0 (from file:///workspaces/erk/packages/erk-mcp)
+ - exceptiongroup==1.3.1
+ - fastmcp==3.1.0
+ - httpx-sse==0.4.3
+ - importlib-metadata==8.7.1
+ - jaraco-classes==3.4.0
+ - jaraco-context==6.1.0
+ - jaraco-functools==4.4.0
+ - jeepney==0.9.0
+ - jsonref==1.1.0
+ - jsonschema==4.26.0
+ - jsonschema-path==0.4.5
+ - jsonschema-specifications==2025.9.1
+ - keyring==25.7.0
+ - mcp==1.26.0
+ - more-itertools==10.8.0
+ - openapi-pydantic==0.5.1
+ - opentelemetry-api==1.39.1
+ - pathable==0.5.0
+ - py-key-value-aio==0.4.4
+ - pycparser==3.0
+ - pydantic-settings==2.13.1
+ - pyjwt==2.11.0
+ - python-dotenv==1.2.2
+ - python-multipart==0.0.22
+ - referencing==0.37.0
+ - rich-rst==1.3.2
+ - rpds-py==0.30.0
+ - secretstorage==3.5.0
+ - sse-starlette==3.3.2
+ - starlette==0.52.1
+ - uncalled-for==0.2.0
+ - uvicorn==0.41.0
+ - watchfiles==1.1.1
+ - websockets==16.0
+ - zipp==3.23.0
+
+why is this happening everytime we connect to the codespace?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15783" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15783}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me investigate what's triggering the package uninstalls on codespace connection.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15783" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15783}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JrScEwv2xPva2ZLGKSFM8j">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find codespace startup hooks</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 819 chars]...ync` removes them.
+
+Focus on finding what triggers the `uv` resolution/sync on connection.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15783" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15783}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KXLAoWsoCY9Jwi7NQNhzch">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Check uv/pyproject dependency changes</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 737 chars]...alled in the codespace environment and what the current lockfile/pyproject.toml specifies?</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15783" cache_read_input_tokens="9738" output_tokens="909" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15783, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KXLAoWsoCY9Jwi7NQNhzch">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary of the findings.
+
+## Investigation Summary
+
+I've identified the root cause of the 47-package uninstall issue when running `uv sync`. Here are my findings:
+
+### Root Cause: Missing `erk-mcp` in `[tool.uv.sources]`
+
+**The Problem:**
+- The `erk-mcp` package exists as a workspace member in `packages/erk-mcp/` and is correctly defined in the `[tool.uv.workspace]` with `members = ["packages/*"]`
+- The `uv.lock` manifest correctly lists all 5 members: `erk`, `erk-dev`, `erk-mcp`, `erk-shared`, and `erk-statusline`
+- However, `erk-mcp` is **NOT** declared in `[tool.uv.sources]` in the root `pyproject.toml`
+
+**Current state of root `pyproject.toml`:**
+```toml
+[tool.uv.sources]
+erk-dev = { workspace = true }
+erk-shared = { workspace = true }
+erk-statusline = { workspace = true }
+# erk-mcp is MISSING here
+```
+
+**Why this causes the uninstall:**
+1. When `uv sync` runs, it reads the `[tool.uv.sources]` section to determine which workspace packages should be treated as local/editable
+2. `erk-mcp` is NOT listed, so uv treats it as a regular PyPI package
+3. The `uv.lock` file was generated when `erk-mcp` WAS properly declared (it has the full dependency tree for `mcp`, `fastmcp`, `starlette`, `uvicorn`, etc.)
+4. When syncing, uv sees the mismatch: the lock file has 47 packages for `erk-mcp`, but the current `pyproject.toml` doesn't declare `erk-mcp` as a workspace source
+5. This causes uv to uninstall all 47 packages that were dependencies of `erk-mcp` (mcp, fastmcp, starlette, uvicorn, sse-starlette, and their transitive dependencies)
+
+### Evidence
+
+... [23 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JrScEwv2xPva2ZLGKSFM8j">
+Perfect! Now I have all the information needed. Let me create a comprehensive report.
+
+## Analysis Summary
+
+I've traced the complete flow of what runs when a user connects to a GitHub Codespace and identified the issue causing the 47 packages to be uninstalled on every connection.
+
+### Connection Startup Flow
+
+**1. `.devcontainer/devcontainer.json` - postCreateCommand (Line 21)**
+```json
+"postCreateCommand": "sudo apt-get update &amp;&amp; sudo apt-get install -y tmux &amp;&amp; curl -fsSL https://claude.ai/install.sh | bash &amp;&amp; pip install uv &amp;&amp; uv sync"
+```
+
+This command runs once when the devcontainer is **first created**. It runs `uv sync` which installs all dependencies from `pyproject.toml` and `uv.lock`.
+
+**2. `.envrc` (direnv configuration)**
+When the user opens a terminal in the codespace, direnv is triggered on `cd` (if installed), which sources:
+```bash
+source_env_if_exists .erk/bin/activate.sh
+```
+
+**3. `.erk/bin/activate.sh` - The Activation Script (Lines 21-24)**
+This script **always runs `uv sync`** unconditionally:
+```bash
+if [ ! -d /Users/schrockn/code/erk/.venv ]; then
+  echo 'Creating virtual environment with uv sync...'
+  uv sync
+fi
+```
+
+
+... [48 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="944" cache_creation_input_tokens="2083" cache_read_input_tokens="25521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2083}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The root cause is clear. Let me verify the finding.</assistant>
+  <usage input_tokens="944" cache_creation_input_tokens="2083" cache_read_input_tokens="25521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2083}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VHjVP2QpHtKCDSNWCwyZGV">
+    <param name="pattern">\[tool\.uv\.sources\]</param>
+    <param name="path">/Users/schrockn/code/erk/pyproject.toml</param>
+    <param name="output_mode">content</param>
+    <param name="-A">6</param>
+  </tool_use>
+  <usage input_tokens="944" cache_creation_input_tokens="2083" cache_read_input_tokens="25521" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2083, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VHjVP2QpHtKCDSNWCwyZGV">
+4:[tool.uv.sources]
+5-erk-dev = { workspace = true }
+6-erk-shared = { workspace = true }
+7-erk-statusline = { workspace = true }
+8-
+9-[project]
+10-name = "erk"
+  </tool_result>
+  <assistant>**Root cause:** `erk-mcp` is missing from `[tool.uv.sources]` in `pyproject.toml`.
+
+The workspace has 5 member packages (`erk`, `erk-dev`, `erk-mcp`, `erk-shared`, `erk-statusline`), but only 3 are declared in `[tool.uv.sources]`. Since `erk-mcp` isn't listed, `uv sync` doesn't treat it as a local workspace package and removes it along with all 47 of its transitive dependencies (fastmcp, mcp, starlette, uvicorn, etc.). Then something (likely the MCP server config or a cached venv) reinstalls them, creating the cycle.
+
+**Fix:** Add one line to `pyproject.toml`:
+
+```toml
+[tool.uv.sources]
+erk-dev = { workspace = true }
+erk-mcp = { workspace = true }      # &lt;-- add this
+erk-shared = { workspace = true }
+erk-statusline = { workspace = true }
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1298" cache_read_input_tokens="27604" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1298}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01UMtvZTgJnQGe4zMHn57nxb">
+    <param name="file_path">/Users/schrockn/.claude/plans/shimmying-baking-donut.md</param>
+    <param name="content"># Fix: erk-mcp missing from uv workspace sources
+
+## Context
+
+Every time a codespace conne...[truncated 712 chars]...ync` again — should be a no-op ("Resolved X packages in Yms" with no installs/uninstalls)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1298" cache_read_input_tokens="27604" output_tokens="648" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UMtvZTgJnQGe4zMHn57nxb">
+File created successfully at: /Users/schrockn/.claude/plans/shimmying-baking-donut.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01YNrMjaiF7bR7ASSrXMRgMA">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="28902" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YNrMjaiF7bR7ASSrXMRgMA">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01KEcroBcUCAMbn6cWGgTzMe">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run uv sync to verify fix'}]</param>
+    <param name="plan"># Fix: erk-mcp missing from uv workspace sources
+
+## Context
+
+Every time a codespace conne...[truncated 712 chars]...ync` again — should be a no-op ("Resolved X packages in Yms" with no installs/uninstalls)
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="29590" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KEcroBcUCAMbn6cWGgTzMe">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/shimmying-baking-donut.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: erk-mcp missing from uv workspace sources
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 13696986-cf0b-4eba-ae0c-12b25973843a \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Fix: erk-mcp missing from uv workspace sources
+
+### Context
+
+Every time a codespace connection is established, `uv sync` runs (via `.erk/bin/activate.sh`) and uninstalls 47 packages. These are all transitive dependencies of `erk-mcp` (fastmcp, mcp, starlette, uvicorn, etc.). The root cause is that `erk-mcp` is not declared in `[tool.uv.sources]` in the root `pyproject.toml`, so uv doesn't recognize it as a local workspace package and strips its dependencies.
+
+### Change
+
+**File:** `pyproject.toml` (line 5)
+
+Add `erk-mcp = { workspace = true }` to `[tool.uv.sources]`:
+
+```toml
+[tool.uv.sources]
+erk-dev = { workspace = true }
+erk-mcp = { workspace = true }
+erk-shared = { workspace = true }
+erk-statusline = { workspace = true }
+```
+
+### Verification
+
+1. Run `uv sync` — should not uninstall any packages
+2. Run `uv sync` again — should be a no-op ("Resolved X packages in Yms" with no installs/uninstalls)
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="30328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 726}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01LWdoeMv2kB96Hrwi1Ck1jv">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="30328" output_tokens="390" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 726, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LWdoeMv2kB96Hrwi1Ck1jv">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01G2a1TifwZzzYciBaSkf4XR">
+    <param name="questions">[{'question': 'Fix: erk-mcp missing from uv workspace sources\nCurrent context: (wt:erk) (...[truncated 397 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1852" cache_read_input_tokens="31054" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1852, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G2a1TifwZzzYciBaSkf4XR">
+User has answered your questions: "Fix: erk-mcp missing from uv workspace sources
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Rd4t6QWnr4kkBc1imh589p">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="23477" cache_read_input_tokens="9738" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 23477, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rd4t6QWnr4kkBc1imh589p">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="13696986-cf0b-4eba-ae0c-12b25973843a" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="13696986-cf0b-4eba-ae0c-12b25973843a" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "13696986-cf0b-4eba-ae0c-12b25973843a" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "13696986-cf0b-4eba-ae0c-12b25973843a" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "13696986-cf0b-4eba-ae0c-12b25973843a" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "13696986-cf0b-4eba-ae0c-12b25973843a" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `fix-mcp-uv-sources`
+
+**Summary:** Adds the missing erk-mcp entry to [tool.uv.sources] in the root pyproject.toml, which prevents uv sync from repeatedly uninstalling 47 MCP-related transitive dependencies on every codespace connection.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2271" cache_read_input_tokens="33215" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2271}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HJRER2snaxZ9KpBSrGHNT7">
+    <param name="command">erk exec plan-save --format json --session-id="13696986-cf0b-4eba-ae0c-12b25973843a" --bra...[truncated 133 chars]...atedly uninstalling 47 MCP-related transitive dependencies on every codespace connection."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2271" cache_read_input_tokens="33215" output_tokens="256" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2271, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HJRER2snaxZ9KpBSrGHNT7">
+{"success": true, "plan_number": 8945, "plan_url": "https://github.com/dagster-io/erk/pull/8945", "title": "[erk-plan] Fix: erk-mcp missing from uv workspace sources", "branch_name": "plnd/fix-mcp-uv-sources-03-07-2012", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/13696986-cf0b-4eba-ae0c-12b25973843a/plan_snapshots/000001-765df6bd"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X6D1r2rSrMaHZWLTdS8Ghq">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="35486" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 436, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X6D1r2rSrMaHZWLTdS8Ghq">
+SESSION_ID=13696986-cf0b-4eba-ae0c-12b25973843a
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/13696986-cf0b-4eba-ae0c-12b25973843a.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EwGSx6qve1iTCLT6BJbfy3">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4eba-ae0c-12b25973843a" --stage planning --source local --plan-id 8945 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="35922" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 280, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
