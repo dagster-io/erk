@@ -44,15 +44,13 @@ Rules triggered by matching actions in code.
 
 **adding a new field to agent-produced JSON without updating normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Add the field to CANONICAL_FIELDS and any aliases to FIELD_ALIASES in the normalization script. Without this, the field may be stripped during normalization.
 
-**adding a new method to Git ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
-
-**adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
-
 **adding a new method to HttpClient ABC without implementing in all providers** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. HttpClient follows the gateway pattern. New methods must be added to abc.py, real.py, and fake.py at minimum.
 
-**adding a new method to LocalGitHub ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
+**adding a new method to a 3-file gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 3 places: abc.py, real.py, fake.py.
 
-**adding a new parameter to a gateway ABC method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests.
+**adding a new method to a dry-run-enabled gateway ABC (Git, LocalGitHub, Graphite)** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
+
+**adding a new parameter to a gateway ABC method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. All implementations must be updated (3 or 5 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests.
 
 **adding a new setup path to a command with existing cleanup** → Read [Convergence Points Architecture](convergence-points.md) first. Ensure the new path calls the same convergence function. Multiple setup paths must converge at a single cleanup point to prevent resource leaks.
 
@@ -140,7 +138,7 @@ Rules triggered by matching actions in code.
 
 **changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
 
-**changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern.
+**changing gateway return type to discriminated union** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Verify all implementations import the new types. For 5-file gateways: abc.py, real.py, fake.py, dry_run.py, printing.py. For 3-file gateways: abc.py, real.py, fake.py.
 
 **changing permission_mode_to_claude() (or future permission_mode_to_codex()) implementations** → Read [PermissionMode Abstraction](permission-modes.md) first. Verify both Claude and Codex backend implementations maintain identical enum-to-mode mappings.
 
@@ -175,6 +173,8 @@ Rules triggered by matching actions in code.
 **creating a new ABC without deciding gateway vs backend pattern** → Read [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) first. Read gateway-vs-backend.md first. Gateways wrap external tools (5-place: abc, real, fake, dry_run, printing). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support.
 
 **creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+
+**creating a new gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py and printing.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not.
 
 **creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
 
@@ -276,7 +276,7 @@ Rules triggered by matching actions in code.
 
 **removing .erk/impl-context/ during implementation without git rm** → Read [Impl-Context API](impl-context-api.md) first. Use git rm -rf for committed impl-context (Step 2d of plan-implement). The remove_impl_context() function is for filesystem-only removal.
 
-**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from all implementation files simultaneously (3 or 5 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages.
 
 **returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
 

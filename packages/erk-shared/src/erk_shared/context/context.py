@@ -35,6 +35,7 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.git import GitBranchManager
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.cmux.abc import Cmux
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry
 from erk_shared.gateway.completion.abc import Completion
@@ -93,6 +94,7 @@ class ErkContext:
     shell: Shell
     completion: Completion
     codespace: Codespace
+    cmux: Cmux
     agent_launcher: AgentLauncher
 
     # Erk-specific services (ABCs now in erk_shared.core for proper type hints)
@@ -217,6 +219,7 @@ class ErkContext:
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
         plan_store: PlanBackend | None = None,
+        cmux: Cmux | None = None,
         remote_github: RemoteGitHub | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
@@ -261,6 +264,7 @@ class ErkContext:
             claude_installation=claude_installation,
             prompt_executor=prompt_executor,
             plan_store=plan_store,
+            cmux=cmux,
             remote_github=remote_github,
             debug=debug,
             repo_root=repo_root,

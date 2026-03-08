@@ -7,14 +7,14 @@ read_when:
   - "implementing new gateway operations"
   - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
 tripwires:
-  - action: "adding a new method to Git ABC"
+  - action: "creating a new gateway ABC"
+    warning: "Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py and printing.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not."
+  - action: "adding a new method to a dry-run-enabled gateway ABC (Git, LocalGitHub, Graphite)"
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
-  - action: "adding a new method to LocalGitHub ABC"
-    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
-  - action: "adding a new method to Graphite ABC"
-    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+  - action: "adding a new method to a 3-file gateway ABC"
+    warning: "Must implement in 3 places: abc.py, real.py, fake.py."
   - action: "removing an abstract method from a gateway ABC"
-    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+    warning: "Must remove from all implementation files simultaneously (3 or 5 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages."
   - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
     warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
     pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
@@ -24,18 +24,16 @@ tripwires:
     warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
     pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
   - action: "changing gateway return type to discriminated union"
-    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+    warning: "Verify all implementations import the new types. For 5-file gateways: abc.py, real.py, fake.py, dry_run.py, printing.py. For 3-file gateways: abc.py, real.py, fake.py."
   - action: "designing error handling for a new gateway method"
     warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
   - action: "adding a new parameter to a gateway ABC method"
-    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+    warning: "All implementations must be updated (3 or 5 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests."
   - action: "creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or similar mechanism-named gateway"
     warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
 ---
 
 # Gateway ABC Implementation Checklist
-
-All gateway ABCs (Git, LocalGitHub, Graphite) follow the same 5-file pattern. When adding a new method to any gateway, you must implement it in **5 places**:
 
 ## Scope
 
@@ -49,6 +47,22 @@ Gateways are named after the **tool or service** they wrap, not the **mechanism*
 
 If your gateway name ends in `Runner`, `Shell`, or `Subprocess` — or `Executor` unless it's a specific executor like `PromptExecutor` — reconsider the abstraction level. A gateway that wraps `subprocess.run` generically skips the meaningful abstraction and is no better than mocking `subprocess.run` directly.
 
+## Default Gateway Pattern (3 Files)
+
+The default for new gateways is the **3-file pattern**:
+
+| Implementation | Purpose                                          |
+| -------------- | ------------------------------------------------ |
+| `abc.py`       | Abstract method definition (contract)            |
+| `real.py`      | Production implementation (subprocess/API calls) |
+| `fake.py`      | Constructor-injected test data (unit tests)      |
+
+Most gateways use this pattern: Cmux, Codespace, AgentLauncher, Browser, Clipboard, Shell, Console, Time, etc.
+
+## Extended Gateway Pattern (5 Files) — Opt-In
+
+Only add `dry_run.py` and `printing.py` when the gateway **participates in a user-facing `--dry-run` feature**. These extra files are not free — they add maintenance burden and must be kept in sync with every method change.
+
 | Implementation | Purpose                                              |
 | -------------- | ---------------------------------------------------- |
 | `abc.py`       | Abstract method definition (contract)                |
@@ -57,68 +71,19 @@ If your gateway name ends in `Runner`, `Shell`, or `Subprocess` — or `Executor
 | `dry_run.py`   | Delegates read-only, no-ops mutations (preview mode) |
 | `printing.py`  | Delegates to wrapped, prints mutations (verbose)     |
 
+**Gateways currently opted into 5-file pattern:** Git, LocalGitHub, Graphite, AgentDocs, CiRunner, Http.
+
+These gateways have dry-run/printing because they participate in erk's `--dry-run` CLI mode. **Do not add dry_run.py/printing.py to a new gateway unless the gateway is wired into the dry-run context factory.**
+
 ## Gateway Locations
 
-| Gateway     | Location                                                |
-| ----------- | ------------------------------------------------------- |
-| Git         | `packages/erk-shared/src/erk_shared/gateway/git/`       |
-| LocalGitHub | `packages/erk-shared/src/erk_shared/gateway/github/`    |
-| Graphite    | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
-| Codespace   | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
-
-## Simplified Gateway Pattern (3 Files)
-
-Some gateways don't benefit from dry-run or printing wrappers. The Codespace gateway and AgentLauncher gateway use a simplified 3-file pattern:
-
-| Implementation | Purpose                    |
-| -------------- | -------------------------- |
-| `abc.py`       | Abstract method definition |
-| `real.py`      | Production implementation  |
-| `fake.py`      | Test double                |
-
-**When to use 3-file pattern:**
-
-- Process replacement operations (`os.execvp`) where dry-run doesn't apply
-- External SSH/remote execution where "printing" the command isn't useful
-- Operations that are inherently all-or-nothing
-- NoReturn operations that replace the current process
-
-**Example 1:** Codespace SSH execution replaces the current process, so there's no meaningful "dry-run" - you either exec into the codespace or you don't.
-
-**Example 2:** AgentLauncher uses `os.execvp()` to replace the current process with a Claude agent. The method has `NoReturn` type annotation because it never returns.
-
-### AgentLauncher Pattern
-
-**Purpose**: Abstract `os.execvp()` for launching Claude agent processes.
-
-**Key characteristics**:
-
-- `NoReturn` type annotation on methods (process replacement)
-- No dry_run.py or printing.py needed (no return value to simulate)
-- Fake raises `SystemExit` to simulate process termination in tests
-
-**Implementation**:
-
-```python
-# abc.py
-@abstractmethod
-def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
-    """Launch agent, replacing current process."""
-    ...
-
-# real.py
-def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
-    os.execvp(...)
-
-# fake.py
-def launch_interactive(self, config: InteractiveAgentConfig, *, command: str) -> NoReturn:
-    self._launches.append(AgentLaunchCall(config=config, command=command))
-    raise SystemExit(0)
-```
-
-**Integration**: Used in 3 locations for Claude agent process replacement.
-
-**Code reference**: `packages/erk-shared/src/erk_shared/gateway/agent_launcher/`
+| Gateway     | Pattern | Location                                                |
+| ----------- | ------- | ------------------------------------------------------- |
+| Git         | 5-file  | `packages/erk-shared/src/erk_shared/gateway/git/`       |
+| LocalGitHub | 5-file  | `packages/erk-shared/src/erk_shared/gateway/github/`    |
+| Graphite    | 5-file  | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
+| Cmux        | 3-file  | `packages/erk-shared/src/erk_shared/gateway/cmux/`      |
+| Codespace   | 3-file  | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
 
 ## Checklist for New Gateway Methods
 
@@ -130,10 +95,10 @@ When adding a new method to any gateway ABC:
    - Constructor parameter for test data (if read method)
    - Mutation tracking list/set (if write method)
    - Read-only property for test assertions (if write method)
-4. [ ] Implement in `dry_run.py`:
+4. [ ] **Only for 5-file gateways:** Implement in `dry_run.py`:
    - Read-only methods: delegate to wrapped
    - Mutation methods: no-op, return success value
-5. [ ] Implement in `printing.py`:
+5. [ ] **Only for 5-file gateways:** Implement in `printing.py`:
    - Read-only methods: delegate silently
    - Mutation methods: print, then delegate
 6. [ ] Add unit tests for Fake behavior
