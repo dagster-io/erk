@@ -1,0 +1,1066 @@
+<session>
+  <meta branch="plnd/remove-shell-integration-c-03-08-0705" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="14623271-afdd-4965-95df-2c5e94af7cea" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="14623271-afdd-4965-95df-2c5e94af7cea" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="14623271-afdd-4965-95df-2c5e94af7cea" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="14623271-afdd-4965-95df-2c5e94af7cea" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15430" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15430}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15430" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15430}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AdbSjJq3aZyeNPrtD9QFYQ">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up implementation from branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15430" cache_read_input_tokens="9738" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15430, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AdbSjJq3aZyeNPrtD9QFYQ">
+Found existing impl dir for plan #8997, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/.erk/impl-context/plnd--remove-shell-integration-c-03-08-0705", "plan_number": 8997, "plan_url": "https://github.com/dagster-io/erk/pull/8997", "branch": "plnd/remove-shell-integration-c-03-08-0705", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8997, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="25168" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 349}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CvYLSLd6pfe6Dv5kMctTdf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/.erk/impl-context/plnd--remove-shell-integration-c-03-08-0705/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="25168" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 349, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CvYLSLd6pfe6Dv5kMctTdf">
+     1→# Remove `shell_integration` config and rename `output_for_shell_integration()`
+     2→
+     3→## Context
+     4→
+     5→The `shell_integration` global config boolean is dead code — it's stored/serialized but never read to gate behavior. The `--script` flag on CLI commands controls shell integration behavior, not this config. Removing it to reduce confusion and clean up the config surface.
+     6→
+     7→Additionally, renaming `ScriptResult.output_for_shell_integration()` → `output_for_script_handler()` to avoid naming confusion with the removed config.
+     8→
+     9→## Part 1: Remove `shell_integration` config field
+    10→
+    11→### Config infrastructure
+    12→1. **`packages/erk-shared/src/erk_shared/context/types.py`** — Remove `shell_integration: bool = False` from `GlobalConfig` dataclass (~line 239), and from the test helper factory function (~lines 253, 266)
+    13→2. **`packages/erk-shared/src/erk_shared/config/schema.py`** — Remove `shell_integration` field from `GlobalConfigSchema` (~lines 110-113)
+    14→3. **`packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`** — Remove read (~line 81) and write (~line 141) of `shell_integration`
+    15→4. **`packages/erk-shared/tests/unit/config/test_schema.py`** — Remove from expected fields (~line 32) and overridable keys assertion (~line 144)
+    16→
+    17→### Documentation
+    18→5. **`src/erk/cli/commands/branch/checkout_cmd.py:431-432`** — Remove docstring line "Enable shell integration for automatic navigation: erk config set shell_integration true"
+    19→6. **`docs/ref/configuration.md`** — Remove shell_integration row and example
+    20→7. **`docs/learned/configuration/config-layers.md:35`** — Remove shell_integration line
+    21→8. **`docs/learned/glossary.md:315`** — Remove shell_integration example line
+    22→9. **`docs/learned/architecture/globalconfig-field-addition.md:73`** — Remove shell_integration from field list
+    23→
+    24→## Part 2: Rename `output_for_shell_integration()` → `output_for_script_handler()`
+    25→
+    26→Use `/rename-swarm` to perform this mechanical rename across all files. The rename targets:
+    27→
+    28→- **Method name**: `output_for_shell_integration` → `output_for_script_handler`
+    29→- **Definition**: `packages/erk-shared/src/erk_shared/core/script_writer.py` (~lines 31-75, including docstring and error messages)
+    30→- **Call sites** (8 files in `src/erk/cli/commands/`): `checkout_helpers.py`, `navigation_helpers.py`, `implement_shared.py`, `wt/create_cmd.py`, `branch/checkout_cmd.py`, `branch/create_cmd.py`, `stack/consolidate_cmd.py`
+
+... [8 lines omitted] ...
+
+    35→1. Run `ruff check` and `ty` for lint/type errors
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1117" cache_read_input_tokens="25517" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1117}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Plan read. Two parts: (1) remove dead `shell_integration` config field, (2) rename `output_for_shell_integration()` → `output_for_script_handler()`.
+
+Let me load tripwires and start reading the files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1117" cache_read_input_tokens="25517" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1117}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01U12e3tqMvWbHw3fCaWpbFG">
+    <param name="query">select:TaskCreate,TaskGet,TaskOutput</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1117" cache_read_input_tokens="25517" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1117, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U12e3tqMvWbHw3fCaWpbFG">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01KzYSkcwq2PnYiuwMb1d2L5">
+    <param name="subject">Part 1: Remove shell_integration config field</param>
+    <param name="description">Remove shell_integration from GlobalConfig, GlobalConfigSchema, real gateway, tests, and documentation</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1542" cache_read_input_tokens="26634" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1542}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KzYSkcwq2PnYiuwMb1d2L5">
+Task #1 created successfully: Part 1: Remove shell_integration config field
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_017FHtLH91habRfF6XUmRdek">
+    <param name="subject">Part 2: Rename output_for_shell_integration → output_for_script_handler</param>
+    <param name="description">Rename method across definition, call sites, and tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1542" cache_read_input_tokens="26634" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1542}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017FHtLH91habRfF6XUmRdek">
+Task #2 created successfully: Part 2: Rename output_for_shell_integration → output_for_script_handler
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_013tDx5ouqbvEtDfPi2dxcBK">
+    <param name="subject">Run CI verification</param>
+    <param name="description">Run ruff, ty, and affected tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1542" cache_read_input_tokens="26634" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1542, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013tDx5ouqbvEtDfPi2dxcBK">
+Task #3 created successfully: Run CI verification
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01JQwfz8bduiPoJH9XpsitVD">
+    <param name="query">select:TaskUpdate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="28176" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JQwfz8bduiPoJH9XpsitVD">
+
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014Mi91SCg4q7rXFMZ8nGdyZ">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+    <param name="activeForm">Removing shell_integration config field</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1145" cache_read_input_tokens="28559" output_tokens="97" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1145, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014Mi91SCg4q7rXFMZ8nGdyZ">
+Updated task #1 activeForm, status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016cUWbNGQoa4RT1YboJKWoi">
+    <param name="command">erk exec impl-signal started --session-id="14623271-afdd-4965-95df-2c5e94af7cea" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="29704" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 120, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016cUWbNGQoa4RT1YboJKWoi">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8997
+}
+  </tool_result>
+  <assistant>Let me read all the files that need changes for Part 1.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="29824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 150}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CaaA6op8R2hsNJYyyXcsLg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="offset">230</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="29824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 150}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CaaA6op8R2hsNJYyyXcsLg">
+   230→    """
+   231→
+   232→    erk_root: Path
+   233→    use_graphite: bool
+   234→    shell_setup_complete: bool
+   235→    github_planning: bool
+   236→    live_dangerously: bool = True
+   237→    show_hidden_commands: bool = False
+   238→    prompt_learn_on_land: bool = True
+   239→    shell_integration: bool = False
+   240→    cmux_integration: bool = False
+   241→    interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()
+   242→
+   243→    @staticmethod
+   244→    def test(
+   245→        erk_root: Path,
+   246→        *,
+   247→        use_graphite: bool = True,
+   248→        shell_setup_complete: bool = True,
+   249→        github_planning: bool = True,
+   250→        live_dangerously: bool = True,
+   251→        show_hidden_commands: bool = False,
+   252→        prompt_learn_on_land: bool = True,
+   253→        shell_integration: bool = False,
+   254→        cmux_integration: bool = False,
+   255→        interactive_agent: InteractiveAgentConfig | None = None,
+   256→    ) -&gt; GlobalConfig:
+   257→        """Create a GlobalConfig with sensible test defaults."""
+   258→        return GlobalConfig(
+   259→            erk_root=erk_root,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016bSfpDpfsVUMd5P7DRyb7E">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/config/schema.py</param>
+    <param name="offset">100</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="29824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 150}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016bSfpDpfsVUMd5P7DRyb7E">
+   100→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "live_dangerously"},
+   101→    )
+   102→    show_hidden_commands: bool = Field(
+   103→        description="Show deprecated/hidden commands in help output",
+   104→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "show_hidden_commands"},
+   105→    )
+   106→    prompt_learn_on_land: bool = Field(
+   107→        description="Prompt about running learn before landing plan PRs",
+   108→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "prompt_learn_on_land"},
+   109→    )
+   110→    shell_integration: bool = Field(
+   111→        description="Enable auto-navigation shell integration (opt-in)",
+   112→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "shell_integration"},
+   113→    )
+   114→    cmux_integration: bool = Field(
+   115→        description="Enable cmux workspace creation on PR checkout",
+   116→        json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "cmux_integration"},
+   117→    )
+   118→
+   119→
+   120→class RepoConfigSchema(BaseModel):
+   121→    """Schema for repository-level configuration keys.
+   122→
+   123→    Fields are defined in display order for `erk config keys`.
+   124→    """
+   125→
+   126→    trunk_branch: str | None = Field(
+   127→        description="The main/master branch name for the repository",
+   128→        json_schema_extra={
+   129→            "level": ConfigLevel.REPO_ONLY,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ADEHNfRbr7wBb1BoCpCX6a">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+    <param name="offset">70</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="29824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 150}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ADEHNfRbr7wBb1BoCpCX6a">
+    70→            allow_dangerous=bool(ia_data.get("allow_dangerous", False)),
+    71→        )
+    72→
+    73→        return GlobalConfig(
+    74→            erk_root=Path(root).expanduser().resolve(),
+    75→            use_graphite=bool(data.get("use_graphite", False)),
+    76→            shell_setup_complete=bool(data.get("shell_setup_complete", False)),
+    77→            github_planning=bool(data.get("github_planning", True)),
+    78→            live_dangerously=bool(data.get("live_dangerously", True)),
+    79→            show_hidden_commands=bool(data.get("show_hidden_commands", False)),
+    80→            prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
+    81→            shell_integration=bool(data.get("shell_integration", False)),
+    82→            cmux_integration=bool(data.get("cmux_integration", False)),
+    83→            interactive_agent=interactive_agent,
+    84→        )
+    85→
+    86→    def save_config(self, config: GlobalConfig) -&gt; None:
+    87→        """Save global config to ~/.erk/config.toml.
+    88→
+    89→        Args:
+    90→            config: GlobalConfig instance to save
+    91→
+    92→        Raises:
+    93→            PermissionError: If directory or file cannot be written
+    94→        """
+    95→        config_path = self.config_path()
+    96→        parent = config_path.parent
+    97→
+    98→        # Check parent directory permissions BEFORE attempting mkdir
+    99→        if parent.exists() and not os.access(parent, os.W_OK):
+
+... [50 lines omitted] ...
+
+   100→            raise PermissionError(
+   112→        except PermissionError:
+   113→            raise PermissionError(
+   123→            raise PermissionError(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QkHfmBB6UsYEzhpdoj339c">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="29824" output_tokens="462" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 150, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QkHfmBB6UsYEzhpdoj339c">
+     1→"""Tests for the config schema module."""
+     2→
+     3→from erk_shared.config.schema import (
+     4→    ConfigLevel,
+     5→    FieldMetadata,
+     6→    GlobalConfigSchema,
+     7→    RepoConfigSchema,
+     8→    get_field_metadata,
+     9→    get_global_config_fields,
+    10→    get_global_config_key_names,
+    11→    get_global_only_keys,
+    12→    get_overridable_keys,
+    13→    get_repo_config_fields,
+    14→    is_global_config_key,
+    15→    iter_displayable_fields,
+    16→)
+    17→
+    18→
+    19→class TestGlobalConfigSchema:
+    20→    """Tests for GlobalConfigSchema metadata."""
+    21→
+    22→    def test_has_expected_fields(self) -&gt; None:
+    23→        """Schema contains all expected global config fields."""
+    24→        field_names = set(GlobalConfigSchema.model_fields.keys())
+    25→        expected_fields = {
+    26→            "erk_root",
+    27→            "use_graphite",
+    28→            "github_planning",
+    29→            "live_dangerously",
+    30→            "show_hidden_commands",
+
+... [138 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the documentation files that need changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5122" cache_read_input_tokens="29974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5122}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017WuAHEDRZ1guEhCFUGn6Zj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">425</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5122" cache_read_input_tokens="29974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5122}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017WuAHEDRZ1guEhCFUGn6Zj">
+   425→    new_slot: bool,
+   426→    force: bool,
+   427→    script: bool,
+   428→) -&gt; None:
+   429→    """Checkout BRANCH by finding and switching to its worktree.
+   430→
+   431→    Prints the activation path for the target worktree. Enable shell integration
+   432→    for automatic navigation: erk config set shell_integration true
+   433→
+   434→    This command finds which worktree has the specified branch checked out
+   435→    and switches to it. If the branch exists but isn't checked out anywhere,
+   436→    a worktree is automatically created. If the branch exists on origin but
+   437→    not locally, a tracking branch and worktree are created automatically.
+   438→
+   439→    Use --for-plan to resolve a plan and set up .erk/impl-context/ after checkout.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XZBk8KFFDhHAHhB99PfYSJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/ref/configuration.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5122" cache_read_input_tokens="29974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5122}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XZBk8KFFDhHAHhB99PfYSJ">
+     1→# Configuration Reference
+     2→
+     3→Erk uses a layered configuration system with global, repository, and local configuration files.
+     4→
+     5→## Configuration Files
+     6→
+     7→| File                     | Scope            | Versioned | Purpose                         |
+     8→| ------------------------ | ---------------- | --------- | ------------------------------- |
+     9→| `~/.erk/config.toml`     | All repositories | No        | User-wide settings              |
+    10→| `.erk/config.toml`       | Single repo      | Yes       | Team-shared repository settings |
+    11→| `.erk/config.local.toml` | Single repo      | No        | Personal overrides (gitignored) |
+    12→
+    13→## Global Configuration
+    14→
+    15→Settings in `~/.erk/config.toml` apply to all repositories.
+    16→
+    17→| Option              | Type    | Description                                     |
+    18→| ------------------- | ------- | ----------------------------------------------- |
+    19→| `erks_root`         | string  | Directory where worktrees are stored            |
+    20→| `use_graphite`      | boolean | Enable Graphite integration for stacked PRs     |
+    21→| `github_planning`   | boolean | Enable GitHub issue-based planning              |
+    22→| `shell_integration` | boolean | Enable auto-navigation when switching worktrees |
+    23→
+    24→**Example:**
+    25→
+    26→```toml
+    27→erks_root = "/Users/you/erks"
+    28→use_graphite = true
+    29→github_planning = true
+    30→shell_integration = true
+
+... [119 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TqAoKgMWhbgtj2ArrqrbBz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/configuration/config-layers.md</param>
+    <param name="offset">25</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5122" cache_read_input_tokens="29974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5122}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TqAoKgMWhbgtj2ArrqrbBz">
+    25→
+    26→### Global Config (`~/.erk/config.toml`)
+    27→
+    28→User-wide settings that apply across all repositories.
+    29→
+    30→**Contains:**
+    31→
+    32→- `erks_root` - Where worktrees are stored
+    33→- `use_graphite` - Enable/disable Graphite integration
+    34→- `shell_setup_complete` - Whether shell integration is configured
+    35→- `shell_integration` - Enable auto-navigation shell integration (default: `false`)
+    36→- `github_planning` - Enable GitHub-based planning
+    37→- `prompt_learn_on_land` - Prompt for learning extraction on PR land
+    38→
+    39→**Not merged with other configs** - this is handled separately via `GlobalConfig`.
+    40→
+    41→### Repo Config (`.erk/config.toml`)
+    42→
+    43→Team-shared settings for the repository. Checked into git.
+    44→
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013MZmWzVJUBZ5mzqaA6nnmh">
+    <param name="pattern">shell_integration</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/glossary.md</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5122" cache_read_input_tokens="29974" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5122}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013MZmWzVJUBZ5mzqaA6nnmh">
+313-use_graphite = true
+314-shell_setup_complete = true
+315:shell_integration = true  # Enable auto-navigation for erk up/down/checkout
+316-prompt_learn_on_land = true  # Set false to disable learn prompts on erk land
+317-```
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0168vBtot5Y681KxevGoPz2h">
+    <param name="pattern">shell_integration</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/architecture/globalconfig-field-addition.md</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5122" cache_read_input_tokens="29974" output_tokens="573" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5122, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0168vBtot5Y681KxevGoPz2h">
+71-- `show_hidden_commands: bool` — expose hidden CLI commands
+72-- `prompt_learn_on_land: bool` — prompt for learn extraction after landing PRs
+73:- `shell_integration: bool` — shell integration active
+74-- `interactive_agent: InteractiveAgentConfig` — interactive agent settings
+75-
+  </tool_result>
+  <assistant>Good, I have all the context. Now let me make all the Part 1 edits.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3319" cache_read_input_tokens="35096" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3319}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Cyd8hKYChjCmRj6PjPsbJL">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="old_string">    prompt_learn_on_land: bool = True
+    shell_integration: bool = False
+    cmux_integration: bool = False</param>
+    <param name="new_string">    prompt_learn_on_land: bool = True
+    cmux_integration: bool = False</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3319" cache_read_input_tokens="35096" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3319}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cyd8hKYChjCmRj6PjPsbJL">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/context/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01P7cCfY7e2MLJLPY5NQKtbD">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="old_string">        prompt_learn_on_land: bool = True,
+        shell_integration: bool = False,
+        cmux_integration: bool = False,</param>
+    <param name="new_string">        prompt_learn_on_land: bool = True,
+        cmux_integration: bool = False,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3319" cache_read_input_tokens="35096" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3319}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P7cCfY7e2MLJLPY5NQKtbD">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/context/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015xcgFjC9XdWba9V7wtixDd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="old_string">            prompt_learn_on_land=prompt_learn_on_land,
+            shell_integration=shell_integration,
+            cmux_integration=cmux_integration,</param>
+    <param name="new_string">            prompt_learn_on_land=prompt_learn_on_land,
+            cmux_integration=cmux_integration,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3319" cache_read_input_tokens="35096" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3319}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015xcgFjC9XdWba9V7wtixDd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/context/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TQrS3nbcB8NrxhR6fT2g76">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/config/schema.py</param>
+    <param name="old_string">    shell_integration: bool = Field(
+        description="Enable auto-navigation shell int...[truncated 45 chars]...el.OVERRIDABLE, "cli_key": "shell_integration"},
+    )
+    cmux_integration: bool = Field(</param>
+    <param name="new_string">    cmux_integration: bool = Field(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3319" cache_read_input_tokens="35096" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3319}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TQrS3nbcB8NrxhR6fT2g76">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/config/schema.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NtLhrFMPwnCwsVukCs9g6W">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+    <param name="old_string">            prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
+           ...[truncated 24 chars]...gration", False)),
+            cmux_integration=bool(data.get("cmux_integration", False)),</param>
+    <param name="new_string">            prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
+            cmux_integration=bool(data.get("cmux_integration", False)),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3319" cache_read_input_tokens="35096" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3319}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NtLhrFMPwnCwsVukCs9g6W">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016V3yxoMymatYuPXawA67rk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+    <param name="old_string">        doc["prompt_learn_on_land"] = config.prompt_learn_on_land
+        doc["shell_integration"] = config.shell_integration
+        doc["cmux_integration"] = config.cmux_integration</param>
+    <param name="new_string">        doc["prompt_learn_on_land"] = config.prompt_learn_on_land
+        doc["cmux_integration"] = config.cmux_integration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3319" cache_read_input_tokens="35096" output_tokens="1203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3319, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016V3yxoMymatYuPXawA67rk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the test file and documentation edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1790" cache_read_input_tokens="38415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1790}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017DtsE2DU6jrLhCY4kpN7RL">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">            "prompt_learn_on_land",
+            "shell_integration",
+            "cmux_integration",</param>
+    <param name="new_string">            "prompt_learn_on_land",
+            "cmux_integration",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1790" cache_read_input_tokens="38415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1790}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017DtsE2DU6jrLhCY4kpN7RL">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:             "prompt_learn_on_land",
+            "shell_integration",
+            "cmux_integration",&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Di8PXhLVqVD8XqEiu7VExh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">        assert len(fields) == 8
+
+    def test_iterates_all_repo_fields(self) -&gt; None:
+    ...[truncated 24 chars]...fields."""
+        fields = list(get_repo_config_fields())
+        assert len(fields) == 8</param>
+    <param name="new_string">        assert len(fields) == 7
+
+    def test_iterates_all_repo_fields(self) -&gt; None:
+    ...[truncated 24 chars]...fields."""
+        fields = list(get_repo_config_fields())
+        assert len(fields) == 8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1790" cache_read_input_tokens="38415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1790}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Di8PXhLVqVD8XqEiu7VExh">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018TkrFFb3XDwR54hS7bj2GV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">            "prompt_learn_on_land",
+            "shell_integration",
+            "cmux_integration",
+        ]
+        assert field_names == expected_order</param>
+    <param name="new_string">            "prompt_learn_on_land",
+            "cmux_integration",
+        ]
+        assert field_names == expected_order</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1790" cache_read_input_tokens="38415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1790}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018TkrFFb3XDwR54hS7bj2GV">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01558PZxQcDNWVLpgzbAJLAq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">        assert "prompt_learn_on_land" in keys
+        assert "shell_integration" in keys</param>
+    <param name="new_string">        assert "prompt_learn_on_land" in keys</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1790" cache_read_input_tokens="38415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1790}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01558PZxQcDNWVLpgzbAJLAq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016qsDb8zpccLmRG5gJiUr5Q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">        assert len(keys) == 8</param>
+    <param name="new_string">        assert len(keys) == 7</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1790" cache_read_input_tokens="38415" output_tokens="996" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1790, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016qsDb8zpccLmRG5gJiUr5Q">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FTMsXUFtZkFYcmuh3GtU8t">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">            "prompt_learn_on_land",
+            "shell_integration",
+            "cmux_integration",</param>
+    <param name="new_string">            "prompt_learn_on_land",
+            "cmux_integration",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1592" cache_read_input_tokens="40205" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1592, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FTMsXUFtZkFYcmuh3GtU8t">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/config/test_schema.py has been updated. All occurrences of '            "prompt_learn_on_land",
+            "shell_integration",
+            "cmux_integration",' were successfully replaced with '            "prompt_learn_on_land",
+            "cmux_integration",'.
+  </tool_result>
+  <assistant>Now the documentation files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 314}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QaKjWXBehbHPJGePEmFmFQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    Prints the activation path for the target worktree. Enable shell integration
+    for automatic navigation: erk config set shell_integration true
+
+    This command</param>
+    <param name="new_string">    Prints the activation path for the target worktree.
+
+    This command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 314}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QaKjWXBehbHPJGePEmFmFQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LnESctKGvfex4zbLVPisnQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/ref/configuration.md</param>
+    <param name="old_string">| `shell_integration` | boolean | Enable auto-navigation when switching worktrees |
+</param>
+    <param name="new_string">
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 314}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LnESctKGvfex4zbLVPisnQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/ref/configuration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EDsGzJEmwdCVvVZ3KRrFMd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/ref/configuration.md</param>
+    <param name="old_string">github_planning = true
+shell_integration = true</param>
+    <param name="new_string">github_planning = true</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 314}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EDsGzJEmwdCVvVZ3KRrFMd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/ref/configuration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01J17H4PMMtvnEsztXSXwJ8c">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/configuration/config-layers.md</param>
+    <param name="old_string">- `shell_integration` - Enable auto-navigation shell integration (default: `false`)
+</param>
+    <param name="new_string">
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 314}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J17H4PMMtvnEsztXSXwJ8c">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/configuration/config-layers.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UMYR9CS6QCAXAdkLu59hbA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/glossary.md</param>
+    <param name="old_string">shell_integration = true  # Enable auto-navigation for erk up/down/checkout
+</param>
+    <param name="new_string">
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 314}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UMYR9CS6QCAXAdkLu59hbA">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016ZT34QEBfv8TPeJWuGUyTB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/architecture/globalconfig-field-addition.md</param>
+    <param name="old_string">- `shell_integration: bool` — shell integration active
+</param>
+    <param name="new_string">
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="41797" output_tokens="818" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016ZT34QEBfv8TPeJWuGUyTB">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01J4Qyu1GfZzbQ5sj95RCAa5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/glossary.md</param>
+    <param name="offset">310</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1308" cache_read_input_tokens="42111" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1308}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J4Qyu1GfZzbQ5sj95RCAa5">
+   310→
+   311→```toml
+   312→erks_root = "/Users/you/worktrees"
+   313→use_graphite = true
+   314→shell_setup_complete = true
+   315→shell_integration = true  # Enable auto-navigation for erk up/down/checkout
+   316→prompt_learn_on_land = true  # Set false to disable learn prompts on erk land
+   317→```
+   318→
+   319→**Access**: Via `ConfigStore` interface.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RPMW5jHdMY8pzB5HRMfQRV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/architecture/globalconfig-field-addition.md</param>
+    <param name="offset">68</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1308" cache_read_input_tokens="42111" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1308, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RPMW5jHdMY8pzB5HRMfQRV">
+    68→- `use_graphite: bool` — whether to use Graphite for PR management
+    69→- `shell_setup_complete: bool` — shell integration status
+    70→- `github_planning: bool` — GitHub-based planning enabled
+    71→- `show_hidden_commands: bool` — expose hidden CLI commands
+    72→- `prompt_learn_on_land: bool` — prompt for learn extraction after landing PRs
+    73→- `shell_integration: bool` — shell integration active
+    74→- `interactive_agent: InteractiveAgentConfig` — interactive agent settings
+    75→
+    76→## Related Documentation
+    77→
+    78→- [Config Layers](../configuration/config-layers.md) — Full config architecture
+    79→- [Conventions](../conventions.md) — Frozen dataclass requirements
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Kd3zPhVjNNuZgzaUQQF1HD">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/glossary.md</param>
+    <param name="old_string">shell_integration = true  # Enable auto-navigation for erk up/down/checkout
+</param>
+    <param name="new_string">
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="780" cache_read_input_tokens="43419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 780}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kd3zPhVjNNuZgzaUQQF1HD">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FdL9hXfy2JM6pS95FzJsEa">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/architecture/globalconfig-field-addition.md</param>
+    <param name="old_string">- `shell_integration: bool` — shell integration active
+</param>
+    <param name="new_string">
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="780" cache_read_input_tokens="43419" output_tokens="308" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 780, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FdL9hXfy2JM6pS95FzJsEa">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/docs/learned/architecture/globalconfig-field-addition.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me check for any remaining `shell_integration` references (excluding git history and the plan).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="455" cache_read_input_tokens="44199" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 455}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MkEezpwcs3CCJf7qHtuxHk">
+    <param name="pattern">shell_integration</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14</param>
+    <param name="output_mode">content</param>
+    <param name="glob">!.erk/**</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="455" cache_read_input_tokens="44199" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 455, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MkEezpwcs3CCJf7qHtuxHk">
+tests/commands/shell/AGENTS.md:9:- `test_shell_integration.py` - Shell wrapper generation and integration
+tests/commands/shell/AGENTS.md:27:from erk.commands.shell import prepare_shell_integration
+tests/commands/shell/AGENTS.md:35:    result = runner.invoke(prepare_shell_integration, ["bash"], obj=ctx)
+tests/commands/shell/AGENTS.md:47:    result = runner.invoke(prepare_shell_integration, ["bash"], obj=ctx)
+tests/commands/shell/AGENTS.md:58:    result = runner.invoke(prepare_shell_integration, ["fish"], obj=ctx)
+tests/commands/shell/AGENTS.md:215:        prepare_shell_integration,
+src/erk/cli/commands/wt/create_cmd.py:980:        result.output_for_shell_integration()
+tests/commands/test_create.py:119:def test_create_from_current_branch_shows_shell_integration_instructions() -&gt; None:
+src/erk/cli/commands/stack/consolidate_cmd.py:463:        activation_result.output_for_shell_integration()
+tests/commands/test_wt_checkout.py:133:def test_checkout_shows_branch_info_with_shell_integration() -&gt; None:
+tests/commands/test_wt_checkout.py:172:def test_checkout_prints_activation_instructions_without_shell_integration() -&gt; None:
+src/erk/cli/commands/implement_shared.py:575:        result.output_for_shell_integration()
+src/erk/cli/commands/navigation_helpers.py:395:        result.output_for_shell_integration()
+src/erk/cli/commands/branch/checkout_cmd.py:340:        result.output_for_shell_integration()
+src/erk/cli/commands/branch/create_cmd.py:277:            result.output_for_shell_integration()
+tests/core/test_script_result_output.py:12:def test_output_for_shell_integration_routes_to_stdout() -&gt; None:
+tests/core/test_script_result_output.py:13:    """Test that output_for_shell_integration() routes to stdout."""
+tests/core/test_script_result_output.py:26:        result.output_for_shell_integration()
+tests/core/test_script_result_output.py:58:def test_output_for_shell_integration_raises_on_duplicate_call() -&gt; None:
+tests/core/test_script_result_output.py:59:    """Test that calling output_for_shell_integration() twice raises ValueError."""
+tests/core/test_script_result_output.py:70:        result.output_for_shell_integration()
+tests/core/test_script_result_output.py:76:        result.output_for_shell_integration()
+tests/core/test_script_result_output.py:79:    assert "output_for_shell_integration" in str(exc_info.value)
+tests/core/test_script_result_output.py:134:    assert hasattr(result, "output_for_shell_integration")
+tests/commands/workspace/test_consolidate.py:1119:        # The script path is output via output_for_shell_integration() and appears in stdout
+src/erk/cli/commands/checkout_helpers.py:43:    result.output_for_shell_integration()
+src/erk/cli/commands/checkout_helpers.py:212:        result.output_for_shell_integration()
+packages/erk-shared/src/erk_shared/core/script_writer.py:31:    def output_for_shell_integration(self) -&gt; None:
+packages/erk-shared/src/erk_shared/core/script_writer.py:49:            result.output_for_shell_integration()
+packages/erk-shared/src/erk_shared/core/script_writer.py:55:                script_result.output_for_shell_integration()
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Good — the remaining `shell_integration` references are all Part 2 (`output_for_shell_integration` method rename) plus `tests/commands/shell/AGENTS.md` which refers to a different concept (shell command integration, not the config). Let me verify the AGENTS.md is about something different.
+
+The `tests/commands/shell/AGENTS.md` references are about `prepare_shell_integration` — a shell setup function, not the config field. Those should stay.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1191" cache_read_input_tokens="44654" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Ei6kUssDQKtSNey5aqhzHh">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1191" cache_read_input_tokens="44654" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ei6kUssDQKtSNey5aqhzHh">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JqazmaxcvYE648M37Dszn4">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+    <param name="activeForm">Renaming output_for_shell_integration → output_for_script_handler</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1191" cache_read_input_tokens="44654" output_tokens="269" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1191, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JqazmaxcvYE648M37Dszn4">
+Updated task #2 activeForm, status
+  </tool_result>
+  <assistant>Part 1 complete. Now Part 2 — renaming `output_for_shell_integration` → `output_for_script_handler`. The plan suggests `/rename-swarm` but this is a simple find-replace across files. Let me do it directly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="45845" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 345}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J3466DC4y7ezCFf6wFbZBj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/core/script_writer.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="45845" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 345, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J3466DC4y7ezCFf6wFbZBj">
+     1→"""Shell activation script writing abstraction - ABC and types.
+     2→
+     3→This module provides ScriptResult and the abstract ScriptWriter interface.
+     4→The real implementation (RealScriptWriter) remains in erk.core.script_writer.
+     5→
+     6→ScriptResult is a self-documenting return type for commands that generate shell
+     7→activation scripts. The key insight is that ScriptResult knows how to output
+     8→itself correctly to the right stream (stdout vs stderr), preventing an entire
+     9→class of shell integration bugs.
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class ScriptResult:
+    19→    """Result of writing an activation script.
+    20→
+    21→    Attributes:
+    22→        path: Path to the script file (may be sentinel in tests)
+    23→        content: Full content of the script including headers
+    24→        _output_performed: Private flag tracking if output has been performed (for idempotency)
+    25→    """
+    26→
+    27→    path: Path
+    28→    content: str
+    29→    _output_performed: bool = False
+    30→
+
+... [141 lines omitted] ...
+
+    40→        times on the same instance will raise ValueError.
+    58→            ValueError: If output has already been performed for this ScriptResult.
+    62→            raise ValueError(
+    86→        times on the same instance will raise ValueError.
+    95→            ValueError: If output has already been performed for this ScriptResult.
+    99→            raise ValueError(
+  </tool_result>
+  <assistant>Now let me do the rename across all files. I'll use `replace_all` on each file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2191" cache_read_input_tokens="46190" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2191}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>
