@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "plan_id": 8965,
+  "sessions": [
+    {
+      "session_id": "e0cab27d-2ca2-4651-afbe-7b16109ea8a4",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T02:21:57.208486+00:00",
+      "files": [
+        "impl-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-part1.xml",
+        "impl-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-part2.xml",
+        "impl-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-part3.xml",
+        "impl-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-part4.xml",
+        "impl-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-part5.xml",
+        "impl-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-e0cab27d-2ca2-4651-afbe-7b16109ea8a4-part6.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 5,
+      "raw_size_kb": 285,
+      "xml_size_kb": 93,
+      "git_branch": "plnd/simplify-current-wt-cmds-03-07-2114"
+    }
+  ]
+}
