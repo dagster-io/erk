@@ -162,3 +162,17 @@ class GitRemoteOps(ABC):
             ValueError: If remote doesn't exist or has no URL
         """
         ...
+
+    @abstractmethod
+    def get_local_tracking_ref_sha(self, repo_root: Path, remote: str, branch: str) -> str | None:
+        """Get SHA of the local remote-tracking ref without contacting remote.
+
+        Args:
+            repo_root: Path to the git repository root
+            remote: Remote name (e.g., "origin")
+            branch: Branch name
+
+        Returns:
+            SHA hex string, or None if the tracking ref doesn't exist locally.
+        """
+        ...

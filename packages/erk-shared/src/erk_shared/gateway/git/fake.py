@@ -144,7 +144,8 @@ class FakeGit(Git):
         commits_ahead: dict[tuple[Path, str], int] | None = None,
         commits_behind: dict[tuple[Path, str], int] | None = None,
         remote_urls: dict[tuple[Path, str], str] | None = None,
-        remote_refs: dict[tuple[str, str], str] | None = None,
+        remote_refs: dict[tuple[Path, str, str], str] | None = None,
+        local_tracking_refs: dict[tuple[Path, str, str], str] | None = None,
         ref_file_contents: dict[tuple[str, str], bytes] | None = None,
         add_all_raises: Exception | None = None,
         fetch_branch_raises: Exception | None = None,
@@ -207,7 +208,9 @@ class FakeGit(Git):
             commits_ahead: Mapping of (cwd, base_branch) -> commit count
             commits_behind: Mapping of (cwd, target_branch) -> commit count
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
-            remote_refs: Mapping of (remote, ref) -> commit SHA for get_remote_ref()
+            remote_refs: Mapping of (repo_root, remote, ref) -> SHA string for get_remote_ref()
+            local_tracking_refs: Mapping of (repo_root, remote, branch) -> SHA string
+                for get_local_tracking_ref_sha()
             ref_file_contents: Mapping of (ref, file_path) -> bytes for read_file_from_ref
             add_all_raises: Exception to raise when add_all() is called
             fetch_branch_raises: Exception to raise when fetch_branch() is called
@@ -386,7 +389,8 @@ class FakeGit(Git):
         # Remote operations subgateway - linked to FakeGit's state
         self._remote_gateway = FakeGitRemoteOps(
             remote_urls=self._remote_urls,
-            remote_refs=self._remote_refs,
+            remote_refs=remote_refs,
+            local_tracking_refs=local_tracking_refs,
             fetch_branch_raises=self._fetch_branch_raises,
             pull_branch_raises=self._pull_branch_raises,
             push_to_remote_error=self._push_to_remote_error,

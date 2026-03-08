@@ -148,6 +148,18 @@ class RealGitRemoteOps(GitRemoteOps):
         sha = first_line.split("\t")[0].strip()
         return sha if sha else None
 
+    def get_local_tracking_ref_sha(self, repo_root: Path, remote: str, branch: str) -> str | None:
+        """Get SHA of the local remote-tracking ref."""
+        result = run_subprocess_with_context(
+            cmd=["git", "rev-parse", "--verify", f"{remote}/{branch}"],
+            operation_context=f"get local tracking ref '{remote}/{branch}'",
+            cwd=repo_root,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.
 
