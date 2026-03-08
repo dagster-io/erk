@@ -9,7 +9,7 @@ from rich.text import Text
 from textual.command import DiscoveryHit, Hit, Hits, Provider
 
 from erk.tui.commands.registry import CATEGORY_EMOJI, get_available_commands, get_display_name
-from erk.tui.commands.types import CommandCategory, CommandContext
+from erk.tui.commands.types import CommandContext
 from erk.tui.views.types import ViewMode
 
 if TYPE_CHECKING:
@@ -265,12 +265,9 @@ class PlanCommandProvider(Provider):
 class NodeCommandProvider(Provider):
     """Command provider for objective nodes modal.
 
-    Provides OPEN and COPY commands for the selected node's PR.
-    ACTION commands (close, dispatch, land, etc.) are excluded because
-    they require the full app context.
+    Provides all command categories for the selected node's PR,
+    including ACTION commands which are dispatched via the nodes screen.
     """
-
-    _ALLOWED_CATEGORIES = {CommandCategory.OPEN, CommandCategory.COPY}
 
     @property
     def _nodes_screen(self) -> ObjectiveNodesScreen:
@@ -312,8 +309,6 @@ class NodeCommandProvider(Provider):
             return
 
         for cmd in get_available_commands(ctx):
-            if cmd.category not in self._ALLOWED_CATEGORIES:
-                continue
             emoji = CATEGORY_EMOJI[cmd.category]
             name = get_display_name(cmd, ctx)
             display = _format_palette_display(emoji, cmd.description, name)
@@ -338,8 +333,6 @@ class NodeCommandProvider(Provider):
         matcher = self.matcher(query)
 
         for cmd in get_available_commands(ctx):
-            if cmd.category not in self._ALLOWED_CATEGORIES:
-                continue
             name = get_display_name(cmd, ctx)
             search_text = f"{cmd.description}: {name}"
             score = matcher.match(search_text)

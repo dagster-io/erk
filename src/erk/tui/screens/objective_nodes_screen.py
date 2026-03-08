@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
@@ -15,6 +17,7 @@ from erk.tui.commands.provider import NodeCommandProvider
 from erk.tui.commands.registry import get_copy_text
 from erk.tui.commands.types import CommandContext
 from erk.tui.data.types import PlanRowData
+from erk.tui.screens.launch_screen import LaunchScreen
 from erk.tui.views.types import ViewMode
 from erk_shared.gateway.github.metadata.dependency_graph import (
     _STATUS_SYMBOLS,
@@ -24,6 +27,9 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 from erk_shared.gateway.plan_service.abc import PlanService
+
+if TYPE_CHECKING:
+    from erk.tui.app import ErkDashApp
 
 
 def _styled_stage(lifecycle_display: str) -> str | Text:
@@ -152,6 +158,7 @@ class ObjectiveNodesScreen(ModalScreen):
         Binding("p", "open_pr", "Open PR", show=False),
         Binding("o", "open_objective", "Objective", show=False),
         Binding("enter", "open_detail", "Detail", show=False),
+        Binding("l", "launch", "Launch", show=False),
         Binding("ctrl+p", "command_palette", "Commands", show=False),
     ]
 
@@ -274,7 +281,7 @@ class ObjectiveNodesScreen(ModalScreen):
                 yield Label("Loading nodes...", id="nodes-loading")
 
             yield Label(
-                "p: PR  o: objective  Enter: detail  Ctrl+P: commands  Esc: close",
+                "p: PR  o: objective  l: launch  Enter: detail  Ctrl+P: commands  Esc: close",
                 id="nodes-footer",
             )
 
@@ -344,6 +351,19 @@ class ObjectiveNodesScreen(ModalScreen):
         """Open the command palette."""
         self.app.action_command_palette()
 
+    def action_launch(self) -> None:
+        """Open the launchpad for the selected node's PR."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+        self.app.push_screen(LaunchScreen(ctx=ctx), self._on_launch_result)
+
+    def _on_launch_result(self, command_id: str | None) -> None:
+        """Handle result from LaunchScreen dismissal."""
+        if command_id is not None:
+            self.execute_command(command_id)
+
     def _get_selected_row(self) -> PlanRowData | None:
         """Get PlanRowData for the currently selected table row."""
         table_results = self.query("#nodes-table")
@@ -403,10 +423,10 @@ class ObjectiveNodesScreen(ModalScreen):
         )
 
     def execute_command(self, command_id: str) -> None:
-        """Execute a command from the palette.
+        """Execute a command from the palette or launchpad.
 
-        Handles OPEN and COPY commands. ACTION commands that require
-        the full app context are skipped.
+        Handles OPEN, COPY, and ACTION commands. ACTION commands dismiss
+        the nodes screen and delegate to app-level async methods.
 
         Args:
             command_id: The ID of the command to execute
@@ -437,6 +457,135 @@ class ObjectiveNodesScreen(ModalScreen):
             if text is not None:
                 self._service.clipboard.copy(text)
                 self.notify(f"Copied: {text}", timeout=2)
+
+        else:
+            self._execute_action_command(command_id, row)
+
+    def _dismiss_and_get_app(self) -> ErkDashApp | None:
+        """Dismiss the screen and return the app if it is an ErkDashApp.
+
+        Returns:
+            The ErkDashApp instance, or None if the app is not an ErkDashApp.
+        """
+        from erk.tui.app import ErkDashApp
+
+        self.dismiss()
+        if isinstance(self.app, ErkDashApp):
+            return self.app
+        return None
+
+    def _execute_action_command(self, command_id: str, row: PlanRowData) -> None:
+        """Execute an ACTION command by dismissing and delegating to app.
+
+        Args:
+            command_id: The ACTION command ID
+            row: The selected row's plan data
+        """
+        if command_id == "close_plan":
+            self._action_close_plan(row)
+        elif command_id == "dispatch_to_queue":
+            self._action_dispatch_to_queue(row)
+        elif command_id == "land_pr":
+            self._action_land_pr(row)
+        elif command_id == "rebase_remote":
+            self._action_rebase_remote(row)
+        elif command_id == "address_remote":
+            self._action_address_remote(row)
+        elif command_id == "rewrite_remote":
+            self._action_rewrite_remote(row)
+        elif command_id in ("cmux_checkout", "cmux_teleport"):
+            self._action_cmux_checkout(command_id, row)
+        elif command_id == "incremental_dispatch":
+            self._action_incremental_dispatch(row)
+
+    def _action_close_plan(self, row: PlanRowData) -> None:
+        if row.plan_url is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"close-plan-{row.plan_id}"
+        app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+        app._close_plan_async(op_id, row.plan_id, row.plan_url)
+
+    def _action_dispatch_to_queue(self, row: PlanRowData) -> None:
+        if row.plan_url is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"dispatch-plan-{row.plan_id}"
+        app._start_operation(op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue...")
+        app._dispatch_to_queue_async(op_id, row.plan_id)
+
+    def _action_land_pr(self, row: PlanRowData) -> None:
+        if row.pr_number is None or row.pr_head_branch is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"land-pr-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
+        plan_id = row.plan_id if not row.is_learn_plan else None
+        app._land_pr_async(
+            op_id=op_id,
+            pr_number=row.pr_number,
+            branch=row.pr_head_branch,
+            objective_issue=row.objective_issue,
+            plan_id=plan_id,
+        )
+
+    def _action_rebase_remote(self, row: PlanRowData) -> None:
+        if row.pr_number is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"rebase-pr-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Dispatching rebase for PR #{row.pr_number}...")
+        app._rebase_remote_async(op_id, row.pr_number)
+
+    def _action_address_remote(self, row: PlanRowData) -> None:
+        if row.pr_number is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"address-pr-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Dispatching address for PR #{row.pr_number}...")
+        app._address_remote_async(op_id, row.pr_number)
+
+    def _action_rewrite_remote(self, row: PlanRowData) -> None:
+        if row.pr_number is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"rewrite-pr-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Dispatching rewrite for PR #{row.pr_number}...")
+        app._rewrite_remote_async(op_id, row.pr_number)
+
+    def _action_cmux_checkout(self, command_id: str, row: PlanRowData) -> None:
+        if row.pr_number is None or row.pr_head_branch is None:
+            return
+        teleport = command_id == "cmux_teleport"
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        verb = "teleport" if teleport else "checkout"
+        op_id = f"cmux-{verb}-{row.pr_number}"
+        suffix = " (teleport)" if teleport else ""
+        label = f"Creating cmux workspace{suffix} for PR #{row.pr_number}..."
+        app._start_operation(op_id=op_id, label=label)
+        app._cmux_checkout_async(op_id, row.pr_number, row.pr_head_branch, teleport=teleport)
+
+    def _action_incremental_dispatch(self, row: PlanRowData) -> None:
+        if row.pr_number is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        app.execute_palette_command("incremental_dispatch")
 
     @work(thread=True)
     def _fetch_nodes(self) -> None:

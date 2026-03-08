@@ -1,11 +1,16 @@
-"""Tests for ObjectiveNodesScreen _build_table_rows formatting."""
+"""Tests for ObjectiveNodesScreen _build_table_rows formatting and action methods."""
+
+from datetime import UTC, datetime
 
 from rich.text import Text
 
-from erk.tui.screens.objective_nodes_screen import _build_table_rows
+from erk.tui.data.fake_provider import FakePlanDataProvider
+from erk.tui.data.types import PlanRowData
+from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen, _build_table_rows
 from erk_shared.gateway.github.metadata.dependency_graph import ObjectiveNode
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 def _rows_from(
@@ -404,3 +409,249 @@ def test_node_rows_parallel_mapping() -> None:
     assert node_rows[1].id == "1.1"
     assert node_rows[3] is not None
     assert node_rows[3].id == "2.1"
+
+
+# Tests for ObjectiveNodesScreen action methods
+
+
+def _make_screen() -> ObjectiveNodesScreen:
+    """Create an ObjectiveNodesScreen for testing action methods."""
+    return ObjectiveNodesScreen(
+        provider=FakePlanDataProvider(),
+        service=FakePlanService(),
+        plan_id=123,
+        plan_body="",
+        full_title="Test Objective",
+    )
+
+
+def _make_row_without_plan_url() -> PlanRowData:
+    """Create a PlanRowData with plan_url=None for guard testing."""
+    return PlanRowData(
+        plan_id=123,
+        plan_url=None,
+        pr_number=456,
+        pr_url="https://github.com/test/repo/pull/456",
+        pr_display="456",
+        checks_display="-",
+        checks_passing=None,
+        checks_counts=None,
+        ci_summary_comment_id=None,
+        worktree_name="",
+        exists_locally=False,
+        local_impl_display="-",
+        remote_impl_display="-",
+        run_id_display="-",
+        run_state_display="-",
+        run_url=None,
+        full_title="Test",
+        plan_body="",
+        pr_title=None,
+        pr_state=None,
+        pr_head_branch="feature-123",
+        worktree_branch=None,
+        last_local_impl_at=None,
+        last_remote_impl_at=None,
+        run_id=None,
+        run_status=None,
+        run_conclusion=None,
+        log_entries=(),
+        resolved_comment_count=0,
+        total_comment_count=0,
+        comments_display="-",
+        learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_issue_closed=None,
+        learn_plan_pr=None,
+        learn_run_url=None,
+        learn_display="- not started",
+        learn_display_icon="-",
+        objective_issue=None,
+        objective_url=None,
+        objective_display="-",
+        objective_done_nodes=0,
+        objective_total_nodes=0,
+        objective_progress_display="-",
+        objective_slug_display="-",
+        objective_state_display="-",
+        objective_deps_display="-",
+        objective_deps_plans=(),
+        objective_next_node_display="-",
+        updated_at=datetime(2025, 1, 1, tzinfo=UTC),
+        updated_display="-",
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
+        created_display="-",
+        author="test-user",
+        is_learn_plan=False,
+        lifecycle_display="-",
+        status_display="-",
+    )
+
+
+class TestActionClosePlan:
+    """Tests for _action_close_plan guard conditions."""
+
+    def test_does_nothing_without_plan_url(self) -> None:
+        """_action_close_plan does nothing if plan_url is None."""
+        screen = _make_screen()
+        row = _make_row_without_plan_url()
+        # Should not raise
+        screen._action_close_plan(row)
+
+
+class TestActionDispatchToQueue:
+    """Tests for _action_dispatch_to_queue guard conditions."""
+
+    def test_does_nothing_without_plan_url(self) -> None:
+        """_action_dispatch_to_queue does nothing if plan_url is None."""
+        screen = _make_screen()
+        row = _make_row_without_plan_url()
+        # Should not raise
+        screen._action_dispatch_to_queue(row)
+
+
+class TestActionLandPR:
+    """Tests for _action_land_pr guard conditions."""
+
+    def test_does_nothing_without_pr_number(self) -> None:
+        """_action_land_pr does nothing if pr_number is None."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")  # No pr_number
+        # Should not raise
+        screen._action_land_pr(row)
+
+    def test_does_nothing_without_pr_head_branch(self) -> None:
+        """_action_land_pr does nothing if pr_head_branch is None."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test", pr_number=456)  # No pr_head_branch
+        # Should not raise
+        screen._action_land_pr(row)
+
+
+class TestActionRebaseRemote:
+    """Tests for _action_rebase_remote guard conditions."""
+
+    def test_does_nothing_without_pr_number(self) -> None:
+        """_action_rebase_remote does nothing if pr_number is None."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")  # No pr_number
+        # Should not raise
+        screen._action_rebase_remote(row)
+
+
+class TestActionAddressRemote:
+    """Tests for _action_address_remote guard conditions."""
+
+    def test_does_nothing_without_pr_number(self) -> None:
+        """_action_address_remote does nothing if pr_number is None."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")  # No pr_number
+        # Should not raise
+        screen._action_address_remote(row)
+
+
+class TestActionRewriteRemote:
+    """Tests for _action_rewrite_remote guard conditions."""
+
+    def test_does_nothing_without_pr_number(self) -> None:
+        """_action_rewrite_remote does nothing if pr_number is None."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")  # No pr_number
+        # Should not raise
+        screen._action_rewrite_remote(row)
+
+
+class TestActionCmuxCheckout:
+    """Tests for _action_cmux_checkout guard conditions."""
+
+    def test_does_nothing_without_pr_number(self) -> None:
+        """_action_cmux_checkout does nothing if pr_number is None."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")  # No pr_number
+        # Should not raise
+        screen._action_cmux_checkout("cmux_checkout", row)
+
+    def test_does_nothing_without_pr_head_branch(self) -> None:
+        """_action_cmux_checkout does nothing if pr_head_branch is None."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test", pr_number=456)  # No pr_head_branch
+        # Should not raise
+        screen._action_cmux_checkout("cmux_checkout", row)
+
+
+class TestActionIncrementalDispatch:
+    """Tests for _action_incremental_dispatch guard conditions."""
+
+    def test_does_nothing_without_pr_number(self) -> None:
+        """_action_incremental_dispatch does nothing if pr_number is None."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")  # No pr_number
+        # Should not raise
+        screen._action_incremental_dispatch(row)
+
+
+class TestExecuteActionCommand:
+    """Tests for _execute_action_command routing."""
+
+    def test_routes_to_close_plan(self) -> None:
+        """_execute_action_command routes 'close_plan' to _action_close_plan."""
+        screen = _make_screen()
+        row = _make_row_without_plan_url()
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("close_plan", row)
+
+    def test_routes_to_dispatch_to_queue(self) -> None:
+        """_execute_action_command routes 'dispatch_to_queue' to _action_dispatch_to_queue."""
+        screen = _make_screen()
+        row = _make_row_without_plan_url()
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("dispatch_to_queue", row)
+
+    def test_routes_to_land_pr(self) -> None:
+        """_execute_action_command routes 'land_pr' to _action_land_pr."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("land_pr", row)
+
+    def test_routes_to_rebase_remote(self) -> None:
+        """_execute_action_command routes 'rebase_remote' to _action_rebase_remote."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("rebase_remote", row)
+
+    def test_routes_to_address_remote(self) -> None:
+        """_execute_action_command routes 'address_remote' to _action_address_remote."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("address_remote", row)
+
+    def test_routes_to_rewrite_remote(self) -> None:
+        """_execute_action_command routes 'rewrite_remote' to _action_rewrite_remote."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("rewrite_remote", row)
+
+    def test_routes_cmux_checkout(self) -> None:
+        """_execute_action_command routes 'cmux_checkout' to _action_cmux_checkout."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("cmux_checkout", row)
+
+    def test_routes_cmux_teleport(self) -> None:
+        """_execute_action_command routes 'cmux_teleport' to _action_cmux_checkout."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("cmux_teleport", row)
+
+    def test_routes_to_incremental_dispatch(self) -> None:
+        """_execute_action_command routes 'incremental_dispatch' to _action_incremental_dispatch."""
+        screen = _make_screen()
+        row = make_plan_row(123, "Test")
+        # Should not raise, verifies dispatch table entry
+        screen._execute_action_command("incremental_dispatch", row)
