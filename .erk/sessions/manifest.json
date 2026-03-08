@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plan_id": 8997,
+  "sessions": [
+    {
+      "session_id": "2518bc01-e7f9-438d-a673-32ed7be4fedf",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-08T07:06:01.280548+00:00",
+      "files": [
+        "planning-2518bc01-e7f9-438d-a673-32ed7be4fedf-2518bc01-e7f9-438d-a673-32ed7be4fedf.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 5,
+      "raw_size_kb": 441,
+      "xml_size_kb": 53,
+      "git_branch": "master"
+    }
+  ]
+}
