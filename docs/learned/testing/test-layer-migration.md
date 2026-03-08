@@ -35,15 +35,7 @@ Move a test from unit to integration when it:
 
 ## Gateway Extension Pattern
 
-When adding new gateway capabilities (e.g., codespace gateway extension), maintain the 5-place pattern:
-
-1. **ABC** — abstract interface
-2. **Real** — production implementation
-3. **Fake** — test double with constructor injection
-4. **Dry-run** — no-op implementation for `--dry-run`
-5. **Printing** — human-readable output wrapper
-
-Each new gateway method must be added to all five implementations.
+See [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md) for the 5-place pattern (ABC, Real, Fake, Dry-run, Printing).
 
 ## Related
 
