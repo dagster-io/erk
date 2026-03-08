@@ -281,9 +281,7 @@ def objective_apply_landed_update(
         roadmap = _build_roadmap_context(updated_body, plan_id)
 
     # --- Auto-close if all nodes complete ---
-    auto_closed = False
-    if auto_close and roadmap["all_complete"]:
-        auto_closed = True
+    auto_closed = auto_close and roadmap["all_complete"]
 
     # --- Post action comment ---
     date_str = time.now().strftime("%Y-%m-%d")
