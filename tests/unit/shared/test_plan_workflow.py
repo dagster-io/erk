@@ -5,12 +5,12 @@ Tests the shared logic for preparing plans for worktree creation.
 
 from datetime import datetime
 
-from erk_shared.issue_workflow import (
-    IssueBranchSetup,
-    IssueValidationFailed,
+from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.plan_workflow import (
+    PlanBranchSetup,
+    PlanValidationFailed,
     prepare_plan_for_worktree,
 )
-from erk_shared.plan_store.types import Plan, PlanState
 
 
 def _make_plan(
@@ -43,7 +43,7 @@ def _make_plan(
 
 
 def test_prepare_plan_valid_returns_setup() -> None:
-    """Valid plan with erk-plan label returns IssueBranchSetup."""
+    """Valid plan with erk-plan label returns PlanBranchSetup."""
     plan = _make_plan(
         labels=["erk-plan", "enhancement"],
         header_fields={"branch_name": "plan-test-01-15-1430"},
@@ -52,18 +52,18 @@ def test_prepare_plan_valid_returns_setup() -> None:
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueBranchSetup)
+    assert isinstance(result, PlanBranchSetup)
     assert result.warnings == ()
 
 
 def test_prepare_plan_missing_label_returns_failure() -> None:
-    """Plan without erk-plan label returns IssueValidationFailed."""
+    """Plan without erk-plan label returns PlanValidationFailed."""
     plan = _make_plan(labels=["bug", "enhancement"])
     timestamp = datetime(2024, 1, 15, 14, 30)
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueValidationFailed)
+    assert isinstance(result, PlanValidationFailed)
     assert "must have 'erk-plan' label" in result.message
 
 
@@ -78,14 +78,14 @@ def test_prepare_plan_non_open_generates_warning() -> None:
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueBranchSetup)
+    assert isinstance(result, PlanBranchSetup)
     assert len(result.warnings) == 1
     assert "is CLOSED" in result.warnings[0]
     assert "Proceeding anyway" in result.warnings[0]
 
 
 def test_prepare_plan_converts_identifier_to_int() -> None:
-    """Plan identifier string is converted to issue number int."""
+    """Plan identifier string is converted to plan number int."""
     plan = _make_plan(
         plan_identifier="789",
         header_fields={"branch_name": "plan-test-01-01-0000"},
@@ -94,25 +94,25 @@ def test_prepare_plan_converts_identifier_to_int() -> None:
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueBranchSetup)
+    assert isinstance(result, PlanBranchSetup)
     assert result.plan_number == 789
     assert isinstance(result.plan_number, int)
 
 
 def test_prepare_plan_invalid_identifier_returns_failure() -> None:
-    """Non-numeric plan identifier returns IssueValidationFailed."""
+    """Non-numeric plan identifier returns PlanValidationFailed."""
     plan = _make_plan(plan_identifier="not-a-number")
     timestamp = datetime(2024, 1, 1, 0, 0)
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueValidationFailed)
-    assert "not a valid issue number" in result.message
+    assert isinstance(result, PlanValidationFailed)
+    assert "not a valid plan number" in result.message
     assert "not-a-number" in result.message
 
 
 def test_prepare_plan_with_objective_id_populates_objective_issue() -> None:
-    """Plan with objective_id populates IssueBranchSetup.objective_issue."""
+    """Plan with objective_id populates PlanBranchSetup.objective_issue field."""
     plan = Plan(
         plan_identifier="123",
         title="Test Issue",
@@ -131,7 +131,7 @@ def test_prepare_plan_with_objective_id_populates_objective_issue() -> None:
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueBranchSetup)
+    assert isinstance(result, PlanBranchSetup)
     assert result.objective_issue == 456
 
 
@@ -142,7 +142,7 @@ def test_prepare_plan_without_objective_id_has_none() -> None:
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueBranchSetup)
+    assert isinstance(result, PlanBranchSetup)
     assert result.objective_issue is None
 
 
@@ -157,7 +157,7 @@ def test_uses_existing_branch_from_header() -> None:
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueBranchSetup)
+    assert isinstance(result, PlanBranchSetup)
     assert result.branch_name == "plan-add-new-feature-01-15-1430"
     assert result.plan_number == 456
 
@@ -173,7 +173,7 @@ def test_missing_branch_returns_failure() -> None:
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueValidationFailed)
+    assert isinstance(result, PlanValidationFailed)
     assert "missing required branch_name" in result.message
 
 
@@ -188,5 +188,5 @@ def test_empty_branch_returns_failure() -> None:
 
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
-    assert isinstance(result, IssueValidationFailed)
+    assert isinstance(result, PlanValidationFailed)
     assert "missing required branch_name" in result.message

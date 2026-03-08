@@ -16,17 +16,11 @@ from erk.cli.activation import render_activation_script
 from erk.cli.help_formatter import script_option
 from erk.core.context import ErkContext
 from erk.core.prompt_executor import PromptExecutor
-from erk_shared.issue_workflow import (
-    IssueBranchSetup,
-    IssueValidationFailed,
-    prepare_plan_for_worktree,
-)
 from erk_shared.naming import (
     sanitize_worktree_name,
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
 
 # Valid model names and their aliases
 _MODEL_ALIASES: dict[str, str] = {
@@ -478,83 +472,6 @@ class PlanSource:
     plan_content: str
     base_name: str
     dry_run_description: str
-
-
-@dataclass(frozen=True)
-class IssuePlanSource:
-    """Extended plan source with issue-specific metadata.
-
-    Attributes:
-        plan_source: The base PlanSource with content and metadata
-        branch_name: The development branch name for this issue
-        already_existed: Whether the branch already existed
-    """
-
-    plan_source: PlanSource
-    branch_name: str
-    already_existed: bool
-
-
-def prepare_plan_source_from_issue(
-    ctx: ErkContext, repo_root: Path, plan_number: str, base_branch: str
-) -> IssuePlanSource:
-    """Prepare plan source from GitHub issue.
-
-    Creates a branch for the issue and fetches plan content.
-
-    Args:
-        ctx: Erk context
-        repo_root: Repository root path
-        plan_number: GitHub plan number
-        base_branch: Base branch for creating the development branch
-
-    Returns:
-        IssuePlanSource with plan content, metadata, and branch name
-
-    Raises:
-        SystemExit: If issue not found or doesn't have erk-plan label
-    """
-    # Output fetching diagnostic
-    ctx.console.info("Fetching plan from GitHub...")
-
-    # Fetch plan from GitHub
-    result = ctx.plan_store.get_plan(repo_root, plan_number)
-    if isinstance(result, PlanNotFound):
-        ctx.console.error(f"Error: Plan #{plan_number} not found")
-        raise SystemExit(1)
-    plan = result
-
-    # Output issue title
-    ctx.console.info(f"Plan: {plan.title}")
-
-    # Prepare and validate using shared helper (returns union type)
-    result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
-
-    if isinstance(result, IssueValidationFailed):
-        user_output(click.style("Error: ", fg="red") + result.message)
-        raise SystemExit(1) from None
-
-    setup: IssueBranchSetup = result
-    for warning in setup.warnings:
-        user_output(click.style("Warning: ", fg="yellow") + warning)
-
-    dry_run_desc = f"Would create worktree from plan #{plan_number}\n  Title: {plan.title}"
-
-    plan_source = PlanSource(
-        plan_content=setup.plan_content,
-        base_name=setup.worktree_name,
-        dry_run_description=dry_run_desc,
-    )
-
-    # Check if the branch already exists locally
-    local_branches = ctx.git.branch.list_local_branches(repo_root)
-    branch_already_exists = setup.branch_name in local_branches
-
-    return IssuePlanSource(
-        plan_source=plan_source,
-        branch_name=setup.branch_name,
-        already_existed=branch_already_exists,
-    )
 
 
 def prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSource:

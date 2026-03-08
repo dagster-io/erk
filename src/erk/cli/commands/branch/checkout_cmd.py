@@ -34,13 +34,13 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
-from erk_shared.issue_workflow import (
-    IssueBranchSetup,
-    IssueValidationFailed,
-    prepare_plan_for_worktree,
-)
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanNotFound
+from erk_shared.plan_workflow import (
+    PlanBranchSetup,
+    PlanValidationFailed,
+    prepare_plan_for_worktree,
+)
 
 
 def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) -> Path | None:
@@ -290,7 +290,7 @@ def _find_current_slot_assignment(state: PoolState, cwd: Path) -> SlotAssignment
 def _setup_impl_for_plan(
     ctx: ErkContext,
     *,
-    setup: IssueBranchSetup,
+    setup: PlanBranchSetup,
     worktree_path: Path,
     branch_name: str,
     script: bool,
@@ -496,7 +496,7 @@ def _branch_checkout_impl(
     ensure_erk_metadata_dir(repo)
 
     # Plan setup - fetches plan and derives branch name if --for-plan is used
-    setup: IssueBranchSetup | None = None
+    setup: PlanBranchSetup | None = None
     plan: Plan | None = None
 
     if for_plan is not None:
@@ -507,7 +507,7 @@ def _branch_checkout_impl(
         plan = result
 
         plan_result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
-        if isinstance(plan_result, IssueValidationFailed):
+        if isinstance(plan_result, PlanValidationFailed):
             user_output(f"Error: {plan_result.message}")
             raise SystemExit(1) from None
 

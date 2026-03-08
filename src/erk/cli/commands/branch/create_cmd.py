@@ -21,13 +21,13 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
-from erk_shared.issue_workflow import (
-    IssueBranchSetup,
-    IssueValidationFailed,
-    prepare_plan_for_worktree,
-)
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_workflow import (
+    PlanBranchSetup,
+    PlanValidationFailed,
+    prepare_plan_for_worktree,
+)
 
 
 @click.command("create", cls=CommandWithHiddenOptions)
@@ -130,7 +130,7 @@ def branch_create(
     ensure_erk_metadata_dir(repo)
 
     # Plan setup - fetches plan and derives branch name if --for-plan is used
-    setup: IssueBranchSetup | None = None
+    setup: PlanBranchSetup | None = None
 
     if for_plan is not None:
         plan_number = parse_issue_identifier(for_plan)
@@ -140,7 +140,7 @@ def branch_create(
         plan = result
 
         result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
-        if isinstance(result, IssueValidationFailed):
+        if isinstance(result, PlanValidationFailed):
             user_output(f"Error: {result.message}")
             raise SystemExit(1) from None
 
