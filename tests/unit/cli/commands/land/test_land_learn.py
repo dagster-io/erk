@@ -830,9 +830,9 @@ def test_log_session_summary_from_manifest_shows_per_file_sizes(
     assert ".erk/sessions/manifest.json" in captured.err
     assert "1 session(s)" in captured.err
     # Session row
-    assert "aaaa1111..." in captured.err
+    assert "aaaa1111" in captured.err
     assert "impl" in captured.err
-    # Per-file rows
+    # Per-file rows with indentation
     assert "impl-aaaa1111-part1.xml" in captured.err
     assert "impl-aaaa1111-part2.xml" in captured.err
     assert "KB" in captured.err

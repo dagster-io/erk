@@ -141,7 +141,7 @@ def _log_session_summary_from_manifest(
         # Show per-file sizes under each session
         for filename in entry.get("files", []):
             file_size_str = _file_size_from_xml_files(xml_files, filename)
-            table.add_row("", "", "", "", "", f"[dim]{filename}  ({file_size_str})[/dim]")
+            table.add_row(f"      [dim]{filename}  ({file_size_str})[/dim]", "", "", "", "", "")
 
     user_output(
         f"  Manifest: planned-pr-context/{plan_id}"
