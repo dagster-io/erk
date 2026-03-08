@@ -158,8 +158,6 @@ class ErkDashApp(
         Returns:
             Display name string
         """
-        if mode == ViewMode.PLANS:
-            return "Planned PRs"
         return get_view_config(mode).display_name
 
     def compose(self) -> ComposeResult:

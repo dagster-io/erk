@@ -65,6 +65,7 @@ class FakeLocalGitHub(LocalGitHub):
         pr_changed_files: dict[int, list[str]] | None = None,
         merge_should_succeed: bool = True,
         pr_update_should_succeed: bool = True,
+        pr_base_update_should_apply: bool = True,
         pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
         pr_check_runs: dict[int, list[PRCheckRun]] | None = None,
         review_threads_rate_limited: bool = False,
@@ -106,6 +107,9 @@ class FakeLocalGitHub(LocalGitHub):
             pr_changed_files: Mapping of pr_number -> list of changed file paths
             merge_should_succeed: Whether merge_pr() should succeed (default True)
             pr_update_should_succeed: Whether PR updates should succeed (default True)
+            pr_base_update_should_apply: Whether update_pr_base_branch() should
+                mutate stored PR state. Set False to simulate a silent no-op
+                update for read-after-write verification tests.
             pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
             review_threads_rate_limited: Whether get_pr_review_threads() should raise
                 RuntimeError simulating GraphQL rate limit
@@ -151,6 +155,7 @@ class FakeLocalGitHub(LocalGitHub):
         self._pr_changed_files = pr_changed_files or {}
         self._merge_should_succeed = merge_should_succeed
         self._pr_update_should_succeed = pr_update_should_succeed
+        self._pr_base_update_should_apply = pr_base_update_should_apply
         self._pr_review_threads = pr_review_threads or {}
         self._review_threads_rate_limited = review_threads_rate_limited
         self._resolve_thread_failures = resolve_thread_failures or set()
@@ -206,9 +211,20 @@ class FakeLocalGitHub(LocalGitHub):
         return self._closed_prs
 
     def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -> None:
-        """Record PR base branch update in mutation tracking list."""
+        """Record PR base branch update and optionally mutate stored PR state."""
         self._updated_pr_bases.append((pr_number, new_base))
         self._operation_log.append(("update_pr_base_branch", pr_number, new_base))
+        if not self._pr_base_update_should_apply:
+            return
+
+        self._pr_bases[pr_number] = new_base
+
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, base_ref_name=new_base)
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
 
     def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -> None:
         """Record PR body update in mutation tracking list and update stored state.

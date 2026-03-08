@@ -5,6 +5,7 @@ It accepts a branch name, PR number, or PR URL as argument.
 
 Usage:
     erk land              # Land current branch's PR
+    erk land --stack      # Land the current Graphite stack
     erk land 123          # Land PR by number
     erk land <url>        # Land PR by URL
     erk land <branch>     # Land PR for branch
@@ -490,6 +491,43 @@ def _navigate_or_exit(cleanup: CleanupContext) -> None:
             )
             machine_output(str(result.path), nl=False)
         raise SystemExit(0)
+
+
+def _cleanup_landed_branch(cleanup: CleanupContext) -> None:
+    """Run the appropriate cleanup path without navigation or exit behavior."""
+    resolved = determine_cleanup_type(
+        no_delete=cleanup.no_delete,
+        worktree_path=cleanup.worktree_path,
+        pool_json_path=cleanup.repo.pool_json_path,
+        branch=cleanup.branch,
+        repo_root=cleanup.main_repo_root,
+    )
+
+    match resolved.cleanup_type:
+        case CleanupType.NO_DELETE:
+            user_output(
+                click.style("✓", fg="green")
+                + f" Branch '{cleanup.branch}' and slot assignment preserved (--no-delete)"
+            )
+        case CleanupType.NO_WORKTREE:
+            _cleanup_no_worktree(cleanup)
+        case CleanupType.SLOT_ASSIGNED:
+            assert resolved.pool_state is not None
+            assert resolved.assignment is not None
+            _cleanup_slot_with_assignment(
+                cleanup,
+                state=resolved.pool_state,
+                assignment=resolved.assignment,
+            )
+        case CleanupType.SLOT_UNASSIGNED:
+            assert cleanup.worktree_path is not None
+            _cleanup_slot_without_assignment(cleanup, slot_name=cleanup.worktree_path.name)
+        case CleanupType.ROOT_WORKTREE:
+            _cleanup_root_worktree(cleanup)
+        case CleanupType.NON_SLOT:
+            _cleanup_non_slot_worktree(cleanup)
+        case _:
+            assert_never(resolved.cleanup_type)
 
 
 class ParsedArgument(NamedTuple):
@@ -1153,36 +1191,11 @@ def _cleanup_and_navigate(
         cleanup_confirmed=cleanup_confirmed,
     )
 
-    resolved = determine_cleanup_type(
-        no_delete=cleanup.no_delete,
-        worktree_path=cleanup.worktree_path,
-        pool_json_path=repo.pool_json_path,
-        branch=branch,
-        repo_root=main_repo_root,
-    )
+    if cleanup.no_delete:
+        _handle_no_delete(cleanup)
+        return
 
-    match resolved.cleanup_type:
-        case CleanupType.NO_DELETE:
-            _handle_no_delete(cleanup)
-            return
-        case CleanupType.NO_WORKTREE:
-            _cleanup_no_worktree(cleanup)
-        case CleanupType.SLOT_ASSIGNED:
-            assert resolved.pool_state is not None
-            assert resolved.assignment is not None
-            _cleanup_slot_with_assignment(
-                cleanup, state=resolved.pool_state, assignment=resolved.assignment
-            )
-        case CleanupType.SLOT_UNASSIGNED:
-            assert cleanup.worktree_path is not None
-            _cleanup_slot_without_assignment(cleanup, slot_name=cleanup.worktree_path.name)
-        case CleanupType.ROOT_WORKTREE:
-            _cleanup_root_worktree(cleanup)
-        case CleanupType.NON_SLOT:
-            _cleanup_non_slot_worktree(cleanup)
-        case _:
-            assert_never(resolved.cleanup_type)
-
+    _cleanup_landed_branch(cleanup)
     _navigate_or_exit(cleanup)
 
 
@@ -1489,6 +1502,12 @@ def _execute_land(
     help="Skip all confirmation prompts (unresolved comments, worktree deletion)",
 )
 @click.option(
+    "--stack",
+    "stack_flag",
+    is_flag=True,
+    help="Land the current Graphite stack bottom-up.",
+)
+@click.option(
     "--pull/--no-pull",
     "pull_flag",
     default=True,
@@ -1520,6 +1539,7 @@ def land(
     up_flag: bool,
     down_flag: bool,
     force: bool,
+    stack_flag: bool,
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
@@ -1535,6 +1555,7 @@ def land(
     \b
     Usage:
       erk land              # Merge + cleanup directly (no navigation)
+      erk land --stack      # Merge the current Graphite stack bottom-up
       erk land --down       # Merge + cleanup + navigate to trunk
       erk land --up         # Merge + cleanup + navigate to child branch
       erk land 123          # Land PR #123
@@ -1545,7 +1566,8 @@ def land(
     - PR must be open and ready to merge
     - PR's base branch must be trunk
 
-    Note: --up and --down are mutually exclusive. --up requires Graphite.
+    Note: --stack, --up, and --down are mutually exclusive navigation modes.
+    --up and --stack require Graphite.
     """
     # Replace context with appropriate wrappers based on flags.
     #
@@ -1569,11 +1591,40 @@ def land(
         "--up and --down are mutually exclusive.\n"
         "--up navigates to child branch, --down navigates to trunk.",
     )
+    Ensure.invariant(
+        not (stack_flag and up_flag),
+        "--stack and --up are mutually exclusive.\n"
+        "--stack lands the full stack, while --up lands one branch and navigates upward.",
+    )
+    Ensure.invariant(
+        not (stack_flag and down_flag),
+        "--stack and --down are mutually exclusive.\n"
+        "--stack already lands toward trunk and does not support deferred navigation.",
+    )
+    Ensure.invariant(
+        not (stack_flag and target is not None),
+        "Cannot use --stack with a PR, URL, or branch argument.\n"
+        "--stack only works from the currently checked out branch.",
+    )
 
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    if stack_flag:
+        from erk.cli.commands.land_stack import execute_land_stack
+
+        execute_land_stack(
+            ctx,
+            repo=repo,
+            script=script,
+            force=force,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            skip_learn=skip_learn,
+        )
+        return
 
     # Run validation pipeline (resolve target, validate PR, gather confirmations)
     initial_state = make_initial_state(

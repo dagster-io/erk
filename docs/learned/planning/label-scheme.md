@@ -1,59 +1,52 @@
 ---
-title: Plan Label Assignment Scheme
+title: Erk PR Label Scheme
 read_when:
   - "understanding how plans and learn issues are labeled"
-  - "working with erk-planned-pr, erk-plan, or erk-learn labels"
+  - "working with erk-pr, erk-plan, or erk-learn labels"
   - "debugging label filtering in TUI or CLI views"
 tripwires:
-  - action: "querying plans using only the erk-planned-pr base label"
-    warning: "Use type-specific labels (erk-plan, erk-learn) for queries. The base label erk-planned-pr is for identification, not filtering. See github-graphql-label-semantics.md for AND-logic issues."
   - action: "backfilling labels on existing issues without considering updated_at side effects"
     warning: "GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users."
 ---
 
-# Plan Label Assignment Scheme
+# Erk PR Label Scheme
 
-Erk uses a two-label scheme for plans: a **base label** for universal identification and a **type-specific label** for filtering and routing.
+Erk uses `erk-pr` as the **base label** on ALL erk-submitted PRs — both plan PRs and non-plan code PRs. Type-specific labels provide further classification.
 
 ## Label Taxonomy
 
-| Label              | Purpose                           | Applied To                |
-| ------------------ | --------------------------------- | ------------------------- |
-| `erk-planned-pr`   | Base label — identifies all plans | All plans and learn plans |
-| `erk-plan`         | Type label — implementation plans | Regular plans             |
-| `erk-learn`        | Type label — documentation plans  | Learn plans               |
-| `erk-objective`    | Separate system — objectives      | Objective issues          |
-| `erk-consolidated` | Consolidation marker              | Consolidated learn plans  |
+| Label              | Purpose                            | Applied To                        |
+| ------------------ | ---------------------------------- | --------------------------------- |
+| `erk-pr`           | Base label — all erk-submitted PRs | Plan PRs, learn PRs, and code PRs |
+| `erk-plan`         | Type label — implementation plans  | Regular plans                     |
+| `erk-learn`        | Type label — documentation plans   | Learn plans                       |
+| `erk-objective`    | Separate system — objectives       | Objective issues                  |
+| `erk-consolidated` | Consolidation marker               | Consolidated learn plans          |
 
-## Two-Label Assignment
+## Label Assignment
 
-When `PlannedPRBackend.create_plan()` creates a new issue:
+**Plan PRs**: When `PlannedPRBackend.create_plan()` creates a new issue, it applies `erk-pr` (base) plus `erk-plan` or `erk-learn` (type).
 
-1. Always applies `erk-planned-pr` (base label)
-2. Applies `erk-plan` for regular plans OR `erk-learn` for learn plans
-
-The type is determined by `plan_type` in the plan metadata.
+**Code PRs**: The submit pipeline's `label_code_pr` step applies `erk-pr` to non-plan PRs submitted via `erk pr submit`. This ensures all erk-submitted PRs appear in the dashboard.
 
 ## Querying by Label
 
-Due to [GitHub GraphQL AND semantics](../architecture/github-graphql-label-semantics.md), always query by **type-specific** labels:
+The "PRs" view in the dashboard queries `erk-pr` to show all erk-submitted PRs (plans + code). Type-specific views use type labels:
 
 | View       | Query Label     | Exclude Label |
 | ---------- | --------------- | ------------- |
-| Plans      | `erk-plan`      | `erk-learn`   |
+| PRs        | `erk-pr`        | `erk-learn`   |
 | Learn      | `erk-learn`     | (none)        |
 | Objectives | `erk-objective` | (none)        |
 
-Do NOT query by `erk-planned-pr` — it returns all plan types, and combining with a type label triggers AND semantics.
-
 ## Defense-in-Depth Filtering
 
-The Plans view uses both server-side and client-side filtering:
+The PRs view uses both server-side and client-side filtering:
 
-1. **Server-side**: Queries with `labels=("erk-plan",)`
-2. **Client-side**: `exclude_labels=("erk-learn",)` filters out any learn items
+1. **Server-side**: Queries with `labels=("erk-pr",)`
+2. **Client-side**: `exclude_labels=("erk-learn",)` filters out learn items
 
-This double filtering prevents learn plans from appearing in the Plans tab even if they have both labels.
+This prevents learn plans from appearing in the PRs tab even if they have both labels.
 
 ## Label Backfill Side Effects
 

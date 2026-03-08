@@ -36,8 +36,8 @@ class ViewConfig:
 
 PLANS_VIEW = ViewConfig(
     mode=ViewMode.PLANS,
-    display_name="Plans",
-    labels=("erk-plan",),
+    display_name="PRs",
+    labels=("erk-pr",),
     key_hint="1",
     exclude_labels=("erk-learn",),
 )
