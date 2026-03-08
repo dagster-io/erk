@@ -43,9 +43,10 @@ class UserFacingCliError(click.ClickException):
         raise UserFacingCliError(push_result.message)
     """
 
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: str, *, error_type: str = "cli_error") -> None:
         super().__init__(message)
         self.message = message
+        self.error_type = error_type
 
     def show(self, file: Any = None) -> None:
         """Display styled error message to stderr."""

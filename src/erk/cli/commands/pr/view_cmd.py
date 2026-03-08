@@ -4,7 +4,9 @@ from datetime import datetime
 
 import click
 
+from erk.cli.ensure import UserFacingCliError
 from erk.cli.github_parsing import parse_issue_identifier
+from erk.cli.json_output import emit_json, json_output
 from erk.cli.repo_resolution import (
     get_remote_github,
     repo_option,
@@ -225,6 +227,7 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
     return lines
 
 
+@json_output
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
 @click.option("--full", "-f", is_flag=True, help="Show full plan body")
@@ -236,6 +239,7 @@ def pr_view(
     *,
     full: bool,
     target_repo: str | None,
+    json_mode: bool,
 ) -> None:
     """Fetch and display a plan by identifier.
 
@@ -252,6 +256,7 @@ def pr_view(
         erk pr view 42
         erk pr view 42 --full
         erk pr view 42 --repo owner/repo
+        erk pr view 42 --json              # JSON output for agents
     """
     repo_root = None if isinstance(ctx.repo, NoRepoSentinel) else ctx.repo.root
     plan_id: str | None = None
@@ -297,8 +302,7 @@ def pr_view(
 
     issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
     if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
-        raise SystemExit(1)
+        raise UserFacingCliError(f"Plan #{plan_id} not found", error_type="not_found")
 
     plan = github_issue_to_plan(issue)
 
@@ -312,7 +316,49 @@ def pr_view(
     else:
         header_info = plan.header_fields
 
+    if json_mode:
+        _emit_plan_json(plan, plan_id=plan_id, header_info=header_info)
+        return
+
     _display_plan(plan, plan_id=plan_id, header_info=header_info, full=full)
+
+
+def _serialize_header(header_info: dict[str, object]) -> dict[str, object]:
+    """Convert header_info to a JSON-serializable dict.
+
+    Converts datetime values to ISO 8601 strings.
+    """
+    result: dict[str, object] = {}
+    for key, value in header_info.items():
+        if isinstance(value, datetime):
+            result[key] = value.isoformat().replace("+00:00", "Z")
+        else:
+            result[key] = value
+    return result
+
+
+def _emit_plan_json(
+    plan: Plan,
+    *,
+    plan_id: str,
+    header_info: dict[str, object],
+) -> None:
+    """Emit plan details as JSON. Always includes body (agents always want full content)."""
+    emit_json(
+        {
+            "plan_id": plan_id,
+            "title": plan.title,
+            "state": plan.state.value,
+            "labels": plan.labels,
+            "url": plan.url,
+            "objective_id": plan.objective_id,
+            "header": _serialize_header(header_info),
+            "body": plan.body,
+            "assignees": plan.assignees,
+            "created_at": plan.created_at.isoformat(),
+            "updated_at": plan.updated_at.isoformat(),
+        }
+    )
 
 
 def _display_plan(
