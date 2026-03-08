@@ -1,0 +1,1298 @@
+<session>
+  <meta branch="plnd/fix-objective-roadmap-sync-03-07-2053" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8955&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8955` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8955.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11288" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11288, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RcgY1A1SrAXS5jSStxc1Py">
+    <param name="command">erk exec setup-impl --issue 8955</param>
+    <param name="description">Set up implementation for plan #8955</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11288" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11288, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RcgY1A1SrAXS5jSStxc1Py">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-objective-roadmap-sync-03-07-2053", "plan_number": 8955, "plan_url": "https://github.com/dagster-io/erk/pull/8955", "branch": "plnd/fix-objective-roadmap-sync-03-07-2053", "plan_title": "[erk-plan] Fix: Objective Roadmap Rendering and Validation Sync", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8955, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-objective-roadmap-sync-03-07-2053', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="28543" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Xy4mxJ4bDswgEXaE8aAGwv">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-objective-roadmap-sync-03-07-2053/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="28543" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xy4mxJ4bDswgEXaE8aAGwv">
+     1→# Fix: Objective Roadmap Rendering and Validation Sync
+     2→
+     3→## Context
+     4→
+     5→When creating objective #8950, two bugs caused the `erk objective check` validation to fail on every newly-created objective:
+     6→
+     7→1. `objective-render-roadmap` hardcodes all nodes as `pending` with no PR, ignoring status/pr fields in the input JSON
+     8→2. `format_objective_content_comment()` wraps raw markdown (with descriptions, test sections) between roadmap-table markers, but the validator re-renders from YAML using `render_roadmap_tables()` which produces a stripped-down format (headers + tables only, with PR count suffix). These never match.
+     9→
+    10→## Bug 1: `objective-render-roadmap` ignores status/pr
+    11→
+    12→**File:** `src/erk/cli/commands/exec/scripts/objective_render_roadmap.py`
+    13→
+    14→**Lines 168-184** hardcode `pending` and `None`:
+    15→```python
+    16→sections.append(f"| {step_id} | {step_desc} | pending | - |")
+    17→# ...
+    18→RoadmapNode(id=step_id, description=step_desc, status="pending", pr=None, ...)
+    19→```
+    20→
+    21→**Fix:** Read status/pr from input:
+    22→```python
+    23→status = step_data.get("status", "pending")
+    24→pr = step_data.get("pr")
+    25→pr_display = pr if pr is not None else "-"
+    26→# Use status and pr_display in table row
+    27→# Use status and pr in RoadmapNode constructor
+    28→```
+    29→
+    30→Also handle the `depends_on` variant (line 170).
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me load the relevant documentation and source files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2510" cache_read_input_tokens="28895" cache_creation="{'ephemeral_5m_input_tokens': 2510, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_014j3C4wmxWzhNT3aY7tKjiK">
+    <param name="todos">[{'content': 'Bug 1: Fix objective-render-roadmap to read status/pr from input', 'status':...[truncated 669 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2510" cache_read_input_tokens="28895" cache_creation="{'ephemeral_5m_input_tokens': 2510, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014j3C4wmxWzhNT3aY7tKjiK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EnksqA2X6foePj95MsrEw1">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018SxEzHFpq7G6C9Bcmq26Pc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_render_roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01G5AMRAgTpQVDYcUGNEaUhc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Phj7yE3avR5JPP4zBKtEwb">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_014HgeoyiyBcXZo832H3edju">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="31405" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EnksqA2X6foePj95MsrEw1">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_018SxEzHFpq7G6C9Bcmq26Pc">
+     1→"""Render a complete roadmap section from structured JSON input.
+     2→
+     3→Takes structured JSON from stdin describing phases/steps and outputs
+     4→a complete ## Roadmap markdown section with phase headers, tables,
+     5→test sections, and a machine-readable metadata block.
+     6→
+     7→Usage:
+     8→    echo '&lt;json&gt;' | erk exec objective-render-roadmap
+     9→
+    10→Input JSON:
+    11→    {
+    12→      "phases": [
+    13→        {
+    14→          "name": "Steelthread",
+    15→          "description": "Minimal vertical slice.",
+    16→          "pr_count": "1 PR",
+    17→          "steps": [
+    18→            {"id": "1.1", "description": "Minimal infrastructure"},
+    19→            {"id": "1.2", "description": "Wire into one path"}
+    20→          ],
+    21→          "test": "End-to-end acceptance test"
+    22→        }
+    23→      ]
+    24→    }
+    25→
+    26→Output:
+    27→    Complete ## Roadmap section including:
+    28→    - Phase headers (### Phase 1: Name (1 PR))
+    29→    - Phase descriptions
+    30→    - 4-column markdown tables (Step | Description | Status | PR)
+
+... [206 lines omitted] ...
+
+    58→        Tuple of (phases_list, error_message). If valid, error is None.
+   212→            json.dumps({"success": False, "error": "No input provided on stdin"}),
+   218→    except json.JSONDecodeError as e:
+   220→            json.dumps({"success": False, "error": f"Invalid JSON: {e}"}),
+   224→    phases, error = _validate_input(data)
+   225→    if error is not None:
+   226→        click.echo(json.dumps({"success": False, "error": error}))
+  </tool_result>
+  <tool_result tool="toolu_01G5AMRAgTpQVDYcUGNEaUhc">
+     1→"""Unit tests for objective-render-roadmap command."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.commands.exec.scripts.objective_render_roadmap import (
+     8→    _render_roadmap,
+     9→    _validate_input,
+    10→    objective_render_roadmap,
+    11→)
+    12→from erk_shared.gateway.github.metadata.roadmap import parse_roadmap_frontmatter
+    13→
+    14→# --- Validation tests ---
+    15→
+    16→
+    17→def test_validate_input_valid_minimal() -&gt; None:
+    18→    """Validate accepts minimal valid input."""
+    19→    data = {
+    20→        "phases": [
+    21→            {
+    22→                "name": "Steelthread",
+    23→                "steps": [
+    24→                    {"id": "1.1", "description": "First step"},
+    25→                ],
+    26→            },
+    27→        ],
+    28→    }
+    29→    phases, error = _validate_input(data)
+    30→    assert error is None
+
+... [410 lines omitted] ...
+
+    59→    phases, error = _validate_input(data)
+    60→    assert error is None
+    66→    _, error = _validate_input("not a dict")
+    67→    assert error == "Input must be a JSON object"
+    72→    _, error = _validate_input({})
+    73→    assert error == "Missing required field: phases"
+    78→    _, error = _validate_input({"phases": "not a list"})
+    79→    assert error == "Field 'phases' must be a list"
+    84→    _, error = _validate_input({"phases": []})
+    85→    assert error == "Field 'phases' must not be empty"
+    91→    _, error = _validate_input(data)
+    92→    assert "missing required field: name" in error
+    98→    _, error = _validate_input(data)
+    99→    assert "missing required field: steps" in error
+   105→    _, error = _validate_input(data)
+   106→    assert "must not be empty" in error
+   112→    _, error = _validate_input(data)
+   113→    assert "missing required field: id" in error
+   119→    _, error = _validate_input(data)
+   120→    assert "missing required field: description" in error
+   275→    """CLI exits with error for empty input."""
+   282→    assert "No input" in output["error"]
+   286→    """CLI exits with error for invalid JSON."""
+   293→    assert "Invalid JSON" in output["error"]
+   297→    """CLI exits with error for valid JSON but invalid structure."""
+   307→    assert "must be a list" in output["error"]
+   325→    phases, error = _validate_input(data)
+   326→    assert error is None
+   342→    _, error = _validate_input(data)
+   343→    assert error is not None
+   344→    assert "depends_on" in error
+   345→    assert "must be a list" in error
+   360→    _, error = _validate_input(data)
+   361→    assert error is not None
+   362→    assert "depends_on" in error
+   363→    assert "must be a string" in error
+  </tool_result>
+  <tool_result tool="toolu_01Phj7yE3avR5JPP4zBKtEwb">
+     1→"""GitHub issue creation for objectives and label management.
+     2→
+     3→This module contains:
+     4→- create_objective_issue(): Create objective issues with roadmap metadata
+     5→- Label management utilities (definitions, ensuring labels exist)
+     6→- CreatePlanIssueResult: Result type shared by objective issue creation
+     7→
+     8→Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
+     9→"""
+    10→
+    11→from dataclasses import dataclass
+    12→from datetime import UTC
+    13→from pathlib import Path
+    14→
+    15→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    create_objective_header_block,
+    18→    extract_raw_metadata_blocks,
+    19→    format_objective_content_comment,
+    20→    render_metadata_block,
+    21→    update_objective_header_comment_id,
+    22→)
+    23→from erk_shared.gateway.github.metadata.roadmap import (
+    24→    parse_roadmap_frontmatter,
+    25→    render_objective_roadmap_block,
+    26→    render_roadmap_block_inner,
+    27→)
+    28→from erk_shared.gateway.github.metadata.types import BlockKeys
+    29→from erk_shared.gateway.github.types import BodyText
+    30→from erk_shared.gateway.time.abc import Time
+
+... [354 lines omitted] ...
+
+    62→        plan_number: Plan number if created (may be set even on failure if
+    63→            partial success - issue created but comment failed)
+    66→        error: Error message if failed, None if success
+    73→    error: str | None
+   142→        Does NOT raise exceptions. All errors returned in result.
+   152→            error="Could not get GitHub username (gh CLI not authenticated?)",
+   168→                error=slug_result.message,
+   181→    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
+   182→    if label_errors:
+   188→            error=label_errors,
+   214→    except RuntimeError as e:
+   220→            error=f"Failed to create GitHub issue: {e}",
+   227→    except RuntimeError as e:
+   228→        # Partial success - issue created but comment failed
+   234→            error=f"Issue #{result.number} created but failed to add objective comment: {e}",
+   246→        error=None,
+   263→        Error message if failed, None if success
+   303→    except RuntimeError as e:
+   304→        return f"Failed to ensure labels exist: {e}"
+  </tool_result>
+  <tool_result tool="toolu_014HgeoyiyBcXZo832H3edju">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the Python version-specific rules and read the key files needed for Bug 2.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="14504" cache_read_input_tokens="31749" cache_creation="{'ephemeral_5m_input_tokens': 14504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SEYw7mkuT4iR6TQc55Keft">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="14504" cache_read_input_tokens="31749" cache_creation="{'ephemeral_5m_input_tokens': 14504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0125eYkyUXHrkpf3CoWmXcNp">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.10.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="14504" cache_read_input_tokens="31749" cache_creation="{'ephemeral_5m_input_tokens': 14504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WrxdvWc5r86fRX2FYnCrZ9">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="offset">780</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="14504" cache_read_input_tokens="31749" cache_creation="{'ephemeral_5m_input_tokens': 14504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01C6zQmJPFyVZECBoDi3q2KE">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="14504" cache_read_input_tokens="31749" cache_creation="{'ephemeral_5m_input_tokens': 14504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SEYw7mkuT4iR6TQc55Keft">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_0125eYkyUXHrkpf3CoWmXcNp">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.10
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.10. This is the baseline for modern Python type syntax.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.10 introduced major improvements to type annotation syntax through PEP 604 (union types via `|`) and PEP 585 (generic types in standard collections). These features eliminated the need for most `typing` module imports and made type annotations more concise and readable.
+    11→
+    12→**What's new in 3.10:**
+    13→
+    14→- Union types with `|` operator (PEP 604)
+    15→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    16→- No more need for `List`, `Dict`, `Union`, `Optional` from typing
+    17→
+    18→**What you need from typing module:**
+    19→
+    20→- `TypeVar` for generic functions/classes
+    21→- `Protocol` for structural typing (rare - prefer ABC)
+    22→- `TYPE_CHECKING` for conditional imports
+    23→- `Any` (use sparingly)
+    24→
+    25→## Complete Type Annotation Syntax for Python 3.10
+    26→
+    27→### Basic Collection Types
+    28→
+    29→✅ **PREFERRED** - Use built-in generic types:
+    30→
+
+... [493 lines omitted] ...
+
+   303→            raise ValueError("Entity must have id")
+   375→        raise FileNotFoundError(f"Config not found: {path}")
+   385→### API Client with Error Handling
+   394→    """Container for API response with data or error."""
+   396→    def __init__(self, data: T | None = None, error: str | None = None) -&gt; None:
+   398→        self.error = error
+   401→        return self.error is None
+   407→        return ApiResponse(error=self.error)
+   445→All code should pass type checking without errors.
+  </tool_result>
+  <tool_result tool="toolu_01WrxdvWc5r86fRX2FYnCrZ9">
+   780→    &lt;!-- /erk:metadata-block:objective-body --&gt;
+   781→    """
+   782→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   783→&lt;!-- erk:metadata-block:objective-body --&gt;
+   784→&lt;details open&gt;
+   785→&lt;summary&gt;&lt;strong&gt;Objective&lt;/strong&gt;&lt;/summary&gt;
+   786→
+   787→{content}
+   788→
+   789→&lt;/details&gt;
+   790→&lt;!-- /erk:metadata-block:objective-body --&gt;"""
+   791→
+   792→
+   793→def format_objective_content_comment(content: str) -&gt; str:
+   794→    """Format objective content for the first comment.
+   795→
+   796→    Wraps objective content in collapsible objective-body metadata block.
+   797→    If the content contains roadmap tables, wraps them with HTML comment
+   798→    markers for reliable table detection by update-objective-node.
+   799→
+   800→    Args:
+   801→        content: The full objective markdown content
+   802→
+   803→    Returns:
+   804→        Comment body with objective wrapped in metadata block
+   805→    """
+   806→    from erk_shared.gateway.github.metadata.roadmap import wrap_roadmap_tables_with_markers
+   807→
+   808→    marked_content = wrap_roadmap_tables_with_markers(content.strip())
+   809→    return render_objective_body_block(marked_content)
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01C6zQmJPFyVZECBoDi3q2KE">
+     1→"""Abstract interface for GitHub issue operations."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.github.issues.types import (
+     7→    CreateIssueResult,
+     8→    IssueComment,
+     9→    IssueInfo,
+    10→    IssueNotFound,
+    11→    PRReference,
+    12→)
+    13→from erk_shared.gateway.github.types import BodyContent
+    14→
+    15→
+    16→class GitHubIssues(ABC):
+    17→    """Abstract interface for GitHub issue operations.
+    18→
+    19→    All implementations (real and fake) must implement this interface.
+    20→    """
+    21→
+    22→    @abstractmethod
+    23→    def create_issue(
+    24→        self, *, repo_root: Path, title: str, body: str, labels: list[str]
+    25→    ) -&gt; CreateIssueResult:
+    26→        """Create a new GitHub issue.
+    27→
+    28→        Args:
+    29→            repo_root: Repository root directory
+    30→            title: Issue title
+
+... [321 lines omitted] ...
+
+    38→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+    54→            RuntimeError: If gh CLI fails (not installed, not authenticated)
+    70→            RuntimeError: If gh CLI fails (not installed, not authenticated)
+    87→            RuntimeError: If gh CLI fails or issue not found
+   104→            RuntimeError: If gh CLI fails or issue not found
+   129→            RuntimeError: If gh CLI fails
+   145→            RuntimeError: If gh CLI fails or issue not found
+   161→            RuntimeError: If gh CLI fails or comment not found
+   177→            RuntimeError: If gh CLI fails or issue not found
+   194→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+   210→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+   224→            RuntimeError: If gh CLI fails or issue not found
+   238→            RuntimeError: If gh CLI fails or issue not found
+   251→            RuntimeError: If gh CLI fails or issue not found
+   308→            RuntimeError: If gh CLI fails (not installed, not authenticated,
+   323→            RuntimeError: If gh CLI fails or issue not found
+   342→            RuntimeError: If gh CLI fails (not installed, not authenticated,
+  </tool_result>
+  <assistant>Good - `update_comment` already exists on `GitHubIssues`. Now let me find the `rerender_comment_roadmap` function to understand the normalization path, and also look at the existing test for objective save to issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16440" cache_read_input_tokens="46253" cache_creation="{'ephemeral_5m_input_tokens': 16440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Y22kGyarePbESh87NE1AJS">
+    <param name="pattern">def rerender_comment_roadmap</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16440" cache_read_input_tokens="46253" cache_creation="{'ephemeral_5m_input_tokens': 16440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01Q45V3MB6LDAd4Taouta15m">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16440" cache_read_input_tokens="46253" cache_creation="{'ephemeral_5m_input_tokens': 16440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y22kGyarePbESh87NE1AJS">
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:821:def rerender_comment_roadmap(issue_body: str, comment_body: str) -&gt; str | None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-822-    """Deterministically re-render the roadmap tables in a comment from YAML source of truth.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-823-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-824-    Parses the roadmap YAML from the issue body, enriches phase names from the
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-825-    comment's markdown headers, renders new tables, and splices them into the
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-826-    comment's marker-bounded section.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-827-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-828-    This replaces all per-node regex patching (``_replace_table_in_text``).
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-829-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-830-    Args:
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-831-        issue_body: The objective issue body containing the ``objective-roadmap``
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-832-            metadata block (YAML source of truth).
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-833-        comment_body: The objective-body comment containing the rendered
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-834-            markdown tables bounded by ``&lt;!-- erk:roadmap-table --&gt;`` markers.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-835-
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-836-    Returns:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-837-        Updated comment body with re-rendered tables, or None if no roadmap
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-838-        block or no markers found.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-839-    """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-840-    raw_blocks = extract_raw_metadata_blocks(issue_body)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py-841-    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
+  </tool_result>
+  <tool_result tool="toolu_01Q45V3MB6LDAd4Taouta15m">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_013bjoYiTs5Lfo7hj4ZgjEVg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">840</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1571" cache_read_input_tokens="62693" cache_creation="{'ephemeral_5m_input_tokens': 1571, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01G78XLBdZSkjC4NZvT2Cd6T">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1571" cache_read_input_tokens="62693" cache_creation="{'ephemeral_5m_input_tokens': 1571, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013bjoYiTs5Lfo7hj4ZgjEVg">
+   840→    raw_blocks = extract_raw_metadata_blocks(issue_body)
+   841→    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
+   842→
+   843→    if not matching_blocks:
+   844→        return None
+   845→
+   846→    steps = parse_roadmap_frontmatter(matching_blocks[0].body)
+   847→    if steps is None:
+   848→        return None
+   849→
+   850→    phases = group_nodes_by_phase(steps)
+   851→    phases = enrich_phase_names(comment_body, phases)
+   852→    new_tables = render_roadmap_tables(phases)
+   853→
+   854→    marker_section = extract_roadmap_table_section(comment_body)
+   855→    if marker_section is None:
+   856→        return None
+   857→
+   858→    _section_content, section_start, section_end = marker_section
+   859→    return (
+   860→        comment_body[:section_start]
+   861→        + ROADMAP_TABLE_MARKER_START
+   862→        + "\n"
+   863→        + new_tables
+   864→        + "\n"
+   865→        + ROADMAP_TABLE_MARKER_END
+   866→        + comment_body[section_end:]
+   867→    )
+   868→
+
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01G78XLBdZSkjC4NZvT2Cd6T">
+     1→"""Unit tests for objective-save-to-issue command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.objective_save_to_issue import (
+     9→    objective_save_to_issue,
+    10→)
+    11→from erk_shared.context.context import ErkContext
+    12→from erk_shared.gateway.claude_installation.fake import (
+    13→    FakeClaudeInstallation,
+    14→)
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→
+    19→# Valid plan content that passes validation (100+ chars with structure)
+    20→VALID_PLAN_CONTENT = """# Feature Objective
+    21→
+    22→This objective describes the implementation of a new feature.
+    23→
+    24→- Step 1: Set up the environment
+    25→- Step 2: Implement the core logic
+    26→- Step 3: Add tests and documentation"""
+    27→
+    28→
+    29→def test_objective_save_to_issue_success() -&gt; None:
+    30→    """Test successful objective issue creation with v2 format."""
+
+... [612 lines omitted] ...
+
+    50→    assert result.exit_code == 0, f"Failed: {result.output}"
+    75→    """Test error when no plan found."""
+    93→    assert "No plan found" in output["error"]
+   183→        assert result.exit_code == 0, f"Failed: {result.output}"
+   234→        assert result.exit_code == 0, f"Failed: {result.output}"
+   265→    assert result.exit_code == 0, f"Failed: {result.output}"
+   315→        assert result1.exit_code == 0, f"First call failed: {result1.output}"
+   328→        assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   412→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   459→    assert result.exit_code == 0, f"Failed: {result.output}"
+   497→    assert result.exit_code == 0, f"Failed: {result.output}"
+   521→    assert result.exit_code == 0, f"Failed: {result.output}"
+   543→    assert result.exit_code == 0, f"Failed: {result.output}"
+   573→    assert result.exit_code == 0, f"Failed: {result.output}"
+   582→def test_objective_save_to_issue_invalid_slug_returns_error() -&gt; None:
+   583→    """Test that an invalid slug returns exit code 1 with error in JSON output."""
+   606→    assert "Invalid objective slug" in output["error"]
+   632→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>I now have a thorough understanding of both bugs. Let me start implementing.
+
+## Bug 1: Fix `objective_render_roadmap.py` to read status/pr from input</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8985" cache_read_input_tokens="64264" cache_creation="{'ephemeral_5m_input_tokens': 8985, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_012N4gJ4NMYA6kuAJvcuxfVc">
+    <param name="todos">[{'content': 'Bug 1: Fix objective-render-roadmap to read status/pr from input', 'status':...[truncated 673 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8985" cache_read_input_tokens="64264" cache_creation="{'ephemeral_5m_input_tokens': 8985, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012N4gJ4NMYA6kuAJvcuxfVc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>The fix for Bug 1 is in `_render_roadmap()` at lines 168-184. Currently it hardcodes `"pending"` and `None`/`"-"` for status and pr. We need to read those from the input step data.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="73249" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_015bnp7yNdpqmKYUNqLofrcH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_render_roadmap.py</param>
+    <param name="old_string">            if any_has_depends_on:
+                depends_display = ", ".join(depends_on)...[truncated 448 chars]...               slug=slug,
+                    reason=None,
+                )
+            )</param>
+    <param name="new_string">            status = step_data.get("status", "pending")
+            pr = step_data.get("pr...[truncated 654 chars]...               slug=slug,
+                    reason=None,
+                )
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="73249" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015bnp7yNdpqmKYUNqLofrcH">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_render_roadmap.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01LsjBLf8tKe9Nu4rB73DPAQ">
+    <param name="todos">[{'content': 'Bug 1: Fix objective-render-roadmap to read status/pr from input', 'status':...[truncated 675 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="73622" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LsjBLf8tKe9Nu4rB73DPAQ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me add the parametric test for Bug 1. I'll add tests for both the regular (no depends_on) and depends_on cases with pre-set status/pr.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="74260" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018ggNWeMYiNsGRrY2ASXgr1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+    <param name="old_string">def test_render_roadmap_depends_on_metadata_roundtrip() -&gt; None:</param>
+    <param name="new_string">def test_render_roadmap_preserves_status_and_pr() -&gt; None:
+    """status and pr fields in ...[truncated 2575 chars]...8841'" in result.output
+
+
+def test_render_roadmap_depends_on_metadata_roundtrip() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="74260" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018ggNWeMYiNsGRrY2ASXgr1">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_018TZPi1ThvsgEw1z2WqDozJ">
+    <param name="todos">[{'content': 'Bug 1: Fix objective-render-roadmap to read status/pr from input', 'status':...[truncated 677 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1097" cache_read_input_tokens="74592" cache_creation="{'ephemeral_5m_input_tokens': 1097, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018TZPi1ThvsgEw1z2WqDozJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now for Bug 2: Add normalization step in `create_objective_issue()` after comment creation. The plan says to call `rerender_comment_roadmap(updated_body, objective_comment)` after the comment is created, and update if different. The `updated_body` has the roadmap block in it, which `rerender_comment_roadmap` uses to re-render canonical tables.
+
+I need to add this after Step 7 (update issue body with comment_id) since `updated_body` contains the roadmap block. Let me look more carefully at the flow:
+
+1. Step 6 creates the comment with `objective_comment` (from `format_objective_content_comment`)
+2. Step 7 updates the issue body with the `comment_id`
+
+The rerender needs: issue_body (with roadmap YAML) and comment_body (with marker-bounded tables). The `updated_body` has the roadmap block. The `objective_comment` has the content wrapped with markers. So I should rerender using `updated_body` and `objective_comment`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="75689" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JmiU39c2AccAmL3moqfwKj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.roadmap import (
+    parse_roadmap_frontmatter,
+    render_objective_roadmap_block,
+    render_roadmap_block_inner,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.roadmap import (
+    parse_roadmap_frontmatter,
+    render_objective_roadmap_block,
+    render_roadmap_block_inner,
+    rerender_comment_roadmap,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="75689" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JmiU39c2AccAmL3moqfwKj">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the normalization step after Step 7:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="76021" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JgQi8HUwj9faWGcQeQVusQ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+    <param name="old_string">    # Step 7: Update issue body with objective_comment_id
+    updated_body = update_object...[truncated 64 chars]...po_root, result.number, BodyText(content=updated_body))
+
+    return CreatePlanIssueResult(</param>
+    <param name="new_string">    # Step 7: Update issue body with objective_comment_id
+    updated_body = update_object...[truncated 662 chars]...ssues.update_comment(repo_root, comment_id, rerendered)
+
+    return CreatePlanIssueResult(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="76021" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JgQi8HUwj9faWGcQeQVusQ">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_017FEUaVuW8s7nfYFdSVh5gp">
+    <param name="todos">[{'content': 'Bug 1: Fix objective-render-roadmap to read status/pr from input', 'status':...[truncated 679 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="76554" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017FEUaVuW8s7nfYFdSVh5gp">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now for the round-trip invariant test. I need to test that after `create_objective_issue()` runs with roadmap content, the resulting comment body passes validation (i.e., `rerender_comment_roadmap` returns the same content or `None`). Let me check what `FakeGitHubIssues` provides for tracking updated comments.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="77058" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011AoAVDkNbMC8GHB2bTE2TT">
+    <param name="pattern">class FakeGitHubIssues</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="77058" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011AoAVDkNbMC8GHB2bTE2TT">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_0114bDcXEhLihU6Azd6yBZqd">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="77390" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0114bDcXEhLihU6Azd6yBZqd">
+     1→"""In-memory fake implementation of GitHub issues for testing."""
+     2→
+     3→from dataclasses import replace
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.types import (
+     9→    CreateIssueResult,
+    10→    IssueComment,
+    11→    IssueInfo,
+    12→    IssueNotFound,
+    13→    PRReference,
+    14→)
+    15→from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
+    16→
+    17→
+    18→class FakeGitHubIssues(GitHubIssues):
+    19→    """In-memory fake implementation for testing.
+    20→
+    21→    All state is provided via constructor using keyword arguments.
+    22→    """
+    23→
+    24→    def __init__(
+    25→        self,
+    26→        *,
+    27→        issues: dict[int, IssueInfo] | None = None,
+    28→        next_issue_number: int = 1,
+    29→        labels: set[str] | None = None,
+    30→        comments: dict[int, list[str]] | None = None,
+
+... [462 lines omitted] ...
+
+    34→        add_reaction_error: str | None = None,
+    35→        get_comments_error: str | None = None,
+    50→            add_reaction_error: If set, add_reaction_to_comment raises RuntimeError
+    52→            get_comments_error: If set, get_issue_comments_with_urls raises
+    53→                RuntimeError with this message
+    65→        self._add_reaction_error = add_reaction_error
+    66→        self._get_comments_error = get_comments_error
+   202→            RuntimeError: If issue number not found (simulates gh CLI error)
+   206→            raise RuntimeError(msg)
+   216→            RuntimeError: If issue number not found (simulates gh CLI error)
+   220→            raise RuntimeError(msg)
+   254→            RuntimeError: If issue number not found (simulates gh CLI error)
+   258→            raise RuntimeError(msg)
+   315→            RuntimeError: If comment ID not found (simulates gh CLI error)
+   329→        raise RuntimeError(msg)
+   339→            RuntimeError: If get_comments_error was set in constructor
+   341→        if self._get_comments_error is not None:
+   342→            raise RuntimeError(self._get_comments_error)
+   361→            RuntimeError: If issue number not found (simulates gh CLI error)
+   365→            raise RuntimeError(msg)
+   388→            RuntimeError: If issue number not found (simulates gh CLI error)
+   392→            raise RuntimeError(msg)
+   415→            RuntimeError: If issue number not found (simulates gh CLI error)
+   419→            raise RuntimeError(msg)
+   469→            RuntimeError: If add_reaction_error was set in constructor
+   471→        if self._add_reaction_error is not None:
+   472→            raise RuntimeError(self._add_reaction_error)
+  </tool_result>
+  <assistant>The fake already has `updated_comments` tracking. Now let me write the round-trip invariant test. The test needs to create an objective with roadmap content, then verify the final comment body matches the canonical format. I'll add it to the existing test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6414" cache_read_input_tokens="77596" cache_creation="{'ephemeral_5m_input_tokens': 6414, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HiNViWVU7NhdmKnj2bhsKt">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="offset">390</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6414" cache_read_input_tokens="77596" cache_creation="{'ephemeral_5m_input_tokens': 6414, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HiNViWVU7NhdmKnj2bhsKt">
+   390→# --- v2 roadmap metadata tests ---
+   391→
+   392→
+   393→OBJECTIVE_WITH_ROADMAP = """# Feature Objective
+   394→
+   395→This objective describes the implementation of a new feature.
+   396→
+   397→## Roadmap
+   398→
+   399→### Phase 1: Foundation (1 PR)
+   400→
+   401→| Node | Description | Status | Plan | PR |
+   402→|------|-------------|--------|------|-----|
+   403→| 1.1 | Set up project structure | pending | - | - |
+   404→| 1.2 | Add core types | pending | - | - |
+   405→
+   406→### Phase 2: Implementation (1 PR)
+   407→
+   408→| Node | Description | Status | Plan | PR |
+   409→|------|-------------|--------|------|-----|
+   410→| 2.1 | Implement main feature | pending | - | - |
+   411→
+   412→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   413→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+   414→&lt;details&gt;
+   415→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+   416→
+   417→```yaml
+   418→
+   419→schema_version: '2'
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to write the round-trip test. The test should verify that after `create_objective_issue()` runs, calling `rerender_comment_roadmap` on the final state returns the same content (i.e., the comment is already in canonical format). I'll write this as a direct unit test of `create_objective_issue` rather than going through the CLI.
+
+Let me check what imports I need:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="926" cache_read_input_tokens="84010" cache_creation="{'ephemeral_5m_input_tokens': 926, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NXYKCRiqRWiVHkQ1T1TE3T">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="926" cache_read_input_tokens="84010" cache_creation="{'ephemeral_5m_input_tokens': 926, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NXYKCRiqRWiVHkQ1T1TE3T">
+     1→"""Unit tests for objective-save-to-issue command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.objective_save_to_issue import (
+     9→    objective_save_to_issue,
+    10→)
+    11→from erk_shared.context.context import ErkContext
+    12→from erk_shared.gateway.claude_installation.fake import (
+    13→    FakeClaudeInstallation,
+    14→)
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→
+    19→# Valid plan content that passes validation (100+ chars with structure)
+    20→VALID_PLAN_CONTENT = """# Feature Objective
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I need to check what `FakeTime` looks like for the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="84936" cache_creation="{'ephemeral_5m_input_tokens': 805, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01V4YxerDK2hkrTnfVDy8trz">
+    <param name="pattern">class FakeTime</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="84936" cache_creation="{'ephemeral_5m_input_tokens': 805, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V4YxerDK2hkrTnfVDy8trz">
+packages/erk-shared/src/erk_shared/gateway/time/fake.py:17:class FakeTime(Time):
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-18-    """In-memory fake implementation that tracks calls without sleeping.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-19-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-20-    This class has NO public setup methods. All state is provided via constructor
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-21-    or captured during execution.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-22-    """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-23-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-24-    def __init__(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-25-        self,
+packages/erk-shared/src/erk_shared/gateway/time/fake.py-26-        current_time: datetime | None = None,
+packages/erk-shared/src/erk_shared/gateway/time/fake.py-27-        monotonic_values: Sequence[float] | None = None,
+  </tool_result>
+  <assistant>Now let me add the round-trip test at the end of the test file. I'll test `create_objective_issue` directly since it's the function that was changed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="577" cache_read_input_tokens="85741" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FboTtnc5xjzbZfK5wBY5pm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="offset">630</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="577" cache_read_input_tokens="85741" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FboTtnc5xjzbZfK5wBY5pm">
+   630→    )
+   631→
+   632→    assert result.exit_code == 0, f"Failed: {result.output}"
+   633→
+   634→    # Verify slug does NOT appear in the issue body metadata
+   635→    created_body = fake_gh.created_issues[0][1]
+   636→    assert "slug:" not in created_body
+   637→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MrnyWo3RmFwsXJWywVpXS2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">"""Unit tests for objective-save-to-issue command."""
+
+import json
+from pathlib import Pat...[truncated 340 chars]... import FakeLocalGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues</param>
+    <param name="new_string">"""Unit tests for objective-save-to-issue command."""
+
+import json
+from pathlib import Pat...[truncated 543 chars]...lan_issues import create_objective_issue
+from erk_shared.gateway.time.fake import FakeTime</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="86318" cache_creation="{'ephemeral_5m_input_tokens': 582, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MrnyWo3RmFwsXJWywVpXS2">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the round-trip test at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="573" cache_read_input_tokens="86900" cache_creation="{'ephemeral_5m_input_tokens': 573, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01AxqYtHLba5eicGM8kJz2LW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    # Verify slug does NOT a...[truncated 9 chars]...ata
+    created_body = fake_gh.created_issues[0][1]
+    assert "slug:" not in created_body</param>
+    <param name="new_string">    assert result.exit_code == 0, f"Failed: {result.output}"
+
+    # Verify slug does NOT a...[truncated 1566 chars]...t when already canonical
+    assert rerendered is None or rerendered == final_comment_body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="573" cache_read_input_tokens="86900" cache_creation="{'ephemeral_5m_input_tokens': 573, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AxqYtHLba5eicGM8kJz2LW">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01PnbRjX2JU5ZJcZ1na9WjLk">
+    <param name="todos">[{'content': 'Bug 1: Fix objective-render-roadmap to read status/pr from input', 'status':...[truncated 681 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="994" cache_read_input_tokens="87473" cache_creation="{'ephemeral_5m_input_tokens': 994, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PnbRjX2JU5ZJcZ1na9WjLk">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the tests for the modified files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="88467" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+</session>
