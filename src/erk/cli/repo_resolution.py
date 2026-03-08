@@ -1,4 +1,4 @@
-"""Shared --repo infrastructure for PR read commands.
+"""Shared --repo infrastructure for CLI commands.
 
 Provides helpers for resolving owner/repo from either a --repo flag
 or local git context, and constructing RemoteGitHub instances.

@@ -5,13 +5,13 @@ from typing import NamedTuple
 
 import click
 
-from erk.cli.commands.pr.repo_resolution import (
+from erk.cli.ensure import Ensure
+from erk.cli.github_parsing import parse_issue_identifier
+from erk.cli.repo_resolution import (
     get_remote_github,
     repo_option,
     resolve_owner_repo,
 )
-from erk.cli.ensure import Ensure
-from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
