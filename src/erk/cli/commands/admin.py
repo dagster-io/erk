@@ -121,7 +121,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             )
 
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
     elif action == "enable":
         # Enable PR creation
@@ -135,7 +135,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             user_output("Workflows can now create and approve pull requests.")
 
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
     elif action == "disable":
         # Disable PR creation
@@ -149,7 +149,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             user_output("Workflows can no longer create pull requests.")
 
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
 
 def _compute_active_label(*, api_key_exists: bool, oauth_exists: bool) -> str | None:
@@ -291,7 +291,7 @@ def gh_actions_api_key(
                 + f" Deleted {config.other_github_secret_name} to prevent ambiguity"
             )
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
     elif action == "disable":
         try:
@@ -301,7 +301,7 @@ def gh_actions_api_key(
                 + f" Deleted {config.github_secret_name} secret from GitHub Actions"
             )
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
 
 @admin_group.command("claude-ci")
@@ -369,7 +369,7 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
                 click.style("✓", fg="green") + " Enabled Claude CI workflows (CLAUDE_ENABLED=true)"
             )
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
     elif action == "disable":
         try:
@@ -379,7 +379,7 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
                 + " Disabled Claude CI workflows (CLAUDE_ENABLED=false)"
             )
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
 
 @admin_group.command("upgrade-repo")
@@ -453,7 +453,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         repo.root, "origin", current_branch, set_upstream=True, force=False
     )
     if isinstance(push_result, PushError):
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
     user_output(click.style("✓", fg="green") + f" Branch '{current_branch}' pushed to origin")
 
     # Step 2: Find or create test plan
@@ -484,7 +484,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         repo.root, "origin", f"{trunk}:{test_branch}", set_upstream=False, force=False
     )
     if isinstance(push_result, PushError):
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
     user_output(click.style("✓", fg="green") + f" Test branch '{test_branch}' created")
 
     # Step 4: Add an empty commit to the test branch
@@ -497,7 +497,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         repo.root, "origin", test_branch, set_upstream=False, force=False
     )
     if isinstance(push_result, PushError):
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
     ctx.branch_manager.checkout_branch(repo.root, current_branch)
     user_output(click.style("✓", fg="green") + f" Initial commit added to '{test_branch}'")
 

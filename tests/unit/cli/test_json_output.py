@@ -56,7 +56,7 @@ def test_catches_user_facing_error() -> None:
     @json_output
     @click.command("error-cmd")
     def error_cmd(*, json_mode: bool) -> None:
-        raise UserFacingCliError("something went wrong")
+        raise UserFacingCliError("something went wrong", error_type="cli_error")
 
     runner = CliRunner()
     result = runner.invoke(error_cmd, ["--json"])
@@ -103,7 +103,7 @@ def test_error_without_json_flag_uses_normal_handling() -> None:
     @json_output
     @click.command("normal-error-cmd")
     def normal_error_cmd(*, json_mode: bool) -> None:
-        raise UserFacingCliError("normal error")
+        raise UserFacingCliError("normal error", error_type="cli_error")
 
     runner = CliRunner()
     result = runner.invoke(normal_error_cmd, [])

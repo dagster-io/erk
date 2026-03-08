@@ -189,7 +189,8 @@ def one_shot(
         if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
             raise UserFacingCliError(
                 "Cannot determine target repository.\n"
-                "Use --repo owner/repo or run from inside a git repository."
+                "Use --repo owner/repo or run from inside a git repository.",
+                error_type="cli_error",
             )
         owner, repo_name = ctx.repo.github.owner, ctx.repo.github.repo
 
