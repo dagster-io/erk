@@ -44,7 +44,7 @@ def test_interactive_mode_calls_executor() -> None:
         worktree_path, dangerous, command, target_subpath, model, _ = executor.interactive_calls[0]
         # Runs in current directory
         assert worktree_path == env.cwd
-        assert dangerous is False
+        assert dangerous is True  # live_dangerously=True by default
         assert command == "/erk:plan-implement"
         assert target_subpath is None
         assert model is None
@@ -102,7 +102,7 @@ def test_interactive_mode_from_plan_file() -> None:
         assert len(executor.interactive_calls) == 1
         worktree_path, dangerous, command, target_subpath, model, _ = executor.interactive_calls[0]
         assert worktree_path == env.cwd
-        assert dangerous is False
+        assert dangerous is True  # live_dangerously=True by default
         assert command == "/erk:plan-implement"
         assert model is None
 
@@ -158,7 +158,7 @@ def test_non_interactive_executes_single_command() -> None:
         assert len(executor.executed_commands) == 1
         command, worktree_path, dangerous, verbose, model = executor.executed_commands[0]
         assert command == "/erk:plan-implement"
-        assert dangerous is False
+        assert dangerous is True  # live_dangerously=True by default
         assert verbose is False
         assert model is None
 

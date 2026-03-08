@@ -16,22 +16,26 @@ Patterns for CLI flag design, including asymmetric requirements and flag combina
 
 Some flags are only required in certain contexts or combinations. Document these clearly.
 
-### Pattern: Flag Required Unless Config Disables
+### Pattern: Dangerous Mode with Config Default and --safe Override
 
-The `--dangerous` flag is required by default but can be disabled via config:
+Commands that invoke Claude with `--dangerously-skip-permissions` use a tri-state resolution pattern:
 
 ```python
 from erk.cli.ensure import Ensure
 
 @click.command()
-@click.option("-d", "--dangerous", is_flag=True)
+@click.option("-d", "--dangerous", is_flag=True, help="Force dangerous mode")
+@click.option("--safe", is_flag=True, help="Disable dangerous mode")
 @click.pass_obj
-def my_command(ctx: ErkContext, *, dangerous: bool) -> None:
-    # Centralized check via Ensure.dangerous_flag()
-    Ensure.dangerous_flag(ctx, dangerous=dangerous)
+def my_command(ctx: ErkContext, *, dangerous: bool, safe: bool) -> None:
+    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)
 ```
 
-The `Ensure.dangerous_flag()` helper in `src/erk/cli/ensure.py` centralizes this check. It reads the config key `require_dangerous_flag_for_implicitly_dangerous_operations` and raises `click.UsageError` with a remediation message when the flag is missing.
+`Ensure.resolve_dangerous()` in `src/erk/cli/ensure.py` resolves the effective dangerous mode:
+
+1. `--dangerous` and `--safe` are mutually exclusive (raises `UsageError`)
+2. `--dangerous` → True, `--safe` → False
+3. Neither → falls back to `ctx.global_config.live_dangerously` (default: True)
 
 ### Pattern: Flag Required in Combination
 
@@ -71,15 +75,9 @@ Include in help text:
 2. **When to use** - Common scenarios
 3. **How to disable** - If configurable
 
-```python
-@click.option(
-    "-d",
-    "--dangerous",
-    is_flag=True,
-    help="Acknowledge that this command may modify files. "
-         "To disable: erk config set require_dangerous_flag_for_implicitly_dangerous_operations false",
-)
-```
+<!-- Source: src/erk/cli/commands/pr/diverge_fix_cmd.py, pr_diverge_fix (--dangerous and --safe click options) -->
+
+See the `--dangerous` and `--safe` click option definitions in `src/erk/cli/commands/pr/diverge_fix_cmd.py` (also present in `address_cmd.py`).
 
 ## Mutual Exclusivity
 
@@ -113,13 +111,17 @@ def my_command(...) -> None:
     Examples:
 
     \b
-      # Basic usage (requires --dangerous)
-      erk my-command --dangerous
-
-    To disable the --dangerous flag requirement:
+      # Basic usage (dangerous by default)
+      erk my-command
 
     \b
-      erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
+      # Run in safe mode (permission prompts enabled)
+      erk my-command --safe
+
+    To disable dangerous mode by default:
+
+    \b
+      erk config set live_dangerously false
     """
 ```
 

@@ -15,7 +15,7 @@ Fixes a diverged local branch with its remote tracking branch, handling rebase a
 ## Usage
 
 ```bash
-erk pr diverge-fix --dangerous
+erk pr diverge-fix
 ```
 
 ## When to Use
@@ -34,21 +34,22 @@ This happens when:
 
 ## Flags
 
-| Flag              | Required | Description                                   |
-| ----------------- | -------- | --------------------------------------------- |
-| `-d, --dangerous` | Yes\*    | Acknowledge Claude runs with skip-permissions |
+| Flag              | Required | Description                                    |
+| ----------------- | -------- | ---------------------------------------------- |
+| `-d, --dangerous` | No       | Force dangerous mode (skip permission prompts) |
+| `--safe`          | No       | Disable dangerous mode (permission prompts on) |
 
-\*Required by default. Can be disabled via config.
+By default, dangerous mode is enabled via the `live_dangerously` config key (default: True).
 
 ## Configuration
 
-To disable the `--dangerous` flag requirement:
+To disable dangerous mode by default:
 
 ```bash
-erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
+erk config set live_dangerously false
 ```
 
-This is useful for workflows where you've accepted the risk of Claude executing commands.
+When `live_dangerously` is false, commands run in safe mode unless `--dangerous` is explicitly passed.
 
 ## How It Works
 

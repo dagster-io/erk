@@ -117,8 +117,8 @@ def test_pr_rebase_in_progress_launches_tui() -> None:
         assert len(executor.interactive_calls) == 1
 
 
-def test_pr_rebase_requires_dangerous_flag() -> None:
-    """Test that command fails when --dangerous flag is not provided (default config)."""
+def test_pr_rebase_succeeds_without_dangerous_flag() -> None:
+    """Test that command succeeds without --dangerous when live_dangerously=True (default)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -133,15 +133,42 @@ def test_pr_rebase_requires_dangerous_flag() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["rebase"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--target", "main"], obj=ctx)
 
-        assert result.exit_code != 0
-        assert "Missing option '--dangerous'" in result.output
-        assert "require_dangerous_flag_for_implicitly_dangerous_operations false" in result.output
+        assert result.exit_code == 0
+        assert "Rebase complete!" in result.output
 
 
-def test_pr_rebase_skip_dangerous_with_config() -> None:
-    """Test that --dangerous flag is not required when config disables requirement."""
+def test_pr_rebase_safe_flag_disables_dangerous() -> None:
+    """Test that --safe overrides live_dangerously=True default."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            rebase_onto_result=RebaseResult(success=False, conflict_files=("file.py",)),
+            conflicted_files=["file.py"],
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(
+            pr_group, ["rebase", "--safe", "--target", "main"], obj=ctx, input="y\n"
+        )
+
+        assert result.exit_code == 0
+        assert len(executor.interactive_calls) == 1
+        call = executor.interactive_calls[0]
+        assert call[1] is False  # dangerous should be False
+
+
+def test_pr_rebase_dangerous_and_safe_mutually_exclusive() -> None:
+    """Test that --dangerous and --safe together produce an error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -154,9 +181,35 @@ def test_pr_rebase_skip_dangerous_with_config() -> None:
 
         executor = FakePromptExecutor(available=True)
 
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(
+            pr_group, ["rebase", "--dangerous", "--safe", "--target", "main"], obj=ctx
+        )
+
+        assert result.exit_code != 0
+        assert "mutually exclusive" in result.output
+
+
+def test_pr_rebase_live_dangerously_false_runs_safe() -> None:
+    """Test that live_dangerously=False makes command run in safe mode by default."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            rebase_onto_result=RebaseResult(success=False, conflict_files=("file.py",)),
+            conflicted_files=["file.py"],
+        )
+
+        executor = FakePromptExecutor(available=True)
+
         global_config = GlobalConfig.test(
             env.erk_root,
-            require_dangerous_flag_for_implicitly_dangerous_operations=False,
+            live_dangerously=False,
         )
 
         ctx = build_workspace_test_context(
@@ -166,10 +219,12 @@ def test_pr_rebase_skip_dangerous_with_config() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(pr_group, ["rebase", "--target", "main"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--target", "main"], obj=ctx, input="y\n")
 
         assert result.exit_code == 0
-        assert "Rebase complete!" in result.output
+        assert len(executor.interactive_calls) == 1
+        call = executor.interactive_calls[0]
+        assert call[1] is False  # dangerous should be False
 
 
 def test_pr_rebase_claude_not_available() -> None:

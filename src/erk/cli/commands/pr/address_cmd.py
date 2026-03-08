@@ -16,10 +16,15 @@ from erk.core.context import ErkContext
     "-d",
     "--dangerous",
     is_flag=True,
-    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    help="Force dangerous mode (skip permission prompts).",
+)
+@click.option(
+    "--safe",
+    is_flag=True,
+    help="Disable dangerous mode (permission prompts enabled).",
 )
 @click.pass_obj
-def address(ctx: ErkContext, *, dangerous: bool) -> None:
+def address(ctx: ErkContext, *, dangerous: bool, safe: bool) -> None:
     """Address PR review comments with AI-powered resolution.
 
     Addresses PR review comments on the current branch using Claude.
@@ -32,15 +37,19 @@ def address(ctx: ErkContext, *, dangerous: bool) -> None:
     Examples:
 
     \b
-      # Address comments locally with Claude
-      erk pr address --dangerous
-
-    To disable the --dangerous flag requirement:
+      # Address comments locally with Claude (dangerous by default)
+      erk pr address
 
     \b
-      erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
+      # Address in safe mode (permission prompts enabled)
+      erk pr address --safe
+
+    To disable dangerous mode by default:
+
+    \b
+      erk config set live_dangerously false
     """
-    Ensure.dangerous_flag(ctx, dangerous=dangerous)
+    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)
 
     cwd = ctx.cwd
 
@@ -59,7 +68,7 @@ def address(ctx: ErkContext, *, dangerous: bool) -> None:
         executor=executor,
         command="/erk:pr-address",
         worktree_path=cwd,
-        dangerous=True,
+        dangerous=effective_dangerous,
         permission_mode="edits",
     )
 

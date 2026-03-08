@@ -31,6 +31,7 @@ from erk.cli.commands.implement_shared import (
     validate_flags,
 )
 from erk.cli.core import discover_repo_context
+from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.context import ErkContext
 from erk.core.prompt_executor import PromptExecutor
@@ -329,6 +330,7 @@ def implement(
     dry_run: bool,
     submit: bool,
     dangerous: bool,
+    safe: bool,
     no_interactive: bool,
     script: bool,
     yolo: bool,
@@ -383,9 +385,14 @@ def implement(
     """
     # Handle --yolo flag (shorthand for dangerous + submit + no-interactive)
     if yolo:
+        if safe:
+            raise click.ClickException("--yolo and --safe are mutually exclusive")
         dangerous = True
         submit = True
         no_interactive = True
+
+    # Resolve effective dangerous mode from flags and config
+    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)
 
     # Normalize model name (validates and expands aliases)
     model = normalize_model_name(model)
@@ -413,7 +420,7 @@ def implement(
                 ctx,
                 repo=repo,
                 submit=submit,
-                dangerous=dangerous,
+                dangerous=effective_dangerous,
                 script=script,
                 no_interactive=no_interactive,
                 verbose=verbose,
@@ -459,7 +466,7 @@ def implement(
             plan_number=target_info.plan_number,
             dry_run=dry_run,
             submit=submit,
-            dangerous=dangerous,
+            dangerous=effective_dangerous,
             script=script,
             no_interactive=no_interactive,
             verbose=verbose,
@@ -473,7 +480,7 @@ def implement(
             plan_file=plan_file,
             dry_run=dry_run,
             submit=submit,
-            dangerous=dangerous,
+            dangerous=effective_dangerous,
             script=script,
             no_interactive=no_interactive,
             verbose=verbose,
