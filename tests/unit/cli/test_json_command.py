@@ -1,4 +1,4 @@
-"""Tests for @json_command decorator, emit_json, and emit_json_result."""
+"""Tests for @json_command decorator, emit_json, emit_json_result, and --schema flag."""
 
 import json
 from dataclasses import dataclass
@@ -9,7 +9,7 @@ import click
 from click.testing import CliRunner
 
 from erk.cli.ensure import UserFacingCliError
-from erk.cli.json_command import emit_json, emit_json_result, json_command
+from erk.cli.json_command import JsonCommandMeta, emit_json, emit_json_result, json_command
 
 # -- Helpers --
 
@@ -374,3 +374,142 @@ def test_emit_json_result_with_plain_dataclass() -> None:
     assert data["success"] is True
     assert data["name"] == "test"
     assert data["count"] == 7
+
+
+# -- JsonCommandMeta tests --
+
+
+def test_json_command_meta_stored_on_command() -> None:
+    """@json_command stores JsonCommandMeta on the command object."""
+
+    @json_command(
+        exclude_json_input=frozenset({"secret"}),
+        required_json_input=frozenset({"name"}),
+    )
+    @click.command("meta-cmd")
+    @click.option("--name", default=None)
+    @click.option("--secret", default=None)
+    def meta_cmd(*, json_mode: bool, name: str | None, secret: str | None) -> None:
+        pass
+
+    meta = meta_cmd._json_command_meta  # type: ignore[attr-defined]
+    assert isinstance(meta, JsonCommandMeta)
+    assert meta.exclude_json_input == frozenset({"secret"})
+    assert meta.required_json_input == frozenset({"name"})
+    assert meta.output_types == ()
+
+
+def test_json_command_meta_with_output_types() -> None:
+    """output_types parameter is stored in JsonCommandMeta."""
+
+    @dataclass(frozen=True)
+    class ResultA:
+        value: int
+
+    @json_command(output_types=(ResultA,))
+    @click.command("typed-cmd")
+    def typed_cmd(*, json_mode: bool) -> None:
+        pass
+
+    meta = typed_cmd._json_command_meta  # type: ignore[attr-defined]
+    assert meta.output_types == (ResultA,)
+
+
+# -- --schema flag tests --
+
+
+def test_schema_flag_exists() -> None:
+    """--schema flag is added by @json_command."""
+    cmd = _make_test_command()
+    param_names = [p.name for p in cmd.params]
+    assert "schema_mode" in param_names
+
+
+def test_schema_flag_short_circuits() -> None:
+    """--schema outputs schema without executing the command."""
+    call_count = 0
+
+    @json_command
+    @click.command("schema-cmd")
+    @click.option("--name", type=str, default=None)
+    def schema_cmd(*, json_mode: bool, name: str | None) -> None:
+        nonlocal call_count
+        call_count += 1
+
+    runner = CliRunner()
+    result = runner.invoke(schema_cmd, ["--schema"])
+    assert result.exit_code == 0
+    assert call_count == 0  # command was NOT executed
+
+
+def test_schema_output_structure() -> None:
+    """--schema outputs a valid schema document with input/output/error schemas."""
+
+    @json_command
+    @click.command("struct-cmd")
+    @click.option("--name", type=str, default=None, help="The name")
+    def struct_cmd(*, json_mode: bool, name: str | None) -> None:
+        pass
+
+    runner = CliRunner()
+    result = runner.invoke(struct_cmd, ["--schema"])
+    assert result.exit_code == 0
+
+    doc = json.loads(result.output)
+    assert doc["command"] == "struct-cmd"
+    assert "input_schema" in doc
+    assert "output_schema" in doc
+    assert "error_schema" in doc
+    assert doc["error_schema"]["properties"]["success"]["const"] is False
+
+
+def test_schema_includes_input_params() -> None:
+    """--schema output includes command parameters in input_schema."""
+
+    @json_command
+    @click.command("params-cmd")
+    @click.option("--name", type=str, default=None, help="User name")
+    @click.option("--count", type=int, default=None, help="Item count")
+    def params_cmd(*, json_mode: bool, name: str | None, count: int | None) -> None:
+        pass
+
+    runner = CliRunner()
+    result = runner.invoke(params_cmd, ["--schema"])
+    doc = json.loads(result.output)
+
+    assert "name" in doc["input_schema"]["properties"]
+    assert doc["input_schema"]["properties"]["name"]["type"] == "string"
+    assert doc["input_schema"]["properties"]["count"]["type"] == "integer"
+
+
+def test_schema_with_output_types() -> None:
+    """--schema output includes output_schema from registered types."""
+
+    @dataclass(frozen=True)
+    class MyResult:
+        value: int
+
+        def to_json_dict(self) -> dict[str, Any]:
+            return {"value": self.value}
+
+        @classmethod
+        def json_schema(cls) -> dict[str, Any]:
+            return {
+                "type": "object",
+                "properties": {
+                    "success": {"type": "boolean", "const": True},
+                    "value": {"type": "integer"},
+                },
+                "required": ["success", "value"],
+            }
+
+    @json_command(output_types=(MyResult,))
+    @click.command("typed-schema-cmd")
+    def typed_cmd(*, json_mode: bool) -> None:
+        pass
+
+    runner = CliRunner()
+    result = runner.invoke(typed_cmd, ["--schema"])
+    doc = json.loads(result.output)
+
+    assert "value" in doc["output_schema"]["properties"]

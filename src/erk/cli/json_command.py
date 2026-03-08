@@ -1,9 +1,10 @@
-"""JSON command harness for CLI commands (input + output).
+"""JSON command harness for CLI commands (input + output + schema).
 
-Adds a --json flag to Click commands with:
+Adds --json and --schema flags to Click commands with:
 - JSON error serialization (catches UserFacingCliError)
 - JSON input from stdin (when piped, maps keys to Click params)
 - emit_json_result() for structured output via to_json_dict() protocol
+- --schema flag to output JSON Schema for input/output/error shapes
 
 Commands return a result object with to_json_dict() or as a dataclass;
 the decorator auto-serializes it via emit_json_result() when --json is active.
@@ -13,11 +14,21 @@ Commands may also call emit_json()/emit_json_result() inline and return None.
 import dataclasses
 import json
 import sys
+from dataclasses import dataclass
 from typing import Any, overload
 
 import click
 
 from erk.cli.ensure import UserFacingCliError
+
+
+@dataclass(frozen=True)
+class JsonCommandMeta:
+    """Metadata stored on Command objects decorated with @json_command."""
+
+    exclude_json_input: frozenset[str]
+    required_json_input: frozenset[str]
+    output_types: tuple[type, ...]
 
 
 @overload
@@ -29,6 +40,7 @@ def json_command(
     *,
     exclude_json_input: frozenset[str] = ...,
     required_json_input: frozenset[str] = ...,
+    output_types: tuple[type, ...] = ...,
 ) -> Any: ...
 
 
@@ -37,8 +49,9 @@ def json_command(
     *,
     exclude_json_input: frozenset[str] | None = None,
     required_json_input: frozenset[str] | None = None,
+    output_types: tuple[type, ...] = (),
 ) -> click.Command | Any:
-    """Add --json flag, JSON input mapping, and JSON error handling to a Click command.
+    """Add --json/--schema flags, JSON input mapping, and JSON error handling to a Click command.
 
     Must be applied ABOVE @click.command (i.e., listed above it in the
     decorator stack). This is because decorators are applied bottom-to-top,
@@ -53,22 +66,27 @@ def json_command(
     - UserFacingCliError is caught and serialized as JSON to stdout
     - SystemExit and other exceptions pass through unchanged
 
-    When --json is not passed:
+    When --schema is passed:
+    - Outputs JSON Schema document for the command's input/output/error shapes
+    - Short-circuits without executing the command
+
+    When neither is passed:
     - Delegates to the original callback unchanged
 
     Args:
         cmd: Click Command object (when used as bare decorator)
         exclude_json_input: Param names to skip when mapping JSON input
         required_json_input: Param names that must be present and non-None in JSON input
+        output_types: Result types for output schema generation
     """
     resolved_exclude = exclude_json_input if exclude_json_input is not None else frozenset()
     resolved_required = required_json_input if required_json_input is not None else frozenset()
 
     if cmd is not None:
-        return _apply_json_command(cmd, resolved_exclude, resolved_required)
+        return _apply_json_command(cmd, resolved_exclude, resolved_required, output_types)
 
     def decorator(cmd: click.Command) -> click.Command:
-        return _apply_json_command(cmd, resolved_exclude, resolved_required)
+        return _apply_json_command(cmd, resolved_exclude, resolved_required, output_types)
 
     return decorator
 
@@ -95,14 +113,30 @@ def _apply_json_command(
     cmd: click.Command,
     exclude_json_input: frozenset[str],
     required_json_input: frozenset[str],
+    output_types: tuple[type, ...],
 ) -> click.Command:
     """Apply the json_command behavior to a Click command."""
+    # Store metadata on the command object for schema introspection
+    cmd._json_command_meta = JsonCommandMeta(  # type: ignore[attr-defined]
+        exclude_json_input=exclude_json_input,
+        required_json_input=required_json_input,
+        output_types=output_types,
+    )
+
     json_option = click.Option(
         ["--json", "json_mode"],
         is_flag=True,
         help="Output results as JSON",
     )
     cmd.params.append(json_option)
+
+    schema_option = click.Option(
+        ["--schema", "schema_mode"],
+        is_flag=True,
+        default=False,
+        help="Output JSON Schema for this command's input/output shapes",
+    )
+    cmd.params.append(schema_option)
 
     original_callback = cmd.callback
     if original_callback is None:
@@ -112,6 +146,14 @@ def _apply_json_command(
     valid_param_names = frozenset(p.name for p in cmd.params if p.name is not None)
 
     def wrapped_callback(**kwargs: Any) -> Any:
+        schema_mode = kwargs.pop("schema_mode", False)
+        if schema_mode:
+            from erk.cli.json_schema import build_schema_document
+
+            schema_doc = build_schema_document(cmd)
+            click.echo(json.dumps(schema_doc, indent=2))
+            return None
+
         json_mode = kwargs.pop("json_mode", False)
         kwargs["json_mode"] = json_mode
         if not json_mode:
@@ -209,7 +251,6 @@ def emit_json_result(result: Any) -> None:
     elif dataclasses.is_dataclass(result) and not isinstance(result, type):
         data = dataclasses.asdict(result)
     else:
-        raise TypeError(
-            f"Cannot serialize {type(result).__name__}: no to_json_dict() and not a dataclass"
-        )
+        type_name = type(result).__name__
+        raise TypeError(f"Cannot serialize {type_name}: no to_json_dict() and not a dataclass")
     emit_json(data)
