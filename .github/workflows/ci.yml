@@ -27,6 +27,19 @@ jobs:
         id: check
         uses: ./.github/actions/check-impl-context
 
+  no-impl-context:
+    if: github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure .erk/impl-context/ is not in tree
+        run: |
+          if [ -d ".erk/impl-context" ]; then
+            echo "::error::.erk/impl-context/ must be removed before merging. Run: git rm -rf .erk/impl-context/ && git commit && git push"
+            exit 1
+          fi
+
   # === Style Checks (parallel) ===
   format:
     needs: [check-submission, fix-formatting]
