@@ -11,7 +11,9 @@ from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListData
 from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.prompt_executor import FakePromptExecutor
 
@@ -437,3 +439,217 @@ def test_list_remote_empty() -> None:
 
     assert result.exit_code == 0
     assert "No plans found" in result.output
+
+
+# --- pr dispatch --repo ---
+
+
+def _make_plan_header_body(*, branch_name: str) -> str:
+    """Build a plan-header metadata block with a branch name."""
+    return render_metadata_block(
+        MetadataBlock(
+            key="plan-header",
+            data={
+                "schema_version": "2",
+                "created_at": "2024-01-01T00:00:00+00:00",
+                "created_by": "test-user",
+                "branch_name": branch_name,
+            },
+        )
+    )
+
+
+def _make_plan_issue(
+    number: int,
+    *,
+    title: str = "Test Plan",
+    branch_name: str = "plnd/test-plan",
+    state: str = "OPEN",
+    labels: list[str] | None = None,
+) -> IssueInfo:
+    """Create a test IssueInfo with plan-header metadata in the body."""
+    plan_header = _make_plan_header_body(branch_name=branch_name)
+    plan_content = "# Plan: Test\n\n- Step 1\n- Step 2"
+    body = build_plan_stage_body(plan_header, plan_content, summary="")
+    return IssueInfo(
+        number=number,
+        title=title,
+        body=body,
+        state=state,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        labels=labels if labels is not None else ["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-author",
+    )
+
+
+def test_dispatch_remote_dispatches_workflow() -> None:
+    """Test pr dispatch --repo dispatches workflow via RemoteGitHub."""
+    issue = _make_plan_issue(42, title="Remote Dispatch Plan", branch_name="plnd/remote-test")
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "42", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+    assert "Workflow dispatched" in result.output
+    assert "1 plan(s) dispatched successfully" in result.output
+
+    # Verify workflow was dispatched
+    assert len(fake_remote.dispatched_workflows) == 1
+    dispatched = fake_remote.dispatched_workflows[0]
+    assert dispatched.inputs["plan_id"] == "42"
+    assert dispatched.inputs["plan_backend"] == "planned_pr"
+    assert dispatched.inputs["branch_name"] == "plnd/remote-test"
+
+    # Verify impl-context files were committed to the branch
+    assert len(fake_remote.created_file_commits) >= 1
+    committed_paths = [c.path for c in fake_remote.created_file_commits]
+    assert any(".erk/impl-context/plan.md" in p for p in committed_paths)
+
+
+def test_dispatch_remote_plan_not_found() -> None:
+    """Test pr dispatch --repo with non-existent plan."""
+    fake_remote = _make_fake_remote(issues={})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "999", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code != 0
+    assert "Plan #999 not found" in result.output
+
+
+def test_dispatch_remote_missing_label() -> None:
+    """Test pr dispatch --repo rejects plan without erk-plan label."""
+    issue = _make_plan_issue(42, labels=["bug"])
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "42", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code != 0
+    assert "does not have erk-plan label" in result.output
+
+
+def test_dispatch_remote_closed_plan() -> None:
+    """Test pr dispatch --repo rejects closed plan."""
+    issue = _make_plan_issue(42, state="CLOSED")
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "42", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code != 0
+    assert "is CLOSED" in result.output
+
+
+def test_dispatch_remote_requires_plan_number() -> None:
+    """Test pr dispatch --repo without plan number gives error."""
+    fake_remote = _make_fake_remote()
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code != 0
+    assert "Plan number(s) required in remote mode" in result.output
+
+
+def test_dispatch_remote_multiple_plans() -> None:
+    """Test pr dispatch --repo dispatches multiple plans."""
+    issue_1 = _make_plan_issue(10, title="Plan A", branch_name="plnd/plan-a")
+    issue_2 = _make_plan_issue(20, title="Plan B", branch_name="plnd/plan-b")
+    fake_remote = _make_fake_remote(issues={10: issue_1, 20: issue_2})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "10", "20", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+    assert "2 plan(s) dispatched successfully" in result.output
+    assert len(fake_remote.dispatched_workflows) == 2
+
+
+def test_dispatch_remote_posts_queued_comment() -> None:
+    """Test pr dispatch --repo posts a queued event comment."""
+    issue = _make_plan_issue(42, branch_name="plnd/comment-test")
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "42", "--repo", "owner/repo"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+    assert "Queued event comment posted" in result.output
+    assert len(fake_remote.added_issue_comments) == 1
+    assert fake_remote.added_issue_comments[0].issue_number == 42
+
+
+def test_dispatch_remote_with_base_branch() -> None:
+    """Test pr dispatch --repo --base threads base branch to workflow inputs."""
+    issue = _make_plan_issue(42, branch_name="plnd/base-test")
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "42", "--repo", "owner/repo", "--base", "develop"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+    dispatched = fake_remote.dispatched_workflows[0]
+    assert dispatched.inputs["base_branch"] == "develop"
+
+
+def test_dispatch_remote_with_ref() -> None:
+    """Test pr dispatch --repo --ref threads ref to workflow dispatch."""
+    issue = _make_plan_issue(42, branch_name="plnd/ref-test")
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["pr", "dispatch", "42", "--repo", "owner/repo", "--ref", "custom-ref"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
+    dispatched = fake_remote.dispatched_workflows[0]
+    assert dispatched.ref == "custom-ref"
