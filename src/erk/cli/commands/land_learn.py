@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING
 
 import click
 from rich.console import Console
+from rich.padding import Padding
 from rich.table import Table
+from rich.text import Text
 
 from erk.cli.commands.exec.scripts.preprocess_session import (
     deduplicate_assistant_messages,
@@ -141,7 +143,10 @@ def _log_session_summary_from_manifest(
         # Show per-file sizes under each session
         for filename in entry.get("files", []):
             file_size_str = _file_size_from_xml_files(xml_files, filename)
-            table.add_row(f"      [dim]{filename}  ({file_size_str})[/dim]", "", "", "", "", "")
+            # Use Rich's Padding for consistent column indentation instead of hardcoded spaces
+            text_content = Text(f"{filename}  ({file_size_str})", style="dim")
+            padded_content = Padding(text_content, pad=(0, 0, 0, 2))
+            table.add_row(padded_content, "", "", "", "", "")
 
     user_output(
         f"  Manifest: planned-pr-context/{plan_id}"
