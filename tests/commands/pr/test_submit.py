@@ -1704,6 +1704,8 @@ def test_pr_submit_graphite_flow_detects_remote_divergence() -> None:
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
             diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
             remote_branches={env.git_dir: ["origin/feature"]},
+            remote_refs={("origin", "feature"): "remote_sha_abc"},
+            branch_heads={"feature": "local_sha_def"},
             branch_divergence={
                 (env.cwd, "feature", "origin"): BranchDivergence(
                     is_diverged=True, ahead=1, behind=2

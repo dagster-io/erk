@@ -280,7 +280,7 @@ def test_matching_sha_skips_fetch(tmp_path: Path) -> None:
     """When local and remote SHAs match, skip fetch and proceed to submit."""
     pr = _pr_details(number=42, branch="feature")
     fake_graphite = FakeGraphite()
-    fake_github = FakeGitHub(
+    fake_github = FakeLocalGitHub(
         prs_by_branch={"feature": pr},
     )
     same_sha = "abc123def456"
