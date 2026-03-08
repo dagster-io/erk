@@ -65,6 +65,31 @@
       "raw_size_kb": 1207,
       "xml_size_kb": 287,
       "git_branch": "plnd/O9009-json-output-decorato-03-08-1402"
+    },
+    {
+      "session_id": "8e036eef-9eea-4768-a76e-65df4acf122c",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T14:49:47.299053+00:00",
+      "files": [
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part1.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part10.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part11.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part12.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part2.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part3.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part4.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part5.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part6.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part7.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part8.xml",
+        "address-8e036eef-9eea-4768-a76e-65df4acf122c-8e036eef-9eea-4768-a76e-65df4acf122c-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 12,
+      "raw_size_kb": 900,
+      "xml_size_kb": 302,
+      "git_branch": "plnd/O9009-json-output-decorato-03-08-1402"
     }
   ]
 }

@@ -1,0 +1,232 @@
+<session>
+  <meta source="agent-ac843db" />
+  <meta branch="plnd/O9009-json-output-decorato-03-08-1402" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_result tool="toolu_013GQ9s1SwaRKcw7g2ABGmNq">
+The file /home/runner/work/erk/erk/src/erk/cli/ensure.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""CLI assertion utilities with styled error output.
+     2→
+     3→Provides the Ensure class with static methods for checking common invariants
+     4→in CLI commands, raising UserFacingCliError with helpful messages when
+     5→assertions fail.
+     6→"""
+     7→
+     8→import os
+     9→import shutil
+    10→from pathlib import Path
+    11→from typing import Any, TypeVar
+    12→
+    13→import click
+    14→
+    15→from erk.cli.output import user_output
+    16→from erk.cli.repo_context import ErkContext
+    17→from erk.core.config.repo_config import ErkRepoConfig
+    18→from erk.core.exceptions import GraphiteDisabledError
+    19→from erk.gateway.graphite_impl import GraphiteDisabled
+    20→
+    21→T = TypeVar("T")
+    22→
+    23→
+    24→def _get_config_path(ctx: ErkContext) -&gt; Path | None:
+    25→    """Get the repo config path if available."""
+    26→    if not isinstance(ctx.repo, ErkRepoConfig):
+    27→        return None
+    28→    return ctx.repo.erk_dir / "config.yml"
+    29→
+
+... [506 lines omitted] ...
+
+    31→class UserFacingCliError(click.ClickException):
+    32→    """Exception for user-facing CLI errors with styled output.
+    34→    Extends click.ClickException so Click catches it automatically at every
+    35→    level (groups, subgroups, commands) and converts it to a styled error
+    40→        raise UserFacingCliError("Not a GitHub repository", error_type="cli_error")
+    41→        raise UserFacingCliError(push_result.message, error_type="cli_error")
+    44→    def __init__(self, message: str, *, error_type: str = "cli_error") -&gt; None:
+    47→        self.error_type = error_type
+    50→        """Display styled error message to stderr."""
+    51→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    55→    """Helper class for asserting invariants with consistent error handling."""
+    58→    def invariant(condition: bool, error_message: str) -&gt; None:
+    59→        """Ensure condition is true, otherwise output styled error and exit.
+    63→            error_message: Message to display if condition is false
+    66→            UserFacingCliError: If condition is false
+    69→            raise UserFacingCliError(error_message, error_type="cli_error")
+    72→    def truthy(value: T, error_message: str) -&gt; T:
+    73→        """Ensure value is truthy, otherwise output styled error and exit.
+    77→            error_message: Message to display if value is falsy
+    83→            UserFacingCliError: If value is falsy
+    86→            raise UserFacingCliError(error_message, error_type="cli_error")
+    90→    def not_none(value: T | None, error_message: str) -&gt; T:
+    91→        """Ensure value is not None, otherwise output styled error and exit.
+    94→        returned value as non-None without type checker warnings.
+    98→            error_message: Message to display if value is None
+   104→            UserFacingCliError: If value is None
+   112→            raise UserFacingCliError(error_message, error_type="cli_error")
+   123→            UserFacingCliError: If repo is a GitHub repository
+   131→        raise UserFacingCliError(
+   135→            error_type="cli_error",
+   146→            UserFacingCliError: If not in a GitHub repository
+   153→            raise UserFacingCliError(
+   157→                error_type="cli_error",
+   159→        raise UserFacingCliError(
+   162→            error_type="cli_error",
+   167→        ctx: ErkContext, path: Path, error_message: str | None = None
+   169→        """Ensure worktree path exists, otherwise output styled error and exit.
+   174→            error_message: Custom message to display if path doesn't exist.
+   178→            UserFacingCliError: If path doesn't exist
+   181→            if error_message is None:
+   182→                error_message = f"Path not found: {path}"
+   183→            raise UserFacingCliError(error_message, error_type="cli_error")
+   186→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   187→        """Ensure value is non-empty and non-None, otherwise output styled error and exit.
+   191→            error_message: Message to display if value is empty or None
+   194→            UserFacingCliError: If value is empty or None
+   201→            raise UserFacingCliError(error_message, error_type="cli_error")
+   210→            name: Optional human-readable name for error messages
+   213→            UserFacingCliError: If worktree doesn't exist at path
+   218→                error = f"Worktree '{name}' not found"
+   220→                error = f"Worktree not found at {wt_path}"
+   221→            raise UserFacingCliError(error, error_type="cli_error")
+   225→                error = f"Worktree '{name}' does not exist"
+   227→                error = f"No worktree found at {wt_path}"
+   228→            raise UserFacingCliError(error, error_type="cli_error")
+   240→            UserFacingCliError: If branch doesn't exist
+   244→            raise UserFacingCliError(
+   246→                error_type="cli_error",
+   257→            UserFacingCliError: If not in a worktree
+   260→            raise UserFacingCliError(
+   262→                error_type="cli_error",
+   266→    def exact_args(args: tuple[str, ...], expected: int, error_message: str | None = None) -&gt; None:
+   272→            error_message: Custom error message. If None, generates default message.
+   275→            UserFacingCliError: If argument count doesn't match expected
+   278→            if error_message is None:
+   280→                    error_message = f"No arguments expected, got {len(args)}"
+   282→                    error_message = f"Expected 1 argument, got {len(args)}"
+   284→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   285→            raise UserFacingCliError(error_message, error_type="cli_error")
+   292→        error_message: str | None = None,
+   299→            field_name: Name of the field (for error messages)
+   300→            error_message: Custom error message. If None, generates default message
+   304→            UserFacingCliError: If field is not set
+   309→        if error_message is None:
+   312→                error_message = (
+   318→                error_message = (
+   322→            raise UserFacingCliError(error_message, error_type="cli_error")
+   325→    def path_is_directory(path: Path, error_message: str | None = None) -&gt; None:
+   330→            error_message: Custom error message. Defaults to "Path is not a directory: {path}"
+   333→            UserFacingCliError: If path doesn't exist or isn't a directory
+   337→        if error_message is None:
+   338→            error_message = f"Path is not a directory: {path}"
+   339→            raise UserFacingCliError(error_message, error_type="cli_error")
+   342→    def worktree_path_available(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   348→            error_message: Message to display if worktree exists
+   351→            UserFacingCliError: If worktree already exists at path
+   354→            raise UserFacingCliError(error_message, error_type="cli_error")
+   361→            UserFacingCliError: If gh is not installed
+   364→            raise UserFacingCliError(
+   368→                error_type="cli_error",
+   376→            UserFacingCliError: If gh is not authenticated
+   387→            raise UserFacingCliError(
+   391→                error_type="cli_error",
+   399→            UserFacingCliError: If gt is not installed
+   402→            raise UserFacingCliError(
+   406→                error_type="cli_error",
+   417→            UserFacingCliError: If Graphite is disabled
+   420→            error = GraphiteDisabledError(ctx.graphite.reason)
+   421→            raise UserFacingCliError(str(error), error_type="cli_error")
+   428→            UserFacingCliError: If Claude CLI is not installed
+   433→            raise UserFacingCliError(
+   437→                error_type="cli_error",
+   447→            UserFacingCliError: If gt is not authenticated
+   459→            raise UserFacingCliError(
+   463→                error_type="cli_error",
+   473→            UserFacingCliError: If gh is not authenticated
+   484→            raise UserFacingCliError(
+   488→                error_type="cli_error",
+   508→            UserFacingCliError: If branch is managed by Graphite (has gt metadata)
+   523→            raise UserFacingCliError(
+   533→                error_type="cli_error",
+  </tool_result>
+  <assistant>Perfect! Now let me verify the final state by running my check again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="11900" cache_read_input_tokens="55285" cache_creation="{'ephemeral_5m_input_tokens': 11900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012n6UrGuW8FmJk93jWXvMN5">
+    <param name="command">python3 &lt;&lt; 'EOF'
+import re
+from pathlib import Path
+
+# Find all Python files
+py_files = li...[truncated 1366 chars]...100]}...")
+else:
+    print("All UserFacingCliError calls have error_type parameter!")
+EOF
+</param>
+    <param name="description">Final check for UserFacingCliError calls without error_type</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="11900" cache_read_input_tokens="55285" cache_creation="{'ephemeral_5m_input_tokens': 11900, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012n6UrGuW8FmJk93jWXvMN5">
+All UserFacingCliError calls have error_type parameter!
+  </tool_result>
+  <assistant>Excellent! Now let me clean up the temporary script and provide a summary:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="709" cache_read_input_tokens="67185" cache_creation="{'ephemeral_5m_input_tokens': 709, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013j1P6uFFyhroWthwMG6BSZ">
+    <param name="command">rm add_error_type.py</param>
+    <param name="description">Remove temporary refactoring script</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="709" cache_read_input_tokens="67185" cache_creation="{'ephemeral_5m_input_tokens': 709, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013j1P6uFFyhroWthwMG6BSZ">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018nbgMHuM6QyY728gKSaniS">
+    <param name="command">git status --short</param>
+    <param name="description">Show final git status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="67894" cache_creation="{'ephemeral_5m_input_tokens': 123, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018nbgMHuM6QyY728gKSaniS">
+ M src/erk/cli/commands/admin.py
+ M src/erk/cli/commands/objective/view_cmd.py
+ M src/erk/cli/commands/one_shot.py
+ M src/erk/cli/commands/pr/dispatch_cmd.py
+ M src/erk/cli/commands/pr/submit_pipeline.py
+ M src/erk/cli/commands/wt/create_cmd.py
+ M src/erk/cli/ensure.py
+ M src/erk/cli/repo_resolution.py
+ M tests/unit/cli/test_json_output.py
+  </tool_result>
+  <assistant>Perfect! Let me create a summary of the changes:
+
+## LibCST Refactoring Results
+
+**Task:** Add `error_type="cli_error"` to all `UserFacingCliError(...)` calls that don't already have an `error_type=` keyword argument.
+
+### Files Modified: 9
+
+**Source files:**
+- `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py` - 3 calls updated
+- `/home/runner/work/erk/erk/src/erk/cli/ensure.py` - 18 calls updated + docstring examples fixed
+- `/home/runner/work/erk/erk/src/erk/cli/commands/admin.py` - 10 calls updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py` - 1 call updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py` - 4 calls updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py` - 6 calls updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py` - 1 call updated
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py` - 1 call updated
+
+**Test files:**
+- `/home/runner/work/erk/erk/tests/unit/cli/test_json_output.py` - 2 calls updated
+
+### Changes Made:
+
+1. **Added `error_type="cli_error"`** to 46 `UserFacingCliError(...)` calls that were missing it
+2. **Preserved existing `error_type` values** (e.g., `error_type="auth_required"`, `error_type="invalid_input"`, `error_type="invalid_repo"`) - these were correctly left unchanged
+3. **Updated docstring examples** in `UserFacingCliError` class to show the correct usage with `error_type="cli_error"`
+4. **Formatted all changes** using ruff to ensure proper multi-line formatting
+
+### Verification:
+
+- All `UserFacingCliError(...)` calls now have an `error_type=` parameter
+- Calls with existing non-default `error_type` values were preserved
+- Multi-line calls are properly formatted with the new parameter
+
+The refactoring is complete and ready for the next step (removing the default parameter from the `__init__` signature).</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="342" cache_read_input_tokens="68017" cache_creation="{'ephemeral_5m_input_tokens': 342, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
