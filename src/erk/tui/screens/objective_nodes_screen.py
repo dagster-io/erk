@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
@@ -25,6 +27,9 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 from erk_shared.gateway.plan_service.abc import PlanService
+
+if TYPE_CHECKING:
+    from erk.tui.app import ErkDashApp
 
 
 def _styled_stage(lifecycle_display: str) -> str | Text:
@@ -456,6 +461,19 @@ class ObjectiveNodesScreen(ModalScreen):
         else:
             self._execute_action_command(command_id, row)
 
+    def _dismiss_and_get_app(self) -> ErkDashApp | None:
+        """Dismiss the screen and return the app if it is an ErkDashApp.
+
+        Returns:
+            The ErkDashApp instance, or None if the app is not an ErkDashApp.
+        """
+        from erk.tui.app import ErkDashApp
+
+        self.dismiss()
+        if isinstance(self.app, ErkDashApp):
+            return self.app
+        return None
+
     def _execute_action_command(self, command_id: str, row: PlanRowData) -> None:
         """Execute an ACTION command by dismissing and delegating to app.
 
@@ -463,93 +481,111 @@ class ObjectiveNodesScreen(ModalScreen):
             command_id: The ACTION command ID
             row: The selected row's plan data
         """
-        from erk.tui.app import ErkDashApp
-
         if command_id == "close_plan":
-            if row.plan_url:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    op_id = f"close-plan-{row.plan_id}"
-                    self.app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
-                    self.app._close_plan_async(op_id, row.plan_id, row.plan_url)
-
+            self._action_close_plan(row)
         elif command_id == "dispatch_to_queue":
-            if row.plan_url:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    op_id = f"dispatch-plan-{row.plan_id}"
-                    self.app._start_operation(
-                        op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue..."
-                    )
-                    self.app._dispatch_to_queue_async(op_id, row.plan_id)
-
+            self._action_dispatch_to_queue(row)
         elif command_id == "land_pr":
-            if row.pr_number and row.pr_head_branch:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    op_id = f"land-pr-{row.pr_number}"
-                    self.app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
-                    plan_id = row.plan_id if not row.is_learn_plan else None
-                    self.app._land_pr_async(
-                        op_id=op_id,
-                        pr_number=row.pr_number,
-                        branch=row.pr_head_branch,
-                        objective_issue=row.objective_issue,
-                        plan_id=plan_id,
-                    )
-
+            self._action_land_pr(row)
         elif command_id == "rebase_remote":
-            if row.pr_number is not None:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    op_id = f"rebase-pr-{row.pr_number}"
-                    self.app._start_operation(
-                        op_id=op_id,
-                        label=f"Dispatching rebase for PR #{row.pr_number}...",
-                    )
-                    self.app._rebase_remote_async(op_id, row.pr_number)
-
+            self._action_rebase_remote(row)
         elif command_id == "address_remote":
-            if row.pr_number is not None:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    op_id = f"address-pr-{row.pr_number}"
-                    self.app._start_operation(
-                        op_id=op_id,
-                        label=f"Dispatching address for PR #{row.pr_number}...",
-                    )
-                    self.app._address_remote_async(op_id, row.pr_number)
-
+            self._action_address_remote(row)
         elif command_id == "rewrite_remote":
-            if row.pr_number is not None:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    op_id = f"rewrite-pr-{row.pr_number}"
-                    self.app._start_operation(
-                        op_id=op_id,
-                        label=f"Dispatching rewrite for PR #{row.pr_number}...",
-                    )
-                    self.app._rewrite_remote_async(op_id, row.pr_number)
-
+            self._action_rewrite_remote(row)
         elif command_id in ("cmux_checkout", "cmux_teleport"):
-            if row.pr_number and row.pr_head_branch:
-                teleport = command_id == "cmux_teleport"
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    verb = "teleport" if teleport else "checkout"
-                    op_id = f"cmux-{verb}-{row.pr_number}"
-                    suffix = " (teleport)" if teleport else ""
-                    label = f"Creating cmux workspace{suffix} for PR #{row.pr_number}..."
-                    self.app._start_operation(op_id=op_id, label=label)
-                    self.app._cmux_checkout_async(
-                        op_id, row.pr_number, row.pr_head_branch, teleport=teleport
-                    )
-
+            self._action_cmux_checkout(command_id, row)
         elif command_id == "incremental_dispatch":
-            if row.pr_number is not None:
-                self.dismiss()
-                if isinstance(self.app, ErkDashApp):
-                    self.app.execute_palette_command("incremental_dispatch")
+            self._action_incremental_dispatch(row)
+
+    def _action_close_plan(self, row: PlanRowData) -> None:
+        if row.plan_url is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"close-plan-{row.plan_id}"
+        app._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
+        app._close_plan_async(op_id, row.plan_id, row.plan_url)
+
+    def _action_dispatch_to_queue(self, row: PlanRowData) -> None:
+        if row.plan_url is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"dispatch-plan-{row.plan_id}"
+        app._start_operation(op_id=op_id, label=f"Dispatching plan #{row.plan_id} to queue...")
+        app._dispatch_to_queue_async(op_id, row.plan_id)
+
+    def _action_land_pr(self, row: PlanRowData) -> None:
+        if row.pr_number is None or row.pr_head_branch is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"land-pr-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
+        plan_id = row.plan_id if not row.is_learn_plan else None
+        app._land_pr_async(
+            op_id=op_id,
+            pr_number=row.pr_number,
+            branch=row.pr_head_branch,
+            objective_issue=row.objective_issue,
+            plan_id=plan_id,
+        )
+
+    def _action_rebase_remote(self, row: PlanRowData) -> None:
+        if row.pr_number is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"rebase-pr-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Dispatching rebase for PR #{row.pr_number}...")
+        app._rebase_remote_async(op_id, row.pr_number)
+
+    def _action_address_remote(self, row: PlanRowData) -> None:
+        if row.pr_number is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"address-pr-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Dispatching address for PR #{row.pr_number}...")
+        app._address_remote_async(op_id, row.pr_number)
+
+    def _action_rewrite_remote(self, row: PlanRowData) -> None:
+        if row.pr_number is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        op_id = f"rewrite-pr-{row.pr_number}"
+        app._start_operation(op_id=op_id, label=f"Dispatching rewrite for PR #{row.pr_number}...")
+        app._rewrite_remote_async(op_id, row.pr_number)
+
+    def _action_cmux_checkout(self, command_id: str, row: PlanRowData) -> None:
+        if row.pr_number is None or row.pr_head_branch is None:
+            return
+        teleport = command_id == "cmux_teleport"
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        verb = "teleport" if teleport else "checkout"
+        op_id = f"cmux-{verb}-{row.pr_number}"
+        suffix = " (teleport)" if teleport else ""
+        label = f"Creating cmux workspace{suffix} for PR #{row.pr_number}..."
+        app._start_operation(op_id=op_id, label=label)
+        app._cmux_checkout_async(op_id, row.pr_number, row.pr_head_branch, teleport=teleport)
+
+    def _action_incremental_dispatch(self, row: PlanRowData) -> None:
+        if row.pr_number is None:
+            return
+        app = self._dismiss_and_get_app()
+        if app is None:
+            return
+        app.execute_palette_command("incremental_dispatch")
 
     @work(thread=True)
     def _fetch_nodes(self) -> None:
