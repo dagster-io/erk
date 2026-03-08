@@ -1,0 +1,935 @@
+<session>
+  <meta branch="plnd/dynamic-trunk-detection-03-08-0747" />
+  <meta model="claude-opus-4-6" />
+  <user>source "$(erk pr teleport 9005 --new-slot --script --sync)"
+Last login: Sun Mar  8 09:07:43 on ttys024
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+OK workspace:87
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk source "$(erk pr teleport 9005 --new-slot --script --sync)"
+Fetching PR #9005...
+✓ Assigned plnd/dynamic-trunk-detection-03-08-0747 to erk-slot-07
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-07/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-07/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/.venv (3.13.1)
+-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07
+OK workspace:87
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+ERROR: You must restack and resolve conflicts with gt restack before submitting.
+Teleported plnd/dynamic-trunk-detection-03-08-0747 (PR #9005) at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747) erk pr rebase
+Restacking with Graphite...
+Error: gt restack failed:
+ERROR: Command failed with error exit code 128:
+git rebase --onto master ebba4e54f72302bbe6ebfd95873312920ffdcd87 plnd/consolidate-learn-docs-03-07-2145
+
+fatal: 'plnd/consolidate-learn-docs-03-07-2145' is already used by worktree at '/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14'
+
+
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747) erk stack consolidate
+✅ Safety check: All worktrees have no uncommitted changes
+
+No other worktrees found containing branches from current stack
+
+Current stack branches: master, plnd/consolidate-learn-docs-03-07-2145, plnd/dynamic-trunk-detection-03-08-0747
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747) gt restack
+ERROR: Command failed with error exit code 128:
+git rebase --onto master ebba4e54f72302bbe6ebfd95873312920ffdcd87 plnd/consolidate-learn-docs-03-07-2145
+
+fatal: 'plnd/consolidate-learn-docs-03-07-2145' is already used by worktree at '/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14'
+
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747) claude
+
+ ▐▛███▜▌   Claude Code v2.1.71
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-07
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747)
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747)
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747) gt sync
+🌲 Fetching branches from remote...
+Running git fetch: [========================================] 100% | Done
+master is up to date.
+
+🧹 Cleaning up branches with merged/closed PRs...
+✔ PR #8924 for plnd/drop-uv-pip-install-03-07-1704 is closed. Delete this branch? … yes
+✔ PR #8921 for plnd/add-check-roadmap-sync-03-07-1646 is closed. Delete this branch? … yes
+✔ PR #8919 for plnd/update-rebase-ask-question-03-07-1637 is closed. Delete this branch? … yes
+
+Deleted branch plnd/drop-uv-pip-install-03-07-1704 for PR #8924 (previously at e8346c3c84b28632902365d1c51faaae8cb58d15)
+Deleted branch plnd/add-check-roadmap-sync-03-07-1646 for PR #8921 (previously at 25907766bcdec26d5af9c54edfc8bc67338d84e7)
+Deleted branch plnd/update-rebase-ask-question-03-07-1637 for PR #8919 (previously at 4cd611968737474818181ab5c09e75111c3d07d7)
+
+🔄 Syncing branches...
+Branch plnd/optimize-tripwire-prescan-02-24-0836 is up to date with remote (PR #8074 v14).
+Branch plnd/O8384-restructure-nav-comp-02-27-1005 is up to date with remote (PR #8397 v6).
+Branch plnd/O7813-erk-objective-plan-7-03-01-2108 has local and remote changes that cannot be reconciled.
+✔ How would you like to proceed? › Overwrite local changes with the remote version
+Synced plnd/O7813-erk-objective-plan-7-03-01-2108 (PR #8594 v16) from remote (previously at db79b1583b754881f6da4056ec8f5ba022a27336).
+Branch plnd/centralize-plan-phase-03-03-0250 is up to date with remote (PR #8652 v8).
+Branch plnd/e2e-agent-sdk-tests-03-03-0954 is up to date with remote (PR #8695 v3).
+Branch plnd/add-workflow-run-indicator-03-04-1907 is up to date with remote (PR #8757 v7).
+Branch plnd/O8760-agent-dx-exec-envelo-03-05-0824 is up to date with remote (PR #8765 v10).
+Branch plnd/O8762-add-frontmatter-life-03-05-0831 is up to date with remote (PR #8766 v8).
+Branch plnd/fix-ci-tier3-race-03-06-0509 is up to date with remote (PR #8834 v1).
+Branch one-shot-plan-only is up to date with remote (PR #8857 v1).
+Branch plnd/add-reconciled-label-03-06-2115 is up to date with remote (PR #8891 v7).
+Branch plnd/consolidate-learn-docs-03-07-2145 is up to date with remote (PR #8920 v10).
+Branch plnd/O8950-idempotent-reconcile-03-07-2054 is up to date with remote (PR #8957 v6).
+Branch plnd/add-codespace-branch-optio-03-08-0703 is up to date with remote, but the current remote version was not pushed with Graphite.
+Branch plnd/fix-file-list-indentation-03-08-0707 is up to date with remote, but the current remote version was not pushed with Graphite.
+✔ Branch plnd/apply-erk-pr-label-03-08-0718 exists locally, but has never been submitted or synced with Graphite. Overwrite it with the remote version? … no
+Branch plnd/learn-remove-shell-integra-03-08-0724 is up to date with remote, but the current remote version was not pushed with Graphite.
+Branch plnd/learn-fix-file-list-indent-03-08-0731 is up to date with remote, but the current remote version was not pushed with Graphite.
+Branch plnd/dynamic-trunk-detection-03-08-0747 is up to date with remote, but the current remote version was not pushed with Graphite.
+Branch plnd/fix-changelog-commits-size-03-08-0909 is up to date with remote, but the current remote version was not pushed with Graphite.
+
+🥞 Restacking branches...
+plnd/fix-changelog-commits-size-03-08-0909 does not need to be restacked on master.
+Restacked plnd/remove-plan-flag-objective-03-07-2039 on master.
+Restacked plnd/fix-mcp-workspace-source-03-07-2039 on master.
+Restacked plnd/add-launch-key-objectiveno-03-08-0527 on master.
+Restacked plnd/clarify-test-helper-exempt-03-07-1831 on master.
+Restacked plnd/fix-docs-plan-terminology-03-07-2111 on master.
+Restacked plnd/unify-pr-read-codepaths-03-07-2016 on master.
+Restacked plnd/canonicalize-session-stora-03-07-1937 on master.
+Restacked plnd/rename-cmux-open-pr-mode-03-07-1835 on master.
+Restacked plnd/fix-roadmap-comment-sync-03-07-2110 on master.
+Restacked plnd/learn-fix-objective-auto-c-03-08-0459 on master.
+Restacked plnd/learn-teleport-sync-script-03-07-1828 on master.
+Restacked plnd/implement-remotegithub-pr-03-07-1819 on master.
+Restacked plnd/fix-teleport-existing-work-03-08-0620 on master.
+Restacked plnd/learn-check-superseded-03-07-1720 on master.
+Restacked plnd/simplify-worktree-activati-03-08-0500 on master.
+Restacked plnd/fix-slow-unit-tests-03-07-1818 on master.
+Restacked plnd/update-changelog-unrelease-03-07-2113 on master.
+Restacked plnd/remove-gateway-printing-la-03-08-0452 on master.
+Restacked plnd/refactor-cmux-checkout-moc-03-07-2053 on master.
+Restacked plnd/consolidate-session-manife-03-07-1954 on master.
+Restacked plnd/enable-objective-operation-03-08-0535 on master.
+Restacked plnd/fix-objective-auto-close-03-08-0636 on master.
+Restacked plnd/add-remote-dispatch-pr-03-08-0629 on master.
+Restacked plnd/disable-uv-cache-pruning-03-07-1721 on master.
+Restacked plnd/show-file-metadata-manifes-03-08-0628 on master.
+Restacked plnd/rename-issue-to-plan-workf-03-08-0459 on master.
+Restacked plnd/standardize-plan-terminolo-03-08-0521 on master.
+Restacked plnd/expand-mock-fake-refactor-03-08-0620 on master.
+Restacked plnd/learn-fix-file-list-indent-03-08-0731 on master.
+Restacked plnd/rename-plan-issues-objecti-03-08-0625 on master.
+Restacked plnd/refactor-dangerous-flag-co-03-08-0543 on master.
+Restacked plnd/centralize-repo-resolution-03-08-0542 on master.
+Restacked plnd/fix-ci-tier3-race-03-06-0509 on master.
+Restacked plnd/add-codespace-branch-optio-03-08-0703 on master.
+Restacked plnd/fix-file-list-indentation-03-08-0707 on master.
+Restacked plnd/centralize-plan-phase-03-03-0250 on master.
+Restacked plnd/learn-remove-shell-integra-03-08-0724 on master.
+Restacked plnd/improve-land-stack-03-08-0608 on master.
+Restacked plnd/add-workflow-run-indicator-03-04-1907 on master.
+Restacked one-shot-plan-only on master.
+Restacked plnd/add-reconciled-label-03-06-2115 on master.
+Restacked plnd/O8760-agent-dx-exec-envelo-03-05-0824 on master.
+Restacked plnd/O8384-restructure-nav-comp-02-27-1005 on master.
+Restacked plnd/O8762-add-frontmatter-life-03-05-0831 on master.
+Restacked plnd/O7813-erk-objective-plan-7-03-01-2108 on master.
+
+WARNING: The following branches could not be restacked cleanly:
+WARNING: ▸ plnd/consolidate-learn-docs-03-07-2145
+WARNING: ▸ plnd/apply-erk-pr-label-03-08-0718
+WARNING: ▸ plnd/O8950-idempotent-reconcile-03-07-2054
+WARNING: ▸ plnd/optimize-tripwire-prescan-02-24-0836
+WARNING: ▸ plnd/e2e-agent-sdk-tests-03-03-0954
+WARNING: You can resolve conflicts with gt restack.
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747) gt restack
+ERROR: Command failed with error exit code 128:
+git rebase --onto master ebba4e54f72302bbe6ebfd95873312920ffdcd87 plnd/consolidate-learn-docs-03-07-2145
+
+fatal: 'plnd/consolidate-learn-docs-03-07-2145' is already used by worktree at '/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14'
+
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747) erk stack consolidate
+✅ Safety check: All worktrees have no uncommitted changes
+
+No other worktrees found containing branches from current stack
+
+Current stack branches: master, plnd/consolidate-learn-docs-03-07-2145, plnd/dynamic-trunk-detection-03-08-0747
+➜  erk-slot-07 git:(plnd/dynamic-trunk-detection-03-08-0747)
+
+somethign is wrong here
+
+i would expecte  erk stack consolidate to work</user>
+  <usage input_tokens="3" cache_creation_input_tokens="18340" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18340}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me investigate the `erk stack consolidate` command to understand why it's not detecting the branch in `erk-slot-14`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18340" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18340}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01VGnDGgg8Sytf4F3DAQ6DAp">
+    <param name="description">Explore stack consolidate</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 760 chars]... another worktree
+
+Search in src/erk/ for the consolidate command and related stack logic.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18340" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18340}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JZbo1sqRVZWGgeUQ7cR26M">
+    <param name="description">Check worktree state</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+I need to und...[truncated 317 chars]...ate information. Working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18340" cache_read_input_tokens="9738" output_tokens="724" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 18340, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JZbo1sqRVZWGgeUQ7cR26M">
+Perfect. Here's the git state summary:
+
+## Git State Summary
+
+**Current Worktree (erk-slot-07):**
+- Branch: `plnd/dynamic-trunk-detection-03-08-0747` (currently checked out, marked with * in branch list)
+- Commit: `2907d7200` - "Trigger CI workflows"
+- Status: Clean (no uncommitted changes)
+- Graphite stack status: Needs restack (marked as ◉ in gt ls)
+
+**About erk-slot-14:**
+- erk-slot-14 exists and is at commit `f85346d29` in detached HEAD state (no branch associated)
+- This is an orphaned worktree without a tracked branch
+
+**Graphite Stack Status:**
+- The current branch `plnd/dynamic-trunk-detection-03-08-0747` is 47 layers deep in a tall stack
+- Multiple branches show "needs restack" warnings including:
+  - `plnd/O8950-idempotent-reconcile-03-07-2054`
+  - `plnd/apply-erk-pr-label-03-08-0718`
+  - `plnd/consolidate-learn-docs-03-07-2145`
+  - `plnd/dynamic-trunk-detection-03-08-0747` (current)
+  - `plnd/e2e-agent-sdk-tests-03-03-0954`
+  - `plnd/optimize-tripwire-prescan-02-24-0836`
+
+**Root Worktree:**
+- Located at `/Users/schrockn/code/erk`
+- On `master` branch at commit `298833493`
+- Status: [origin/master] (up to date with remote)
+
+**Key Observations:**
+
+... [8 lines omitted] ...
+
+1. You're working in a deep stack (47 branches) with restack warnings
+  </tool_result>
+  <tool_result tool="toolu_01VGnDGgg8Sytf4F3DAQ6DAp">
+Now I have enough information. Let me compile my findings in a comprehensive analysis document.
+
+## Summary of Findings
+
+I've traced the `erk stack consolidate` command and identified the root cause of why it's not detecting the branch in erk-slot-14.
+
+### Command Flow Analysis
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/commands/stack/consolidate_cmd.py`
+
+The consolidate command:
+
+1. **Line 253**: Gets the stack for the current branch via `ctx.branch_manager.get_branch_stack(repo.root, current_branch)`
+   - This returns the full stack from trunk to leaf (as Graphite knows it)
+
+2. **Line 277**: Calls `ctx.git.worktree.list_worktrees(repo.root)` to get ALL worktrees
+
+3. **Line 393**: Calls `create_consolidation_plan()` which uses `identify_removable_worktrees()`
+
+### The Problem: Worktree Branch Detection
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/core/consolidation_utils.py` - Lines 98-164
+
+The `identify_removable_worktrees()` function has this critical check (lines 142-148):
+
+```python
+for worktree in all_worktrees:
+    # Skip if no branch (detached HEAD)
+    if worktree.branch is None:
+        continue
+
+... [74 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="597" cache_creation_input_tokens="30352" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30352}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good findings. The root cause is clear. Let me read the key file to plan the fix.</assistant>
+  <usage input_tokens="597" cache_creation_input_tokens="30352" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30352}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TAYBroSK3dgEh3vrTRa66C">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/core/consolidation_utils.py</param>
+  </tool_use>
+  <usage input_tokens="597" cache_creation_input_tokens="30352" cache_read_input_tokens="0" output_tokens="659" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 30352, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TAYBroSK3dgEh3vrTRa66C">
+     1→"""Pure business logic for worktree consolidation operations.
+     2→
+     3→This module contains the core logic for determining which worktrees can be
+     4→safely consolidated (removed) when consolidating a worktree stack into a
+     5→single worktree. All functions are pure and testable without filesystem I/O.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→
+    13→
+    14→@dataclass(frozen=True)
+    15→class ConsolidationPlan:
+    16→    """Plan for consolidating worktrees in a stack.
+    17→
+    18→    Attributes:
+    19→        stack_branches: Full list of branches in the stack (trunk to leaf)
+    20→        stack_to_consolidate: Subset of branches being consolidated
+    21→        worktrees_to_remove: Worktrees that will be removed
+    22→        target_worktree_path: Path to the target worktree (where branches will be consolidated)
+    23→        source_worktree_path: Path to source worktree (None if not creating new worktree)
+    24→    """
+    25→
+    26→    stack_branches: list[str]
+    27→    stack_to_consolidate: list[str]
+    28→    worktrees_to_remove: list[WorktreeInfo]
+    29→    target_worktree_path: Path
+    30→    source_worktree_path: Path | None
+
+... [185 lines omitted] ...
+
+    49→        ValueError: If end_branch is not in stack_branches
+    62→        raise ValueError(f"Branch '{end_branch}' not in stack")
+    82→        ValueError: If start_branch is not in stack_branches
+    92→        raise ValueError(f"Branch '{start_branch}' not in stack")
+   194→        ValueError: If end_branch or start_branch is not in stack_branches
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4245" cache_read_input_tokens="30352" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4245}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013u1yhhUQhezLPVpYkqW1fX">
+    <param name="pattern">class WorktreeInfo</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4245" cache_read_input_tokens="30352" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4245}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013u1yhhUQhezLPVpYkqW1fX">
+packages/erk-shared/src/erk_shared/gateway/git/abc.py:48:class WorktreeInfo:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-49-    """Information about a single git worktree."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-50-
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-51-    path: Path
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-52-    branch: str | None
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-53-    is_root: bool = False
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-54-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-55-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-56-@dataclass(frozen=True)
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-57-class BranchSyncInfo:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-58-    """Sync status for a branch relative to its upstream."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-59-
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-60-    branch: str
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-61-    upstream: str | None  # None if no tracking branch
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-62-    ahead: int
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-63-    behind: int
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-64-    gone: bool = False  # True if upstream tracking branch has been deleted
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-65-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-66-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/abc.py-67-@dataclass(frozen=True)
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-68-class RebaseResult:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JWjSERgP2mQLYW9pLe3xqX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/commands/stack/consolidate_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4245" cache_read_input_tokens="30352" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4245}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JWjSERgP2mQLYW9pLe3xqX">
+     1→"""Consolidate worktrees by removing others containing branches from current stack."""
+     2→
+     3→import time
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.activation import render_activation_script
+     9→from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
+    10→from erk.cli.commands.slot.unassign_cmd import execute_unassign
+    11→from erk.cli.core import discover_repo_context, worktree_path_for
+    12→from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
+    13→from erk.cli.help_formatter import script_option
+    14→from erk.core.consolidation_utils import (
+    15→    calculate_stack_range,
+    16→    calculate_upstack_range,
+    17→    create_consolidation_plan,
+    18→)
+    19→from erk.core.context import ErkContext, create_context
+    20→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    21→from erk.core.worktree_pool import load_pool_state
+    22→from erk_shared.gateway.git.abc import WorktreeInfo
+    23→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    24→from erk_shared.output.output import user_output
+    25→
+    26→
+    27→def _format_section_header(text: str, separator_length: int = 59) -&gt; str:
+    28→    """Format a section header with styled text and separator line."""
+    29→    header = click.style(text, bold=True)
+    30→    separator = "─" * separator_length
+
+... [489 lines omitted] ...
+
+   121→        except RuntimeError as e:
+   122→            raise click.ClickException(str(e)) from None
+   216→        user_output(click.style("❌ Error: Cannot use --down with BRANCH argument", fg="red"))
+   225→        user_output(click.style("❌ Error: Cannot use --up with --down", fg="red"))
+   233→        user_output(click.style("❌ Error: Cannot use --up with BRANCH argument", fg="red"))
+   244→        user_output("Error: Current worktree is in detached HEAD state")
+   255→        user_output(f"Error: Branch '{current_branch}' is not tracked by Graphite")
+   265→                click.style(f"❌ Error: Branch '{branch}' is not in the current stack", fg="red")
+   285→            user_output(click.style(f"❌ Error: Worktree '{name}' already exists", fg="red"))
+   325→            click.style("Error: Uncommitted changes detected in worktrees:", fg="red", bold=True)
+   344→            # Generate temporary branch name to avoid "already used by worktree" error
+   356→                user_output(f"Error: {create_result.message}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9361" cache_read_input_tokens="34597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9361}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how worktrees are listed and how the branch field gets populated.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9361" cache_read_input_tokens="34597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9361}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FeUkCWdWNVJUKMoEA5DZ9D">
+    <param name="pattern">def list_worktrees</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9361" cache_read_input_tokens="34597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9361}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FeUkCWdWNVJUKMoEA5DZ9D">
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py:26:    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-27-        """List all worktrees in the repository."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-28-        ...
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-29-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-30-    @abstractmethod
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py-31-    def add_worktree(
+--
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:22:    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-23-        """List all worktrees in the repository."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-24-        result = run_subprocess_with_context(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-25-            cmd=["git", "worktree", "list", "--porcelain"],
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-26-            operation_context="list worktrees",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py-27-            cwd=repo_root,
+--
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py:68:    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-69-        """List all worktrees in the repository.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-70-
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-71-        Mimics `git worktree list` behavior:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-72-        - Can be called from any worktree path or the main repo root
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py-73-        - Returns the same worktree list regardless of which path is used
+--
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py:34:    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-35-        """List worktrees (read-only, delegates to wrapped)."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-36-        return self._wrapped.list_worktrees(repo_root)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-37-
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-38-    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py-39-        """Find worktree for branch (read-only, delegates to wrapped)."""
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EKvCyH8rGCyweMdU5BrgGR">
+    <param name="pattern">def _parse_worktree</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9361" cache_read_input_tokens="34597" output_tokens="750" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9361, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EKvCyH8rGCyweMdU5BrgGR">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T2EfhxfxVtkj74fYxe8UP4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2529" cache_read_input_tokens="43958" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2529, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T2EfhxfxVtkj74fYxe8UP4">
+     1→"""Production worktree implementation using subprocess.
+     2→
+     3→This module provides the real worktree implementation that executes actual git
+     4→worktree commands via subprocess.
+     5→"""
+     6→
+     7→import os
+     8→import subprocess
+     9→from pathlib import Path
+    10→
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.gateway.git.worktree.abc import Worktree
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealWorktree(Worktree):
+    17→    """Production implementation using subprocess.
+    18→
+    19→    All worktree operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+    23→        """List all worktrees in the repository."""
+    24→        result = run_subprocess_with_context(
+    25→            cmd=["git", "worktree", "list", "--porcelain"],
+    26→            operation_context="list worktrees",
+    27→            cwd=repo_root,
+    28→        )
+    29→
+    30→        worktrees: list[WorktreeInfo] = []
+
+... [176 lines omitted] ...
+
+   174→        # Exit code 0 means no changes, non-zero means changes exist or error
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2912" cache_read_input_tokens="46487" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2912}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear understanding. Let me check the test patterns before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2912" cache_read_input_tokens="46487" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2912}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HqhYMTxo7gd9XyheReFbfy">
+    <param name="pattern">**/test*consolidat*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2912" cache_read_input_tokens="46487" output_tokens="7518" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2912, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HqhYMTxo7gd9XyheReFbfy">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/commands/stack/test_consolidate_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/core/utils/test_consolidation_utils.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/commands/workspace/test_consolidate.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YBqbT4GGsdXG3ZQC2Qy7TY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/core/utils/test_consolidation_utils.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7549" cache_read_input_tokens="49399" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7549, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YBqbT4GGsdXG3ZQC2Qy7TY">
+     1→"""Tests for consolidation utility functions.
+     2→
+     3→These tests verify the pure business logic for worktree consolidation operations.
+     4→All tests are fast and don't require filesystem I/O.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→import pytest
+    10→
+    11→from erk.core.consolidation_utils import (
+    12→    calculate_stack_range,
+    13→    calculate_upstack_range,
+    14→    create_consolidation_plan,
+    15→    identify_removable_worktrees,
+    16→)
+    17→from erk_shared.gateway.git.abc import WorktreeInfo
+    18→
+    19→# Tests for calculate_stack_range function
+    20→
+    21→
+    22→def test_full_stack_when_end_branch_is_none() -&gt; None:
+    23→    """Full stack consolidation when end_branch is None."""
+    24→    stack = ["main", "feat-1", "feat-2", "feat-3"]
+    25→    result = calculate_stack_range(stack, None)
+    26→    assert result == stack
+    27→
+    28→
+    29→def test_partial_stack_to_middle_branch() -&gt; None:
+    30→    """Partial stack consolidation up to a middle branch."""
+
+... [365 lines omitted] ...
+
+    57→def test_error_when_branch_not_in_stack() -&gt; None:
+    58→    """Raises ValueError when end_branch is not in stack."""
+    60→    with pytest.raises(ValueError, match="Branch 'unknown' not in stack"):
+   291→    """Plan raises error when end_branch is invalid."""
+   298→    with pytest.raises(ValueError, match="Branch 'unknown' not in stack"):
+   325→    with pytest.raises(AttributeError):
+   353→def test_upstack_range_error_when_branch_not_in_stack() -&gt; None:
+   354→    """Raises ValueError when start_branch is not in stack."""
+   356→    with pytest.raises(ValueError, match="Branch 'unknown' not in stack"):
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10221" cache_read_input_tokens="56948" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10221}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete understanding. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10221" cache_read_input_tokens="56948" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10221}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Hq3tCXmT6Peb8nQQ54SJEy">
+    <param name="file_path">/Users/schrockn/.claude/plans/wondrous-jingling-lighthouse.md</param>
+    <param name="content"># Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees
+
+## Context
+
+`erk stack c...[truncated 3663 chars]...date` in the current scenario (erk-slot-14 mid-rebase) and verify it detects the worktree
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10221" cache_read_input_tokens="56948" output_tokens="2696" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10221, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hq3tCXmT6Peb8nQQ54SJEy">
+File created successfully at: /Users/schrockn/.claude/plans/wondrous-jingling-lighthouse.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01H5sxsaFSGwWpAtRpXMnjDj">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2802" cache_read_input_tokens="67169" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2802, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H5sxsaFSGwWpAtRpXMnjDj">
+
+  </tool_result>
+  <assistant>
+
+The root cause: `RealWorktree.list_worktrees()` parses `git worktree list --porcelain`, which reports mid-rebase worktrees as detached HEAD (`branch=None`). Then `identify_removable_worktrees` skips all `branch=None` worktrees. So erk-slot-14 (mid-rebase on `plnd/consolidate-learn-docs-03-07-2145`) is invisible to consolidate, even though git still considers that branch locked to it.
+
+The fix enriches `list_worktrees` to detect rebase state by reading git internal files (`rebase-merge/head-name`), so all consumers automatically see the correct branch association.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="69971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01PDFCPAyKcCLyuSaJSzQxKM">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests with pytest'}, {'tool': 'Bash', 'prompt': 'run ruff linter'}, {'tool': 'Bash', 'prompt': 'run ty type checker'}]</param>
+    <param name="plan"># Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees
+
+## Context
+
+`erk stack c...[truncated 3663 chars]...date` in the current scenario (erk-slot-14 mid-rebase) and verify it detects the worktree
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="69971" output_tokens="277" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PDFCPAyKcCLyuSaJSzQxKM">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/wondrous-jingling-lighthouse.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees
+Current context: (wt:erk-slot-07) (br:plnd/dynamic-trunk-detection-03-08-0747) (pr:#9005)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/dyna"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id ec86d0a9-cefc-4068-8bdc-86351f10c1ad \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/wondrous-jingling-lighthouse.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012ujzTL4uEYrE4fdj8FD42j">
+    <param name="file_path">/Users/schrockn/.claude/plans/wondrous-jingling-lighthouse.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="919" cache_read_input_tokens="70709" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 919, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012ujzTL4uEYrE4fdj8FD42j">
+     1→# Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees
+     2→
+     3→## Context
+     4→
+     5→`erk stack consolidate` fails to detect worktrees that are mid-rebase on a stack branch. When a worktree (e.g., `erk-slot-14`) is in the middle of rebasing `plnd/consolidate-learn-docs-03-07-2145`, git puts it in detached HEAD state but still considers the branch "in use" by that worktree. `git worktree list --porcelain` reports `branch=None` for these worktrees, so `identify_removable_worktrees` skips them entirely. This means `erk stack consolidate` reports "No other worktrees found" while `gt restack` still fails.
+     6→
+     7→## Approach
+     8→
+     9→Enhance `RealWorktree.list_worktrees()` to detect rebase state for detached-HEAD worktrees and populate their branch info. This fixes the root cause at the data layer so all consumers (consolidate, `find_worktree_for_branch`, `is_branch_checked_out`) benefit automatically.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Add `is_rebasing` field to `WorktreeInfo`
+    14→**File:** `packages/erk-shared/src/erk_shared/gateway/git/abc.py`
+    15→
+    16→Add `is_rebasing: bool = False` to the frozen dataclass. Backward-compatible default.
+    17→
+    18→### 2. Detect rebase branches in `RealWorktree.list_worktrees`
+    19→**File:** `packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py`
+    20→
+    21→After parsing porcelain output, for each worktree with `branch=None`:
+    22→1. Read `.git` file in the worktree path to find its git dir (format: `gitdir: &lt;path&gt;`)
+    23→2. For root worktree, the git dir is `&lt;path&gt;/.git/`
+    24→3. Check for `&lt;git_dir&gt;/rebase-merge/head-name` (interactive rebase) or `&lt;git_dir&gt;/rebase-apply/head-name` (non-interactive)
+    25→4. If found, parse branch name (strip `refs/heads/` prefix), set `branch=&lt;name&gt;` and `is_rebasing=True`
+    26→
+    27→Extract a helper `_detect_rebase_branch(worktree_path: Path, is_root: bool) -&gt; str | None` for clarity.
+    28→
+    29→### 3. Skip uncommitted-changes check for mid-rebase worktrees in consolidate
+    30→**File:** `src/erk/cli/commands/stack/consolidate_cmd.py`
+
+... [35 lines omitted] ...
+
+    32→In the safety check loop (lines 308-321), skip worktrees where `is_rebasing=True`. Mid-rebase worktrees will have dirty state from the interrupted rebase, but force-removal handles cleanup. Add a warning message like "Worktree X is mid-rebase and will be cleaned up".
+    63→3. Run `uv run ruff check` and `uv run ty check` - no lint/type errors
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01DK9GRB443bhnPs3KdifPhg">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1631" cache_read_input_tokens="71628" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1631, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DK9GRB443bhnPs3KdifPhg">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01BjdRKYAFeshpg3orZTfVec">
+    <param name="questions">[{'question': '📋 Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees\nCurrent c...[truncated 445 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1429" cache_read_input_tokens="73259" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1429, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BjdRKYAFeshpg3orZTfVec">
+User has answered your questions: "📋 Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees
+Current context: (wt:erk-slot-07) (br:plnd/dynamic-trunk-detection-03-08-0747) (pr:#9005)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01PXYG8cwCSsJdMi7CfAgjHZ">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="74688" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 366, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PXYG8cwCSsJdMi7CfAgjHZ">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="ec86d0a9-cefc-4068-8bdc-86351f10c1ad" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="ec86d0a9-cefc-4068-8bdc-86351f10c1ad" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "ec86d0a9-cefc-4068-8bdc-86351f10c1ad" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "ec86d0a9-cefc-4068-8bdc-86351f10c1ad" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "ec86d0a9-cefc-4068-8bdc-86351f10c1ad" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "ec86d0a9-cefc-4068-8bdc-86351f10c1ad" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Branch slug:** `fix-consolidate-rebase-detect`
+
+**Plan summary:** Enhances erk stack consolidate to detect worktrees that are mid-rebase on stack branches. Currently these worktrees appear as detached HEAD and are invisible to consolidation, causing gt restack to fail with branch-in-use errors.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2283" cache_read_input_tokens="75054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2283}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013v9HirP86qvTxBBeifgnP4">
+    <param name="command">erk exec plan-save --format json --session-id="ec86d0a9-cefc-4068-8bdc-86351f10c1ad" --bra...[truncated 172 chars]...and are invisible to consolidation, causing gt restack to fail with branch-in-use errors."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2283" cache_read_input_tokens="75054" output_tokens="315" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013v9HirP86qvTxBBeifgnP4">
+{"success": true, "plan_number": 9011, "plan_url": "https://github.com/dagster-io/erk/pull/9011", "title": "[erk-plan] Plan: Fix `erk stack consolidate` Missing Mid-Rebase Worktrees", "branch_name": "plnd/fix-consolidate-rebase-det-03-08-0930", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/.erk/scratch/sessions/ec86d0a9-cefc-4068-8bdc-86351f10c1ad/plan_snapshots/000001-c92dfc44"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EEh9vQgJ8NrmDjq9EmiUDX">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="490" cache_read_input_tokens="77337" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 490, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EEh9vQgJ8NrmDjq9EmiUDX">
+SESSION_ID=ec86d0a9-cefc-4068-8bdc-86351f10c1ad
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-07/ec86d0a9-cefc-4068-8bdc-86351f10c1ad.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BFcaZU53Nah1p3gQhYseSg">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...4068-8bdc-86351f10c1ad" --stage planning --source local --plan-id 9011 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1415" cache_read_input_tokens="77827" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1415, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

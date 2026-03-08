@@ -1,0 +1,23 @@
+<session>
+  <meta branch="plnd/fix-consolidate-rebase-det-03-08-0930" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_0192HyGJxFhvKcEthwnRHeWF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. PR #9011 is updated at https://github.com/dagster-io/erk/pull/9011
+
+## Summary of changes
+
+**Problem:** `erk stack consolidate` failed to detect worktrees mid-rebase on stack branches. Git reports `branch=None` for these detached-HEAD worktrees in porcelain output, so `identify_removable_worktrees` skipped them entirely.
+
+**Solution:** Three-layer fix at the data, logic, and display layers:
+
+1. **`WorktreeInfo`** (`abc.py`): Added `is_rebasing: bool = False` field
+2. **`_detect_rebase_branch()`** (`real.py`): New helper that reads `rebase-merge/head-name` or `rebase-apply/head-name` from the worktree's git dir to recover the branch name during rebase
+3. **`list_worktrees()`** (`real.py`): Calls the detector for any `branch=None` worktree, populating branch + `is_rebasing=True`
+4. **`consolidate_cmd.py`**: Skips uncommitted-changes safety check for rebasing worktrees (dirty state is expected), shows "(rebasing)" indicator in the plan output, warns user about mid-rebase cleanup
+5. **Tests**: 7 new tests for `_detect_rebase_branch` covering root/linked worktrees, interactive/non-interactive rebases, relative gitdir paths; 1 new test for `identify_removable_worktrees` with rebasing worktrees
+
+All 4039 unit tests pass, ruff and ty checks clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="75581" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
