@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "plan_id": 8975,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T09:40:32.855506+00:00",
+      "files": [
+        "impl--eaffc06a-1763-4704-ae0c-778a96ab8b99-part1.xml",
+        "impl--eaffc06a-1763-4704-ae0c-778a96ab8b99-part2.xml",
+        "impl--eaffc06a-1763-4704-ae0c-778a96ab8b99-part3.xml",
+        "impl--eaffc06a-1763-4704-ae0c-778a96ab8b99-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 597,
+      "xml_size_kb": 64,
+      "git_branch": "plnd/manifest-per-file-metadata-03-08-0533"
+    }
+  ]
+}
