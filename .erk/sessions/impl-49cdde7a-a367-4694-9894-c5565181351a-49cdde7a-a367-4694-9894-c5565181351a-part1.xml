@@ -1,0 +1,1339 @@
+<session>
+  <meta branch="plnd/improve-land-stack-03-08-0608" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8985&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8985` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8985.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11299" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11299, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01B89XYXCKxnFsxFswTvgq4q">
+    <param name="command">erk exec setup-impl --issue 8985</param>
+    <param name="description">Set up implementation for plan #8985</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11299" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11299, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B89XYXCKxnFsxFswTvgq4q">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-land-stack-03-08-0608", "plan_number": 8985, "plan_url": "https://github.com/dagster-io/erk/pull/8985", "branch": "plnd/improve-land-stack-03-08-0608", "plan_title": "[erk-plan] Plan: Improved `erk land --stack` for bottom-up Graphite stack landing", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8985, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/improve-land-stack-03-08-0608', teleporting from remote...
+  </tool_result>
+  <assistant>Setup successful. Now let me read the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="28554" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HAptH1A6TJCVCAJZkLHoQB">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-land-stack-03-08-0608/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="28554" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HAptH1A6TJCVCAJZkLHoQB">
+     1→# Plan: Improved `erk land --stack` for bottom-up Graphite stack landing
+     2→
+     3→## Context
+     4→
+     5→PR #8948 implements `erk land --stack` to land an entire Graphite stack bottom-up. The core algorithm is sound (resolve stack, validate all PRs, then iterate: rebase → re-parent → merge → cleanup), but the implementation has several bugs, missing features, and design issues. This plan replans the implementation to produce a better PR.
+     6→
+     7→## Issues in PR #8948 to fix
+     8→
+     9→### Critical bugs
+    10→1. **`--dry-run --stack` is broken** — In `land()`, the `dry_run` context recreation happens at line 1560-1561 (`ctx = create_context(dry_run=True)`), but the PR's `--stack` dispatch is placed AFTER `discover_repo_context` without forwarding `dry_run`. The `execute_land_stack()` checks `ctx.dry_run` which is always False.
+    11→2. **No confirmation prompt** — Plan says "confirm (unless --force)" but the code lands without asking.
+    12→
+    13→### Missing features
+    14→3. **No learn PR creation** — Plan says "Create learn PR per branch" but code doesn't implement it.
+    15→4. **Poor partial failure reporting** — On failure mid-stack, no indication of which PRs already landed.
+    16→
+    17→### Design issues
+    18→5. **`raise SystemExit(0)` for success** — Makes every test use `pytest.raises(SystemExit)`. The `land()` function already returns after calling `execute_land_stack()`, so returning normally works.
+    19→6. **O(N²) re-parenting API calls** — `_reparent_upstack()` re-parents ALL remaining entries each iteration. Only the next entry needs re-parenting.
+    20→
+    21→### Test gaps
+    22→7. No dry-run test (and dry-run is broken anyway)
+    23→8. No confirmation prompt test
+    24→9. No learn PR creation test
+    25→10. No operation ordering verification
+    26→
+    27→## Files to modify
+    28→
+    29→### 1. `src/erk/cli/commands/land_cmd.py` — MODIFY
+    30→
+
+... [181 lines omitted] ...
+
+    78→| `_rebase_and_push(ctx, *, main_repo_root, branch, trunk)` | Fetch, rebase, force-push. Abort + error on conflict. |
+   110→    # 6. Land each branch bottom-up with partial failure tracking
+   126→        except UserFacingCliError:
+   127→            _report_partial_failure(landed=landed, failed=entry,
+   145→**Partial failure reporting:**
+   147→def _report_partial_failure(*, landed, failed, remaining, total):
+   151→    lines.append(click.style("  ✗ ", fg="red") + f"PR #{failed.pr_number} [{failed.branch}]")
+   165→    except Exception:
+   166→        user_output(click.style("Warning: ", fg="yellow")
+   167→                    + f"Learn plan creation failed for PR #{entry.pr_number}")
+   183→| `test_partial_failure_reports_progress` | Error output shows landed/failed/remaining | Missing feature #4 |
+   188→| `test_merge_failure` | Error raised, progress shown | Enhanced |
+   190→| `test_requires_graphite` | Error when Graphite disabled | Same as PR |
+   191→| `test_stack_not_found` | Error when branch not in stack | Same as PR |
+  </tool_result>
+  <assistant>Now let me load the relevant skills and documentation before coding. Let me explore the existing codebase first.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4043" cache_read_input_tokens="28903" cache_creation="{'ephemeral_5m_input_tokens': 4043, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01RKPjuA8i7AeZbDit9G3MEF">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4043" cache_read_input_tokens="28903" cache_creation="{'ephemeral_5m_input_tokens': 4043, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RKPjuA8i7AeZbDit9G3MEF">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the core dignified-python standards and detect the Python version:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="898" cache_read_input_tokens="32946" cache_creation="{'ephemeral_5m_input_tokens': 898, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Dzi7ZB7ZFwnQ4D6Xv3mQwD">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="898" cache_read_input_tokens="32946" cache_creation="{'ephemeral_5m_input_tokens': 898, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CsFVKTDArz85dX5ddYiPZQ">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="898" cache_read_input_tokens="32946" cache_creation="{'ephemeral_5m_input_tokens': 898, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dzi7ZB7ZFwnQ4D6Xv3mQwD">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01CsFVKTDArz85dX5ddYiPZQ">
+     1→[tool.uv.workspace]
+     2→members = ["packages/*"]
+     3→
+     4→[tool.uv.sources]
+     5→erk-dev = { workspace = true }
+     6→erk-mcp = { workspace = true }
+     7→erk-shared = { workspace = true }
+     8→erk-statusline = { workspace = true }
+     9→
+    10→[project]
+    11→name = "erk"
+    12→version = "0.9.9"
+    13→description = "Add your description here"
+    14→readme = "README.md"
+    15→authors = [
+    16→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    17→]
+    18→requires-python = "&gt;=3.11"
+    19→dependencies = [
+    20→    "anthropic&gt;=0.40.0",
+    21→    "click&gt;=8.1.7",
+    22→    "erk-shared",
+    23→    "erk-statusline",
+    24→    "packaging&gt;=21.0",
+    25→    "pathspec&gt;=0.12.0",
+    26→    "pydantic&gt;=2.0",
+    27→    "pyyaml&gt;=6.0",
+    28→    "python-frontmatter&gt;=1.0.0",
+    29→    "rich&gt;=13.0",
+    30→    "tomlkit&gt;=0.12.0",
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Python 3.11+. Let me load the version-specific file and the CLI patterns, then start exploring the existing code:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6788" cache_read_input_tokens="33844" cache_creation="{'ephemeral_5m_input_tokens': 6788, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01P3Pw7wH98wwhsDdNuT3dfb">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.11.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6788" cache_read_input_tokens="33844" cache_creation="{'ephemeral_5m_input_tokens': 6788, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01N8ZaNjBSBre69z5kGi9Txv">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/cli-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6788" cache_read_input_tokens="33844" cache_creation="{'ephemeral_5m_input_tokens': 6788, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P3Pw7wH98wwhsDdNuT3dfb">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.11
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.11.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.11 builds on 3.10's type syntax with the addition of the `Self` type (PEP 673), making method chaining and builder patterns significantly cleaner. All modern syntax from 3.10 continues to work.
+    11→
+    12→**What's new in 3.11:**
+    13→
+    14→- `Self` type for self-returning methods (PEP 673)
+    15→- Variadic generics with TypeVarTuple (PEP 646)
+    16→- Significantly improved error messages
+    17→
+    18→**Available from 3.10:**
+    19→
+    20→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    21→- Union types with `|` operator (PEP 604)
+    22→- Optional with `X | None`
+    23→
+    24→**What you need from typing module:**
+    25→
+    26→- `Self` for self-returning methods (NEW)
+    27→- `TypeVar` for generic functions/classes
+    28→- `Generic` for generic classes
+    29→- `Protocol` for structural typing (rare - prefer ABC)
+    30→- `TYPE_CHECKING` for conditional imports
+
+... [512 lines omitted] ...
+
+   370→            raise ValueError("FROM table not specified")
+   412→            raise FileNotFoundError(f"Config not found: {path}")
+   473→All code should pass type checking without errors.
+   528→2. **Enjoy improved error messages** (no code changes needed)
+  </tool_result>
+  <tool_result tool="toolu_01N8ZaNjBSBre69z5kGi9Txv">
+     1→---
+     2→---
+     3→
+     4→# CLI Patterns - Click Best Practices
+     5→
+     6→## Core Rules
+     7→
+     8→1. **Use `click.echo()` for output, NEVER `print()`**
+     9→2. **Exit with `raise SystemExit(1)` for CLI errors**
+    10→3. **Error boundaries at command level**
+    11→4. **Use `err=True` for error output**
+    12→5. **Flush stderr before `click.confirm()`** (prevents buffering hangs)
+    13→
+    14→## Basic Click Patterns
+    15→
+    16→```python
+    17→import click
+    18→from pathlib import Path
+    19→
+    20→# ✅ CORRECT: Use click.echo for output
+    21→@click.command()
+    22→@click.argument("name")
+    23→def greet(name: str) -&gt; None:
+    24→    """Greet the user."""
+    25→    click.echo(f"Hello, {name}!")
+    26→
+    27→# ❌ WRONG: Using print()
+    28→@click.command()
+    29→def greet(name: str) -&gt; None:
+    30→    print(f"Hello, {name}!")  # NEVER use print in CLI
+
+... [132 lines omitted] ...
+
+    33→## Error Handling in CLI
+    36→# ✅ CORRECT: CLI command error boundary
+    43→    except subprocess.CalledProcessError as e:
+    44→        click.echo(f"Error: Command failed: {e.stderr}", err=True)
+    46→    except ValueError as e:
+    47→        click.echo(f"Error: {e}", err=True)
+    57→# Error output to stderr
+    58→click.echo("Error: Operation failed", err=True)
+    62→click.echo(click.style("Warning!", fg="yellow", bold=True))
+   102→click.echo("Warning: This operation is destructive!", err=True)
+   109→click.echo("Warning: This operation is destructive!", err=True)
+   153→2. **Error to stderr**: Use `err=True` for error messages
+   154→3. **Exit cleanly**: Use `raise SystemExit(1)` for errors
+  </tool_result>
+  <assistant>Now let me explore the existing land command and test infrastructure to understand the patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7496" cache_read_input_tokens="40632" cache_creation="{'ephemeral_5m_input_tokens': 7496, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01LLgWMU7EPXu7BJcPC3DMBK">
+    <param name="todos">[{'content': 'Read existing land_cmd.py and understand the dispatch pattern', 'status': 'i...[truncated 724 chars]...hecker and linter', 'status': 'pending', 'activeForm': 'Running type checker and linter'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7496" cache_read_input_tokens="40632" cache_creation="{'ephemeral_5m_input_tokens': 7496, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LLgWMU7EPXu7BJcPC3DMBK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_015HNFFpY9Te7QNEsShNSZdn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="48128" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0177ypDY4FsiUMNQsRC1k7cH">
+    <param name="description">Explore land test infrastructure</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 610 chars]...ed in the codebase
+
+Report back the key patterns, file paths, and important code snippets.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="48128" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0177ypDY4FsiUMNQsRC1k7cH">
+Async agent launched successfully.
+agentId: a35f5d8 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_015HNFFpY9Te7QNEsShNSZdn">
+     1→"""Unified land command for PRs.
+     2→
+     3→This command merges a PR and cleans up the worktree/branch.
+     4→It accepts a branch name, PR number, or PR URL as argument.
+     5→
+     6→Usage:
+     7→    erk land              # Land current branch's PR
+     8→    erk land 123          # Land PR by number
+     9→    erk land &lt;url&gt;        # Land PR by URL
+    10→    erk land &lt;branch&gt;     # Land PR for branch
+    11→"""
+    12→
+    13→import re
+    14→from dataclasses import dataclass, replace
+    15→from enum import Enum, auto
+    16→from pathlib import Path
+    17→from typing import Literal, NamedTuple, assert_never
+    18→
+    19→import click
+    20→
+    21→from erk.cli.activation import print_temp_script_instructions, render_activation_script
+    22→from erk.cli.commands.land_pipeline import (
+    23→    LandError,
+    24→    make_execution_state,
+    25→    make_initial_state,
+    26→    run_execution_pipeline,
+    27→    run_validation_pipeline,
+    28→)
+    29→from erk.cli.commands.navigation_helpers import (
+    30→    activate_root_repo,
+
+... [1611 lines omitted] ...
+
+   238→                click.style("Warning:", fg="yellow")
+   571→    # Handle rate limit errors gracefully - this is an advisory check.
+   576→    except RuntimeError as e:
+   577→        error_str = str(e)
+   578→        if "RATE_LIMIT" in error_str or "rate limit" in error_str.lower():
+   584→        raise  # Re-raise other errors
+   629→        SystemExit(1) on validation failure
+   683→        SystemExit(1) on validation failure
+   728→        validation_error = validate_parent_is_trunk(
+   734→            validation_error is None,
+   735→            validation_error.message if validation_error else "",
+   776→        SystemExit(1) on validation failure
+   831→        SystemExit(1) on validation failure
+   924→        if isinstance(result, LandError):
+   925→            user_output(click.style("Error: ", fg="red") + result.message)
+  1010→        SystemExit(1) on validation failure
+  1225→        # Use --downstack to only restack the current branch, avoiding errors if
+  1259→                    click.style("Warning: ", fg="yellow")
+  1269→                except RuntimeError:
+  1272→                        click.style("Warning: ", fg="yellow")
+  1273→                        + "git pull failed (try running manually)"
+  1355→    # Silence unused parameter warnings - these are still needed for the function
+  1386→PR_NUMBER="${{1:?Error: PR number required}}"
+  1387→BRANCH="${{2:?Error: Branch name required}}"
+  1464→    if isinstance(result, LandError):
+  1465→        user_output(click.style("Error: ", fg="red") + result.message)
+  1595→    if isinstance(result, LandError):
+  1597→    # Type narrowing: Ensure.invariant exits on failure, so result is LandState here
+  1598→    assert not isinstance(result, LandError)
+  </tool_result>
+  <assistant>I've read the main `land_cmd.py`. Now let me wait for the exploration agent to finish and also read some key files I need:</assistant>
+  <usage input_tokens="198" cache_creation_input_tokens="22938" cache_read_input_tokens="48481" cache_creation="{'ephemeral_5m_input_tokens': 22938, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_016cV4V7qwJueJSxgLXhG1Kr">
+    <param name="task_id">a35f5d8</param>
+    <param name="block">True</param>
+    <param name="timeout">90000</param>
+  </tool_use>
+  <usage input_tokens="198" cache_creation_input_tokens="22938" cache_read_input_tokens="48481" cache_creation="{'ephemeral_5m_input_tokens': 22938, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016cV4V7qwJueJSxgLXhG1Kr">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a35f5d8&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/index.md"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/tests -type f -name \"*.md\" | head -20","description":"Find test-related documentation files"}
+[Tool: Glob] {"pattern":"docs/learned/testing/**/*.md"}
+[Tool: Glob] {"pattern":"docs/learned/testing/**/*.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/testing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/fake-driven-testing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/fake-driven-testing.md"}
+[Tool: Glob] {"pattern":"tests/**/land/**/*.py"}
+[Tool: Glob] {"pattern":"tests/unit/cli/commands/land/**/*.py"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/tests -path \"*/land*\" -type f | head -20","description":"Search for land-related test files"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/tests -path \"*/land*\" -type f | head -20","description":"Search for land-related test files"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_dry_run.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py"}
+[Tool: Grep] {"pattern":"user_output","path":"/home/runner/work/erk/erk/src","type":"py","head_limit":20}
+[Tool: Grep] {"pattern":"_create_learn_pr_core","path":"/home/runner/work/erk/erk/src","type":"py"}
+[Tool: Grep] {"pattern":"UserFacingCliError","path":"/home/runner/work/erk/erk/src","type":"py","head_limit":10}
+[Tool: Grep] {"pattern":"Ensure\\.invariant","path":"/home/runner/work/erk/erk/src","type":"py","head_limit":10}
+[Tool: Grep] {"pattern":"Ensure\\.invariant","path":"/home/runner/work/erk/erk/src","type":"py","head_limit":10}
+
+... [274 lines omitted] ...
+
+├── test_branch_errors.py
+#### `user_output()` - Error/Status Output
+user_output(click.style("Error: ", fg="red") + message)
+#### `UserFacingCliError` - Error Handling
+from erk.cli.ensure import UserFacingCliError
+# Raises click.ClickException with styled error output
+raise UserFacingCliError("Not a GitHub repository")
+Ensure.invariant(condition, "error message")      # Raises if false
+Ensure.not_none(value, "error message")           # Type narrows, raises if None
+Ensure.path_exists(ctx, path, "error message")    # Custom git-aware checks
+- **LandError union types** for error handling
+  </tool_result>
+  <assistant>Excellent. Now I have a comprehensive understanding of the codebase. Let me read the specific key files I'll need to model my implementation after:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4657" cache_read_input_tokens="71419" cache_creation="{'ephemeral_5m_input_tokens': 4657, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01JSJnuL1V8vwdpBvFJUnf3b">
+    <param name="todos">[{'content': 'Read existing land_cmd.py and understand the dispatch pattern', 'status': 'c...[truncated 728 chars]...hecker and linter', 'status': 'pending', 'activeForm': 'Running type checker and linter'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4657" cache_read_input_tokens="71419" cache_creation="{'ephemeral_5m_input_tokens': 4657, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JSJnuL1V8vwdpBvFJUnf3b">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read the key files I need for building the implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="76076" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011s1nUKiyzuGacRjwvfEgvZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="76076" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Bq6N49sHmW7KaB6u85iws1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/ensure.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="76076" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01YMJYSwawZvraKz5X972mtB">
+    <param name="pattern">tests/unit/cli/commands/land/test_dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="76076" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011s1nUKiyzuGacRjwvfEgvZ">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.branch_slug_generator import generate_branch_slug
+    27→from erk.core.context import ErkContext
+    28→from erk_shared.learn.extraction.session_schema import (
+    29→    compute_session_provenance,
+    30→)
+
+... [573 lines omitted] ...
+
+   267→    elif pr_result.error:
+   269→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {pr_result.error}"
+   286→    Fire-and-forget: raises on error (caller should catch).
+   417→    except Exception as exc:
+   418→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   577→    """Inner implementation for learn plan creation (raises on error).
+  </tool_result>
+  <tool_result tool="toolu_01Bq6N49sHmW7KaB6u85iws1">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+
+... [558 lines omitted] ...
+
+    33→class UserFacingCliError(click.ClickException):
+    34→    """Exception for user-facing CLI errors with styled output.
+    36→    Extends click.ClickException so Click catches it automatically at every
+    37→    level (groups, subgroups, commands) and converts it to a styled error
+    42→        raise UserFacingCliError("Not a GitHub repository")
+    43→        raise UserFacingCliError(push_result.message)
+    51→        """Display styled error message to stderr."""
+    52→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    56→    """Helper class for asserting invariants with consistent error handling."""
+    59→    def invariant(condition: bool, error_message: str) -&gt; None:
+    60→        """Ensure condition is true, otherwise output styled error and exit.
+    64→            error_message: Error message to display if condition is false.
+    65→                          "Error: " prefix will be added automatically in red.
+    68→            UserFacingCliError: If condition is false
+    71→            raise UserFacingCliError(error_message)
+    74→    def truthy(value: T, error_message: str) -&gt; T:
+    75→        """Ensure value is truthy, otherwise output styled error and exit.
+    79→            error_message: Error message to display if value is falsy.
+    80→                          "Error: " prefix will be added automatically in red.
+    86→            UserFacingCliError: If value is falsy
+    89→            raise UserFacingCliError(error_message)
+    93→    def not_none(value: T | None, error_message: str) -&gt; T:
+    94→        """Ensure value is not None, otherwise output styled error and exit.
+   102→            error_message: Error message to display if value is None.
+   103→                          "Error: " prefix will be added automatically in red.
+   109→            UserFacingCliError: If value is None
+   118→            raise UserFacingCliError(error_message)
+   136→            click.UsageError: If both --dangerous and --safe are provided
+   139→            raise click.UsageError("--dangerous and --safe are mutually exclusive")
+   152→        error_message: str | None = None,
+   154→        """Ensure path exists, otherwise output styled error and exit.
+   165→            error_message: Optional custom error message. If not provided,
+   167→                          "Error: " prefix will be added automatically in red.
+   170→            UserFacingCliError: If path does not exist
+   173→            &gt;&gt;&gt; # Basic usage with default error message
+   176→            &gt;&gt;&gt; # With custom error message
+   180→            if error_message is None:
+   181→                error_message = f"Path not found: {path}"
+   182→            raise UserFacingCliError(error_message)
+   185→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   190→            error_message: Error message to display if value is empty.
+   191→                          "Error: " prefix will be added automatically in red.
+   194→            UserFacingCliError: If value is None, empty string, empty list, or empty dict
+   201→            raise UserFacingCliError(error_message)
+   205→        """Ensure worktree exists at path, otherwise output styled error and exit.
+   210→            name: Optional worktree name for friendlier error message
+   217→            &gt;&gt;&gt; Ensure.git_worktree_exists(ctx, wt_path)  # Uses path in error
+   220→            error_message = f"Worktree '{name}' does not exist"
+   222→            error_message = f"Worktree not found: {wt_path}"
+   223→        Ensure.path_exists(ctx, wt_path, error_message)
+   227→        """Ensure git branch exists, otherwise output styled error and exit.
+   235→            UserFacingCliError: If branch does not exist
+   242→            raise UserFacingCliError(
+   248→        """Ensure currently in a git worktree, otherwise output styled error and exit.
+   251→            ctx: Application context (for error handling)
+   255→            UserFacingCliError: If not in a git worktree
+   262→            raise UserFacingCliError(
+   270→        error_message: str | None = None,
+   272→        """Ensure argument count matches expected, otherwise output styled error and exit.
+   277→            error_message: Optional custom error message
+   280→            UserFacingCliError: If argument count does not match expected
+   287→            if error_message is None:
+   289→                    error_message = f"Expected no arguments, got {len(args)}"
+   291→                    error_message = f"Expected 1 argument, got {len(args)}"
+   293→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   294→            raise UserFacingCliError(error_message)
+   300→        error_message: str | None = None,
+   302→        """Ensure configuration field is set, otherwise output styled error and exit.
+   307→            error_message: Optional custom error message
+   310→            UserFacingCliError: If field is not set (None or missing)
+   321→        except AttributeError:
+   324→            except (KeyError, TypeError):
+   328→            if error_message is None:
+   329→                error_message = (
+   333→            raise UserFacingCliError(error_message)
+   336→    def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -&gt; None:
+   337→        """Ensure path exists and is a directory, otherwise output styled error and exit.
+   342→            error_message: Optional custom error message
+   345→            UserFacingCliError: If path doesn't exist or is not a directory
+   350→        Ensure.path_exists(ctx, path, error_message)
+   352→            if error_message is None:
+   353→                error_message = f"Path is not a directory: {path}"
+   354→            raise UserFacingCliError(error_message)
+   357→    def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   358→        """Ensure path does NOT exist, otherwise output styled error and exit.
+   365→            error_message: Error message to display if path exists
+   368→            UserFacingCliError: If path already exists
+   379→            raise UserFacingCliError(error_message)
+   389→            UserFacingCliError: If gh CLI is not found on PATH
+   397→            raise UserFacingCliError(
+   411→            UserFacingCliError: If gt CLI is not found on PATH
+   419→            raise UserFacingCliError(
+   430→        outputs a helpful error message based on why Graphite is unavailable
+   439→            UserFacingCliError: If Graphite is disabled or not installed
+   447→            error = GraphiteDisabledError(ctx.graphite.reason)
+   448→            raise UserFacingCliError(str(error))
+   458→            UserFacingCliError: If claude CLI is not found on PATH
+   466→            raise UserFacingCliError(
+   483→            UserFacingCliError: If gt is not authenticated
+   493→            raise UserFacingCliError(
+   512→            UserFacingCliError: If gh is not installed or not authenticated
+   523→            raise UserFacingCliError(
+   545→        If branch exists and is NOT tracked, errors with remediation steps.
+   572→        # Branch exists but is not tracked - error with remediation
+   573→        raise UserFacingCliError(
+  </tool_result>
+  <tool_result tool="toolu_01YMJYSwawZvraKz5X972mtB">
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_dry_run.py
+  </tool_result>
+  <assistant>Now let me read a sample test file and the key fake infrastructure I need:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15808" cache_read_input_tokens="76444" cache_creation="{'ephemeral_5m_input_tokens': 15808, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NFRfeZNXABUpVXqME2hZ7A">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15808" cache_read_input_tokens="76444" cache_creation="{'ephemeral_5m_input_tokens': 15808, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01SmVo2uwtoUKctaTfC6ZQdA">
+    <param name="description">Find FakeGit/FakeGitHub/context_for_test APIs</param>
+    <param name="prompt">I need to understand the fake infrastructure for testing in the erk project. Please find a...[truncated 648 chars]...uctor signatures, and how to wire them together for a test. Include the actual file paths.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15808" cache_read_input_tokens="76444" cache_creation="{'ephemeral_5m_input_tokens': 15808, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NFRfeZNXABUpVXqME2hZ7A">
+     1→"""Unit tests for dry-run mode in land command cleanup."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.land_cmd import _cleanup_and_navigate
+     9→from erk.core.context import context_for_test
+    10→from erk.core.repo_discovery import RepoContext
+    11→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    12→from erk_shared.gateway.git.abc import WorktreeInfo
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.types import GitHubRepoId
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→from tests.test_utils.env_helpers import erk_inmem_env
+    17→
+    18→
+    19→def _create_test_assignment(
+    20→    slot_name: str,
+    21→    branch_name: str,
+    22→    worktree_path: Path,
+    23→) -&gt; SlotAssignment:
+    24→    """Create a test assignment with current timestamp."""
+    25→    return SlotAssignment(
+    26→        slot_name=slot_name,
+    27→        branch_name=branch_name,
+    28→        assigned_at=datetime.now(UTC).isoformat(),
+    29→        worktree_path=worktree_path,
+    30→    )
+
+... [140 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SmVo2uwtoUKctaTfC6ZQdA">
+Async agent launched successfully.
+agentId: af612b0 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Let me get the exploration results and also look at more key infrastructure:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3224" cache_read_input_tokens="92252" cache_creation="{'ephemeral_5m_input_tokens': 3224, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01TMa2XWhAg96TVBTf8Gq2Bp">
+    <param name="task_id">af612b0</param>
+    <param name="block">True</param>
+    <param name="timeout">90000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3224" cache_read_input_tokens="92252" cache_creation="{'ephemeral_5m_input_tokens': 3224, 'ephemeral_1h_input_tokens': 0}" output_tokens="107" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TMa2XWhAg96TVBTf8Gq2Bp">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;af612b0&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Glob] {"pattern":"**/context.py"}
+[Tool: Glob] {"pattern":"**/fake*.py"}
+[Tool: Glob] {"pattern":"**/conftest.py"}
+[Tool: Glob] {"pattern":"**/conftest.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/fakes/context.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/context.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/conftest.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/conftest.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py","limit":150}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py","limit":150}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py","limit":150}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/console/fake.py","limit":100}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/console/fake.py","limit":100}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py","offset":150,"limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py","offset":150,"limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py","offset":150,"limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py","offset":150,"limit":200}
+[Tool: Grep] {"pattern":"class PRDetails","path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github"}
+[Tool: Grep] {"pattern":"def erk_inmem_env|class .*InMem","path":"/home/runner/work/erk/erk/tests","glob":"**/*.py"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk -name \"types.py\" -path \"*/gateway/github/*\" | head -5","description":"Find GitHub types definitions"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py","limit":100}
+
+... [402 lines omitted] ...
+
+    resolve_thread_failures: set[str] | None = None,
+    pr_diff_error: str | None = None,
+    workflow_runs_error: str | None = None,
+    add_label_errors: dict[str, str] | None = None,
+    # Error simulation
+    delete_branch_raises: dict[str, Exception] | None = None,
+    add_worktree_error: str | None = None,
+    remove_worktree_error: str | None = None,
+- Error simulation: Can configure specific operations to raise exceptions
+    submit_branch_raises: Exception | None = None,
+    track_branch_raises: Exception | None = None,
+    retrack_branch_raises: Exception | None = None,
+    squash_branch_raises: Exception | None = None,
+    submit_stack_raises: Exception | None = None,
+    delete_branch_raises: Exception | None = None,
+- `error(message)` - captures and outputs error message
+- `messages` - list of all messages (prefixed with "INFO:", "SUCCESS:", "ERROR:")
+- Fails with error if confirm() called more times than responses provided
+  </tool_result>
+  <assistant>Now I have comprehensive knowledge. Let me also look at `get_stack_for_branch` or similar in the graphite fake, and the `get_objective_for_branch` helper:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6372" cache_read_input_tokens="95476" cache_creation="{'ephemeral_5m_input_tokens': 6372, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01WxFw43NoHkkGsQECzFRxFR">
+    <param name="pattern">get_stack_branches|get_branch_stack|get_stack_for</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6372" cache_read_input_tokens="95476" cache_creation="{'ephemeral_5m_input_tokens': 6372, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01VshdsxXUwxMseSrvKdMDec">
+    <param name="pattern">def get_objective_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6372" cache_read_input_tokens="95476" cache_creation="{'ephemeral_5m_input_tokens': 6372, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016MiU1xoi8GDLuBcosu9RFL">
+    <param name="pattern">def merge_pr</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6372" cache_read_input_tokens="95476" cache_creation="{'ephemeral_5m_input_tokens': 6372, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VshdsxXUwxMseSrvKdMDec">
+src/erk/cli/commands/objective_helpers.py:56:def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -&gt; int | None:
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py:107:    def get_objective_for_branch(branch: str) -&gt; int | None:
+  </tool_result>
+  <tool_result tool="toolu_01WxFw43NoHkkGsQECzFRxFR">
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/abc.py:17:    Query operations (get_all_branches, get_branch_stack, etc.) remain on the
+packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py:47:    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str] | None:
+packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py:49:        return self._wrapped.get_branch_stack(git_ops, repo_root, branch)
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:94:    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str] | None:
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py:72:    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str] | None:
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py:107:    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str] | None:
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py:77:    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str] | None:
+  </tool_result>
+  <tool_result tool="toolu_016MiU1xoi8GDLuBcosu9RFL">
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:60:    def merge_pr(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:233:    def merge_pr(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:230:    def merge_pr(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:68:    def merge_pr(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DVHv8MLankhNAYod3aoWae">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py</param>
+    <param name="offset">80</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1350" cache_read_input_tokens="101848" cache_creation="{'ephemeral_5m_input_tokens': 1350, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0123Z8dycqUsNYj8qwX8i73C">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">220</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1350" cache_read_input_tokens="101848" cache_creation="{'ephemeral_5m_input_tokens': 1350, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GXKroM7SV5AbDetfE1HQXH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">60</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1350" cache_read_input_tokens="101848" cache_creation="{'ephemeral_5m_input_tokens': 1350, 'ephemeral_1h_input_tokens': 0}" output_tokens="327" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DVHv8MLankhNAYod3aoWae">
+    80→        self._check_auth_status_calls: list[None] = []
+    81→
+    82→    def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -&gt; str:
+    83→        """Get Graphite PR URL (constructs URL directly)."""
+    84→        return f"https://app.graphite.com/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
+    85→
+    86→    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -&gt; dict[str, PullRequestInfo]:
+    87→        """Return pre-configured PR info for tests."""
+    88→        return self._pr_info.copy()
+    89→
+    90→    def get_all_branches(self, git_ops: Git, repo_root: Path) -&gt; dict[str, BranchMetadata]:
+    91→        """Return pre-configured branch metadata for tests."""
+    92→        return self._branches.copy()
+    93→
+    94→    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -&gt; list[str] | None:
+    95→        """Return pre-configured stack for the given branch."""
+    96→        # If stacks are configured, use those
+    97→        if self._stacks:
+    98→            # Find the stack that contains this branch
+    99→            for _stack_branch, stack in self._stacks.items():
+   100→                if branch in stack:
+   101→                    return stack.copy()
+   102→            return None
+   103→
+   104→        # Otherwise, build from branch metadata if available
+   105→        if not self._branches:
+   106→            return None
+   107→
+   108→        if branch not in self._branches:
+   109→            return None
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0123Z8dycqUsNYj8qwX8i73C">
+   220→        """
+   221→        if not self._pr_update_should_succeed:
+   222→            raise RuntimeError("PR update failed (configured to fail)")
+   223→        self._updated_pr_bodies.append((pr_number, body))
+   224→
+   225→        if pr_number in self._pr_details:
+   226→            old = self._pr_details[pr_number]
+   227→            updated = dataclasses.replace(old, body=body)
+   228→            self._pr_details[pr_number] = updated
+   229→            # Keep prs_by_branch in sync
+   230→            if old.head_ref_name in self._prs_by_branch:
+   231→                self._prs_by_branch[old.head_ref_name] = updated
+   232→
+   233→    def merge_pr(
+   234→        self,
+   235→        repo_root: Path,
+   236→        pr_number: int,
+   237→        *,
+   238→        squash: bool,
+   239→        verbose: bool,
+   240→        subject: str | None = None,
+   241→        body: str | None = None,
+   242→    ) -&gt; MergeResult | MergeError:
+   243→        """Record PR merge in mutation tracking list.
+   244→
+   245→        Returns MergeResult on success, MergeError on failure.
+   246→        """
+   247→        if self._merge_should_succeed:
+   248→            self._merged_prs.append(pr_number)
+   249→            self._operation_log.append(("merge_pr", pr_number))
+
+... [55 lines omitted] ...
+
+   251→        return MergeError(pr_number=pr_number, message="Merge failed (configured to fail in test)")
+  </tool_result>
+  <tool_result tool="toolu_01GXKroM7SV5AbDetfE1HQXH">
+    60→        Args:
+    61→            repo_root: Repository root directory
+    62→            pr_number: PR number to update
+    63→            body: New PR body (markdown)
+    64→        """
+    65→        ...
+    66→
+    67→    @abstractmethod
+    68→    def merge_pr(
+    69→        self,
+    70→        repo_root: Path,
+    71→        pr_number: int,
+    72→        *,
+    73→        squash: bool,
+    74→        verbose: bool,
+    75→        subject: str | None = None,
+    76→        body: str | None = None,
+    77→    ) -&gt; MergeResult | MergeError:
+    78→        """Merge a pull request on GitHub.
+    79→
+    80→        Args:
+    81→            repo_root: Repository root directory
+    82→            pr_number: PR number to merge
+    83→            squash: If True, use squash merge strategy (default: True)
+    84→            verbose: If True, show detailed output
+    85→            subject: Optional commit message subject for squash merge.
+    86→                     If provided, overrides GitHub's default behavior.
+    87→            body: Optional commit message body for squash merge.
+    88→                  If provided, included as the commit body text.
+    89→
+
+... [15 lines omitted] ...
+
+    91→            MergeResult on success, MergeError on failure
+  </tool_result>
+  <assistant>Let me also check how `update_pr_base_branch` works and how branches get deleted on remote:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="103198" cache_creation="{'ephemeral_5m_input_tokens': 3151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JWs8sAopqmwM8AfpYfHiCf">
+    <param name="pattern">def update_pr_base_branch|def delete_remote_branch|def delete_branch</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="103198" cache_creation="{'ephemeral_5m_input_tokens': 3151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01MMG1x5LeMbaTwzdmbSRpaZ">
+    <param name="pattern">def delete_remote_branch|def push_delete_branch</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="103198" cache_creation="{'ephemeral_5m_input_tokens': 3151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CEZ91YCJuae6Mo3WVjF22i">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">190</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3151" cache_read_input_tokens="103198" cache_creation="{'ephemeral_5m_input_tokens': 3151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CEZ91YCJuae6Mo3WVjF22i">
+   190→        self._comments_by_id = comments_by_id or {}
+   191→        self._add_label_errors = add_label_errors or {}
+   192→
+   193→    @property
+   194→    def issues(self) -&gt; GitHubIssues:
+   195→        """Access to issue operations."""
+   196→        return self._issues_gateway
+   197→
+   198→    @property
+   199→    def merged_prs(self) -&gt; list[int]:
+   200→        """List of PR numbers that were merged."""
+   201→        return self._merged_prs
+   202→
+   203→    @property
+   204→    def closed_prs(self) -&gt; list[int]:
+   205→        """Read-only access to tracked PR closures for test assertions."""
+   206→        return self._closed_prs
+   207→
+   208→    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+   209→        """Record PR base branch update in mutation tracking list."""
+   210→        self._updated_pr_bases.append((pr_number, new_base))
+   211→        self._operation_log.append(("update_pr_base_branch", pr_number, new_base))
+   212→
+   213→    def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -&gt; None:
+   214→        """Record PR body update in mutation tracking list and update stored state.
+   215→
+   216→        Updates the PRDetails entry (if one exists) so get_pr() returns
+   217→        the latest body. Also updates prs_by_branch if applicable.
+   218→
+   219→        Raises RuntimeError if pr_update_should_succeed is False.
+
+... [10 lines omitted] ...
+
+   222→            raise RuntimeError("PR update failed (configured to fail)")
+  </tool_result>
+  <tool_result tool="toolu_01MMG1x5LeMbaTwzdmbSRpaZ">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01JWs8sAopqmwM8AfpYfHiCf">
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:50:    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:341:    def delete_remote_branch(self, repo_root: Path, branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:208:    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:1055:    def delete_remote_branch(self, repo_root: Path, branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/github/real.py:152:    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/github/real.py:2323:    def delete_remote_branch(self, repo_root: Path, branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:46:    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:739:    def delete_remote_branch(self, repo_root: Path, branch: str) -&gt; bool:
+  </tool_result>
+  <assistant>Now let me look at how the existing land pipeline merges and deletes branches to understand which methods to use, and check the `MergeResult`/`MergeError` types:</assistant>
+  <usage input_tokens="642" cache_creation_input_tokens="1097" cache_read_input_tokens="106349" cache_creation="{'ephemeral_5m_input_tokens': 1097, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013nbGw8KBXHiYaAgcesBySv">
+    <param name="pattern">class MergeResult|class MergeError</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="642" cache_creation_input_tokens="1097" cache_read_input_tokens="106349" cache_creation="{'ephemeral_5m_input_tokens': 1097, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GGYNpiT2ccsXGEJZunmXoG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">91</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="642" cache_creation_input_tokens="1097" cache_read_input_tokens="106349" cache_creation="{'ephemeral_5m_input_tokens': 1097, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+</session>
