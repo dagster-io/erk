@@ -33,6 +33,9 @@ def _build_export_prefix(env_vars: tuple[str, ...]) -> str:
 @click.argument("name", required=False)
 @click.option("--shell", is_flag=True, help="Drop into shell instead of launching Claude.")
 @click.option("--env", "env_vars", multiple=True, help="Set env var in remote session (KEY=VALUE).")
+@click.option(
+    "--branch", "-b", help="Branch to checkout on the codespace (default: current local branch)."
+)
 @click.pass_obj
 def connect_codespace(
     ctx: ErkContext,
@@ -40,6 +43,7 @@ def connect_codespace(
     *,
     shell: bool,
     env_vars: tuple[str, ...],
+    branch: str | None,
 ) -> None:
     """Connect to a codespace and launch Claude.
 
@@ -57,8 +61,11 @@ def connect_codespace(
         config_codespace_name=ctx.local_config.codespace_name,
     )
 
-    # Determine local branch for remote checkout (skip if not in a repo)
-    if isinstance(ctx.repo, NoRepoSentinel):
+    # Determine local branch for remote checkout
+    # If --branch provided, use it directly; otherwise detect from local repo
+    if branch is not None:
+        local_branch = branch
+    elif isinstance(ctx.repo, NoRepoSentinel):
         local_branch = None
     else:
         local_branch = ctx.git.branch.get_current_branch(ctx.repo_root)

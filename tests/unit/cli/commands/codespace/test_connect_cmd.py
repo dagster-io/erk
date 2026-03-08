@@ -419,3 +419,89 @@ def test_connect_shell_checks_out_local_branch() -> None:
     remote_command = fake_codespace.last_call.remote_command
     assert "git fetch origin feature-x && git checkout feature-x" in remote_command
     assert "exec bash -l" in remote_command
+
+
+def test_connect_with_branch_option_overrides_local_branch() -> None:
+    """connect --branch master uses the specified branch instead of the local branch."""
+    runner = CliRunner()
+    repo_root = Path("/test/repo")
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
+    git = FakeGit(current_branches={repo_root: "feature-x"})
+    repo = _make_repo_context(repo_root)
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+        git=git,
+        repo=repo,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect", "--branch", "master"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    # Should use master, not the local branch feature-x
+    assert "git fetch origin master && git checkout master" in remote_command
+    assert "feature-x" not in remote_command
+
+
+def test_connect_with_branch_option_and_shell() -> None:
+    """connect --branch with --shell uses the specified branch in shell mode."""
+    runner = CliRunner()
+    repo_root = Path("/test/repo")
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
+    git = FakeGit(current_branches={repo_root: "feature-x"})
+    repo = _make_repo_context(repo_root)
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+        git=git,
+        repo=repo,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect", "--shell", "--branch", "master"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    assert "git fetch origin master && git checkout master" in remote_command
+    assert "exec bash -l" in remote_command
+    assert "feature-x" not in remote_command
+
+
+def test_connect_with_branch_option_no_repo() -> None:
+    """connect --branch works even when not in a git repo."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace(
+        run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
+    )
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect", "--branch", "master"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    assert "git fetch origin master && git checkout master" in remote_command
