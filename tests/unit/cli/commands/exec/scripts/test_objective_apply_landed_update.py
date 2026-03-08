@@ -18,7 +18,6 @@ from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
 def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
@@ -141,7 +140,7 @@ class TestApplyLandedUpdateHappyPath:
     def test_updates_nodes_and_posts_comment(self, tmp_path: Path) -> None:
         """All matched nodes updated to done, action comment posted, returns rich JSON."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="Add auth system", body="pr body")
 
         comment = IssueComment(
@@ -151,12 +150,12 @@ class TestApplyLandedUpdateHappyPath:
             author="testuser",
         )
         fake_issues = FakeGitHubIssues(
-            issues={6423: objective, 6513: plan},
+            issues={6423: objective, 6517: plan},
             comments_with_urls={6423: [comment]},
         )
         fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
-            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+            pr_details={6517: pr},
         )
 
         runner = CliRunner()
@@ -169,8 +168,6 @@ class TestApplyLandedUpdateHappyPath:
                 "6423",
                 "--branch",
                 "plnd/some-branch",
-                "--plan",
-                "6513",
                 "--node",
                 "1.1",
                 "--node",
@@ -188,7 +185,7 @@ class TestApplyLandedUpdateHappyPath:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["objective"]["number"] == 6423
-        assert data["plan"]["number"] == "6513"
+        assert data["plan"]["number"] == "6517"
         assert data["pr"]["number"] == 6517
 
         # Node updates recorded
@@ -215,7 +212,7 @@ class TestApplyLandedUpdateHappyPath:
     def test_objective_content_included(self, tmp_path: Path) -> None:
         """Objective prose content from the first comment is included."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         comment = IssueComment(
@@ -225,12 +222,12 @@ class TestApplyLandedUpdateHappyPath:
             author="testuser",
         )
         fake_issues = FakeGitHubIssues(
-            issues={6423: objective, 6513: plan},
+            issues={6423: objective, 6517: plan},
             comments_with_urls={6423: [comment]},
         )
         fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
-            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+            pr_details={6517: pr},
         )
 
         runner = CliRunner()
@@ -243,8 +240,6 @@ class TestApplyLandedUpdateHappyPath:
                 "6423",
                 "--branch",
                 "plnd/some-branch",
-                "--plan",
-                "6513",
                 "--node",
                 "1.1",
                 "--node",
@@ -268,7 +263,7 @@ class TestApplyLandedUpdateNoNodes:
     def test_no_node_flags_still_posts_comment(self, tmp_path: Path) -> None:
         """When no --node flags are passed, still posts action comment."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         comment = IssueComment(
@@ -278,12 +273,12 @@ class TestApplyLandedUpdateNoNodes:
             author="testuser",
         )
         fake_issues = FakeGitHubIssues(
-            issues={6423: objective, 6513: plan},
+            issues={6423: objective, 6517: plan},
             comments_with_urls={6423: [comment]},
         )
         fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
-            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+            pr_details={6517: pr},
         )
 
         runner = CliRunner()
@@ -296,8 +291,6 @@ class TestApplyLandedUpdateNoNodes:
                 "6423",
                 "--branch",
                 "plnd/some-branch",
-                "--plan",
-                "6513",
             ],
             obj=context_for_test(
                 github=fake_github,
@@ -372,7 +365,7 @@ class TestApplyLandedUpdateAutoMatch:
     def test_auto_matches_nodes_by_pr_ref(self, tmp_path: Path) -> None:
         """When no --node flags are passed, auto-matches nodes whose pr field references the PR."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY_WITH_PR_REF)
-        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="Add auth system", body="pr body")
 
         comment = IssueComment(
@@ -382,12 +375,12 @@ class TestApplyLandedUpdateAutoMatch:
             author="testuser",
         )
         fake_issues = FakeGitHubIssues(
-            issues={6423: objective, 6513: plan},
+            issues={6423: objective, 6517: plan},
             comments_with_urls={6423: [comment]},
         )
         fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
-            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+            pr_details={6517: pr},
         )
 
         runner = CliRunner()
@@ -400,8 +393,6 @@ class TestApplyLandedUpdateAutoMatch:
                 "6423",
                 "--branch",
                 "plnd/some-branch",
-                "--plan",
-                "6513",
             ],
             obj=context_for_test(
                 github=fake_github,
@@ -427,13 +418,13 @@ class TestApplyLandedUpdateAutoMatch:
 class TestApplyLandedUpdateErrors:
     def test_objective_not_found(self, tmp_path: Path) -> None:
         """Returns error when objective issue not found."""
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+        plan = _make_issue(number=6517, title="My Plan", body="plan body")
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
-        fake_issues = FakeGitHubIssues(issues={6513: plan})
+        fake_issues = FakeGitHubIssues(issues={6517: plan})
         fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
-            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+            pr_details={6517: pr},
         )
 
         runner = CliRunner()
@@ -446,8 +437,6 @@ class TestApplyLandedUpdateErrors:
                 "9999",
                 "--branch",
                 "plnd/some-branch",
-                "--plan",
-                "6513",
             ],
             obj=context_for_test(
                 github=fake_github,
@@ -463,15 +452,11 @@ class TestApplyLandedUpdateErrors:
         assert "9999" in data["error"]
 
     def test_pr_not_found(self, tmp_path: Path) -> None:
-        """Returns error when PR not found."""
+        """Returns error when PR (and thus plan) not found."""
         objective = _make_issue(number=6423, title="My Objective", body="objective body")
-        plan = _make_issue(number=6513, title="My Plan", body="plan body")
 
-        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
-        fake_github = FakeLocalGitHub(
-            issues_gateway=fake_issues,
-            pr_details={6513: issue_info_to_pr_details(plan)},
-        )
+        fake_issues = FakeGitHubIssues(issues={6423: objective})
+        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(
@@ -483,8 +468,6 @@ class TestApplyLandedUpdateErrors:
                 "6423",
                 "--branch",
                 "plnd/some-branch",
-                "--plan",
-                "6513",
             ],
             obj=context_for_test(
                 github=fake_github,
@@ -499,15 +482,22 @@ class TestApplyLandedUpdateErrors:
         assert data["success"] is False
         assert "9999" in data["error"]
 
-    def test_bad_branch_no_plan(self, tmp_path: Path) -> None:
-        """Returns error when branch doesn't match any plan pattern."""
+    def test_plan_not_found_for_pr(self, tmp_path: Path) -> None:
+        """Returns error when no plan (PR) exists for the given PR number."""
         fake_issues = FakeGitHubIssues()
         fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         runner = CliRunner()
         result = runner.invoke(
             objective_apply_landed_update,
-            ["--pr", "6517", "--objective", "6423", "--branch", "feature-branch"],
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+            ],
             obj=context_for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
@@ -519,14 +509,14 @@ class TestApplyLandedUpdateErrors:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "No plan found" in data["error"]
+        assert "6517" in data["error"]
 
 
 class TestApplyLandedUpdateDiscovery:
     def test_discover_branch_from_git(self, tmp_path: Path) -> None:
         """Auto-discovers branch when --branch is omitted."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         comment = IssueComment(
@@ -536,12 +526,12 @@ class TestApplyLandedUpdateDiscovery:
             author="testuser",
         )
         fake_issues = FakeGitHubIssues(
-            issues={6423: objective, 6513: plan},
+            issues={6423: objective, 6517: plan},
             comments_with_urls={6423: [comment]},
         )
         fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
-            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+            pr_details={6517: pr},
         )
         fake_git = FakeGit(current_branches={tmp_path: "plnd/some-branch"})
 
@@ -553,8 +543,6 @@ class TestApplyLandedUpdateDiscovery:
                 "6517",
                 "--objective",
                 "6423",
-                "--plan",
-                "6513",
                 "--node",
                 "1.1",
                 "--node",
@@ -572,84 +560,4 @@ class TestApplyLandedUpdateDiscovery:
         assert result.exit_code == 0, result.output
         data = json.loads(result.output)
         assert data["success"] is True
-        assert data["plan"]["number"] == "6513"
-
-    def test_plan_direct_lookup_skips_branch_discovery(self, tmp_path: Path) -> None:
-        """--plan enables direct plan lookup, avoiding branch-based discovery."""
-        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
-        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
-        pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
-
-        comment = IssueComment(
-            body=OBJECTIVE_COMMENT_BODY,
-            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
-            id=55555,
-            author="testuser",
-        )
-        fake_issues = FakeGitHubIssues(
-            issues={6423: objective, 6513: plan},
-            comments_with_urls={6423: [comment]},
-        )
-        fake_github = FakeLocalGitHub(
-            issues_gateway=fake_issues,
-            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
-        )
-
-        runner = CliRunner()
-        # Use a branch name that does NOT encode the plan number ---
-        # branch-based discovery would fail, but --plan bypasses it.
-        result = runner.invoke(
-            objective_apply_landed_update,
-            [
-                "--pr",
-                "6517",
-                "--objective",
-                "6423",
-                "--branch",
-                "plnd/unrelated-branch-name",
-                "--plan",
-                "6513",
-            ],
-            obj=context_for_test(
-                github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
-                repo_root=tmp_path,
-                cwd=tmp_path,
-            ),
-        )
-
-        assert result.exit_code == 0, result.output
-        data = json.loads(result.output)
-        assert data["success"] is True
-        assert data["plan"]["number"] == "6513"
-
-    def test_plan_direct_lookup_not_found(self, tmp_path: Path) -> None:
-        """--plan returns error when the specified plan doesn't exist."""
-        fake_issues = FakeGitHubIssues()
-        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
-
-        runner = CliRunner()
-        result = runner.invoke(
-            objective_apply_landed_update,
-            [
-                "--pr",
-                "6517",
-                "--objective",
-                "6423",
-                "--branch",
-                "some-branch",
-                "--plan",
-                "9999",
-            ],
-            obj=context_for_test(
-                github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
-                repo_root=tmp_path,
-                cwd=tmp_path,
-            ),
-        )
-
-        assert result.exit_code == 1
-        data = json.loads(result.output)
-        assert data["success"] is False
-        assert "9999" in data["error"]
+        assert data["plan"]["number"] == "6517"

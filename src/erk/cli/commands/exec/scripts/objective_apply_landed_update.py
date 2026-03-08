@@ -4,8 +4,10 @@ Combines the fetch-context, update-nodes, and post-action-comment steps into
 a single call, eliminating 5+ sequential agent commands.  Only prose
 reconciliation (which requires LLM judgment) is left to the calling skill.
 
+The PR number doubles as the plan number (in erk, the PR IS the plan).
+
 Usage:
-    erk exec objective-apply-landed-update --pr 6517 --objective 6423 --branch P6513-...
+    erk exec objective-apply-landed-update --pr 6517 --objective 6423 --branch P6517-...
     erk exec objective-apply-landed-update  # auto-discovers all arguments
 
 Output:
@@ -147,13 +149,6 @@ def _update_comment_table(
     help="Branch name (auto-discovered if omitted)",
 )
 @click.option(
-    "--plan",
-    "plan_number",
-    type=int,
-    default=None,
-    help="Plan number (direct lookup, skips branch-based discovery)",
-)
-@click.option(
     "--node",
     "node_ids",
     multiple=True,
@@ -166,13 +161,14 @@ def objective_apply_landed_update(
     pr_number: int | None,
     objective_number: int | None,
     branch_name: str | None,
-    plan_number: int | None,
     node_ids: tuple[str, ...],
 ) -> None:
     """Apply mechanical updates to an objective after landing a PR.
 
     Fetches context, updates roadmap nodes to done, and posts an action comment
     in a single call. Returns rich JSON for the agent to use in prose reconciliation.
+
+    The PR number is used as the plan number (in erk, the PR IS the plan).
     """
     issues = require_issues(ctx)
     github = require_github(ctx)
@@ -189,17 +185,19 @@ def objective_apply_landed_update(
             click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
             raise SystemExit(1)
 
-    # --- Resolve plan (direct lookup or branch-based discovery) ---
-    if plan_number is not None:
-        plan_result = plan_backend.get_plan(repo_root, str(plan_number))
-        if isinstance(plan_result, PlanNotFound):
-            click.echo(_error_json(f"Plan #{plan_number} not found"))
+    # --- Discovery: auto-fill PR from branch ---
+    if pr_number is None:
+        pr_result = github.get_pr_for_branch(repo_root, branch_name)
+        if isinstance(pr_result, PRNotFound):
+            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
             raise SystemExit(1)
-    else:
-        plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
-        if isinstance(plan_result, PlanNotFound):
-            click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
-            raise SystemExit(1)
+        pr_number = pr_result.number
+
+    # --- Resolve plan using PR number (the PR IS the plan) ---
+    plan_result = plan_backend.get_plan(repo_root, str(pr_number))
+    if isinstance(plan_result, PlanNotFound):
+        click.echo(_error_json(f"Plan #{pr_number} not found"))
+        raise SystemExit(1)
 
     plan_id = plan_result.plan_identifier
 
@@ -210,14 +208,6 @@ def objective_apply_landed_update(
             click.echo(_error_json(msg))
             raise SystemExit(1)
         objective_number = plan_result.objective_id
-
-    # --- Discovery: auto-fill PR from branch ---
-    if pr_number is None:
-        pr_result = github.get_pr_for_branch(repo_root, branch_name)
-        if isinstance(pr_result, PRNotFound):
-            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
-            raise SystemExit(1)
-        pr_number = pr_result.number
 
     # --- Fetch objective issue ---
     objective = issues.get_issue(repo_root, objective_number)
