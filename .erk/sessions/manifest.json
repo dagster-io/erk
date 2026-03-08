@@ -16,6 +16,23 @@
       "raw_size_kb": 163,
       "xml_size_kb": 45,
       "git_branch": "plnd/O9009-add-agent-friendly-c-03-08-1017"
+    },
+    {
+      "session_id": "687e356a-a1bd-4ae8-842c-2de93b6a4245",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T14:41:29.692003+00:00",
+      "files": [
+        "address-687e356a-a1bd-4ae8-842c-2de93b6a4245-687e356a-a1bd-4ae8-842c-2de93b6a4245-part1.xml",
+        "address-687e356a-a1bd-4ae8-842c-2de93b6a4245-687e356a-a1bd-4ae8-842c-2de93b6a4245-part2.xml",
+        "address-687e356a-a1bd-4ae8-842c-2de93b6a4245-687e356a-a1bd-4ae8-842c-2de93b6a4245-part3.xml",
+        "address-687e356a-a1bd-4ae8-842c-2de93b6a4245-687e356a-a1bd-4ae8-842c-2de93b6a4245-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 4,
+      "raw_size_kb": 245,
+      "xml_size_kb": 97,
+      "git_branch": "plnd/O9009-add-agent-friendly-c-03-08-1017"
     }
   ]
 }
