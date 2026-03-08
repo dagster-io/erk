@@ -76,9 +76,7 @@ def _build_stack_context(
         pool_json_path=repo_dir / "pool.json",
     )
 
-    configured_worktree_branches = (
-        worktree_branches if worktree_branches is not None else branches
-    )
+    configured_worktree_branches = worktree_branches if worktree_branches is not None else branches
     worktree_paths: dict[str, Path] = {}
     worktree_infos = [WorktreeInfo(path=repo_root, branch="main", is_root=True)]
     current_branches = {repo_root: "main"}
