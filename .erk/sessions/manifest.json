@@ -41,6 +41,22 @@
       "raw_size_kb": 562,
       "xml_size_kb": 145,
       "git_branch": "plnd/O8832-centralize-repo-reso-03-08-0204"
+    },
+    {
+      "session_id": "818ea68e-9888-45d3-a9eb-4bfc48595829",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T09:01:55.920236+00:00",
+      "files": [
+        "address-818ea68e-9888-45d3-a9eb-4bfc48595829-818ea68e-9888-45d3-a9eb-4bfc48595829-part1.xml",
+        "address-818ea68e-9888-45d3-a9eb-4bfc48595829-818ea68e-9888-45d3-a9eb-4bfc48595829-part2.xml",
+        "address-818ea68e-9888-45d3-a9eb-4bfc48595829-818ea68e-9888-45d3-a9eb-4bfc48595829-part3.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 2,
+      "raw_size_kb": 87,
+      "xml_size_kb": 82,
+      "git_branch": "plnd/O8832-centralize-repo-reso-03-08-0204"
     }
   ]
 }
