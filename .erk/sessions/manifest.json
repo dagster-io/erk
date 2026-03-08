@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plan_id": 9006,
+  "sessions": [
+    {
+      "session_id": "73bc2662-6548-4f61-8c27-50cce1ca6ad9",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T08:02:21.046020+00:00",
+      "files": [
+        "impl-73bc2662-6548-4f61-8c27-50cce1ca6ad9-73bc2662-6548-4f61-8c27-50cce1ca6ad9.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 158,
+      "xml_size_kb": 31,
+      "git_branch": "plnd/fix-changelog-output-size-03-08-0756"
+    }
+  ]
+}
