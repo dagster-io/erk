@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add --json to erk pr list and erk pr view",
+  "objective_id": 9009,
+  "node_ids": [
+    "2.1"
+  ]
+}
