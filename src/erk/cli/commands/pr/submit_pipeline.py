@@ -24,7 +24,7 @@ from erk.cli.commands.pr.shared import (
     recover_plan_header,
     run_commit_message_generation,
 )
-from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
 from erk.cli.ensure import UserFacingCliError
 from erk.cli.repo_resolution import get_remote_github
 from erk.core.commit_message_generator import CommitMessageGenerator
@@ -265,6 +265,26 @@ def push_and_create_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
     if graphite_handles_push:
         return _graphite_first_flow(ctx, state)
     return _core_submit_flow(ctx, state)
+
+
+def label_code_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
+    """Add erk-pr label to non-plan code PRs.
+
+    Plan PRs already get erk-pr via plan creation. This step ensures code PRs
+    submitted through erk also get the label for dashboard visibility.
+    """
+    if state.plan_id is not None:
+        return state  # Plan PRs already get erk-pr via plan creation
+    if state.pr_number is None:
+        return state
+    add_labels_resilient(
+        ctx.github,
+        time=ctx.time,
+        repo_root=state.repo_root,
+        pr_number=state.pr_number,
+        labels=(ERK_PR_LABEL,),
+    )
+    return state
 
 
 def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
@@ -1001,6 +1021,7 @@ def _push_and_create_pipeline() -> tuple[SubmitStep, ...]:
         commit_wip,
         capture_existing_pr_body,
         push_and_create_pr,
+        label_code_pr,
     )
 
 
@@ -1032,6 +1053,7 @@ def _submit_pipeline() -> tuple[SubmitStep, ...]:
         commit_wip,
         capture_existing_pr_body,
         push_and_create_pr,
+        label_code_pr,
         extract_diff_and_fetch_plan_context,
         generate_description,
         enhance_with_graphite,
