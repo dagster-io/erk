@@ -22,6 +22,7 @@ from erk.cli.commands.objective_helpers import (
 from erk.cli.commands.slot.common import find_branch_assignment
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
+from erk.cli.constants import ERK_PR_LABEL, ERK_RECONCILED_LABEL
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.context.types import RepoContext
@@ -122,6 +123,65 @@ def detect_merged_branches(
     return merged
 
 
+def detect_unreconciled_prs(
+    ctx: ErkContext,
+    *,
+    main_repo_root: Path,
+) -> list[ReconcileBranchInfo]:
+    """Detect merged erk-pr PRs that haven't been through post-merge lifecycle.
+
+    Sweeps GitHub for closed PRs labeled `erk-pr` but missing `erk-reconciled`.
+    This catches PRs merged outside `erk land` that never had a local branch
+    (e.g., remote-dispatched PRs merged via GitHub web UI).
+
+    Cost: 2 REST API calls (list_prs with different label filters), constant
+    regardless of total PR count. Per-unreconciled-PR resolution calls shrink
+    toward zero once the label is being stamped consistently.
+
+    Args:
+        ctx: ErkContext
+        main_repo_root: Main repository root (for API calls)
+
+    Returns:
+        List of ReconcileBranchInfo for merged PRs missing the reconciled label.
+    """
+    # 1. Get all closed erk-pr PRs
+    all_erk_prs = ctx.github.list_prs(main_repo_root, state="all", labels=[ERK_PR_LABEL])
+
+    # 2. Get already-reconciled ones
+    reconciled_prs = ctx.github.list_prs(
+        main_repo_root, state="all", labels=[ERK_PR_LABEL, ERK_RECONCILED_LABEL]
+    )
+
+    # 3. Diff by PR number to find unreconciled
+    reconciled_numbers = {pr.number for pr in reconciled_prs.values()}
+
+    # 4. Filter for MERGED state and build ReconcileBranchInfo
+    unreconciled: list[ReconcileBranchInfo] = []
+    for branch, pr in all_erk_prs.items():
+        if pr.state != "MERGED":
+            continue
+        if pr.number in reconciled_numbers:
+            continue
+
+        # Resolve metadata for each unreconciled PR
+        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+        objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
+
+        unreconciled.append(
+            ReconcileBranchInfo(
+                branch=branch,
+                pr_number=pr.number,
+                pr_title=pr.title,
+                worktree_path=None,  # No local presence for sweep-detected PRs
+                plan_id=plan_id,
+                objective_number=objective_number,
+            )
+        )
+
+    return unreconciled
+
+
 def process_merged_branch(
     ctx: ErkContext,
     info: ReconcileBranchInfo,
@@ -196,7 +256,16 @@ def process_merged_branch(
                 + f"Objective update failed for {info.branch}: {exc}"
             )
 
-    # 3. Cleanup: unassign slot, delete branch, remove worktree
+    # 3. Stamp reconciled label (fail-open)
+    try:
+        ctx.github.add_label_to_pr(main_repo_root, info.pr_number, ERK_RECONCILED_LABEL)
+    except Exception as exc:
+        user_output(
+            click.style("Warning: ", fg="yellow")
+            + f"Failed to add reconciled label to PR #{info.pr_number}: {exc}"
+        )
+
+    # 4. Cleanup: unassign slot, delete branch, remove worktree
     try:
         _cleanup_branch(ctx, info=info, main_repo_root=main_repo_root, repo=repo)
         cleaned_up = True

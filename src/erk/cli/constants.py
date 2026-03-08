@@ -58,3 +58,6 @@ ERK_LEARN_LABEL = "erk-learn"
 
 ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning plan"
 ERK_LEARN_LABEL_COLOR = "D93F0B"  # Orange-red
+
+# Label stamped on PRs after post-merge lifecycle completes (learn + objective update)
+ERK_RECONCILED_LABEL = "erk-reconciled"

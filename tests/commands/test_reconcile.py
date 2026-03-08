@@ -6,12 +6,14 @@ from erk.cli.cli import cli
 from erk.cli.commands.reconcile_pipeline import (
     ReconcileBranchInfo,
     detect_merged_branches,
+    detect_unreconciled_prs,
     process_merged_branch,
 )
+from erk.cli.constants import ERK_PR_LABEL, ERK_RECONCILED_LABEL
 from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -708,3 +710,220 @@ def test_cli_force_processes_without_prompt() -> None:
         assert result.exit_code == 0
         assert "feature-1" in git.deleted_branches
         assert "reconciled" in result.output.lower() or "complete" in result.output.lower()
+
+
+# =============================================================================
+# erk-reconciled label stamping
+# =============================================================================
+
+
+def _pr_info(*, number: int, branch: str, state: str = "MERGED") -> PullRequestInfo:
+    """Build a PullRequestInfo for list_prs testing."""
+    return PullRequestInfo(
+        number=number,
+        state=state,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        is_draft=False,
+        title=f"PR #{number}",
+        checks_passing=None,
+        owner="owner",
+        repo="repo",
+        head_branch=branch,
+    )
+
+
+def _pr_details_with_labels(
+    *, number: int, branch: str, state: str = "MERGED", labels: tuple[str, ...] = ()
+) -> PRDetails:
+    """Build a PRDetails with labels for list_prs cross-reference."""
+    return PRDetails(
+        number=number,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        title=f"PR #{number}",
+        body="",
+        state=state,
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name=branch,
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+        labels=labels,
+    )
+
+
+def test_process_merged_branch_stamps_reconciled_label() -> None:
+    """process_merged_branch adds erk-reconciled label to the PR."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-1"]},
+            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch="main", is_root=True)]},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+        )
+        github = FakeLocalGitHub()
+        ctx = env.build_context(git=git, github=github)
+
+        info = ReconcileBranchInfo(
+            branch="feature-1",
+            pr_number=100,
+            pr_title="Test",
+            worktree_path=None,
+            plan_id=None,
+            objective_number=None,
+        )
+        process_merged_branch(
+            ctx,
+            info,
+            main_repo_root=env.cwd,
+            repo=env.repo,
+            cwd=env.cwd,
+            dry_run=False,
+            skip_learn=False,
+        )
+
+        assert (100, ERK_RECONCILED_LABEL) in github.added_labels
+
+
+def test_dry_run_does_not_stamp_reconciled_label() -> None:
+    """Dry run skips the reconciled label stamp."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-1"]},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+        )
+        github = FakeLocalGitHub()
+        ctx = env.build_context(git=git, github=github)
+
+        info = ReconcileBranchInfo(
+            branch="feature-1",
+            pr_number=100,
+            pr_title="Test",
+            worktree_path=None,
+            plan_id=None,
+            objective_number=None,
+        )
+        process_merged_branch(
+            ctx,
+            info,
+            main_repo_root=env.cwd,
+            repo=env.repo,
+            cwd=env.cwd,
+            dry_run=True,
+            skip_learn=False,
+        )
+
+        assert len(github.added_labels) == 0
+
+
+# =============================================================================
+# detect_unreconciled_prs
+# =============================================================================
+
+
+def test_detects_unreconciled_merged_prs() -> None:
+    """Merged erk-pr PRs missing erk-reconciled label are detected."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        github = FakeLocalGitHub(
+            prs={
+                "feat-a": _pr_info(number=101, branch="feat-a"),
+                "feat-b": _pr_info(number=102, branch="feat-b"),
+            },
+            pr_details={
+                101: _pr_details_with_labels(number=101, branch="feat-a", labels=(ERK_PR_LABEL,)),
+                102: _pr_details_with_labels(
+                    number=102,
+                    branch="feat-b",
+                    labels=(ERK_PR_LABEL, ERK_RECONCILED_LABEL),
+                ),
+            },
+        )
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+        )
+        ctx = env.build_context(git=git, github=github)
+
+        result = detect_unreconciled_prs(ctx, main_repo_root=env.cwd)
+
+        assert len(result) == 1
+        assert result[0].pr_number == 101
+        assert result[0].branch == "feat-a"
+        assert result[0].worktree_path is None
+
+
+def test_no_unreconciled_when_all_labeled() -> None:
+    """Returns empty list when all merged erk-pr PRs have erk-reconciled label."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        github = FakeLocalGitHub(
+            prs={"feat-a": _pr_info(number=101, branch="feat-a")},
+            pr_details={
+                101: _pr_details_with_labels(
+                    number=101,
+                    branch="feat-a",
+                    labels=(ERK_PR_LABEL, ERK_RECONCILED_LABEL),
+                ),
+            },
+        )
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+        )
+        ctx = env.build_context(git=git, github=github)
+
+        result = detect_unreconciled_prs(ctx, main_repo_root=env.cwd)
+
+        assert len(result) == 0
+
+
+def test_skips_open_prs_in_sweep() -> None:
+    """Open PRs with erk-pr label are not included in sweep results."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        github = FakeLocalGitHub(
+            prs={"feat-open": _pr_info(number=201, branch="feat-open", state="OPEN")},
+            pr_details={
+                201: _pr_details_with_labels(
+                    number=201, branch="feat-open", state="OPEN", labels=(ERK_PR_LABEL,)
+                ),
+            },
+        )
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+        )
+        ctx = env.build_context(git=git, github=github)
+
+        result = detect_unreconciled_prs(ctx, main_repo_root=env.cwd)
+
+        assert len(result) == 0
+
+
+def test_no_unreconciled_when_no_erk_prs() -> None:
+    """Returns empty list when no PRs have erk-pr label."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        github = FakeLocalGitHub()
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+        )
+        ctx = env.build_context(git=git, github=github)
+
+        result = detect_unreconciled_prs(ctx, main_repo_root=env.cwd)
+
+        assert len(result) == 0
