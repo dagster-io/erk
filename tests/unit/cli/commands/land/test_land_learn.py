@@ -894,8 +894,8 @@ def test_log_learn_pr_files_indentation(
     _log_learn_pr_files(plan_content="# Plan", xml_files={})
 
     lines = capsys.readouterr().err.splitlines()
-    header_line = next(l for l in lines if "file(s) committed" in l)
-    file_lines = [l for l in lines if "plan.md" in l or "ref.json" in l]
+    header_line = next(line for line in lines if "file(s) committed" in line)
+    file_lines = [line for line in lines if "plan.md" in line or "ref.json" in line]
 
     assert header_line.startswith("  ")  # 2-space indent on header
     for line in file_lines:
