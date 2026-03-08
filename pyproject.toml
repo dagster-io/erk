@@ -3,6 +3,7 @@ members = ["packages/*"]
 
 [tool.uv.sources]
 erk-dev = { workspace = true }
+erk-mcp = { workspace = true }
 erk-shared = { workspace = true }
 erk-statusline = { workspace = true }
 
