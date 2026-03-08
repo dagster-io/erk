@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: 7d49225f8 -->
+<!-- As of: f1268fd27 -->
 
 ### Added
 
@@ -17,11 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wire incremental dispatch into TUI with plan input modal (e94dabcf)
 - Hide stub branches from `erk br list` by default, with `--all/-a` flag to show them (578cc981)
 - Make TUI help screen view-mode-aware, showing context-sensitive shortcuts for plans vs objectives (433c9c2e)
+- Add Check 8 to `erk objective check` for roadmap table sync validation: detects when the prose roadmap table has drifted from YAML source of truth (20f3cd393)
 
 ### Changed
 
 - Show conflicted files and prompt for confirmation before launching Claude in `erk pr rebase` (c0461e8a)
 - Sort command palette menu items alphabetically within each subgroup (94957ecb)
+- Remove `--sync` from `erk pr checkout` (now purely local); add `--script` and `--sync` options to `erk pr teleport` for remote Graphite submission workflows (7065d4546)
+- Rename bundled slash command `/erk:rebase` to `/erk:pr-rebase` for consistency with PR-focused command naming (51d6ccb84)
+- `erk objective view` now infers the objective from the current branch when no explicit reference is provided (56dbf1a04)
+- Add arrow key navigation to the objective nodes screen in TUI (91d3f1143)
+- Update `/erk:pr-rebase` skill to use AskUserQuestion for push options (932de4cca)
 
 ### Fixed
 
