@@ -19,13 +19,11 @@ import click
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
-    OneShotDispatchResult,
-    OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.ensure import Ensure, UserFacingCliError
-from erk.cli.json_output import emit_json, json_output
+from erk.cli.json_command import emit_json_result, json_command
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.real import RealRemoteGitHub
@@ -59,7 +57,7 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
     return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
 
 
-@json_output
+@json_command(exclude_json_input=frozenset({"file_path"}), required_json_input=frozenset({"prompt"}))
 @click.command("one-shot")
 @click.argument("prompt", required=False, default=None)
 @click.option(
@@ -216,28 +214,4 @@ def one_shot(
     )
 
     if json_mode:
-        if isinstance(result, OneShotDryRunResult):
-            emit_json(
-                {
-                    "dry_run": True,
-                    "branch_name": result.branch_name,
-                    "prompt": result.prompt,
-                    "target": result.target,
-                    "pr_title": result.pr_title,
-                    "base_branch": result.base_branch,
-                    "submitted_by": result.submitted_by,
-                    "model": result.model,
-                    "workflow": result.workflow,
-                }
-            )
-        elif isinstance(result, OneShotDispatchResult):
-            emit_json(
-                {
-                    "dry_run": False,
-                    "pr_number": result.pr_number,
-                    "pr_url": f"https://github.com/{owner}/{repo_name}/pull/{result.pr_number}",
-                    "run_id": result.run_id,
-                    "run_url": f"https://github.com/{owner}/{repo_name}/actions/runs/{result.run_id}",
-                    "branch_name": result.branch_name,
-                }
-            )
+        emit_json_result(result)

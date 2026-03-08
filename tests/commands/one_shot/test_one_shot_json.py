@@ -1,4 +1,4 @@
-"""Tests for erk one-shot --json output."""
+"""Tests for erk one-shot --json output and input."""
 
 import json
 from typing import Any
@@ -208,4 +208,39 @@ def test_json_no_human_on_stdout() -> None:
         assert result.exit_code == 0
         data = _extract_json(result.output)
         assert isinstance(data, dict)
+        assert data["success"] is True
+
+
+def test_json_stdin_input() -> None:
+    """JSON stdin input populates prompt when piped with --json."""
+    from unittest.mock import patch
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        github = FakeLocalGitHub(authenticated=True)
+        remote = _make_remote()
+
+        ctx = build_workspace_test_context(env, git=git, github=github, remote_github=remote)
+
+        with patch(
+            "erk.cli.json_command.read_stdin_json",
+            return_value={"prompt": "fix bug from stdin"},
+        ):
+            result = runner.invoke(
+                cli,
+                ["one-shot", "--json"],
+                obj=ctx,
+                catch_exceptions=False,
+            )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+        data = _extract_json(result.output)
         assert data["success"] is True

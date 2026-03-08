@@ -44,6 +44,8 @@ def test_dispatch_happy_path() -> None:
     assert result is not None
     # Branch should have plnd/ prefix (planned-PR naming)
     assert result.branch_name.startswith("plnd/")
+    assert result.pr_url == "https://github.com/owner/repo/pull/1"
+    assert result.run_url == "https://github.com/owner/repo/actions/runs/run-1"
 
     # Verify branch was created
     assert len(remote.created_refs) == 1
@@ -114,6 +116,8 @@ def test_dispatch_with_extra_inputs() -> None:
 
     assert result is not None
     assert result.branch_name.startswith("plnd/")
+    assert "owner/repo/pull/1" in result.pr_url
+    assert "owner/repo/actions/runs/run-1" in result.run_url
 
     # Verify extra inputs are in workflow trigger
     wf = remote.dispatched_workflows[0]
@@ -199,6 +203,8 @@ def test_dispatch_with_pre_generated_slug_skips_llm() -> None:
     # Branch should contain the pre-generated slug
     assert "fix-config-import" in result.branch_name
     assert result.branch_name.startswith("plnd/")
+    assert result.pr_url is not None
+    assert result.run_url is not None
 
 
 def test_dispatch_long_prompt_truncates_workflow_input() -> None:
@@ -236,6 +242,8 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
     )
 
     assert result is not None
+    assert result.pr_url is not None
+    assert result.run_url is not None
 
     # Verify workflow input was truncated
     wf = remote.dispatched_workflows[0]
@@ -282,5 +290,7 @@ def test_dispatch_explicit_ref_is_passed_to_workflow() -> None:
     )
 
     assert result is not None
+    assert result.pr_url is not None
+    assert result.run_url is not None
     assert len(remote.dispatched_workflows) == 1
     assert remote.dispatched_workflows[0].ref == "custom-ref"

@@ -8,6 +8,7 @@ canonical dispatch path for all one-shot commands.
 import time
 from dataclasses import dataclass
 from datetime import UTC
+from typing import Any
 
 import click
 
@@ -51,6 +52,18 @@ class OneShotDispatchResult:
     pr_number: int
     run_id: str
     branch_name: str
+    pr_url: str
+    run_url: str
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "dry_run": False,
+            "pr_number": self.pr_number,
+            "run_id": self.run_id,
+            "branch_name": self.branch_name,
+            "pr_url": self.pr_url,
+            "run_url": self.run_url,
+        }
 
 
 @dataclass(frozen=True)
@@ -65,6 +78,19 @@ class OneShotDryRunResult:
     submitted_by: str
     model: str | None
     workflow: str
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "dry_run": True,
+            "branch_name": self.branch_name,
+            "prompt": self.prompt,
+            "target": self.target,
+            "pr_title": self.pr_title,
+            "base_branch": self.base_branch,
+            "submitted_by": self.submitted_by,
+            "model": self.model,
+            "workflow": self.workflow,
+        }
 
 
 def generate_branch_name(
@@ -399,4 +425,6 @@ def dispatch_one_shot_remote(
         pr_number=pr_number,
         run_id=run_id,
         branch_name=branch_name,
+        pr_url=pr_url,
+        run_url=run_url,
     )
