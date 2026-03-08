@@ -1,0 +1,16 @@
+<session>
+  <meta branch="plnd/apply-erk-pr-label-03-08-0718" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Bash" id="toolu_01PrUXsue5DtmCU5LGczqEmR">
+    <param name="command">erk exec upload-impl-session --session-id="eedfc1fb-8a3e-474a-8c02-b9d5fd33db39" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="369" cache_read_input_tokens="79827" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L6jAksWgy5VGAvsqT8SqFv">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9000
+}
+  </tool_result>
+</session>

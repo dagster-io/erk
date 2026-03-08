@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "plan_id": 9000,
+  "sessions": [
+    {
+      "session_id": "eedfc1fb-8a3e-474a-8c02-b9d5fd33db39",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T11:27:25.967040+00:00",
+      "files": [
+        "impl-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-part1.xml",
+        "impl-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-part2.xml",
+        "impl-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-part3.xml",
+        "impl-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-part4.xml",
+        "impl-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-eedfc1fb-8a3e-474a-8c02-b9d5fd33db39-part5.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 5,
+      "raw_size_kb": 626,
+      "xml_size_kb": 82,
+      "git_branch": "plnd/apply-erk-pr-label-03-08-0718"
+    }
+  ]
+}
