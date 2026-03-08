@@ -87,6 +87,9 @@ def execute_land_stack(
     merged_entries: list[StackLandEntry] = []
     for index, entry in enumerate(plan.entries):
         if index > 0:
+            user_output(
+                click.style(f"  Rebasing {entry.branch} onto {plan.trunk_branch}...", dim=True)
+            )
             _rebase_entry_onto_trunk(
                 ctx,
                 main_repo_root=plan.main_repo_root,
@@ -97,6 +100,9 @@ def execute_land_stack(
 
         child_branches = get_direct_child_branches_for_land(ctx, plan.main_repo_root, entry.branch)
         if child_branches:
+            user_output(
+                click.style(f"  Reparenting {len(child_branches)} child branch(es)...", dim=True)
+            )
             _reparent_children_for_stack(
                 ctx,
                 main_repo_root=plan.main_repo_root,
@@ -160,12 +166,14 @@ def _prepare_stack_land(
 ) -> StackLandPlan:
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
     check_clean_working_tree(ctx)
+    user_output(click.style("  ✓", fg="green") + " Working tree is clean")
 
     Ensure.invariant(
         ctx.branch_manager.is_graphite_managed(),
         "--stack requires Graphite for stack tracking.\n\n"
         "To enable Graphite: erk config set use_graphite true",
     )
+    user_output(click.style("  ✓", fg="green") + " Graphite stack management confirmed")
 
     current_branch = Ensure.not_none(
         ctx.git.branch.get_current_branch(ctx.cwd),
@@ -180,6 +188,7 @@ def _prepare_stack_land(
         f"Cannot use --stack from trunk branch '{trunk_branch}'.\n"
         "Check out a stacked branch first, then retry: erk land --stack",
     )
+    user_output(click.style("  ✓", fg="green") + f" Current branch: {current_branch}")
     stack = ctx.branch_manager.get_branch_stack(main_repo_root, current_branch)
 
     Ensure.invariant(
@@ -192,6 +201,7 @@ def _prepare_stack_land(
         len(stack) >= 2,
         f"Stack has no branches to land (only contains trunk '{stack[0]}').",
     )
+    user_output(click.style("  ✓", fg="green") + f" Stack has {len(stack) - 1} branch(es) to land")
 
     entries = _validate_stack_entries(
         ctx,
@@ -230,6 +240,7 @@ def _validate_stack_entries(
 ) -> list[StackLandEntry]:
     entries: list[StackLandEntry] = []
     root_needs_clean_check = False
+    user_output(click.style("  Validating stack entries...", dim=True))
 
     for index, branch in enumerate(stack_branches):
         pr_details = ctx.github.get_pr_for_branch(main_repo_root, branch)
@@ -275,6 +286,10 @@ def _validate_stack_entries(
                 plan_id=ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch),
                 objective_number=get_objective_for_branch(ctx, main_repo_root, branch),
             )
+        )
+        user_output(
+            click.style("  ✓", fg="green")
+            + f" PR #{pr_details.number} [{branch}]: open, base correct, clean"
         )
 
     if root_needs_clean_check and ctx.git.status.has_uncommitted_changes(main_repo_root):
@@ -393,6 +408,8 @@ def _rebase_entry_onto_trunk(
             ),
         )
 
+    user_output(click.style("  ✓", fg="green") + f" Rebased onto {trunk_branch}")
+
 
 def _resolve_rebase_cwd(
     ctx: ErkContext,
@@ -448,6 +465,8 @@ def _reparent_children_for_stack(
                     ),
                 ),
             )
+
+    user_output(click.style("  ✓", fg="green") + f" Reparented children to {trunk_branch}")
 
 
 def _merge_entry(
@@ -545,6 +564,7 @@ def _cleanup_stack_after_success(
     if any(entry.worktree_path is None for entry in plan.entries):
         ctx.branch_manager.checkout_branch(plan.main_repo_root, plan.trunk_branch)
 
+    user_output(click.style(f"  Cleaning up {len(plan.entries)} branch(es)...", dim=True))
     cleanup_warnings: list[str] = []
     for entry in plan.entries:
         cleanup = CleanupContext(
