@@ -12,6 +12,7 @@ from datetime import datetime
 from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
 from erk_shared.gateway.http.abc import HttpClient, HttpError
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
+from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
 from erk_shared.gateway.time.abc import Time
 from erk_shared.output.output import user_output
 
@@ -236,6 +237,23 @@ class RealRemoteGitHub(RemoteGitHub):
 
         return _parse_issue_response(response, time=self._time)
 
+    def get_pr(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> RemotePRInfo | RemotePRNotFound:
+        """Fetch pull request data by number via REST API."""
+        try:
+            response = self._http.get(f"repos/{owner}/{repo}/pulls/{number}")
+        except HttpError as e:
+            if e.status_code == 404:
+                return RemotePRNotFound(pr_number=number)
+            raise
+
+        return _parse_pr_response(response, owner=owner, repo_name=repo)
+
     def get_issue_comments(
         self,
         *,
@@ -445,6 +463,42 @@ def _parse_issue_response(data: dict, *, time: Time) -> IssueInfo:
         created_at=created_at,
         updated_at=updated_at,
         author=author,
+    )
+
+
+def _parse_pr_response(data: dict, *, owner: str, repo_name: str) -> RemotePRInfo:
+    """Parse a GitHub REST API pull request response into RemotePRInfo.
+
+    Args:
+        data: Raw JSON dict from GitHub API /pulls/{number} endpoint
+        owner: Repository owner
+        repo_name: Repository name
+
+    Returns:
+        RemotePRInfo with parsed fields
+    """
+    state_raw = data.get("state", "open")
+    merged = data.get("merged", False)
+    if merged:
+        state = "MERGED"
+    else:
+        state = state_raw.upper() if isinstance(state_raw, str) else "OPEN"
+
+    labels_raw = data.get("labels", [])
+    labels = [
+        label.get("name", "") if isinstance(label, dict) else str(label) for label in labels_raw
+    ]
+
+    return RemotePRInfo(
+        number=data.get("number", 0),
+        title=data.get("title", ""),
+        state=state,
+        url=data.get("html_url", ""),
+        head_ref_name=data.get("head", {}).get("ref", ""),
+        base_ref_name=data.get("base", {}).get("ref", ""),
+        owner=owner,
+        repo=repo_name,
+        labels=labels,
     )
 
 
