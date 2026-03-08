@@ -1,0 +1,752 @@
+<session>
+  <meta branch="plnd/improve-mock-to-fake-skill-03-07-1854" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8938&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8938` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8938.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28551" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28551, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WXVv6rVtHs6jHyfp5f5hmp">
+    <param name="command">erk exec setup-impl --issue 8938</param>
+    <param name="description">Set up implementation for plan #8938</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28551" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28551, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WXVv6rVtHs6jHyfp5f5hmp">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-mock-to-fake-skill-03-07-1854", "plan_number": 8938, "plan_url": "https://github.com/dagster-io/erk/pull/8938", "branch": "plnd/improve-mock-to-fake-skill-03-07-1854", "plan_title": "[erk-plan] Improve refac-mock-to-fake Skill", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8938, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/improve-mock-to-fake-skill-03-07-1854', teleporting from remote...
+  </tool_result>
+  <assistant>Good, implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28551" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012ECd8LpgAa4YLDPyQyN6PQ">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-mock-to-fake-skill-03-07-1854/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28551" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012ECd8LpgAa4YLDPyQyN6PQ">
+     1→# Improve refac-mock-to-fake Skill
+     2→
+     3→## Context
+     4→
+     5→After using refac-mock-to-fake on `test_cmux_checkout_workspace.py`, several gaps emerged. The skill assumes an existing gateway will be found but provides minimal guidance when one must be created from scratch — which dramatically increases scope. Seven concrete improvements were identified during the session.
+     6→
+     7→## Files Modified
+     8→
+     9→| File | Change |
+    10→|---|---|
+    11→| `.claude/skills/refac-mock-to-fake/SKILL.md` | Restructure with decision fork, improve audit table, add targeted search, add Click injection variant |
+    12→| `docs/learned/architecture/gateway-abc-implementation.md` | Add "New Gateway: ErkContext Wiring" section |
+    13→
+    14→## Plan
+    15→
+    16→### Change 1: Add "System boundary" column to Phase 1 audit table
+    17→
+    18→**File**: `.claude/skills/refac-mock-to-fake/SKILL.md` (Phase 1, ~line 26-31)
+    19→
+    20→Replace the 3-column audit table with a 4-column table that captures the tool being invoked:
+    21→
+    22→```
+    23→| Mock target (fully qualified)      | System boundary (tool) | What it simulates      | Return value configured |
+    24→| ---------------------------------- | ---------------------- | ---------------------- | ----------------------- |
+    25→| `erk.core.fast_llm.shutil.which`   | Claude CLI             | CLI availability check | `None` or `"/usr/bin/claude"` |
+    26→| `erk.core.fast_llm.subprocess.run` | Claude CLI             | CLI execution result   | `CompletedProcess(...)` |
+    27→```
+    28→
+    29→Add guidance: "The system boundary column identifies which gateway should own this mock. Multiple mocks with the same system boundary should be covered by a single gateway."
+    30→
+
+... [209 lines omitted] ...
+
+   128→### Error handling decision
+   130→- All callers terminate on failure → raise `RuntimeError`
+   131→- Some callers branch on error → return discriminated union
+   224→  warning: "Must also wire into ErkContext: add field to context.py dataclass, add parameter to for_test(), and wire Real* in production factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section."
+  </tool_result>
+  <assistant>Now let me read the current state of the files I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3549" cache_read_input_tokens="28904" cache_creation="{'ephemeral_5m_input_tokens': 3549, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XnBt58awYNMbLsUtakVAzJ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3549" cache_read_input_tokens="28904" cache_creation="{'ephemeral_5m_input_tokens': 3549, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01J4SA6hocAuYLFGshmWGTbh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3549" cache_read_input_tokens="28904" cache_creation="{'ephemeral_5m_input_tokens': 3549, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XnBt58awYNMbLsUtakVAzJ">
+     1→---
+     2→name: refac-mock-to-fake
+     3→description: &gt;
+     4→  Refactor tests that use unittest.mock.patch or MagicMock into erk's gateway-based
+     5→  fake pattern. Use when tests import unittest.mock, use @patch decorators, or
+     6→  directly call mock.patch() as context managers. Essential when test_*.py files
+     7→  patch module-level attributes like subprocess.run, shutil.which, os.environ, or
+     8→  other system calls. Covers both making source code injectable AND rewriting tests.
+     9→---
+    10→
+    11→# Refactoring Mocks to Fakes
+    12→
+    13→Remove `unittest.mock.patch` from tests by making source code inject gateway
+    14→dependencies, then configuring pre-canned fakes in tests.
+    15→
+    16→**Use this skill when**: A test imports `from unittest.mock import patch` or uses
+    17→`@patch(...)` decorators.
+    18→
+    19→**Key principle**: Don't stop at the lowest-level matching gateway. Look for a
+    20→higher-level abstraction that covers ALL the things being mocked together.
+    21→
+    22→---
+    23→
+    24→## Phase 1: Audit Mock Usage
+    25→
+    26→Read the test file. For each `patch(...)` call, record:
+    27→
+    28→| Mock target (fully qualified)      | What it simulates      | Return value configured                        |
+    29→| ---------------------------------- | ---------------------- | ---------------------------------------------- |
+    30→| `erk.core.fast_llm.shutil.which`   | CLI availability check | `None` or `"/usr/bin/claude"`                  |
+
+... [239 lines omitted] ...
+
+   148→returns `PromptResult(success, output, error)` but the function returns
+   149→`LlmResponse | LlmCallFailed`, add the mapping:
+   153→    return LlmCallFailed(message=f"CLI failed: {result.error}")
+   208→        prompt_results=[PromptResult(success=True, output="my-slug", error=None)]
+  </tool_result>
+  <tool_result tool="toolu_01J4SA6hocAuYLFGshmWGTbh">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "adding a new method to Git ABC"
+    11→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    12→  - action: "adding a new method to LocalGitHub ABC"
+    13→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    14→  - action: "adding a new method to Graphite ABC"
+    15→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [780 lines omitted] ...
+
+    31→    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+    33→    warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
+    44→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   144→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   146→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   148→### Decision: Discriminated Union or Exception?
+   152→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   153→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   154→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   158→- [ ] At least one caller branches on the error and continues with different logic
+   159→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   160→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   164→### Checklist: Use Exceptions When
+   166→- [ ] All callers terminate on failure (extract message and stop)
+   167→- [ ] No caller inspects error type or branches on error content
+   168→- [ ] Use `UserFacingCliError` at CLI boundary
+   174→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   189→**Methods using discriminated unions** (callers branch on error):
+   193→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   194→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   195→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   197→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   199→**Methods using exceptions** (all callers terminate):
+   201→| Method              | Exception      | Why                                                         |
+   203→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   204→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   208→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   215→   - [ ] `real.py` - Return appropriate error types for failure cases
+   217→   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+   220→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   225→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   229→- Updated tests to use `isinstance(result, MergeError)`
+   251→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   259→- When error messages from `get_X()` on missing resources are unclear
+   282→    user_output(f"Error: Issue #{issue_number} not found")
+   361→5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   605→The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   694→**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+   712→1. Run type checker (`ty`) to verify no abstract method errors
+   769→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   771→├── fake.py       # Constructor-injected errors, mutation tracking
+   778→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   779→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   780→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   803→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <assistant>Good, I've read both files. Now let me create the todo list and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16434" cache_read_input_tokens="32453" cache_creation="{'ephemeral_5m_input_tokens': 16434, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01T87pv9n8inM2oxL1nARURW">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'p...[truncated 1179 chars]..., 'status': 'pending', 'activeForm': 'Verifying modified files end-to-end for coherence'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16434" cache_read_input_tokens="32453" cache_creation="{'ephemeral_5m_input_tokens': 16434, 'ephemeral_1h_input_tokens': 0}" output_tokens="456" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01T87pv9n8inM2oxL1nARURW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal GitHub that implementation has started.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="48887" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011H7WMdtMDH1CLK61zqrpJe">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="48887" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011H7WMdtMDH1CLK61zqrpJe">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Let me proceed with the implementation. Starting with Change 1.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="49375" cache_creation="{'ephemeral_5m_input_tokens': 183, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01W4cvZA2agbZaDBMShKPaC3">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'i...[truncated 1183 chars]..., 'status': 'pending', 'activeForm': 'Verifying modified files end-to-end for coherence'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="49375" cache_creation="{'ephemeral_5m_input_tokens': 183, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W4cvZA2agbZaDBMShKPaC3">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HvYGtLncqL3RBenYc6A54U">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md</param>
+    <param name="old_string">Read the test file. For each `patch(...)` call, record:
+
+| Mock target (fully qualified)  ...[truncated 461 chars]...gether suggests those
+things form a unit that should be covered by one injectable gateway.</param>
+    <param name="new_string">Read the test file. For each `patch(...)` call, record:
+
+| Mock target (fully qualified)  ...[truncated 724 chars]...gether suggests those
+things form a unit that should be covered by one injectable gateway.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="49558" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HvYGtLncqL3RBenYc6A54U">
+The file /home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_014185hZTSyLqgFQncARyGpR">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'c...[truncated 1185 chars]..., 'status': 'pending', 'activeForm': 'Verifying modified files end-to-end for coherence'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="50042" cache_creation="{'ephemeral_5m_input_tokens': 546, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014185hZTSyLqgFQncARyGpR">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Change 2: Add targeted search before broad exploration. This goes before the existing Step 2b.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="50588" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0178eSZLpUkfGgaKWHBipKxG">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md</param>
+    <param name="old_string">### Step 2b: Search for existing gateways at the right abstraction level</param>
+    <param name="new_string">### Step 2a-quick: Targeted gateway search
+
+Before broad exploration, do a quick targeted ...[truncated 905 chars]...ope of new work.
+
+### Step 2b: Search for existing gateways at the right abstraction level</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="50588" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0178eSZLpUkfGgaKWHBipKxG">
+The file /home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01LmGNJhFP3Pa34YFhz2ZQtb">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'c...[truncated 1189 chars]..., 'status': 'pending', 'activeForm': 'Verifying modified files end-to-end for coherence'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="51058" cache_creation="{'ephemeral_5m_input_tokens': 495, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LmGNJhFP3Pa34YFhz2ZQtb">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Note: Change 3 was incorporated into Change 2 (the "Step 2a-reuse" section). Now Change 4: Add the decision fork between Phase 2 and Phase 3.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="51553" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012AfQxo6B4tyu9NgPA72GWh">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md</param>
+    <param name="old_string">---
+
+## Phase 3: Plan the injection</param>
+    <param name="new_string">---
+
+## Decision Fork: Gateway Found vs. New Gateway Needed
+
+After Phase 2, you're in one ...[truncated 500 chars]...s + ErkContext wiring + modify source + rewrite tests
+
+---
+
+## Phase 3: Plan the injection</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="51553" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012AfQxo6B4tyu9NgPA72GWh">
+The file /home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01RLb3YHXsHtHLtK2GhAnFcU">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'c...[truncated 1191 chars]..., 'status': 'pending', 'activeForm': 'Verifying modified files end-to-end for coherence'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="52023" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RLb3YHXsHtHLtK2GhAnFcU">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Change 5: Replace the brief Phase 4b with the expanded version.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="52434" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01MYKyhbKGiAnNMfVyhZNYmf">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md</param>
+    <param name="old_string">## Phase 4b: Create a new fake (only if needed)
+
+If no suitable fake exists, create one fo...[truncated 183 chars]...ple` entries in a list (`self.calls: list[MyCall]`)
+- Expose calls as a read-only property</param>
+    <param name="new_string">## Phase 4b: Create a new gateway (when no suitable gateway exists)
+
+Load `docs/learned/ar...[truncated 1424 chars]...iminated union
+  (see Non-Ideal State Decision Checklist in gateway-abc-implementation.md)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="52434" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MYKyhbKGiAnNMfVyhZNYmf">
+The file /home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01AM3PRKZSAjmx1EaqvNADhj">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'c...[truncated 1193 chars]..., 'status': 'pending', 'activeForm': 'Verifying modified files end-to-end for coherence'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="774" cache_read_input_tokens="52904" cache_creation="{'ephemeral_5m_input_tokens': 774, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AM3PRKZSAjmx1EaqvNADhj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Change 6: Add Click context injection variant to Phase 4a. This goes after the existing production wiring code block.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="53678" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LsRWwkfxGdTfpeKbYYErMo">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md</param>
+    <param name="old_string">Update production wiring in `context.py`:
+
+```python
+from erk.core.prompt_executor import ClaudeCliPromptExecutor
+MyClass(prompt_executor=ClaudeCliPromptExecutor(console=None))
+```
+
+---
+
+## Phase 4b:</param>
+    <param name="new_string">Update production wiring in `context.py`:
+
+```python
+from erk.core.prompt_executor import ...[truncated 565 chars]...See `src/erk/cli/commands/exec/scripts/AGENTS.md` for the full pattern.
+
+---
+
+## Phase 4b:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="53678" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LsRWwkfxGdTfpeKbYYErMo">
+The file /home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_018bnUJWNNBtFvediBWA8W3f">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'c...[truncated 1195 chars]..., 'status': 'pending', 'activeForm': 'Verifying modified files end-to-end for coherence'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="54148" cache_creation="{'ephemeral_5m_input_tokens': 466, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018bnUJWNNBtFvediBWA8W3f">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Change 7: Add the ErkContext wiring section to gateway-abc-implementation.md after the "Simplified Gateway Pattern (3 Files)" section, and add the tripwire.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="54614" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014pgeyqXZM5hGm3AaHwanVb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="old_string">## Checklist for New Gateway Methods</param>
+    <param name="new_string">## New Gateway: ErkContext Wiring
+
+After creating the gateway files, wire the new gateway ...[truncated 1306 chars]...- Test: `FakeCodespace(...)` default in `for_test()`
+
+## Checklist for New Gateway Methods</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="54614" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014pgeyqXZM5hGm3AaHwanVb">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md has been updated successfully.
+  </tool_result>
+  <assistant>Now add the tripwire to the frontmatter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="55084" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TUH6jTFkpvioq9XTDYq4PS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="old_string">  - action: "creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or si...[truncated 221 chars]...anism-named gateway is just moving the mock up one layer without gaining abstraction."
+---</param>
+    <param name="new_string">  - action: "creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or si...[truncated 539 chars]...tion factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section."
+---</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="55084" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TUH6jTFkpvioq9XTDYq4PS">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01UEHsSm37VLNi56QywTWn6y">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'c...[truncated 1197 chars]...tatus': 'in_progress', 'activeForm': 'Verifying modified files end-to-end for coherence'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="55764" cache_creation="{'ephemeral_5m_input_tokens': 468, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UEHsSm37VLNi56QywTWn6y">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me verify both files end-to-end.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="56232" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01D4MAKwfqrnynkz6EC6on8B">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/refac-mock-to-fake/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="56232" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_012Q7DWJboSfpY1KKyBXMp89">
+    <param name="pattern">creating a new gateway directory</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="56232" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D4MAKwfqrnynkz6EC6on8B">
+     1→---
+     2→name: refac-mock-to-fake
+     3→description: &gt;
+     4→  Refactor tests that use unittest.mock.patch or MagicMock into erk's gateway-based
+     5→  fake pattern. Use when tests import unittest.mock, use @patch decorators, or
+     6→  directly call mock.patch() as context managers. Essential when test_*.py files
+     7→  patch module-level attributes like subprocess.run, shutil.which, os.environ, or
+     8→  other system calls. Covers both making source code injectable AND rewriting tests.
+     9→---
+    10→
+    11→# Refactoring Mocks to Fakes
+    12→
+    13→Remove `unittest.mock.patch` from tests by making source code inject gateway
+    14→dependencies, then configuring pre-canned fakes in tests.
+    15→
+    16→**Use this skill when**: A test imports `from unittest.mock import patch` or uses
+    17→`@patch(...)` decorators.
+    18→
+    19→**Key principle**: Don't stop at the lowest-level matching gateway. Look for a
+    20→higher-level abstraction that covers ALL the things being mocked together.
+    21→
+    22→---
+    23→
+    24→## Phase 1: Audit Mock Usage
+    25→
+    26→Read the test file. For each `patch(...)` call, record:
+    27→
+    28→| Mock target (fully qualified)      | System boundary (tool) | What it simulates      | Return value configured                        |
+    29→| ---------------------------------- | ---------------------- | ---------------------- | ---------------------------------------------- |
+    30→| `erk.core.fast_llm.shutil.which`   | Claude CLI             | CLI availability check | `None` or `"/usr/bin/claude"`                  |
+
+... [323 lines omitted] ...
+
+   192→returns `PromptResult(success, output, error)` but the function returns
+   193→`LlmResponse | LlmCallFailed`, add the mapping:
+   197→    return LlmCallFailed(message=f"CLI failed: {result.error}")
+   255→### Error handling decision
+   257→- All callers terminate on failure → raise `RuntimeError`
+   258→- Some callers branch on error → return discriminated union
+   292→        prompt_results=[PromptResult(success=True, output="my-slug", error=None)]
+  </tool_result>
+  <tool_result tool="toolu_012Q7DWJboSfpY1KKyBXMp89">
+34:  - action: "creating a new gateway directory under packages/erk-shared/src/erk_shared/gateway/"
+  </tool_result>
+  <assistant>The skill file flows coherently:
+1. Phase 1 now has a 4-column audit table with "System boundary" column
+2. Phase 2 has the new targeted search (Step 2a-quick) and reuse check (Step 2a-reuse) before the broad search (Step 2b)
+3. The Decision Fork clearly separates Path A (existing gateway) from Path B (new gateway)
+4. Phase 4a includes the Click injection variant
+5. Phase 4b is expanded with full gateway creation and ErkContext wiring checklists
+
+The tripwire was confirmed added to gateway-abc-implementation.md (line 34).
+
+Let me also verify the gateway-abc-implementation.md has the new section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5400" cache_read_input_tokens="56702" cache_creation="{'ephemeral_5m_input_tokens': 5400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BQ8uDkBmoWRUtwTBNdWSLV">
+    <param name="pattern">New Gateway: ErkContext Wiring</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5400" cache_read_input_tokens="56702" cache_creation="{'ephemeral_5m_input_tokens': 5400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BQ8uDkBmoWRUtwTBNdWSLV">
+35:    warning: "Must also wire into ErkContext: add field to context.py dataclass, add parameter to for_test(), and wire Real* in production factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section."
+125:## New Gateway: ErkContext Wiring
+  </tool_result>
+  <assistant>Both the tripwire and the new section are in place. Let me also verify there's no duplication with existing content:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="62102" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GjfEJ9aPpSHfcXYUaKea8k">
+    <param name="pattern">ErkContext</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="62102" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GjfEJ9aPpSHfcXYUaKea8k">
+35:    warning: "Must also wire into ErkContext: add field to context.py dataclass, add parameter to for_test(), and wire Real* in production factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section."
+125:## New Gateway: ErkContext Wiring
+127:After creating the gateway files, wire the new gateway into ErkContext so it's
+130:### 1. Add field to ErkContext
+134:Add the gateway field to the `ErkContext` dataclass, grouped with related gateways:
+145:**File**: `packages/erk-shared/src/erk_shared/context/context.py` (`ErkContext.for_test`)
+156:) -&gt; ErkContext:
+174:ErkContext(
+184:- Field: `codespace: Codespace` in ErkContext
+  </tool_result>
+  <assistant>No duplication — the ErkContext wiring content is new and doesn't overlap with existing sections. All changes are complete and verified.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="62480" cache_creation="{'ephemeral_5m_input_tokens': 653, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01J3soYu2oKPHyooR5PbQniF">
+    <param name="todos">[{'content': "Change 1: Add 'System boundary' column to Phase 1 audit table", 'status': 'c...[truncated 1332 chars]...PR', 'status': 'in_progress', 'activeForm': 'Cleaning up impl context and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="62480" cache_creation="{'ephemeral_5m_input_tokens': 653, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J3soYu2oKPHyooR5PbQniF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal completion, upload session, clean up impl context, and submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="63133" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SZRPwGj2b7AhCLvtwPTT2Q">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="63133" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01QZCxUfvnKRc7bt6PKdRRsQ">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="63133" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SZRPwGj2b7AhCLvtwPTT2Q">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8938
+}
+  </tool_result>
+</session>
