@@ -52,10 +52,10 @@ For type-specific filtering, use `erk-plan` or `erk-learn` labels directly.
 
 ## Defense-in-Depth Filtering
 
-The PRs view uses both server-side and client-side filtering:
+The PRs view uses both server-side and client-side filtering (configured in `PLANS_VIEW` in `src/erk/tui/views/types.py`):
 
-1. **Server-side**: Queries with `labels=("erk-pr",)`
-2. **Client-side**: `exclude_labels=("erk-learn",)` filters out learn items
+1. **Server-side**: Queries with `erk-pr` label
+2. **Client-side**: Excludes `erk-learn` items
 
 This prevents learn plans from appearing in the PRs tab.
 
