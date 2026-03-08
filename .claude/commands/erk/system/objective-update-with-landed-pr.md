@@ -26,26 +26,25 @@ Run after landing a PR:
 
 Check `$ARGUMENTS` for optional overrides:
 
-- `--pr <number>`: PR number that was just landed
+- `--pr <number>`: PR number that was just landed (also used as the plan number)
 - `--objective <number>`: Objective number to update
 - `--branch <name>`: Original branch name
-- `--plan <number>`: Plan number (enables direct plan lookup, avoids branch-based discovery which may fail after branch deletion)
 - `--auto-close`: If set and all nodes are complete, close objective without asking
 
-Run a single command that fetches context, updates roadmap nodes to done, and posts an action comment:
+Run a single command that fetches context, updates roadmap nodes to done, and posts an action comment. The PR number doubles as the plan number (in erk, the PR IS the plan):
 
 ```bash
-erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>]
+erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--branch <name>]
 ```
 
 Optionally pass `--node` flags to specify which roadmap nodes to mark as done. When omitted, the command auto-matches nodes whose `pr` field references the landing PR (e.g., `pr: "#6517"`):
 
 ```bash
 # Explicit node specification:
-erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>] --node <id1> [--node <id2> ...]
+erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--branch <name>] --node <id1> [--node <id2> ...]
 
 # Auto-match (no --node flags needed when nodes already have pr references):
-erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--plan <number>] [--branch <name>]
+erk exec objective-apply-landed-update [--pr <number>] [--objective <number>] [--branch <name>]
 ```
 
 This returns JSON with:
