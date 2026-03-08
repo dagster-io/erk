@@ -1,0 +1,326 @@
+<session>
+  <meta source="agent-aa1108d" />
+  <meta branch="plnd/consolidate-learn-docs-03-07-2352" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find and read these files for me:
+1. `src/erk/cli/activation.py` around line 211 - verify that `uv sync --quiet` is used (not `uv pip install --no-deps`)
+2. `.github/actions/erk-remote-setup/action.yml` around lines 30-32 - verify `prune-cache: false` exists
+3. `.claude/commands/local/check-superceded.md` - read to understand the command structure
+4. `.claude/skills/dignified-python/references/api-design.md` around line 61 - find the test helper exemption rule
+5. `.claude/commands/erk/pr-rebase.md` around lines 58-61 - find AskUserQuestion pattern
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find and read these files. Let me start by checking the documentation index for relevant information, then explore the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15217" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15217, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Nx4GmCqbaeBGNGZjXtKLug">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15217" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15217, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01SNG84diEa5hoCRyLS6crn4">
+    <param name="pattern">docs/learned/**/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15217" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15217, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nx4GmCqbaeBGNGZjXtKLug">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SNG84diEa5hoCRyLS6crn4">
+/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-execution-modes.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-error-reporting.md
+/home/runner/work/erk/erk/docs/learned/architecture/bash-python-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/at-reference-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-schema-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md
+/home/runner/work/erk/erk/docs/learned/architecture/callback-progress-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md
+/home/runner/work/erk/erk/docs/learned/architecture/checked-out-branch-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/defense-in-depth-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-binary-ops-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/click-context-di-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-installation-gateway.md
+/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md
+/home/runner/work/erk/erk/docs/learned/architecture/composable-remote-commands.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/convergence-points.md
+/home/runner/work/erk/erk/docs/learned/architecture/direct-condition-vs-derived-output.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-injection-tiers.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-efficiency.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-to-pipeline-boundary.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-progress.md
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/exception-logging-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md
+  </tool_result>
+  <assistant>Now let me read the specific files you requested:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4040" cache_read_input_tokens="15217" cache_creation="{'ephemeral_5m_input_tokens': 4040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NAqSGQEBotbRpRtTDS1w5t">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/activation.py</param>
+    <param name="offset">200</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4040" cache_read_input_tokens="15217" cache_creation="{'ephemeral_5m_input_tokens': 4040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016Uca6V4d7MsvqgFeLdEzVX">
+    <param name="file_path">/home/runner/work/erk/erk/.github/actions/erk-remote-setup/action.yml</param>
+    <param name="offset">20</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4040" cache_read_input_tokens="15217" cache_creation="{'ephemeral_5m_input_tokens': 4040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F6SMZEdfAFPaQAFycvSYwk">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/local/check-superceded.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4040" cache_read_input_tokens="15217" cache_creation="{'ephemeral_5m_input_tokens': 4040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D9zqRNDEJUV91SQkUwUmjL">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/references/api-design.md</param>
+    <param name="offset">50</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4040" cache_read_input_tokens="15217" cache_creation="{'ephemeral_5m_input_tokens': 4040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UMzyGgXgDKPBceNHdYADxb">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/pr-rebase.md</param>
+    <param name="offset">50</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4040" cache_read_input_tokens="15217" cache_creation="{'ephemeral_5m_input_tokens': 4040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NAqSGQEBotbRpRtTDS1w5t">
+   200→        post_activation_section = (
+   201→            "# Post-activation commands\n" + "\n".join(post_cd_commands) + "\n"
+   202→        )
+   203→
+   204→    return f"""# {comment}
+   205→{logging_helper}
+   206→{cd_command}
+   207→# Always sync deps (idempotent — handles branch switches in reused slots)
+   208→if [ ! -d {venv_dir} ]; then
+   209→  __erk_log "-&gt;" "Creating virtual environment..."
+   210→fi
+   211→uv sync --quiet
+   212→# Skip activation if VIRTUAL_ENV already points to this worktree's .venv
+   213→# (guards against double activation when direnv triggers on cd)
+   214→if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
+   215→  # Unset VIRTUAL_ENV to avoid conflicts with previous activations
+   216→  unset VIRTUAL_ENV
+   217→  if [ -f {venv_activate} ]; then
+   218→    . {venv_activate}
+   219→    __py_ver=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+   220→    __erk_log "-&gt;" "Activating venv: {worktree_path / ".venv"} ($__py_ver)"
+   221→  fi
+   222→  # Load .env into the environment (allexport)
+   223→  set -a
+   224→  if [ -f ./.env ]; then
+   225→    __erk_log "-&gt;" "Loading .env"
+   226→    . ./.env
+   227→  fi
+   228→  set +a
+   229→  # Shell completion
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016Uca6V4d7MsvqgFeLdEzVX">
+    20→      run: |
+    21→        if [ -z "${{ inputs.erk-pat }}" ]; then
+    22→          echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT not configured"
+    23→          exit 1
+    24→        fi
+    25→        if [ -z "${{ inputs.anthropic-api-key }}" ] &amp;&amp; [ -z "${{ inputs.claude-code-oauth-token }}" ]; then
+    26→          echo "::error title=Missing Secret::Either ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN must be configured"
+    27→          exit 1
+    28→        fi
+    29→
+    30→    - uses: astral-sh/setup-uv@v7
+    31→      with:
+    32→        prune-cache: false
+    33→
+    34→    - uses: ./.github/actions/setup-claude-code
+    35→
+    36→    - name: Install prettier
+    37→      shell: bash
+    38→      run: npm install -g prettier
+    39→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01F6SMZEdfAFPaQAFycvSYwk">
+     1→---
+     2→description: Assess whether a PR or plan's work is already in master
+     3→---
+     4→
+     5→# /local:check-superceded
+     6→
+     7→Deep code-level analysis to determine if a PR's changes have been superseded by work already in master. Unlike simple metadata checks, this command reads actual file contents and compares implementation approaches.
+     8→
+     9→## Usage
+    10→
+    11→```bash
+    12→/local:check-superceded 2521           # Check PR #2521
+    13→```
+    14→
+    15→---
+    16→
+    17→## Agent Instructions
+    18→
+    19→### Phase 1: Parse Input and Fetch PR Metadata
+    20→
+    21→Parse `$ARGUMENTS` as a PR number.
+    22→
+    23→```bash
+    24→gh pr view &lt;NUMBER&gt; --json title,body,state,headRefName,files
+    25→```
+    26→
+    27→Store the title, body, state, branch name, and files list.
+    28→
+    29→If the PR is already merged, report that and stop — merged PRs are not "superseded", they landed.
+    30→
+
+... [184 lines omitted] ...
+
+   204→## Error Handling
+   206→- If PR not found: report error and stop
+  </tool_result>
+  <tool_result tool="toolu_01D9zqRNDEJUV91SQkUwUmjL">
+    50→
+    51→# CORRECT: Remove the parameter entirely
+    52→def activate_worktree(ctx, repo, path, script, command_name) -&gt; None:
+    53→    # Always preserve relative path - it's just the behavior
+    54→    ...
+    55→```
+    56→
+    57→**Acceptable uses of defaults:**
+    58→
+    59→1. **Truly optional behavior** - Where the default is correct for 95%+ of callers
+    60→2. **Backwards compatibility** - When adding a parameter to existing API (temporary)
+    61→3. **Test helper functions and Fake classes** - Functions in test files and test utilities that exist to reduce test boilerplate are explicitly exempt. These helpers often wrap complex constructors (like `format_plan_header_body`) with sensible defaults, and having many default parameters is their intended purpose—not a code smell. Similarly, **Fake classes** (`FakeGit`, `FakeLocalGitHub`, `FakeGraphite`, etc.) used for testing are exempt since they often have many optional configuration parameters for setting up different test scenarios
+    62→4. **Loop closure capture** - Using `def f(x=x)` to capture the current value of a loop variable is the standard Python idiom for avoiding late-binding closure bugs. This is not a "default" in the API design sense—it's a scoping mechanism.
+    63→
+    64→**When reviewing code with defaults, ask:**
+    65→
+    66→- Do all call sites actually want this default?
+    67→- Would a caller forgetting this parameter cause a bug?
+    68→- Is there a safer design that makes the choice explicit?
+    69→
+    70→---
+    71→
+    72→## Keyword-Only Arguments for Complex Functions
+    73→
+    74→**Functions with 5 or more parameters MUST use keyword-only arguments.**
+    75→
+    76→Use the `*` separator after the first positional parameter to enforce keyword-only at the language level. This improves call-site readability by forcing explicit parameter names.
+    77→
+    78→```python
+    79→# CORRECT: Keyword-only after first param
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UMzyGgXgDKPBceNHdYADxb">
+    50→5. **Loop** - If the rebase continues with more conflicts, repeat the process
+    51→
+    52→6. **Regenerate auto-generated files** - If any auto-generated files were resolved in step 2, regenerate them now:
+    53→   - For tripwires/index files: `erk docs sync`
+    54→   - Commit the regenerated files separately
+    55→
+    56→7. **Verify completion** - Check git status and recent commit history to confirm success
+    57→
+    58→8. **Ask user about pushing** - After rebase, the branch will have diverged from origin. Use `AskUserQuestion` to ask the user how they'd like to proceed, presenting these options:
+    59→   - **Push with Graphite**: `gt submit --no-interactive`
+    60→   - **Push with git**: `git push --force-with-lease`
+    61→   - **Do nothing**: skip pushing (user will handle manually)
+    62→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! I've successfully found and read all five requested files. Here's a summary of my findings:
+
+## Summary of Findings
+
+### 1. **src/erk/cli/activation.py (line 211)**
+✓ **Verified**: `uv sync --quiet` is correctly used
+```python
+# Line 211:
+uv sync --quiet
+```
+
+### 2. **.github/actions/erk-remote-setup/action.yml (lines 30-32)**
+✓ **Verified**: `prune-cache: false` exists
+```yaml
+- uses: astral-sh/setup-uv@v7
+  with:
+    prune-cache: false
+```
+
+### 3. **.claude/commands/local/check-superceded.md**
+✓ **Read successfully**: This command performs deep code-level analysis to determine if a PR's changes are superseded by work already in master. Key structure:
+- **Phase 1**: Parse input and fetch PR metadata
+- **Phase 2**: Fetch PR code changes (with fallback for large PRs using REST API)
+- **Phase 3**: Understand PR intent
+- **Phase 4**: Deep code comparison (critical directive: read actual file contents)
+- **Phase 5**: Supporting context
+- **Phase 6**: Build evidence table with match types (IDENTICAL, EQUIVALENT, DIFFERENT_APPROACH, PARTIAL, ABSENT)
+- **Phase 7**: Determine verdict (SUPERSEDED, PARTIALLY_SUPERSEDED, STILL_RELEVANT, NEEDS_REVIEW)
+- **Phase 8**: Present assessment with `AskUserQuestion` pattern
+- **Phase 9**: Execute chosen action
+
+### 4. **.claude/skills/dignified-python/references/api-design.md (around line 61)**
+✓ **Found test helper exemption rule**: Line 61 states:
+```
+3. **Test helper functions and Fake classes** - Functions in test files and test utilities that exist to reduce test boilerplate are explicitly exempt. These helpers often wrap complex constructors (like `format_plan_header_body`) with sensible defaults, and having many default parameters is their intended purpose—not a code smell. Similarly, **Fake classes** (`FakeGit`, `FakeLocalGitHub`, `FakeGraphite`, etc.) used for testing are exempt since they often have many optional configuration parameters for setting up different test scenarios
+```
+
+### 5. **.claude/commands/erk/pr-rebase.md (lines 58-61)**
+✓ **Found AskUserQuestion pattern**: Lines 58-61 show the pattern:
+```
+8. **Ask user about pushing** - After rebase, the branch will have diverged from origin. Use `AskUserQuestion` to ask the user how they'd like to proceed, presenting these options:
+   - **Push with Graphite**: `gt submit --no-interactive`
+   - **Push with git**: `git push --force-with-lease`
+   - **Do nothing**: skip pushing (user will handle manually)
+```
+
+All files have been successfully located and read. The implementations match the expected specifications for uv package management, cache configuration, command structure patterns, API design exemptions for tests, and user interaction patterns.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4862" cache_read_input_tokens="19257" cache_creation="{'ephemeral_5m_input_tokens': 4862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

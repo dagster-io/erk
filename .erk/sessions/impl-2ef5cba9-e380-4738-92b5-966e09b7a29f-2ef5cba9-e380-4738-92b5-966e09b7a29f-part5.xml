@@ -1,436 +1,119 @@
 <session>
-  <meta source="agent-a9c1925" />
+  <meta source="agent-a1cfcd3" />
   <meta branch="plnd/consolidate-learn-docs-03-07-2352" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Find and read the RemoteGitHub gateway pattern files in erk. I need:
-1. The ABC: `packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py` - list all methods
-2. The repo_resolution.py file - find `resolve_owner_repo()`, `get_remote_github()`, `is_remote_mode()`, `repo_option`
-3. Any real implementation and fake implementation files
-4. Give me the method signatures and a brief description of each.
+  <user>Check if `docs/learned/commands/skill-patterns.md` exists. Also check for any existing docs about skill patterns in the `docs/learned/commands/` directory - list all files there.
 
 FIRST check docs/learned/index.md for existing documentation on this topic.
 Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
-  <assistant>I'll help you find and analyze the RemoteGitHub gateway pattern files. Let me start by checking the documentation index and searching for relevant documentation.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="15157" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15157, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_012ttLKCLRNBFGMJZnZPVv5q">
-    <param name="pattern">RemoteGitHub|remote_github|gateway</param>
-    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
-    <param name="glob">*.md</param>
-    <param name="output_mode">files_with_matches</param>
+  <assistant>I'll check the documentation index first, then look for files related to skill patterns in the commands directory.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0181v2yiBUWgGFn7FNsD26Ju">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="15157" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15157, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Glob" id="toolu_017WbNedPNPeZJmuKoegaY6u">
-    <param name="pattern">**/remote_github/**</param>
-    <param name="path">/home/runner/work/erk/erk</param>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01L2mKEULsLALRrxbJkQwV2B">
+    <param name="pattern">docs/learned/commands/*</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="15157" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15157, 'ephemeral_1h_input_tokens': 0}" output_tokens="235" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_012ttLKCLRNBFGMJZnZPVv5q">
-Found 227 files
-docs/learned/tui/tripwires.md
-docs/learned/tui/view-switching.md
-docs/learned/uncategorized/tripwires.md
-docs/learned/universal-tripwires.md
-docs/learned/workflows/commit-messages.md
-docs/learned/tui/frozen-dataclass-field-management.md
-docs/learned/tui/index.md
-docs/learned/tui/lifecycle-display.md
-docs/learned/tui/modal-widget-embedding.md
-docs/learned/tui/plan-row-data.md
-docs/learned/tui/stacked-pr-indicator.md
-docs/learned/tui/status-indicators.md
-docs/learned/tripwires-index.md
-docs/learned/tui/architecture.md
-docs/learned/tui/column-addition-pattern.md
-docs/learned/tui/data-contract.md
-docs/learned/tui/derived-display-columns.md
-docs/learned/testing/submit-pipeline-tests.md
-docs/learned/testing/subprocess-testing.md
-docs/learned/testing/testing.md
-docs/learned/testing/time-injection-patterns.md
-docs/learned/testing/tripwires.md
-docs/learned/testing/tui-subprocess-testing.md
-docs/learned/testing/fake-git-divergence.md
-docs/learned/testing/fake-github-api-reference.md
-docs/learned/testing/fake-github-mutation-tracking.md
-docs/learned/testing/fake-github-testing.md
-docs/learned/testing/frozen-dataclass-test-doubles.md
-docs/learned/testing/gateway-fake-testing-exemplar.md
-
-... [198 lines omitted] ...
-
-docs/learned/cli/error-handling-antipatterns.md
-docs/learned/ci/ci-failure-summarization.md
-docs/learned/architecture/gateway-error-boundaries.md
-docs/learned/architecture/error-handling-patterns.md
-docs/learned/architecture/discriminated-union-error-handling.md
-  </tool_result>
-  <tool_result tool="toolu_017WbNedPNPeZJmuKoegaY6u">
-/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/__init__.py
-/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py
-/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py
-/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py
-/home/runner/work/erk/erk/tests/unit/gateways/remote_github/__init__.py
-/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_real_remote_github.py
-/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_fake_remote_github.py
-/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/__pycache__/__init__.cpython-312.pyc
-/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/__pycache__/abc.cpython-312.pyc
-/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/__pycache__/real.cpython-312.pyc
-  </tool_result>
-  <assistant>Good! I found the remote_github gateway files. Let me check for documentation on gateway patterns and look for repo_resolution.py.</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="3948" cache_read_input_tokens="15157" cache_creation="{'ephemeral_5m_input_tokens': 3948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01Y5RXcebFs6Yj7L6ahU1s7o">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/gateway/index.md</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="3948" cache_read_input_tokens="15157" cache_creation="{'ephemeral_5m_input_tokens': 3948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Glob" id="toolu_01AXUvpQVhoHsAnnaDm7mT4P">
-    <param name="pattern">**/repo_resolution.py</param>
-    <param name="path">/home/runner/work/erk/erk</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="3948" cache_read_input_tokens="15157" cache_creation="{'ephemeral_5m_input_tokens': 3948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_01GunrDghha3FtSn22dMmeY8">
-    <param name="pattern">RemoteGitHub|remote_github</param>
-    <param name="path">/home/runner/work/erk/erk/docs/learned/gateway</param>
-    <param name="glob">*.md</param>
-    <param name="output_mode">files_with_matches</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="3948" cache_read_input_tokens="15157" cache_creation="{'ephemeral_5m_input_tokens': 3948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Y5RXcebFs6Yj7L6ahU1s7o">
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0181v2yiBUWgGFn7FNsD26Ju">
      1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
      2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
      3→
-     4→# Gateway Documentation
+     4→# Agent Documentation
      5→
-     6→- **[codespace-gateway.md](codespace-gateway.md)** — adding a new codespace SSH operation to the gateway, deciding whether a new gateway needs dry-run and printing implementations, testing code that uses os.execvp or NoReturn methods, choosing between exec_ssh_interactive and run_ssh_command
-     7→- **[codespace-registry.md](codespace-registry.md)** — working with GitHub Codespace registration or lookup, adding a gateway that separates read-only ABC from mutation functions, choosing between ABC methods vs standalone functions for gateway operations
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
      8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01L2mKEULsLALRrxbJkQwV2B">
+/home/runner/work/erk/erk/docs/learned/commands/audit-doc.md
+/home/runner/work/erk/erk/docs/learned/commands/optimization-patterns.md
+/home/runner/work/erk/erk/docs/learned/commands/index.md
+/home/runner/work/erk/erk/docs/learned/commands/command-rename-pattern.md
+/home/runner/work/erk/erk/docs/learned/commands/tripwires.md
+/home/runner/work/erk/erk/docs/learned/commands/tool-restriction-safety.md
+/home/runner/work/erk/erk/docs/learned/commands/preview-command-pattern.md
+/home/runner/work/erk/erk/docs/learned/commands/session-id-substitution.md
+/home/runner/work/erk/erk/docs/learned/commands/step-renumbering-checklist.md
+  </tool_result>
+  <assistant>Now let me check what files exist in the commands directory. I see there are several files, but I don't see "skill-patterns.md" specifically. Let me read the index to understand the structure better:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1513" cache_read_input_tokens="15080" cache_creation="{'ephemeral_5m_input_tokens': 1513, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0114GvswLb9V5CdJRXJD3HPi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/commands/index.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1513" cache_read_input_tokens="15080" cache_creation="{'ephemeral_5m_input_tokens': 1513, 'ephemeral_1h_input_tokens': 0}" output_tokens="119" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0114GvswLb9V5CdJRXJD3HPi">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Commands Documentation
+     5→
+     6→- **[audit-doc.md](audit-doc.md)** — understanding why audit-doc works the way it does, modifying the /local:audit-doc command, understanding collateral finding tiers, debugging unexpected audit verdicts
+     7→- **[command-rename-pattern.md](command-rename-pattern.md)** — renaming a slash command or skill, migrating command invocations across the codebase, performing a terminology shift that affects command names
+     8→- **[optimization-patterns.md](optimization-patterns.md)** — reducing command file size, using @ reference in commands, modularizing command content
+     9→- **[preview-command-pattern.md](preview-command-pattern.md)** — pairing destructive commands with preview commands, implementing dry-run for slash commands, adding preview functionality to existing commands
+    10→- **[session-id-substitution.md](session-id-substitution.md)** — writing slash commands or skills that need session context, developing hooks that interact with Claude sessions, debugging session ID unavailable or empty string errors, deciding where to place session-dependent logic (root agent vs sub-agent)
+    11→- **[step-renumbering-checklist.md](step-renumbering-checklist.md)** — merging, removing, or reordering steps in slash commands, refactoring command workflows that use numbered steps, encountering broken step references after editing a command
+    12→- **[tool-restriction-safety.md](tool-restriction-safety.md)** — adding allowed-tools to a command or agent frontmatter, designing a read-only slash command, creating commands intended for use within plan mode, deciding which tools a restricted command needs
+    13→
 
 &lt;system-reminder&gt;
 Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
 &lt;/system-reminder&gt;
 
   </tool_result>
-  <tool_result tool="toolu_01GunrDghha3FtSn22dMmeY8">
-No files found
-  </tool_result>
-  <tool_result tool="toolu_01AXUvpQVhoHsAnnaDm7mT4P">
-/home/runner/work/erk/erk/src/erk/cli/commands/pr/repo_resolution.py
-  </tool_result>
-  <assistant>Perfect! Now let me read all the relevant files to extract the method signatures and descriptions.</assistant>
-  <usage input_tokens="34" cache_creation_input_tokens="789" cache_read_input_tokens="19105" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01RPgkD8e2JQUY2YvThMbZmW">
-    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py</param>
-  </tool_use>
-  <usage input_tokens="34" cache_creation_input_tokens="789" cache_read_input_tokens="19105" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01BbZdAUaS9q6DcrdY7PNszf">
-    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py</param>
-  </tool_use>
-  <usage input_tokens="34" cache_creation_input_tokens="789" cache_read_input_tokens="19105" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_012gtjcV5RaHqX3gZU6PJpVx">
-    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py</param>
-  </tool_use>
-  <usage input_tokens="34" cache_creation_input_tokens="789" cache_read_input_tokens="19105" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01CDNKTxZzGZSUitYocW1AL3">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/repo_resolution.py</param>
-  </tool_use>
-  <usage input_tokens="34" cache_creation_input_tokens="789" cache_read_input_tokens="19105" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01RPgkD8e2JQUY2YvThMbZmW">
-     1→"""Abstract interface for remote GitHub operations without a local git clone.
-     2→
-     3→This gateway enables GitHub operations (branch creation, file commits, PR management,
-     4→workflow dispatch) using the GitHub REST API directly, without requiring a local
-     5→git repository. All methods take explicit owner/repo parameters.
-     6→"""
-     7→
-     8→from abc import ABC, abstractmethod
-     9→
-    10→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
-    11→
-    12→
-    13→class RemoteGitHub(ABC):
-    14→    """GitHub operations that don't require a local git clone.
-    15→
-    16→    Every method takes explicit owner/repo parameters instead of repo_root: Path.
-    17→    Uses the GitHub REST API via HttpClient.
-    18→    """
-    19→
-    20→    @abstractmethod
-    21→    def get_authenticated_user(self) -&gt; str:
-    22→        """Get the username of the authenticated GitHub user.
-    23→
-    24→        Returns:
-    25→            GitHub username string
-    26→        """
-    27→        ...
-    28→
-    29→    @abstractmethod
-    30→    def get_default_branch_name(self, *, owner: str, repo: str) -&gt; str:
+  <assistant>Perfect! Now I have a complete answer. Let me provide a summary of my findings.
 
-... [307 lines omitted] ...
+## Summary
 
-   329→            Tuple of (is_authenticated, username, error_message)
-  </tool_result>
-  <tool_result tool="toolu_01BbZdAUaS9q6DcrdY7PNszf">
-     1→"""Real implementation of RemoteGitHub using HttpClient.
-     2→
-     3→All GitHub operations are performed via the REST API through HttpClient,
-     4→with no local git repository or gh CLI required.
-     5→"""
-     6→
-     7→import base64
-     8→import secrets
-     9→import string
-    10→from datetime import datetime
-    11→
-    12→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
-    13→from erk_shared.gateway.http.abc import HttpClient, HttpError
-    14→from erk_shared.gateway.remote_github.abc import RemoteGitHub
-    15→from erk_shared.gateway.time.abc import Time
-    16→from erk_shared.output.output import user_output
-    17→
-    18→
-    19→class RealRemoteGitHub(RemoteGitHub):
-    20→    """Production implementation using HttpClient for all GitHub API calls."""
-    21→
-    22→    def __init__(self, *, http_client: HttpClient, time: Time) -&gt; None:
-    23→        """Create RealRemoteGitHub.
-    24→
-    25→        Args:
-    26→            http_client: Authenticated HTTP client for GitHub API
-    27→            time: Time gateway for polling delays
-    28→        """
-    29→        self._http = http_client
-    30→        self._time = time
+Based on my investigation of the documentation:
 
-... [394 lines omitted] ...
+**Does `docs/learned/commands/skill-patterns.md` exist?**
+No, the file `skill-patterns.md` does not exist in the `docs/learned/commands/` directory.
 
-    37→            raise RuntimeError("GitHub API returned user without login field")
-    45→            raise RuntimeError(
-    56→            raise RuntimeError(
-    90→            raise RuntimeError(
-   119→            raise RuntimeError("GitHub API returned PR without number field")
-   190→                    raise RuntimeError(
-   201→        raise RuntimeError(
-   231→        except HttpError as e:
-   355→        except HttpError as e:
-   356→            return (False, None, f"Authentication failed: {e}")
-  </tool_result>
-  <tool_result tool="toolu_012gtjcV5RaHqX3gZU6PJpVx">
-     1→"""Fake implementation of RemoteGitHub for testing.
-     2→
-     3→Constructor-injected responses for reads, mutation tracking lists for write assertions.
-     4→"""
-     5→
-     6→from dataclasses import dataclass
-     7→
-     8→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
-     9→from erk_shared.gateway.remote_github.abc import RemoteGitHub
-    10→
-    11→
-    12→@dataclass(frozen=True)
-    13→class CreatedRef:
-    14→    """Recorded create_ref call."""
-    15→
-    16→    owner: str
-    17→    repo: str
-    18→    ref: str
-    19→    sha: str
-    20→
-    21→
-    22→@dataclass(frozen=True)
-    23→class CreatedFileCommit:
-    24→    """Recorded create_file_commit call."""
-    25→
-    26→    owner: str
-    27→    repo: str
-    28→    path: str
-    29→    content: str
-    30→    message: str
+**Files in `docs/learned/commands/` directory:**
 
-... [370 lines omitted] ...
-  </tool_result>
-  <tool_result tool="toolu_01CDNKTxZzGZSUitYocW1AL3">
-     1→"""Shared --repo infrastructure for PR read commands.
-     2→
-     3→Provides helpers for resolving owner/repo from either a --repo flag
-     4→or local git context, and constructing RemoteGitHub instances.
-     5→"""
-     6→
-     7→import click
-     8→
-     9→from erk.cli.ensure import UserFacingCliError
-    10→from erk.core.context import ErkContext, NoRepoSentinel
-    11→from erk_shared.gateway.remote_github.abc import RemoteGitHub
-    12→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
-    13→
-    14→
-    15→def resolve_owner_repo(
-    16→    ctx: ErkContext,
-    17→    *,
-    18→    target_repo: str | None,
-    19→) -&gt; tuple[str, str]:
-    20→    """Resolve owner/repo from --repo flag or local git context.
-    21→
-    22→    Args:
-    23→        ctx: ErkContext
-    24→        target_repo: Optional "owner/repo" string from --repo flag
-    25→
-    26→    Returns:
-    27→        Tuple of (owner, repo_name)
-    28→
-    29→    Raises:
-    30→        UserFacingCliError: If owner/repo cannot be determined
+1. `/home/runner/work/erk/erk/docs/learned/commands/audit-doc.md`
+2. `/home/runner/work/erk/erk/docs/learned/commands/optimization-patterns.md`
+3. `/home/runner/work/erk/erk/docs/learned/commands/index.md`
+4. `/home/runner/work/erk/erk/docs/learned/commands/command-rename-pattern.md`
+5. `/home/runner/work/erk/erk/docs/learned/commands/tripwires.md`
+6. `/home/runner/work/erk/erk/docs/learned/commands/tool-restriction-safety.md`
+7. `/home/runner/work/erk/erk/docs/learned/commands/preview-command-pattern.md`
+8. `/home/runner/work/erk/erk/docs/learned/commands/session-id-substitution.md`
+9. `/home/runner/work/erk/erk/docs/learned/commands/step-renumbering-checklist.md`
 
-... [72 lines omitted] ...
+**Related Documentation:**
+The `commands/` directory focuses on slash command authoring patterns. The closest existing documentation is:
+- `optimization-patterns.md` — covers using @ references in commands and modularizing command content
+- `preview-command-pattern.md` — covers pairing commands with preview functionality
+- `tool-restriction-safety.md` — covers adding allowed-tools and designing restricted commands
 
-    34→            raise UserFacingCliError(
-    42→        raise UserFacingCliError(
-    62→        UserFacingCliError: If no http_client is available
-    68→        raise UserFacingCliError(
-  </tool_result>
-  <assistant>Perfect! Now let me check the __init__.py to see what's exported:</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="14317" cache_read_input_tokens="19894" cache_creation="{'ephemeral_5m_input_tokens': 14317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_012M6LKDfWGMXafR6z5T3uU1">
-    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/__init__.py</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="14317" cache_read_input_tokens="19894" cache_creation="{'ephemeral_5m_input_tokens': 14317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_012M6LKDfWGMXafR6z5T3uU1">
-&lt;system-reminder&gt;Warning: the file exists but is shorter than the provided offset (1). The file has 1 lines.&lt;/system-reminder&gt;
-  </tool_result>
-  <assistant>Now let me compile a comprehensive report of all the findings:
-
-## RemoteGitHub Gateway Pattern Analysis
-
-I found all the RemoteGitHub gateway pattern files you requested. Here's a complete analysis:
-
-### 1. ABC Interface - Method Signatures and Descriptions
-
-**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py`
-
-All methods are abstract and take explicit `owner` and `repo` parameters. Here are all 17 methods:
-
-#### Authentication &amp; Basic Repository Info
-- `get_authenticated_user() -&gt; str` — Get the username of the authenticated GitHub user
-- `check_auth_status() -&gt; tuple[bool, str | None, str | None]` — Check authentication status via REST API, returns (is_authenticated, username, error_message)
-
-#### Default Branch Operations
-- `get_default_branch_name(*, owner: str, repo: str) -&gt; str` — Get the default branch name (e.g., "main")
-- `get_default_branch_sha(*, owner: str, repo: str) -&gt; str` — Get the SHA of the default branch HEAD
-
-#### Git Reference &amp; Commit Operations
-- `create_ref(*, owner: str, repo: str, ref: str, sha: str) -&gt; None` — Create a git reference/branch (e.g., "refs/heads/my-branch")
-- `create_file_commit(*, owner: str, repo: str, path: str, content: str, message: str, branch: str) -&gt; str` — Create a file commit via GitHub Contents API, returns commit SHA
-
-#### Pull Request Operations
-- `create_pull_request(*, owner: str, repo: str, head: str, base: str, title: str, body: str, draft: bool) -&gt; int` — Create a pull request, returns PR number
-- `update_pull_request_body(*, owner: str, repo: str, pr_number: int, body: str) -&gt; None` — Update PR body content
-- `close_pr(*, owner: str, repo: str, number: int) -&gt; None` — Close a pull request
-
-#### Issue Operations
-- `add_labels(*, owner: str, repo: str, issue_number: int, labels: tuple[str, ...]) -&gt; None` — Add labels to an issue or PR
-- `add_issue_comment(*, owner: str, repo: str, issue_number: int, body: str) -&gt; None` — Add a comment to an issue or PR
-- `get_issue(*, owner: str, repo: str, number: int) -&gt; IssueInfo | IssueNotFound` — Fetch issue by number
-- `get_issue_comments(*, owner: str, repo: str, number: int) -&gt; list[str]` — Fetch all comment bodies for an issue
-- `get_prs_referencing_issue(*, owner: str, repo: str, number: int) -&gt; list[PRReference]` — Get PRs that reference an issue via timeline API
-- `list_issues(*, owner: str, repo: str, labels: tuple[str, ...], state: str, limit: int | None, creator: str | None) -&gt; list[IssueInfo]` — List issues with filtering
-- `close_issue(*, owner: str, repo: str, number: int) -&gt; None` — Close a GitHub issue
-
-#### Workflow Operations
-- `dispatch_workflow(*, owner: str, repo: str, workflow: str, ref: str, inputs: dict[str, str]) -&gt; str` — Dispatch a workflow and poll for run ID, returns workflow run ID
-
----
-
-### 2. Real Implementation 
-
-**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py`
-
-**Class:** `RealRemoteGitHub`
-
-Uses `HttpClient` for all GitHub REST API calls and `Time` gateway for polling delays. Key implementation details:
-
-- All read operations query GitHub REST API directly
-- `create_file_commit()` base64-encodes content before sending
-- `dispatch_workflow()` generates a random 6-character distinct ID for correlation, then polls with exponential backoff (1, 2, 4, 8, 8, 8 seconds)
-- `get_issue_comments()` uses paginated API with per_page=100
-- `list_issues()` skips pull requests (GitHub includes them in issues endpoint)
-- `get_prs_referencing_issue()` parses timeline events to find cross-references, tracks seen PR numbers to avoid duplicates
-- Helper function `_parse_issue_response()` converts GitHub REST API responses to IssueInfo objects with timestamp parsing
-- Helper function `_generate_distinct_id()` creates base36 random strings for workflow dispatch
-
----
-
-### 3. Fake Implementation
-
-**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py`
-
-**Class:** `FakeRemoteGitHub`
-
-Constructor-injected fake for testing with mutation tracking. Key characteristics:
-
-**Constructor parameters:**
-- `authenticated_user: str` — pre-configured username
-- `default_branch_name: str` — pre-configured branch name
-- `default_branch_sha: str` — pre-configured SHA
-- `next_pr_number: int` — PR number to return from create operations
-- `dispatch_run_id: str` — workflow run ID to return
-- `issues: dict[int, IssueInfo] | None` — pre-configured issues
-- `issue_comments: dict[int, list[str]] | None` — pre-configured comments
-- `pr_references: dict[int, list[PRReference]] | None` — pre-configured PR references
-
-**Mutation tracking properties** (for test assertions):
-- `created_refs: list[CreatedRef]` — recorded branch creation calls
-- `created_file_commits: list[CreatedFileCommit]` — recorded file commits
-- `created_pull_requests: list[CreatedPullRequest]` — recorded PR creations
-- `updated_pr_bodies: list[UpdatedPullRequestBody]` — recorded PR updates
-- `added_labels: list[AddedLabels]` — recorded label additions
-- `dispatched_workflows: list[DispatchedWorkflow]` — recorded workflow dispatches
-- `added_issue_comments: list[AddedIssueComment]` — recorded issue comments
-- `closed_issues: list[ClosedIssue]` — recorded issue closures
-- `closed_prs: list[ClosedPR]` — recorded PR closures
-
-**Read operations** implement filtering logic:
-- `list_issues()` filters by state, creator, and labels; respects limit
-- `get_issue_comments()` returns copy of stored comments list
-
----
-
-### 4. Repository Resolution Utilities
-
-**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/repo_resolution.py`
-
-#### Key Functions:
-
-**`resolve_owner_repo(ctx: ErkContext, *, target_repo: str | None) -&gt; tuple[str, str]`**
-- Resolves owner/repo from either `--repo flag` or local git context
-- If `target_repo` provided: validates "owner/repo" format (exactly one "/"), splits and returns
-- If `target_repo` None: extracts from `ctx.repo.github.owner` and `ctx.repo.github.repo`
-- Raises `UserFacingCliError` if format invalid or repo context unavailable
-
-**`get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub`**
-- Gets or constructs RemoteGitHub instance
-- Priority: uses `ctx.remote_github` if available (for test injection), otherwise constructs `RealRemoteGitHub` from `ctx.http_client` and `ctx.time`
-- Raises `UserFacingCliError` if no http_client available
-
-**`is_remote_mode(ctx: ErkContext, *, target_repo: str | None) -&gt; bool`**
-- Determines if command should use remote path
-- Returns `True` if `target_repo` explicitly provided OR if `ctx.repo` is a `NoRepoSentinel` (no local git)
-- Returns `False` if local repo context exists and no explicit target
-
-**`repo_option`**
-- Click option decorator for `--repo` flag
-- Type: str, default None
-- Help: "Target repo (owner/repo) for remote operation without local git clone"
-
----
-
-### Summary
-
-The RemoteGitHub gateway pattern is a clean separation of concerns:
-
-1. **ABC** (`RemoteGitHub`) — 17 abstract methods covering auth, branches, commits, PRs, issues, and workflows
-2. **Real** (`RealRemoteGitHub`) — HttpClient-based implementation with intelligent polling and pagination
-3. **Fake** (`FakeRemoteGitHub`) — In-memory test double with constructor injection and mutation tracking
-4. **Utilities** (`repo_resolution.py`) — CLI helpers for --repo flag handling, RemoteGitHub construction, and mode determination
-
-This enables remote GitHub operations without a local git clone, used primarily by PR read commands that operate on external repositories.</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="186" cache_read_input_tokens="34211" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+There is no dedicated `skill-patterns.md` document in this directory currently.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="697" cache_read_input_tokens="16593" cache_creation="{'ephemeral_5m_input_tokens': 697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>
