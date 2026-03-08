@@ -131,6 +131,23 @@ class GitRemoteOps(ABC):
     # ============================================================================
 
     @abstractmethod
+    def get_remote_ref(self, repo_root: Path, remote: str, ref: str) -> str | None:
+        """Get the commit SHA of a ref on a remote without fetching objects.
+
+        Uses git ls-remote to query the remote for the given ref's SHA.
+        This is a lightweight network call — no objects are downloaded.
+
+        Args:
+            repo_root: Path to the git repository root
+            remote: Remote name (e.g., "origin")
+            ref: Ref name to query (e.g., "refs/heads/my-branch" or just "my-branch")
+
+        Returns:
+            The commit SHA as a string, or None if the ref doesn't exist on the remote.
+        """
+        ...
+
+    @abstractmethod
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.
 

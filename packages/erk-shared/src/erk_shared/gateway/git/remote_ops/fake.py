@@ -45,6 +45,7 @@ class FakeGitRemoteOps(GitRemoteOps):
         self,
         *,
         remote_urls: dict[tuple[Path, str], str] | None = None,
+        remote_refs: dict[tuple[str, str], str] | None = None,
         fetch_branch_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
         push_to_remote_error: PushError | None = None,
@@ -55,6 +56,7 @@ class FakeGitRemoteOps(GitRemoteOps):
 
         Args:
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
+            remote_refs: Mapping of (remote, ref) -> commit SHA for get_remote_ref()
             fetch_branch_raises: Exception to raise when fetch_branch() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
             push_to_remote_error: PushError to return when push_to_remote() is called
@@ -62,6 +64,7 @@ class FakeGitRemoteOps(GitRemoteOps):
         """
         # Use `is None` check to preserve empty dict reference from FakeGit
         self._remote_urls = remote_urls if remote_urls is not None else {}
+        self._remote_refs = remote_refs if remote_refs is not None else {}
         self._fetch_branch_raises = fetch_branch_raises
         self._pull_branch_raises = pull_branch_raises
         self._push_to_remote_error = push_to_remote_error
@@ -137,6 +140,10 @@ class FakeGitRemoteOps(GitRemoteOps):
         if self._pull_rebase_error is not None:
             return self._pull_rebase_error
         return PullRebaseResult()
+
+    def get_remote_ref(self, repo_root: Path, remote: str, ref: str) -> str | None:
+        """Return pre-configured remote ref SHA, or None."""
+        return self._remote_refs.get((remote, ref))
 
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.

@@ -210,7 +210,8 @@ def test_plan_impl_auto_forces_on_divergence(tmp_path: Path) -> None:
     fake_git = FakeGit(
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
         repository_roots={tmp_path: tmp_path},
-        remote_branches={tmp_path: ["origin/feature"]},
+        remote_refs={("origin", "feature"): "remote_sha_abc"},
+        branch_heads={"feature": "local_sha_xyz"},
         branch_divergence={
             (tmp_path, "feature", "origin"): BranchDivergence(is_diverged=True, ahead=3, behind=2)
         },
@@ -247,7 +248,8 @@ def test_plnd_branch_prefix_auto_forces_on_divergence(tmp_path: Path) -> None:
     fake_git = FakeGit(
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
         repository_roots={tmp_path: tmp_path},
-        remote_branches={tmp_path: [f"origin/{branch}"]},
+        remote_refs={("origin", branch): "remote_sha_abc"},
+        branch_heads={branch: "local_sha_xyz"},
         branch_divergence={
             (tmp_path, branch, "origin"): BranchDivergence(is_diverged=True, ahead=3, behind=2)
         },
@@ -274,6 +276,43 @@ def test_plnd_branch_prefix_auto_forces_on_divergence(tmp_path: Path) -> None:
     assert result.pr_number == 42
 
 
+def test_matching_sha_skips_fetch(tmp_path: Path) -> None:
+    """When local and remote SHAs match, skip fetch and proceed to submit."""
+    pr = _pr_details(number=42, branch="feature")
+    fake_graphite = FakeGraphite()
+    fake_github = FakeLocalGitHub(
+        prs_by_branch={"feature": pr},
+    )
+    same_sha = "abc123def456"
+    fake_git = FakeGit(
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+        repository_roots={tmp_path: tmp_path},
+        remote_refs={("origin", "feature"): same_sha},
+        branch_heads={"feature": same_sha},
+    )
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        github=fake_github,
+        cwd=tmp_path,
+        global_config=global_config,
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = _graphite_first_flow(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert result.pr_number == 42
+    # Verify no fetch was performed (SHAs matched, fast-path taken)
+    assert fake_git.remote.fetched_branches == []
+
+
 def test_branch_not_on_remote_skips_divergence_check(tmp_path: Path) -> None:
     """Branch absent from remote proceeds to gt submit without divergence check."""
     pr = _pr_details(number=42, branch="feature")
@@ -284,7 +323,7 @@ def test_branch_not_on_remote_skips_divergence_check(tmp_path: Path) -> None:
     fake_git = FakeGit(
         remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
         repository_roots={tmp_path: tmp_path},
-        # remote_branches omitted: branch does not exist on remote
+        # remote_refs omitted: get_remote_ref returns None (branch not on remote)
     )
     global_config = GlobalConfig(
         erk_root=Path("/test/erks"),
@@ -310,7 +349,8 @@ def test_branch_not_on_remote_skips_divergence_check(tmp_path: Path) -> None:
 def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -> None:
     """Non-plan branch (no plan_id) still errors when behind remote."""
     fake_git = FakeGit(
-        remote_branches={tmp_path: ["origin/feature"]},
+        remote_refs={("origin", "feature"): "remote_sha_abc"},
+        branch_heads={"feature": "local_sha_xyz"},
         branch_divergence={
             (tmp_path, "feature", "origin"): BranchDivergence(is_diverged=True, ahead=1, behind=3)
         },
@@ -338,7 +378,8 @@ def test_branch_behind_remote_returns_error(tmp_path: Path) -> None:
     """SubmitError(error_type='remote_diverged') when branch is behind remote."""
     fake_graphite = FakeGraphite()
     fake_git = FakeGit(
-        remote_branches={tmp_path: ["origin/feature"]},
+        remote_refs={("origin", "feature"): "remote_sha_abc"},
+        branch_heads={"feature": "local_sha_xyz"},
         branch_divergence={
             (tmp_path, "feature", "origin"): BranchDivergence(is_diverged=False, ahead=0, behind=3)
         },

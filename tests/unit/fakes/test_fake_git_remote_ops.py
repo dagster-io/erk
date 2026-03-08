@@ -66,3 +66,13 @@ class TestPullRebase:
         ops = FakeGitRemoteOps(pull_rebase_error=PullRebaseError(message="conflict"))
         ops.pull_rebase(cwd, "origin", "main")
         assert ops.pull_rebase_calls == [(cwd, "origin", "main")]
+
+
+class TestGetRemoteRef:
+    def test_returns_configured_sha(self) -> None:
+        ops = FakeGitRemoteOps(remote_refs={("origin", "my-branch"): "abc123"})
+        assert ops.get_remote_ref(Path("/repo"), "origin", "my-branch") == "abc123"
+
+    def test_returns_none_by_default(self) -> None:
+        ops = FakeGitRemoteOps()
+        assert ops.get_remote_ref(Path("/repo"), "origin", "nonexistent") is None

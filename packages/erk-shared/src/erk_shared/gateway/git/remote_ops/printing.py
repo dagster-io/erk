@@ -90,6 +90,10 @@ class PrintingGitRemoteOps(PrintingBase, GitRemoteOps):
     # Query Operations (delegate without printing)
     # ============================================================================
 
+    def get_remote_ref(self, repo_root: Path, remote: str, ref: str) -> str | None:
+        """Get remote ref (read-only, no printing)."""
+        return self._wrapped.get_remote_ref(repo_root, remote, ref)
+
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get remote URL (read-only, no printing)."""
         return self._wrapped.get_remote_url(repo_root, remote)

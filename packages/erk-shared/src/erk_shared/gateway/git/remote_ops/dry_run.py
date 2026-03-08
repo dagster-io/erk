@@ -84,6 +84,10 @@ class DryRunGitRemoteOps(GitRemoteOps):
     # Query Operations (delegate to wrapped implementation)
     # ============================================================================
 
+    def get_remote_ref(self, repo_root: Path, remote: str, ref: str) -> str | None:
+        """Get remote ref (read-only, delegates to wrapped)."""
+        return self._wrapped.get_remote_ref(repo_root, remote, ref)
+
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get remote URL (read-only, delegates to wrapped)."""
         return self._wrapped.get_remote_url(repo_root, remote)
