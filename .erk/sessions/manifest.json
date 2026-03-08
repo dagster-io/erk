@@ -32,6 +32,23 @@
       "raw_size_kb": 892,
       "xml_size_kb": 137,
       "git_branch": "plnd/O8381-fix-cli-erk-docs-ter-03-08-0110"
+    },
+    {
+      "session_id": "55929aff-ab2e-4594-9cec-172041ca1efe",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T01:42:05.589382+00:00",
+      "files": [
+        "address-55929aff-ab2e-4594-9cec-172041ca1efe-55929aff-ab2e-4594-9cec-172041ca1efe-part1.xml",
+        "address-55929aff-ab2e-4594-9cec-172041ca1efe-55929aff-ab2e-4594-9cec-172041ca1efe-part2.xml",
+        "address-55929aff-ab2e-4594-9cec-172041ca1efe-55929aff-ab2e-4594-9cec-172041ca1efe-part3.xml",
+        "address-55929aff-ab2e-4594-9cec-172041ca1efe-55929aff-ab2e-4594-9cec-172041ca1efe-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 2,
+      "raw_size_kb": 101,
+      "xml_size_kb": 70,
+      "git_branch": "plnd/O8381-fix-cli-erk-docs-ter-03-08-0110"
     }
   ]
 }
