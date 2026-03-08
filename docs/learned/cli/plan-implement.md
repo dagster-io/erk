@@ -166,7 +166,7 @@ git add -f .impl/plan.md  # Force-add ignored file
 git commit -m "Add implementation plan"
 ```
 
-**Why wrong:** `.impl/` is agent working state, not documentation. Plans live in GitHub issues. Forcing gitignored files into commits creates confusion about source of truth.
+**Why wrong:** `.impl/` is agent working state, not documentation. Plans are tracked as GitHub PRs. Forcing gitignored files into commits creates confusion about source of truth.
 
 **Correct:** Link PR body to plan (`**Plan:** #123`). The plan is the documentation.
 
