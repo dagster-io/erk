@@ -1,7 +1,7 @@
 ---
 title: Plan Schema Reference
 read_when:
-  - "understanding plan issue structure"
+  - "understanding plan structure"
   - "debugging plan validation errors"
   - "working with plan-header or plan-body blocks"
 last_audited: "2026-02-03 04:00 PT"

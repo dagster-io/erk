@@ -4,7 +4,7 @@ read_when:
   - "creating or updating PRs programmatically in erk"
   - "debugging why a duplicate PR or issue was created"
   - "fixing erk pr check validation failures"
-  - "understanding the PR number vs issue number distinction"
+  - "understanding the PR number vs plan number distinction"
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 tripwires:

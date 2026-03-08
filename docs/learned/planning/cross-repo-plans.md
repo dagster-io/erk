@@ -3,7 +3,7 @@ title: Cross-Repo Plans
 read_when:
   - "setting up plans in a separate repository"
   - "configuring [plans] repo in config.toml"
-  - "understanding cross-repo issue closing syntax"
+  - "understanding cross-repo plan closing syntax"
 ---
 
 # Cross-Repo Plans

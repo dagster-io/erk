@@ -3,7 +3,7 @@ title: PR Discovery Strategies for Plans
 last_audited: "2026-02-16 00:00 PT"
 audit_result: clean
 read_when:
-  - "finding the PR associated with an erk plan issue"
+  - "finding the PR associated with an erk plan"
   - "debugging why get-pr-for-plan returns no-branch-in-plan"
   - "understanding how erk learn finds PRs"
   - "working with plan-header branch_name field"

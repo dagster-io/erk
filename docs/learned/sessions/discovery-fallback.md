@@ -23,14 +23,14 @@ audit_result: clean
 
 Erk has two distinct session discovery commands that serve different purposes. Choosing the wrong one wastes tokens or misses available sessions.
 
-| Command                               | Purpose                                             | Output                                        | When to use                                                |
-| ------------------------------------- | --------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------- |
-| `erk exec list-sessions`              | Enumerate all sessions for the current project      | JSON with branch context and session metadata | General session browsing, selecting sessions interactively |
-| `erk exec get-learn-sessions <issue>` | Find sessions associated with a specific plan issue | JSON with categorized session IDs and paths   | Learn workflows, plan-specific analysis                    |
+| Command                               | Purpose                                        | Output                                        | When to use                                                |
+| ------------------------------------- | ---------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------- |
+| `erk exec list-sessions`              | Enumerate all sessions for the current project | JSON with branch context and session metadata | General session browsing, selecting sessions interactively |
+| `erk exec get-learn-sessions <issue>` | Find sessions associated with a specific plan  | JSON with categorized session IDs and paths   | Learn workflows, plan-specific analysis                    |
 
 ### Why two commands?
 
-`list-sessions` knows nothing about plans — it scans the local Claude Code project directory and returns what's there. `get-learn-sessions` starts from a plan issue, extracts session IDs from GitHub metadata (plan-header fields and issue comments), then checks which ones are actually readable on disk. It also discovers remote sessions (branch-based or legacy artifact-based) that `list-sessions` would never find.
+`list-sessions` knows nothing about plans — it scans the local Claude Code project directory and returns what's there. `get-learn-sessions` starts from a plan, extracts session IDs from GitHub metadata (plan-header fields and issue comments), then checks which ones are actually readable on disk. It also discovers remote sessions (branch-based or legacy artifact-based) that `list-sessions` would never find.
 
 <!-- Source: packages/erk-shared/src/erk_shared/sessions/discovery.py, find_sessions_for_plan -->
 

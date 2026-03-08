@@ -28,7 +28,7 @@ Rules triggered by matching actions in code.
 
 **modifying business logic in src/ without adding a test** → Read [Universal Tripwires](universal-tripwires.md) first. Bug fixes require regression tests.
 
-**parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan issue), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated.
+**parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan PR), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated.
 
 **passing session IDs via environment variables** → Read [Universal Tripwires](universal-tripwires.md) first. Use CLI flags (--session-id) for context propagation, not environment variables. Erk code never has access to CLAUDE_CODE_SESSION_ID.
 

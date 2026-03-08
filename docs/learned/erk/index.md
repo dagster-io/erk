@@ -4,7 +4,7 @@
 # Erk Documentation
 
 - **[branch-cleanup.md](branch-cleanup.md)** — cleaning up branches, removing dormant worktrees, managing branch lifecycle
-- **[branch-naming.md](branch-naming.md)** — creating or modifying branch name generation, extracting issue or objective numbers from branch names, working with generate_planned_pr_branch_name(), or extract functions
+- **[branch-naming.md](branch-naming.md)** — creating or modifying branch name generation, extracting objective numbers from branch names, working with generate_planned_pr_branch_name(), or extract functions
 - **[codespace-machine-types.md](codespace-machine-types.md)** — creating or configuring codespaces, choosing a machine type for codespace setup, debugging codespace creation failures
 - **[codespace-remote-execution.md](codespace-remote-execution.md)** — modifying the codespace environment bootstrap sequence, debugging why a remote erk command fails before reaching the actual command, deciding whether a new remote command needs build_codespace_ssh_command
 - **[dispatch-ref-config.md](dispatch-ref-config.md)** — configuring which branch workflow_dispatch targets, working with .erk/config.toml dispatch settings, debugging workflow dispatch targeting the wrong branch, using --ref CLI option to override dispatch branch per run, using --ref-current to dispatch against current branch
@@ -12,7 +12,7 @@
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[graphite-divergence-detection.md](graphite-divergence-detection.md)** — debugging remote divergence errors during erk pr submit, understanding the Graphite-first submit flow's pre-checks, resolving 'branch is behind remote' errors, using --force flag with erk pr submit
 - **[graphite-stack-troubleshooting.md](graphite-stack-troubleshooting.md)** — debugging Graphite stack operation failures, recovering from gt sync or gt submit errors, fixing stack ordering or parent tracking issues
-- **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its plan, working with .erk/impl-context/plan-ref.json or .erk/impl-context/ref.json, creating PRs that close plans
+- **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its plan, working with .erk/impl-context/plan-ref.json or .erk/impl-context/ref.json, creating PRs that close issues
 - **[placeholder-branches.md](placeholder-branches.md)** — working with worktree pool slots or slot commands, understanding why placeholder branches bypass BranchManager, debugging slot cleanup during erk land
 - **[pr-address-workflows.md](pr-address-workflows.md)** — addressing PR review comments, choosing between local and remote PR addressing, understanding erk launch pr-address, understanding /erk:pr-address command
 - **[pr-commands.md](pr-commands.md)** — generating or modifying PR body footers, debugging `erk pr check` footer validation failures

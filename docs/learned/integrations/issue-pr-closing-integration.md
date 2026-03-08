@@ -4,14 +4,14 @@ read_when:
   - linking PRs to issues for auto-close
   - debugging why issues didn't close when PR merged
   - working on issue number discovery in the submit pipeline
-  - understanding cross-repo plan issue references
+  - understanding cross-repo plan references
 tripwires:
   - action: "putting Closes keyword in PR title or commit message"
     warning: "GitHub only processes closing keywords in the PR body. Title and commit message references are ignored."
   - action: "using issue number from .erk/impl-context/plan-ref.json for a checkout footer"
-    warning: "The checkout footer requires the PR number, not the issue number. These are different values — the issue is the plan, the PR is the implementation."
-  - action: "resolving issue number from a single source without checking for mismatches"
-    warning: "Both .erk/impl-context/plan-ref.json and branch name may contain issue numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong issue."
+    warning: "The checkout footer requires the PR number, not the plan number. These are different values — the plan is the source, the PR is the implementation."
+  - action: "resolving plan number from a single source without checking for mismatches"
+    warning: "Both .erk/impl-context/plan-ref.json and branch name may contain plan numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong plan."
 ---
 
 # Issue-PR Closing Integration
@@ -20,9 +20,9 @@ GitHub automatically closes issues when a PR merges **only if** the closing keyw
 
 This document covers the cross-cutting pattern of how erk ensures that closing references are correctly discovered, validated, and embedded across the submit pipeline, exec scripts, and footer generation system.
 
-## Issue Number Discovery: Three Sources, One Truth
+## Plan Number Discovery: Three Sources, One Truth
 
-The submit pipeline resolves issue numbers from three sources with a strict priority hierarchy. The cross-cutting concern is that these sources live in different systems (filesystem, git, GitHub API) and must be validated against each other.
+The submit pipeline resolves plan numbers from three sources with a strict priority hierarchy. The cross-cutting concern is that these sources live in different systems (filesystem, git, GitHub API) and must be validated against each other.
 
 | Source                            | When used                             | Why it exists                                                                |
 | --------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------- |
@@ -32,7 +32,7 @@ The submit pipeline resolves issue numbers from three sources with a strict prio
 
 <!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, validate_plan_linkage -->
 
-**The mismatch guard is the key design decision.** When both `.erk/impl-context/plan-ref.json` and the branch name contain issue numbers, they must agree — a mismatch raises `ValueError` and halts the pipeline. This prevents the most dangerous failure mode: silently closing the wrong issue because stale metadata disagrees with the branch. See `validate_plan_linkage()` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
+**The mismatch guard is the key design decision.** When both `.erk/impl-context/plan-ref.json` and the branch name contain plan numbers, they must agree — a mismatch raises `ValueError` and halts the pipeline. This prevents the most dangerous failure mode: silently closing the wrong issue because stale metadata disagrees with the branch. See `validate_plan_linkage()` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
 
 ### Auto-Repair: Bridging Manual Worktree Creation
 
@@ -50,7 +50,7 @@ When re-submitting a PR that already has a closing reference but no local `.erk/
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _core_submit_flow -->
 
-The footer needs both the issue number (for `Closes #N`) and the PR number (for the `erk pr checkout` command), but the PR number doesn't exist until after creation. The solution is two API calls:
+The footer needs both the plan number (for `Closes #N`) and the PR number (for the `erk pr checkout` command), but the PR number doesn't exist until after creation. The solution is two API calls:
 
 1. Create PR with `pr_number=0` placeholder in the footer
 2. Immediately update the body with the actual PR number
@@ -91,6 +91,6 @@ The most common failure: the keyword is absent from the body because the PR was 
 ## Related Documentation
 
 - [PR Footer Format Validation](../architecture/pr-footer-validation.md) — Footer format contract and migration strategy
-- [Issue-PR Linkage Storage Model](../erk/issue-pr-linkage-storage.md) — `.erk/impl-context/plan-ref.json` structure and `willCloseTarget` timing
+- [Plan-PR Linkage Storage Model](../erk/issue-pr-linkage-storage.md) — `.erk/impl-context/plan-ref.json` structure and `willCloseTarget` timing
 - [PR Submission Decision Framework](../cli/pr-submission.md) — Choosing between git-pr-push and pr-submit workflows
 - [PR Validation Rules](../pr-operations/pr-validation-rules.md) — `erk pr check` validates closing references and checkout footers

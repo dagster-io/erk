@@ -11,7 +11,7 @@ audit_result: clean
 
 # Plan-PR Linkage Storage Model
 
-This document describes how erk creates and stores the relationship between plans and pull requests.
+This document describes how erk creates and stores the relationship between plans and their implementation pull requests.
 
 ## Overview
 

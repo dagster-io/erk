@@ -2,7 +2,7 @@
 title: Complete File Inventory Protocol
 read_when:
   - "estimating effort or remaining work for a plan or PR"
-  - "closing a plan issue as complete"
+  - "closing a plan as complete"
   - "creating a consolidation plan from multiple PRs"
 tripwires:
   - action: "estimating effort for a plan without checking actual files changed"
