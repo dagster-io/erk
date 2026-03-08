@@ -1512,6 +1512,12 @@ def _execute_land(
     is_flag=True,
     help="Skip creating a learn plan after landing.",
 )
+@click.option(
+    "--stack",
+    "stack_flag",
+    is_flag=True,
+    help="Land the entire Graphite stack bottom-up.",
+)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -1525,6 +1531,7 @@ def land(
     dry_run: bool,
     no_delete: bool,
     skip_learn: bool,
+    stack_flag: bool,
 ) -> None:
     """Merge PR and clean up branch.
 
@@ -1538,6 +1545,7 @@ def land(
       erk land              # Merge + cleanup directly (no navigation)
       erk land --down       # Merge + cleanup + navigate to trunk
       erk land --up         # Merge + cleanup + navigate to child branch
+      erk land --stack      # Land entire Graphite stack bottom-up
       erk land 123          # Land PR #123
       erk land <url>        # Land PR by GitHub URL
       erk land <branch>     # Land PR for branch
@@ -1546,7 +1554,7 @@ def land(
     - PR must be open and ready to merge
     - PR's base branch must be trunk
 
-    Note: --up and --down are mutually exclusive. --up requires Graphite.
+    Note: --up, --down, and --stack are mutually exclusive. --up and --stack require Graphite.
     """
     # Replace context with appropriate wrappers based on flags.
     #
@@ -1571,7 +1579,34 @@ def land(
         "--up navigates to child branch, --down navigates to trunk.",
     )
 
+    Ensure.invariant(
+        not (stack_flag and (up_flag or down_flag)),
+        "--stack cannot be combined with --up or --down.\n"
+        "--stack lands the entire Graphite stack bottom-up.",
+    )
+
+    Ensure.invariant(
+        not (stack_flag and target is not None),
+        "--stack cannot be combined with a target argument.\n"
+        "--stack operates on the current branch's stack.",
+    )
+
     Ensure.gh_authenticated(ctx)
+
+    # Dispatch --stack before repo context discovery (stack handles its own)
+    if stack_flag:
+        from erk.cli.commands.land_stack import execute_land_stack
+
+        repo = discover_repo_context(ctx, ctx.cwd)
+        execute_land_stack(
+            ctx,
+            repo=repo,
+            force=force,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            skip_learn=skip_learn,
+        )
+        return
 
     repo = discover_repo_context(ctx, ctx.cwd)
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
