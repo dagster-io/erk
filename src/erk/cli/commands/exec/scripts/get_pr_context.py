@@ -17,12 +17,12 @@ import uuid
 
 import click
 
-from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk.cli.commands.pr.shared import (
     discover_branch_context,
     echo_plan_context_status,
     run_diff_extraction,
 )
+from erk.cli.repo_resolution import get_remote_github
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.context.types import NoRepoSentinel

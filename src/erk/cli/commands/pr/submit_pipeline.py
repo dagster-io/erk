@@ -17,7 +17,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk.cli.commands.pr.shared import (
     assemble_pr_body,
     echo_plan_context_status,
@@ -27,6 +26,7 @@ from erk.cli.commands.pr.shared import (
 )
 from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
 from erk.cli.ensure import UserFacingCliError
+from erk.cli.repo_resolution import get_remote_github
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider

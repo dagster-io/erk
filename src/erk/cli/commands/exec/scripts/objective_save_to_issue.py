@@ -30,7 +30,7 @@ from erk.cli.commands.objective.check_cmd import (
     ObjectiveValidationSuccess,
     validate_objective,
 )
-from erk.cli.commands.pr.repo_resolution import get_remote_github
+from erk.cli.repo_resolution import get_remote_github
 from erk_shared.context.helpers import (
     require_claude_installation,
     require_context,
