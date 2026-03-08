@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plan_id": 8999,
+  "sessions": [
+    {
+      "session_id": "4f7c7846-8549-4550-8bab-0838d5d70f09",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T07:17:12.137327+00:00",
+      "files": [
+        "impl-4f7c7846-8549-4550-8bab-0838d5d70f09-4f7c7846-8549-4550-8bab-0838d5d70f09.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 3,
+      "raw_size_kb": 580,
+      "xml_size_kb": 52,
+      "git_branch": "plnd/fix-manifest-file-indent-03-08-0712"
+    }
+  ]
+}
