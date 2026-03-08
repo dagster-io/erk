@@ -60,7 +60,7 @@ These signals indicate you should stop coding and switch to planning. They're or
 
 **If you have committed work:** Keep what you have, enter plan mode, and plan the remaining work. The plan should reference your existing commits as context.
 
-**Switching from planning to planless (rare):** If a plan reveals the task is simpler than expected, close the plan issue and make the change directly. This is uncommon — if you invested in planning, the implementation usually benefits from the plan's structure.
+**Switching from planning to planless (rare):** If a plan reveals the task is simpler than expected, close the plan and make the change directly. This is uncommon — if you invested in planning, the implementation usually benefits from the plan's structure.
 
 ## Anti-Patterns
 

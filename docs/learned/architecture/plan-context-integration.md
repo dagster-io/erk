@@ -13,7 +13,7 @@ audit_result: clean
 
 # Plan Context Integration
 
-The `PlanContextProvider` extracts plan content for branches linked to erk-plan issues, enabling more accurate PR descriptions that understand the "why" behind changes.
+The `PlanContextProvider` extracts plan content for branches linked to erk plans, enabling more accurate PR descriptions that understand the "why" behind changes.
 
 ## 5-Step Extraction Algorithm
 
@@ -57,7 +57,7 @@ The provider is designed to fail silently and return `None` when:
 
 - Branch doesn't match naming convention
 - Issue doesn't exist
-- Issue isn't an erk-plan issue (no `plan_comment_id`)
+- Issue isn't an erk plan (no `plan_comment_id`)
 - Plan comment was deleted
 - API errors occur
 

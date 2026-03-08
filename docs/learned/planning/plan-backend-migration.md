@@ -15,7 +15,7 @@ audit_result: clean
 
 # PlanBackend Migration Guide
 
-When exec scripts need to read or update plan issues, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
+When exec scripts need to read or update plans, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
 
 ## Migration Pattern
 
@@ -62,7 +62,7 @@ Two different error types serve different purposes:
 
 | Type                      | Kind                     | Use                                                   |
 | ------------------------- | ------------------------ | ----------------------------------------------------- |
-| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when issue doesn't exist     |
+| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when plan doesn't exist      |
 | `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |
 
 **PlanNotFound** is checked with `isinstance()` (LBYL pattern). **PlanHeaderNotFoundError** is caught with try/except because it indicates a corrupted plan state that cannot be predicted.
@@ -102,7 +102,7 @@ else:
         result["issue_update_error"] = str(e)
 ```
 
-This pattern ensures the gist URL is still reported even if the plan issue update fails.
+This pattern ensures the gist URL is still reported even if the plan update fails.
 
 ## Time Abstraction
 
@@ -162,7 +162,7 @@ The canonical implementation lives in `packages/erk-shared/src/erk_shared/plan_s
 
 ## Error Handling Asymmetry: get vs update
 
-`get_metadata_field()` returns `PlanNotFound` when the plan issue doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:
+`get_metadata_field()` returns `PlanNotFound` when the plan doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:
 
 - **get**: caller typically wants to branch on the result (display vs skip)
 - **update**: caller typically wants to report failure and continue

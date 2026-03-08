@@ -707,7 +707,7 @@ Gastown's severity-based routing handles stuck agents gracefully. Erk currently 
 
 **Potential adoption:**
 
-- Add severity field to plan issues
+- Add severity field to plans
 - Implement stale detection in TUI
 - Route critical issues to human attention
 - Auto-escalate unacknowledged items
@@ -758,7 +758,7 @@ Fast startup when work is discovered. Applicable to:
 
 Auto-escalate unacknowledged issues. Applicable to:
 
-- Plan issues open too long
+- Plans open too long
 - PRs without review
 - Stuck worktrees
 

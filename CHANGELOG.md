@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix land learn pipeline to fetch remote sessions from async-learn branches when local sessions are missing (2db54844)
+- Fix land learn pipeline to fetch remote sessions from planned-pr-context branches when local sessions are missing (2db54844)
 - Fix objective roadmap sync by normalizing comment format to canonical representation (5ec2d82cf)
 
 ## [0.9.9] - 2026-03-06 16:54 PT

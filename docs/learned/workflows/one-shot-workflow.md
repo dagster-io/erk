@@ -7,7 +7,7 @@ read_when:
   - "working with one-shot.yml"
 tripwires:
   - action: "modifying one-shot branch naming convention"
-    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification."
+    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification."
   - action: "assuming one-shot plan and implementation run in the same Claude session"
     warning: "They run in separate sessions. The plan is written to `.erk/impl-context/plan.md` and the implementer reads it fresh. No context carries over."
 ---

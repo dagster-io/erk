@@ -29,7 +29,7 @@ The gap between steps 1 and 2 is unavoidable: the plan must exist before the bra
 
 ## Two-Layer Resolution
 
-When code needs to look up a PR from a plan issue, `branch_name` may be missing from metadata. The system uses two layers:
+When code needs to look up a PR from a plan, `branch_name` may be missing from metadata. The system uses two layers:
 
 <!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, get_pr_for_plan -->
 

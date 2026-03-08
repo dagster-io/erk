@@ -74,7 +74,7 @@ The learn workflow needs to know which sessions belong to which plan. This linka
 
 `find_sessions_for_plan()` extracts session IDs from plan-header metadata blocks (`created_from_session` for planning, `last_local_impl_session` for implementation) and from issue comments (`impl-started`/`impl-ended` events for all implementation sessions, `learn-invoked` for learn sessions).
 
-The planning session ID is captured at plan creation time by the `session_id_injector_hook`, which writes the current session ID to `.erk/scratch/current-session-id`. This is then embedded in the plan issue's metadata when the issue is created.
+The planning session ID is captured at plan creation time by the `session_id_injector_hook`, which writes the current session ID to `.erk/scratch/current-session-id`. This is then embedded in the plan's metadata when the issue is created.
 
 ## Agent Log Discovery
 

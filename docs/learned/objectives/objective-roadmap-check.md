@@ -39,7 +39,7 @@ This separation exists because structural parsing is shared across consumers —
 
 | Check                 | Why it matters                                                                                                                                                                                                    |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `erk-objective` label | Prevents running check on plan issues or random issues that happen to contain markdown tables                                                                                                                     |
+| `erk-objective` label | Prevents running check on plans or random issues that happen to contain markdown tables                                                                                                                           |
 | Roadmap parses        | Early exit — no point running semantic checks on unparseable content                                                                                                                                              |
 | Status/PR consistency | Catches stale status after manual table edits (someone adds a PR reference but forgets to update the Status column). Allowed statuses for nodes with PR references: `done`, `in_progress`, `planning`, `skipped`. |
 | No orphaned done      | Catches typos where someone marks a step done but forgets to add the PR number                                                                                                                                    |

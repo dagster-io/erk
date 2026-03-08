@@ -27,7 +27,7 @@ The command executes six phases sequentially:
 1. **Validate** — Checks Claude CLI availability, current branch, and that a PR exists
 2. **Squash** — Idempotent squash via `execute_squash()` (works whether 1 or N commits)
 3. **Extract diff** — Gets the diff between current branch and parent via `execute_diff_extraction()`
-4. **Generate AI title/body** — Uses `CommitMessageGenerator` with optional plan context from linked erk-plan issue
+4. **Generate AI title/body** — Uses `CommitMessageGenerator` with optional plan context from linked erk plan
 5. **Amend commit** — Rewrites the local commit with the AI-generated message
 6. **Push and update PR** — Force-pushes via `branch_manager.submit_branch()`, updates PR title/body on GitHub
 

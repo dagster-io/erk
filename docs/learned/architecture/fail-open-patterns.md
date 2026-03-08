@@ -84,12 +84,12 @@ If the metadata update itself fails after a successful PR close, that's tolerabl
 
 See `pr_close()` in `src/erk/cli/commands/pr/close_cmd.py`.
 
-**Context**: When closing a plan, we close all linked PRs before closing the plan issue. PR closure is non-critical to the main operation—the plan close should still succeed even if PR cleanup fails.
+**Context**: When closing a plan, we close all linked PRs before closing the plan. PR closure is non-critical to the main operation—the plan close should still succeed even if PR cleanup fails.
 
 **Two-step pattern**:
 
 1. Close linked PRs (optional, fail-open) — closes all OPEN PRs referencing the issue
-2. Close plan issue (critical, fail-closed) — closes the plan itself
+2. Close plan (critical, fail-closed) — closes the plan itself
 
 **Why this works**: If linked PR closure fails, the plan still closes successfully. Users can manually close lingering PRs later. The pattern separates optional cleanup from the critical operation.
 
@@ -170,7 +170,7 @@ Use two layers when:
 - Caller needs to explain failures differently based on context
 - Same operation is critical in one context, optional in another
 
-**Example**: PR lookup for the same plan issue:
+**Example**: PR lookup for the same plan:
 
 | Context          | Critical? | Failure Handling      | Rationale                              |
 | ---------------- | --------- | --------------------- | -------------------------------------- |
@@ -185,7 +185,7 @@ The same gateway function (`_get_pr_for_plan_direct`) returns `None` in all case
 ### erk pr close
 
 - Close linked PRs (optional, fail-open)
-- Close plan issue (critical, fail-closed)
+- Close plan (critical, fail-closed)
 - Update objective roadmap (dependent on plan close)
 
 If linked PR cleanup fails, plan close still succeeds. Users can manually close the PRs later.

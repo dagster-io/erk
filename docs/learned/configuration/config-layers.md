@@ -48,7 +48,7 @@ Team-shared settings for the repository. Checked into git.
 - `[post_create]` - Commands to run after worktree creation
 - `[pool]` - Worktree pool settings (max_slots)
 - `[pool.checkout]` - Commands to run on pool checkout
-- `[plans]` - Plan issue repository settings
+- `[plans]` - Plan repository settings
 
 ### Local Config (`.erk/config.local.toml`)
 

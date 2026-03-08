@@ -45,7 +45,7 @@ Record what was documented in the objective's action comment, creating a bidirec
 
 After an objective's plan produces a merged PR, `/erk:learn` extracts documentation candidates from session logs. This is the right path for insights you didn't realize were worth documenting, or for extracting patterns from implementation sessions focused on shipping code.
 
-The learn workflow creates a separate plan issue for documentation that goes through human review before implementation — insights are captured but not committed without review. See [Learn Workflow](../planning/learn-workflow.md) for the full pipeline.
+The learn workflow creates a separate plan for documentation that goes through human review before implementation — insights are captured but not committed without review. See [Learn Workflow](../planning/learn-workflow.md) for the full pipeline.
 
 ### Choosing Between Paths
 

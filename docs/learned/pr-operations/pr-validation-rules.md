@@ -6,7 +6,7 @@ read_when:
   - "generating PR bodies with checkout footers"
 tripwires:
   - action: "using issue number from .erk/impl-context/plan-ref.json in a checkout footer"
-    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md."
+    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan number. See pr-validation-rules.md."
 last_audited: "2026-02-26 00:00 PT"
 audit_result: edited
 ---
@@ -31,10 +31,10 @@ See `pr_check()` in `src/erk/cli/commands/pr/check_cmd.py` for the orchestration
 
 This is the single most common validation failure for agents, and it stems from a data source confusion:
 
-| Data source                       | Contains              | Use for                                    |
-| --------------------------------- | --------------------- | ------------------------------------------ |
-| `.erk/impl-context/plan-ref.json` | Plan **issue** number | Identifying the plan (not used in PR body) |
-| `create_pr()` return value        | **PR** number         | `erk pr checkout N` footer                 |
+| Data source                       | Contains      | Use for                                    |
+| --------------------------------- | ------------- | ------------------------------------------ |
+| `.erk/impl-context/plan-ref.json` | Plan number   | Identifying the plan (not used in PR body) |
+| `create_pr()` return value        | **PR** number | `erk pr checkout N` footer                 |
 
 **Why agents get confused:** During the submit workflow, `.erk/impl-context/plan-ref.json` is readily available and contains a number. The checkout footer needs a number. Agents grab the accessible one — but it's the wrong one. The PR number doesn't exist until `create_pr()` returns.
 

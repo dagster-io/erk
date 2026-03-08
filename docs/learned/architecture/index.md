@@ -65,7 +65,7 @@
 - **[github-graphql-label-semantics.md](github-graphql-label-semantics.md)** — querying GitHub issues or PRs with multiple label filters, debugging unexpected empty results from GitHub GraphQL label queries, implementing label-based filtering for plan or issue views
 - **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
-- **[github-issue-autoclose.md](github-issue-autoclose.md)** — understanding why erk no longer uses Closes #N, understanding plan issue closure strategy
+- **[github-issue-autoclose.md](github-issue-autoclose.md)** — understanding why erk no longer uses Closes #N, understanding plan closure strategy
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
 - **[github-pr-linkage-api.md](github-pr-linkage-api.md)** — querying PRs linked to an issue, understanding how GitHub tracks issue-PR relationships, debugging why a PR doesn't show as linked to an issue, working with CrossReferencedEvent or closingIssuesReferences
 - **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml

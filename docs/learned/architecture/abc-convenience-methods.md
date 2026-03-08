@@ -50,7 +50,7 @@ Don't use convenience methods when:
 
 - The operation requires implementation-specific behavior
 - Performance characteristics differ between real/fake
-- The operation needs dry-run/printing wrapper behavior
+- The operation needs dry-run wrapper behavior
 
 In those cases, add an abstract method following the [Gateway ABC Implementation Checklist](gateway-abc-implementation.md).
 

@@ -12,7 +12,7 @@ audit_result: edited
 
 ## Two-Part Structure
 
-Plan issues use a two-part structure optimized for GitHub API performance:
+Plans use a two-part structure optimized for GitHub API performance:
 
 | Location      | Block Key     | Purpose                                  |
 | ------------- | ------------- | ---------------------------------------- |

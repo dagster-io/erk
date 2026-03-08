@@ -16,8 +16,7 @@ tripwires:
       always raises UsageError
     warning: use erk pr submit instead
   - action: using this pattern
-    warning:
-      PR workflows automatically update plan issue dispatch metadata when the
+    warning: PR workflows automatically update plan dispatch metadata when the
       branch follows the plnd/ prefix naming pattern
 ---
 
@@ -60,11 +59,11 @@ The handler functions follow a consistent pattern: validate inputs → fetch con
 
 ## Plan Dispatch Metadata Side Effect
 
-PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.
+PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan body.
 
 <!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata -->
 
-This is a cross-cutting concern — the launch command doesn't know about plans, but the metadata helper silently links workflow runs to their originating plan issues. The function uses multiple LBYL early returns (no matching branch pattern, no node ID available, no plan-header metadata block) to gracefully skip non-plan branches.
+This is a cross-cutting concern — the launch command doesn't know about plans, but the metadata helper silently links workflow runs to their originating plans. The function uses multiple LBYL early returns (no matching branch pattern, no node ID available, no plan-header metadata block) to gracefully skip non-plan branches.
 
 ## Anti-Patterns
 

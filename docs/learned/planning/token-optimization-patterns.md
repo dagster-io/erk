@@ -37,7 +37,7 @@ The parent agent's context is the bottleneck. Every token fetched into parent co
 
 <!-- Source: .claude/commands/erk/replan.md, Steps 3-4 -->
 
-The `/erk:replan` command demonstrates this pattern. Step 3 explicitly skips content fetching ("Plan content is fetched by each Explore agent in Step 4, not in the main context"), and Step 4 launches parallel Explore agents that each fetch their own plan issue as their first action.
+The `/erk:replan` command demonstrates this pattern. Step 3 explicitly skips content fetching ("Plan content is fetched by each Explore agent in Step 4, not in the main context"), and Step 4 launches parallel Explore agents that each fetch their own plan as their first action.
 
 <!-- Source: .claude/commands/local/replan-learn-plans.md, Step 3 -->
 

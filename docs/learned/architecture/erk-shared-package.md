@@ -30,7 +30,6 @@ packages/erk-shared/src/erk_shared/
 ├── learn/         # Learn workflow utilities
 ├── output/        # Output formatting
 ├── plan_store/    # Plan backend abstraction (directory still named plan_store)
-├── printing/      # Printing utilities
 ├── scratch/       # Scratch storage and markers
 ├── sessions/      # Session management
 ├── shell_utils/   # Shell integration utilities

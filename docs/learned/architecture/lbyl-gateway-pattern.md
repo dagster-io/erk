@@ -39,7 +39,7 @@ See `GitHubIssues.issue_exists()` and `GitHubIssues.get_issue()` in the ABC for 
 
 ## Implementation Across Gateway Layers
 
-The 5-layer gateway architecture implements existence checks differently at each layer:
+The gateway architecture implements existence checks differently at each layer:
 
 ### Real Gateway: Lightweight API Calls
 
@@ -59,7 +59,7 @@ Fake gateways check constructor-provided test data. See `FakeGitHubIssues.issue_
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py, DryRunGitHubIssues.issue_exists -->
 
-Dry-run and printing gateways delegate existence checks to their wrapped implementations. Existence checks are read-only operations, so they execute even in dry-run mode. See `DryRunGitHubIssues.issue_exists()` — it calls `self._wrapped.issue_exists()` directly.
+Dry-run gateways delegate existence checks to their wrapped implementations. Existence checks are read-only operations, so they execute even in dry-run mode. See `DryRunGitHubIssues.issue_exists()` — it calls `self._wrapped.issue_exists()` directly.
 
 **Why delegate instead of no-op?** Dry-run mode validates workflows without mutating state. If a command would fail due to a missing resource, dry-run should surface that error before the user runs it for real.
 

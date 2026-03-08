@@ -140,7 +140,7 @@ The `/repos/{owner}/{repo}/codespaces/machines` endpoint returns HTTP 500 for ce
 
 GitHub's `willCloseTarget` behavior is evaluated at PR creation time. Adding a `Closes #N` reference via a post-creation body update does **not** enable auto-close. The closing reference must be present in the initial `create_pr()` call body.
 
-This affects one-shot dispatch and any workflow that creates a PR then later wants to link it to a plan issue. The registration step must ensure the closing reference is in the initial body, not appended afterward.
+This affects one-shot dispatch and any workflow that creates a PR then later wants to link it to a plan. The registration step must ensure the closing reference is in the initial body, not appended afterward.
 
 ## Hardcoded --repo Flag Returns Empty Output
 

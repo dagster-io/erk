@@ -32,7 +32,7 @@ The `plan-save` command reads `objective-context` directly to link the plan to i
 
 The `objective-context` marker is the PRIMARY mechanism for objective linking — there is no CLI flag alternative. It must be created before entering plan mode (step 5 of objective-plan), before gathering code context. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update.
 
-### Plan Issue Tracking
+### Plan Tracking
 
 When saving a plan to GitHub, markers communicate the issue number between commands:
 

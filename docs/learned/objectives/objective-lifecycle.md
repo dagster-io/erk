@@ -434,7 +434,7 @@ erk exec objective-fetch-context --pr 6517 --objective 6423 --branch P6513-...
 
 1. **Branch**: from current git state via `git.branch.get_current_branch()`
 2. **Plan number**: extracted from branch name via regex `^P(\d+)-`
-3. **Objective**: extracted from plan issue metadata (`plan-header.objective_issue` field)
+3. **Objective**: extracted from plan metadata (`plan-header.objective_issue` field)
 4. **PR number**: discovered from branch via `github.get_pr_for_branch()`
 
 ### Explicit Node Selection
