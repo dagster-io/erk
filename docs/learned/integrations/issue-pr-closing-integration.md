@@ -32,7 +32,7 @@ The submit pipeline resolves plan numbers from three sources with a strict prior
 
 <!-- Source: packages/erk-shared/src/erk_shared/impl_folder.py, validate_plan_linkage -->
 
-**The mismatch guard is the key design decision.** When both `.erk/impl-context/plan-ref.json` and the branch name contain plan numbers, they must agree — a mismatch raises `ValueError` and halts the pipeline. This prevents the most dangerous failure mode: silently closing the wrong issue because stale metadata disagrees with the branch. See `validate_plan_linkage()` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
+**The mismatch guard is the key design decision.** When both `.erk/impl-context/plan-ref.json` and the branch name contain plan numbers, they must agree — a mismatch raises `ValueError` and halts the pipeline. This prevents the most dangerous failure mode: silently closing the wrong plan because stale metadata disagrees with the branch. See `validate_plan_linkage()` in `packages/erk-shared/src/erk_shared/impl_folder.py`.
 
 ### Auto-Repair: Bridging Manual Worktree Creation
 
