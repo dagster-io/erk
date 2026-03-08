@@ -3,7 +3,7 @@ title: Issue-PR Closing Integration
 read_when:
   - linking PRs to issues for auto-close
   - debugging why issues didn't close when PR merged
-  - working on issue number discovery in the submit pipeline
+  - working on plan number discovery in the submit pipeline
   - understanding cross-repo plan references
 tripwires:
   - action: "putting Closes keyword in PR title or commit message"
@@ -38,7 +38,7 @@ The submit pipeline resolves plan numbers from three sources with a strict prior
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, prepare_state -->
 
-When `.erk/impl-context/` exists but lacks `plan-ref.json`, and the branch name contains a valid issue number, `prepare_state()` auto-creates the missing `plan-ref.json`. This bridges the gap when a worktree is created manually from a plan branch (e.g., `git worktree add`) without going through `erk br co --for-plan`, which would normally create the file. See `prepare_state()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
+When `.erk/impl-context/` exists but lacks `plan-ref.json`, and the branch name contains a valid plan number, `prepare_state()` auto-creates the missing `plan-ref.json`. This bridges the gap when a worktree is created manually from a plan branch (e.g., `git worktree add`) without going through `erk br co --for-plan`, which would normally create the file. See `prepare_state()` in `src/erk/cli/commands/pr/submit_pipeline.py`.
 
 ### Closing Reference Preservation on Re-Submit
 
