@@ -527,7 +527,6 @@ def _run_post_merge_hooks(
                 objective=entry.objective_number,
                 pr=entry.pr_number,
                 branch=entry.branch,
-                plan=int(entry.plan_id) if entry.plan_id is not None else None,
                 worktree_path=main_repo_root,
             )
         except Exception as exc:
