@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Objective Roadmap Rendering and Validation Sync"
+  "plan_id": "8955",
+  "url": "https://github.com/dagster-io/erk/pull/8955",
+  "created_at": "2026-03-07T20:54:43.739339",
+  "synced_at": "2026-03-07T20:54:43.739339",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
