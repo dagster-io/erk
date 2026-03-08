@@ -48,7 +48,7 @@ For each mock group, find the right gateway. **Do not stop at the first match.**
 > just wraps `subprocess.run` is no better than mocking `subprocess.run` directly — it skips
 > the meaningful abstraction layer.
 
-### Step 2a: Identify the system boundary being tested
+### Step 1: Identify the system boundary being tested
 
 Ask: what is the test _actually_ testing? Not "what function is being patched" but
 "what behavior is under test?" Think in terms of the _tool or service_ being interacted
@@ -61,7 +61,7 @@ Examples:
 - Together -> "interact with the Claude CLI" -> gateway is `PromptExecutor` (Claude-specific),
   not `Shell` (subprocess-generic)
 
-### Step 2a-quick: Targeted gateway search
+### Step 2: Targeted gateway search
 
 Before broad exploration, do a quick targeted search using the tool names from Phase 1:
 
@@ -69,12 +69,12 @@ Before broad exploration, do a quick targeted search using the tool names from P
 Grep(pattern="<tool_name>", path="packages/erk-shared/src/erk_shared/gateway/")
 ```
 
-If zero hits for a tool → no gateway exists for it. You'll need to create one (see Phase 4b).
+If zero hits for a tool → no gateway exists for it. You'll need to create one (see Phase 5).
 If hits → read the matching gateway to assess coverage.
 
 This takes seconds and immediately tells you whether you're in "reuse" or "create" territory.
 
-### Step 2a-reuse: Check if any mock target is already covered
+### Step 3: Check if any mock target is already covered
 
 Before creating anything new, check if existing gateways already cover some of your
 mock targets. A test mocking `subprocess.run(["gh", "pr", "view", ...])` is already
@@ -87,7 +87,7 @@ For each system boundary from Phase 1, ask:
 
 This often eliminates half the mocks immediately, reducing the scope of new work.
 
-### Step 2b: Search for existing gateways at the right abstraction level
+### Step 4: Search for existing gateways at the right abstraction level
 
 Search from highest to lowest. A higher-level gateway is preferable because it
 covers multiple low-level calls as a unit.
@@ -116,7 +116,7 @@ Grep(pattern="shutil.which|subprocess.run|is_available", path="packages/erk-shar
   (FakePromptExecutor, FakeLlmCaller, FakeScriptWriter, etc.)
 - `tests/fakes/` -- erk-specific fakes
 
-### Step 2c: Verify the fake covers what you need
+### Step 5: Verify the fake covers what you need
 
 Read the fake's `__init__` signature. Check:
 
@@ -124,7 +124,7 @@ Read the fake's `__init__` signature. Check:
 - Does the fake record calls for assertion (`calls`, `prompt_calls`, etc.)?
 - Does the fake's `is_available()` return what you need?
 
-If no fake exists at the right level, you'll need to create one (see Phase 4b).
+If no fake exists at the right level, you'll need to create one (see Phase 5).
 
 ---
 
@@ -134,14 +134,14 @@ After Phase 2, you're in one of two paths:
 
 **Path A: Existing gateway covers all mocks**
 
-- Skip to Phase 3 (plan injection) → Phase 4a (make injectable) → Phase 5 (rewrite tests)
+- Skip to Phase 3 (plan injection) → Phase 4 (make injectable) → Phase 6 (rewrite tests)
 - This is the fast path. Scope: modify source + rewrite tests.
 
 **Path B: No gateway exists for one or more system boundaries**
 
 - You must create a new gateway before rewriting tests
 - Load the `gateway-abc-implementation` doc (`docs/learned/architecture/gateway-abc-implementation.md`)
-- Follow Phase 4b-expanded below
+- Follow Phase 5-expanded below
 - Scope is significantly larger: new gateway files + ErkContext wiring + modify source + rewrite tests
 
 ---
@@ -157,7 +157,7 @@ Find the class or function that directly calls the mocked thing.
 
 ### Is there already a constructor parameter for this gateway?
 
-- **Yes** -> skip Phase 4a, go to Phase 5
+- **Yes** -> skip Phase 4, go to Phase 6
 - **No** -> plan to add a constructor parameter
 
 ### What's the production wiring?
@@ -171,7 +171,7 @@ Plan what real implementation to wire in:
 
 ---
 
-## Phase 4a: Make source code injectable
+## Phase 4: Make source code injectable
 
 Add the gateway as a constructor parameter. Follow erk's conventions:
 
@@ -226,7 +226,7 @@ See `src/erk/cli/commands/exec/scripts/AGENTS.md` for the full pattern.
 
 ---
 
-## Phase 4b: Create a new gateway (when no suitable gateway exists)
+## Phase 5: Create a new gateway (when no suitable gateway exists)
 
 Load `docs/learned/architecture/gateway-abc-implementation.md` for full patterns.
 
@@ -263,7 +263,7 @@ Most new gateways for mock-to-fake refactoring use the 3-file pattern.
 
 ---
 
-## Phase 5: Rewrite the tests
+## Phase 6: Rewrite the tests
 
 For each test that used `patch`:
 
@@ -306,7 +306,7 @@ Note: `monkeypatch.delenv` is a pytest fixture, not `mock.patch` -- it's fine to
 
 ---
 
-## Phase 6: Verify
+## Phase 7: Verify
 
 Run the affected test file:
 
