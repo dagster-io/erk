@@ -41,6 +41,23 @@
       "raw_size_kb": 1540,
       "xml_size_kb": 223,
       "git_branch": "plnd/refactor-live-dangerously-03-07-2026"
+    },
+    {
+      "session_id": "399bf063-c47f-44dc-b678-fe0af3c67515",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T02:14:43.616974+00:00",
+      "files": [
+        "address-399bf063-c47f-44dc-b678-fe0af3c67515-399bf063-c47f-44dc-b678-fe0af3c67515-part1.xml",
+        "address-399bf063-c47f-44dc-b678-fe0af3c67515-399bf063-c47f-44dc-b678-fe0af3c67515-part2.xml",
+        "address-399bf063-c47f-44dc-b678-fe0af3c67515-399bf063-c47f-44dc-b678-fe0af3c67515-part3.xml",
+        "address-399bf063-c47f-44dc-b678-fe0af3c67515-399bf063-c47f-44dc-b678-fe0af3c67515-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 128,
+      "xml_size_kb": 88,
+      "git_branch": "plnd/refactor-live-dangerously-03-07-2026"
     }
   ]
 }
