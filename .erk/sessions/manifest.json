@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "plan_id": 8959,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T02:12:57.716827+00:00",
+      "files": [
+        "impl--e8456695-6019-4a35-b903-f0be7f82a37a-part1.xml",
+        "impl--e8456695-6019-4a35-b903-f0be7f82a37a-part2.xml",
+        "impl--e8456695-6019-4a35-b903-f0be7f82a37a-part3.xml",
+        "impl--e8456695-6019-4a35-b903-f0be7f82a37a-part4.xml",
+        "impl--e8456695-6019-4a35-b903-f0be7f82a37a-part5.xml",
+        "impl--e8456695-6019-4a35-b903-f0be7f82a37a-part6.xml",
+        "impl--e8456695-6019-4a35-b903-f0be7f82a37a-part7.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 6,
+      "raw_size_kb": 546,
+      "xml_size_kb": 139,
+      "git_branch": "plnd/O8832-centralize-repo-reso-03-08-0204"
+    }
+  ]
+}
