@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Simplify current-wt implement commands to drop unnecessary `source`/`--script`"
+}
