@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Refactor `--dangerous` flag system to `live_dangerously` config with `--safe` override"
+}

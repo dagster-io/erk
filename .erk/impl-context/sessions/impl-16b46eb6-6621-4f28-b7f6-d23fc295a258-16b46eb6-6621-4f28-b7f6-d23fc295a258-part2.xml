@@ -1,0 +1,1064 @@
+<session>
+  <meta branch="plnd/refactor-live-dangerously-03-07-2026" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01TeLE2Zy9t1DYnsb8QYwKuv">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012caGP3a3fcwCNmiQGopGHt">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py</param>
+    <param name="old_string">@click.command("address")
+@click.option(
+    "-d",
+    "--dangerous",
+    is_flag=True,
+  ...[truncated 605 chars]...tly_dangerous_operations false
+    """
+    Ensure.dangerous_flag(ctx, dangerous=dangerous)</param>
+    <param name="new_string">@click.command("address")
+@click.option(
+    "-d",
+    "--dangerous",
+    is_flag=True,
+  ...[truncated 789 chars]...""
+    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="98648" cache_creation="{'ephemeral_5m_input_tokens': 593, 'ephemeral_1h_input_tokens': 0}" output_tokens="601" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012caGP3a3fcwCNmiQGopGHt">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the bug on line 62 where `dangerous=True` is hardcoded — it should use `effective_dangerous`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="99241" cache_creation="{'ephemeral_5m_input_tokens': 648, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XShWTgrBEU8Ag9tNrhW9iu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py</param>
+    <param name="old_string">    result = stream_command_with_feedback(
+        executor=executor,
+        command="/erk:pr-address",
+        worktree_path=cwd,
+        dangerous=True,
+        permission_mode="edits",
+    )</param>
+    <param name="new_string">    result = stream_command_with_feedback(
+        executor=executor,
+        command="/er...[truncated 9 chars]...ee_path=cwd,
+        dangerous=effective_dangerous,
+        permission_mode="edits",
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="99241" cache_creation="{'ephemeral_5m_input_tokens': 648, 'ephemeral_1h_input_tokens': 0}" output_tokens="262" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XShWTgrBEU8Ag9tNrhW9iu">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Step 6 done. Step 7: Update diverge_fix_cmd.py.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="99889" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_015VxSMsWdqtyEFM7yRcEBNP">
+    <param name="todos">[{'content': 'Step 1: Rename GlobalConfig field in types.py', 'status': 'completed', 'acti...[truncated 1421 chars]...ification (CI checks)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="99889" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="554" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015VxSMsWdqtyEFM7yRcEBNP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QVhH6bMHJ8Hv7S9YvfxuB7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py</param>
+    <param name="old_string">@click.command("diverge-fix")
+@click.option(
+    "-d",
+    "--dangerous",
+    is_flag=True...[truncated 602 chars]...tly_dangerous_operations false
+    """
+    Ensure.dangerous_flag(ctx, dangerous=dangerous)</param>
+    <param name="new_string">@click.command("diverge-fix")
+@click.option(
+    "-d",
+    "--dangerous",
+    is_flag=True...[truncated 786 chars]...""
+    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="100198" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="625" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QVhH6bMHJ8Hv7S9YvfxuB7">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `stream_diverge_fix` call to pass `effective_dangerous`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="675" cache_read_input_tokens="100794" cache_creation="{'ephemeral_5m_input_tokens': 675, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01BR884sqmJwvbFymaCiifAy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py</param>
+    <param name="old_string">    # Execute diverge fix
+    result = stream_diverge_fix(executor, cwd)</param>
+    <param name="new_string">    # Execute diverge fix
+    result = stream_diverge_fix(executor, cwd, dangerous=effective_dangerous)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="675" cache_read_input_tokens="100794" cache_creation="{'ephemeral_5m_input_tokens': 675, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BR884sqmJwvbFymaCiifAy">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Step 7 done. Step 8: Update `stream_diverge_fix` signature in output.py.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="101469" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NGUgYVX6SGnYgQijt9twTw">
+    <param name="todos">[{'content': 'Step 1: Rename GlobalConfig field in types.py', 'status': 'completed', 'acti...[truncated 1423 chars]...ification (CI checks)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="101469" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="559" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NGUgYVX6SGnYgQijt9twTw">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013SKaNsZ3dQQzjLZkg8cNu1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">def stream_diverge_fix(
+    executor: PromptExecutor,
+    worktree_path: Path,
+) -&gt; DivergenceFixResult:</param>
+    <param name="new_string">def stream_diverge_fix(
+    executor: PromptExecutor,
+    worktree_path: Path,
+    *,
+    dangerous: bool,
+) -&gt; DivergenceFixResult:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="601" cache_read_input_tokens="101707" cache_creation="{'ephemeral_5m_input_tokens': 601, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013SKaNsZ3dQQzjLZkg8cNu1">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `execute_command_streaming` call inside `stream_diverge_fix` to use the `dangerous` parameter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="102308" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Dx5uDQZke5d7ksRTb2kyjb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/output.py</param>
+    <param name="old_string">    for event in executor.execute_command_streaming(
+        command="/erk:diverge-fix",
+ ...[truncated 33 chars]...=True,  # Divergence resolution modifies git state
+        permission_mode="edits",
+    ):</param>
+    <param name="new_string">    for event in executor.execute_command_streaming(
+        command="/erk:diverge-fix",
+        worktree_path=worktree_path,
+        dangerous=dangerous,
+        permission_mode="edits",
+    ):</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="102308" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="262" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dx5uDQZke5d7ksRTb2kyjb">
+The file /home/runner/work/erk/erk/src/erk/cli/output.py has been updated successfully.
+  </tool_result>
+  <assistant>Step 8 done. Step 9: Update implement_shared.py — add `--safe` option.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="102544" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01CFdiB8QCESV4rrqspXvLed">
+    <param name="todos">[{'content': 'Step 1: Rename GlobalConfig field in types.py', 'status': 'completed', 'acti...[truncated 1425 chars]...ification (CI checks)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="102544" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="558" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CFdiB8QCESV4rrqspXvLed">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Axcom6KcS5rAqXJXa8dShK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+    <param name="old_string">    fn = click.option(
+        "-d",
+        "--dangerous",
+        is_flag=True,
+        ...[truncated 6 chars]...p="Skip permission prompts by passing --dangerously-skip-permissions to Claude",
+    )(fn)</param>
+    <param name="new_string">    fn = click.option(
+        "--safe",
+        is_flag=True,
+        default=False,
+    ...[truncated 148 chars]...   default=False,
+        help="Force dangerous mode (skip permission prompts)",
+    )(fn)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="102847" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="272" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Axcom6KcS5rAqXJXa8dShK">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Step 9 done. Step 10: Update implement.py — add `safe` param and use `Ensure.resolve_dangerous`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="103447" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01UW4Arv5S5dJhGfNRv9ZnCr">
+    <param name="todos">[{'content': 'Step 1: Rename GlobalConfig field in types.py', 'status': 'completed', 'acti...[truncated 1427 chars]...ification (CI checks)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="103447" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UW4Arv5S5dJhGfNRv9ZnCr">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>I need to add `safe` to the `implement` function signature, add `Ensure` import, and resolve the dangerous flag. Let me first add the import:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="103764" cache_creation="{'ephemeral_5m_input_tokens': 606, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RJ9BVjLg7wzcRs9zyhF5dc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">from erk.cli.alias import alias
+from erk.cli.commands.completions import complete_plan_files
+from erk.cli.commands.implement_shared import (</param>
+    <param name="new_string">from erk.cli.alias import alias
+from erk.cli.commands.completions import complete_plan_files
+from erk.cli.ensure import Ensure
+from erk.cli.commands.implement_shared import (</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="103764" cache_creation="{'ephemeral_5m_input_tokens': 606, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RJ9BVjLg7wzcRs9zyhF5dc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `implement` function signature to include `safe`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="104370" cache_creation="{'ephemeral_5m_input_tokens': 283, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Qqnm2KKWoV7tefzsBbzvnc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">def implement(
+    ctx: ErkContext,
+    *,
+    target: str | None,
+    dry_run: bool,
+    ...[truncated 37 chars]...ol,
+    script: bool,
+    yolo: bool,
+    verbose: bool,
+    model: str | None,
+) -&gt; None:</param>
+    <param name="new_string">def implement(
+    ctx: ErkContext,
+    *,
+    target: str | None,
+    dry_run: bool,
+    ...[truncated 53 chars]...ol,
+    script: bool,
+    yolo: bool,
+    verbose: bool,
+    model: str | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="104370" cache_creation="{'ephemeral_5m_input_tokens': 283, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qqnm2KKWoV7tefzsBbzvnc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the yolo/safe mutual exclusion check and resolve dangerous after the yolo block:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="104653" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Fh9vPvu1THamTpADkdEgGF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">    # Handle --yolo flag (shorthand for dangerous + submit + no-interactive)
+    if yolo:
+...[truncated 66 chars]...rmalize model name (validates and expands aliases)
+    model = normalize_model_name(model)</param>
+    <param name="new_string">    # Handle --yolo flag (shorthand for dangerous + submit + no-interactive)
+    if yolo:
+...[truncated 316 chars]...rmalize model name (validates and expands aliases)
+    model = normalize_model_name(model)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="104653" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="328" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fh9vPvu1THamTpADkdEgGF">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to replace all `dangerous=dangerous` with `dangerous=effective_dangerous` in the implement function's downstream calls. Let me check what needs updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="711" cache_read_input_tokens="104993" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FrNURixrub7Y1wAmHR5ph1">
+    <param name="pattern">dangerous=dangerous</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="711" cache_read_input_tokens="104993" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FrNURixrub7Y1wAmHR5ph1">
+81:            dangerous=dangerous,
+90:            dangerous=dangerous,
+100:            dangerous=dangerous,
+198:            dangerous=dangerous,
+236:        dangerous=dangerous,
+286:            dangerous=dangerous,
+312:        dangerous=dangerous,
+395:    effective_dangerous = Ensure.resolve_dangerous(ctx, dangerous=dangerous, safe=safe)
+423:                dangerous=dangerous,
+469:            dangerous=dangerous,
+483:            dangerous=dangerous,
+  </tool_result>
+  <assistant>There are many occurrences of `dangerous=dangerous` in the file. The ones in `_execute`, `_show_dry_run_output`, `_implement_from_issue`, `_implement_from_file` are internal function calls that just pass-through the parameter - they should now receive `effective_dangerous`. Let me look at the calls from the `implement()` function itself to update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="105704" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WNtmq2e4F8BqmXsrS5rPyE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="offset">400</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="105704" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WNtmq2e4F8BqmXsrS5rPyE">
+   400→    # Validate flag combinations
+   401→    validate_flags(
+   402→        submit=submit,
+   403→        no_interactive=no_interactive,
+   404→        script=script,
+   405→    )
+   406→
+   407→    # Auto-detect from impl-context or branch name when TARGET is omitted
+   408→    if target is None:
+   409→        current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
+   410→
+   411→        # Strategy 1: Check existing .erk/impl-context/
+   412→        impl_dir = resolve_impl_dir(ctx.cwd, branch_name=current_branch)
+   413→        if impl_dir is not None and (impl_dir / "plan.md").exists():
+   414→            user_output(f"Auto-detected impl-context at {impl_dir.relative_to(ctx.cwd)}")
+   415→            if dry_run:
+   416→                user_output("Would execute implementation from existing impl-context")
+   417→                return
+   418→            repo = discover_repo_context(ctx, ctx.cwd)
+   419→            _execute(
+   420→                ctx,
+   421→                repo=repo,
+   422→                submit=submit,
+   423→                dangerous=dangerous,
+   424→                script=script,
+   425→                no_interactive=no_interactive,
+   426→                verbose=verbose,
+   427→                model=model,
+   428→                executor=ctx.prompt_executor,
+   429→            )
+
+... [66 lines omitted] ...
+
+   439→            raise click.ClickException(
+   460→                click.style("Error: ", fg="red") + "Failed to extract plan number from target"
+  </tool_result>
+  <assistant>I need to update the three call sites in the `implement()` function to pass `effective_dangerous` instead of `dangerous`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1781" cache_read_input_tokens="105969" cache_creation="{'ephemeral_5m_input_tokens': 1781, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01ESioG6nRSYC8GEgLEnruUn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">            _execute(
+                ctx,
+                repo=repo,
+                subm...[truncated 214 chars]...            )
+            return
+
+        # Strategy 2: Extract plan number from GitHub PR</param>
+    <param name="new_string">            _execute(
+                ctx,
+                repo=repo,
+                subm...[truncated 224 chars]...            )
+            return
+
+        # Strategy 2: Extract plan number from GitHub PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1781" cache_read_input_tokens="105969" cache_creation="{'ephemeral_5m_input_tokens': 1781, 'ephemeral_1h_input_tokens': 0}" output_tokens="309" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ESioG6nRSYC8GEgLEnruUn">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HxXGzUkgPzQdkD2ApySpme">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">        _implement_from_issue(
+            ctx,
+            plan_number=target_info.plan_n...[truncated 161 chars]...bose=verbose,
+            model=model,
+            executor=ctx.prompt_executor,
+        )</param>
+    <param name="new_string">        _implement_from_issue(
+            ctx,
+            plan_number=target_info.plan_n...[truncated 171 chars]...bose=verbose,
+            model=model,
+            executor=ctx.prompt_executor,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="107750" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="293" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HxXGzUkgPzQdkD2ApySpme">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RcQQDitTNFiK4BgzBihYYx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">        _implement_from_file(
+            ctx,
+            plan_file=plan_file,
+          ...[truncated 144 chars]...bose=verbose,
+            model=model,
+            executor=ctx.prompt_executor,
+        )</param>
+    <param name="new_string">        _implement_from_file(
+            ctx,
+            plan_file=plan_file,
+          ...[truncated 154 chars]...bose=verbose,
+            model=model,
+            executor=ctx.prompt_executor,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="676" cache_read_input_tokens="108102" cache_creation="{'ephemeral_5m_input_tokens': 676, 'ephemeral_1h_input_tokens': 0}" output_tokens="285" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RcQQDitTNFiK4BgzBihYYx">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <assistant>Step 10 done. Now Step 11: Update tests. Let me first search for all test files that reference the old field name.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="108778" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013ixU2TDA3RyA8LAvFZ1JkQ">
+    <param name="todos">[{'content': 'Step 1: Rename GlobalConfig field in types.py', 'status': 'completed', 'acti...[truncated 1429 chars]...ification (CI checks)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="108778" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013ixU2TDA3RyA8LAvFZ1JkQ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Grep" id="toolu_011x9qgRMbRgUmimPLdJVohH">
+    <param name="pattern">require_dangerous_flag_for_implicitly_dangerous_operations</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="605" cache_read_input_tokens="109106" cache_creation="{'ephemeral_5m_input_tokens': 605, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0129KsC1Dv9NixgxBoFZVHwh">
+    <param name="pattern">dangerous_flag</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="605" cache_read_input_tokens="109106" cache_creation="{'ephemeral_5m_input_tokens': 605, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01WWjjiycptRmiRB8fgCjBid">
+    <param name="pattern">stream_diverge_fix</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="605" cache_read_input_tokens="109106" cache_creation="{'ephemeral_5m_input_tokens': 605, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011x9qgRMbRgUmimPLdJVohH">
+Found 9 files
+tests/commands/pr/test_rebase.py
+tests/commands/pr/test_address.py
+tests/commands/pr/test_diverge_fix.py
+packages/erk-statusline/tests/test_context.py
+packages/erk-shared/tests/unit/config/test_schema.py
+docs/learned/reference/cli-flag-patterns.md
+docs/learned/cli/commands/pr-diverge-fix.md
+docs/learned/cli/cli-options-validation.md
+CHANGELOG.md
+  </tool_result>
+  <tool_result tool="toolu_0129KsC1Dv9NixgxBoFZVHwh">
+Found 18 files
+tests/unit/cli/test_activation.py
+tests/unit/cli/commands/codespace/run/objective/test_plan_cmd.py
+tests/integration/test_real_global_config.py
+tests/commands/pr/test_rebase.py
+tests/commands/pr/test_address.py
+tests/commands/pr/test_diverge_fix.py
+tests/commands/objective/test_plan.py
+tests/commands/learn/test_display.py
+tests/commands/implement/test_execution_modes.py
+tests/commands/implement/test_flags.py
+packages/erk-statusline/tests/test_context.py
+packages/erk-shared/tests/unit/config/test_schema.py
+docs/learned/reference/cli-flag-patterns.md
+docs/learned/reference/interactive-claude-config.md
+docs/learned/reference/tripwires.md
+docs/learned/cli/commands/pr-diverge-fix.md
+docs/learned/cli/cli-options-validation.md
+CHANGELOG.md
+  </tool_result>
+  <tool_result tool="toolu_01WWjjiycptRmiRB8fgCjBid">
+Found 2 files
+src/erk/cli/output.py
+src/erk/cli/commands/pr/diverge_fix_cmd.py
+  </tool_result>
+  <assistant>I need to update many test files. Let me read and update them. Let me start by reading the key test files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="109711" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KzsWur2z8sRfHA2KZPtriS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="109711" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011d8RgUxvYG7qNETchSHq1c">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/tests/test_context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="109711" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017MyPS332c7W9WEm4GZU9Wn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rebase.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="109711" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018JvhLqdt293d66hf6vfS25">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_address.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="109711" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0191SCq7ZCDcsLqT5oYFbUv3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="109711" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KzsWur2z8sRfHA2KZPtriS">
+     1→"""Tests for the config schema module."""
+     2→
+     3→from erk_shared.config.schema import (
+     4→    ConfigLevel,
+     5→    FieldMetadata,
+     6→    GlobalConfigSchema,
+     7→    RepoConfigSchema,
+     8→    get_field_metadata,
+     9→    get_global_config_fields,
+    10→    get_global_config_key_names,
+    11→    get_global_only_keys,
+    12→    get_overridable_keys,
+    13→    get_repo_config_fields,
+    14→    is_global_config_key,
+    15→    iter_displayable_fields,
+    16→)
+    17→
+    18→
+    19→class TestGlobalConfigSchema:
+    20→    """Tests for GlobalConfigSchema metadata."""
+    21→
+    22→    def test_has_expected_fields(self) -&gt; None:
+    23→        """Schema contains all expected global config fields."""
+    24→        field_names = set(GlobalConfigSchema.model_fields.keys())
+    25→        expected_fields = {
+    26→            "erk_root",
+    27→            "use_graphite",
+    28→            "github_planning",
+    29→            "require_dangerous_flag_for_implicitly_dangerous_operations",
+    30→            "show_hidden_commands",
+
+... [141 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011d8RgUxvYG7qNETchSHq1c">
+     1→"""Tests for statusline context creation."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.context.types import GlobalConfig
+     8→from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+     9→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+    10→from erk_shared.gateway.graphite.real import RealGraphite
+    11→from erk_statusline.context import resolve_graphite
+    12→
+    13→
+    14→class TestResolveGraphite:
+    15→    """Test resolve_graphite() helper function."""
+    16→
+    17→    def test_no_config_returns_graphite_disabled(self) -&gt; None:
+    18→        """When no config exists, should return GraphiteDisabled."""
+    19→        installation = FakeErkInstallation(config=None)
+    20→
+    21→        result = resolve_graphite(installation)
+    22→
+    23→        assert isinstance(result, GraphiteDisabled)
+    24→        assert result.reason == GraphiteDisabledReason.CONFIG_DISABLED
+    25→
+    26→    def test_config_with_graphite_disabled_returns_graphite_disabled(self) -&gt; None:
+    27→        """When config has use_graphite=false, should return GraphiteDisabled."""
+    28→        config = GlobalConfig(
+    29→            erk_root=Path("/fake/erk"),
+    30→            use_graphite=False,
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017MyPS332c7W9WEm4GZU9Wn">
+     1→"""Tests for erk pr rebase command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.abc import RebaseResult
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from tests.fakes.prompt_executor import FakePromptExecutor
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_pr_rebase_non_graphite_success() -&gt; None:
+    15→    """Test successful rebase via git rebase (Graphite disabled)."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git = FakeGit(
+    19→            git_common_dirs={env.cwd: env.git_dir},
+    20→            local_branches={env.cwd: ["main", "feature-branch"]},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "feature-branch"},
+    24→        )
+    25→
+    26→        executor = FakePromptExecutor(available=True)
+    27→
+    28→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    29→
+    30→        result = runner.invoke(pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx)
+
+... [229 lines omitted] ...
+
+    70→def test_pr_rebase_non_graphite_no_target_error() -&gt; None:
+    71→    """Test error when --target not provided with Graphite disabled."""
+   176→    """Test error when Claude is not installed."""
+  </tool_result>
+  <tool_result tool="toolu_018JvhLqdt293d66hf6vfS25">
+     1→"""Tests for erk pr address command (local variant)."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.fake import FakeGit
+     8→from tests.fakes.prompt_executor import FakePromptExecutor
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_pr_address_success() -&gt; None:
+    14→    """Test successful local address when Claude is available."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        git = FakeGit(
+    18→            git_common_dirs={env.cwd: env.git_dir},
+    19→            local_branches={env.cwd: ["main", "feature-branch"]},
+    20→            default_branches={env.cwd: "main"},
+    21→            trunk_branches={env.cwd: "main"},
+    22→            current_branches={env.cwd: "feature-branch"},
+    23→        )
+    24→
+    25→        executor = FakePromptExecutor(available=True)
+    26→
+    27→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    28→
+    29→        result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
+    30→
+
+... [124 lines omitted] ...
+
+    61→        # Verify error message includes config hint
+   100→    """Test error when Claude is not installed."""
+   125→def test_pr_address_fails_on_command_error() -&gt; None:
+   147→        # Error message from FakePromptExecutor
+   148→        assert "failed" in result.output.lower()
+  </tool_result>
+  <tool_result tool="toolu_0191SCq7ZCDcsLqT5oYFbUv3">
+     1→"""Tests for erk pr diverge-fix command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.abc import BranchDivergence
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from tests.fakes.prompt_executor import FakePromptExecutor
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_pr_diverge_fix_success() -&gt; None:
+    15→    """Test successful reconciliation when branch is diverged."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git = FakeGit(
+    19→            git_common_dirs={env.cwd: env.git_dir},
+    20→            local_branches={env.cwd: ["main", "feature-branch"]},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "feature-branch"},
+    24→            remote_branches={env.cwd: ["origin/feature-branch", "origin/main"]},
+    25→            branch_divergence={
+    26→                (env.cwd, "feature-branch", "origin"): BranchDivergence(
+    27→                    is_diverged=True, ahead=2, behind=3
+    28→                )
+    29→            },
+    30→        )
+
+... [330 lines omitted] ...
+
+    74→        # Verify error message includes config hint
+   180→    """Test error when no remote tracking branch."""
+   204→    """Test error when not on a branch."""
+   227→    """Test error when Claude is not installed."""
+   291→def test_pr_diverge_fix_fails_on_command_error() -&gt; None:
+   319→        # Error message from FakePromptExecutor
+   320→        assert "failed" in result.output.lower()
+  </tool_result>
+  <assistant>Now I have a clear picture of all the tests. The key changes needed:
+
+1. **test_schema.py**: Replace `require_dangerous_flag_for_implicitly_dangerous_operations` with `live_dangerously`, add `cmux_integration` to expected fields, update field counts to 8
+2. **test_context.py**: Replace `require_dangerous_flag_for_implicitly_dangerous_operations=True` with `live_dangerously=True`
+3. **test_rebase.py**: Update the `test_pr_rebase_requires_dangerous_flag` and `test_pr_rebase_skip_dangerous_with_config` tests
+4. **test_address.py**: Same pattern
+5. **test_diverge_fix.py**: Same pattern
+
+Let me also check for other test files that use `dangerous_flag`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15574" cache_read_input_tokens="110428" cache_creation="{'ephemeral_5m_input_tokens': 15574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0176aFudbsjwbKcMFoyPXWHm">
+    <param name="pattern">dangerous_flag</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15574" cache_read_input_tokens="110428" cache_creation="{'ephemeral_5m_input_tokens': 15574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0176aFudbsjwbKcMFoyPXWHm">
+tests/commands/implement/test_execution_modes.py:53:def test_interactive_mode_with_dangerous_flag() -&gt; None:
+tests/commands/implement/test_flags.py:165:def test_implement_with_dangerous_flag_in_script_mode() -&gt; None:
+tests/commands/implement/test_flags.py:200:def test_implement_without_dangerous_flag_in_script_mode() -&gt; None:
+tests/commands/implement/test_flags.py:273:def test_implement_with_dangerous_flag_in_dry_run() -&gt; None:
+tests/commands/implement/test_flags.py:334:def test_implement_plan_file_with_dangerous_flag() -&gt; None:
+tests/commands/pr/test_rebase.py:120:def test_pr_rebase_requires_dangerous_flag() -&gt; None:
+tests/commands/pr/test_rebase.py:140:        assert "require_dangerous_flag_for_implicitly_dangerous_operations false" in result.output
+tests/commands/pr/test_rebase.py:159:            require_dangerous_flag_for_implicitly_dangerous_operations=False,
+tests/commands/pr/test_diverge_fix.py:43:        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
+tests/commands/pr/test_diverge_fix.py:45:        assert dangerous_flag is True
+tests/commands/pr/test_diverge_fix.py:48:def test_pr_diverge_fix_requires_dangerous_flag() -&gt; None:
+tests/commands/pr/test_diverge_fix.py:75:        assert "require_dangerous_flag_for_implicitly_dangerous_operations false" in result.output
+tests/commands/pr/test_diverge_fix.py:98:        # Create GlobalConfig with require_dangerous_flag_for_implicitly_dangerous_operations=False
+tests/commands/pr/test_diverge_fix.py:101:            require_dangerous_flag_for_implicitly_dangerous_operations=False,
+tests/commands/pr/test_address.py:36:        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
+tests/commands/pr/test_address.py:38:        assert dangerous_flag is True
+tests/commands/pr/test_address.py:41:def test_pr_address_requires_dangerous_flag() -&gt; None:
+tests/commands/pr/test_address.py:62:        assert "require_dangerous_flag_for_implicitly_dangerous_operations false" in result.output
+tests/commands/pr/test_address.py:81:            require_dangerous_flag_for_implicitly_dangerous_operations=False,
+tests/integration/test_real_global_config.py:441:    # (note: "requires_dangerous_flag" is a different field that exists elsewhere)
+tests/commands/learn/test_display.py:107:def test_dangerous_flag_passed_to_execute_interactive(tmp_path: Path) -&gt; None:
+tests/commands/learn/test_display.py:194:def test_learn_without_dangerous_flag(tmp_path: Path) -&gt; None:
+tests/commands/learn/test_display.py:643:def test_dangerous_flag_auto_launches_without_interactive_flag(tmp_path: Path) -&gt; None:
+tests/commands/objective/test_plan.py:124:def test_plan_with_dangerous_flag() -&gt; None:
+tests/commands/objective/test_plan.py:141:def test_plan_without_dangerous_flag() -&gt; None:
+tests/unit/cli/test_activation.py:776:def test_print_activation_instructions_implement_dangerous_config_shows_dangerous_flag(
+tests/unit/cli/commands/codespace/run/objective/test_plan_cmd.py:100:def test_run_plan_with_dangerous_flag() -&gt; None:
+tests/unit/cli/commands/codespace/run/objective/test_plan_cmd.py:127:def test_run_plan_without_dangerous_flag() -&gt; None:
+  </tool_result>
+  <assistant>There are more test files to update. Let me handle the main ones first. Let me do the test updates in parallel via batch edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1290" cache_read_input_tokens="126002" cache_creation="{'ephemeral_5m_input_tokens': 1290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011G13iExfGoHBsTeaNfqSRb">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">        expected_fields = {
+            "erk_root",
+            "use_graphite",
+          ...[truncated 145 chars]...,
+            "shell_integration",
+        }
+        assert field_names == expected_fields</param>
+    <param name="new_string">        expected_fields = {
+            "erk_root",
+            "use_graphite",
+          ...[truncated 135 chars]...",
+            "cmux_integration",
+        }
+        assert field_names == expected_fields</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1290" cache_read_input_tokens="126002" cache_creation="{'ephemeral_5m_input_tokens': 1290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SBTnEqwG7sAcyqe1pHUr8k">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">        fields = list(iter_displayable_fields(GlobalConfigSchema))
+        assert len(fields) == 7</param>
+    <param name="new_string">        fields = list(iter_displayable_fields(GlobalConfigSchema))
+        assert len(fields) == 8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1290" cache_read_input_tokens="126002" cache_creation="{'ephemeral_5m_input_tokens': 1290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01513a8LUYvVBCMYm1bYce3j">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">        expected_order = [
+            "erk_root",
+            "use_graphite",
+           ...[truncated 98 chars]..._commands",
+            "prompt_learn_on_land",
+            "shell_integration",
+        ]</param>
+    <param name="new_string">        expected_order = [
+            "erk_root",
+            "use_graphite",
+           ...[truncated 88 chars]...learn_on_land",
+            "shell_integration",
+            "cmux_integration",
+        ]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1290" cache_read_input_tokens="126002" cache_creation="{'ephemeral_5m_input_tokens': 1290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017YK4dgrDN2br6GNrQp1uHJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py</param>
+    <param name="old_string">        assert len(keys) == 7</param>
+    <param name="new_string">        assert len(keys) == 8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1290" cache_read_input_tokens="126002" cache_creation="{'ephemeral_5m_input_tokens': 1290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011G13iExfGoHBsTeaNfqSRb">
+The file /home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01SBTnEqwG7sAcyqe1pHUr8k">
+The file /home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01513a8LUYvVBCMYm1bYce3j">
+The file /home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017YK4dgrDN2br6GNrQp1uHJ">
+The file /home/runner/work/erk/erk/packages/erk-shared/tests/unit/config/test_schema.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the statusline test and the PR command tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1444" cache_read_input_tokens="127292" cache_creation="{'ephemeral_5m_input_tokens': 1444, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018WaSZBxU7Ykg3a3ZCuPMw8">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/tests/test_context.py</param>
+    <param name="old_string">require_dangerous_flag_for_implicitly_dangerous_operations=True</param>
+    <param name="new_string">live_dangerously=True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1444" cache_read_input_tokens="127292" cache_creation="{'ephemeral_5m_input_tokens': 1444, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018WaSZBxU7Ykg3a3ZCuPMw8">
+The file /home/runner/work/erk/erk/packages/erk-statusline/tests/test_context.py has been updated. All occurrences of 'require_dangerous_flag_for_implicitly_dangerous_operations=True' were successfully replaced with 'live_dangerously=True'.
+  </tool_result>
+  <assistant>Now update the rebase tests. The `test_pr_rebase_requires_dangerous_flag` test needs to change because with `live_dangerously=True` (default), the command should succeed without `--dangerous`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="128736" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Y3c7YNGGWAY2xPABpR8hWT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rebase.py</param>
+    <param name="old_string">def test_pr_rebase_requires_dangerous_flag() -&gt; None:
+    """Test that command fails when ...[truncated 1834 chars]...)
+
+        assert result.exit_code == 0
+        assert "Rebase complete!" in result.output</param>
+    <param name="new_string">def test_pr_rebase_succeeds_without_dangerous_flag() -&gt; None:
+    """Test that command suc...[truncated 3979 chars]...executor.interactive_calls[0]
+        assert call[1] is False  # dangerous should be False</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="128736" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="1991" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y3c7YNGGWAY2xPABpR8hWT">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rebase.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the address tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2374" cache_read_input_tokens="128991" cache_creation="{'ephemeral_5m_input_tokens': 2374, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KrkiZe1GQh9uaRP2xLhYKS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_address.py</param>
+    <param name="old_string">def test_pr_address_requires_dangerous_flag() -&gt; None:
+    """Test that command fails when...[truncated 1979 chars]...     assert result.exit_code == 0
+        assert "PR comments addressed!" in result.output</param>
+    <param name="new_string">def test_pr_address_succeeds_without_dangerous_flag() -&gt; None:
+    """Test that command su...[truncated 3822 chars]...ands[0]
+        assert command == "/erk:pr-address"
+        assert dangerous_flag is False</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2374" cache_read_input_tokens="128991" cache_creation="{'ephemeral_5m_input_tokens': 2374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1884" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KrkiZe1GQh9uaRP2xLhYKS">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_address.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the diverge-fix tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1926" cache_read_input_tokens="131365" cache_creation="{'ephemeral_5m_input_tokens': 1926, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_015ufuittAqVExzdHsFY155W">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py</param>
+    <param name="old_string">def test_pr_diverge_fix_requires_dangerous_flag() -&gt; None:
+    """Test that command fails ...[truncated 2666 chars]... assert result.exit_code == 0
+        assert "Branch synced with remote!" in result.output</param>
+    <param name="new_string">def test_pr_diverge_fix_succeeds_without_dangerous_flag() -&gt; None:
+    """Test that comman...[truncated 4968 chars]...nds[0]
+        assert command == "/erk:diverge-fix"
+        assert dangerous_flag is False</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1926" cache_read_input_tokens="131365" cache_creation="{'ephemeral_5m_input_tokens': 1926, 'ephemeral_1h_input_tokens': 0}" output_tokens="2437" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015ufuittAqVExzdHsFY155W">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to update the remaining test files that reference the old field name. Let me also check if there are any files that use `Ensure.dangerous_flag` that I haven't updated yet:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="81207" cache_read_input_tokens="20341" cache_creation="{'ephemeral_5m_input_tokens': 81207, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01X7AfW1PNi6bL3boceVdCHF">
+    <param name="pattern">Ensure\.dangerous_flag</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="81207" cache_read_input_tokens="20341" cache_creation="{'ephemeral_5m_input_tokens': 81207, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X7AfW1PNi6bL3boceVdCHF">
+Found 2 files
+docs/learned/reference/cli-flag-patterns.md
+docs/learned/cli/cli-options-validation.md
+  </tool_result>
+  <assistant>Good - only docs files, which I'll update in Step 12. Now let me check for any other files that use `require_dangerous_flag` in source code (non-docs, non-changelog):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="101548" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Td88VKAotkEz1f1N2YRD8K">
+    <param name="pattern">require_dangerous_flag</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="101548" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01RuCmiMaKTXKwywA7HxwPtK">
+    <param name="pattern">require_dangerous_flag</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="101548" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011Nqzs9mzNR6xJCwqoAwfRo">
+    <param name="pattern">require_dangerous_flag</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="101548" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RuCmiMaKTXKwywA7HxwPtK">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01Td88VKAotkEz1f1N2YRD8K">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_011Nqzs9mzNR6xJCwqoAwfRo">
+No files found
+  </tool_result>
+  <assistant>All source and test code is clean. Now I need to check the other test files that reference `dangerous_flag` in test function names (for `learn`, `objective`, `activation`, `codespace` tests). These may need the same pattern update. Let me check them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="771" cache_read_input_tokens="101716" cache_creation="{'ephemeral_5m_input_tokens': 771, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MBBLqqQyVpjdDWdddxUrYc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/learn/test_display.py</param>
+    <param name="offset">100</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="771" cache_read_input_tokens="101716" cache_creation="{'ephemeral_5m_input_tokens': 771, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013Z7JhmDJNLNr78fAQ6vkSx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/objective/test_plan.py</param>
+    <param name="offset">115</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="771" cache_read_input_tokens="101716" cache_creation="{'ephemeral_5m_input_tokens': 771, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MBBLqqQyVpjdDWdddxUrYc">
+   100→        "created_by": "test-user",
+   101→        "created_from_session": session_id,
+   102→    }
+   103→    header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
+   104→    return f"{header_block}\n\n# Plan\n\nTest plan content"
+   105→
+   106→
+   107→def test_dangerous_flag_passed_to_execute_interactive(tmp_path: Path) -&gt; None:
+   108→    """Verify --dangerous flag is passed to execute_interactive."""
+   109→    # Arrange: Create issue with session metadata
+   110→    session_id = "test-session-abc123"
+   111→    issue_body = _make_plan_body_with_session(session_id)
+   112→
+   113→    now = datetime.now(UTC)
+   114→    issue_123 = IssueInfo(
+   115→        number=123,
+   116→        title="Test Plan",
+   117→        body=issue_body,
+   118→        state="OPEN",
+   119→        url="https://github.com/owner/repo/issues/123",
+   120→        labels=["erk-pr", "erk-plan"],
+   121→        assignees=[],
+   122→        created_at=now,
+   123→        updated_at=now,
+   124→        author="testuser",
+   125→    )
+   126→    fake_issues = FakeGitHubIssues(issues={123: issue_123})
+   127→    fake_github = FakeLocalGitHub(
+   128→        pr_details={123: issue_info_to_pr_details(issue_123)},
+   129→        issues_gateway=fake_issues,
+
+... [95 lines omitted] ...
+
+   185→    assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_013Z7JhmDJNLNr78fAQ6vkSx">
+   115→    assert fake_launcher.launch_called
+   116→    assert fake_launcher.last_call is not None
+   117→    # Should include allow_dangerous from config
+   118→    # and use plan mode (overridden from default acceptEdits)
+   119→    assert fake_launcher.last_call.config.allow_dangerous is True
+   120→    assert fake_launcher.last_call.config.permission_mode == "plan"
+   121→    assert fake_launcher.last_call.command == "/erk:objective-plan 123"
+   122→
+   123→
+   124→def test_plan_with_dangerous_flag() -&gt; None:
+   125→    """Test that -d/--dangerous flag enables allow_dangerous in launcher config."""
+   126→    runner = CliRunner()
+   127→    fake_launcher = FakeAgentLauncher()
+   128→    ctx = context_for_test(agent_launcher=fake_launcher)
+   129→
+   130→    result = runner.invoke(cli, ["objective", "plan", "-d", "123"], obj=ctx)
+   131→
+   132→    assert result.exit_code == 0
+   133→    assert fake_launcher.launch_called
+   134→    assert fake_launcher.last_call is not None
+   135→    # Should include allow_dangerous from -d flag
+   136→    assert fake_launcher.last_call.config.allow_dangerous is True
+   137→    assert fake_launcher.last_call.config.permission_mode == "plan"
+   138→    assert fake_launcher.last_call.command == "/erk:objective-plan 123"
+   139→
+   140→
+   141→def test_plan_without_dangerous_flag() -&gt; None:
+   142→    """Test that without -d flag, allow_dangerous is not enabled."""
+   143→    runner = CliRunner()
+   144→    fake_launcher = FakeAgentLauncher()
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>The `learn` and `objective` test files use `--dangerous` flag directly without going through `Ensure.dangerous_flag()` — they have their own mechanisms (different from the config-based pattern). Those don't need changes for this refactor.
+
+Let me now check if the `test_real_global_config.py` and `test_execution_modes.py` / `test_flags.py` need updates:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3175" cache_read_input_tokens="102487" cache_creation="{'ephemeral_5m_input_tokens': 3175, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01N4MGdKKXYv9QWGZBpbBoC4">
+    <param name="pattern">require_dangerous_flag|dangerous_flag</param>
+    <param name="path">/home/runner/work/erk/erk/tests/integration/test_real_global_config.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3175" cache_read_input_tokens="102487" cache_creation="{'ephemeral_5m_input_tokens': 3175, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01RQuk8XMhVLe1aZ2VHNPuTp">
+    <param name="pattern">dangerous_flag</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/implement/test_execution_modes.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3175" cache_read_input_tokens="102487" cache_creation="{'ephemeral_5m_input_tokens': 3175, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FxS2GeZyS9TeJgRYosaHLp">
+    <param name="pattern">dangerous_flag</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/implement/test_flags.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3175" cache_read_input_tokens="102487" cache_creation="{'ephemeral_5m_input_tokens': 3175, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FxS2GeZyS9TeJgRYosaHLp">
+162-# Dangerous Flag Tests
+163-
+164-
+165:def test_implement_with_dangerous_flag_in_script_mode() -&gt; None:
+166-    """Test that --dangerous flag adds --dangerously-skip-permissions to generated script."""
+167-    plan_issue = create_sample_plan_issue()
+168-
+--
+197-        assert expected_cmd in script_content
+198-
+199-
+200:def test_implement_without_dangerous_flag_in_script_mode() -&gt; None:
+201-    """Test that script without --dangerous flag does not include --dangerously-skip-permissions."""
+202-    plan_issue = create_sample_plan_issue()
+203-
+--
+270-        assert expected_submit in script_content
+271-
+272-
+273:def test_implement_with_dangerous_flag_in_dry_run() -&gt; None:
+274-    """Test that --dangerous flag shows in dry-run output."""
+275-    plan_issue = create_sample_plan_issue()
+276-
+--
+331-        assert not (env.cwd / ".erk" / "impl-context").exists()
+332-
+333-
+334:def test_implement_plan_file_with_dangerous_flag() -&gt; None:
+335-    """Test that --dangerous flag works with plan file mode."""
+336-    runner = CliRunner()
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RQuk8XMhVLe1aZ2VHNPuTp">
+50-        assert model is None
+51-
+52-
+53:def test_interactive_mode_with_dangerous_flag() -&gt; None:
+54-    """Verify interactive mode passes dangerous flag to executor."""
+55-    plan_issue = create_sample_plan_issue()
+56-
+  </tool_result>
+  <tool_result tool="toolu_01N4MGdKKXYv9QWGZBpbBoC4">
+438-    assert "verbose =" not in content
+439-    assert "permission_mode =" not in content
+440-    # Check that "dangerous =" is not in [interactive-agent] section
+441:    # (note: "requires_dangerous_flag" is a different field that exists elsewhere)
+442-    assert "\ndangerous =" not in content
+443-    assert "allow_dangerous =" not in content
+444-
+  </tool_result>
+  <assistant>The integration test just has a comment mentioning `requires_dangerous_flag`, which is fine. The implement tests use `--dangerous` flag directly in CLI invocations rather than going through `Ensure.dangerous_flag()`, so they're testing the flag passing behavior. Let me quickly check if the implement tests need updating — they now need to also pass `safe`:</assistant>
+  <usage input_tokens="468" cache_creation_input_tokens="932" cache_read_input_tokens="105662" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HqLio7BXzDJ7bXJ6eScYai">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/implement/test_execution_modes.py</param>
+    <param name="offset">40</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="468" cache_creation_input_tokens="932" cache_read_input_tokens="105662" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HqLio7BXzDJ7bXJ6eScYai">
+    40→        # Verify execute_interactive was called, not execute_command
+    41→        assert len(executor.interactive_calls) == 1
+    42→        assert len(executor.executed_commands) == 0
+    43→
+    44→        worktree_path, dangerous, command, target_subpath, model, _ = executor.interactive_calls[0]
+    45→        # Runs in current directory
+    46→        assert worktree_path == env.cwd
+    47→        assert dangerous is False
+    48→        assert command == "/erk:plan-implement"
+    49→        assert target_subpath is None
+    50→        assert model is None
+    51→
+    52→
+    53→def test_interactive_mode_with_dangerous_flag() -&gt; None:
+    54→    """Verify interactive mode passes dangerous flag to executor."""
+    55→    plan_issue = create_sample_plan_issue()
+    56→
+    57→    runner = CliRunner()
+    58→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    59→        git = FakeGit(
+    60→            git_common_dirs={env.cwd: env.git_dir},
+    61→            local_branches={env.cwd: ["main"]},
+    62→            default_branches={env.cwd: "main"},
+    63→        )
+    64→        store, _ = create_plan_store_with_plans({"42": plan_issue})
+    65→        executor = FakePromptExecutor(available=True)
+    66→        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+    67→
+    68→        result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx)
+    69→
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>The implement tests check interactive_calls where `dangerous` is the raw value passed to the executor. But now with the new logic, the default config has `live_dangerously=True`, so even without `--dangerous`, the effective value should be `True`. Let me check what happens in the first test (line 47 - `assert dangerous is False`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1321" cache_read_input_tokens="106594" cache_creation="{'ephemeral_5m_input_tokens': 1321, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01P8oDTNLitzvE3Q1SLMrBWn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/implement/test_execution_modes.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1321" cache_read_input_tokens="106594" cache_creation="{'ephemeral_5m_input_tokens': 1321, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+</session>
