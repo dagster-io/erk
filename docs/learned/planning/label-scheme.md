@@ -20,7 +20,7 @@ Erk uses `erk-pr` as the **base label** on all erk-submitted PRs, with **type-sp
 | Label              | Purpose                              | Applied To                           |
 | ------------------ | ------------------------------------ | ------------------------------------ |
 | `erk-pr`           | Base label — all erk-submitted PRs   | All plans, learn plans, and code PRs |
-| `erk-planned-pr`   | Legacy base label — identifies plans | All plans and learn plans            |
+| `erk-planned-pr`   | Legacy base label — identifies plans | Historical plans only (no longer applied by code) |
 | `erk-plan`         | Type label — implementation plans    | Regular plans                        |
 | `erk-learn`        | Type label — documentation plans     | Learn plans                          |
 | `erk-objective`    | Separate system — objectives         | Objective issues                     |
@@ -30,9 +30,10 @@ Erk uses `erk-pr` as the **base label** on all erk-submitted PRs, with **type-sp
 
 **Plan PRs** (via `PlannedPRBackend.create_plan()`):
 
-1. Always applies `erk-planned-pr` (legacy base label)
+1. Applies `erk-pr` (base label for all erk-submitted PRs)
 2. Applies `erk-plan` for regular plans OR `erk-learn` for learn plans
-3. Plan PRs also receive `erk-pr` through the plan creation pipeline
+
+Note: `erk-planned-pr` exists on older issues but is no longer applied by code.
 
 **Code PRs** (via `erk pr submit` for non-plan branches):
 
