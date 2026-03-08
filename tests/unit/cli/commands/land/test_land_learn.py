@@ -12,8 +12,10 @@ from erk.cli.commands.land_learn import (
     _create_learn_pr_impl,
     _create_learn_pr_with_sessions,
     _fetch_xmls_from_context_branch,
+    _file_size_from_xml_files,
     _log_learn_pr_files,
     _log_session_discovery,
+    _log_session_summary_from_manifest,
     _should_create_learn_pr,
 )
 from erk.cli.commands.land_pipeline import LandState, create_learn_pr
@@ -793,6 +795,82 @@ def test_log_session_discovery_uses_correct_type_prefix(
 
 
 # ---------------------------------------------------------------------------
+# _log_session_summary_from_manifest
+# ---------------------------------------------------------------------------
+
+
+def test_log_session_summary_from_manifest_shows_per_file_sizes(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Shows per-file sizes under each session in the manifest table."""
+    manifest = {
+        "sessions": [
+            {
+                "session_id": "aaaa1111-2222-3333-4444-555566667777",
+                "stage": "impl",
+                "source": "local",
+                "user_turns": 2,
+                "duration_minutes": 8,
+                "raw_size_kb": 1284,
+                "xml_size_kb": 175,
+                "files": ["impl-aaaa1111-part1.xml", "impl-aaaa1111-part2.xml"],
+            }
+        ]
+    }
+    xml_files = {
+        ".erk/impl-context/sessions/impl-aaaa1111-part1.xml": "x" * 71_000,
+        ".erk/impl-context/sessions/impl-aaaa1111-part2.xml": "x" * 68_000,
+    }
+
+    _log_session_summary_from_manifest(manifest, xml_files=xml_files, plan_id="8953")
+
+    captured = capsys.readouterr()
+    # Manifest source line
+    assert "planned-pr-context/8953" in captured.err
+    assert ".erk/sessions/manifest.json" in captured.err
+    assert "1 session(s)" in captured.err
+    # Session row
+    assert "aaaa1111..." in captured.err
+    assert "impl" in captured.err
+    # Per-file rows
+    assert "impl-aaaa1111-part1.xml" in captured.err
+    assert "impl-aaaa1111-part2.xml" in captured.err
+    assert "KB" in captured.err
+
+
+def test_log_session_summary_from_manifest_empty_sessions(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """No output when manifest has no sessions."""
+    manifest: dict = {"sessions": []}
+
+    _log_session_summary_from_manifest(manifest, xml_files={}, plan_id="100")
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+
+
+# ---------------------------------------------------------------------------
+# _file_size_from_xml_files
+# ---------------------------------------------------------------------------
+
+
+def test_file_size_from_xml_files_matches_by_suffix() -> None:
+    """Finds file size by matching filename suffix in xml_files keys."""
+    xml_files = {
+        ".erk/impl-context/sessions/impl-aaaa1111.xml": "x" * 2048,
+    }
+    result = _file_size_from_xml_files(xml_files, "impl-aaaa1111.xml")
+    assert result == "2 KB"
+
+
+def test_file_size_from_xml_files_returns_question_mark_when_not_found() -> None:
+    """Returns '?' when filename is not found in xml_files."""
+    result = _file_size_from_xml_files({}, "missing.xml")
+    assert result == "?"
+
+
+# ---------------------------------------------------------------------------
 # _log_learn_pr_files
 # ---------------------------------------------------------------------------
 
@@ -812,7 +890,7 @@ def test_log_learn_pr_files_shows_plan_and_ref(
 def test_log_learn_pr_files_includes_session_xml_files(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """With 2 XML files, shows all 4 files (plan.md + ref.json + 2 XML)."""
+    """With 2 XML files, total count is 4 but XML filenames not listed individually."""
     xml_files = {
         ".erk/impl-context/sessions/impl-aaaa1111.xml": "<session>short</session>",
         ".erk/impl-context/sessions/planning-bbbb2222.xml": "<session>data</session>",
@@ -823,14 +901,15 @@ def test_log_learn_pr_files_includes_session_xml_files(
     assert "4 file(s) committed" in captured.err
     assert "plan.md" in captured.err
     assert "ref.json" in captured.err
-    assert "impl-aaaa1111.xml" in captured.err
-    assert "planning-bbbb2222.xml" in captured.err
+    # XML files are no longer listed individually (shown in manifest table instead)
+    assert "impl-aaaa1111.xml" not in captured.err
+    assert "planning-bbbb2222.xml" not in captured.err
 
 
 def test_log_learn_pr_files_shows_sizes_in_kb_for_large_files(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Large XML content shows KB size."""
+    """Total size includes large XML content in KB."""
     large_content = "x" * 2048  # 2 KB
     xml_files = {
         ".erk/impl-context/sessions/impl-cccc3333.xml": large_content,
@@ -839,8 +918,7 @@ def test_log_learn_pr_files_shows_sizes_in_kb_for_large_files(
 
     captured = capsys.readouterr()
     assert "KB" in captured.err
-    # The large file should show "2 KB"
-    assert "2 KB" in captured.err
+    assert "3 file(s) committed" in captured.err
 
 
 # ---------------------------------------------------------------------------
