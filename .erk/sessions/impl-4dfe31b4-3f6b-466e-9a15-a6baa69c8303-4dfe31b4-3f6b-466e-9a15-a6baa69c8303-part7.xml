@@ -1,0 +1,656 @@
+<session>
+  <meta source="agent-a4af37f" />
+  <meta branch="plnd/consolidate-learn-docs-03-08-1055" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <tool_result tool="toolu_01Huxi7jAHfNBBGbJUsxgbAi">
+     1→---
+     2→title: FakeLocalGitHub API Reference
+     3→read_when:
+     4→  - "writing tests that need fake GitHub PR or issue data"
+     5→  - "understanding FakeLocalGitHub.create_pr() auto-registration"
+     6→  - "using mutation tracking in LocalGitHub fake tests"
+     7→tripwires:
+     8→  - action: "creating a FakeLocalGitHub PR without checking auto-registration in _pr_details"
+     9→    warning: "FakeLocalGitHub.create_pr() auto-registers the PR in _pr_details. Manually adding to _pr_details after create_pr() causes duplicates."
+    10→  - action: "using context_for_test without matching parameter names to the current API"
+    11→    warning: "context_for_test() parameter names evolve. Check the current function signature before adding new parameters."
+    12→---
+    13→
+    14→# FakeLocalGitHub API Reference
+    15→
+    16→Reference for the FakeLocalGitHub test double used throughout erk's test suite. Covers auto-registration behavior, mutation tracking, and common patterns.
+    17→
+    18→## FakeLocalGitHub.create_pr() Auto-Registration
+    19→
+    20→When `FakeLocalGitHub.create_pr()` is called, it automatically:
+    21→
+    22→1. Creates the PR record
+    23→2. Registers it in `_pr_details` for subsequent `get_pr_details()` calls
+    24→3. Adds it to the open PRs list
+    25→
+    26→Do NOT manually add to `_pr_details` after calling `create_pr()` — this causes duplicate entries.
+    27→
+    28→## Mutation Tracking API
+    29→
+    30→FakeLocalGitHub tracks all mutations for test assertions:
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LJRBPqsTGhKhoTrTKNyVSY">
+     1→---
+     2→title: Planless vs Planning Workflow Decision Framework
+     3→read_when:
+     4→  - "deciding whether to plan or start coding directly"
+     5→  - "realizing mid-task that the scope is larger than expected"
+     6→  - "choosing between erk wt create and plan mode"
+     7→tripwires:
+     8→  - action: "starting a multi-file change without entering plan mode"
+     9→    warning: "If the change touches 5+ files or has uncertain approach, plan first. See the decision matrix in when-to-switch-pattern.md."
+    10→  - action: "continuing to code after discovering scope is larger than expected"
+    11→    warning: "Stop and switch to planning. Mid-task warning signs (uncertainty accumulating, scope creeping, multiple valid approaches) indicate you should plan. See when-to-switch-pattern.md."
+    12→last_audited: "2026-02-16 14:20 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# Planless vs Planning Workflow Decision Framework
+    17→
+    18→Erk supports two workflows — planless (direct coding) and planning (plan-first). This document captures the cross-cutting decision framework for choosing between them and recognizing when to switch mid-task.
+    19→
+    20→For the mechanics of each workflow, see the howto guides: [planless workflow](../../howto/planless-workflow.md) and [local workflow](../../howto/local-workflow.md).
+    21→
+    22→For the mechanics of each workflow, see the planning workflow documentation in `docs/learned/planning/`.
+    23→
+    24→## Why This Decision Matters
+    25→
+    26→Choosing the wrong workflow has asymmetric costs:
+    27→
+    28→- **Planning a trivial change** wastes minutes on overhead (issue creation, `.erk/impl-context/` setup, progress tracking). Low cost.
+    29→- **Skipping planning on a complex change** leads to scope creep, missed edge cases, poor architectural decisions, and potentially hours of wasted implementation. High cost.
+    30→
+
+... [52 lines omitted] ...
+
+    45→## Mid-Task Warning Signs
+    71→**Switch too late:** Realizing deep into implementation that you should have planned means potentially discarding work. The 30-minute check and warning signs above catch this early.
+  </tool_result>
+  <assistant>Now I have all the files read. Let me start making the replacements. I'll process them file by file, handling the terminology changes as specified in the rules.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3231" cache_read_input_tokens="82437" cache_creation="{'ephemeral_5m_input_tokens': 3231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018B7ocPdVru8K5aRa7rHgF2">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+    <param name="old_string">**adding new exec script parameters with 'issue' in the name** → Read [erk exec Commands](...[truncated 56 chars]...an' terminology not 'issue'. See erk-exec-commands.md Phase 5 Terminology Standardization.</param>
+    <param name="new_string">**adding new exec script parameters with 'issue' in the name** → Read [erk exec Commands](...[truncated 56 chars]...an' terminology not 'issue'. See erk-exec-commands.md Phase 5 Terminology Standardization.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3231" cache_read_input_tokens="82437" cache_creation="{'ephemeral_5m_input_tokens': 3231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ScputMcVLfWCjbkJa7SoHG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+    <param name="old_string">**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the plnd/ prefix naming pattern</param>
+    <param name="new_string">**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan dispatch metadata when the branch follows the plnd/ prefix naming pattern</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3231" cache_read_input_tokens="82437" cache_creation="{'ephemeral_5m_input_tokens': 3231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013wbqdMVMwQxMPw68UpGEa7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/tripwires.md</param>
+    <param name="old_string">**landing a PR without updating associated learn plan status** → Read [Learn Plan Land Flo...[truncated 89 chars]... plan metadata. Ensure check_learn_status and update_learn_plan steps execute after merge.</param>
+    <param name="new_string">**landing a PR without updating associated learn plan status** → Read [Learn Plan Land Flo...[truncated 89 chars]... plan metadata. Ensure check_learn_status and update_learn_plan steps execute after merge.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3231" cache_read_input_tokens="82437" cache_creation="{'ephemeral_5m_input_tokens': 3231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018B7ocPdVru8K5aRa7rHgF2">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01ScputMcVLfWCjbkJa7SoHG">
+The file /home/runner/work/erk/erk/docs/learned/cli/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013wbqdMVMwQxMPw68UpGEa7">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me continue with more edits. I'll search for instances more carefully:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="952" cache_read_input_tokens="85668" cache_creation="{'ephemeral_5m_input_tokens': 952, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NrHAkbLPRDjnKj8Rd4i6kV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after trig...[truncated 118 chars]...tes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.</param>
+    <param name="new_string">PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after trig...[truncated 112 chars]...it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan body.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="952" cache_read_input_tokens="85668" cache_creation="{'ephemeral_5m_input_tokens': 952, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011QhBTCqJ4xbpc9ut89GM5r">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">This is a cross-cutting concern — the launch command doesn't know about plans, but the met...[truncated 131 chars]...no node ID available, no plan-header metadata block) to gracefully skip non-plan branches.</param>
+    <param name="new_string">This is a cross-cutting concern — the launch command doesn't know about plans, but the met...[truncated 125 chars]...no node ID available, no plan-header metadata block) to gracefully skip non-plan branches.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="952" cache_read_input_tokens="85668" cache_creation="{'ephemeral_5m_input_tokens': 952, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NrHAkbLPRDjnKj8Rd4i6kV">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011QhBTCqJ4xbpc9ut89GM5r">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me continue with the remaining files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="733" cache_read_input_tokens="86620" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014X4smpdozkLZHKtLCm3PWz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md</param>
+    <param name="old_string">The validation pipeline's `check_learn_status()` step extracts the issue number from the b...[truncated 59 chars]...am execution steps. See `check_learn_status()` in `src/erk/cli/commands/land_pipeline.py`.</param>
+    <param name="new_string">The validation pipeline's `check_learn_status()` step extracts the issue number from the b...[truncated 53 chars]...am execution steps. See `check_learn_status()` in `src/erk/cli/commands/land_pipeline.py`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="733" cache_read_input_tokens="86620" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PdoJbvvRcPUaATcWUEBAo5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md</param>
+    <param name="old_string">The single most common agent mistake is using the issue number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:</param>
+    <param name="new_string">The single most common agent mistake is using the plan issue number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="733" cache_read_input_tokens="86620" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019ghkTt11oUBQhuJJPEm8LG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md</param>
+    <param name="old_string">| Source                            | Use for checkout footer?    | Why                   ...[truncated 291 chars]...on` | Never                       | Plan issue number != PR number; validation will fail |</param>
+    <param name="new_string">| Source                            | Use for checkout footer?    | Why                   ...[truncated 285 chars]...ref.json` | Never                       | Plan number != PR number; validation will fail |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="733" cache_read_input_tokens="86620" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AGCz7FfKkJPzLghygw6khF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md</param>
+    <param name="old_string">| Data source                       | Contains              | Use for                     ...[truncated 227 chars]...return value        | **PR** number         | `erk pr checkout N` footer                 |</param>
+    <param name="new_string">| Data source                       | Contains              | Use for                     ...[truncated 227 chars]...return value        | **PR** number         | `erk pr checkout N` footer                 |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="733" cache_read_input_tokens="86620" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0111Hs2HoUTprSwiYt9JvMkt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md</param>
+    <param name="old_string">**Why agents get confused:** During the submit workflow, `.erk/impl-context/plan-ref.json`...[truncated 84 chars]...ble one — but it's the wrong one. The PR number doesn't exist until `create_pr()` returns.</param>
+    <param name="new_string">**Why agents get confused:** During the submit workflow, `.erk/impl-context/plan-ref.json`...[truncated 84 chars]...ble one — but it's the wrong one. The PR number doesn't exist until `create_pr()` returns.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="733" cache_read_input_tokens="86620" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014X4smpdozkLZHKtLCm3PWz">
+The file /home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PdoJbvvRcPUaATcWUEBAo5">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019ghkTt11oUBQhuJJPEm8LG">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AGCz7FfKkJPzLghygw6khF">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0111Hs2HoUTprSwiYt9JvMkt">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me continue with more files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1638" cache_read_input_tokens="87353" cache_creation="{'ephemeral_5m_input_tokens': 1638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012CzkaJYC91PbbtYrFV8AT1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md</param>
+    <param name="old_string">**using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [C...[truncated 120 chars]...res a PR number. Issue numbers in checkout footers cause erk pr check validation failures.</param>
+    <param name="new_string">**using plan issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Re...[truncated 123 chars]...ires a PR number. Plan numbers in checkout footers cause erk pr check validation failures.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1638" cache_read_input_tokens="87353" cache_creation="{'ephemeral_5m_input_tokens': 1638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019X9zmgVRMxa5xT3eW9FU1j">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md</param>
+    <param name="old_string">**writing checkout footer with issue number from .erk/impl-context/plan-ref.json** → Read ...[truncated 122 chars]...res a PR number. Issue numbers in checkout footers cause erk pr check validation failures.</param>
+    <param name="new_string">**writing checkout footer with plan number from .erk/impl-context/plan-ref.json** → Read [...[truncated 119 chars]...ires a PR number. Plan numbers in checkout footers cause erk pr check validation failures.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1638" cache_read_input_tokens="87353" cache_creation="{'ephemeral_5m_input_tokens': 1638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GUF193m6YSVbnCkAsuwsuR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+    <param name="old_string">Learn plans are child plans (they document parent features). The parent plan issue is the canonical place to track learning status. Updating the parent creates a bidirectional link:</param>
+    <param name="new_string">Learn plans are child plans (they document parent features). The parent plan is the canonical place to track learning status. Updating the parent creates a bidirectional link:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1638" cache_read_input_tokens="87353" cache_creation="{'ephemeral_5m_input_tokens': 1638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ke9tWVAasqKQgYMQx8TiRq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+    <param name="old_string">**Why update a different issue's body?**</param>
+    <param name="new_string">**Why update a different plan's body?**</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1638" cache_read_input_tokens="87353" cache_creation="{'ephemeral_5m_input_tokens': 1638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012CzkaJYC91PbbtYrFV8AT1">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: **using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_019X9zmgVRMxa5xT3eW9FU1j">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GUF193m6YSVbnCkAsuwsuR">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: Learn plans are child plans (they document parent features). The parent plan issue is the canonical place to track learning status. Updating the parent creates a bidirectional link:&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Ke9tWVAasqKQgYMQx8TiRq">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: **Why update a different issue's body?**&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me check the exact strings in the objective-lifecycle file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1234" cache_read_input_tokens="88991" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NWfStBNbk1b3Gp2bGhon38">
+    <param name="pattern">Learn plans are child plans</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1234" cache_read_input_tokens="88991" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BDy96thfrG1Sb9sax7Qb24">
+    <param name="pattern">Why update a different</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1234" cache_read_input_tokens="88991" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NWfStBNbk1b3Gp2bGhon38">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01BDy96thfrG1Sb9sax7Qb24">
+No matches found
+  </tool_result>
+  <assistant>Let me continue with the files that need edits. Let me process the erk/pr-commands.md file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="396" cache_read_input_tokens="90225" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WFapx1iNFgX3Q6st9U8yqv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md</param>
+    <param name="old_string">| **Issue number** | `.erk/impl-context/plan-ref.json` | `Closes #N` reference      |
+| **PR number**    | `gh pr create` output             | `erk pr checkout N` footer |</param>
+    <param name="new_string">| **Plan number**  | `.erk/impl-context/plan-ref.json` | `Closes #N` reference      |
+| **PR number**    | `gh pr create` output             | `erk pr checkout N` footer |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="396" cache_read_input_tokens="90225" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JFzobyCdfSuuALPnPx4Ymv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md</param>
+    <param name="old_string">These are never the same number. The issue is created during planning; the PR is created during submission.</param>
+    <param name="new_string">These are never the same number. The plan is created during planning; the PR is created during submission.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="396" cache_read_input_tokens="90225" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0143XZcpVaigR7jqWQmhiGVH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md</param>
+    <param name="old_string">**Why agents make this mistake:** During footer construction, `.erk/impl-context/plan-ref....[truncated 265 chars]...ith a placeholder footer (`pr_number=0`), then immediately update with the real PR number.</param>
+    <param name="new_string">**Why agents make this mistake:** During footer construction, `.erk/impl-context/plan-ref....[truncated 263 chars]...ith a placeholder footer (`pr_number=0`), then immediately update with the real PR number.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="396" cache_read_input_tokens="90225" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AR2Zuawq6Sp9LDorKuvahe">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/tripwires.md</param>
+    <param name="old_string">**using issue number in checkout footer instead of PR number** → Read [PR Checkout Footer ...[truncated 63 chars]...from gh pr create output), NOT the plan issue number from .erk/impl-context/plan-ref.json.</param>
+    <param name="new_string">**using plan number in checkout footer instead of PR number** → Read [PR Checkout Footer V...[truncated 56 chars]...mber (from gh pr create output), NOT the plan number from .erk/impl-context/plan-ref.json.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="396" cache_read_input_tokens="90225" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WFapx1iNFgX3Q6st9U8yqv">
+The file /home/runner/work/erk/erk/docs/learned/erk/pr-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01JFzobyCdfSuuALPnPx4Ymv">
+The file /home/runner/work/erk/erk/docs/learned/erk/pr-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0143XZcpVaigR7jqWQmhiGVH">
+The file /home/runner/work/erk/erk/docs/learned/erk/pr-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AR2Zuawq6Sp9LDorKuvahe">
+The file /home/runner/work/erk/erk/docs/learned/erk/tripwires.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me continue with the remaining files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1236" cache_read_input_tokens="90621" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WyUM8r3mhm7T9cUwEqSRxK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md</param>
+    <param name="old_string">| Check             | What it validates                                                   ...[truncated 549 chars]...t legacy top position            | Ensures PR body follows current formatting standards  |</param>
+    <param name="new_string">| Check             | What it validates                                                   ...[truncated 549 chars]...t legacy top position            | Ensures PR body follows current formatting standards  |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1236" cache_read_input_tokens="90621" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014NtbZdgXoNGMiSwoa1V9ZJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/data-contract.md</param>
+    <param name="old_string">| Artifact                                | Location                                      ...[truncated 609 chars]...`packages/erk-shared/.../plan_data_provider/fake.py` | Test doubles                      |</param>
+    <param name="new_string">| Artifact                                | Location                                      ...[truncated 609 chars]...`packages/erk-shared/.../plan_data_provider/fake.py` | Test doubles                      |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1236" cache_read_input_tokens="90621" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WyUM8r3mhm7T9cUwEqSRxK">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_014NtbZdgXoNGMiSwoa1V9ZJ">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me check which files still have instances of "plan issue" that need to be changed:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1113" cache_read_input_tokens="91857" cache_creation="{'ephemeral_5m_input_tokens': 1113, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0163uwjpxE4SJ9jQ1be4pNMW">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1113" cache_read_input_tokens="91857" cache_creation="{'ephemeral_5m_input_tokens': 1113, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0163uwjpxE4SJ9jQ1be4pNMW">
+Found 24 files
+docs/learned/erk/pr-commands.md
+docs/learned/pr-operations/tripwires.md
+docs/learned/pr-operations/pr-validation-rules.md
+docs/learned/pr-operations/checkout-footer-syntax.md
+docs/learned/cli/learn-plan-land-flow.md
+docs/learned/cli/workflow-commands.md
+docs/learned/reference/gastown-analysis.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/plan-row-data.md
+docs/learned/workflows/tripwires.md
+docs/learned/pr-operations/plan-embedding-in-pr.md
+docs/learned/pr-operations/pr-submit-phases.md
+docs/learned/planning/no-changes-handling.md
+docs/learned/planning/plan-header-privatization.md
+docs/learned/documentation/when-to-switch-pattern.md
+docs/learned/objectives/objective-lifecycle.md
+docs/learned/objectives/research-documentation-integration.md
+docs/learned/ci/learn-ci-environment-detection.md
+docs/learned/cli/commands/pr-summarize.md
+docs/learned/cli/pr-rewrite.md
+docs/learned/cli/slash-command-llm-turn-optimization.md
+docs/learned/workflows/one-shot-workflow.md
+docs/learned/objectives/objective-roadmap-check.md
+docs/learned/objectives/roadmap-mutation-patterns.md
+  </tool_result>
+  <assistant>Let me search more specifically for "plan issue" (case sensitive):</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="498" cache_read_input_tokens="92970" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HzQPjUsFFLFDn5PtzHw1eX">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="498" cache_read_input_tokens="92970" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HzQPjUsFFLFDn5PtzHw1eX">
+69:Learn plans are child plans (they document parent features). The parent plan issue is the canonical place to track learning status. Updating the parent creates a bidirectional link:
+79:# In parent plan issue body
+  </tool_result>
+  <assistant>Now I'll fix these:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="293" cache_read_input_tokens="93468" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TifDwV9M3vFWeYVRKr2Aj1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md</param>
+    <param name="old_string">Learn plans are child plans (they document parent features). The parent plan issue is the canonical place to track learning status. Updating the parent creates a bidirectional link:</param>
+    <param name="new_string">Learn plans are child plans (they document parent features). The parent plan is the canonical place to track learning status. Updating the parent creates a bidirectional link:</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="293" cache_read_input_tokens="93468" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Q3GXr15sPnY7RSyykFwSBE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md</param>
+    <param name="old_string"># In parent plan issue body</param>
+    <param name="new_string"># In parent plan body</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="293" cache_read_input_tokens="93468" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TifDwV9M3vFWeYVRKr2Aj1">
+The file /home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Q3GXr15sPnY7RSyykFwSBE">
+The file /home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me check the other files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="530" cache_read_input_tokens="93761" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LSV3FwbmPv5yAZNx69udJ5">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/objectives</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="530" cache_read_input_tokens="93761" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KBBzxWLmj1UThrucmqZSMg">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/pr-operations</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="530" cache_read_input_tokens="93761" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01L9iEfzw8kguhTxT1gaoxwa">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/tui</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="530" cache_read_input_tokens="93761" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LSV3FwbmPv5yAZNx69udJ5">
+docs/learned/objectives/objective-lifecycle.md:437:3. **Objective**: extracted from plan issue metadata (`plan-header.objective_issue` field)
+docs/learned/objectives/roadmap-mutation-patterns.md:76:The full-body workflow uses a **bundled context fetch** (`erk exec objective-fetch-context`) to retrieve the objective issue, plan issue, and PR details in a single CLI call. This exists because the command needs all three to compose the update, and fetching them in separate LLM turns would waste tokens and add latency.
+docs/learned/objectives/objective-roadmap-check.md:42:| `erk-objective` label | Prevents running check on plan issues or random issues that happen to contain markdown tables                                                                                                                     |
+docs/learned/objectives/research-documentation-integration.md:48:The learn workflow creates a separate plan issue for documentation that goes through human review before implementation — insights are captured but not committed without review. See [Learn Workflow](../planning/learn-workflow.md) for the full pipeline.
+  </tool_result>
+  <tool_result tool="toolu_01L9iEfzw8kguhTxT1gaoxwa">
+docs/learned/tui/data-contract.md:161:| `learn_plan_issue_closed` | `bool` | Yes      | Whether the learn plan issue is closed                    |
+docs/learned/tui/plan-row-data.md:95:| `learn_plan_issue_closed` | `bool \| None` | Whether the learn plan issue is closed              | Yes                   |
+  </tool_result>
+  <tool_result tool="toolu_01KBBzxWLmj1UThrucmqZSMg">
+docs/learned/pr-operations/plan-embedding-in-pr.md:18:When a PR originates from an erk-plan issue, reviewers need the original plan for context — it explains the _intent_ behind the code, not just the diff. Embedding the plan directly in the PR body means reviewers don't have to chase cross-references to a separate GitHub issue. A collapsible `&lt;details&gt;` section keeps this context available without overwhelming the PR description.
+docs/learned/pr-operations/plan-embedding-in-pr.md:25:2. **GitHub API** → fetches the plan issue body, then the plan comment containing the actual plan markdown
+docs/learned/pr-operations/pr-validation-rules.md:9:    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md."
+docs/learned/pr-operations/pr-submit-phases.md:60:The `PlanContextProvider` checks for a linked erk-plan issue:
+docs/learned/pr-operations/checkout-footer-syntax.md:36:The single most common agent mistake is using the plan issue number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:
+docs/learned/pr-operations/tripwires.md:41:**using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [PR Validation Rules](pr-validation-rules.md) first. Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md.
+  </tool_result>
+  <assistant>Now let me fix these instances:</assistant>
+  <usage input_tokens="122" cache_creation_input_tokens="1141" cache_read_input_tokens="94291" cache_creation="{'ephemeral_5m_input_tokens': 1141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DpHFA8FLrviuwGmiH8bGUG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+    <param name="old_string">3. **Objective**: extracted from plan issue metadata (`plan-header.objective_issue` field)</param>
+    <param name="new_string">3. **Objective**: extracted from plan metadata (`plan-header.objective_issue` field)</param>
+  </tool_use>
+  <usage input_tokens="122" cache_creation_input_tokens="1141" cache_read_input_tokens="94291" cache_creation="{'ephemeral_5m_input_tokens': 1141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TWVoWULTLpu9qJiJ97uXyA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/roadmap-mutation-patterns.md</param>
+    <param name="old_string">The full-body workflow uses a **bundled context fetch** (`erk exec objective-fetch-context...[truncated 121 chars]...se the update, and fetching them in separate LLM turns would waste tokens and add latency.</param>
+    <param name="new_string">The full-body workflow uses a **bundled context fetch** (`erk exec objective-fetch-context...[truncated 115 chars]...se the update, and fetching them in separate LLM turns would waste tokens and add latency.</param>
+  </tool_use>
+  <usage input_tokens="122" cache_creation_input_tokens="1141" cache_read_input_tokens="94291" cache_creation="{'ephemeral_5m_input_tokens': 1141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Aj6fbTxU4kqPwaJ4HfFb6e">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-roadmap-check.md</param>
+    <param name="old_string">| `erk-objective` label | Prevents running check on plan issues or random issues that happ...[truncated 37 chars]...                                                                                         |</param>
+    <param name="new_string">| `erk-objective` label | Prevents running check on plans or random issues that happen to ...[truncated 31 chars]...                                                                                         |</param>
+  </tool_use>
+  <usage input_tokens="122" cache_creation_input_tokens="1141" cache_read_input_tokens="94291" cache_creation="{'ephemeral_5m_input_tokens': 1141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NrwktwyMXdvAeAbZoSyDNo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/research-documentation-integration.md</param>
+    <param name="old_string">The learn workflow creates a separate plan issue for documentation that goes through human...[truncated 52 chars]...without review. See [Learn Workflow](../planning/learn-workflow.md) for the full pipeline.</param>
+    <param name="new_string">The learn workflow creates a separate plan for documentation that goes through human revie...[truncated 46 chars]...without review. See [Learn Workflow](../planning/learn-workflow.md) for the full pipeline.</param>
+  </tool_use>
+  <usage input_tokens="122" cache_creation_input_tokens="1141" cache_read_input_tokens="94291" cache_creation="{'ephemeral_5m_input_tokens': 1141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AvCGVYdoaUcMKdUum645Ti">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md</param>
+    <param name="old_string">When a PR originates from an erk-plan issue, reviewers need the original plan for context ...[truncated 180 chars]... `&lt;details&gt;` section keeps this context available without overwhelming the PR description.</param>
+    <param name="new_string">When a PR originates from an erk plan, reviewers need the original plan for context — it e...[truncated 174 chars]... `&lt;details&gt;` section keeps this context available without overwhelming the PR description.</param>
+  </tool_use>
+  <usage input_tokens="122" cache_creation_input_tokens="1141" cache_read_input_tokens="94291" cache_creation="{'ephemeral_5m_input_tokens': 1141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TJZeSmEeesyQWdcgxLPu5N">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md</param>
+    <param name="old_string">2. **GitHub API** → fetches the plan issue body, then the plan comment containing the actual plan markdown</param>
+    <param name="new_string">2. **GitHub API** → fetches the plan body, then the plan comment containing the actual plan markdown</param>
+  </tool_use>
+  <usage input_tokens="122" cache_creation_input_tokens="1141" cache_read_input_tokens="94291" cache_creation="{'ephemeral_5m_input_tokens': 1141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DpHFA8FLrviuwGmiH8bGUG">
+The file /home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TWVoWULTLpu9qJiJ97uXyA">
+The file /home/runner/work/erk/erk/docs/learned/objectives/roadmap-mutation-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Aj6fbTxU4kqPwaJ4HfFb6e">
+The file /home/runner/work/erk/erk/docs/learned/objectives/objective-roadmap-check.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01NrwktwyMXdvAeAbZoSyDNo">
+The file /home/runner/work/erk/erk/docs/learned/objectives/research-documentation-integration.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AvCGVYdoaUcMKdUum645Ti">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TJZeSmEeesyQWdcgxLPu5N">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me continue with the remaining instances:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1733" cache_read_input_tokens="95432" cache_creation="{'ephemeral_5m_input_tokens': 1733, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V55dw2UA8nPuvjT7rqMbYK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md</param>
+    <param name="old_string">    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md."</param>
+    <param name="new_string">    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan number. See pr-validation-rules.md."</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1733" cache_read_input_tokens="95432" cache_creation="{'ephemeral_5m_input_tokens': 1733, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012XxabF5H174ZxMGVABPdXY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+    <param name="old_string">The `PlanContextProvider` checks for a linked erk-plan issue:</param>
+    <param name="new_string">The `PlanContextProvider` checks for a linked erk plan:</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1733" cache_read_input_tokens="95432" cache_creation="{'ephemeral_5m_input_tokens': 1733, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01A91tGNLptZNVKyRUBBMnfF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md</param>
+    <param name="old_string">The single most common agent mistake is using the plan issue number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:</param>
+    <param name="new_string">The single most common agent mistake is using the plan number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1733" cache_read_input_tokens="95432" cache_creation="{'ephemeral_5m_input_tokens': 1733, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U7jRbny6SeediVdtpmF65e">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md</param>
+    <param name="old_string">**using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [P...[truncated 65 chars]...mber (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md.</param>
+    <param name="new_string">**using plan number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [PR...[truncated 58 chars]... PR number (from create_pr return value), NOT the plan number. See pr-validation-rules.md.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1733" cache_read_input_tokens="95432" cache_creation="{'ephemeral_5m_input_tokens': 1733, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V55dw2UA8nPuvjT7rqMbYK">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012XxabF5H174ZxMGVABPdXY">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01A91tGNLptZNVKyRUBBMnfF">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01U7jRbny6SeediVdtpmF65e">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me search for any remaining instances to check in other files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1086" cache_read_input_tokens="97165" cache_creation="{'ephemeral_5m_input_tokens': 1086, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KRQwam3uuA1QPKC4YQ1Aj1">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1086" cache_read_input_tokens="97165" cache_creation="{'ephemeral_5m_input_tokens': 1086, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KRQwam3uuA1QPKC4YQ1Aj1">
+docs/learned/ci/learn-ci-environment-detection.md:55:**Why skip confirmations entirely?** The learn workflow was designed to be safe to run automatically — it creates a plan issue but doesn't merge code or modify production state. Auto-proceeding in CI reduces friction without introducing risk.
+docs/learned/reference/gastown-analysis.md:710:- Add severity field to plan issues
+docs/learned/cli/pr-rewrite.md:30:4. **Generate AI title/body** — Uses `CommitMessageGenerator` with optional plan context from linked erk-plan issue
+docs/learned/tui/data-contract.md:161:| `learn_plan_issue_closed` | `bool` | Yes      | Whether the learn plan issue is closed                    |
+docs/learned/tui/plan-row-data.md:95:| `learn_plan_issue_closed` | `bool \| None` | Whether the learn plan issue is closed              | Yes                   |
+docs/learned/documentation/when-to-switch-pattern.md:63:**Switching from planning to planless (rare):** If a plan reveals the task is simpler than expected, close the plan issue and make the change directly. This is uncommon — if you invested in planning, the implementation usually benefits from the plan's structure.
+docs/learned/cli/slash-command-llm-turn-optimization.md:47:The `system:objective-update-with-landed-pr` command demonstrates this: Step 1 calls `erk exec objective-fetch-context` once to fetch the objective issue, plan issue, PR details, and parsed roadmap context. The command then has everything it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.
+docs/learned/cli/workflow-commands.md:20:      PR workflows automatically update plan issue dispatch metadata when the
+docs/learned/cli/commands/pr-summarize.md:57:1. **Plan context** - From linked erk-plan issue (highest priority)
+docs/learned/cli/commands/pr-summarize.md:73:When a branch is associated with a plan, the command automatically fetches plan context from the linked erk-plan issue.
+docs/learned/workflows/one-shot-workflow.md:10:    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification."
+docs/learned/workflows/tripwires.md:21:**modifying one-shot branch naming convention** → Read [One-Shot Workflow](one-shot-workflow.md) first. Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification.
+docs/learned/erk/pr-commands.md:10:    warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .erk/impl-context/plan-ref.json."
+  </tool_result>
+  <assistant>Let me fix the remaining instances:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="890" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011T3JfLMS9rbQdD7nBRiTQC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/learn-ci-environment-detection.md</param>
+    <param name="old_string">**Why skip confirmations entirely?** The learn workflow was designed to be safe to run aut...[truncated 42 chars]... modify production state. Auto-proceeding in CI reduces friction without introducing risk.</param>
+    <param name="new_string">**Why skip confirmations entirely?** The learn workflow was designed to be safe to run aut...[truncated 36 chars]... modify production state. Auto-proceeding in CI reduces friction without introducing risk.</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="890" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HB5rLzifpHJVZ8LkGPFouL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/reference/gastown-analysis.md</param>
+    <param name="old_string">- Add severity field to plan issues</param>
+    <param name="new_string">- Add severity field to plans</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="890" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014CuUKxrbWbCMcwCgiYRAsv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md</param>
+    <param name="old_string">4. **Generate AI title/body** — Uses `CommitMessageGenerator` with optional plan context from linked erk-plan issue</param>
+    <param name="new_string">4. **Generate AI title/body** — Uses `CommitMessageGenerator` with optional plan context from linked erk plan</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="890" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BM5Fr72ecAk1zTFYDLNyDt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/documentation/when-to-switch-pattern.md</param>
+    <param name="old_string">**Switching from planning to planless (rare):** If a plan reveals the task is simpler than...[truncated 62 chars]...f you invested in planning, the implementation usually benefits from the plan's structure.</param>
+    <param name="new_string">**Switching from planning to planless (rare):** If a plan reveals the task is simpler than...[truncated 56 chars]...f you invested in planning, the implementation usually benefits from the plan's structure.</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="890" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WBsug1kMJUbshGGvuNRxT8">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/slash-command-llm-turn-optimization.md</param>
+    <param name="old_string">The `system:objective-update-with-landed-pr` command demonstrates this: Step 1 calls `erk ...[truncated 129 chars]...it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.</param>
+    <param name="new_string">The `system:objective-update-with-landed-pr` command demonstrates this: Step 1 calls `erk ...[truncated 123 chars]...it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="890" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LuPHu1aJcbfABwP7amVuP3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md</param>
+    <param name="old_string">1. **Plan context** - From linked erk-plan issue (highest priority)</param>
+    <param name="new_string">1. **Plan context** - From linked erk plan (highest priority)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="890" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01A8FrbWr1XSrRVZ2nK4rU2p">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md</param>
+    <param name="old_string">When a branch is associated with a plan, the command automatically fetches plan context from the linked erk-plan issue.</param>
+    <param name="new_string">When a branch is associated with a plan, the command automatically fetches plan context from the linked erk plan.</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="890" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011T3JfLMS9rbQdD7nBRiTQC">
+The file /home/runner/work/erk/erk/docs/learned/ci/learn-ci-environment-detection.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01HB5rLzifpHJVZ8LkGPFouL">
+The file /home/runner/work/erk/erk/docs/learned/reference/gastown-analysis.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014CuUKxrbWbCMcwCgiYRAsv">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BM5Fr72ecAk1zTFYDLNyDt">
+The file /home/runner/work/erk/erk/docs/learned/documentation/when-to-switch-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WBsug1kMJUbshGGvuNRxT8">
+The file /home/runner/work/erk/erk/docs/learned/cli/slash-command-llm-turn-optimization.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LuPHu1aJcbfABwP7amVuP3">
+The file /home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01A8FrbWr1XSrRVZ2nK4rU2p">
+The file /home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me continue with the remaining instances:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1721" cache_read_input_tokens="99141" cache_creation="{'ephemeral_5m_input_tokens': 1721, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XEivrGgSWmb1F6nrMqeZQv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">      PR workflows automatically update plan issue dispatch metadata when the</param>
+    <param name="new_string">      PR workflows automatically update plan dispatch metadata when the</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1721" cache_read_input_tokens="99141" cache_creation="{'ephemeral_5m_input_tokens': 1721, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JRwwbk4y7EPYV1kJwqPhLh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/workflows/one-shot-workflow.md</param>
+    <param name="old_string">    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slu...[truncated 16 chars]...mber is provided). The workflow and CLI both depend on these prefixes for identification."</param>
+    <param name="new_string">    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan) or `P{N}-{slug}-{MM...[truncated 10 chars]...mber is provided). The workflow and CLI both depend on these prefixes for identification."</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1721" cache_read_input_tokens="99141" cache_creation="{'ephemeral_5m_input_tokens': 1721, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WE59ygGjDiGYSnq8pCbtKv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/workflows/tripwires.md</param>
+    <param name="old_string">**modifying one-shot branch naming convention** → Read [One-Shot Workflow](one-shot-workfl...[truncated 105 chars]...umber is provided). The workflow and CLI both depend on these prefixes for identification.</param>
+    <param name="new_string">**modifying one-shot branch naming convention** → Read [One-Shot Workflow](one-shot-workfl...[truncated 99 chars]...umber is provided). The workflow and CLI both depend on these prefixes for identification.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1721" cache_read_input_tokens="99141" cache_creation="{'ephemeral_5m_input_tokens': 1721, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MLbN13fujQCNJBH8tVxWUk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md</param>
+    <param name="old_string">    warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .erk/impl-context/plan-ref.json."</param>
+    <param name="new_string">    warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan number from .erk/impl-context/plan-ref.json."</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1721" cache_read_input_tokens="99141" cache_creation="{'ephemeral_5m_input_tokens': 1721, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XEivrGgSWmb1F6nrMqeZQv">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01JRwwbk4y7EPYV1kJwqPhLh">
+The file /home/runner/work/erk/erk/docs/learned/workflows/one-shot-workflow.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WE59ygGjDiGYSnq8pCbtKv">
+The file /home/runner/work/erk/erk/docs/learned/workflows/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MLbN13fujQCNJBH8tVxWUk">
+The file /home/runner/work/erk/erk/docs/learned/erk/pr-commands.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify that all changes are complete by doing a final search for "plan issue":</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1175" cache_read_input_tokens="100862" cache_creation="{'ephemeral_5m_input_tokens': 1175, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AWSP8qE6s6ScZbKMg2guAT">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1175" cache_read_input_tokens="100862" cache_creation="{'ephemeral_5m_input_tokens': 1175, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AWSP8qE6s6ScZbKMg2guAT">
+docs/learned/tui/data-contract.md:161:| `learn_plan_issue_closed` | `bool` | Yes      | Whether the learn plan issue is closed                    |
+docs/learned/tui/plan-row-data.md:95:| `learn_plan_issue_closed` | `bool \| None` | Whether the learn plan issue is closed              | Yes                   |
+  </tool_result>
+  <assistant>I see these remaining instances are in field names (`learn_plan_issue_closed`) which should be preserved as they are code references. According to the rules, I should preserve code references. Let me verify if there are any more text instances that need changing:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="229" cache_read_input_tokens="102037" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0171Z4S95XYxjyKUwvi8xtTL">
+    <param name="pattern">plan issues</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="229" cache_read_input_tokens="102037" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0171Z4S95XYxjyKUwvi8xtTL">
+No matches found
+  </tool_result>
+  <assistant>Perfect! Now let me verify my work is complete by checking one final time for case-insensitive variations:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="277" cache_read_input_tokens="102266" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015P8dtcXbTDGqaQrQbBs783">
+    <param name="command">grep -r "plan issue" docs/learned/ 2&gt;/dev/null | grep -v "learn_plan_issue" | head -20</param>
+    <param name="description">Check for remaining "plan issue" text instances</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="277" cache_read_input_tokens="102266" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="146" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015P8dtcXbTDGqaQrQbBs783">
+
+  </tool_result>
+  <assistant>Excellent! Let me verify the git status to confirm all the changes are made:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="157" cache_read_input_tokens="102543" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "plan_id": 8995,
+  "sessions": [
+    {
+      "session_id": "4dfe31b4-3f6b-466e-9a15-a6baa69c8303",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T11:15:38.184296+00:00",
+      "files": [
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part1.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part10.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part11.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part12.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part13.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part14.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part15.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part16.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part17.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part18.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part2.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part3.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part4.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part5.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part6.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part7.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part8.xml",
+        "impl-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-4dfe31b4-3f6b-466e-9a15-a6baa69c8303-part9.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 14,
+      "raw_size_kb": 1837,
+      "xml_size_kb": 990,
+      "git_branch": "plnd/consolidate-learn-docs-03-08-1055"
+    }
+  ]
+}

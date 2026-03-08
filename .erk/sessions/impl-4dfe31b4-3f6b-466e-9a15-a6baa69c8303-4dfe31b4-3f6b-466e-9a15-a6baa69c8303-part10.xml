@@ -1,0 +1,250 @@
+<session>
+  <meta source="agent-a5c0f8c" />
+  <meta branch="plnd/consolidate-learn-docs-03-08-1055" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Perfect! Now let me verify the changes by checking one of the modified files to ensure all replacements were made correctly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2113" cache_read_input_tokens="47371" cache_creation="{'ephemeral_5m_input_tokens': 2113, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FNg8V9BPNr2BVYb8GruPGP">
+    <param name="command">git diff docs/learned/architecture/ | head -200</param>
+    <param name="description">Show git diff of all changes made</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2113" cache_read_input_tokens="47371" cache_creation="{'ephemeral_5m_input_tokens': 2113, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FNg8V9BPNr2BVYb8GruPGP">
+diff --git a/docs/learned/architecture/abc-convenience-methods.md b/docs/learned/architecture/abc-convenience-methods.md
+index be03b6a56..fc21e66a7 100644
+--- a/docs/learned/architecture/abc-convenience-methods.md
++++ b/docs/learned/architecture/abc-convenience-methods.md
+@@ -50,7 +50,7 @@ Don't use convenience methods when:
+ 
+ - The operation requires implementation-specific behavior
+ - Performance characteristics differ between real/fake
+-- The operation needs dry-run/printing wrapper behavior
++- The operation needs dry-run wrapper behavior
+ 
+ In those cases, add an abstract method following the [Gateway ABC Implementation Checklist](gateway-abc-implementation.md).
+ 
+diff --git a/docs/learned/architecture/discriminated-union-error-handling.md b/docs/learned/architecture/discriminated-union-error-handling.md
+index 4ece46c05..ed5b7bd04 100644
+--- a/docs/learned/architecture/discriminated-union-error-handling.md
++++ b/docs/learned/architecture/discriminated-union-error-handling.md
+@@ -10,7 +10,7 @@ tripwires:
+   - action: "choosing between exceptions and discriminated unions for operation failures"
+     warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
+   - action: "migrating a gateway method to return discriminated union"
+-    warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
++    warning: "Update all implementations (ABC, real, fake; add dry_run only for dry-run-participating gateways) AND all call sites AND tests. Incomplete migrations break type safety."
+   - action: "accessing properties on a discriminated union result without isinstance() check"
+     warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
+   - action: "using None as a success return value in a validation function (ErrorType | None where None = success)"
+@@ -274,7 +274,7 @@ if isinstance(merge_result, MergeError):
+ 
+ 1. Define types in appropriate `types.py` module
+ 2. Update ABC signature
+
+... [170 lines omitted] ...
+
+ 5. Update tests to check `isinstance(result, ErrorType)`
+ - Caller needs to explain failures differently based on context
+ | Context          | Critical? | Failure Handling      | Rationale                              |
+ **Why delegate instead of no-op?** Dry-run mode validates workflows without mutating state. If a command would fail due to a missing resource, dry-run should surface that error before the user runs it for real.
+  </tool_result>
+  <assistant>Let me get the rest of the diff:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3990" cache_read_input_tokens="49484" cache_creation="{'ephemeral_5m_input_tokens': 3990, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T3gRLaxcYpMnLHzyKzjV2C">
+    <param name="command">git diff docs/learned/architecture/ | tail -50</param>
+    <param name="description">Show remaining git diff</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3990" cache_read_input_tokens="49484" cache_creation="{'ephemeral_5m_input_tokens': 3990, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T3gRLaxcYpMnLHzyKzjV2C">
+ **Why delegate instead of no-op?** Dry-run mode validates workflows without mutating state. If a command would fail due to a missing resource, dry-run should surface that error before the user runs it for real.
+ 
+diff --git a/docs/learned/architecture/plan-backend-migration.md b/docs/learned/architecture/plan-backend-migration.md
+index 3c05990b2..fe635dc20 100644
+--- a/docs/learned/architecture/plan-backend-migration.md
++++ b/docs/learned/architecture/plan-backend-migration.md
+@@ -18,7 +18,7 @@ Pattern for migrating exec scripts from direct GitHub CLI calls to the `PlanBack
+ 
+ ## Context
+ 
+-Exec scripts historically used direct `gh` CLI calls to update plan issue metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
++Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
+ 
+ ## Migration Pattern
+ 
+diff --git a/docs/learned/architecture/plan-context-integration.md b/docs/learned/architecture/plan-context-integration.md
+index 1bdb51453..bf2f5ef42 100644
+--- a/docs/learned/architecture/plan-context-integration.md
++++ b/docs/learned/architecture/plan-context-integration.md
+@@ -13,7 +13,7 @@ audit_result: clean
+ 
+ # Plan Context Integration
+ 
+-The `PlanContextProvider` extracts plan content for branches linked to erk-plan issues, enabling more accurate PR descriptions that understand the "why" behind changes.
++The `PlanContextProvider` extracts plan content for branches linked to erk plans, enabling more accurate PR descriptions that understand the "why" behind changes.
+ 
+ ## 5-Step Extraction Algorithm
+ 
+@@ -57,7 +57,7 @@ The provider is designed to fail silently and return `None` when:
+ 
+
+... [20 lines omitted] ...
+
+ - API errors occur
+  </tool_result>
+  <assistant>Perfect! Let me verify all changes are correct by running a final check for any remaining "plan issue" terminology in these files:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1003" cache_read_input_tokens="53474" cache_creation="{'ephemeral_5m_input_tokens': 1003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SuPTWvb8wcFtysJBTDqRVa">
+    <param name="command">grep -i "plan issue\|erk-plan issue" docs/learned/architecture/*.md || echo "No remaining instances found"</param>
+    <param name="description">Check for remaining "plan issue" terminology</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1003" cache_read_input_tokens="53474" cache_creation="{'ephemeral_5m_input_tokens': 1003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SuPTWvb8wcFtysJBTDqRVa">
+docs/learned/architecture/pr-body-assembly.md:PR bodies no longer contain `Closes #N` references. Plan issue closure is handled directly via the GitHub API in `erk land` (see `objective_helpers.py`). This avoids unreliable GitHub auto-close behavior.
+  </tool_result>
+  <assistant>I found one more instance in pr-body-assembly.md. Let me fix that:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="208" cache_read_input_tokens="54477" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011EorHCRvbenayHqsfUFCZh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md</param>
+    <param name="old_string">PR bodies no longer contain `Closes #N` references. Plan issue closure is handled directly...[truncated 4 chars]...erk land` (see `objective_helpers.py`). This avoids unreliable GitHub auto-close behavior.</param>
+    <param name="new_string">PR bodies no longer contain `Closes #N` references. Plan closure is handled directly via the GitHub API in `erk land` (see `objective_helpers.py`). This avoids unreliable GitHub auto-close behavior.</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="208" cache_read_input_tokens="54477" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011EorHCRvbenayHqsfUFCZh">
+The file /home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify there are no more remaining instances:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="382" cache_read_input_tokens="54685" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RaHGkofrMPjSt2rztnd9du">
+    <param name="command">grep -i "plan issue\|erk-plan issue" docs/learned/architecture/*.md || echo "No remaining instances found"</param>
+    <param name="description">Final check for remaining "plan issue" terminology</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="382" cache_read_input_tokens="54685" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RaHGkofrMPjSt2rztnd9du">
+No remaining instances found
+  </tool_result>
+  <assistant>Perfect! Now let me verify the GATEWAY/PRINTING changes are correct:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="133" cache_read_input_tokens="55067" cache_creation="{'ephemeral_5m_input_tokens': 133, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NEQJKRUL4CBWfxgG5P1Xvm">
+    <param name="command">grep -n "5-layer\|printing utilities\|dry-run/printing" docs/learned/architecture/*.md || echo "No remaining instances found"</param>
+    <param name="description">Check for GATEWAY/PRINTING references</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="133" cache_read_input_tokens="55067" cache_creation="{'ephemeral_5m_input_tokens': 133, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NEQJKRUL4CBWfxgG5P1Xvm">
+docs/learned/architecture/gateway-decomposition-phases.md:30:The objective used **linear extraction** — one complete subgateway per PR, with full 5-layer implementation (ABC, Real, Fake, DryRun, Printing) in a single changeset. Earlier attempts at parallel extraction created merge conflicts as multiple PRs touched the same callsites.
+docs/learned/architecture/gateway-decomposition-phases.md:34:1. Create subgateway directory with 5-layer implementation
+docs/learned/architecture/gateway-decomposition-phases.md:46:| 1     | Worktree     | add, remove, list, get_root                  | —     | Established 5-layer pattern and property composition       |
+docs/learned/architecture/gateway-decomposition-phases.md:117:2. **5-layer implementation in single PR** — Implementing all layers together prevented partial migrations
+docs/learned/architecture/gateway-decomposition-phases.md:134:2. Extract **one group at a time** with full 5-layer implementation
+docs/learned/architecture/gateway-decomposition-phases.md:141:- [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) — The 5-layer implementation contract for subgateway properties
+docs/learned/architecture/lbyl-gateway-pattern.md:104:- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-layer implementation pattern
+  </tool_result>
+  <assistant>Good! The remaining references to "5-layer" are in gateway-decomposition-phases.md which was not in the requested list, and the lbyl-gateway-pattern.md reference is at line 104 which is after the section I edited. Let me check if there are any of the specific references I was supposed to change that I might have missed:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="577" cache_read_input_tokens="55200" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PmciyDf6xzuyGNAqdeknbV">
+    <param name="command">grep -n "printing gateway\|printing utilities\|dry-run/printing" docs/learned/architecture...[truncated 52 chars]....md docs/learned/architecture/erk-shared-package.md || echo "No remaining instances found"</param>
+    <param name="description">Check target files for remaining printer references</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="577" cache_read_input_tokens="55200" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PmciyDf6xzuyGNAqdeknbV">
+No remaining instances found
+  </tool_result>
+  <assistant>Excellent! Let me create a summary of all the changes made:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="234" cache_read_input_tokens="55777" cache_creation="{'ephemeral_5m_input_tokens': 234, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016EhoSodnFe3s94vwKGCEDe">
+    <param name="command">git diff docs/learned/architecture/ --stat</param>
+    <param name="description">Show summary of changes</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="234" cache_read_input_tokens="55777" cache_creation="{'ephemeral_5m_input_tokens': 234, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016EhoSodnFe3s94vwKGCEDe">
+Exit code 128
+fatal: option '--stat' must come before non-option arguments
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MizNQgpAEuvgEm6eiAMdrW">
+    <param name="command">git diff --stat docs/learned/architecture/</param>
+    <param name="description">Show summary of changes</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="236" cache_read_input_tokens="56011" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MizNQgpAEuvgEm6eiAMdrW">
+ docs/learned/architecture/abc-convenience-methods.md            | 2 +-
+ docs/learned/architecture/discriminated-union-error-handling.md | 4 ++--
+ docs/learned/architecture/erk-shared-package.md                 | 1 -
+ docs/learned/architecture/fail-open-patterns.md                 | 8 ++++----
+ docs/learned/architecture/gateway-vs-backend.md                 | 2 +-
+ docs/learned/architecture/github-cli-limits.md                  | 2 +-
+ docs/learned/architecture/github-issue-autoclose.md             | 6 +++---
+ docs/learned/architecture/index.md                              | 2 +-
+ docs/learned/architecture/lbyl-gateway-pattern.md               | 4 ++--
+ docs/learned/architecture/plan-backend-migration.md             | 2 +-
+ docs/learned/architecture/plan-context-integration.md           | 4 ++--
+ docs/learned/architecture/pr-body-assembly.md                   | 2 +-
+ docs/learned/architecture/session-discovery.md                  | 2 +-
+ 13 files changed, 20 insertions(+), 21 deletions(-)
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary document:
+
+## Summary
+
+I have successfully completed the terminology replacement task. All instances of "plan issue" have been replaced with "plan" in the 8 specified architecture documentation files, along with additional GATEWAY/PRINTING reference updates in related files.
+
+### Files Modified: 13 architecture documentation files
+
+#### Main "Plan Issue" Terminology Replacements (8 required files + 1 additional):
+
+1. **fail-open-patterns.md** - 4 replacements:
+   - "closing the plan issue" → "closing the plan"
+   - "Close plan issue" → "Close plan" (2x)
+   - "PR lookup for the same plan issue" → "PR lookup for the same plan"
+
+2. **github-issue-autoclose.md** - 3 replacements:
+   - "understanding plan issue closure strategy" → "understanding plan closure strategy"
+   - "auto-close plan issues on merge" → "auto-close plans on merge"
+   - "Plan issues are now closed" → "Plans are now closed"
+
+3. **github-cli-limits.md** - 1 replacement:
+   - "link it to a plan issue" → "link it to a plan"
+
+4. **plan-backend-migration.md** - 1 replacement:
+   - "update plan issue metadata" → "update plan metadata"
+
+5. **plan-context-integration.md** - 2 replacements:
+   - "linked to erk-plan issues" → "linked to erk plans"
+   - "erk-plan issue (no `plan_comment_id`)" → "erk plan (no `plan_comment_id`)"
+
+6. **session-discovery.md** - 1 replacement:
+   - "Sessions are tracked in the plan issue" → "Sessions are tracked in the plan"
+
+7. **index.md** - 1 replacement:
+   - "understanding plan issue closure strategy" → "understanding plan closure strategy"
+
+8. **pr-body-assembly.md** (found during verification) - 1 replacement:
+   - "Plan issue closure is handled" → "Plan closure is handled"
+
+#### GATEWAY/PRINTING Reference Updates (5 files):
+
+1. **discriminated-union-error-handling.md** - 2 updates:
+   - Line 13: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing)" → "Update all implementations (ABC, real, fake; add dry_run only for dry-run-participating gateways)"
+   - Line 277: Same replacement in migration checklist
+
+2. **lbyl-gateway-pattern.md** - 2 updates:
+   - "The 5-layer gateway architecture" → "The gateway architecture"
+   - "Dry-run and printing gateways delegate" → "Dry-run gateways delegate"
+
+3. **gateway-vs-backend.md** - 1 update:
+   - "missing dry-run/printing support" → "missing dry-run support"
+
+4. **abc-convenience-methods.md** - 1 update:
+   - "dry-run/printing wrapper behavior" → "dry-run wrapper behavior"
+
+5. **erk-shared-package.md** - 1 update:
+   - Removed the line: "├── printing/      # Printing utilities"
+
+### Verification:
+- All replacements maintain case sensitivity as specified
+- Preserved "objective issue", "GitHub issue/Issue" terminology unchanged
+- Preserved code references like `IssueInfo`, `GitHubIssues`, `IssueNotFound` unchanged
+- Preserved `issue_number` variable names in code blocks unchanged
+- No remaining instances of "plan issue" terminology found in any modified files
+
+Total changes: 13 files modified, 20 insertions, 21 deletions</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="56247" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,871 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-08-1055" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8995&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8995` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8995.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28558" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28558, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UuoQSPnr8rrxXHoz6EFJzx">
+    <param name="command">erk exec setup-impl --issue 8995</param>
+    <param name="description">Set up implementation for plan #8995</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28558" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28558, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UuoQSPnr8rrxXHoz6EFJzx">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-08-1055", "plan_number": 8995, "plan_url": "https://github.com/dagster-io/erk/pull/8995", "branch": "plnd/consolidate-learn-docs-03-08-1055", "plan_title": "[erk-learn] Plan: Consolidate learned documentation from 23 erk-learn plans", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8995, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/consolidate-learn-docs-03-08-1055', teleporting from remote...
+  </tool_result>
+  <assistant>Setup successful. Now let me read the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="28558" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UxGi3y6Uwnvrs8ePmGR7W9">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-08-1055/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="28558" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UxGi3y6Uwnvrs8ePmGR7W9">
+     1→# Plan: Consolidate learned documentation from 23 erk-learn plans
+     2→
+     3→&gt; **Consolidates:** #8991, #8989, #8988, #8987, #8986, #8979, #8978, #8977, #8972, #8971, #8970, #8969, #8968, #8967, #8964, #8963, #8962, #8956, #8952, #8951, #8946, #8942, #8940
+     4→
+     5→## Context
+     6→
+     7→23 erk-learn plans were generated from recently merged PRs. All code changes are fully implemented. The remaining work is purely documentation: updating stale terminology in docs/learned/, fixing references to deleted architecture layers, and documenting new patterns discovered during implementation.
+     8→
+     9→## Source Plans
+    10→
+    11→| # | Title | Items |
+    12→|---|-------|-------|
+    13→| #8987 | Rename `plan_issues` module to `objective_issues` | Implemented, doc verified |
+    14→| #8971 | Standardize plan terminology | 62 doc instances remaining |
+    15→| #8969 | Rename issue_workflow to plan_workflow | Implemented, verified |
+    16→| #8963 | Fix cli/ and erk/ docs terminology | 7 files still need updates |
+    17→| #8991 | Fix objective auto-close: robust code + prompt | Implemented |
+    18→| #8968 | Fix objective auto-close edge case | Implemented |
+    19→| #8977 | Enable objective operations without repo | Implemented |
+    20→| #8952 | Remove --plan flag from objective-apply-landed-update | Implemented |
+    21→| #8962 | Fix objective roadmap sync normalization | Implemented |
+    22→| #8967 | Remove printing layer from gateway pattern | 8 docs still reference printing |
+    23→| #8986 | Expand mock-to-fake skill with decision framework | Implemented |
+    24→| #8956 | Refactor cmux_checkout_workspace mock to fake | Implemented |
+    25→| #8946 | Unify local/remote codepaths in PR read commands | Implemented |
+    26→| #8979 | Refactor --dangerous to live_dangerously config | Implemented |
+    27→| #8978 | Centralize repository resolution logic | Implemented |
+    28→| #8970 | Simplify current-worktree commands | Implemented |
+    29→| #8972 | Add "l" key to launch launchpad | Implemented |
+    30→| #8989 | Add remote dispatch support to pr dispatch | Implemented |
+
+... [115 lines omitted] ...
+
+    59→- `docs/learned/architecture/discriminated-union-error-handling.md` (line 13: "Update ALL 5 implementations")
+   102→**File:** `docs/learned/architecture/discriminated-union-error-handling.md`
+  </tool_result>
+  <assistant>Good, I understand the plan. Let me set up the todo list and signal the start:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2868" cache_read_input_tokens="28906" cache_creation="{'ephemeral_5m_input_tokens': 2868, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01AJsH5mPNtyey4SzLKGs1Fm">
+    <param name="todos">[{'content': 'Fix CHANGELOG stale reference (async-learn → planned-pr-context)', 'status':...[truncated 606 chars]... cleanup, CI, submit PR', 'status': 'pending', 'activeForm': 'Finalizing implementation'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2868" cache_read_input_tokens="28906" cache_creation="{'ephemeral_5m_input_tokens': 2868, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AJsH5mPNtyey4SzLKGs1Fm">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012hfUeQU4sVrb3h5a7zYNZn">
+    <param name="command">erk exec impl-signal started --session-id "4dfe31b4-3f6b-466e-9a15-a6baa69c8303" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="341" cache_read_input_tokens="31774" cache_creation="{'ephemeral_5m_input_tokens': 341, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012hfUeQU4sVrb3h5a7zYNZn">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8995
+}
+  </tool_result>
+  <assistant>Now let me start with Step 1 - fixing the CHANGELOG:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="32115" cache_creation="{'ephemeral_5m_input_tokens': 156, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0132znXeVcm6u95G6qwxS4VE">
+    <param name="todos">[{'content': 'Fix CHANGELOG stale reference (async-learn → planned-pr-context)', 'status':...[truncated 610 chars]... cleanup, CI, submit PR', 'status': 'pending', 'activeForm': 'Finalizing implementation'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="32115" cache_creation="{'ephemeral_5m_input_tokens': 156, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0132znXeVcm6u95G6qwxS4VE">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016P59ShHjeZ5zRDD6MpCQo9">
+    <param name="pattern">async-learn</param>
+    <param name="path">/home/runner/work/erk/erk/CHANGELOG.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="32271" cache_creation="{'ephemeral_5m_input_tokens': 339, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016P59ShHjeZ5zRDD6MpCQo9">
+38:- Fix land learn pipeline to fetch remote sessions from async-learn branches when local sessions are missing (2db54844)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XiUoYCA9KXb36DvPkVp2wZ">
+    <param name="file_path">/home/runner/work/erk/erk/CHANGELOG.md</param>
+    <param name="old_string">- Fix land learn pipeline to fetch remote sessions from async-learn branches when local sessions are missing (2db54844)</param>
+    <param name="new_string">- Fix land learn pipeline to fetch remote sessions from planned-pr-context branches when local sessions are missing (2db54844)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="32610" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XiUoYCA9KXb36DvPkVp2wZ">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SuNzmnzKFnsmtVb9BLM4i4">
+    <param name="file_path">/home/runner/work/erk/erk/CHANGELOG.md</param>
+    <param name="offset">35</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="201" cache_read_input_tokens="32772" cache_creation="{'ephemeral_5m_input_tokens': 201, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SuNzmnzKFnsmtVb9BLM4i4">
+    35→
+    36→### Fixed
+    37→
+    38→- Fix land learn pipeline to fetch remote sessions from async-learn branches when local sessions are missing (2db54844)
+    39→- Fix objective roadmap sync by normalizing comment format to canonical representation (5ec2d82cf)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011N74uz52563fyEeL86h31h">
+    <param name="file_path">/home/runner/work/erk/erk/CHANGELOG.md</param>
+    <param name="old_string">- Fix land learn pipeline to fetch remote sessions from async-learn branches when local sessions are missing (2db54844)</param>
+    <param name="new_string">- Fix land learn pipeline to fetch remote sessions from planned-pr-context branches when local sessions are missing (2db54844)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="32973" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011N74uz52563fyEeL86h31h">
+The file /home/runner/work/erk/erk/CHANGELOG.md has been updated successfully.
+  </tool_result>
+  <assistant>Step 1 done. Now Step 2 - the big terminology sweep. Let me first find all instances:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33236" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_016EGfwXNzjkSNa5dt57GLqE">
+    <param name="todos">[{'content': 'Fix CHANGELOG stale reference (async-learn → planned-pr-context)', 'status':...[truncated 612 chars]... cleanup, CI, submit PR', 'status': 'pending', 'activeForm': 'Finalizing implementation'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33236" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016EGfwXNzjkSNa5dt57GLqE">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NgKuQTNFTWNmYLhC5g6EHR">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="33426" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NgKuQTNFTWNmYLhC5g6EHR">
+docs/learned/planning/no-changes-handling.md:30:4. **Posts issue comment**: Notifies the plan issue with a link to the PR
+docs/learned/planning/no-changes-handling.md:55:2. **If already done**: Close both the PR and the linked plan issue
+docs/learned/planning/cross-artifact-analysis.md:21:| Linked       | PR explicitly references plan issue         | PR body contains `Plan: #&lt;issue&gt;` reference |
+docs/learned/pr-operations/plan-embedding-in-pr.md:18:When a PR originates from an erk-plan issue, reviewers need the original plan for context — it explains the _intent_ behind the code, not just the diff. Embedding the plan directly in the PR body means reviewers don't have to chase cross-references to a separate GitHub issue. A collapsible `&lt;details&gt;` section keeps this context available without overwhelming the PR description.
+docs/learned/pr-operations/plan-embedding-in-pr.md:25:2. **GitHub API** → fetches the plan issue body, then the plan comment containing the actual plan markdown
+docs/learned/pr-operations/pr-validation-rules.md:9:    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md."
+docs/learned/planning/plan-header-privatization.md:14:The `plan_header.py` module contains low-level functions for reading/writing plan issue metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.
+docs/learned/pr-operations/pr-submit-phases.md:60:The `PlanContextProvider` checks for a linked erk-plan issue:
+docs/learned/pr-operations/checkout-footer-syntax.md:41:| `.erk/impl-context/plan-ref.json` | Never                       | Plan issue number != PR number; validation will fail |
+docs/learned/pr-operations/tripwires.md:41:**using issue number from .erk/impl-context/plan-ref.json in a checkout footer** → Read [PR Validation Rules](pr-validation-rules.md) first. Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md.
+docs/learned/ci/learn-ci-environment-detection.md:55:**Why skip confirmations entirely?** The learn workflow was designed to be safe to run automatically — it creates a plan issue but doesn't merge code or modify production state. Auto-proceeding in CI reduces friction without introducing risk.
+docs/learned/planning/workflow-markers.md:35:### Plan Issue Tracking
+docs/learned/planning/consolidation-labels.md:34:The label application happens in Step 7 of `/erk:replan`, after the new plan issue is created via `/erk:plan-save`.
+docs/learned/reference/gastown-analysis.md:710:- Add severity field to plan issues
+docs/learned/reference/gastown-analysis.md:761:- Plan issues open too long
+docs/learned/planning/session-preprocessing.md:77:The planning session ID is captured at plan creation time by the `session_id_injector_hook`, which writes the current session ID to `.erk/scratch/current-session-id`. This is then embedded in the plan issue's metadata when the issue is created.
+docs/learned/planning/planned-pr-context-local-preprocessing.md:53:**Graceful degradation**: If no PR exists for the plan issue, comment fetching is skipped entirely. Missing PR comments don't block the learn workflow — sessions alone contain sufficient material for insight extraction.
+docs/learned/planning/learn-plan-validation.md:18:Learn plans exist to extract insights from **implementation work** (erk-plan issues). A learn plan must never target another learn plan — this would create documentation cycles where plans endlessly analyze each other instead of analyzing real code changes.
+docs/learned/planning/plan-schema.md:15:Plan issues use a two-part structure optimized for GitHub API performance:
+docs/learned/configuration/config-layers.md:51:- `[plans]` - Plan issue repository settings
+docs/learned/planning/learn-pipeline-workflow.md:27:The learn pipeline has 7 stages that transform raw session JSONL into a documentation plan issue. The key architectural decision is **where processing happens**: stages 1-5 run locally (fast, free), while stages 6-7 run in GitHub Actions (background, billed).
+docs/learned/planning/learn-pipeline-workflow.md:60:Finds all session logs related to a plan issue by querying GitHub issue metadata for tracked session IDs, then resolving those IDs to local file paths. Three session source types exist:
+docs/learned/planning/learn-pipeline-workflow.md:118:Human reviews the learn plan issue, optionally edits it, and submits for implementation through the standard `plan-implement` workflow.
+docs/learned/planning/branch-name-inference.md:32:When code needs to look up a PR from a plan issue, `branch_name` may be missing from metadata. The system uses two layers:
+docs/learned/planning/token-optimization-patterns.md:40:The `/erk:replan` command demonstrates this pattern. Step 3 explicitly skips content fetching ("Plan content is fetched by each Explore agent in Step 4, not in the main context"), and Step 4 launches parallel Explore agents that each fetch their own plan issue as their first action.
+docs/learned/planning/tripwires.md:95:**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+docs/learned/planning/complete-inventory-protocol.md:10:  - action: "closing a plan issue without verifying all items were addressed"
+docs/learned/planning/complete-inventory-protocol.md:35:| Before closing a plan issue as "complete"              | The only reliable completion check is comparing actual files against planned items                     |
+docs/learned/planning/learn-plan-metadata-fields.md:39:GitHub Actions workflow run URL that created this plan. Provides a backlink from the plan issue to the workflow that generated it.
+docs/learned/planning/learn-plan-metadata-fields.md:61:- Quick navigation from plan issue to the workflow that created it
+
+... [42 lines omitted] ...
+
+docs/learned/planning/plan-backend-migration.md:18:When exec scripts need to read or update plan issues, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
+docs/learned/erk/pr-commands.md:10:    warning: "Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .erk/impl-context/plan-ref.json."
+docs/learned/workflows/one-shot-workflow.md:10:    warning: "Branch format is `oneshot-{slug}-{MM-DD-HHMM}` (no plan issue) or `P{N}-{slug}-{MM-DD-HHMM}` (when plan_issue_number is provided). The workflow and CLI both depend on these prefixes for identification."
+  </tool_result>
+  <assistant>That's a lot of instances. Let me use the libcst-refactor agent for a systematic text replacement, but since these are markdown files, I'll use a more targeted approach. Let me categorize the replacements carefully and handle them in parallel batches.
+
+Let me first identify which files need changes and handle them systematically. I'll launch parallel agents to process different directories:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3988" cache_read_input_tokens="33774" cache_creation="{'ephemeral_5m_input_tokens': 3988, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0197BEmmxrvUCQxxYGt6qtfd">
+    <param name="description">Sweep plan issue terminology - architecture</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Your task is to do a find-and-replace of "plan issue" terminology in docs/learned/ markdow...[truncated 1926 chars]...Read each file first, then make precise edits. Do NOT create new files. Use the Edit tool.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3988" cache_read_input_tokens="33774" cache_creation="{'ephemeral_5m_input_tokens': 3988, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0197BEmmxrvUCQxxYGt6qtfd">
+Async agent launched successfully.
+agentId: a0de203 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_use name="Task" id="toolu_016cdSVmpWMo1w5x3Uea4iq9">
+    <param name="description">Sweep plan issue terminology - planning</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Your task is to do a find-and-replace of "plan issue" terminology in docs/learned/planning...[truncated 1924 chars]...Read each file first, then make precise edits. Do NOT create new files. Use the Edit tool.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="37762" cache_creation="{'ephemeral_5m_input_tokens': 971, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016cdSVmpWMo1w5x3Uea4iq9">
+Async agent launched successfully.
+agentId: ae3bef9 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>
+
+Let me also launch agents for the remaining directories:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="970" cache_read_input_tokens="38733" cache_creation="{'ephemeral_5m_input_tokens': 970, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01XcKuZxfhxLbnfPtvu3DRg1">
+    <param name="description">Sweep plan issue terminology - cli</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Your task is to do a find-and-replace of "plan issue" terminology in docs/learned/cli/ mar...[truncated 1292 chars]...Read each file first, then make precise edits. Do NOT create new files. Use the Edit tool.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="970" cache_read_input_tokens="38733" cache_creation="{'ephemeral_5m_input_tokens': 970, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XcKuZxfhxLbnfPtvu3DRg1">
+Async agent launched successfully.
+agentId: adb7c4a (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>
+
+Let me launch the remaining directory agents in parallel:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1053" cache_read_input_tokens="39703" cache_creation="{'ephemeral_5m_input_tokens': 1053, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0144D3GjocBo1bEMVqJ8Z9AJ">
+    <param name="description">Sweep plan issue - objectives/erk/other</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Your task is to do a find-and-replace of "plan issue" terminology in several docs/learned/...[truncated 2205 chars]...Read each file first, then make precise edits. Do NOT create new files. Use the Edit tool.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1053" cache_read_input_tokens="39703" cache_creation="{'ephemeral_5m_input_tokens': 1053, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0144D3GjocBo1bEMVqJ8Z9AJ">
+Async agent launched successfully.
+agentId: af1f40d (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>
+
+Good, agents are still working. Let me now check the status of the first two agents that were launched earlier, while also starting work on Step 3 (gateway/printing references) since that's independent:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1168" cache_read_input_tokens="40756" cache_creation="{'ephemeral_5m_input_tokens': 1168, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_012sr2jvgWWF5mdLQZGWegyE">
+    <param name="task_id">a0de203</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1168" cache_read_input_tokens="40756" cache_creation="{'ephemeral_5m_input_tokens': 1168, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012sr2jvgWWF5mdLQZGWegyE">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a0de203&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-issue-autoclose.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-cli-limits.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md","old_string":"**Context**: When closing a plan, we close all linked PRs before closing the plan issue. PR closure is non-critical to the main operation—the plan close should still succeed even if PR cleanup fails.\n\n**Two-step pattern**:\n\n1. Close linked PRs (optional, fail-open) — closes all OPEN PRs referencing the issue\n2. Close plan issue (critical, fail-closed) — closes the plan itself","new_string":"**Context**: When closing a plan, we close all linked PRs before closing the plan. PR closure is non-critical to the main operation—the plan close should still succeed even if PR cleanup fails.\n\n**Two-step pattern**:\n\n1. Close linked PRs (optional, fail-open) — closes all OPEN PRs referencing the issue\n2. Close plan (critical, fail-closed) — closes the plan itself"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md","old_string":"### erk pr close\n\n- Close linked PRs (optional, fail-open)\n- Close plan issue (critical, fail-closed)\n- Update objective roadmap (dependent on plan close)","new_string":"### erk pr close\n\n- Close linked PRs (optional, fail-open)\n- Close plan (critical, fail-closed)\n- Update objective roadmap (dependent on plan close)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md","old_string":"**Example**: PR lookup for the same plan issue:\n\n| Context          | Critical? | Failure Handling      | Rationale                              |\n| ---------------- | --------- | --------------------- | -------------------------------------- |\n| User CLI command | Yes       | Error exit            | User needs immediate feedback          |\n| Async background | No        | Log warning, continue | Review comments are optional for learn |\n| Pre-flight check | Yes       | Abort early           | Prevent invalid workflow trigger       |","new_string":"**Example**: PR lookup for the same plan:\n\n| Context          | Critical? | Failure Handling      | Rationale                              |\n| ---------------- | --------- | --------------------- | -------------------------------------- |\n| User CLI command | Yes       | Error exit            | User needs immediate feedback          |\n| Async background | No        | Log warning, continue | Review comments are optional for learn |\n| Pre-flight check | Yes       | Abort early           | Prevent invalid workflow trigger       |"}
+&lt;/output&gt;
+  </tool_result>
+  <assistant>The architecture agent is actively making edits. Let me also check the planning agent and start reading the gateway/printing files for Step 3 in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1548" cache_read_input_tokens="41924" cache_creation="{'ephemeral_5m_input_tokens': 1548, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01K3eNpXgYfHuhrzm4TYJ2TP">
+    <param name="task_id">ae3bef9</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1548" cache_read_input_tokens="41924" cache_creation="{'ephemeral_5m_input_tokens': 1548, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K3eNpXgYfHuhrzm4TYJ2TP">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ae3bef9&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/workflow-markers.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/session-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-context-local-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-schema.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/token-optimization-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md","old_string":"3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)\n4. **Posts issue comment**: Notifies the plan issue with a link to the PR\n5. **Exits gracefully**: Returns exit code 0 (success)","new_string":"3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)\n4. **Posts issue comment**: Notifies the plan with a link to the PR\n5. **Exits gracefully**: Returns exit code 0 (success)"}
+&lt;/output&gt;
+  </tool_result>
+  <assistant>Agents are all actively making edits. Let me start reading the gateway/printing files for Step 3 while waiting:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1127" cache_read_input_tokens="43472" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018VvVMC5X5D7KQSnVkNZoyC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1127" cache_read_input_tokens="43472" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01VepMVN3TV5iTG9aPLJNMdX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/lbyl-gateway-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1127" cache_read_input_tokens="43472" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LTuzAJegx56vkAsDbKoqoR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1127" cache_read_input_tokens="43472" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019Ey6jbVDzXwKgjxWPT93Ao">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1127" cache_read_input_tokens="43472" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019iLwcMpQpFLvVKt6SJ6LQx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1127" cache_read_input_tokens="43472" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01R9P3LU2T43P6PzwpuSg6GQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1127" cache_read_input_tokens="43472" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018VvVMC5X5D7KQSnVkNZoyC">
+     1→---
+     2→title: Discriminated Union Error Handling
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing return types for operations that may fail"
+     7→  - "implementing T | ErrorType patterns"
+     8→  - "handling errors without exceptions"
+     9→tripwires:
+    10→  - action: "choosing between exceptions and discriminated unions for operation failures"
+    11→    warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
+    12→  - action: "migrating a gateway method to return discriminated union"
+    13→    warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
+    14→  - action: "accessing properties on a discriminated union result without isinstance() check"
+    15→    warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
+    16→  - action: "using None as a success return value in a validation function (ErrorType | None where None = success)"
+    17→    warning: "None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types."
+    18→  - action: "using if/else on a discriminated union without isinstance() for type narrowing"
+    19→    warning: "Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches."
+    20→  - action: "returning a collection (list, tuple, str) directly from a function with NonIdealState return type"
+    21→    warning: "Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements __iter__ if needed. See 'The Wrapping Rule' section."
+    22→  - action: "using Protocol property descriptors on a frozen dataclass NonIdealState class"
+    23→    warning: "Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields."
+    24→  - action: "placing @handle_non_ideal_exit before @click.command() or @click.pass_context"
+    25→    warning: "@handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments."
+    26→---
+    27→
+    28→# Discriminated Union Error Handling
+    29→
+    30→Erk uses discriminated unions (`SuccessType | ErrorType`) for LBYL-compliant error handling at gateway and pipeline boundaries. This pattern makes failure modes explicit in type signatures and enables callers to branch on specific error types.
+
+... [396 lines omitted] ...
+
+    32→## The Core Trade-off: Unions vs Exceptions
+    34→**Use discriminated unions when the caller continues after failure** — branching logic, multiple error types, or inspection of error fields (like `pr_number`, `branch_name`).
+    36→**Use exceptions when all callers terminate identically** — error just surfaces as a message, no branching logic, no meaningful field inspection.
+    38→### When Exceptions Are Better: The Worktree Operations Case
+    40→Worktree add/remove failures are _expected_ (path collisions, missing branches), but they're still better as exceptions because no caller does anything beyond extracting the message and terminating:
+    46→except RuntimeError as e:
+    47→    raise UserFacingCliError(str(e))
+    50→The exception pattern is simpler here: no caller branches on error content, no caller inspects error structure, and every call site terminates identically. A discriminated union would add ceremony without value.
+    54→Contrast with `create_branch` and `submit_branch`, where callers _do_ branch on error types:
+    72→1. **Branching logic** — different handling for "already exists" vs other failures
+    74→3. **Type-safe continuation** — caller keeps running after handling the error
+    78→Gateway methods return `SuccessType | ErrorType` where:
+    81→- **Error types** are frozen dataclasses with `message: str` and `error_type` property
+    83→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushResult, PushError --&gt;
+    85→See `PushResult` and `PushError` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`.
+    90→if isinstance(push_result, PushError):
+    91→    raise UserFacingCliError(push_result.message)
+   101→- **Error types** (`NonIdealState`): `.ensure()` raises `NonIdealStateError`
+   105→# One-liner: raises if error, returns the value if success
+   116→def _ensure_comments(result: list[IssueComment] | GitHubAPIFailed) -&gt; list[IssueComment]:
+   117→    if isinstance(result, GitHubAPIFailed):
+   118→        exit_with_error(result.error_type, result.message)
+   119→    assert not isinstance(result, GitHubAPIFailed)
+   131→def issue_comments(...) -&gt; list[IssueComment] | GitHubAPIFailed: ...
+   146→| All error paths should raise (caller can't recover) | `.ensure()` one-liner          |
+   147→| Caller branches on success vs error                 | `isinstance()` check           |
+   148→| Caller branches on multiple error types             | `isinstance()` checks per type |
+   154→# isinstance() — when caller handles the error path explicitly
+   156→if isinstance(result, GitHubAPIFailed):
+   157→    log_warning(result.message)
+   170→- **`NonIdealStateMixin`**: Provides `.ensure()` for error types that use `message: str` as a field (frozen dataclass field conflicts with `NonIdealState` protocol's `@property message`). Used by `GitHubAPIFailed`.
+   171→- **`NonIdealState`**: Protocol for error types with computed `message` properties. `.ensure()` raises `NonIdealStateError`.
+   175→&lt;!-- Source: src/erk/cli/ensure.py, UserFacingCliError --&gt;
+   177→CLI commands use `UserFacingCliError` for error propagation. See `UserFacingCliError` in `src/erk/cli/ensure.py`.
+   180→# Check error case first and raise
+   182→if isinstance(result, PushError):
+   183→    raise UserFacingCliError(result.message)
+   187→**Why `UserFacingCliError`:**
+   189→- Caught at CLI entry point (`main()`) with consistent error styling
+   191→- One-line pattern replaces verbose `user_output(error) + raise SystemExit(1)`
+   193→## Pipeline Discriminated Unions: Structured Error Propagation
+   195→Both submit and land pipelines use discriminated unions to thread errors through multi-step operations:
+   197→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, SubmitState, SubmitError --&gt;
+   198→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, LandState, LandError --&gt;
+   200→See `SubmitError` in `src/erk/cli/commands/pr/submit_pipeline.py` and `LandError` in `src/erk/cli/commands/land_pipeline.py`.
+   205→PipelineStep = Callable[[ErkContext, State], State | Error]
+   211→- `Error` to short-circuit pipeline
+   213→**Why structured error types?**
+   215→1. **Phase tracking** — caller knows if error occurred in validation vs execution
+   216→2. **Machine-readable `error_type`** — enables specific error handling (e.g., "pr-checks-failing" vs "merge-conflict")
+   220→**Why `dict[str, str]` for details?** Not `dict[str, Any]` or `dict[str, str] | None`. Every error has details (even if empty `{}`), and string values enable consistent serialization/logging without type uncertainty.
+   224→def run_validation_pipeline(ctx: ErkContext, state: State) -&gt; State | Error:
+   225→    """Run all validation steps, short-circuit on first error."""
+   228→        if isinstance(result, Error):
+   242→    """Returns True on success, error message string on failure."""
+   247→    error_detail = merge_result if isinstance(merge_result, str) else "Unknown"
+   248→    return f"Failed to merge: {error_detail}"
+   253→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py, MergeResult, MergeError --&gt;
+   255→See `MergeResult` and `MergeError` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
+   258→def merge_pr(self, repo_root: Path, pr_number: int, ...) -&gt; MergeResult | MergeError:
+   259→    """Returns MergeResult on success, MergeError on failure."""
+   263→if isinstance(merge_result, MergeError):
+   264→    return LandError(
+   266→        error_type="merge-failed",
+   267→        message=f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
+   279→5. Update tests to check `isinstance(result, ErrorType)`
+   287→Error types implement the `NonIdealState` protocol. See `packages/erk-shared/src/erk_shared/non_ideal_state.py`.
+   291→- `error_type` property (read-only, machine-readable classification)
+   294→This enables generic error handling without coupling to specific error types:
+   297→def handle_error(result: Any) -&gt; str:
+   305→### Error Types Are Frozen Dataclasses
+   307→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushError --&gt;
+   309→All error types use `@dataclass(frozen=True)` for immutability. See `PushError` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py` for the canonical pattern: a single `message: str` field and an `error_type` property returning a kebab-case string like `"push-failed"`.
+   313→Error types should carry domain-meaningful fields for caller inspection:
+   317→See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`. It carries `pr_number: int | None` (set when looking up by number) and `branch: str | None` (set when looking up by branch), enabling callers to construct better error messages or branch on specific failure modes.
+   323→| `&lt;Operation&gt;Error`   | `SubmitError`, `MergeError`   | Operation failed               |
+   331→### vs. Exceptions
+   333→| Discriminated Unions        | Exceptions              |
+   338→| IDE shows possible failures | Requires doc reading    |
+   344→| Preserves error context       | Loses information    |
+   346→| Multiple error types possible | Single failure state |
+   354→def fetch() -&gt; Data | Error: ...
+   357→def fetch() -&gt; Result[Data, Error]: ...
+   372→# T | ErrorType: isinstance() required for type narrowing
+   374→if isinstance(result, FetchError):
+   375→    handle_error(result.message)
+   382→**Anti-pattern:** `validate_thing() -&gt; ErrorType | None` where `None` means success.
+   384→This is counterintuitive because `None` typically signals absence or failure, not success. Callers end up writing `if result is not None:` to check for errors, which reads backwards.
+   394→error = validate_slug(slug)
+   395→if error is not None:  # "if not nothing" = error?
+   396→    handle_error(error)
+   411→    handle_error(result)
+  </tool_result>
+  <tool_result tool="toolu_01VepMVN3TV5iTG9aPLJNMdX">
+     1→---
+     2→title: LBYL Gateway Pattern
+     3→read_when:
+     4→  - "implementing existence checks before gateway operations"
+     5→  - "adding LBYL validation to CLI commands"
+     6→  - "understanding why gateways have separate existence methods"
+     7→last_audited: "2026-02-16 14:20 PT"
+     8→audit_result: clean
+     9→tripwires:
+    10→  - action: "calling get_X() and handling IssueNotFound sentinel inline"
+    11→    warning: "Check with X_exists() first for cleaner error messages and LBYL compliance."
+    12→  - action: "implementing idempotent operations that fail on missing resources"
+    13→    warning: "Use LBYL existence check to return early, making the operation truly idempotent."
+    14→  - action: "adding a get_X() method to a gateway ABC without a corresponding X_exists() convenience method"
+    15→    warning: "Gateway ABCs pair fetch methods with lightweight existence checks. Add X_exists() alongside get_X() for LBYL compliance at CLI boundaries."
+    16→---
+    17→
+    18→# LBYL Gateway Pattern
+    19→
+    20→Gateway ABCs provide separate existence-check methods (`issue_exists()`, `label_exists()`, etc.) alongside their fetch methods (`get_issue()`, `get_label()`, etc.). This enables Look Before You Leap validation at CLI boundaries.
+    21→
+    22→## Why Separate Existence Methods
+    23→
+    24→Gateway `get_X()` methods may return sentinels (e.g., `IssueNotFound`) or fail when resources don't exist. Without upfront existence checks, CLI commands face a choice:
+    25→
+    26→1. **Handle sentinels inline** — Leads to complex control flow and cryptic error messages
+    27→2. **Catch exceptions** — Violates LBYL, creates misleading stack traces in agent sessions
+    28→3. **Check existence first** — Clean, explicit validation with user-friendly errors
+    29→
+    30→The third option is erk's standard. Existence methods make LBYL practical by providing a lightweight check that avoids fetching the full resource.
+
+... [82 lines omitted] ...
+
+    64→**Why delegate instead of no-op?** Dry-run mode validates workflows without mutating state. If a command would fail due to a missing resource, dry-run should surface that error before the user runs it for real.
+    73→2. If missing, output user-friendly error and exit
+    79→**Anti-pattern:** Calling `get_issue()` and checking for `IssueNotFound` inline. This works but produces worse error messages and violates LBYL.
+    87→| Resource existence is first validation step | ✅ Yes      | Enables user-friendly "not found" errors before deeper validation         |
+   105→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — Sentinel types like `IssueNotFound`
+  </tool_result>
+  <tool_result tool="toolu_01LTuzAJegx56vkAsDbKoqoR">
+     1→---
+     2→title: Gateway vs Backend ABC Pattern
+     3→read_when:
+     4→  - "creating a new ABC interface"
+     5→  - "deciding between gateway and backend patterns"
+     6→  - "understanding PlanBackend vs Git gateway architecture"
+     7→  - "choosing the right abstraction pattern for a new service"
+     8→tripwires:
+     9→  - action: "creating a new ABC without deciding gateway vs backend pattern"
+    10→    warning: "Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support."
+    11→  - action: "constructing PlannedPRBackend with positional arguments or wrong parameter order"
+    12→    warning: "PlannedPRBackend constructor takes keyword-only gateway dependencies. Check the current __init__ signature — it evolves as gateways are added. Use keyword arguments explicitly."
+    13→last_audited: "2026-02-17 00:00 PT"
+    14→audit_result: clean
+    15→---
+    16→
+    17→# Gateway vs Backend ABC Pattern
+    18→
+    19→Erk uses two distinct ABC patterns for dependency injection. Choosing the wrong one creates unnecessary boilerplate (gateway for business logic) or missing dry-run/printing support (backend for external tools).
+    20→
+    21→## Gateway ABCs: External System Wrappers
+    22→
+    23→Gateways wrap external tools and system calls (subprocess, CLI, HTTP). They follow a **4-place implementation pattern**:
+    24→
+    25→| Place        | Purpose                                 | Example File             |
+    26→| ------------ | --------------------------------------- | ------------------------ |
+    27→| `abc.py`     | Abstract interface definition           | `gateway/git/abc.py`     |
+    28→| `real.py`    | Production implementation (subprocess)  | `gateway/git/real.py`    |
+    29→| `fake.py`    | In-memory test double with shared state | `gateway/git/fake.py`    |
+    30→| `dry_run.py` | Records operations without side effects | `gateway/git/dry_run.py` |
+
+... [56 lines omitted] ...
+
+    37→- Error handling uses discriminated unions (not exceptions) in the ABC
+  </tool_result>
+  <tool_result tool="toolu_019Ey6jbVDzXwKgjxWPT93Ao">
+     1→---
+     2→title: ABC Convenience Method Pattern
+     3→read_when:
+     4→  - "adding non-abstract methods to gateway ABCs"
+     5→  - "composing primitive gateway operations into higher-level methods"
+     6→  - "handling exception type differences between real and fake implementations"
+     7→last_audited: "2026-02-01 20:34 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# ABC Convenience Method Pattern
+    12→
+    13→Gateway ABCs can include **concrete (non-abstract) convenience methods** that compose primitive operations. These methods are defined once in the ABC and inherited by all implementations.
+    14→
+    15→## When to Use
+    16→
+    17→Use this pattern when:
+    18→
+    19→- A common operation composes multiple primitive methods
+    20→- Error handling logic is complex and should be centralized
+    21→- You want to provide an ergonomic API without adding abstract methods
+    22→
+    23→## Canonical Example
+    24→
+    25→See `squash_branch_idempotent()` in `packages/erk-shared/src/erk_shared/gateway/graphite/abc.py`. This wraps the primitive `squash_branch()` with idempotent error handling, returning a discriminated union (`SquashSuccess | SquashError`) instead of raising.
+    26→
+    27→## Exception Type Compatibility
+    28→
+    29→Real and fake implementations may raise different exception types:
+    30→
+
+... [40 lines omitted] ...
+
+    31→| Implementation | Exception Type                  | Source                          |
+    33→| Real           | `RuntimeError`                  | `run_subprocess_with_context()` |
+    34→| Fake           | `subprocess.CalledProcessError` | Direct raise for testing        |
+    64→- [Subprocess Wrappers](subprocess-wrappers.md) - Why real implementations raise RuntimeError
+  </tool_result>
+  <tool_result tool="toolu_019iLwcMpQpFLvVKt6SJ6LQx">
+     1→---
+     2→title: erk_shared Package
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "deciding where to put new utilities"
+     7→  - "moving code between packages"
+     8→---
+     9→
+    10→# erk_shared Package
+    11→
+    12→The `erk_shared` package (`packages/erk-shared/`) contains reusable code that can be shared between the main `erk` package and future packages.
+    13→
+    14→## When to Use erk_shared
+    15→
+    16→| Situation                           | Location               |
+    17→| ----------------------------------- | ---------------------- |
+    18→| Code only used by erk CLI           | `src/erk/`             |
+    19→| Reusable utilities and abstractions | `packages/erk-shared/` |
+    20→
+    21→## Package Structure
+    22→
+    23→```
+    24→packages/erk-shared/src/erk_shared/
+    25→├── config/        # Configuration management
+    26→├── context/       # Context helpers for dependency injection
+    27→├── core/          # Core abstractions (PromptExecutor ABC)
+    28→├── gateway/       # Gateway abstractions (git, github, shell, etc.)
+    29→├── hooks/         # Hook utilities
+    30→├── learn/         # Learn workflow utilities
+
+... [27 lines omitted] ...
+  </tool_result>
+</session>

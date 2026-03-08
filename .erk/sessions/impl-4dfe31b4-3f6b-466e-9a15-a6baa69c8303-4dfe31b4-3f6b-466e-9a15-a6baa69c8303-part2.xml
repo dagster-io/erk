@@ -1,0 +1,500 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-08-1055" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01R9P3LU2T43P6PzwpuSg6GQ">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+
+... [367 lines omitted] ...
+
+    43→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    61→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    83→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    91→**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+   103→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+   117→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+   119→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+   127→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   135→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   139→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   153→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   169→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   175→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   191→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   227→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   229→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   231→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   233→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   247→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   249→**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+   263→**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+   281→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from all implementation files simultaneously (3 or 4 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages.
+   283→**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
+   295→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   297→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   305→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   313→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   317→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   319→**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
+   323→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   325→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   345→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   347→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   351→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   353→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   373→**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+   385→**writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
+   387→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <assistant>I now have all the gateway/printing files read. Let me analyze what needs to change for Step 3. I can see the following stale references:
+
+1. **discriminated-union-error-handling.md line 13**: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing)" - needs update
+2. **discriminated-union-error-handling.md line 277**: "Update all 5 implementations" in migration checklist
+3. **lbyl-gateway-pattern.md**: References "5-layer" architecture, "Dry-run and printing gateways", `DryRunGitHubIssues`
+4. **gateway-vs-backend.md**: References "4-place" pattern - actually this is correct (abc, real, fake, dry_run) since printing is removed
+5. **abc-convenience-methods.md**: References "3-4 files" - this is correct since printing is gone
+6. **erk-shared-package.md**: Has `printing/` in directory listing - need to check if it still exists
+7. **tripwires.md**: Multiple references to "5 implementations" and "printing"
+
+Let me check what printing directory still exists and also start making the gateway/printing edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="28954" cache_read_input_tokens="44599" cache_creation="{'ephemeral_5m_input_tokens': 28954, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FcaTktDCMYRi89GYMs1uEF">
+    <param name="command">ls /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/printing/ 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "NOT_FOUND"</param>
+    <param name="description">Check if printing directory exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="28954" cache_read_input_tokens="44599" cache_creation="{'ephemeral_5m_input_tokens': 28954, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FcaTktDCMYRi89GYMs1uEF">
+NOT_FOUND
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SwH4jEnUQouVZ5MuRb1xUA">
+    <param name="command">ls /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/ | head -30</param>
+    <param name="description">List erk_shared package contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="73553" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SwH4jEnUQouVZ5MuRb1xUA">
+__init__.py
+__pycache__
+config
+context
+core
+debug.py
+debug_timing.py
+entity_store
+env.py
+gateway
+hooks
+impl_context.py
+impl_folder.py
+learn
+naming.py
+non_ideal_state.py
+objective_apply_landed_update_result.py
+objective_fetch_context_result.py
+output
+plan_store
+plan_utils.py
+plan_workflow.py
+scratch
+sessions
+shell_utils
+stack
+subprocess_utils.py
+  </tool_result>
+  <assistant>No `printing/` directory exists. Now let me make the gateway/printing reference updates. I'll start editing the files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="689" cache_read_input_tokens="73977" cache_creation="{'ephemeral_5m_input_tokens': 689, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01QrMKqZ85kvrDMWYdrRF8vZ">
+    <param name="todos">[{'content': 'Fix CHANGELOG stale reference (async-learn → planned-pr-context)', 'status':...[truncated 616 chars]... cleanup, CI, submit PR', 'status': 'pending', 'activeForm': 'Finalizing implementation'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="689" cache_read_input_tokens="73977" cache_creation="{'ephemeral_5m_input_tokens': 689, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QrMKqZ85kvrDMWYdrRF8vZ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me make the edits for stale gateway references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="74666" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PbYw1iAC8M3teZXirTYiGS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md</param>
+    <param name="old_string">  - action: "migrating a gateway method to return discriminated union"
+    warning: "Updat...[truncated 22 chars]...dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."</param>
+    <param name="new_string">  - action: "migrating a gateway method to return discriminated union"
+    warning: "Updat...[truncated 54 chars]...cipating gateways) AND all call sites AND tests. Incomplete migrations break type safety."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="74666" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PbYw1iAC8M3teZXirTYiGS">
+The file /home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017THkuU9esvazhEovK4s4JP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md</param>
+    <param name="old_string">**Migration checklist:**
+
+1. Define types in appropriate `types.py` module
+2. Update ABC s...[truncated 194 chars]...migrations break type safety — mypy won't catch missing checks if you only update the ABC.</param>
+    <param name="new_string">**Migration checklist:**
+
+1. Define types in appropriate `types.py` module
+2. Update ABC s...[truncated 208 chars]...migrations break type safety — mypy won't catch missing checks if you only update the ABC.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="75018" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017THkuU9esvazhEovK4s4JP">
+The file /home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update lbyl-gateway-pattern.md:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="363" cache_read_input_tokens="75532" cache_creation="{'ephemeral_5m_input_tokens': 363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Wf5MUhx5cqfkZB91vqhcgf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/lbyl-gateway-pattern.md</param>
+    <param name="old_string">The 5-layer gateway architecture implements existence checks differently at each layer:</param>
+    <param name="new_string">The gateway architecture implements existence checks differently at each layer:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="363" cache_read_input_tokens="75532" cache_creation="{'ephemeral_5m_input_tokens': 363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Wf5MUhx5cqfkZB91vqhcgf">
+The file /home/runner/work/erk/erk/docs/learned/architecture/lbyl-gateway-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RAgayVFCbkzzF8Lp4WzkWw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/lbyl-gateway-pattern.md</param>
+    <param name="old_string">Dry-run and printing gateways delegate existence checks to their wrapped implementations. ...[truncated 62 chars]...ee `DryRunGitHubIssues.issue_exists()` — it calls `self._wrapped.issue_exists()` directly.</param>
+    <param name="new_string">Dry-run gateways delegate existence checks to their wrapped implementations. Existence che...[truncated 49 chars]...ee `DryRunGitHubIssues.issue_exists()` — it calls `self._wrapped.issue_exists()` directly.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="75895" cache_creation="{'ephemeral_5m_input_tokens': 367, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RAgayVFCbkzzF8Lp4WzkWw">
+The file /home/runner/work/erk/erk/docs/learned/architecture/lbyl-gateway-pattern.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the related patterns link that references "5-layer":</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="528" cache_read_input_tokens="76262" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01MjBmcNpRfBCYtRpj6uVDPi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/lbyl-gateway-pattern.md</param>
+    <param name="old_string">- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — 5-layer implementation pattern</param>
+    <param name="new_string">- [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) — Implementation pattern</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="528" cache_read_input_tokens="76262" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MjBmcNpRfBCYtRpj6uVDPi">
+The file /home/runner/work/erk/erk/docs/learned/architecture/lbyl-gateway-pattern.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the erk-shared-package.md to remove the stale `printing/` directory:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="76790" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01MP8n2dD64WAzGDGQwoYRY3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md</param>
+    <param name="old_string">├── output/        # Output formatting
+├── plan_store/    # Plan backend abstraction (dire...[truncated 8 chars]...)
+├── printing/      # Printing utilities
+├── scratch/       # Scratch storage and markers</param>
+    <param name="new_string">├── output/        # Output formatting
+├── plan_store/    # Plan backend abstraction (directory still named plan_store)
+├── scratch/       # Scratch storage and markers</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="76790" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MP8n2dD64WAzGDGQwoYRY3">
+The file /home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the tripwires.md file. The tripwires.md is auto-generated so I need to update the source files. Let me check which tripwires reference "5 implementations" or "printing":</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="77178" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018kgFzqP54i9xtr5rBzgswy">
+    <param name="pattern">printing|5 implementations</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="77178" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018kgFzqP54i9xtr5rBzgswy">
+227:**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+  </tool_result>
+  <assistant>This tripwires.md is auto-generated from frontmatter. Since I already updated the source file (discriminated-union-error-handling.md), the tripwires.md will be regenerated by `erk docs sync` in Step 4. The gateway-vs-backend.md already has the correct "4-place" pattern (abc, real, fake, dry_run), and abc-convenience-methods.md already correctly says "3-4 files" which is accurate. 
+
+Let me also check if there are any other "printing gateway" or "Printing*" references I should update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="77685" cache_creation="{'ephemeral_5m_input_tokens': 372, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013tSczdX2Vq8y9GsyuhTRHZ">
+    <param name="pattern">Printing[A-Z]|printing gateway|printing layer</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="77685" cache_creation="{'ephemeral_5m_input_tokens': 372, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013tSczdX2Vq8y9GsyuhTRHZ">
+No matches found
+  </tool_result>
+  <assistant>Good - no more Printing* class references. Let me also check the `gateway-vs-backend.md` doc mentions "printing" at all:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="78057" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NHVpYpqpHfPoZgvuvvnQyD">
+    <param name="pattern">printing</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="78057" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NHVpYpqpHfPoZgvuvvnQyD">
+19:Erk uses two distinct ABC patterns for dependency injection. Choosing the wrong one creates unnecessary boilerplate (gateway for business logic) or missing dry-run/printing support (backend for external tools).
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015zYZMurFWL3TP66uJc4SQu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+    <param name="old_string">Erk uses two distinct ABC patterns for dependency injection. Choosing the wrong one create...[truncated 10 chars]...eway for business logic) or missing dry-run/printing support (backend for external tools).</param>
+    <param name="new_string">Erk uses two distinct ABC patterns for dependency injection. Choosing the wrong one create...[truncated 1 chars]...late (gateway for business logic) or missing dry-run support (backend for external tools).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="78571" cache_creation="{'ephemeral_5m_input_tokens': 312, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015zYZMurFWL3TP66uJc4SQu">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if `abc-convenience-methods.md` has any stale printing references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="78883" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Uo2aVmnVZQ5V5KCe1ez8Vu">
+    <param name="pattern">printing|dry_run</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="78883" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Uo2aVmnVZQ5V5KCe1ez8Vu">
+42:| Implementation | abc, real, fake, dry_run    | abc only                    |
+53:- The operation needs dry-run/printing wrapper behavior
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01N1sKURovCBrMuxREh73mTY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md</param>
+    <param name="old_string">- The operation needs dry-run/printing wrapper behavior</param>
+    <param name="new_string">- The operation needs dry-run wrapper behavior</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="79355" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N1sKURovCBrMuxREh73mTY">
+The file /home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me check on all the background agents. Let me check them in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="79670" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_018RHyggvMxyQVKufBq7sjVP">
+    <param name="task_id">a0de203</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="79670" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01KZ7QeeXzEo6DTMqhUr2g6P">
+    <param name="task_id">ae3bef9</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="79670" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_0163xqEXfAzCNgRUefhZQ5Pr">
+    <param name="task_id">adb7c4a</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="79670" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01ArLK59Rwm4MzphVmUNShQi">
+    <param name="task_id">af1f40d</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="79670" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018RHyggvMxyQVKufBq7sjVP">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a0de203&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-issue-autoclose.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-cli-limits.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md","old_string":"**Context**: When closing a plan, we close all linked PRs before closing the plan issue. PR closure is non-critical to the main operation—the plan close should still succeed even if PR cleanup fails.\n\n**Two-step pattern**:\n\n1. Close linked PRs (optional, fail-open) — closes all OPEN PRs referencing the issue\n2. Close plan issue (critical, fail-closed) — closes the plan itself","new_string":"**Context**: When closing a plan, we close all linked PRs before closing the plan. PR closure is non-critical to the main operation—the plan close should still succeed even if PR cleanup fails.\n\n**Two-step pattern**:\n\n1. Close linked PRs (optional, fail-open) — closes all OPEN PRs referencing the issue\n2. Close plan (critical, fail-closed) — closes the plan itself"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md","old_string":"### erk pr close\n\n- Close linked PRs (optional, fail-open)\n- Close plan issue (critical, fail-closed)\n- Update objective roadmap (dependent on plan close)","new_string":"### erk pr close\n\n- Close linked PRs (optional, fail-open)\n- Close plan (critical, fail-closed)\n- Update objective roadmap (dependent on plan close)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md","old_string":"**Example**: PR lookup for the same plan issue:\n\n| Context          | Critical? | Failure Handling      | Rationale                              |\n| ---------------- | --------- | --------------------- | -------------------------------------- |\n| User CLI command | Yes       | Error exit            | User needs immediate feedback          |\n| Async background | No        | Log warning, continue | Review comments are optional for learn |\n| Pre-flight check | Yes       | Abort early           | Prevent invalid workflow trigger       |","new_string":"**Example**: PR lookup for the same plan:\n\n| Context          | Critical? | Failure Handling      | Rationale                              |\n| ---------------- | --------- | --------------------- | -------------------------------------- |\n| User CLI command | Yes       | Error exit            | User needs immediate feedback          |\n| Async background | No        | Log warning, continue | Review comments are optional for learn |\n| Pre-flight check | Yes       | Abort early           | Prevent invalid workflow trigger       |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-issue-autoclose.md","old_string":"---\ntitle: GitHub Issue Auto-Close Behavior (Historical)\nread_when:\n  - \"understanding why erk no longer uses Closes #N\"\n  - \"understanding plan issue closure strategy\"\nlast_audited: \"2026-02-26 12:00 PT\"\naudit_result: clean\n---\n\n# GitHub Issue Auto-Close Behavior (Historical)\n\nErk previously used `Closes #N` in PR bodies to auto-close plan issues on merge. This approach was abandoned due to unreliable behavior.\n\n## Why \"Closes #N\" Was Removed\n\nGitHub's `Closes #N` auto-close feature has critical quirks:\n\n1. **Closing keywords must be present at PR creation time.** Adding `Closes #123` to a PR body after creation does NOT create the issue linkage.\n2. **Auto-close is asynchronous.** There's a 1-3 second delay between PR merge and issue closure.\n3. **Cross-repo references are fragile.** The `Closes owner/repo#123` format was frequently broken by PR body rewrites.\n\nThese issues caused frequent \"issue didn't close\" bugs that required retry logic and user-facing warnings.\n\n## Current Strategy: Direct API Closure\n\nPlan issues are now closed directly via the GitHub API during `erk land`:\n\n- `check_and_display_plan_issue_closure()` in `objective_helpers.py` calls `plan_store.close_plan()` directly\n- No dependency on PR body content\n- No retry logic needed\n- Deterministic and immediate","new_string":"---\ntitle: GitHub Issue Auto-Close Behavior (Historical)\nread_when:\n  - \"understanding why erk no longer uses Closes #N\"\n  - \"understanding plan closure strategy\"\nlast_audited: \"2026-02-26 12:00 PT\"\naudit_result: clean\n---\n\n# GitHub Issue Auto-Close Behavior (Historical)\n\nErk previously used `Closes #N` in PR bodies to auto-close plans on merge. This approach was abandoned due to unreliable behavior.\n\n## Why \"Closes #N\" Was Removed\n\nGitHub's `Closes #N` auto-close feature has critical quirks:\n\n1. **Closing keywords must be present at PR creation time.** Adding `Closes #123` to a PR body after creation does NOT create the issue linkage.\n2. **Auto-close is asynchronous.** There's a 1-3 second delay between PR merge and issue closure.\n3. **Cross-repo references are fragile.** The `Closes owner/repo#123` format was frequently broken by PR body rewrites.\n\nThese issues caused frequent \"issue didn't close\" bugs that required retry logic and user-facing warnings.\n\n## Current Strategy: Direct API Closure\n\nPlans are now closed directly via the GitHub API during `erk land`:\n\n- `check_and_display_plan_issue_closure()` in `objective_helpers.py` calls `plan_store.close_plan()` directly\n- No dependency on PR body content\n- No retry logic needed\n- Deterministic and immediate"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-cli-limits.md","old_string":"## PR Closing Reference Timing\n\nGitHub's `willCloseTarget` behavior is evaluated at PR creation time. Adding a `Closes #N` reference via a post-creation body update does **not** enable auto-close. The closing reference must be present in the initial `create_pr()` call body.\n\nThis affects one-shot dispatch and any workflow that creates a PR then later wants to link it to a plan issue. The registration step must ensure the closing reference is in the initial body, not appended afterward.","new_string":"## PR Closing Reference Timing\n\nGitHub's `willCloseTarget` behavior is evaluated at PR creation time. Adding a `Closes #N` reference via a post-creation body update does **not** enable auto-close. The closing reference must be present in the initial `create_pr()` call body.\n\nThis affects one-shot dispatch and any workflow that creates a PR then later wants to link it to a plan. The registration step must ensure the closing reference is in the initial body, not appended afterward."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md","old_string":"# Plan Context Integration\n\nThe `PlanContextProvider` extracts plan content for branches linked to erk-plan issues, enabling more accurate PR descriptions that understand the \"why\" behind changes.","new_string":"# Plan Context Integration\n\nThe `PlanContextProvider` extracts plan content for branches linked to erk plans, enabling more accurate PR descriptions that understand the \"why\" behind changes."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md","old_string":"2. Fetch the issue body from GitHub\n   GET /repos/{owner}/{repo}/issues/5763\n   ↓\n3. Extract plan_comment_id from issue metadata\n   Parse YAML header for `plan_comment_id: 123456789`","new_string":"2. Fetch the issue body from GitHub\n   GET /repos/{owner}/{repo}/issues/5763\n   ↓\n3. Extract plan_comment_id from metadata\n   Parse YAML header for `plan_comment_id: 123456789`"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md","old_string":"The provider is designed to fail silently and return `None` when:\n\n- Branch doesn't match naming convention\n- Issue doesn't exist\n- Issue isn't an erk-plan issue (no `plan_comment_id`)\n- Plan comment was deleted\n- API errors occur","new_string":"The provider is designed to fail silently and return `None` when:\n\n- Branch doesn't match naming convention\n- Issue doesn't exist\n- Issue isn't an erk plan (no `plan_comment_id`)\n- Plan comment was deleted\n- API errors occur"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"### Fallback: Local Filesystem\n\nWhen GitHub has no tracked sessions (older issues created before session tracking), scan `~/.claude/projects/` for sessions where `gitBranch` matches `P{issue}-*`.","new_string":"### Fallback: Local Filesystem\n\nWhen GitHub has no tracked sessions (older plans created before session tracking), scan `~/.claude/projects/` for sessions where `gitBranch` matches `P{issue}-*`."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"### Primary: GitHub Issue Metadata\n\nSessions are tracked in the plan issue through:\n\n1. **Plan header branch fields** - `last_session_branch` stores the `planned-pr-context/{plan_id}` branch reference\n2. **Plan header metadata** - `created_from_session` field stores the planning session ID\n3. **Implementation comments** - `impl-started` and `impl-ended` comments track implementation sessions\n4. **Learn comments** - `learn-invoked` comments track previous learn invocations\n\nThis approach makes GitHub the authoritative source, enabling cross-machine session discovery.","new_string":"### Primary: GitHub Metadata\n\nSessions are tracked in the plan through:\n\n1. **Plan header branch fields** - `last_session_branch` stores the `planned-pr-context/{plan_id}` branch reference\n2. **Plan header metadata** - `created_from_session` field stores the planning session ID\n3. **Implementation comments** - `impl-started` and `impl-ended` comments track implementation sessions\n4. **Learn comments** - `learn-invoked` comments track previous learn invocations\n\nThis approach makes GitHub the authoritative source, enabling cross-machine session discovery."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"| Function                            | Purpose                                          |\n| ----------------------------------- | ------------------------------------------------ |\n| `find_sessions_for_plan()`          | Extract session IDs from GitHub issue metadata   |\n| `get_readable_sessions()`           | Filter to sessions that exist on local disk      |\n| `find_local_sessions_for_project()` | Scan local sessions by branch pattern (fallback) |\n| `extract_implementation_sessions()` | Parse impl session IDs from issue comments       |\n| `extract_learn_sessions()`          | Parse learn session IDs from issue comments      |","new_string":"| Function                            | Purpose                                        |\n| ----------------------------------- | ---------------------------------------------- |\n| `find_sessions_for_plan()`          | Extract session IDs from GitHub metadata       |\n| `get_readable_sessions()`           | Filter to sessions that exist on local disk    |\n| `find_local_sessions_for_project()` | Scan local sessions by branch pattern (fallback) |\n| `extract_implementation_sessions()` | Parse impl session IDs from comments           |\n| `extract_learn_sessions()`          | Parse learn session IDs from comments          |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"## Pattern: Dual-Source Discovery\n\nThis pattern appears throughout erk when data can come from multiple sources:\n\n1. **Check authoritative source first** (GitHub issue metadata with branch info)\n2. **Fallback to local scan** when authoritative source lacks data\n3. **Merge results** if both sources provide partial information\n\nThis enables:\n\n- Cross-machine workflows (GitHub is authoritative)\n- Backwards compatibility (older issues without metadata)\n- Offline resilience (local fallback when GitHub unavailable)","new_string":"## Pattern: Dual-Source Discovery\n\nThis pattern appears throughout erk when data can come from multiple sources:\n\n1. **Check authoritative source first** (GitHub metadata with branch info)\n2. **Fallback to local scan** when authoritative source lacks data\n3. **Merge results** if both sources provide partial information\n\nThis enables:\n\n- Cross-machine workflows (GitHub is authoritative)\n- Backwards compatibility (older plans without metadata)\n- Offline resilience (local fallback when GitHub unavailable)"}
+
+... [52 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KZ7QeeXzEo6DTMqhUr2g6P">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ae3bef9&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/workflow-markers.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/session-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-context-local-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-schema.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/token-optimization-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md","old_string":"3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)\n4. **Posts issue comment**: Notifies the plan issue with a link to the PR\n5. **Exits gracefully**: Returns exit code 0 (success)","new_string":"3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)\n4. **Posts issue comment**: Notifies the plan with a link to the PR\n5. **Exits gracefully**: Returns exit code 0 (success)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md","old_string":"When encountering a no-changes PR:\n\n1. **Review recent commits**: Check if the work appears in trunk\n2. **If already done**: Close both the PR and the linked plan issue\n3. **If not done**: Investigate why no changes were produced (plan may need revision)","new_string":"When encountering a no-changes PR:\n\n1. **Review recent commits**: Check if the work appears in trunk\n2. **If already done**: Close both the PR and the linked plan\n3. **If not done**: Investigate why no changes were produced (plan may need revision)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md","old_string":"| Relationship | Description                                 | Detection Method                            |\n| ------------ | ------------------------------------------- | ------------------------------------------- |\n| Linked       | PR explicitly references plan issue         | PR body contains `Plan: #&lt;issue&gt;` reference |\n| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |\n| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |\n| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |","new_string":"| Relationship | Description                                 | Detection Method                            |\n| ------------ | ------------------------------------------- | ------------------------------------------- |\n| Linked       | PR explicitly references plan               | PR body contains `Plan: #&lt;issue&gt;` reference |\n| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |\n| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |\n| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md","old_string":"# Plan Header Privatization\n\nThe `plan_header.py` module contains low-level functions for reading/writing plan issue metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.","new_string":"# Plan Header Privatization\n\nThe `plan_header.py` module contains low-level functions for reading/writing plan metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction."}
+
+... [12 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.","new_string":"**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.","new_string":"**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;number&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives."}
+  </tool_result>
+  <tool_result tool="toolu_0163xqEXfAzCNgRUefhZQ5Pr">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;adb7c4a&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/slash-command-llm-turn-optimization.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md","old_string":"The validation pipeline's `check_learn_status()` step extracts the issue number from the branch name prefix. If a plan issue exists for that number, it triggers downstream execution steps. See `check_learn_status()` in `src/erk/cli/commands/land_pipeline.py`.","new_string":"The validation pipeline's `check_learn_status()` step extracts the issue number from the branch name prefix. If a plan exists for that number, it triggers downstream execution steps. See `check_learn_status()` in `src/erk/cli/commands/land_pipeline.py`."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md","old_string":"The `update_learn_plan()` step reads the `learned_from_issue` field from the current plan and updates that parent plan's issue body. See `update_learn_plan()` in `src/erk/cli/commands/land_pipeline.py`.\n\n**Why update a different issue's body?**\n\nLearn plans are child plans (they document parent features). The parent plan issue is the canonical place to track learning status. Updating the parent creates a bidirectional link:","new_string":"The `update_learn_plan()` step reads the `learned_from_issue` field from the current plan and updates that parent plan's issue body. See `update_learn_plan()` in `src/erk/cli/commands/land_pipeline.py`.\n\n**Why update a different issue's body?**\n\nLearn plans are child plans (they document parent features). The parent plan is the canonical place to track learning status. Updating the parent creates a bidirectional link:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md","old_string":"**Critical fields updated**:\n\n```yaml\n# In parent plan issue body\nlearn_status: plan_completed # Was: completed_with_plan\nlearn_plan_pr: 456 # The landed PR number\n```","new_string":"**Critical fields updated**:\n\n```yaml\n# In parent plan body\nlearn_status: plan_completed # Was: completed_with_plan\nlearn_plan_pr: 456 # The landed PR number\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md","old_string":"## Plan Dispatch Metadata Side Effect\n\nPR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan issue body.\n\n&lt;!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata --&gt;\n\nThis is a cross-cutting concern — the launch command doesn't know about plans, but the metadata helper silently links workflow runs to their originating plan issues. The function uses multiple LBYL early returns (no matching branch pattern, no node ID available, no plan-header metadata block) to gracefully skip non-plan branches.","new_string":"## Plan Dispatch Metadata Side Effect\n\nPR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan body.\n\n&lt;!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata --&gt;\n\nThis is a cross-cutting concern — the launch command doesn't know about plans, but the metadata helper silently links workflow runs to their originating plans. The function uses multiple LBYL early returns (no matching branch pattern, no node ID available, no plan-header metadata block) to gracefully skip non-plan branches."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md","old_string":"  - action: using this pattern\n    warning:\n      PR workflows automatically update plan issue dispatch metadata when the\n      branch follows the plnd/ prefix naming pattern","new_string":"  - action: using this pattern\n    warning:\n      PR workflows automatically update plan dispatch metadata when the\n      branch follows the plnd/ prefix naming pattern"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md","old_string":"**Plan context**: Uses `CommitMessageGenerator` with optional plan context from linked erk-plan issue","new_string":"**Plan context**: Uses `CommitMessageGenerator` with optional plan context from linked erk plan"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md","old_string":"**Issue discovery**: Uses shared `discover_issue_for_footer()` for two-step issue discovery (`.erk/impl-context/plan-ref.json` primary, with legacy `.erk/impl-context/issue.json` fallback, then existing PR body fallback).","new_string":"**Issue discovery**: Uses shared `discover_issue_for_footer()` for two-step discovery (`.erk/impl-context/plan-ref.json` primary, with legacy `.erk/impl-context/issue.json` fallback, then existing PR body fallback)."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/slash-command-llm-turn-optimization.md","old_string":"&lt;!-- Source: .claude/commands/erk/system/objective-update-with-landed-pr.md, Step 1 --&gt;\n&lt;!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py, objective_fetch_context --&gt;\n\nThe `system:objective-update-with-landed-pr` command demonstrates this: Step 1 calls `erk exec objective-fetch-context` once to fetch the objective issue, plan issue, PR details, and parsed roadmap context. The command then has everything it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.","new_string":"&lt;!-- Source: .claude/commands/erk/system/objective-update-with-landed-pr.md, Step 1 --&gt;\n&lt;!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py, objective_fetch_context --&gt;\n\nThe `system:objective-update-with-landed-pr` command demonstrates this: Step 1 calls `erk exec objective-fetch-context` once to fetch the objective issue, plan, PR details, and parsed roadmap context. The command then has everything it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/tripwires.md","old_string":"**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan issue dispatch metadata when the branch follows the plnd/ prefix naming pattern","new_string":"**using this pattern** → Read [Workflow Commands](workflow-commands.md) first. PR workflows automatically update plan dispatch metadata when the branch follows the plnd/ prefix naming pattern"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md","old_string":"&lt;!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback --&gt;\n\nWhen a branch is associated with a plan, the command automatically fetches plan context from the linked erk-plan issue.","new_string":"&lt;!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback --&gt;\n\nWhen a branch is associated with a plan, the command automatically fetches plan context from the linked erk plan."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md","old_string":"### Phase 2: Generate Commit Message\n\nUses `CommitMessageGenerator` with identical context priority to `pr submit`:\n\n1. **Plan context** - From linked erk-plan issue (highest priority)\n2. **Objective context** - From parent objective if plan is linked\n3. **Commit messages** - Not used in summarize (only in submit with multiple commits)","new_string":"### Phase 2: Generate Commit Message\n\nUses `CommitMessageGenerator` with identical context priority to `pr submit`:\n\n1. **Plan context** - From linked erk plan (highest priority)\n2. **Objective context** - From parent objective if plan is linked\n3. **Commit messages** - Not used in summarize (only in submit with multiple commits)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md","old_string":"### Phase 2: Generate Commit Message\n\nUses `CommitMessageGenerator` with identical context priority to `pr submit`:\n\n1. **Plan context** - From linked erk-plan issue (highest priority)\n2. **Objective context** - From parent objective if plan is linked\n3. **Commit messages** - Not used in summarize (only in submit with multiple commits)","new_string":"### Phase 2: Generate Commit Message\n\nUses `CommitMessageGenerator` with identical context priority to `pr submit`:\n\n1. **Plan context** - From linked erk plan (highest priority)\n2. **Objective context** - From parent objective if plan is linked\n3. **Commit messages** - Not used in summarize (only in submit with multiple commits)"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md","offset":28,"limit":10}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md","old_string":"4. **Generate AI title/body** — Uses `CommitMessageGenerator` with optional plan context from linked erk-plan issue","new_string":"4. **Generate AI title/body** — Uses `CommitMessageGenerator` with optional plan context from linked erk plan"}
+
+... [45 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01ArLK59Rwm4MzphVmUNShQi">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;af1f40d&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/research-documentation-integration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/roadmap-mutation-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/objective-roadmap-check.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/data-contract.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/ci/learn-ci-environment-detection.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/workflows/one-shot-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/workflows/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/reference/gastown-analysis.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/fake-github-api-reference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/documentation/when-to-switch-pattern.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/documentation/when-to-switch-pattern.md"}
+
+... [17 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md","old_string":"**writing checkout footer with issue number from .erk/impl-context/plan-ref.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures.","new_string":"**writing checkout footer with plan number from .erk/impl-context/plan-ref.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT plan number. The checkout command requires a PR number. Plan numbers in checkout footers cause erk pr check validation failures."}
+  </tool_result>
+  <assistant>Architecture agent (a0de203) and CLI agent (adb7c4a) are done. The objectives/erk/other agent (af1f40d) is still running - making good progress with lots of edits. The planning agent (ae3bef9) is still running. Let me wait for them to finish:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="18420" cache_read_input_tokens="80080" cache_creation="{'ephemeral_5m_input_tokens': 18420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01L7fTP8JGmJF8gpGNdsqEua">
+    <param name="task_id">ae3bef9</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18420" cache_read_input_tokens="80080" cache_creation="{'ephemeral_5m_input_tokens': 18420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_019mPcJrBvDXLB7yFHzXwb3P">
+    <param name="task_id">af1f40d</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18420" cache_read_input_tokens="80080" cache_creation="{'ephemeral_5m_input_tokens': 18420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019mPcJrBvDXLB7yFHzXwb3P">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;af1f40d&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/research-documentation-integration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/roadmap-mutation-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/objective-roadmap-check.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/erk/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/data-contract.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/ci/learn-ci-environment-detection.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/workflows/one-shot-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/workflows/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/reference/gastown-analysis.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/fake-github-api-reference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/documentation/when-to-switch-pattern.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/documentation/when-to-switch-pattern.md"}
+
+... [71 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md","old_string":"**writing checkout footer with issue number from .erk/impl-context/plan-ref.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT issue number. The checkout command requires a PR number. Issue numbers in checkout footers cause erk pr check validation failures.","new_string":"**writing checkout footer with plan number from .erk/impl-context/plan-ref.json** → Read [Checkout Footer Syntax](checkout-footer-syntax.md) first. Use PR number (from create_pr result), NOT plan number. The checkout command requires a PR number. Plan numbers in checkout footers cause erk pr check validation failures."}
+  </tool_result>
+</session>

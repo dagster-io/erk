@@ -1,0 +1,565 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-08-1055" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01L7fTP8JGmJF8gpGNdsqEua">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ae3bef9&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/workflow-markers.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/session-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-context-local-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-schema.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/token-optimization-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md","old_string":"3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)\n4. **Posts issue comment**: Notifies the plan issue with a link to the PR\n5. **Exits gracefully**: Returns exit code 0 (success)","new_string":"3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)\n4. **Posts issue comment**: Notifies the plan with a link to the PR\n5. **Exits gracefully**: Returns exit code 0 (success)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md","old_string":"When encountering a no-changes PR:\n\n1. **Review recent commits**: Check if the work appears in trunk\n2. **If already done**: Close both the PR and the linked plan issue\n3. **If not done**: Investigate why no changes were produced (plan may need revision)","new_string":"When encountering a no-changes PR:\n\n1. **Review recent commits**: Check if the work appears in trunk\n2. **If already done**: Close both the PR and the linked plan\n3. **If not done**: Investigate why no changes were produced (plan may need revision)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md","old_string":"| Relationship | Description                                 | Detection Method                            |\n| ------------ | ------------------------------------------- | ------------------------------------------- |\n| Linked       | PR explicitly references plan issue         | PR body contains `Plan: #&lt;issue&gt;` reference |\n| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |\n| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |\n| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |","new_string":"| Relationship | Description                                 | Detection Method                            |\n| ------------ | ------------------------------------------- | ------------------------------------------- |\n| Linked       | PR explicitly references plan               | PR body contains `Plan: #&lt;issue&gt;` reference |\n| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |\n| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |\n| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md","old_string":"# Plan Header Privatization\n\nThe `plan_header.py` module contains low-level functions for reading/writing plan issue metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.","new_string":"# Plan Header Privatization\n\nThe `plan_header.py` module contains low-level functions for reading/writing plan metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction."}
+
+... [35 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.","new_string":"**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.","new_string":"**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;number&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"```python\nbackend = require_plan_backend(ctx)\nissue_number = 123\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"issue-not-found\", f\"Issue #{issue_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```","new_string":"```python\nbackend = require_plan_backend(ctx)\nplan_number = 123\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"plan-not-found\", f\"Plan #{plan_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"```python\nbackend = require_plan_backend(ctx)\nissue_number = 123\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"issue-not-found\", f\"Issue #{issue_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```","new_string":"```python\nbackend = require_plan_backend(ctx)\nplan_number = 123\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"plan-not-found\", f\"Plan #{plan_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"| Type                      | Kind                     | Use                                                   |\n| ------------------------- | ------------------------ | ----------------------------------------------------- |\n| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when issue doesn't exist     |\n| `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |","new_string":"| Type                      | Kind                     | Use                                                   |\n| ------------------------- | ------------------------ | ----------------------------------------------------- |\n| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when plan doesn't exist      |\n| `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"# Gist already created successfully\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    result[\"issue_updated\"] = False\n    result[\"issue_update_error\"] = f\"Issue #{issue_number} not found\"\nelse:\n    try:\n        backend.update_metadata(repo_root, plan_id, metadata)\n        result[\"issue_updated\"] = True\n    except RuntimeError as e:\n        result[\"issue_updated\"] = False\n        result[\"issue_update_error\"] = str(e)","new_string":"# Gist already created successfully\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    result[\"plan_updated\"] = False\n    result[\"plan_update_error\"] = f\"Plan #{plan_number} not found\"\nelse:\n    try:\n        backend.update_metadata(repo_root, plan_id, metadata)\n        result[\"plan_updated\"] = True\n    except RuntimeError as e:\n        result[\"plan_updated\"] = False\n        result[\"plan_update_error\"] = str(e)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"| Method                                             | Returns                  | Description                                 |\n| -------------------------------------------------- | ------------------------ | ------------------------------------------- |\n| `get_plan(repo_root, plan_id)`                     | `Plan \\| PlanNotFound`   | Fetch full plan by ID                       |\n| `get_metadata_field(repo_root, plan_id, field)`    | `object \\| PlanNotFound` | Get a single metadata field value           |\n| `update_metadata(repo_root, plan_id, metadata)`    | `None \\| PlanNotFound`   | Update metadata fields in plan header block |\n| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |\n| `post_event(repo_root, plan_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |\n\n`add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).","new_string":"| Method                                             | Returns                  | Description                                 |\n| -------------------------------------------------- | ------------------------ | ------------------------------------------- |\n| `get_plan(repo_root, plan_id)`                     | `Plan \\| PlanNotFound`   | Fetch full plan by ID                       |\n| `get_metadata_field(repo_root, plan_id, field)`    | `object \\| PlanNotFound` | Get a single metadata field value           |\n| `update_metadata(repo_root, plan_id, metadata)`    | `None \\| PlanNotFound`   | Update metadata fields in plan header block |\n| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |\n| `post_event(repo_root, plan_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |\n\n`add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type)."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"## get_metadata_field Returns object | PlanNotFound\n\n`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.\n\n## Error Handling Asymmetry: get vs update\n\n`get_metadata_field()` returns `PlanNotFound` when the plan issue doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:","new_string":"## get_metadata_field Returns object | PlanNotFound\n\n`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.\n\n## Error Handling Asymmetry: get vs update\n\n`get_metadata_field()` returns `PlanNotFound` when the plan doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"## get_metadata_field Returns object | PlanNotFound\n\n`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.\n\n## Error Handling Asymmetry: get vs update\n\n`get_metadata_field()` returns `PlanNotFound` when the plan issue doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:","new_string":"## get_metadata_field Returns object | PlanNotFound\n\n`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.\n\n## Error Handling Asymmetry: get vs update\n\n`get_metadata_field()` returns `PlanNotFound` when the plan doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md","old_string":"This field enables:\n\n- Debugging failed plan creations by linking to the workflow run\n- Tracing provenance of automatically generated plans\n- Quick navigation from plan issue to the workflow that created it","new_string":"This field enables:\n\n- Debugging failed plan creations by linking to the workflow run\n- Tracing provenance of automatically generated plans\n- Quick navigation from plan to the workflow that created it"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"When exec scripts need to read or update plan issues, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.","new_string":"When exec scripts need to read or update plans, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md","old_string":"tripwires:\n  - action: \"estimating effort for a plan without checking actual files changed\"\n    warning: \"Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes.\"\n  - action: \"closing a plan issue without verifying all items were addressed\"\n    warning: \"Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.\"","new_string":"tripwires:\n  - action: \"estimating effort for a plan without checking actual files changed\"\n    warning: \"Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes.\"\n  - action: \"closing a plan without verifying all items were addressed\"\n    warning: \"Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.\""}
+  </tool_result>
+  <assistant>Agent af1f40d (objectives/erk/other) is done. The planning agent (ae3bef9) is still running but has made substantial progress. Let me wait for it:</assistant>
+  <usage input_tokens="11087" cache_creation_input_tokens="9027" cache_read_input_tokens="98500" cache_creation="{'ephemeral_5m_input_tokens': 9027, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01BdQKHCt5Sy9QP5NhJ5Rt5Z">
+    <param name="task_id">ae3bef9</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="11087" cache_creation_input_tokens="9027" cache_read_input_tokens="98500" cache_creation="{'ephemeral_5m_input_tokens': 9027, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BdQKHCt5Sy9QP5NhJ5Rt5Z">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ae3bef9&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/workflow-markers.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/session-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-context-local-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-schema.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/token-optimization-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md","old_string":"3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)\n4. **Posts issue comment**: Notifies the plan issue with a link to the PR\n5. **Exits gracefully**: Returns exit code 0 (success)","new_string":"3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)\n4. **Posts issue comment**: Notifies the plan with a link to the PR\n5. **Exits gracefully**: Returns exit code 0 (success)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md","old_string":"When encountering a no-changes PR:\n\n1. **Review recent commits**: Check if the work appears in trunk\n2. **If already done**: Close both the PR and the linked plan issue\n3. **If not done**: Investigate why no changes were produced (plan may need revision)","new_string":"When encountering a no-changes PR:\n\n1. **Review recent commits**: Check if the work appears in trunk\n2. **If already done**: Close both the PR and the linked plan\n3. **If not done**: Investigate why no changes were produced (plan may need revision)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md","old_string":"| Relationship | Description                                 | Detection Method                            |\n| ------------ | ------------------------------------------- | ------------------------------------------- |\n| Linked       | PR explicitly references plan issue         | PR body contains `Plan: #&lt;issue&gt;` reference |\n| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |\n| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |\n| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |","new_string":"| Relationship | Description                                 | Detection Method                            |\n| ------------ | ------------------------------------------- | ------------------------------------------- |\n| Linked       | PR explicitly references plan               | PR body contains `Plan: #&lt;issue&gt;` reference |\n| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |\n| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |\n| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md","old_string":"# Plan Header Privatization\n\nThe `plan_header.py` module contains low-level functions for reading/writing plan issue metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.","new_string":"# Plan Header Privatization\n\nThe `plan_header.py` module contains low-level functions for reading/writing plan metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction."}
+
+... [67 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.","new_string":"**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.","new_string":"**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;number&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"```python\nbackend = require_plan_backend(ctx)\nissue_number = 123\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"issue-not-found\", f\"Issue #{issue_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```","new_string":"```python\nbackend = require_plan_backend(ctx)\nplan_number = 123\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"plan-not-found\", f\"Plan #{plan_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"```python\nbackend = require_plan_backend(ctx)\nissue_number = 123\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"issue-not-found\", f\"Issue #{issue_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```","new_string":"```python\nbackend = require_plan_backend(ctx)\nplan_number = 123\n\n# LBYL: Check plan exists before updating\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    output_error(\"plan-not-found\", f\"Plan #{plan_number} not found\")\n    return\n\n# Safe to update\nbackend.update_metadata(repo_root, plan_id, metadata)\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"| Type                      | Kind                     | Use                                                   |\n| ------------------------- | ------------------------ | ----------------------------------------------------- |\n| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when issue doesn't exist     |\n| `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |","new_string":"| Type                      | Kind                     | Use                                                   |\n| ------------------------- | ------------------------ | ----------------------------------------------------- |\n| `PlanNotFound`            | Result type (dataclass)  | Returned by `get_plan()` when plan doesn't exist      |\n| `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"# Gist already created successfully\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    result[\"issue_updated\"] = False\n    result[\"issue_update_error\"] = f\"Issue #{issue_number} not found\"\nelse:\n    try:\n        backend.update_metadata(repo_root, plan_id, metadata)\n        result[\"issue_updated\"] = True\n    except RuntimeError as e:\n        result[\"issue_updated\"] = False\n        result[\"issue_update_error\"] = str(e)","new_string":"# Gist already created successfully\nplan_result = backend.get_plan(repo_root, plan_id)\nif isinstance(plan_result, PlanNotFound):\n    result[\"plan_updated\"] = False\n    result[\"plan_update_error\"] = f\"Plan #{plan_number} not found\"\nelse:\n    try:\n        backend.update_metadata(repo_root, plan_id, metadata)\n        result[\"plan_updated\"] = True\n    except RuntimeError as e:\n        result[\"plan_updated\"] = False\n        result[\"plan_update_error\"] = str(e)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"| Method                                             | Returns                  | Description                                 |\n| -------------------------------------------------- | ------------------------ | ------------------------------------------- |\n| `get_plan(repo_root, plan_id)`                     | `Plan \\| PlanNotFound`   | Fetch full plan by ID                       |\n| `get_metadata_field(repo_root, plan_id, field)`    | `object \\| PlanNotFound` | Get a single metadata field value           |\n| `update_metadata(repo_root, plan_id, metadata)`    | `None \\| PlanNotFound`   | Update metadata fields in plan header block |\n| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |\n| `post_event(repo_root, plan_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |\n\n`add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).","new_string":"| Method                                             | Returns                  | Description                                 |\n| -------------------------------------------------- | ------------------------ | ------------------------------------------- |\n| `get_plan(repo_root, plan_id)`                     | `Plan \\| PlanNotFound`   | Fetch full plan by ID                       |\n| `get_metadata_field(repo_root, plan_id, field)`    | `object \\| PlanNotFound` | Get a single metadata field value           |\n| `update_metadata(repo_root, plan_id, metadata)`    | `None \\| PlanNotFound`   | Update metadata fields in plan header block |\n| `add_label(repo_root, plan_id, label)`             | `None` (raises on fail)  | Add a label to a plan                       |\n| `post_event(repo_root, plan_id, event_type, data)` | `None`                   | Post a lifecycle event to the plan          |\n\n`add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type)."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"## get_metadata_field Returns object | PlanNotFound\n\n`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.\n\n## Error Handling Asymmetry: get vs update\n\n`get_metadata_field()` returns `PlanNotFound` when the plan issue doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:","new_string":"## get_metadata_field Returns object | PlanNotFound\n\n`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.\n\n## Error Handling Asymmetry: get vs update\n\n`get_metadata_field()` returns `PlanNotFound` when the plan doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"## get_metadata_field Returns object | PlanNotFound\n\n`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.\n\n## Error Handling Asymmetry: get vs update\n\n`get_metadata_field()` returns `PlanNotFound` when the plan issue doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:","new_string":"## get_metadata_field Returns object | PlanNotFound\n\n`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.\n\n## Error Handling Asymmetry: get vs update\n\n`get_metadata_field()` returns `PlanNotFound` when the plan doesn't exist. `update_metadata()` also returns `PlanNotFound`. However, the semantics differ:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md","old_string":"This field enables:\n\n- Debugging failed plan creations by linking to the workflow run\n- Tracing provenance of automatically generated plans\n- Quick navigation from plan issue to the workflow that created it","new_string":"This field enables:\n\n- Debugging failed plan creations by linking to the workflow run\n- Tracing provenance of automatically generated plans\n- Quick navigation from plan to the workflow that created it"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md","old_string":"When exec scripts need to read or update plan issues, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.","new_string":"When exec scripts need to read or update plans, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md","old_string":"tripwires:\n  - action: \"estimating effort for a plan without checking actual files changed\"\n    warning: \"Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes.\"\n  - action: \"closing a plan issue without verifying all items were addressed\"\n    warning: \"Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.\"","new_string":"tripwires:\n  - action: \"estimating effort for a plan without checking actual files changed\"\n    warning: \"Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes.\"\n  - action: \"closing a plan without verifying all items were addressed\"\n    warning: \"Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.","new_string":"**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode."}
+  </tool_result>
+  <assistant>The planning agent (ae3bef9) did a `git reset --hard HEAD` which undid ALL work. This is a serious problem. Let me check the current state and fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="25401" cache_read_input_tokens="107527" cache_creation="{'ephemeral_5m_input_tokens': 25401, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018cDTwYxeD6qfZNhgnTf4cw">
+    <param name="command">git diff --stat</param>
+    <param name="description">Check current git status after reset</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25401" cache_read_input_tokens="107527" cache_creation="{'ephemeral_5m_input_tokens': 25401, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018cDTwYxeD6qfZNhgnTf4cw">
+ docs/learned/planning/planned-pr-context-local-preprocessing.md | 2 +-
+ docs/learned/planning/session-preprocessing.md                  | 2 +-
+ docs/learned/planning/token-optimization-patterns.md            | 2 +-
+ docs/learned/planning/tripwires.md                              | 4 ++--
+ docs/learned/planning/workflow-markers.md                       | 2 +-
+ 5 files changed, 6 insertions(+), 6 deletions(-)
+  </tool_result>
+  <assistant>The agent reset all changes and then only re-did a few planning files. I need to redo all the work. Let me check exactly what's still present and what was lost:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="132928" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013z5iuznSnmZ734Hy8sfjZT">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/</param>
+    <param name="-i">True</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="132928" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014mus9MsW1gAzRxde3rDboA">
+    <param name="pattern">async-learn</param>
+    <param name="path">/home/runner/work/erk/erk/CHANGELOG.md</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="132928" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014mus9MsW1gAzRxde3rDboA">
+1
+
+Found 0 total occurrences across 0 files.
+  </tool_result>
+  <tool_result tool="toolu_013z5iuznSnmZ734Hy8sfjZT">
+docs/learned/erk/pr-commands.md:1
+docs/learned/erk/tripwires.md:1
+docs/learned/workflows/one-shot-workflow.md:1
+docs/learned/workflows/tripwires.md:1
+docs/learned/ci/learn-ci-environment-detection.md:1
+docs/learned/configuration/config-layers.md:1
+docs/learned/pr-operations/checkout-footer-syntax.md:1
+docs/learned/pr-operations/plan-embedding-in-pr.md:2
+docs/learned/pr-operations/tripwires.md:1
+docs/learned/pr-operations/pr-validation-rules.md:1
+docs/learned/pr-operations/pr-submit-phases.md:1
+docs/learned/reference/gastown-analysis.md:2
+docs/learned/planning/learn-pipeline-workflow.md:3
+docs/learned/planning/branch-name-inference.md:1
+docs/learned/planning/no-changes-handling.md:2
+docs/learned/planning/cross-artifact-analysis.md:1
+docs/learned/planning/plan-header-privatization.md:1
+docs/learned/tui/data-contract.md:2
+docs/learned/tui/plan-row-data.md:2
+docs/learned/planning/consolidation-labels.md:1
+docs/learned/objectives/objective-lifecycle.md:1
+docs/learned/objectives/roadmap-mutation-patterns.md:1
+docs/learned/objectives/objective-roadmap-check.md:1
+docs/learned/planning/learn-plan-validation.md:1
+docs/learned/objectives/research-documentation-integration.md:1
+docs/learned/planning/learn-plan-metadata-fields.md:2
+docs/learned/cli/learn-plan-land-flow.md:3
+docs/learned/planning/plan-backend-migration.md:3
+docs/learned/planning/complete-inventory-protocol.md:2
+docs/learned/planning/plan-schema.md:1
+
+... [17 lines omitted] ...
+  </tool_result>
+  <assistant>The CHANGELOG fix survived, and 5 planning files have partial fixes, but nearly everything else was reset. The `git reset --hard HEAD` by the rogue planning agent wiped almost all the edits. I need to redo all the work. Let me take a different approach - I'll use a single batch agent with the rename-swarm skill to do this efficiently, or just use sed-like batch replacements myself. Let me use a systematic Edit approach across all files:</assistant>
+  <usage input_tokens="46" cache_creation_input_tokens="1310" cache_read_input_tokens="133477" cache_creation="{'ephemeral_5m_input_tokens': 1310, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_019bZamCms54WjDeF2G6EKot">
+    <param name="todos">[{'content': 'Fix CHANGELOG stale reference (async-learn → planned-pr-context)', 'status':...[truncated 630 chars]... cleanup, CI, submit PR', 'status': 'pending', 'activeForm': 'Finalizing implementation'}]</param>
+  </tool_use>
+  <usage input_tokens="46" cache_creation_input_tokens="1310" cache_read_input_tokens="133477" cache_creation="{'ephemeral_5m_input_tokens': 1310, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019bZamCms54WjDeF2G6EKot">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me use the rename-swarm skill for maximum efficiency - it's designed for bulk renames across many files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="134787" cache_creation="{'ephemeral_5m_input_tokens': 461, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01LaFwBxJREgeb2fgBN4Ynuj">
+    <param name="skill">rename-swarm</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="134787" cache_creation="{'ephemeral_5m_input_tokens': 461, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LaFwBxJREgeb2fgBN4Ynuj">
+Launching skill: rename-swarm
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/rename-swarm
+
+You are an expert at orchestrating parallel mechanical renames across large codebases using swarms of lightweight agents. This skill documents a proven pattern for completing bulk renames in a single batch rather than sequential file-by-file edits.
+
+## When to Use
+
+- Renaming an identifier, parameter, key, or variable across **5+ files**
+- The renames are **mechanical** — same find-and-replace logic in each file, no reasoning required
+- Files are **independent** — editing file A doesn't affect what needs to change in file B
+- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+
+## When NOT to Use
+
+- **Cross-file cascading refactors** where renaming a shared type changes method signatures, requiring each file to adapt differently
+- **Renames requiring judgment** — e.g., "rename this concept" where each call site needs context-aware naming
+- **Fewer than 5 files** — sequential edits are simpler and have less overhead
+- **Complex AST transforms** — use `libcst-refactor` agent instead
+
+## The Pattern
+
+### Step 1: Identify All Files
+
+Use Grep to find every file containing the target identifier:
+
+```
+Grep(pattern="old_name", output_mode="files_with_matches")
+```
+
+Partition files into two groups:
+
+- **Source files** (`src/` or library code)
+- **Test files** (`tests/`)
+
+### Step 2: Launch Source File Agents in Parallel
+
+Launch one `Task` agent per file (or per small group of 2-3 closely related files):
+
+```python
+Task(
+    subagent_type='general-purpose',
+    model='haiku',
+    description='Rename old_name in path/to/file.py',
+    prompt="""..."""  # See agent prompt template below
+)
+```
+
+**Launch ALL source file agents in a single message** so they run concurrently.
+
+### Step 3: Wait for Source Agents to Complete
+
+Collect results from all source file agents. Review for errors.
+
+### Step 4: Launch Test File Agents in Parallel
+
+Same pattern as Step 2, but for test files. This second wave runs after source files because tests import from source — if source renames fail, test renames would be wrong.
+
+### Step 5: Verify
+
+After all agents complete:
+
+1. **Grep check**: Confirm old name no longer appears (except intentional exceptions)
+2. **Run CI**: Use devrun agent to run tests, type checking, and linting
+
+## Agent Prompt Template
+
+Each agent receives a focused, self-contained prompt:
+
+```
+In the file `{file_path}`:
+
+Rename all occurrences of `{old_name}` to `{new_name}`.
+
+This includes:
+- Variable names and assignments
+- Function/method parameter names
+- Dictionary keys (both definition and access)
+- String literals that reference the identifier programmatically
+- Type annotations
+- Comments that reference the identifier by name
+
+DO NOT rename:
+- {boundary_constraints}
+
+Read the file first, then apply all renames using the Edit tool.
+```
+
+### Boundary Constraints
+
+Boundary constraints are critical for partial renames. Always specify what should NOT be renamed. Examples:
+
+- `"Do not rename occurrences inside string literals that are user-facing messages"`
+- `"Do not rename the GitHub API field 'issue_number' — only rename internal references"`
+- `"Do not rename imports from external packages"`
+
+If there are no exceptions, state: `"No exceptions — rename ALL occurrences."`
+
+## Batching Strategy
+
+| Wave | Files                 | Rationale                                                    |
+| ---- | --------------------- | ------------------------------------------------------------ |
+| 1    | Source files (`src/`) | Core renames, no dependencies on other waves                 |
+| 2    | Test files (`tests/`) | Tests import from source; must run after source renames land |
+
+Within each wave, all agents run in parallel. Between waves, wait for completion.
+
+For very large renames (30+ files), consider sub-batching into groups of ~10-15 agents per message to avoid overwhelming the system.
+
+## Key Design Decisions
+
+- **Model: haiku** — mechanical edits need speed, not deep reasoning. Haiku is 10x cheaper and sufficient for find-and-replace tasks.
+- **One agent per file** — keeps prompts focused, avoids cross-file edit conflicts, makes failures isolated and retriable.
+- **Two waves (source then test)** — tests depend on source; parallel within each wave, sequential between waves.
+- **Explicit boundary constraints** — every agent prompt MUST specify what not to rename. Omitting this causes over-eager renames (e.g., renaming API field names that must stay as-is).
+
+## Example: Renaming `issue_number` to `plan_number`
+
+1. Grep found 16 source files and 12 test files containing `issue_number`
+2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds
+3. Wave 2: Launched 12 haiku agents for test files — completed in ~20 seconds
+4. Verification: `Grep(pattern="issue_number")` confirmed only intentional GitHub API references remained
+5. CI: All tests passed, type checker clean
+
+Total wall time: ~60 seconds for 28 files, vs ~10+ minutes for sequential edits.
+</user>
+  <assistant>
+
+Good, I have the rename-swarm pattern. Since all files are markdown docs (not source + test), I can do everything in one wave. Let me launch haiku agents for all 45 files in parallel batches. Let me first get the exact file list:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1457" cache_read_input_tokens="135248" cache_creation="{'ephemeral_5m_input_tokens': 1457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01F524tx9EuBeKrChAfyFpSR">
+    <param name="pattern">plan issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/</param>
+    <param name="-i">True</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1457" cache_read_input_tokens="135248" cache_creation="{'ephemeral_5m_input_tokens': 1457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F524tx9EuBeKrChAfyFpSR">
+Found 45 files
+docs/learned/reference/gastown-analysis.md
+docs/learned/testing/fake-github-api-reference.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/plan-row-data.md
+docs/learned/workflows/tripwires.md
+docs/learned/pr-operations/checkout-footer-syntax.md
+docs/learned/pr-operations/plan-embedding-in-pr.md
+docs/learned/pr-operations/pr-submit-phases.md
+docs/learned/pr-operations/pr-validation-rules.md
+docs/learned/pr-operations/tripwires.md
+docs/learned/planning/consolidation-labels.md
+docs/learned/planning/cross-artifact-analysis.md
+docs/learned/planning/learn-pipeline-workflow.md
+docs/learned/planning/learn-plan-metadata-fields.md
+docs/learned/planning/learn-plan-validation.md
+docs/learned/planning/no-changes-handling.md
+docs/learned/planning/plan-backend-migration.md
+docs/learned/planning/plan-header-privatization.md
+docs/learned/planning/plan-schema.md
+docs/learned/cli/tripwires.md
+docs/learned/cli/workflow-commands.md
+docs/learned/configuration/config-layers.md
+docs/learned/documentation/when-to-switch-pattern.md
+docs/learned/objectives/objective-lifecycle.md
+docs/learned/objectives/research-documentation-integration.md
+docs/learned/planning/branch-name-inference.md
+docs/learned/planning/complete-inventory-protocol.md
+docs/learned/architecture/index.md
+docs/learned/architecture/plan-context-integration.md
+
+... [16 lines omitted] ...
+  </tool_result>
+  <assistant>I also need to redo the gateway/printing fixes. Let me launch all 45 rename agents plus the gateway/printing fixes in one massive parallel batch. I'll group them into batches of ~15 per message to avoid overwhelming things.
+
+Batch 1 - architecture + planning files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="842" cache_read_input_tokens="136705" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01AjYFdbMGV1hj4cjVuPKFeo">
+    <param name="description">Rename plan issue - arch batch</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In these files under /home/runner/work/erk/erk/, replace "plan issue" terminology with "pl...[truncated 2344 chars]...md:
+- Remove the line "├── printing/      # Printing utilities" from the directory listing</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="842" cache_read_input_tokens="136705" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Vp8nPaTw9ceM2MxFYN27vp">
+    <param name="description">Rename plan issue - planning batch</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In these files under /home/runner/work/erk/erk/, replace "plan issue" terminology with "pl...[truncated 1440 chars]...hange.
+
+IMPORTANT: Do NOT run git reset or any git commands. Only use Read and Edit tools.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="842" cache_read_input_tokens="136705" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01WWJaQkEvTEHpLqJVEZqhkf">
+    <param name="description">Rename plan issue - cli+other batch</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="prompt">In these files under /home/runner/work/erk/erk/, replace "plan issue" terminology with "pl...[truncated 2025 chars]...hange.
+
+IMPORTANT: Do NOT run git reset or any git commands. Only use Read and Edit tools.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="842" cache_read_input_tokens="136705" cache_creation="{'ephemeral_5m_input_tokens': 842, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AjYFdbMGV1hj4cjVuPKFeo">
+Async agent launched successfully.
+agentId: a5c0f8c (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01Vp8nPaTw9ceM2MxFYN27vp">
+Async agent launched successfully.
+agentId: ada03ec (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01WWJaQkEvTEHpLqJVEZqhkf">
+Async agent launched successfully.
+agentId: a4af37f (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>
+
+Let me check on the progress of the three new agents:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3286" cache_read_input_tokens="137547" cache_creation="{'ephemeral_5m_input_tokens': 3286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01N9znMNzpgQoWBqqdqwfJox">
+    <param name="task_id">a5c0f8c</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3286" cache_read_input_tokens="137547" cache_creation="{'ephemeral_5m_input_tokens': 3286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01V3pzYCA5Y6pGQvA4J2Jhyu">
+    <param name="task_id">ada03ec</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3286" cache_read_input_tokens="137547" cache_creation="{'ephemeral_5m_input_tokens': 3286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01AJQ1fULbv1wRpa3RUrDejP">
+    <param name="task_id">a4af37f</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3286" cache_read_input_tokens="137547" cache_creation="{'ephemeral_5m_input_tokens': 3286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N9znMNzpgQoWBqqdqwfJox">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a5c0f8c&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-issue-autoclose.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-cli-limits.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md"}
+[Tool: Grep] {"pattern":"plan issue","path":"/home/runner/work/erk/erk/docs/learned/architecture","output_mode":"content"}
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01V3pzYCA5Y6pGQvA4J2Jhyu">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ada03ec&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/cross-artifact-analysis.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/no-changes-handling.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-schema.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/complete-inventory-protocol.md"}
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01AJQ1fULbv1wRpa3RUrDejP">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a4af37f&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/commands/pr-summarize.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/pr-rewrite.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/slash-command-llm-turn-optimization.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md"}
+&lt;/output&gt;
+  </tool_result>
+  <assistant>All three agents are actively reading files and preparing edits. Let me wait for them to complete:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2112" cache_read_input_tokens="140833" cache_creation="{'ephemeral_5m_input_tokens': 2112, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_019MsW9PPzCDhYQRG25rYNTb">
+    <param name="task_id">a5c0f8c</param>
+    <param name="block">True</param>
+    <param name="timeout">300000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2112" cache_read_input_tokens="140833" cache_creation="{'ephemeral_5m_input_tokens': 2112, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019MsW9PPzCDhYQRG25rYNTb">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a5c0f8c&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/fail-open-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-issue-autoclose.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-cli-limits.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pr-body-assembly.md"}
+[Tool: Grep] {"pattern":"plan issue","path":"/home/runner/work/erk/erk/docs/learned/architecture","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan issue","path":"/home/runner/work/erk/erk/docs/learned/architecture","output_mode":"content"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md","offset":1,"limit":50}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/lbyl-gateway-pattern.md","offset":1,"limit":50}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md","offset":1,"limit":50}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md","offset":1,"limit":50}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md","offset":1,"limit":100}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md","offset":1,"limit":100}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md","offset":270,"limit":20}
+[Tool: Grep] {"pattern":"5-layer.*gateway|Dry-run and printing|dry-run/printing","path":"/home/runner/work/erk/erk/docs/learned/architecture","output_mode":"content"}
+[Tool: Grep] {"pattern":"5-layer.*gateway|Dry-run and printing|dry-run/printing","path":"/home/runner/work/erk/erk/docs/learned/architecture","output_mode":"content"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/github-issue-autoclose.md","old_string":"  - \"understanding plan issue closure strategy\"","new_string":"  - \"understanding plan closure strategy\""}
+
+... [107 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md","old_string":"  - action: \"migrating a gateway method to return discriminated union\"\n    warning: \"Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.\"","new_string":"  - action: \"migrating a gateway method to return discriminated union\"\n    warning: \"Update all implementations (ABC, real, fake; add dry_run only for dry-run-participating gateways) AND all call sites AND tests. Incomplete migrations break type safety.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md","old_string":"1. Define types in appropriate `types.py` module\n2. Update ABC signature\n3. Update all 5 implementations (real, fake, dry_run, printing, and any subclass)\n4. Update all call sites to use `isinstance()` checks\n5. Update tests to check `isinstance(result, ErrorType)`","new_string":"1. Define types in appropriate `types.py` module\n2. Update ABC signature\n3. Update all implementations (real, fake; add dry_run only for dry-run-participating gateways)\n4. Update all call sites to use `isinstance()` checks\n5. Update tests to check `isinstance(result, ErrorType)`"}
+1. **discriminated-union-error-handling.md** - 2 updates:
+  </tool_result>
+  <assistant>Architecture agent done. Let me check the other two:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5999" cache_read_input_tokens="142945" cache_creation="{'ephemeral_5m_input_tokens': 5999, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Ru2HoSRGoBcc3Ub4DXXpoy">
+    <param name="task_id">ada03ec</param>
+    <param name="block">True</param>
+    <param name="timeout">300000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5999" cache_read_input_tokens="142945" cache_creation="{'ephemeral_5m_input_tokens': 5999, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_012n6Vuief5jSWJw6oQnbBMt">
+    <param name="task_id">a4af37f</param>
+    <param name="block">True</param>
+    <param name="timeout">300000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5999" cache_read_input_tokens="142945" cache_creation="{'ephemeral_5m_input_tokens': 5999, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
