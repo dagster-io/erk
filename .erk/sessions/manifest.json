@@ -5,15 +5,16 @@
     {
       "session_id": "03f208cf-f928-4006-a15e-9d69b9b10962",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-08T14:23:33.400185+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T14:26:01.373553+00:00",
       "files": [
-        "impl-03f208cf-f928-4006-a15e-9d69b9b10962-03f208cf-f928-4006-a15e-9d69b9b10962.xml"
+        "impl-03f208cf-f928-4006-a15e-9d69b9b10962-03f208cf-f928-4006-a15e-9d69b9b10962-part1.xml",
+        "impl-03f208cf-f928-4006-a15e-9d69b9b10962-03f208cf-f928-4006-a15e-9d69b9b10962-part2.xml"
       ],
       "user_turns": 2,
-      "duration_minutes": 3,
-      "raw_size_kb": 122,
-      "xml_size_kb": 27,
+      "duration_minutes": 5,
+      "raw_size_kb": 163,
+      "xml_size_kb": 45,
       "git_branch": "plnd/O9009-add-agent-friendly-c-03-08-1017"
     }
   ]
