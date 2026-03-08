@@ -9,9 +9,7 @@ from erk.core.repo_discovery import RepoContext
 from erk_shared.output.output import user_output
 
 
-def sync_branch_to_sha(
-    ctx: ErkContext, repo_root: Path, branch: str, target_sha: str
-) -> None:
+def sync_branch_to_sha(ctx: ErkContext, repo_root: Path, branch: str, target_sha: str) -> None:
     """Move a local branch to target_sha, safely handling checked-out branches.
 
     When the branch is NOT checked out, uses update_local_ref (fast ref update).
