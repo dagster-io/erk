@@ -18,6 +18,8 @@ Rules triggered by matching actions in code.
 
 **creating commands that delegate to subagents** → Read [Tool Restriction Safety Pattern](tool-restriction-safety.md) first. NEVER omit Task from allowed-tools if the command delegates to subagents
 
+**hardcoding a choice in a command where user should decide** → Read [Skill and Command Patterns](skill-patterns.md) first. use AskUserQuestion to present options. Commands should empower user decisions, not make them.
+
 **modifying collateral finding categories or auto-apply behavior in audit-doc** → Read [Audit-Doc Design Decisions](audit-doc.md) first. CRITICAL: Read this doc first to understand the conceptual vs mechanical finding distinction
 
 **renaming any file in .claude/commands/ or .claude/skills/** → Read [Command Rename Pattern](command-rename-pattern.md) first. Read this doc — renames require a full reference sweep, not just a file move

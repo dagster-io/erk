@@ -14,6 +14,8 @@ Rules triggered by matching actions in code.
 
 **Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing
 
+**CI job timing out in post-job cleanup** → Read [UV Cache Management in CI](uv-cache-management.md) first. check if UV cache pruning is enabled. Use prune-cache: false for ephemeral CI runners.
+
 **Creating or modifying .prettierignore** → Read [Makefile Prettier Ignore Path](makefile-prettier-ignore-path.md) first. The Makefile uses `prettier --ignore-path .gitignore`, NOT `.prettierignore`. Adding rules to .prettierignore has no effect. Modify .gitignore to control what Prettier ignores.
 
 **GitHub Actions cannot interpolate Python constants** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. label strings must be hardcoded in YAML

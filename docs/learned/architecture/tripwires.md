@@ -118,6 +118,8 @@ Rules triggered by matching actions in code.
 
 **calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
 
+**calling gh CLI for GitHub API operations in remote mode** → Read [RemoteGitHub Gateway](remote-github-gateway.md) first. use RemoteGitHub gateway instead. Remote mode has no local git/gh CLI.
+
 **calling gh api directly in an exec script for plan metadata updates** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
 
 **calling graphite.track_branch() with a remote ref like origin/main** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch().

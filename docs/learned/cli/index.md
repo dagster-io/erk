@@ -9,6 +9,7 @@
 - **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output
 - **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
 - **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
+- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk pr teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
 - **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior
 - **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
 - **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input

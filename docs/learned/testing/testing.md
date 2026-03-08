@@ -360,6 +360,14 @@ When testing code that uses `shlex.quote()` for path quoting:
 - Simple paths like `/tmp/foo` remain unquoted
 - Tests should not hardcode quoted paths like `'{path}'`
 
+## Test Helper Default Parameter Exemption
+
+The dignified-python no-default-parameters rule has an explicit exemption for test code. Functions in `test_*.py`, `conftest.py`, and Fake classes are exempt from this rule.
+
+Test helpers often wrap complex constructors with sensible defaults to reduce boilerplate — having many default parameters is their intended purpose. Similarly, Fake classes (`FakeGit`, `FakeLocalGitHub`, `FakeGraphite`, etc.) have many optional configuration parameters for setting up different test scenarios.
+
+Reference: `.claude/skills/dignified-python/references/api-design.md`
+
 ## Legitimate Test Coverage Exclusions
 
 Not all source files require dedicated unit tests. These categories are excluded from coverage requirements:

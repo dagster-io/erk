@@ -6,8 +6,8 @@ read_when:
   - "understanding how workspace packages are refreshed"
   - "changing activation script generation"
 tripwires:
-  - action: "removing the uv pip install --no-deps line from activation"
-    warning: "This line refreshes workspace editable packages on every activation. Without it, worktrees may use stale versions of erk, erk-shared, or erk-statusline after switching branches."
+  - action: "removing uv sync --quiet from activation"
+    warning: "uv sync --quiet refreshes workspace packages on every activation. Without it, worktrees may use stale versions of erk, erk-shared, or erk-statusline after switching branches."
 ---
 
 # Workspace Activation and Package Refresh
@@ -18,15 +18,7 @@ Every erk worktree runs an activation script on entry. The script refreshes work
 
 <!-- Source: src/erk/cli/activation.py, render_activation_script -->
 
-The activation script includes this line:
-
-<!-- See the uv pip install command in src/erk/cli/activation.py, render_activation_script -->
-
-The activation script reinstalls the three workspace packages (`erk`, `erk-shared`, `erk-statusline`) as editable installs with `--no-deps --quiet` on every worktree activation.
-
-### Why `--no-deps`
-
-The `--no-deps` flag skips external dependency resolution. External dependencies are already installed by `uv sync` during venv creation. Skipping them makes the refresh fast (sub-second) rather than slow (seconds to resolve the full dependency tree).
+The activation script runs `uv sync --quiet` on every worktree activation. This synchronizes all workspace packages (`erk`, `erk-shared`, `erk-statusline`) with the current branch's code, handling both editable installs and external dependencies in a single operation.
 
 ### Why On Every Activation
 

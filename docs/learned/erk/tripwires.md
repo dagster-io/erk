@@ -44,7 +44,7 @@ Rules triggered by matching actions in code.
 
 **pushing to a branch that may have been updated remotely without checking for divergence** → Read [Graphite Divergence Detection](graphite-divergence-detection.md) first. The Graphite-first flow pre-checks for divergence before gt submit. Check with branch_exists_on_remote -> fetch_branch -> is_branch_diverged_from_remote.
 
-**removing the uv pip install --no-deps line from activation** → Read [Workspace Activation and Package Refresh](workspace-activation.md) first. This line refreshes workspace editable packages on every activation. Without it, worktrees may use stale versions of erk, erk-shared, or erk-statusline after switching branches.
+**removing uv sync --quiet from activation** → Read [Workspace Activation and Package Refresh](workspace-activation.md) first. uv sync --quiet refreshes workspace packages on every activation. Without it, worktrees may use stale versions of erk, erk-shared, or erk-statusline after switching branches.
 
 **resolving a review thread when the comment is a discussion comment (not a review thread)** → Read [PR Address Workflows](pr-address-workflows.md) first. Review threads and discussion comments use different GitHub APIs. resolve-review-threads only handles review threads. Discussion comments are resolved differently (or not at all).
 
