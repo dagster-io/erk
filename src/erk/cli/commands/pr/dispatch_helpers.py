@@ -1,10 +1,44 @@
 """Helper functions for dispatch command."""
 
+from pathlib import Path
+
 import click
 
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.output.output import user_output
+
+
+def sync_branch_to_sha(
+    ctx: ErkContext, repo_root: Path, branch: str, target_sha: str
+) -> None:
+    """Move a local branch to target_sha, safely handling checked-out branches.
+
+    When the branch is NOT checked out, uses update_local_ref (fast ref update).
+    When the branch IS checked out, uses 'git reset --hard' in the worktree
+    to atomically sync ref + index + working tree. Refuses if the worktree
+    has uncommitted changes.
+    """
+    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo_root, branch)
+    if checked_out_path is None:
+        ctx.git.branch.update_local_ref(repo_root, branch, target_sha)
+        return
+
+    local_sha = ctx.git.branch.get_branch_head(repo_root, branch)
+    if local_sha == target_sha:
+        return
+
+    if ctx.git.status.has_uncommitted_changes(checked_out_path):
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Branch '{branch}' is checked out at {checked_out_path} with "
+            f"uncommitted changes.\n\n"
+            f"Please commit or stash changes before proceeding."
+        )
+        raise SystemExit(1)
+
+    # Atomically sync ref + index + working tree
+    ctx.git.branch.reset_hard(checked_out_path, target_sha)
 
 
 def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -> None:

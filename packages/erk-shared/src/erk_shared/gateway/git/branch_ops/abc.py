@@ -294,6 +294,19 @@ class GitBranchOps(ABC):
         ...
 
     @abstractmethod
+    def reset_hard(self, cwd: Path, target_ref: str) -> None:
+        """Reset the current branch to a target ref, updating index and working tree.
+
+        Equivalent to 'git reset --hard <target_ref>'. Use when the branch
+        is checked out and both the ref pointer AND working tree need updating.
+
+        Args:
+            cwd: Working directory (must be the worktree where the branch is checked out)
+            target_ref: Commit SHA or ref to reset to
+        """
+        ...
+
+    @abstractmethod
     def get_branch_commits_with_authors(
         self, repo_root: Path, branch: str, trunk: str, *, limit: int
     ) -> list[dict[str, str]]:

@@ -312,6 +312,7 @@ class FakeGit(Git):
         self._pull_rebase_calls: list[tuple[Path, str, str]] = []  # (cwd, remote, branch)
         self._config_sets_records: list[ConfigSetRecord] = []
         self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
+        self._reset_hard_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)
 
         # Per-worktree git dirs (empty by default; get_git_dir falls back to common dir)
         self._git_dirs: dict[Path, Path] = git_dirs if git_dirs is not None else {}
@@ -381,6 +382,7 @@ class FakeGit(Git):
             detached_checkouts=self._detached_checkouts,
             created_tracking_branches=self._created_tracking_branches,
             updated_refs=self._updated_refs,
+            reset_hard_calls=self._reset_hard_calls,
         )
 
         # Remote operations subgateway - linked to FakeGit's state

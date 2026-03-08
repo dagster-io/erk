@@ -471,12 +471,13 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
 
 
 def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
-    """Test that dispatch skips force-updating the branch when it's checked out in a worktree.
+    """Test that dispatch uses reset_hard when branch is checked out in a worktree.
 
     When the plan branch is already checked out (e.g., user ran erk impl -d which
     checked out the plan branch in the current slot), git refuses 'git branch -f'
-    with 'cannot force update the branch used by worktree'. Dispatch should skip
-    create_branch in that case and still commit and push successfully.
+    with 'cannot force update the branch used by worktree'. Dispatch should use
+    sync_branch_to_sha (which does git reset --hard) instead of update_local_ref
+    to keep the working tree in sync.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -496,7 +497,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
         # Simulate: plan branch is checked out in the current worktree
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "main"},
+            current_branches={env.cwd: plan_branch},
             local_branches={env.cwd: ["main", plan_branch]},
             default_branches={env.cwd: "main"},
             remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
@@ -505,6 +506,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
             branch_heads={
                 "main": "abc123",
                 "origin/main": "abc123",
+                plan_branch: "local789",
                 f"origin/{plan_branch}": "remote456",
             },
             worktrees={
@@ -548,10 +550,87 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
             f"Expected no create_branch calls, got: {git.created_branches}"
         )
 
-        # Verify: update_local_ref was called to sync the checked-out branch
-        updated_refs = git.branch.updated_refs
-        assert any(branch == plan_branch for _, branch, _ in updated_refs), (
-            f"Expected update_local_ref for {plan_branch}, got: {updated_refs}"
+        # Verify: reset_hard was used (not update_local_ref) to keep working tree in sync
+        reset_calls = git.branch.reset_hard_calls
+        assert any(ref == "remote456" for _, ref in reset_calls), (
+            f"Expected reset_hard with remote456, got: {reset_calls}"
         )
+
+        # Verify: update_local_ref was NOT called for the plan branch
+        updated_refs = git.branch.updated_refs
+        assert not any(branch == plan_branch for _, branch, _ in updated_refs), (
+            f"Expected no update_local_ref for {plan_branch}, got: {updated_refs}"
+        )
+
+        assert "Traceback" not in result.output
+
+
+def test_dispatch_rejects_dirty_checked_out_worktree() -> None:
+    """Test that dispatch refuses when the checked-out worktree has uncommitted changes."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "draft-pr-plan-branch"
+        pr_42 = _make_pr_42(plan_branch=plan_branch)
+
+        fake_gh = FakeLocalGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        # Simulate: plan branch is checked out with dirty worktree
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: plan_branch},
+            local_branches={env.cwd: ["main", plan_branch]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+            branch_heads={
+                "main": "abc123",
+                "origin/main": "abc123",
+                plan_branch: "local789",
+                f"origin/{plan_branch}": "remote456",
+            },
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch=plan_branch, is_root=True),
+                ]
+            },
+            file_statuses={env.cwd: (["dirty-file.txt"], [], [])},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "uncommitted changes" in result.output
+        assert "commit or stash" in result.output
+
+        # Verify: no workflow was triggered
+        assert len(fake_gh.triggered_workflows) == 0
 
         assert "Traceback" not in result.output

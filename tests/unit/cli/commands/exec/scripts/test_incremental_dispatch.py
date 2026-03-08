@@ -149,7 +149,7 @@ def test_incremental_dispatch_display_format(tmp_path: Path) -> None:
 
 
 def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
-    """Test dispatch when branch is checked out in a worktree uses update_local_ref."""
+    """Test dispatch when branch is checked out in a worktree uses reset_hard."""
     plan_file = tmp_path / "plan.md"
     plan_file.write_text("# Checked Out Plan\n\n- Step 1", encoding="utf-8")
 
@@ -157,11 +157,12 @@ def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
     pr = _make_pr(42, branch="feature/checked-out")
     remote_sha = "remote123"
     fake_git = FakeGit(
-        current_branches={tmp_path: "main"},
+        current_branches={tmp_path: "main", worktree_path: "feature/checked-out"},
         trunk_branches={tmp_path: "main"},
         branch_heads={
             "main": "abc123",
             "origin/main": "abc123",
+            "feature/checked-out": "local456",
             "origin/feature/checked-out": remote_sha,
         },
         worktrees={
@@ -189,10 +190,14 @@ def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
     output = json.loads(result.output.strip().split("\n")[-1])
     assert output["success"] is True
 
-    # Verify update_local_ref was called instead of create_branch
+    # Verify reset_hard was called (not update_local_ref) to keep working tree in sync
+    reset_calls = fake_git.branch.reset_hard_calls
+    assert len(reset_calls) == 1
+    assert reset_calls[0] == (worktree_path, remote_sha)
+
+    # Verify update_local_ref was NOT called for the feature branch
     updated_refs = fake_git.branch.updated_refs
-    assert len(updated_refs) == 1
-    assert updated_refs[0] == (tmp_path, "feature/checked-out", remote_sha)
+    assert not any(branch == "feature/checked-out" for _, branch, _ in updated_refs)
 
     # Verify create_branch was NOT called for the feature branch
     created = fake_git.branch.created_branches

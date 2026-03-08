@@ -107,6 +107,7 @@ class FakeGitBranchOps(GitBranchOps):
         self._detached_checkouts: list[tuple[Path, str]] = []
         self._created_tracking_branches: list[tuple[str, str]] = []  # (branch, remote_ref)
         self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
+        self._reset_hard_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)
 
     def create_branch(
         self, cwd: Path, branch_name: str, start_point: str, *, force: bool
@@ -256,6 +257,26 @@ class FakeGitBranchOps(GitBranchOps):
         self._updated_refs.append((repo_root, branch, target_sha))
         self._branch_heads[branch] = target_sha
 
+    def reset_hard(self, cwd: Path, target_ref: str) -> None:
+        """Reset the current branch to a target ref (fake implementation).
+
+        Tracks the reset for test assertions and updates branch_heads state.
+        """
+        self._reset_hard_calls.append((cwd, target_ref))
+        # Update the branch head for the branch currently checked out at cwd
+        branch = self._current_branches.get(cwd)
+        if branch is not None:
+            self._branch_heads[branch] = target_ref
+
+    @property
+    def reset_hard_calls(self) -> list[tuple[Path, str]]:
+        """Get list of reset --hard calls during test.
+
+        Returns list of (cwd, target_ref) tuples.
+        This property is for test assertions only.
+        """
+        return self._reset_hard_calls.copy()
+
     def link_mutation_tracking(
         self,
         created_branches: list[tuple[Path, str, str, bool]],
@@ -264,6 +285,7 @@ class FakeGitBranchOps(GitBranchOps):
         detached_checkouts: list[tuple[Path, str]],
         created_tracking_branches: list[tuple[str, str]],
         updated_refs: list[tuple[Path, str, str]],
+        reset_hard_calls: list[tuple[Path, str]],
     ) -> None:
         """Link mutation tracking lists to allow shared tracking with FakeGit.
 
@@ -277,6 +299,7 @@ class FakeGitBranchOps(GitBranchOps):
             detached_checkouts: Reference to FakeGit's detached_checkouts list
             created_tracking_branches: Reference to FakeGit's created_tracking_branches list
             updated_refs: Reference to FakeGit's updated_refs list
+            reset_hard_calls: Reference to FakeGit's reset_hard_calls list
         """
         self._created_branches = created_branches
         self._deleted_branches = deleted_branches
@@ -284,6 +307,7 @@ class FakeGitBranchOps(GitBranchOps):
         self._detached_checkouts = detached_checkouts
         self._created_tracking_branches = created_tracking_branches
         self._updated_refs = updated_refs
+        self._reset_hard_calls = reset_hard_calls
 
     # ============================================================================
     # Query Operations
