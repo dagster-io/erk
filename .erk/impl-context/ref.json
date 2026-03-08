@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Fix changelog-commits output size for agent consumption"
+}
