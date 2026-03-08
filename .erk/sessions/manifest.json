@@ -15,6 +15,21 @@
       "raw_size_kb": 378,
       "xml_size_kb": 69,
       "git_branch": "master"
+    },
+    {
+      "session_id": "e445abc8-dbfd-4ba1-b4fe-ec10edcc97ec",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T01:20:16.939149+00:00",
+      "files": [
+        "impl-e445abc8-dbfd-4ba1-b4fe-ec10edcc97ec-e445abc8-dbfd-4ba1-b4fe-ec10edcc97ec-part1.xml",
+        "impl-e445abc8-dbfd-4ba1-b4fe-ec10edcc97ec-e445abc8-dbfd-4ba1-b4fe-ec10edcc97ec-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 7,
+      "raw_size_kb": 842,
+      "xml_size_kb": 113,
+      "git_branch": "plnd/O8381-fix-cli-erk-docs-ter-03-08-0110"
     }
   ]
 }
