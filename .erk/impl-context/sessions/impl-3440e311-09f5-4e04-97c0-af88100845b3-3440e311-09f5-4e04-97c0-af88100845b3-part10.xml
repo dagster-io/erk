@@ -1,0 +1,567 @@
+<session>
+  <meta source="agent-a1b530b" />
+  <meta branch="plnd/O8832-objective-no-repo-cm-03-08-0038" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for existing remote path test files (tests that exercise the `--repo` flag / no-repo codepath) in this project. I need to understand the pattern for writing tests that verify commands work without a local git repo by passing `--repo owner/repo`. 
+
+Look for:
+1. Files like `test_remote_paths.py` or similar
+2. Tests that use `NoRepoSentinel` 
+3. Tests that pass `--repo` flag to CLI commands
+
+Return the file paths and show representative test function examples so I can replicate the pattern.</user>
+  <assistant>I'll search for tests related to remote paths, the `--repo` flag, and `NoRepoSentinel` pattern.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18927" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18927, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01ULEgHT8B5SVNjH9NnSgFcc">
+    <param name="pattern">**/test_*remote*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18927" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18927, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01V6prdhZgv1K37engRtdHtm">
+    <param name="pattern">**/tests/*no_repo*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18927" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18927, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CBYwG7akWxk28zjru5P5gn">
+    <param name="pattern">NoRepoSentinel</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18927" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18927, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019SXZH67r37Z3fyn4ffhtXA">
+    <param name="pattern">--repo</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18927" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18927, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V6prdhZgv1K37engRtdHtm">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01ULEgHT8B5SVNjH9NnSgFcc">
+/home/runner/work/erk/erk/tests/commands/land/test_learn_skip_remote.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py
+/home/runner/work/erk/erk/tests/commands/pr/test_address_remote_cmd.py
+/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rebase_remote.py
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_remote_validation.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_remote_execution_note.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git_remote_ops.py
+/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_real_remote_github.py
+/home/runner/work/erk/erk/tests/unit/gateways/remote_github/test_fake_remote_github.py
+  </tool_result>
+  <tool_result tool="toolu_01CBYwG7akWxk28zjru5P5gn">
+Found 33 files
+src/erk/cli/commands/exec/scripts/objective_plan_setup.py
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/objective/check_cmd.py
+src/erk/cli/commands/objective/view_cmd.py
+tests/unit/core/test_workflow_smoke_test.py
+tests/fakes/context.py
+tests/commands/pr/test_remote_paths.py
+src/erk/tui/data/real_provider.py
+src/erk/hooks/decorators.py
+src/erk/core/workflow_smoke_test.py
+src/erk/core/repo_discovery.py
+src/erk/core/context.py
+src/erk/cli/commands/wt/current_cmd.py
+src/erk/cli/commands/pr/check_cmd.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/pr/prepare_cmd.py
+src/erk/cli/commands/pr/repo_resolution.py
+src/erk/cli/commands/pr/teleport_cmd.py
+src/erk/cli/commands/one_shot.py
+src/erk/cli/commands/init/capability/add_cmd.py
+src/erk/cli/commands/init/capability/list_cmd.py
+src/erk/cli/commands/init/capability/remove_cmd.py
+src/erk/cli/commands/init/main.py
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+src/erk/cli/commands/doctor_workflow.py
+src/erk/cli/commands/codespace/connect_cmd.py
+src/erk/cli/commands/config.py
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019SXZH67r37Z3fyn4ffhtXA">
+Found 20 files limit: 20, offset: 0
+tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py
+tests/unit/cli/commands/exec/scripts/test_ci_verify_autofix.py
+tests/unit/cli/commands/codespace/test_setup_cmd.py
+tests/integration/test_real_github_admin.py
+tests/commands/setup/test_config.py
+tests/commands/pr/test_remote_paths.py
+tests/commands/one_shot/test_one_shot_remote_dispatch.py
+src/erk/cli/config.py
+src/erk/cli/commands/pr/view_cmd.py
+src/erk/cli/commands/pr/check_cmd.py
+src/erk/cli/commands/pr/close_cmd.py
+src/erk/cli/commands/pr/duplicate_check_cmd.py
+src/erk/cli/commands/pr/list_cmd.py
+src/erk/cli/commands/pr/log_cmd.py
+src/erk/cli/commands/pr/repo_resolution.py
+src/erk/cli/commands/one_shot.py
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py
+src/erk/cli/commands/exec/scripts/ci_verify_autofix.py
+src/erk/cli/commands/codespace/setup_cmd.py
+src/erk/cli/commands/config.py
+  </tool_result>
+  <assistant>Great! I found the test file. Let me read the main test file for remote paths and also check a few related files to understand the pattern:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1717" cache_read_input_tokens="18927" cache_creation="{'ephemeral_5m_input_tokens': 1717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q21NP1hE2T8snAmMiiwGej">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1717" cache_read_input_tokens="18927" cache_creation="{'ephemeral_5m_input_tokens': 1717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y7Lq7DFu3egUAV6tm83a1h">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/context.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1717" cache_read_input_tokens="18927" cache_creation="{'ephemeral_5m_input_tokens': 1717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KJ3mEAYz9LRCGQKnaQMkYL">
+    <param name="pattern">NoRepoSentinel</param>
+    <param name="output_mode">content</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1717" cache_read_input_tokens="18927" cache_creation="{'ephemeral_5m_input_tokens': 1717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q21NP1hE2T8snAmMiiwGej">
+     1→"""Tests for PR command remote paths (--repo flag / NoRepoSentinel)."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk.core.context import context_for_test
+     9→from erk_shared.context.types import NoRepoSentinel
+    10→from erk_shared.core.fakes import FakePlanListService
+    11→from erk_shared.core.plan_list_service import PlanListData
+    12→from erk_shared.gateway.console.fake import FakeConsole
+    13→from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+    14→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    15→from erk_shared.plan_store.types import Plan, PlanState
+    16→from tests.fakes.prompt_executor import FakePromptExecutor
+    17→
+    18→
+    19→def _make_fake_remote(
+    20→    *,
+    21→    issues: dict[int, IssueInfo] | None = None,
+    22→    issue_comments: dict[int, list[str]] | None = None,
+    23→    pr_references: dict[int, list[PRReference]] | None = None,
+    24→) -&gt; FakeRemoteGitHub:
+    25→    """Create a FakeRemoteGitHub with sensible defaults."""
+    26→    return FakeRemoteGitHub(
+    27→        authenticated_user="test-user",
+    28→        default_branch_name="main",
+    29→        default_branch_sha="abc123",
+    30→        next_pr_number=1,
+
+... [415 lines omitted] ...
+
+   121→    """Test pr view --repo without identifier gives error."""
+   251→    """Test pr check --repo without identifier gives error."""
+   278→    """Test --repo with invalid format gives helpful error."""
+  </tool_result>
+  <tool_result tool="toolu_01Y7Lq7DFu3egUAV6tm83a1h">
+     1→"""Factory functions for creating test contexts."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.context import (
+     6→    ErkContext,
+     7→    GlobalConfig,
+     8→    LoadedConfig,
+     9→    NoRepoSentinel,
+    10→    RepoContext,
+    11→    context_for_test,
+    12→)
+    13→from erk.core.prompt_executor import PromptExecutor
+    14→from erk.core.script_writer import ScriptWriter
+    15→from erk_shared.gateway.completion.fake import FakeCompletion
+    16→from erk_shared.gateway.git.fake import FakeGit
+    17→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    18→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    19→from erk_shared.gateway.graphite.fake import FakeGraphite
+    20→from erk_shared.gateway.shell.fake import FakeShell
+    21→
+    22→
+    23→def create_test_context(
+    24→    git: FakeGit | None = None,
+    25→    github: FakeLocalGitHub | None = None,
+    26→    issues: GitHubIssues | None = None,
+    27→    graphite: FakeGraphite | None = None,
+    28→    shell: FakeShell | None = None,
+    29→    prompt_executor: PromptExecutor | None = None,
+    30→    completion: FakeCompletion | None = None,
+
+... [76 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KJ3mEAYz9LRCGQKnaQMkYL">
+src/erk/core/workflow_smoke_test.py:18:from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+src/erk/core/workflow_smoke_test.py:70:    if isinstance(ctx.repo, NoRepoSentinel):
+src/erk/core/workflow_smoke_test.py:127:    if isinstance(ctx.repo, NoRepoSentinel):
+src/erk/core/context.py:35:from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
+src/erk/core/context.py:195:        repo=NoRepoSentinel(),
+src/erk/core/context.py:228:    repo: RepoContext | NoRepoSentinel | None = None,
+src/erk/core/context.py:261:        repo: Optional RepoContext or NoRepoSentinel. If None, uses NoRepoSentinel().
+src/erk/core/context.py:405:        repo = NoRepoSentinel()
+src/erk/core/context.py:592:    if not isinstance(repo, NoRepoSentinel):
+src/erk/core/context.py:610:    if isinstance(repo, NoRepoSentinel):
+src/erk/core/repo_discovery.py:10:from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
+src/erk/core/repo_discovery.py:35:) -&gt; RepoContext | NoRepoSentinel:
+src/erk/core/repo_discovery.py:39:    for this repository, or NoRepoSentinel if not inside a git repo.
+src/erk/core/repo_discovery.py:50:        RepoContext if inside a git repository, NoRepoSentinel otherwise
+src/erk/core/repo_discovery.py:55:        return NoRepoSentinel(message=f"Start path '{cwd}' does not exist")
+src/erk/core/repo_discovery.py:83:        return NoRepoSentinel(message="Not inside a git repository (no .git found up the tree)")
+  </tool_result>
+  <assistant>Perfect! Now let me check the NoRepoSentinel definition and look for more patterns in related test files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="13075" cache_read_input_tokens="20644" cache_creation="{'ephemeral_5m_input_tokens': 13075, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012XgCPi79TdXjzj5YvofHMd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13075" cache_read_input_tokens="20644" cache_creation="{'ephemeral_5m_input_tokens': 13075, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019KzZJEZ51DzbVau8KK8TFu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_address_remote_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="13075" cache_read_input_tokens="20644" cache_creation="{'ephemeral_5m_input_tokens': 13075, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012XgCPi79TdXjzj5YvofHMd">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019KzZJEZ51DzbVau8KK8TFu">
+     1→"""Tests for erk launch pr-address command.
+     2→
+     3→Note: The old `erk pr address remote` command has been replaced by
+     4→`erk launch pr-address`. See tests/commands/launch/test_launch_cmd.py
+     5→for the new workflow tests.
+     6→"""
+     7→
+     8→# This file is kept for reference. The tests have been migrated to:
+     9→# - tests/commands/launch/test_launch_cmd.py
+    10→#
+    11→# The `erk pr address remote` subcommand has been removed.
+    12→# Use `erk launch pr-address` instead.
+    13→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me check one more test file to see additional patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2474" cache_read_input_tokens="33719" cache_creation="{'ephemeral_5m_input_tokens': 2474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YVCeCHMx3S1RXtanQJySmm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2474" cache_read_input_tokens="33719" cache_creation="{'ephemeral_5m_input_tokens': 2474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YVCeCHMx3S1RXtanQJySmm">
+     1→"""Tests for one-shot remote dispatch (--repo flag path)."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.commands.one_shot_remote_dispatch import (
+     7→    OneShotDispatchParams,
+     8→    dispatch_one_shot_remote,
+     9→)
+    10→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    11→from erk_shared.gateway.time.fake import FakeTime
+    12→
+    13→
+    14→def test_remote_dispatch_happy_path() -&gt; None:
+    15→    """Test remote dispatch creates branch, PR, and dispatches workflow."""
+    16→    remote = FakeRemoteGitHub(
+    17→        authenticated_user="alice",
+    18→        default_branch_name="main",
+    19→        default_branch_sha="abc123",
+    20→        next_pr_number=42,
+    21→        dispatch_run_id="run-99",
+    22→        issues=None,
+    23→        issue_comments=None,
+    24→        pr_references=None,
+    25→    )
+    26→    time = FakeTime()
+    27→
+    28→    params = OneShotDispatchParams(
+    29→        prompt="fix the bug in config.py",
+    30→        model=None,
+
+... [274 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me search for the NoRepoSentinel class definition to understand its structure:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3825" cache_read_input_tokens="36193" cache_creation="{'ephemeral_5m_input_tokens': 3825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0191ERvKvfCAo1NPBKqz8irF">
+    <param name="pattern">^class NoRepoSentinel</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="3825" cache_read_input_tokens="36193" cache_creation="{'ephemeral_5m_input_tokens': 3825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0191ERvKvfCAo1NPBKqz8irF">
+packages/erk-shared/src/erk_shared/context/types.py:136:class NoRepoSentinel:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YDgU6aTgyoBLKv22CPvneA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="offset">130</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="299" cache_read_input_tokens="40018" cache_creation="{'ephemeral_5m_input_tokens': 299, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YDgU6aTgyoBLKv22CPvneA">
+   130→        if self.main_repo_root is None:
+   131→            # Use object.__setattr__ because dataclass is frozen
+   132→            object.__setattr__(self, "main_repo_root", self.root)
+   133→
+   134→
+   135→@dataclass(frozen=True)
+   136→class NoRepoSentinel:
+   137→    """Sentinel value indicating execution outside a git repository.
+   138→
+   139→    Used when commands run outside git repositories (e.g., before init,
+   140→    in non-git directories). Commands that require repo context can check
+   141→    for this sentinel and fail fast.
+   142→    """
+   143→
+   144→    message: str = "Not inside a git repository"
+   145→
+   146→
+   147→@dataclass(frozen=True)
+   148→class InteractiveAgentConfig:
+   149→    """Configuration for interactive agent CLI launches.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! Now I have all the information I need. Let me create a comprehensive summary with the key findings:
+
+## Summary: Remote Path Tests Pattern
+
+Based on my search through the codebase, here's the complete pattern for writing tests that exercise commands with the `--repo` flag (no-repo codepath):
+
+### Key Files Found
+
+1. **Main Test File**: `/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py` - Comprehensive test suite for `--repo` flag testing
+2. **Remote Dispatch Tests**: `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py` - Remote dispatch pattern examples
+3. **Types Definition**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py` - NoRepoSentinel class definition
+
+### The NoRepoSentinel Sentinel
+
+```python
+@dataclass(frozen=True)
+class NoRepoSentinel:
+    """Sentinel value indicating execution outside a git repository.
+    
+    Used when commands run outside git repositories (e.g., before init,
+    in non-git directories). Commands that require repo context can check
+    for this sentinel and fail fast.
+    """
+    
+    message: str = "Not inside a git repository"
+```
+
+### Test Pattern Structure
+
+Here's the canonical pattern from `test_remote_paths.py`:
+
+#### 1. Helper Functions for Setting Up Test Data
+
+```python
+def _make_fake_remote(
+    *,
+    issues: dict[int, IssueInfo] | None = None,
+    issue_comments: dict[int, list[str]] | None = None,
+    pr_references: dict[int, list[PRReference]] | None = None,
+) -&gt; FakeRemoteGitHub:
+    """Create a FakeRemoteGitHub with sensible defaults."""
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues,
+        issue_comments=issue_comments,
+        pr_references=pr_references,
+    )
+
+
+def _make_issue(number: int, *, title: str = "Test Plan", state: str = "OPEN") -&gt; IssueInfo:
+    """Create a test IssueInfo."""
+    return IssueInfo(
+        number=number,
+        title=title,
+        body="Test plan body content",
+        state=state,
+        url=f"https://github.com/owner/repo/issues/{number}",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        author="test-author",
+    )
+```
+
+#### 2. Critical: Build Remote Context with NoRepoSentinel
+
+```python
+def _build_remote_context(
+    fake_remote: FakeRemoteGitHub,
+    *,
+    target_repo: str | None = "owner/repo",
+) -&gt; context_for_test:
+    """Build ErkContext configured for remote mode testing."""
+    return context_for_test(
+        repo=NoRepoSentinel(),  # &lt;-- CRITICAL: Use NoRepoSentinel here, not a real repo
+        remote_github=fake_remote,
+    )
+```
+
+#### 3. Representative Test Functions
+
+**Test pr view with --repo flag:**
+```python
+def test_view_remote_displays_plan() -&gt; None:
+    """Test pr view with --repo flag displays plan data."""
+    issue = _make_issue(42, title="Remote Plan Title")
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "view", "42", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "Remote Plan Title" in result.output
+    assert "#42" in result.output
+    assert "OPEN" in result.output
+```
+
+**Test pr close with --repo flag:**
+```python
+def test_close_remote_closes_plan() -&gt; None:
+    """Test pr close with --repo flag closes the plan."""
+    issue = _make_issue(42)
+    fake_remote = _make_fake_remote(issues={42: issue})
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "close", "42", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert "Closed plan #42" in result.output
+    assert len(fake_remote.closed_issues) == 1
+    assert fake_remote.closed_issues[0].number == 42
+```
+
+**Test error handling (missing identifier):**
+```python
+def test_view_remote_requires_identifier() -&gt; None:
+    """Test pr view --repo without identifier gives error."""
+    fake_remote = _make_fake_remote()
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "view", "--repo", "owner/repo"], obj=ctx)
+
+    assert result.exit_code == 1
+    assert "identifier is required in remote mode" in result.output
+```
+
+**Test invalid repo format:**
+```python
+def test_invalid_repo_format() -&gt; None:
+    """Test --repo with invalid format gives helpful error."""
+    fake_remote = _make_fake_remote()
+    ctx = _build_remote_context(fake_remote)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["pr", "view", "42", "--repo", "invalid"], obj=ctx)
+
+    assert result.exit_code != 0
+    assert "Invalid --repo format" in result.output
+```
+
+### Key Imports
+
+```python
+from datetime import UTC, datetime
+
+from click.testing import CliRunner
+
+from erk.cli.cli import cli
+from erk.core.context import context_for_test
+from erk_shared.context.types import NoRepoSentinel
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+```
+
+### Testing with Plan Data
+
+For tests that need complete plan data:
+
+```python
+def _make_plan(
+    *,
+    plan_identifier: str,
+    title: str,
+    body: str,
+) -&gt; Plan:
+    return Plan(
+        plan_identifier=plan_identifier,
+        title=title,
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        labels=["erk-pr", "erk-plan"],
+        assignees=[],
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2025, 1, 1, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+```
+
+### Key Assertions for Remote Tests
+
+- **Exit codes**: `assert result.exit_code == 0` for success, `!= 0` for errors
+- **Output verification**: Check for expected messages in `result.output`
+- **Fake mutations**: Verify state changes via `fake_remote` properties:
+  - `fake_remote.closed_issues` - list of closed issues
+  - `fake_remote.closed_prs` - list of closed PRs
+  - `fake_remote.created_refs` - list of created refs
+  - `fake_remote.created_pull_requests` - list of created PRs
+  - `fake_remote.dispatched_workflows` - list of dispatched workflows
+
+### Test File Location
+
+Complete test suite: **`/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py`** (440 lines, multiple test functions covering view, close, log, check, duplicate-check, and list commands)</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="472" cache_read_input_tokens="40317" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,648 @@
+<session>
+  <meta source="agent-aa4e026" />
+  <meta branch="plnd/O8832-objective-no-repo-cm-03-08-0038" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>I need to update the test file at `/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py`.
+
+The file has a new `_test_ctx` helper that creates context with both local `FakeGitHubIssues` and remote `FakeRemoteGitHub`. The file also has `_make_remote` and `_TEST_REPO_INFO` defined.
+
+I need to update every test function that currently does:
+```python
+obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh))
+```
+to instead do:
+```python
+obj=_test_ctx(fake_gh=fake_gh, issues={NUMBER: issue})
+```
+
+where `{NUMBER: issue}` is the same issue dict that was used to create `fake_gh`.
+
+Also, update the two `validate_objective` direct calls:
+1. `validate_objective(fake_gh, Path("/fake/repo"), 700)` should become:
+```python
+validate_objective(
+    _make_remote({700: issue}),
+    owner="test",
+    repo="repo",
+    issue_number=700,
+    github_issues=fake_gh,
+    repo_root=Path("/fake/repo"),
+)
+```
+
+2. `validate_objective(fake_gh, Path("/fake/repo"), 999)` should become:
+```python
+validate_objective(
+    _make_remote({}),
+    owner="test",
+    repo="repo",
+    issue_number=999,
+    github_issues=None,
+    repo_root=None,
+)
+```
+
+For the Check 8 tests that use `comments_with_urls` in `FakeGitHubIssues`, also include the issue in the remote's issues dict.
+
+DO make these edits. Read the file first, then make all the required changes.</user>
+  <assistant>I'll read the file first to understand its current structure, then make all the required changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="20188" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20188, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016SUU4v9ZNUjh8PB1uFgo5m">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20188" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20188, 'ephemeral_1h_input_tokens': 0}" output_tokens="102" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016SUU4v9ZNUjh8PB1uFgo5m">
+     1→"""Unit tests for erk objective check command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.objective.check_cmd import (
+    10→    ObjectiveValidationError,
+    11→    ObjectiveValidationSuccess,
+    12→    check_objective,
+    13→    validate_objective,
+    14→)
+    15→from erk_shared.context.context import ErkContext
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    19→from erk_shared.gateway.github.types import RepoInfo
+    20→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    21→
+    22→
+    23→_TEST_REPO_INFO = RepoInfo(owner="test", name="repo")
+    24→
+    25→
+    26→def _make_remote(issues: dict[int, IssueInfo]) -&gt; FakeRemoteGitHub:
+    27→    """Create a FakeRemoteGitHub from an issue dict."""
+    28→    return FakeRemoteGitHub(
+    29→        authenticated_user="test-user",
+    30→        default_branch_name="main",
+
+... [963 lines omitted] ...
+
+   141→    assert result.exit_code == 0, f"Failed: {result.output}"
+   158→    assert result.exit_code == 0, f"Failed: {result.output}"
+   233→    assert result.exit_code == 0, f"Failed: {result.output}"
+   239→    assert output["validation_errors"] == []
+   288→    """Test that a non-existent issue returns an error."""
+   316→    assert "999" in output["error"]
+   481→def test_validate_objective_returns_error_for_missing_issue() -&gt; None:
+   482→    """Test that validate_objective returns error type for missing issue."""
+   487→    assert isinstance(result, ObjectiveValidationError)
+   488→    assert "999" in result.error
+   544→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   560→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   586→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   601→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   633→    assert result.exit_code == 0, f"Failed: {result.output}"
+   731→    assert result.exit_code == 0, f"Failed: {result.output}"
+   819→    assert result.exit_code == 0, f"Failed: {result.output}"
+   835→    assert result.exit_code == 0, f"Failed: {result.output}"
+   849→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   865→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   944→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I'll make all the required changes to update the test functions to use `_test_ctx` and update the `validate_objective` calls.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="15588" cache_read_input_tokens="20188" cache_creation="{'ephemeral_5m_input_tokens': 15588, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016U7Jweb1wQt636X6k7EvLm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_valid_objective_passes_all_checks() -&gt; None:
+    """Test that a well-formed objec...[truncated 380 chars]...ult.output}"
+    assert "[PASS]" in result.output
+    assert "[FAIL]" not in result.output</param>
+    <param name="new_string">def test_valid_objective_passes_all_checks() -&gt; None:
+    """Test that a well-formed objec...[truncated 360 chars]...ult.output}"
+    assert "[PASS]" in result.output
+    assert "[FAIL]" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="15588" cache_read_input_tokens="20188" cache_creation="{'ephemeral_5m_input_tokens': 15588, 'ephemeral_1h_input_tokens': 0}" output_tokens="515" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016U7Jweb1wQt636X6k7EvLm">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CUJ2mDhhm5TCxBjNwjzAsb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_valid_objective_json_output() -&gt; None:
+    """Test JSON output mode returns struc...[truncated 840 chars]...1
+    assert output["next_node"]["id"] == "1.3"
+    assert output["all_complete"] is False</param>
+    <param name="new_string">def test_valid_objective_json_output() -&gt; None:
+    """Test JSON output mode returns struc...[truncated 820 chars]...1
+    assert output["next_node"]["id"] == "1.3"
+    assert output["all_complete"] is False</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="564" cache_read_input_tokens="35776" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="741" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CUJ2mDhhm5TCxBjNwjzAsb">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DUV3HaNdpbKUUEQnuYcoyK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_missing_objective_label_fails() -&gt; None:
+    """Test that missing erk-objective l...[truncated 385 chars]...= 1
+    assert "[FAIL]" in result.output
+    assert "erk-objective label" in result.output</param>
+    <param name="new_string">def test_missing_objective_label_fails() -&gt; None:
+    """Test that missing erk-objective l...[truncated 365 chars]...= 1
+    assert "[FAIL]" in result.output
+    assert "erk-objective label" in result.output</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="790" cache_read_input_tokens="36340" cache_creation="{'ephemeral_5m_input_tokens': 790, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DUV3HaNdpbKUUEQnuYcoyK">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015QfRtuqWmerDUjHpQ3SbgV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_roadmap_free_objective_passes() -&gt; None:
+    """Test that a body with no roadmap ...[truncated 410 chars]...it_code == 0
+    assert "[PASS]" in result.output
+    assert "no roadmap" in result.output</param>
+    <param name="new_string">def test_roadmap_free_objective_passes() -&gt; None:
+    """Test that a body with no roadmap ...[truncated 390 chars]...it_code == 0
+    assert "[PASS]" in result.output
+    assert "no roadmap" in result.output</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="536" cache_read_input_tokens="37130" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015QfRtuqWmerDUjHpQ3SbgV">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016tHHzfSFE2D4EuLka9odxF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_roadmap_free_objective_json_output() -&gt; None:
+    """Test JSON output for a roadm...[truncated 562 chars]...es"] == []
+    assert output["summary"] == {}
+    assert output["validation_errors"] == []</param>
+    <param name="new_string">def test_roadmap_free_objective_json_output() -&gt; None:
+    """Test JSON output for a roadm...[truncated 542 chars]...es"] == []
+    assert output["summary"] == {}
+    assert output["validation_errors"] == []</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="37666" cache_creation="{'ephemeral_5m_input_tokens': 658, 'ephemeral_1h_input_tokens': 0}" output_tokens="583" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016tHHzfSFE2D4EuLka9odxF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012sVyAyNDfDi13KuHZUvMUh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_done_step_without_pr_fails() -&gt; None:
+    """Test that a done step without PR ref...[truncated 707 chars]...ake_gh)),
+    )
+
+    assert result.exit_code == 0
+    assert "[FAIL]" not in result.output</param>
+    <param name="new_string">def test_done_step_without_pr_fails() -&gt; None:
+    """Test that a done step without PR ref...[truncated 687 chars]... issue}),
+    )
+
+    assert result.exit_code == 0
+    assert "[FAIL]" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="632" cache_read_input_tokens="38324" cache_creation="{'ephemeral_5m_input_tokens': 632, 'ephemeral_1h_input_tokens': 0}" output_tokens="739" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012sVyAyNDfDi13KuHZUvMUh">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RN8t8kmT1SsEUWhQR7c4G9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_issue_not_found_fails() -&gt; None:
+    """Test that a non-existent issue returns an...[truncated 190 chars]...fake_gh)),
+    )
+
+    assert result.exit_code == 1
+    assert "not found" in result.output</param>
+    <param name="new_string">def test_issue_not_found_fails() -&gt; None:
+    """Test that a non-existent issue returns an...[truncated 160 chars]...ssues={}),
+    )
+
+    assert result.exit_code == 1
+    assert "not found" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="787" cache_read_input_tokens="38956" cache_creation="{'ephemeral_5m_input_tokens': 787, 'ephemeral_1h_input_tokens': 0}" output_tokens="362" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RN8t8kmT1SsEUWhQR7c4G9">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011LxWErumRbGssYozKrrLwy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_issue_not_found_json() -&gt; None:
+    """Test JSON output for non-existent issue.""...[truncated 271 chars]...s(result.output)
+    assert output["success"] is False
+    assert "999" in output["error"]</param>
+    <param name="new_string">def test_issue_not_found_json() -&gt; None:
+    """Test JSON output for non-existent issue.""...[truncated 241 chars]...s(result.output)
+    assert output["success"] is False
+    assert "999" in output["error"]</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="514" cache_read_input_tokens="39743" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011LxWErumRbGssYozKrrLwy">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ErWRhnjwRKoMXbHjpKXMFi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_sequential_phase_numbering_passes() -&gt; None:
+    """Test that sequential phases p...[truncated 765 chars]...  assert result.exit_code == 0
+    assert "Phase numbering is sequential" in result.output</param>
+    <param name="new_string">def test_sequential_phase_numbering_passes() -&gt; None:
+    """Test that sequential phases p...[truncated 745 chars]...  assert result.exit_code == 0
+    assert "Phase numbering is sequential" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="458" cache_read_input_tokens="40257" cache_creation="{'ephemeral_5m_input_tokens': 458, 'ephemeral_1h_input_tokens': 0}" output_tokens="741" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ErWRhnjwRKoMXbHjpKXMFi">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AAYVEaRqsMeaMB4iNHMmdg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_non_sequential_phase_numbering_still_passes() -&gt; None:
+    """Test that non-seque...[truncated 777 chars]...  assert result.exit_code == 0
+    assert "Phase numbering is sequential" in result.output</param>
+    <param name="new_string">def test_non_sequential_phase_numbering_still_passes() -&gt; None:
+    """Test that non-seque...[truncated 757 chars]...  assert result.exit_code == 0
+    assert "Phase numbering is sequential" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="789" cache_read_input_tokens="40715" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="763" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AAYVEaRqsMeaMB4iNHMmdg">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LQza484HYeXkh2T67xez2C">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_sub_phase_numbering_passes() -&gt; None:
+    """Test that sub-phases like 1A, 1B, 1C...[truncated 918 chars]... "Phase numbering is sequential" in result.output
+    assert "[FAIL]" not in result.output</param>
+    <param name="new_string">def test_sub_phase_numbering_passes() -&gt; None:
+    """Test that sub-phases like 1A, 1B, 1C...[truncated 898 chars]... "Phase numbering is sequential" in result.output
+    assert "[FAIL]" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="0" cache_read_input_tokens="42414" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LQza484HYeXkh2T67xez2C">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VFynbjNYbrdbxhiemdDNk2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_validate_objective_returns_success_type() -&gt; None:
+    """Test that validate_obje...[truncated 294 chars]...True
+    assert len(result.graph.nodes) == 6
+    assert result.summary["total_nodes"] == 6</param>
+    <param name="new_string">def test_validate_objective_returns_success_type() -&gt; None:
+    """Test that validate_obje...[truncated 441 chars]...True
+    assert len(result.graph.nodes) == 6
+    assert result.summary["total_nodes"] == 6</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="930" cache_read_input_tokens="42414" cache_creation="{'ephemeral_5m_input_tokens': 930, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VFynbjNYbrdbxhiemdDNk2">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011Lwy6cosX8nWhHo2bpgvpm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_validate_objective_returns_error_for_missing_issue() -&gt; None:
+    """Test that va...[truncated 137 chars]...
+
+    assert isinstance(result, ObjectiveValidationError)
+    assert "999" in result.error</param>
+    <param name="new_string">def test_validate_objective_returns_error_for_missing_issue() -&gt; None:
+    """Test that va...[truncated 257 chars]...
+
+    assert isinstance(result, ObjectiveValidationError)
+    assert "999" in result.error</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="505" cache_read_input_tokens="43344" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Lwy6cosX8nWhHo2bpgvpm">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018wKu7vCRwAypBD8Yk3RhBW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_all_steps_complete_json() -&gt; None:
+    """Test JSON output when all steps are don...[truncated 952 chars]...ng"] == 0
+    assert output["next_node"] is None
+    assert output["all_complete"] is True</param>
+    <param name="new_string">def test_all_steps_complete_json() -&gt; None:
+    """Test JSON output when all steps are don...[truncated 932 chars]...ng"] == 0
+    assert output["next_node"] is None
+    assert output["all_complete"] is True</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="496" cache_read_input_tokens="43849" cache_creation="{'ephemeral_5m_input_tokens': 496, 'ephemeral_1h_input_tokens': 0}" output_tokens="861" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018wKu7vCRwAypBD8Yk3RhBW">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01M2D3cSR4sTgXPo6KsjE68r">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_v2_valid_header_passes_check_6() -&gt; None:
+    """v2 format: objective-header with...[truncated 410 chars]...header has objective_comment_id" in result.output
+    assert "[FAIL]" not in result.output</param>
+    <param name="new_string">def test_v2_valid_header_passes_check_6() -&gt; None:
+    """v2 format: objective-header with...[truncated 391 chars]...header has objective_comment_id" in result.output
+    assert "[FAIL]" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="910" cache_read_input_tokens="44345" cache_creation="{'ephemeral_5m_input_tokens': 910, 'ephemeral_1h_input_tokens': 0}" output_tokens="526" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M2D3cSR4sTgXPo6KsjE68r">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01S5U6HrgxoYtnsHiSuu8zoc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_v2_missing_comment_id_fails_check_6() -&gt; None:
+    """v2 format: objective-header...[truncated 367 chars]...exit_code == 1
+    assert "objective-header missing objective_comment_id" in result.output</param>
+    <param name="new_string">def test_v2_missing_comment_id_fails_check_6() -&gt; None:
+    """v2 format: objective-header...[truncated 348 chars]...exit_code == 1
+    assert "objective-header missing objective_comment_id" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="575" cache_read_input_tokens="45255" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="494" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S5U6HrgxoYtnsHiSuu8zoc">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ewz2Dgefgp3gSRtW8dgS98">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_pr_ref_missing_hash_prefix_fails() -&gt; None:
+    """Test that PR reference without...[truncated 704 chars]...== 1
+    assert "[FAIL]" in result.output
+    assert "missing '#' prefix" in result.output</param>
+    <param name="new_string">def test_pr_ref_missing_hash_prefix_fails() -&gt; None:
+    """Test that PR reference without...[truncated 685 chars]...== 1
+    assert "[FAIL]" in result.output
+    assert "missing '#' prefix" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="646" cache_read_input_tokens="45830" cache_creation="{'ephemeral_5m_input_tokens': 646, 'ephemeral_1h_input_tokens': 0}" output_tokens="730" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ewz2Dgefgp3gSRtW8dgS98">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WW31ue7jkN4Nn2dHz2rUtF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_done_step_with_plan_and_pr_passes() -&gt; None:
+    """Test that a done step with bo...[truncated 759 chars]...  assert "[FAIL]" not in result.output
+    assert "Status/PR consistency" in result.output</param>
+    <param name="new_string">def test_done_step_with_plan_and_pr_passes() -&gt; None:
+    """Test that a done step with bo...[truncated 740 chars]...  assert "[FAIL]" not in result.output
+    assert "Status/PR consistency" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="778" cache_read_input_tokens="46476" cache_creation="{'ephemeral_5m_input_tokens': 778, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WW31ue7jkN4Nn2dHz2rUtF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SniQcg6Au4KpD9RwXAFQfo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_valid_hash_prefix_refs_pass() -&gt; None:
+    """Test that properly prefixed plan/PR...[truncated 324 chars]...   assert result.exit_code == 0
+    assert "PR references use '#' prefix" in result.output</param>
+    <param name="new_string">def test_valid_hash_prefix_refs_pass() -&gt; None:
+    """Test that properly prefixed plan/PR...[truncated 305 chars]...   assert result.exit_code == 0
+    assert "PR references use '#' prefix" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="808" cache_read_input_tokens="47254" cache_creation="{'ephemeral_5m_input_tokens': 808, 'ephemeral_1h_input_tokens': 0}" output_tokens="456" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SniQcg6Au4KpD9RwXAFQfo">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UZMyWn9zGEJiyLka6ux1jJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_fan_out_fan_in_passes_validation() -&gt; None:
+    """Objective with explicit deps v...[truncated 328 chars]...result.exit_code == 0, f"Failed: {result.output}"
+    assert "[FAIL]" not in result.output</param>
+    <param name="new_string">def test_fan_out_fan_in_passes_validation() -&gt; None:
+    """Objective with explicit deps v...[truncated 309 chars]...result.exit_code == 0, f"Failed: {result.output}"
+    assert "[FAIL]" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="608" cache_read_input_tokens="48062" cache_creation="{'ephemeral_5m_input_tokens': 608, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UZMyWn9zGEJiyLka6ux1jJ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Jd5zZCbhzszabWqWdYB8Ua">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_fan_out_fan_in_json_output() -&gt; None:
+    """JSON has correct next_node and summa...[truncated 669 chars]...)
+    assert output["next_node"]["id"] == "2.1"
+    assert output["all_complete"] is False</param>
+    <param name="new_string">def test_fan_out_fan_in_json_output() -&gt; None:
+    """JSON has correct next_node and summa...[truncated 650 chars]...)
+    assert output["next_node"]["id"] == "2.1"
+    assert output["all_complete"] is False</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="520" cache_read_input_tokens="48670" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="682" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jd5zZCbhzszabWqWdYB8Ua">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017hDeXaPTVxFyAcapA9kKKM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_roadmap_table_in_sync_passes() -&gt; None:
+    """Check 8: comment table matches YAM...[truncated 625 chars]...Roadmap table in sync with YAML" in result.output
+    assert "[FAIL]" not in result.output</param>
+    <param name="new_string">def test_roadmap_table_in_sync_passes() -&gt; None:
+    """Check 8: comment table matches YAM...[truncated 606 chars]...Roadmap table in sync with YAML" in result.output
+    assert "[FAIL]" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="730" cache_read_input_tokens="49190" cache_creation="{'ephemeral_5m_input_tokens': 730, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017hDeXaPTVxFyAcapA9kKKM">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015RTNNGVaVf2s3QyB6B3R8n">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_roadmap_table_out_of_sync_fails() -&gt; None:
+    """Check 8: comment has stale stat...[truncated 556 chars]...
+
+    assert result.exit_code == 1
+    assert "Roadmap table out of sync" in result.output</param>
+    <param name="new_string">def test_roadmap_table_out_of_sync_fails() -&gt; None:
+    """Check 8: comment has stale stat...[truncated 537 chars]...
+
+    assert result.exit_code == 1
+    assert "Roadmap table out of sync" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="836" cache_read_input_tokens="49920" cache_creation="{'ephemeral_5m_input_tokens': 836, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015RTNNGVaVf2s3QyB6B3R8n">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WWsJs7V8t6kLJGJuD2W3wf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="old_string">def test_roadmap_table_check_skipped_without_comment_id() -&gt; None:
+    """Check 8: no obje...[truncated 334 chars]...),
+    )
+
+    assert result.exit_code == 0
+    assert "Roadmap table" not in result.output</param>
+    <param name="new_string">def test_roadmap_table_check_skipped_without_comment_id() -&gt; None:
+    """Check 8: no obje...[truncated 315 chars]...),
+    )
+
+    assert result.exit_code == 0
+    assert "Roadmap table" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="690" cache_read_input_tokens="50756" cache_creation="{'ephemeral_5m_input_tokens': 690, 'ephemeral_1h_input_tokens': 0}" output_tokens="476" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WWsJs7V8t6kLJGJuD2W3wf">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully updated all the test functions in the file. Let me verify the changes by reading the file one more time to ensure everything is correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="524" cache_read_input_tokens="51446" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NEibnPVeuPUq2s6qrJpRqm">
+    <param name="command">grep -n "ErkContext.for_test" tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="description">Check if any old ErkContext.for_test patterns remain</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="524" cache_read_input_tokens="51446" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NEibnPVeuPUq2s6qrJpRqm">
+46:    return ErkContext.for_test(
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01My9EQe68iaGhCVj9cZhSWK">
+    <param name="command">grep -n "validate_objective(fake_gh" tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="description">Check if any old validate_objective patterns remain</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="269" cache_read_input_tokens="51970" cache_creation="{'ephemeral_5m_input_tokens': 269, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01My9EQe68iaGhCVj9cZhSWK">
+
+  </tool_result>
+  <assistant>Great! All the updates have been successfully completed. Let me verify the file structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="52239" cache_creation="{'ephemeral_5m_input_tokens': 130, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BTFkG6DsPZC11MVPCtoPLX">
+    <param name="command">grep -n "_test_ctx" tests/unit/cli/commands/objective/test_check_cmd.py | head -25</param>
+    <param name="description">Verify _test_ctx usage in the file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="52239" cache_creation="{'ephemeral_5m_input_tokens': 130, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BTFkG6DsPZC11MVPCtoPLX">
+40:def _test_ctx(
+138:        obj=_test_ctx(fake_gh=fake_gh, issues={100: issue}),
+155:        obj=_test_ctx(fake_gh=fake_gh, issues={100: issue}),
+188:        obj=_test_ctx(fake_gh=fake_gh, issues={200: issue}),
+209:        obj=_test_ctx(fake_gh=fake_gh, issues={300: issue}),
+230:        obj=_test_ctx(fake_gh=fake_gh, issues={350: issue}),
+280:        obj=_test_ctx(fake_gh=fake_gh, issues={400: issue}),
+295:        obj=_test_ctx(fake_gh=fake_gh, issues={}),
+310:        obj=_test_ctx(fake_gh=fake_gh, issues={}),
+359:        obj=_test_ctx(fake_gh=fake_gh, issues={500: issue}),
+406:        obj=_test_ctx(fake_gh=fake_gh, issues={600: issue}),
+460:        obj=_test_ctx(fake_gh=fake_gh, issues={900: issue}),
+543:        obj=_test_ctx(fake_gh=fake_gh, issues={800: issue}),
+644:        obj=_test_ctx(fake_gh=fake_gh, issues={1200: issue}),
+661:        obj=_test_ctx(fake_gh=fake_gh, issues={1300: issue}),
+701:        obj=_test_ctx(fake_gh=fake_gh, issues={1800: issue}),
+742:        obj=_test_ctx(fake_gh=fake_gh, issues={2000: issue}),
+759:        obj=_test_ctx(fake_gh=fake_gh, issues={1900: issue}),
+830:        obj=_test_ctx(fake_gh=fake_gh, issues={2100: issue}),
+846:        obj=_test_ctx(fake_gh=fake_gh, issues={2200: issue}),
+955:        obj=_test_ctx(fake_gh=fake_gh, issues={2300: issue}),
+981:        obj=_test_ctx(fake_gh=fake_gh, issues={2400: issue}),
+997:        obj=_test_ctx(fake_gh=fake_gh, issues={2500: issue}),
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019nHAVsJpxJaTUWCSUiQji1">
+    <param name="command">grep -n "validate_objective(" tests/unit/cli/commands/objective/test_check_cmd.py | grep -v "def validate_objective"</param>
+    <param name="description">Verify validate_objective direct calls</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="824" cache_read_input_tokens="52369" cache_creation="{'ephemeral_5m_input_tokens': 824, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019nHAVsJpxJaTUWCSUiQji1">
+473:    result = validate_objective(
+492:    result = validate_objective(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EdUY4vVMjgNzDviCQQcj11">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="offset">468</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="140" cache_read_input_tokens="53193" cache_creation="{'ephemeral_5m_input_tokens': 140, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EdUY4vVMjgNzDviCQQcj11">
+   468→def test_validate_objective_returns_success_type() -&gt; None:
+   469→    """Test that validate_objective returns proper result types."""
+   470→    issue = _make_issue(700, "Objective: Test", VALID_OBJECTIVE_BODY)
+   471→    fake_gh = FakeGitHubIssues(issues={700: issue})
+   472→
+   473→    result = validate_objective(
+   474→        _make_remote({700: issue}),
+   475→        owner="test",
+   476→        repo="repo",
+   477→        issue_number=700,
+   478→        github_issues=fake_gh,
+   479→        repo_root=Path("/fake/repo"),
+   480→    )
+   481→
+   482→    assert isinstance(result, ObjectiveValidationSuccess)
+   483→    assert result.passed is True
+   484→    assert len(result.graph.nodes) == 6
+   485→    assert result.summary["total_nodes"] == 6
+   486→
+   487→
+   488→def test_validate_objective_returns_error_for_missing_issue() -&gt; None:
+   489→    """Test that validate_objective returns error type for missing issue."""
+   490→    fake_gh = FakeGitHubIssues()
+   491→
+   492→    result = validate_objective(
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AuAym3YWuWszrKTnAhc1hZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="offset">488</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="539" cache_read_input_tokens="53333" cache_creation="{'ephemeral_5m_input_tokens': 539, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AuAym3YWuWszrKTnAhc1hZ">
+   488→def test_validate_objective_returns_error_for_missing_issue() -&gt; None:
+   489→    """Test that validate_objective returns error type for missing issue."""
+   490→    fake_gh = FakeGitHubIssues()
+   491→
+   492→    result = validate_objective(
+   493→        _make_remote({}),
+   494→        owner="test",
+   495→        repo="repo",
+   496→        issue_number=999,
+   497→        github_issues=None,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! All the changes have been successfully applied. Let me create a summary of what was done:
+
+## Summary
+
+I successfully updated the test file `/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py` with the following changes:
+
+### 1. Updated all CLI test functions (22 tests)
+
+All tests that previously used:
+```python
+obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh))
+```
+
+Now use:
+```python
+obj=_test_ctx(fake_gh=fake_gh, issues={NUMBER: issue})
+```
+
+This affects the following test functions:
+- `test_valid_objective_passes_all_checks()`
+- `test_valid_objective_json_output()`
+- `test_missing_objective_label_fails()`
+- `test_roadmap_free_objective_passes()`
+- `test_roadmap_free_objective_json_output()`
+- `test_done_step_without_pr_fails()`
+- `test_issue_not_found_fails()` (uses `issues={}`)
+- `test_issue_not_found_json()` (uses `issues={}`)
+- `test_sequential_phase_numbering_passes()`
+- `test_non_sequential_phase_numbering_still_passes()`
+- `test_sub_phase_numbering_passes()`
+- `test_all_steps_complete_json()`
+- `test_v2_valid_header_passes_check_6()`
+- `test_v2_missing_comment_id_fails_check_6()`
+- `test_pr_ref_missing_hash_prefix_fails()`
+- `test_done_step_with_plan_and_pr_passes()`
+- `test_valid_hash_prefix_refs_pass()`
+- `test_fan_out_fan_in_passes_validation()`
+- `test_fan_out_fan_in_json_output()`
+- `test_roadmap_table_in_sync_passes()` (Check 8 test with comments)
+- `test_roadmap_table_out_of_sync_fails()` (Check 8 test with comments)
+- `test_roadmap_table_check_skipped_without_comment_id()`
+
+### 2. Updated direct `validate_objective` calls (2 tests)
+
+**Test 1:** `test_validate_objective_returns_success_type()`
+- Changed from: `validate_objective(fake_gh, Path("/fake/repo"), 700)`
+- Changed to: Full signature with remote GitHub and proper parameters
+
+**Test 2:** `test_validate_objective_returns_error_for_missing_issue()`
+- Changed from: `validate_objective(fake_gh, Path("/fake/repo"), 999)`
+- Changed to: Full signature with empty remote and `None` for optional parameters
+
+### 3. Check 8 tests
+
+For the two Check 8 tests that use `comments_with_urls` in `FakeGitHubIssues`, the issues are now also included in the remote's issues dict via `_test_ctx()`.
+
+All changes maintain consistency with the new `_test_ctx` helper pattern and ensure both local `FakeGitHubIssues` and remote `FakeRemoteGitHub` are properly configured with the same issue data.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="436" cache_read_input_tokens="53872" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
