@@ -8,6 +8,7 @@ Usage examples:
     erk launch learn --issue 789
     erk launch one-shot --pr 456 --prompt "fix the auth bug"
     erk launch one-shot --pr 456 -f prompt.md
+    erk launch pr-rebase --pr 456 --repo owner/repo   # remote mode
 """
 
 from pathlib import Path
@@ -18,9 +19,12 @@ from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_meta
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.ensure import Ensure
+from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
+from erk_shared.gateway.remote_github.types import RemotePRNotFound
 from erk_shared.output.output import user_output
 
 
@@ -349,6 +353,366 @@ def _dispatch_one_shot(
     )
 
 
+# --- Remote mode dispatch handlers ---
+
+
+def _dispatch_workflow_remote(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo_name: str,
+    workflow_name: str,
+    inputs: dict[str, str],
+    ref: str | None,
+) -> None:
+    """Dispatch a workflow via RemoteGitHub and report the run URL."""
+    workflow_file = _get_workflow_file(workflow_name)
+    dispatch_ref = (
+        ref if ref is not None else remote.get_default_branch_name(owner=owner, repo=repo_name)
+    )
+    run_id = remote.dispatch_workflow(
+        owner=owner,
+        repo=repo_name,
+        workflow=workflow_file,
+        ref=dispatch_ref,
+        inputs=inputs,
+    )
+    user_output(click.style("\u2713", fg="green") + " Workflow dispatched")
+
+    user_output("")
+    run_url = f"https://github.com/{owner}/{repo_name}/actions/runs/{run_id}"
+    user_output(f"Run URL: {click.style(run_url, fg='cyan')}")
+
+
+def _dispatch_pr_rebase_remote(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo_name: str,
+    pr_number: int | None,
+    no_squash: bool,
+    model: str | None,
+    ref: str | None,
+) -> None:
+    """Dispatch pr-rebase workflow in remote mode."""
+    Ensure.invariant(
+        pr_number is not None,
+        "--pr is required for pr-rebase in remote mode (no local branch to infer from)",
+    )
+    assert pr_number is not None
+
+    user_output("Checking PR status...")
+    pr = remote.get_pr(owner=owner, repo=repo_name, number=pr_number)
+    Ensure.invariant(
+        not isinstance(pr, RemotePRNotFound),
+        f"No pull request found with number #{pr_number}",
+    )
+    assert not isinstance(pr, RemotePRNotFound)
+
+    Ensure.invariant(
+        pr.state == "OPEN",
+        f"Cannot rebase {pr.state} PR - only OPEN PRs can be rebased",
+    )
+
+    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+    user_output(f"Base branch: {pr.base_ref_name}")
+    user_output("")
+
+    inputs: dict[str, str] = {
+        "branch_name": pr.head_ref_name,
+        "base_branch": pr.base_ref_name,
+        "pr_number": str(pr_number),
+        "squash": "false" if no_squash else "true",
+        "plan_number": "",
+    }
+    if model is not None:
+        inputs["model_name"] = model
+
+    user_output("Dispatching pr-rebase workflow...")
+    _dispatch_workflow_remote(
+        remote,
+        owner=owner,
+        repo_name=repo_name,
+        workflow_name="pr-rebase",
+        inputs=inputs,
+        ref=ref,
+    )
+
+
+def _dispatch_pr_address_remote(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo_name: str,
+    pr_number: int,
+    model: str | None,
+    ref: str | None,
+) -> None:
+    """Dispatch pr-address workflow in remote mode."""
+    user_output("Checking PR status...")
+    pr = remote.get_pr(owner=owner, repo=repo_name, number=pr_number)
+    Ensure.invariant(
+        not isinstance(pr, RemotePRNotFound),
+        f"No pull request found with number #{pr_number}",
+    )
+    assert not isinstance(pr, RemotePRNotFound)
+
+    Ensure.invariant(
+        pr.state == "OPEN",
+        f"Cannot address comments on {pr.state} PR - only OPEN PRs can be addressed",
+    )
+
+    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+    user_output("")
+
+    inputs: dict[str, str] = {
+        "pr_number": str(pr_number),
+        "plan_number": "",
+    }
+    if model is not None:
+        inputs["model_name"] = model
+
+    user_output("Dispatching pr-address workflow...")
+    _dispatch_workflow_remote(
+        remote,
+        owner=owner,
+        repo_name=repo_name,
+        workflow_name="pr-address",
+        inputs=inputs,
+        ref=ref,
+    )
+
+
+def _dispatch_pr_rewrite_remote(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo_name: str,
+    pr_number: int,
+    model: str | None,
+    ref: str | None,
+) -> None:
+    """Dispatch pr-rewrite workflow in remote mode."""
+    user_output("Checking PR status...")
+    pr = remote.get_pr(owner=owner, repo=repo_name, number=pr_number)
+    Ensure.invariant(
+        not isinstance(pr, RemotePRNotFound),
+        f"No pull request found with number #{pr_number}",
+    )
+    assert not isinstance(pr, RemotePRNotFound)
+
+    Ensure.invariant(
+        pr.state == "OPEN",
+        f"Cannot rewrite {pr.state} PR - only OPEN PRs can be rewritten",
+    )
+
+    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+    user_output(f"Base branch: {pr.base_ref_name}")
+    user_output("")
+
+    inputs: dict[str, str] = {
+        "branch_name": pr.head_ref_name,
+        "base_branch": pr.base_ref_name,
+        "pr_number": str(pr_number),
+        "plan_number": "",
+    }
+    if model is not None:
+        inputs["model_name"] = model
+
+    user_output("Dispatching pr-rewrite workflow...")
+    _dispatch_workflow_remote(
+        remote,
+        owner=owner,
+        repo_name=repo_name,
+        workflow_name="pr-rewrite",
+        inputs=inputs,
+        ref=ref,
+    )
+
+
+def _dispatch_learn_remote(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo_name: str,
+    issue: int,
+    ref: str | None,
+) -> None:
+    """Dispatch learn workflow in remote mode."""
+    user_output(f"Dispatching learn workflow for plan #{issue}...")
+
+    inputs: dict[str, str] = {
+        "plan_number": str(issue),
+    }
+
+    _dispatch_workflow_remote(
+        remote,
+        owner=owner,
+        repo_name=repo_name,
+        workflow_name="learn",
+        inputs=inputs,
+        ref=ref,
+    )
+
+
+def _dispatch_one_shot_remote(
+    remote: RemoteGitHub,
+    *,
+    owner: str,
+    repo_name: str,
+    pr_number: int,
+    prompt: str,
+    model: str | None,
+    ref: str | None,
+) -> None:
+    """Dispatch one-shot workflow in remote mode."""
+    user_output("Checking PR status...")
+    pr = remote.get_pr(owner=owner, repo=repo_name, number=pr_number)
+    Ensure.invariant(
+        not isinstance(pr, RemotePRNotFound),
+        f"No pull request found with number #{pr_number}",
+    )
+    assert not isinstance(pr, RemotePRNotFound)
+
+    Ensure.invariant(
+        pr.state == "OPEN",
+        f"Cannot run one-shot on {pr.state} PR - only OPEN PRs can be targeted",
+    )
+
+    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+    user_output("")
+
+    # Get submitter identity
+    submitted_by = remote.get_authenticated_user()
+
+    inputs: dict[str, str] = {
+        "prompt": prompt,
+        "branch_name": pr.head_ref_name,
+        "pr_number": str(pr_number),
+        "submitted_by": submitted_by,
+    }
+    if model is not None:
+        inputs["model_name"] = model
+
+    user_output("Dispatching one-shot workflow...")
+    _dispatch_workflow_remote(
+        remote,
+        owner=owner,
+        repo_name=repo_name,
+        workflow_name="one-shot",
+        inputs=inputs,
+        ref=ref,
+    )
+
+
+def _launch_remote(
+    ctx: ErkContext,
+    *,
+    target_repo: str | None,
+    workflow_name: str,
+    pr_number: int | None,
+    plan_number: int | None,
+    no_squash: bool,
+    model: str | None,
+    prompt: str | None,
+    file_path: str | None,
+    ref: str | None,
+) -> None:
+    """Handle launch command in remote mode (--repo flag or no local repo)."""
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_remote_github(ctx)
+
+    # Validate workflow name
+    _ = _get_workflow_file(workflow_name)
+
+    if workflow_name == "pr-rebase":
+        _dispatch_pr_rebase_remote(
+            remote,
+            owner=owner,
+            repo_name=repo_name,
+            pr_number=pr_number,
+            no_squash=no_squash,
+            model=model,
+            ref=ref,
+        )
+    elif workflow_name == "pr-address":
+        Ensure.invariant(
+            pr_number is not None,
+            "--pr is required for pr-address workflow",
+        )
+        assert pr_number is not None
+        _dispatch_pr_address_remote(
+            remote,
+            owner=owner,
+            repo_name=repo_name,
+            pr_number=pr_number,
+            model=model,
+            ref=ref,
+        )
+    elif workflow_name == "pr-rewrite":
+        Ensure.invariant(
+            pr_number is not None,
+            "--pr is required for pr-rewrite workflow",
+        )
+        assert pr_number is not None
+        _dispatch_pr_rewrite_remote(
+            remote,
+            owner=owner,
+            repo_name=repo_name,
+            pr_number=pr_number,
+            model=model,
+            ref=ref,
+        )
+    elif workflow_name == "learn":
+        Ensure.invariant(
+            plan_number is not None,
+            "--plan is required for learn workflow",
+        )
+        assert plan_number is not None
+        _dispatch_learn_remote(
+            remote,
+            owner=owner,
+            repo_name=repo_name,
+            issue=plan_number,
+            ref=ref,
+        )
+    elif workflow_name == "one-shot":
+        Ensure.invariant(
+            pr_number is not None,
+            "--pr is required for one-shot workflow",
+        )
+        assert pr_number is not None
+        Ensure.invariant(
+            not (prompt is not None and file_path is not None),
+            "--prompt and --file are mutually exclusive",
+        )
+        resolved_prompt: str | None = prompt
+        if file_path is not None:
+            resolved_prompt = Path(file_path).read_text(encoding="utf-8").strip()
+        Ensure.invariant(
+            resolved_prompt is not None and len(resolved_prompt) > 0,
+            "--prompt or --file is required for one-shot workflow",
+        )
+        assert resolved_prompt is not None
+        _dispatch_one_shot_remote(
+            remote,
+            owner=owner,
+            repo_name=repo_name,
+            pr_number=pr_number,
+            prompt=resolved_prompt,
+            model=model,
+            ref=ref,
+        )
+    elif workflow_name == "plan-implement":
+        raise click.UsageError(
+            "Use 'erk pr dispatch' instead of 'erk launch plan-implement'.\n"
+            "The plan-implement workflow requires branch and PR setup that "
+            "'erk pr dispatch' handles automatically."
+        )
+    else:
+        raise click.UsageError(f"Unknown workflow: {workflow_name}")
+
+
 @click.command("launch")
 @click.argument("workflow_name", type=str)
 @click.option(
@@ -400,6 +764,7 @@ def _dispatch_one_shot(
     default=False,
     help="Dispatch workflow from the current branch",
 )
+@repo_option
 @click.pass_obj
 def launch(
     ctx: ErkContext,
@@ -413,6 +778,7 @@ def launch(
     file_path: str | None,
     dispatch_ref: str | None,
     ref_current: bool,
+    target_repo: str | None,
 ) -> None:
     """Dispatch a GitHub Actions workflow.
 
@@ -459,10 +825,28 @@ def launch(
     """
     # Validate preconditions
     Ensure.gh_authenticated(ctx)
-    Ensure.invariant(
-        not isinstance(ctx.repo, NoRepoSentinel),
-        "Not in a git repository",
-    )
+
+    # Remote mode: --repo flag or no local git repo
+    is_remote = target_repo is not None or isinstance(ctx.repo, NoRepoSentinel)
+
+    if is_remote:
+        # In remote mode, --ref-current makes no sense (no local branch)
+        if ref_current:
+            raise click.UsageError("--ref-current cannot be used in remote mode (no local repo)")
+        _launch_remote(
+            ctx,
+            target_repo=target_repo,
+            workflow_name=workflow_name,
+            pr_number=pr_number,
+            plan_number=plan_number,
+            no_squash=no_squash,
+            model=model,
+            prompt=prompt,
+            file_path=file_path,
+            ref=dispatch_ref,
+        )
+        return
+
     assert not isinstance(ctx.repo, NoRepoSentinel)
     repo: RepoContext = ctx.repo
 
