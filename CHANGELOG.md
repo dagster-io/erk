@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: f1268fd27 -->
+<!-- As of: 18903f484 -->
 
 ### Added
 
@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hide stub branches from `erk br list` by default, with `--all/-a` flag to show them (578cc981)
 - Make TUI help screen view-mode-aware, showing context-sensitive shortcuts for plans vs objectives (433c9c2e)
 - Add Check 8 to `erk objective check` for roadmap table sync validation: detects when the prose roadmap table has drifted from YAML source of truth (20f3cd393)
+- Add "l" keyboard shortcut to launch launchpad from the objective nodes screen in TUI (24981a3ef)
 
 ### Changed
 
@@ -28,10 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `erk objective view` now infers the objective from the current branch when no explicit reference is provided (56dbf1a04)
 - Add arrow key navigation to the objective nodes screen in TUI (91d3f1143)
 - Update `/erk:pr-rebase` skill to use AskUserQuestion for push options (932de4cca)
+- Replace `--dangerous` flag with `live_dangerously` config setting and `--safe` override across CLI commands (ee5b9f186)
+- Enable `erk objective` commands (check, close, list, view) to work without requiring a local repository clone (b219c21b6)
+- Simplify current-worktree commands by removing unnecessary shell activation (76d44ec28)
 
 ### Fixed
 
 - Fix land learn pipeline to fetch remote sessions from async-learn branches when local sessions are missing (2db54844)
+- Fix objective roadmap sync by normalizing comment format to canonical representation (5ec2d82cf)
 
 ## [0.9.9] - 2026-03-06 16:54 PT
 
