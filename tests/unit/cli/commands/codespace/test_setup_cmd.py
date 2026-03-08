@@ -8,13 +8,28 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.cli.commands.codespace.setup_cmd import DEFAULT_MACHINE_TYPE
 from erk.core.context import context_for_test
+from erk_shared.context.types import RepoContext
 from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-from erk_shared.gateway.github.types import RepoInfo
+from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
 
 TEST_REPO_INFO = RepoInfo(owner="testorg", name="testrepo")
+TEST_GITHUB_REPO_ID = GitHubRepoId(owner="testorg", repo="testrepo")
+
+
+def _test_repo_context(tmp_path: Path) -> RepoContext:
+    """Create a RepoContext with GitHub identity matching TEST_REPO_INFO."""
+    repo_dir = tmp_path / ".erk" / "repos" / "testrepo"
+    return RepoContext(
+        root=tmp_path,
+        repo_name="testrepo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+        github=TEST_GITHUB_REPO_ID,
+    )
 
 
 def test_setup_shows_error_when_name_exists() -> None:
@@ -48,6 +63,7 @@ def test_setup_derives_name_from_repo_info(tmp_path: Path) -> None:
         codespace_registry=codespace_registry,
         erk_installation=erk_installation,
         repo_info=TEST_REPO_INFO,
+        repo=_test_repo_context(tmp_path),
     )
 
     result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=False)
@@ -73,12 +89,12 @@ def test_setup_uses_default_name_without_repo_info(tmp_path: Path) -> None:
         repo_info=None,
     )
 
-    # No repo info → error at _resolve_owner_repo
+    # No repo context → error at resolve_owner_repo
     result = runner.invoke(cli, ["codespace", "setup"], obj=ctx, catch_exceptions=True)
 
     assert "Using codespace name: erk-codespace" in result.output
     assert result.exit_code == 1
-    assert "No repository specified" in result.output
+    assert "Cannot determine target repository" in result.output
 
 
 def test_setup_accepts_explicit_name(tmp_path: Path) -> None:
@@ -95,6 +111,7 @@ def test_setup_accepts_explicit_name(tmp_path: Path) -> None:
         codespace_registry=codespace_registry,
         erk_installation=erk_installation,
         repo_info=TEST_REPO_INFO,
+        repo=_test_repo_context(tmp_path),
     )
 
     result = runner.invoke(
@@ -116,7 +133,7 @@ def test_setup_errors_without_repo_info_or_repo_flag() -> None:
     result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=True)
 
     assert result.exit_code == 1
-    assert "No repository specified" in result.output
+    assert "Cannot determine target repository" in result.output
 
 
 def test_setup_repo_id_lookup_uses_repo_flag(tmp_path: Path) -> None:
@@ -147,7 +164,7 @@ def test_setup_repo_id_lookup_uses_repo_flag(tmp_path: Path) -> None:
 
 
 def test_setup_repo_id_lookup_uses_repo_info(tmp_path: Path) -> None:
-    """setup command uses ctx.repo_info for repo ID lookup when --repo not provided."""
+    """setup command uses ctx.repo.github for repo ID lookup when --repo not provided."""
     runner = CliRunner()
 
     fake_codespace = FakeCodespace(
@@ -160,6 +177,7 @@ def test_setup_repo_id_lookup_uses_repo_info(tmp_path: Path) -> None:
         codespace_registry=codespace_registry,
         erk_installation=erk_installation,
         repo_info=TEST_REPO_INFO,
+        repo=_test_repo_context(tmp_path),
     )
 
     result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=False)
@@ -187,6 +205,7 @@ def test_setup_creates_codespace_with_correct_params(tmp_path: Path) -> None:
         codespace_registry=codespace_registry,
         erk_installation=erk_installation,
         repo_info=TEST_REPO_INFO,
+        repo=_test_repo_context(tmp_path),
     )
 
     result = runner.invoke(
@@ -219,6 +238,7 @@ def test_setup_calls_ssh_login(tmp_path: Path) -> None:
         codespace_registry=codespace_registry,
         erk_installation=erk_installation,
         repo_info=TEST_REPO_INFO,
+        repo=_test_repo_context(tmp_path),
     )
 
     result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=False)
@@ -247,6 +267,7 @@ def test_setup_shows_retry_hint_on_login_failure(tmp_path: Path) -> None:
         codespace_registry=codespace_registry,
         erk_installation=erk_installation,
         repo_info=TEST_REPO_INFO,
+        repo=_test_repo_context(tmp_path),
     )
 
     result = runner.invoke(cli, ["codespace", "setup", "mybox"], obj=ctx, catch_exceptions=False)

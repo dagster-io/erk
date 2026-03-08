@@ -10,12 +10,12 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from erk.cli.commands.pr.repo_resolution import (
+from erk.cli.core import discover_repo_context
+from erk.cli.repo_resolution import (
     get_remote_github,
     repo_option,
     resolve_owner_repo,
 )
-from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir

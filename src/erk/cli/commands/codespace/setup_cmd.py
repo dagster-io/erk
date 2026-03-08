@@ -2,22 +2,12 @@
 
 import click
 
+from erk.cli.repo_resolution import resolve_owner_repo
 from erk.core.context import ErkContext
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.real import register_codespace, set_default_codespace
 
 DEFAULT_MACHINE_TYPE = "premiumLinux"
-
-
-def _resolve_owner_repo(*, repo: str | None, ctx: ErkContext) -> str:
-    """Resolve the owner/repo string from --repo flag or ctx.repo_info."""
-    if repo is not None:
-        return repo
-    if ctx.repo_info is not None:
-        return f"{ctx.repo_info.owner}/{ctx.repo_info.name}"
-    click.echo("Error: No repository specified and no repo info available.", err=True)
-    click.echo("Use --repo owner/repo to specify the repository.", err=True)
-    raise SystemExit(1)
 
 
 @click.command("setup")
@@ -74,7 +64,8 @@ def setup_codespace(
         click.echo("\nUse 'erk codespace [name]' to connect to it.", err=True)
         raise SystemExit(1)
 
-    owner_repo = _resolve_owner_repo(repo=repo, ctx=ctx)
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=repo)
+    owner_repo = f"{owner}/{repo_name}"
 
     # Get repository ID for REST API call
     click.echo(f"Creating codespace '{name}'...", err=True)

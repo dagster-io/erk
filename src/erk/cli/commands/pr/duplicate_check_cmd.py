@@ -6,13 +6,13 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.pr.repo_resolution import (
+from erk.cli.ensure import Ensure
+from erk.cli.github_parsing import parse_issue_identifier
+from erk.cli.repo_resolution import (
     get_remote_github,
     repo_option,
     resolve_owner_repo,
 )
-from erk.cli.ensure import Ensure
-from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.plan_duplicate_checker import PlanDuplicateChecker
 from erk.core.plan_relevance_checker import PlanRelevanceChecker
