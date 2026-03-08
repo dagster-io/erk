@@ -20,8 +20,8 @@
     {
       "session_id": "49cdde7a-a367-4694-9894-c5565181351a",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-08T10:24:00.498648+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T10:27:11.594503+00:00",
       "files": [
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part1.xml",
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part10.xml",
@@ -30,6 +30,8 @@
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part13.xml",
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part14.xml",
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part15.xml",
+        "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part16.xml",
+        "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part17.xml",
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part2.xml",
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part3.xml",
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part4.xml",
@@ -40,9 +42,9 @@
         "impl-49cdde7a-a367-4694-9894-c5565181351a-49cdde7a-a367-4694-9894-c5565181351a-part9.xml"
       ],
       "user_turns": 3,
-      "duration_minutes": 12,
-      "raw_size_kb": 1332,
-      "xml_size_kb": 339,
+      "duration_minutes": 15,
+      "raw_size_kb": 1371,
+      "xml_size_kb": 359,
       "git_branch": "plnd/improve-land-stack-03-08-0608"
     }
   ]
