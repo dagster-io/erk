@@ -75,19 +75,9 @@ Include in help text:
 2. **When to use** - Common scenarios
 3. **How to disable** - If configurable
 
-```python
-@click.option(
-    "-d",
-    "--dangerous",
-    is_flag=True,
-    help="Force dangerous mode (skip permission prompts).",
-)
-@click.option(
-    "--safe",
-    is_flag=True,
-    help="Disable dangerous mode (permission prompts enabled).",
-)
-```
+<!-- Source: src/erk/cli/commands/pr/diverge_fix_cmd.py, pr_diverge_fix (--dangerous and --safe click options) -->
+
+See the `--dangerous` and `--safe` click option definitions in `src/erk/cli/commands/pr/diverge_fix_cmd.py` (also present in `address_cmd.py`).
 
 ## Mutual Exclusivity
 
