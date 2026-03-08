@@ -572,7 +572,7 @@ def output_activation_instructions(
             comment=f"activate {wt_path.name} and {comment_suffix}",
         )
 
-        result.output_for_shell_integration()
+        result.output_for_script_handler()
     else:
         # Provide manual instructions
         user_output("\n" + click.style("Next steps:", fg="cyan", bold=True))

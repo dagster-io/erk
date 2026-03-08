@@ -392,7 +392,7 @@ def activate_target(
         debug_log(f"{command_name.capitalize()}: Script content:\n{activation_script}")
         debug_log(f"{command_name.capitalize()}: File exists? {result.path.exists()}")
 
-        result.output_for_shell_integration()
+        result.output_for_script_handler()
     else:
         script_path = ensure_worktree_activate_script(
             worktree_path=target_path,

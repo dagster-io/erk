@@ -40,7 +40,7 @@ def _write_error_script_and_exit(ctx: ErkContext) -> None:
         command_name="checkout",
         comment="checkout error",
     )
-    result.output_for_shell_integration()
+    result.output_for_script_handler()
     sys.exit(1)
 
 
@@ -209,7 +209,7 @@ def navigate_to_worktree(
             command_name=command_name,
             comment=f"checkout {branch}",
         )
-        result.output_for_shell_integration()
+        result.output_for_script_handler()
         sys.exit(0)
 
     # Interactive mode: caller handles output and activation instructions

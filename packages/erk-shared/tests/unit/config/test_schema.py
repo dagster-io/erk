@@ -29,7 +29,6 @@ class TestGlobalConfigSchema:
             "live_dangerously",
             "show_hidden_commands",
             "prompt_learn_on_land",
-            "shell_integration",
             "cmux_integration",
         }
         assert field_names == expected_fields
@@ -108,7 +107,7 @@ class TestIterDisplayableFields:
     def test_iterates_all_global_fields(self) -> None:
         """Should iterate all non-internal global fields."""
         fields = list(iter_displayable_fields(GlobalConfigSchema))
-        assert len(fields) == 8
+        assert len(fields) == 7
 
     def test_iterates_all_repo_fields(self) -> None:
         """Should iterate all non-internal repo fields."""
@@ -125,7 +124,6 @@ class TestIterDisplayableFields:
             "live_dangerously",
             "show_hidden_commands",
             "prompt_learn_on_land",
-            "shell_integration",
             "cmux_integration",
         ]
         assert field_names == expected_order
@@ -141,7 +139,6 @@ class TestHelperFunctions:
         assert "use_graphite" in keys
         assert "github_planning" in keys
         assert "prompt_learn_on_land" in keys
-        assert "shell_integration" in keys
 
     def test_get_global_only_keys(self) -> None:
         """get_global_only_keys returns correct set."""
@@ -154,7 +151,7 @@ class TestHelperFunctions:
         keys = get_global_config_key_names()
         assert "erk_root" in keys
         assert "use_graphite" in keys
-        assert len(keys) == 8
+        assert len(keys) == 7
 
     def test_is_global_config_key_positive(self) -> None:
         """is_global_config_key returns True for global keys."""

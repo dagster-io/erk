@@ -14,12 +14,11 @@ Erk uses a layered configuration system with global, repository, and local confi
 
 Settings in `~/.erk/config.toml` apply to all repositories.
 
-| Option              | Type    | Description                                     |
-| ------------------- | ------- | ----------------------------------------------- |
-| `erks_root`         | string  | Directory where worktrees are stored            |
-| `use_graphite`      | boolean | Enable Graphite integration for stacked PRs     |
-| `github_planning`   | boolean | Enable GitHub issue-based planning              |
-| `shell_integration` | boolean | Enable auto-navigation when switching worktrees |
+| Option            | Type    | Description                                 |
+| ----------------- | ------- | ------------------------------------------- |
+| `erks_root`       | string  | Directory where worktrees are stored        |
+| `use_graphite`    | boolean | Enable Graphite integration for stacked PRs |
+| `github_planning` | boolean | Enable GitHub issue-based planning          |
 
 **Example:**
 
@@ -27,7 +26,6 @@ Settings in `~/.erk/config.toml` apply to all repositories.
 erks_root = "/Users/you/erks"
 use_graphite = true
 github_planning = true
-shell_integration = true
 ```
 
 ## Repository Configuration

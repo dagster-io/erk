@@ -460,7 +460,7 @@ def consolidate_stack(
             command_name="consolidate",
             comment=f"activate {name}",
         )
-        activation_result.output_for_shell_integration()
+        activation_result.output_for_script_handler()
 
     # Remove worktrees and collect paths for progress output
     removed_paths: list[Path] = []

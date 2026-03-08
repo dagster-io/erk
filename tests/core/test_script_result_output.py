@@ -9,8 +9,8 @@ import pytest
 from erk.core.script_writer import ScriptResult
 
 
-def test_output_for_shell_integration_routes_to_stdout() -> None:
-    """Test that output_for_shell_integration() routes to stdout."""
+def test_output_for_script_handler_routes_to_stdout() -> None:
+    """Test that output_for_script_handler() routes to stdout."""
     # Arrange
     result = ScriptResult(
         path=Path("/tmp/test_script.sh"),
@@ -23,7 +23,7 @@ def test_output_for_shell_integration_routes_to_stdout() -> None:
 
     try:
         # Act
-        result.output_for_shell_integration()
+        result.output_for_script_handler()
 
         # Assert
         output = sys.stdout.getvalue()
@@ -55,8 +55,8 @@ def test_output_path_for_user_routes_to_stderr() -> None:
         sys.stderr = old_stderr
 
 
-def test_output_for_shell_integration_raises_on_duplicate_call() -> None:
-    """Test that calling output_for_shell_integration() twice raises ValueError."""
+def test_output_for_script_handler_raises_on_duplicate_call() -> None:
+    """Test that calling output_for_script_handler() twice raises ValueError."""
     # Arrange
     result = ScriptResult(
         path=Path("/tmp/test_script.sh"),
@@ -67,16 +67,16 @@ def test_output_for_shell_integration_raises_on_duplicate_call() -> None:
     old_stdout = sys.stdout
     sys.stdout = StringIO()
     try:
-        result.output_for_shell_integration()
+        result.output_for_script_handler()
     finally:
         sys.stdout = old_stdout
 
     # Second call should raise ValueError
     with pytest.raises(ValueError) as exc_info:
-        result.output_for_shell_integration()
+        result.output_for_script_handler()
 
     assert "already called" in str(exc_info.value)
-    assert "output_for_shell_integration" in str(exc_info.value)
+    assert "output_for_script_handler" in str(exc_info.value)
 
 
 def test_output_path_for_user_raises_on_duplicate_call() -> None:
@@ -131,7 +131,7 @@ def test_fake_script_writer_integration() -> None:
     )
 
     # Assert - result should have new methods
-    assert hasattr(result, "output_for_shell_integration")
+    assert hasattr(result, "output_for_script_handler")
     assert hasattr(result, "output_path_for_user")
     assert result.path.name.startswith("erk-test-")
 

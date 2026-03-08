@@ -70,7 +70,7 @@ Key fields in GlobalConfig (as of this writing):
 - `github_planning: bool` — GitHub-based planning enabled
 - `show_hidden_commands: bool` — expose hidden CLI commands
 - `prompt_learn_on_land: bool` — prompt for learn extraction after landing PRs
-- `shell_integration: bool` — shell integration active
+
 - `interactive_agent: InteractiveAgentConfig` — interactive agent settings
 
 ## Related Documentation

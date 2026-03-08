@@ -28,11 +28,11 @@ class ScriptResult:
     content: str
     _output_performed: bool = False
 
-    def output_for_shell_integration(self) -> None:
-        """Output script path to stdout for shell integration handler.
+    def output_for_script_handler(self) -> None:
+        """Output script path to stdout for script handler.
 
         This method routes the script path to stdout (machine_output), which is
-        where the shell integration handler expects to find it. Commands that
+        where the script handler expects to find it. Commands that
         support the --script flag should call this method after generating an
         activation script.
 
@@ -46,13 +46,13 @@ class ScriptResult:
                 command_name="checkout",
                 comment="Checkout worktree",
             )
-            result.output_for_shell_integration()
+            result.output_for_script_handler()
 
             # Deferred output pattern (when conditional logic needed):
             script_result = ctx.script_writer.write_activation_script(...)
             # ... more logic ...
             if should_activate:
-                script_result.output_for_shell_integration()
+                script_result.output_for_script_handler()
 
         Raises:
             ValueError: If output has already been performed for this ScriptResult.
@@ -60,7 +60,7 @@ class ScriptResult:
         # Idempotency check
         if self._output_performed:
             raise ValueError(
-                "output_for_shell_integration() was already called for this ScriptResult. "
+                "output_for_script_handler() was already called for this ScriptResult. "
                 "Each ScriptResult should output exactly once. "
                 "If you need deferred output, save the result and call the method only when ready."
             )
