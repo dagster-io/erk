@@ -7,6 +7,7 @@ This module contains common functionality used by multiple PR commands
 from __future__ import annotations
 
 import queue
+import re
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -259,6 +260,21 @@ def build_plan_details_section(plan_context: PlanContext) -> str:
     return "\n".join(parts)
 
 
+def _insert_objective_link(body: str, objective_summary: str) -> str:
+    """Insert an objective link between summary and Key Changes sections."""
+    match = re.match(r"Objective #(\d+): (.+)", objective_summary)
+    if match is not None:
+        objective_line = f"**Objective #{match.group(1)}:** {match.group(2)}"
+    else:
+        objective_line = f"**Objective:** {objective_summary}"
+
+    key_changes = "## Key Changes"
+    idx = body.find(key_changes)
+    if idx != -1:
+        return body[:idx] + objective_line + "\n\n" + body[idx:]
+    return body + "\n\n" + objective_line
+
+
 def assemble_pr_body(
     *,
     body: str,
@@ -289,13 +305,17 @@ def assemble_pr_body(
         plan_header = recovered_plan_header
 
     pr_body_content = body
+    if plan_context is not None and plan_context.objective_summary is not None:
+        pr_body_content = _insert_objective_link(pr_body_content, plan_context.objective_summary)
     if plan_context is not None:
         if plan_header is not None:
             # Draft PR: use original-plan format (from lifecycle module)
-            pr_body_content = body + build_original_plan_section(plan_context.plan_content)
+            pr_body_content = pr_body_content + build_original_plan_section(
+                plan_context.plan_content
+            )
         else:
             # Issue-based: use existing format
-            pr_body_content = body + build_plan_details_section(plan_context)
+            pr_body_content = pr_body_content + build_plan_details_section(plan_context)
 
     footer = build_pr_body_footer(pr_number)
 
