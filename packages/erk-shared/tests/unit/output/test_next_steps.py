@@ -40,15 +40,13 @@ def test_plan_next_steps_checkout_new_slot() -> None:
 def test_plan_next_steps_implement_current_wt() -> None:
     """implement_current_wt uses --for-plan with erk implement (non-dangerous)."""
     s = PlanNextSteps(plan_number=42, url="https://github.com/org/repo/pull/42")
-    assert s.implement_current_wt == 'source "$(erk br co --for-plan 42 --script)" && erk implement'
+    assert s.implement_current_wt == "erk br co --for-plan 42 && erk implement"
 
 
 def test_plan_next_steps_implement_current_wt_dangerous() -> None:
     """implement_current_wt_dangerous uses -d flag."""
     s = PlanNextSteps(plan_number=42, url="https://github.com/org/repo/pull/42")
-    assert s.implement_current_wt_dangerous == (
-        'source "$(erk br co --for-plan 42 --script)" && erk implement -d'
-    )
+    assert s.implement_current_wt_dangerous == "erk br co --for-plan 42 && erk implement -d"
 
 
 def test_plan_next_steps_implement_new_wt() -> None:
