@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plan_id": 8990,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T10:33:33.593514+00:00",
+      "files": [
+        "impl--b4490008-d0e3-463d-a978-7eb2cbd04c1d.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 61,
+      "xml_size_kb": 20,
+      "git_branch": "plnd/fix-file-list-indent-03-08-0630"
+    }
+  ]
+}
