@@ -93,6 +93,20 @@ class OneShotDryRunResult:
         }
 
 
+@dataclass(frozen=True)
+class OneShotDryRunResult:
+    """Result of a dry-run one-shot dispatch (preview only, no mutations)."""
+
+    branch_name: str
+    prompt: str
+    target: str
+    pr_title: str
+    base_branch: str
+    submitted_by: str
+    model: str | None
+    workflow: str
+
+
 def generate_branch_name(
     prompt: str,
     *,
