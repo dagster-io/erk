@@ -24,6 +24,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap_frontmatter,
     render_objective_roadmap_block,
     render_roadmap_block_inner,
+    rerender_comment_roadmap,
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
@@ -237,6 +238,15 @@ def create_objective_issue(
     # Step 7: Update issue body with objective_comment_id
     updated_body = update_objective_header_comment_id(issue_body, comment_id)
     github_issues.update_issue_body(repo_root, result.number, BodyText(content=updated_body))
+
+    # Step 7b: Normalize roadmap tables in comment to canonical format
+    # The comment from format_objective_content_comment() wraps raw markdown
+    # between roadmap-table markers, but the validator re-renders from YAML
+    # using render_roadmap_tables() which produces a stripped-down format.
+    # Normalize here so the comment is created in the format the validator expects.
+    rerendered = rerender_comment_roadmap(updated_body, objective_comment)
+    if rerendered is not None and rerendered != objective_comment:
+        github_issues.update_comment(repo_root, comment_id, rerendered)
 
     return CreatePlanIssueResult(
         success=True,

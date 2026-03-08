@@ -403,6 +403,88 @@ def test_render_roadmap_without_depends_on_unchanged() -> None:
     assert "| 1.1 | Do thing | pending | - |" in result
 
 
+def test_render_roadmap_preserves_status_and_pr() -> None:
+    """status and pr fields in input must appear in table rows and YAML output."""
+    phases: list[dict[str, object]] = [
+        {
+            "name": "Phase",
+            "steps": [
+                {"id": "1.1", "description": "Done step", "status": "done", "pr": "#8841"},
+                {"id": "1.2", "description": "Pending step"},
+            ],
+        },
+    ]
+
+    result = _render_roadmap(phases)
+
+    # Table rows reflect status/pr from input
+    assert "| 1.1 | Done step | done | #8841 |" in result
+    assert "| 1.2 | Pending step | pending | - |" in result
+
+    # Metadata block also reflects status/pr
+    start_marker = "<!-- erk:metadata-block:objective-roadmap -->"
+    end_marker = "<!-- /erk:metadata-block:objective-roadmap -->"
+    start_idx = result.index(start_marker) + len(start_marker) + 1
+    end_idx = result.index(end_marker)
+    block_content = result[start_idx:end_idx].strip()
+
+    steps = parse_roadmap_frontmatter(block_content)
+    assert steps is not None
+    assert len(steps) == 2
+    assert steps[0].status == "done"
+    assert steps[0].pr == "#8841"
+    assert steps[1].status == "pending"
+    assert steps[1].pr is None
+
+
+def test_render_roadmap_preserves_status_and_pr_with_depends_on() -> None:
+    """status and pr fields preserved in 5-column table with depends_on."""
+    phases: list[dict[str, object]] = [
+        {
+            "name": "Phase",
+            "steps": [
+                {"id": "1.1", "description": "Base", "status": "done", "pr": "#100"},
+                {
+                    "id": "1.2",
+                    "description": "Wire",
+                    "depends_on": ["1.1"],
+                    "status": "in_progress",
+                    "pr": "#101",
+                },
+            ],
+        },
+    ]
+
+    result = _render_roadmap(phases)
+
+    assert "| 1.1 | Base | - | done | #100 |" in result
+    assert "| 1.2 | Wire | 1.1 | in_progress | #101 |" in result
+
+
+def test_cli_preserves_status_and_pr() -> None:
+    """CLI end-to-end: status and pr fields in input appear in output."""
+    input_data = json.dumps(
+        {
+            "phases": [
+                {
+                    "name": "Phase",
+                    "steps": [
+                        {"id": "1.1", "description": "Step", "status": "done", "pr": "#8841"},
+                    ],
+                },
+            ],
+        }
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(objective_render_roadmap, input=input_data)
+
+    assert result.exit_code == 0
+    assert "| 1.1 | Step | done | #8841 |" in result.output
+    assert "status: done" in result.output
+    assert "pr: '#8841'" in result.output
+
+
 def test_render_roadmap_depends_on_metadata_roundtrip() -> None:
     """Metadata block with depends_on parses correctly."""
     phases: list[dict[str, object]] = [
