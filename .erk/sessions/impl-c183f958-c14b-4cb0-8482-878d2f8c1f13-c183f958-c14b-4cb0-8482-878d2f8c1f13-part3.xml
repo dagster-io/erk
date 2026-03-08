@@ -614,4 +614,108 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8957
 }
   </tool_result>
+  <tool_result tool="toolu_012UH4fzhktwxhPuCUnusVRb">
+{"uploaded": true, "plan_id": 8957}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Dz3o6QQbxerGdqeDiM4LS4">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="148262" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dz3o6QQbxerGdqeDiM4LS4">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CYvsGjA7EGvA8CDPoiLS7E">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="148590" cache_creation="{'ephemeral_5m_input_tokens': 106, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CYvsGjA7EGvA8CDPoiLS7E">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8957 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8957
+   Linked to Objective #8950: Objective: Composable Post-Merge Lifecycle
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (43,717 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GfEAbterfDrecpT8oppV9H">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="148696" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012vaJimnh9WpwtNZetMsgXK">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="453" cache_read_input_tokens="148696" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GfEAbterfDrecpT8oppV9H">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8957
+}
+  </tool_result>
+  <tool_result tool="toolu_012vaJimnh9WpwtNZetMsgXK">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GAp27o1EtziYPTQSQ3fM1X">
+    <param name="todos">[{'content': 'Node 2.1: Guard learn plan creation in land_learn.py', 'status': 'completed'...[truncated 1095 chars]...and submit PR', 'status': 'completed', 'activeForm': 'Signaling ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="149149" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GAp27o1EtziYPTQSQ3fM1X">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's the summary:
+
+## Summary of Changes
+
+**PR #8957**: https://github.com/dagster-io/erk/pull/8957
+
+### Node 2.1: Guard learn plan creation (`land_learn.py`)
+- Added **idempotency guard** in both `_create_learn_pr_for_merged_branch` and `_create_learn_pr_impl`: checks `plan_result.header_fields.get("learn_plan_issue")` and skips if already set
+- Added **backpointer write** after successful learn PR creation: calls `update_metadata()` to set `learn_plan_issue` and `learn_status="completed_with_plan"` on the source plan
+- 2 new tests in `tests/unit/cli/commands/test_land_learn.py`
+
+### Node 2.2: Guard objective updates (`objective_apply_landed_update.py`)
+- **Filters already-done nodes** from both auto-match (`pr` field match) and explicit `--node` flag paths
+- **Skips action comment** when no nodes were actually updated (prevents duplicate comments on re-run)
+- Updated `ApplyLandedUpdateResultDict.action_comment_id` type from `int` to `int | None`
+- 3 new tests + 1 updated test in `test_objective_apply_landed_update.py`
+
+### Node 2.3: Guard label stamping scope (`reconcile_pipeline.py`)
+- Only stamps `erk-reconciled` label on PRs that have the `erk-pr` label (prevents labeling non-erk PRs)
+- 2 new tests in `tests/unit/cli/commands/test_reconcile_pipeline.py` + 1 updated existing test
+
+### CI Results
+- All 5797 unit tests pass
+- All lint, format, and type checks pass
+- 9 total new test cases across 3 files</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="149672" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
