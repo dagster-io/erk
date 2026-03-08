@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "plan_id": 8957,
+  "sessions": [
+    {
+      "session_id": "c183f958-c14b-4cb0-8482-878d2f8c1f13",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T02:10:27.509958+00:00",
+      "files": [
+        "impl-c183f958-c14b-4cb0-8482-878d2f8c1f13-c183f958-c14b-4cb0-8482-878d2f8c1f13-part1.xml",
+        "impl-c183f958-c14b-4cb0-8482-878d2f8c1f13-c183f958-c14b-4cb0-8482-878d2f8c1f13-part2.xml",
+        "impl-c183f958-c14b-4cb0-8482-878d2f8c1f13-c183f958-c14b-4cb0-8482-878d2f8c1f13-part3.xml",
+        "impl-c183f958-c14b-4cb0-8482-878d2f8c1f13-c183f958-c14b-4cb0-8482-878d2f8c1f13-part4.xml",
+        "impl-c183f958-c14b-4cb0-8482-878d2f8c1f13-c183f958-c14b-4cb0-8482-878d2f8c1f13-part5.xml",
+        "impl-c183f958-c14b-4cb0-8482-878d2f8c1f13-c183f958-c14b-4cb0-8482-878d2f8c1f13-part6.xml",
+        "impl-c183f958-c14b-4cb0-8482-878d2f8c1f13-c183f958-c14b-4cb0-8482-878d2f8c1f13-part7.xml",
+        "impl-c183f958-c14b-4cb0-8482-878d2f8c1f13-c183f958-c14b-4cb0-8482-878d2f8c1f13-part8.xml"
+      ]
+    }
+  ]
+}

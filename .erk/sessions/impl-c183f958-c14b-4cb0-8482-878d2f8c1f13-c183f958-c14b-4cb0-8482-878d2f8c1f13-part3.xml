@@ -1,0 +1,617 @@
+<session>
+  <meta branch="plnd/O8950-idempotent-reconcile-03-07-2054" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_01AQd31UtLVQ5n1rLJ1cjb7Q">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">    if result.success:
+        # Set backpointer on source plan so re-runs are idempotent
+...[truncated 88 chars]...rn_plan_issue": int(result.plan_number), "learn_status": "completed_with_plan"},
+        )</param>
+    <param name="new_string">    if result.success and result.plan_number is not None:
+        # Set backpointer on sou...[truncated 118 chars]...{"learn_plan_issue": result.plan_number, "learn_status": "completed_with_plan"},
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1015" cache_read_input_tokens="126947" cache_creation="{'ephemeral_5m_input_tokens': 1015, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AQd31UtLVQ5n1rLJ1cjb7Q">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01K3xV1KWaYvwHYfJtXZGpZZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="old_string">    if result.success:
+        # Set backpointer on source plan so re-runs are idempotent
+...[truncated 94 chars]...rn_plan_issue": int(result.plan_number), "learn_status": "completed_with_plan"},
+        )</param>
+    <param name="new_string">    if result.success and result.plan_number is not None:
+        # Set backpointer on sou...[truncated 124 chars]...{"learn_plan_issue": result.plan_number, "learn_status": "completed_with_plan"},
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="127962" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K3xV1KWaYvwHYfJtXZGpZZ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me fix the broken existing tests. Let me look at the three failures:
+
+1. **`test_no_node_flags_still_posts_comment`** — this test expects a comment to be posted even when no nodes are passed, but our change now skips the comment when no nodes are updated. This test needs updating since the old behavior was the bug (posting comments when nothing changed).
+
+2. **`test_creates_pr_and_shows_success`** / **`test_fetches_from_async_learn_branch_when_local_not_found`** — These fail with `PlanHeaderNotFoundError` because our new `update_metadata` call requires a plan-header block in the PR body, and the test PRs may not have one.
+
+3. **`test_process_merged_branch_stamps_reconciled_label`** — Our change now requires `erk-pr` label to be set. Let me look at this test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="128344" cache_creation="{'ephemeral_5m_input_tokens': 677, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013Kwe6cqrJEZbg3VaWbZMeV">
+    <param name="pattern">test_no_node_flags_still_posts_comment</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="128344" cache_creation="{'ephemeral_5m_input_tokens': 677, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018aCkNXRNf37nmfBNKU5ZHa">
+    <param name="pattern">test_creates_pr_and_shows_success</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="128344" cache_creation="{'ephemeral_5m_input_tokens': 677, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SqKVtep9B1JASBTAWqXGQV">
+    <param name="pattern">test_process_merged_branch_stamps_reconciled_label</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="128344" cache_creation="{'ephemeral_5m_input_tokens': 677, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013Kwe6cqrJEZbg3VaWbZMeV">
+tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:268:    def test_no_node_flags_still_posts_comment(self, tmp_path: Path) -&gt; None:
+  </tool_result>
+  <tool_result tool="toolu_01SqKVtep9B1JASBTAWqXGQV">
+tests/commands/test_reconcile.py:757:def test_process_merged_branch_stamps_reconciled_label() -&gt; None:
+  </tool_result>
+  <tool_result tool="toolu_018aCkNXRNf37nmfBNKU5ZHa">
+tests/unit/cli/commands/land/test_land_learn.py:372:def test_creates_pr_and_shows_success(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BLyYmowJyDi4AHSBF2HD8y">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py</param>
+    <param name="offset">267</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="62" cache_creation_input_tokens="962" cache_read_input_tokens="129021" cache_creation="{'ephemeral_5m_input_tokens': 962, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011davHLAf1EB9iZnZSXEJtB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="offset">370</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="62" cache_creation_input_tokens="962" cache_read_input_tokens="129021" cache_creation="{'ephemeral_5m_input_tokens': 962, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UNBeZ3haRDe6jNmAoZdf9d">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_reconcile.py</param>
+    <param name="offset">755</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="62" cache_creation_input_tokens="962" cache_read_input_tokens="129021" cache_creation="{'ephemeral_5m_input_tokens': 962, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BLyYmowJyDi4AHSBF2HD8y">
+   267→class TestApplyLandedUpdateNoNodes:
+   268→    def test_no_node_flags_still_posts_comment(self, tmp_path: Path) -&gt; None:
+   269→        """When no --node flags are passed, still posts action comment."""
+   270→        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+   271→        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+   272→        pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
+   273→
+   274→        comment = IssueComment(
+   275→            body=OBJECTIVE_COMMENT_BODY,
+   276→            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+   277→            id=55555,
+   278→            author="testuser",
+   279→        )
+   280→        fake_issues = FakeGitHubIssues(
+   281→            issues={6423: objective, 6513: plan},
+   282→            comments_with_urls={6423: [comment]},
+   283→        )
+   284→        fake_github = FakeLocalGitHub(
+   285→            issues_gateway=fake_issues,
+   286→            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+   287→        )
+   288→
+   289→        runner = CliRunner()
+   290→        result = runner.invoke(
+   291→            objective_apply_landed_update,
+   292→            [
+   293→                "--pr",
+   294→                "6517",
+   295→                "--objective",
+   296→                "6423",
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011davHLAf1EB9iZnZSXEJtB">
+   370→
+   371→
+   372→def test_creates_pr_and_shows_success(
+   373→    tmp_path: Path,
+   374→    capsys: pytest.CaptureFixture[str],
+   375→    monkeypatch: pytest.MonkeyPatch,
+   376→) -&gt; None:
+   377→    """Happy path: plan found with session material, creates learn draft PR."""
+   378→    from erk.cli.commands import land_learn as learn_mod
+   379→
+   380→    pr = _make_pr_details(
+   381→        pr_number=100,
+   382→        branch="feature",
+   383→        title="Add widgets",
+   384→        labels=("erk-plan",),
+   385→    )
+   386→    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+   387→    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+   388→    fake_time = FakeTime()
+   389→    fake_git = FakeGit(trunk_branches={tmp_path: "main"})
+   390→    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+   391→
+   392→    ctx = context_for_test(
+   393→        git=fake_git,
+   394→        github=fake_github,
+   395→        issues=fake_issues,
+   396→        plan_store=plan_store,
+   397→        time=fake_time,
+   398→        cwd=tmp_path,
+   399→    )
+
+... [95 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UNBeZ3haRDe6jNmAoZdf9d">
+   755→
+   756→
+   757→def test_process_merged_branch_stamps_reconciled_label() -&gt; None:
+   758→    """process_merged_branch adds erk-reconciled label to the PR."""
+   759→    runner = CliRunner()
+   760→    with erk_inmem_env(runner) as env:
+   761→        git = FakeGit(
+   762→            git_common_dirs={env.cwd: env.git_dir},
+   763→            default_branches={env.cwd: "main"},
+   764→            current_branches={env.cwd: "main"},
+   765→            local_branches={env.cwd: ["main", "feature-1"]},
+   766→            worktrees={env.cwd: [WorktreeInfo(path=env.cwd, branch="main", is_root=True)]},
+   767→            remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+   768→        )
+   769→        github = FakeLocalGitHub()
+   770→        ctx = env.build_context(git=git, github=github)
+   771→
+   772→        info = ReconcileBranchInfo(
+   773→            branch="feature-1",
+   774→            pr_number=100,
+   775→            pr_title="Test",
+   776→            worktree_path=None,
+   777→            plan_id=None,
+   778→            objective_number=None,
+   779→        )
+   780→        process_merged_branch(
+   781→            ctx,
+   782→            info,
+   783→            main_repo_root=env.cwd,
+   784→            repo=env.repo,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand all three failures:
+
+**1. `test_no_node_flags_still_posts_comment`** — The `ROADMAP_BODY` has nodes with `pr: null`, so when no `--node` flags are passed and no nodes match `pr_ref`, `matched_steps` is empty and now no comment is posted. This test's assertion needs to change from "still posts comment" to "no comment when no nodes match".
+
+**2. `test_creates_pr_and_shows_success` / `test_fetches_from_async_learn_branch_when_local_not_found`** — The test creates a PR with `_make_pr_details` that has a plain body (no plan-header block). When `update_metadata` is called after learn plan creation, it fails because there's no plan-header block. I need to look at the `_make_pr_details` helper.
+
+**3. `test_process_merged_branch_stamps_reconciled_label`** — The test creates a `FakeLocalGitHub()` with no labels set. My change requires `erk-pr` label on the PR.
+
+Let me fix all three:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4152" cache_read_input_tokens="129983" cache_creation="{'ephemeral_5m_input_tokens': 4152, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014PVcF37bPayaiavGf7GYLh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py</param>
+    <param name="old_string">class TestApplyLandedUpdateNoNodes:
+    def test_no_node_flags_still_posts_comment(self, t...[truncated 1741 chars]... body NOT updated (no nodes to update)
+        assert len(fake_issues.updated_bodies) == 0</param>
+    <param name="new_string">class TestApplyLandedUpdateNoNodes:
+    def test_no_node_flags_no_matching_nodes_skips_com...[truncated 1827 chars]... body NOT updated (no nodes to update)
+        assert len(fake_issues.updated_bodies) == 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4152" cache_read_input_tokens="129983" cache_creation="{'ephemeral_5m_input_tokens': 4152, 'ephemeral_1h_input_tokens': 0}" output_tokens="1543" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014PVcF37bPayaiavGf7GYLh">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the reconcile test by adding `erk-pr` label:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1597" cache_read_input_tokens="134135" cache_creation="{'ephemeral_5m_input_tokens': 1597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01GgooyJne6M9MXMtdw317Jn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_reconcile.py</param>
+    <param name="old_string">def test_process_merged_branch_stamps_reconciled_label() -&gt; None:
+    """process_merged_br...[truncated 507 chars]...        github = FakeLocalGitHub()
+        ctx = env.build_context(git=git, github=github)</param>
+    <param name="new_string">def test_process_merged_branch_stamps_reconciled_label() -&gt; None:
+    """process_merged_br...[truncated 568 chars]...hub.set_pr_labels(100, {"erk-pr"})
+        ctx = env.build_context(git=git, github=github)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1597" cache_read_input_tokens="134135" cache_creation="{'ephemeral_5m_input_tokens': 1597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GgooyJne6M9MXMtdw317Jn">
+The file /home/runner/work/erk/erk/tests/commands/test_reconcile.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the land_learn tests. The problem is `update_metadata` is called after the learn PR is created, but the test PR (plan #100) doesn't have a plan-header block. Let me look at `_make_pr_details` in that test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="998" cache_read_input_tokens="135732" cache_creation="{'ephemeral_5m_input_tokens': 998, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GgCZuB6CDW6JvRhJTTiAr8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="998" cache_read_input_tokens="135732" cache_creation="{'ephemeral_5m_input_tokens': 998, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GgCZuB6CDW6JvRhJTTiAr8">
+     1→"""Tests for land_learn module: learn plan creation logic."""
+     2→
+     3→import json
+     4→from dataclasses import replace
+     5→from datetime import UTC, datetime
+     6→from pathlib import Path
+     7→
+     8→import pytest
+     9→
+    10→from erk.cli.commands.land_learn import (
+    11→    _compute_session_stats,
+    12→    _create_learn_pr_impl,
+    13→    _create_learn_pr_with_sessions,
+    14→    _fetch_xmls_from_async_learn_branch,
+    15→    _log_learn_pr_files,
+    16→    _log_session_discovery,
+    17→    _should_create_learn_pr,
+    18→)
+    19→from erk.cli.commands.land_pipeline import LandState, create_learn_pr
+    20→from erk.core.context import context_for_test
+    21→from erk_shared.context.types import GlobalConfig, LoadedConfig
+    22→from erk_shared.gateway.claude_installation.fake import (
+    23→    FakeClaudeInstallation,
+    24→    FakeProject,
+    25→    FakeSessionData,
+    26→)
+    27→from erk_shared.gateway.git.fake import FakeGit
+    28→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    29→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    30→from erk_shared.gateway.github.types import PRDetails
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BixxNLr8Si3vhxvhecFRMP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="offset">50</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="925" cache_read_input_tokens="136730" cache_creation="{'ephemeral_5m_input_tokens': 925, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BixxNLr8Si3vhxvhecFRMP">
+    50→        state="OPEN",
+    51→        base_ref_name="main",
+    52→        head_ref_name=branch,
+    53→        mergeable="MERGEABLE",
+    54→        merge_state_status="CLEAN",
+    55→        is_draft=True,
+    56→        is_cross_repository=False,
+    57→        owner="owner",
+    58→        repo="repo",
+    59→        labels=labels,
+    60→        created_at=now,
+    61→        updated_at=now,
+    62→    )
+    63→
+    64→
+    65→def _land_state(
+    66→    tmp_path: Path,
+    67→    *,
+    68→    plan_id: str | None = None,
+    69→    merged_pr_number: int | None = None,
+    70→) -&gt; LandState:
+    71→    return LandState(
+    72→        cwd=tmp_path,
+    73→        force=True,
+    74→        script=False,
+    75→        pull_flag=True,
+    76→        no_delete=False,
+    77→        up_flag=False,
+    78→        dry_run=False,
+    79→        skip_learn=False,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>The `_make_pr_details` creates a PR with `body="Test body"` which has no plan-header block. The `update_metadata` call will fail with `PlanHeaderNotFoundError` because it expects a plan-header metadata block in the PR body.
+
+The fix is to ensure the test PR has a plan-header block. I need to change the body in the test to include one. Let me look at how `format_plan_header_body_for_test` is used in this test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="137655" cache_creation="{'ephemeral_5m_input_tokens': 917, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01K54vfYhBTuEHf398JCqQxt">
+    <param name="pattern">format_plan_header_body"</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="137655" cache_creation="{'ephemeral_5m_input_tokens': 917, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K54vfYhBTuEHf398JCqQxt">
+No matches found
+  </tool_result>
+  <assistant>It's not used at all. The test creates PRs with plain text bodies. But the `PlannedPRBackend._convert_to_plan()` will parse the body and if there's no plan-header, `header_fields` will be empty. The plan-header block IS needed for `update_metadata` to work.
+
+I need to wrap the body in a proper plan lifecycle format with a plan-header. The test helper in `plan_helpers.py` does this. Let me use `format_plan_header_body_for_test` to create a body with a plan-header:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="138572" cache_creation="{'ephemeral_5m_input_tokens': 272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01R3mtnqVa4FMCLfPVPTEuvq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="offset">370</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="138572" cache_creation="{'ephemeral_5m_input_tokens': 272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R3mtnqVa4FMCLfPVPTEuvq">
+   370→
+   371→
+   372→def test_creates_pr_and_shows_success(
+   373→    tmp_path: Path,
+   374→    capsys: pytest.CaptureFixture[str],
+   375→    monkeypatch: pytest.MonkeyPatch,
+   376→) -&gt; None:
+   377→    """Happy path: plan found with session material, creates learn draft PR."""
+   378→    from erk.cli.commands import land_learn as learn_mod
+   379→
+   380→    pr = _make_pr_details(
+   381→        pr_number=100,
+   382→        branch="feature",
+   383→        title="Add widgets",
+   384→        labels=("erk-plan",),
+   385→    )
+   386→    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+   387→    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+   388→    fake_time = FakeTime()
+   389→    fake_git = FakeGit(trunk_branches={tmp_path: "main"})
+   390→    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+   391→
+   392→    ctx = context_for_test(
+   393→        git=fake_git,
+   394→        github=fake_github,
+   395→        issues=fake_issues,
+   396→        plan_store=plan_store,
+   397→        time=fake_time,
+   398→        cwd=tmp_path,
+   399→    )
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>I need the PR body to contain a plan-header metadata block. The `PlannedPRBackend._convert_to_plan` looks for a plan-header block. Let me look at the PR body structure expected by PlannedPRBackend:
+
+The issue is that `update_metadata` on the PlannedPRBackend fetches the PR body, locates the plan-header block, updates it, and writes back. If the original PR had no plan-header, this fails.
+
+I need to give the test PR a body that includes a plan-header block. The simplest approach: use `format_plan_header_body_for_test()` to generate the body, then wrap it in the lifecycle format that PlannedPRBackend expects (details tags). But looking at `_make_pr_details`, it just sets `body=body` directly.
+
+Let me check how `PlannedPRBackend` expects the body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1554" cache_read_input_tokens="138844" cache_creation="{'ephemeral_5m_input_tokens': 1554, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013udSsgkD2ZagKp6Ss9Mg4L">
+    <param name="pattern">DETAILS_OPEN"</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1554" cache_read_input_tokens="138844" cache_creation="{'ephemeral_5m_input_tokens': 1554, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013udSsgkD2ZagKp6Ss9Mg4L">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017T3asnkAYS6MAAFKhDRBvU">
+    <param name="pattern">DETAILS_OPEN</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="393" cache_read_input_tokens="140398" cache_creation="{'ephemeral_5m_input_tokens': 393, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017T3asnkAYS6MAAFKhDRBvU">
+86:DETAILS_OPEN = "&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n"
+87:_LEGACY_DETAILS_OPEN = "&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;\n\n"
+105:    plan_section = DETAILS_OPEN + plan_content + DETAILS_CLOSE
+123:    return "\n\n" + DETAILS_OPEN + plan_content + DETAILS_CLOSE
+138:    return DETAILS_OPEN in pr_body or _LEGACY_DETAILS_OPEN in pr_body
+144:    Looks for ``DETAILS_OPEN`` / ``DETAILS_CLOSE`` tags and extracts the
+155:    for details_open in (DETAILS_OPEN, _LEGACY_DETAILS_OPEN):
+  </tool_result>
+  <assistant>The PR body for PlannedPRBackend is structured as:
+1. `DETAILS_OPEN` + plan content + `DETAILS_CLOSE` (the plan content section)
+2. Followed by the plan-header metadata block
+
+I need to modify the `_make_pr_details` in the existing test file to include a proper plan-header block. Let me construct the correct body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="687" cache_read_input_tokens="140791" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011UVciEoyRQZHYudcno8Be7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="old_string">from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.sessions.dis...[truncated 616 chars]... repo="repo",
+        labels=labels,
+        created_at=now,
+        updated_at=now,
+    )</param>
+    <param name="new_string">from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.p...[truncated 995 chars]... repo="repo",
+        labels=labels,
+        created_at=now,
+        updated_at=now,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="687" cache_read_input_tokens="140791" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="883" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011UVciEoyRQZHYudcno8Be7">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also look at the second failing test — `test_fetches_from_async_learn_branch_when_local_not_found`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="931" cache_read_input_tokens="141478" cache_creation="{'ephemeral_5m_input_tokens': 931, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01VL2TkVkLMKH56zMEFXZ79z">
+    <param name="pattern">test_fetches_from_async_learn_branch_when_local_not_found</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="931" cache_read_input_tokens="141478" cache_creation="{'ephemeral_5m_input_tokens': 931, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VL2TkVkLMKH56zMEFXZ79z">
+947:def test_fetches_from_async_learn_branch_when_local_not_found(
+948-    tmp_path: Path,
+949-    capsys: pytest.CaptureFixture[str],
+950-    monkeypatch: pytest.MonkeyPatch,
+951-) -&gt; None:
+952-    """Creates learn PR using remote XML when local sessions are not found."""
+953-    from erk.cli.commands import land_learn as learn_mod
+954-
+955-    pr = _make_pr_details(
+956-        pr_number=100,
+957-        branch="feature",
+958-        title="Add widgets",
+959-        labels=("erk-plan",),
+960-    )
+961-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+962-    fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+963-    fake_time = FakeTime()
+964-
+965-    # Configure FakeGit with async-learn branch data
+966-    manifest = {
+967-        "sessions": [
+968-            {
+969-                "session_id": "aaaa1111-2222-3333-4444-555566667777",
+970-                "files": ["impl-aaaa1111.xml"],
+971-            }
+972-        ]
+973-    }
+974-    manifest_bytes = json.dumps(manifest).encode("utf-8")
+975-    xml_content = b"&lt;session&gt;remote data&lt;/session&gt;"
+976-
+
+... [21 lines omitted] ...
+  </tool_result>
+  <assistant>Good — this test also uses `_make_pr_details` which I already fixed to include a plan-header. Now let me also run the formatter on the two test files to fix ruff format issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1260" cache_read_input_tokens="142409" cache_creation="{'ephemeral_5m_input_tokens': 1260, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_014M5AA4ai9T7cCKzwUif7t2">
+    <param name="todos">[{'content': 'Node 2.1: Guard learn plan creation in land_learn.py', 'status': 'completed'...[truncated 990 chars]...full CI checks again', 'status': 'pending', 'activeForm': 'Running full CI checks again'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1260" cache_read_input_tokens="142409" cache_creation="{'ephemeral_5m_input_tokens': 1260, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014M5AA4ai9T7cCKzwUif7t2">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the specific failing tests and format checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="143669" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01RyFdouvkFzZMCVnkTPExPj">
+    <param name="description">Run formatting and failing tests</param>
+    <param name="prompt">Run these commands sequentially and report all output. Do NOT fix any errors.
+
+1. ruff for...[truncated 506 chars]...ts/commands/test_reconcile.py -xvs -k "test_process_merged_branch_stamps_reconciled_label"</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="470" cache_read_input_tokens="143669" cache_creation="{'ephemeral_5m_input_tokens': 470, 'ephemeral_1h_input_tokens': 0}" output_tokens="344" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RyFdouvkFzZMCVnkTPExPj">
+**Command 5 Result: pytest reconcile test - Success**
+1 passed in 0.69s
+
+---
+
+## Summary
+
+All commands executed successfully with no errors:
+
+1. **ruff format** - 3 files reformatted
+   - tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+   - tests/unit/cli/commands/test_reconcile_pipeline.py
+   - tests/unit/cli/commands/test_land_learn.py
+
+2. **ruff check --fix** - All checks passed
+
+3. **pytest land_learn tests** - 2 passed in 0.74s
+   - test_creates_pr_and_shows_success
+   - test_fetches_from_async_learn_branch_when_local_not_found
+
+4. **pytest objective_apply_landed_update test** - 1 passed in 0.72s
+   - test_no_node_flags
+
+5. **pytest reconcile test** - 1 passed in 0.69s
+   - test_process_merged_branch_stamps_reconciled_label
+agentId: a0e6bab (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+All previously failing tests are now passing. Let me run the full CI check:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2094" cache_read_input_tokens="144139" cache_creation="{'ephemeral_5m_input_tokens': 2094, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01MhcSeFCSTmjCCGZLScrmCd">
+    <param name="description">Run full fast-ci</param>
+    <param name="prompt">Run `make fast-ci` and report the full results. Do NOT attempt to fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2094" cache_read_input_tokens="144139" cache_creation="{'ephemeral_5m_input_tokens': 2094, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MhcSeFCSTmjCCGZLScrmCd">
+## Results Summary
+
+**make fast-ci failed** with exit code 2 due to Prettier formatting issues.
+
+### Detailed Breakdown
+
+**Prettier Check - FAILED:**
+- Code style issues found in 2 files:
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+- Fix available with: `prettier --write`
+
+**All Other Checks - PASSED:**
+- Lint: All checks passed
+- Format check: 1674 files already formatted
+- Markdown check: OK
+- Exec reference check: OK
+- Type checking (ty): All checks passed
+- Unit tests (erk): 5797 passed in 12.76s
+- Unit tests (erk-dev): 136 passed in 4.44s
+- Unit tests (erk-statusline): 115 passed in 0.79s
+- Unit tests (erk-mcp): 24 passed (output truncated but completed)
+
+### Root Cause
+
+The `fast-ci` target failed at the Prettier formatting validation step. Two markdown files in the `docs/learned/` directory do not conform to Prettier's code style requirements.
+agentId: a2009bd (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All code checks pass. The only failure is Prettier formatting on two pre-existing docs files that are unrelated to our changes. Let me verify these files weren't modified by our changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="146233" cache_creation="{'ephemeral_5m_input_tokens': 446, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011Wcdb59s8DcKz84ETSEp7c">
+    <param name="command">git diff --name-only HEAD</param>
+    <param name="description">Check which files were changed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="146233" cache_creation="{'ephemeral_5m_input_tokens': 446, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011Wcdb59s8DcKz84ETSEp7c">
+packages/erk-shared/src/erk_shared/objective_apply_landed_update_result.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/reconcile_pipeline.py
+tests/commands/test_reconcile.py
+tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+tests/unit/cli/commands/land/test_land_learn.py
+  </tool_result>
+  <assistant>Confirmed — the Prettier failures are on `docs/learned/integrations/github-review-decision.md` and `docs/learned/tui/status-indicators.md`, which are pre-existing docs files not touched by our changes. All our changes pass all checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="146679" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01S7PPP7fj6MLYTkCin6AyYg">
+    <param name="command">git diff --name-only HEAD -- "*.py" | wc -l &amp;&amp; git ls-files --others --exclude-standard -- "*.py" | wc -l</param>
+    <param name="description">Count modified and new Python files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="146679" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S7PPP7fj6MLYTkCin6AyYg">
+7
+2
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LpLtV6ynEdkGXyjgV537AD">
+    <param name="command">git ls-files --others --exclude-standard -- "*.py"</param>
+    <param name="description">List untracked new Python files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="147215" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LpLtV6ynEdkGXyjgV537AD">
+tests/unit/cli/commands/test_land_learn.py
+tests/unit/cli/commands/test_reconcile_pipeline.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XkA3mb7nhkMSy2S8zi2Kmx">
+    <param name="todos">[{'content': 'Node 2.1: Guard learn plan creation in land_learn.py', 'status': 'completed'...[truncated 1097 chars]...d submit PR', 'status': 'in_progress', 'activeForm': 'Signaling ended and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="147402" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XkA3mb7nhkMSy2S8zi2Kmx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal completion and clean up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="147808" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012CbwMKSS8H2LpmnWrXZHHp">
+    <param name="command">erk exec impl-signal ended --session-id "c183f958-c14b-4cb0-8482-878d2f8c1f13" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="147808" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012UH4fzhktwxhPuCUnusVRb">
+    <param name="command">erk exec upload-impl-session --session-id "c183f958-c14b-4cb0-8482-878d2f8c1f13" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="147808" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012CbwMKSS8H2LpmnWrXZHHp">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8957
+}
+  </tool_result>
+</session>
