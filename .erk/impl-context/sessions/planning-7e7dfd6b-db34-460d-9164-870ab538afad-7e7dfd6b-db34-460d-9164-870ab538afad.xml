@@ -1,0 +1,1180 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:objective-plan&lt;/command-message&gt;
+&lt;command-name&gt;/erk:objective-plan&lt;/command-name&gt;
+&lt;command-args&gt;8381&lt;/command-args&gt;</user>
+  <user># /erk:objective-plan
+
+Create an implementation plan for a specific node in an objective's dependency graph.
+
+## Usage
+
+```bash
+/erk:objective-plan 3679
+/erk:objective-plan 3679 --node 2.1
+/erk:objective-plan https://github.com/owner/repo/issues/3679
+/erk:objective-plan  # prompts for objective reference
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Check for Known Node (Fast Path)
+
+Parse `8381` for `--node &lt;node-id&gt;`. If `--node` is present along with an issue number:
+
+**Invoke the inner skill immediately** via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;
+```
+
+This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+
+**STOP here** — do not proceed to the steps below.
+
+### Step 1: Resolve Objective Reference
+
+Strip `--node` from `8381` if present, then run:
+
+```bash
+erk exec resolve-objective-ref 8381
+```
+
+**Interpret the JSON result:**
+
+- If `"resolved": true` with `"source": "branch_name"` or `"source": "plan_metadata"`: Inform user "Using objective #N from {source}. Run with explicit argument to override."
+- If `"resolved": true` with `"source": "argument"`: Use the `objective_number` directly.
+- If `"resolved": false`: Use AskUserQuestion to ask "What objective issue should I work from?"
+
+### Step 2: Fetch and Set Up Objective Context
+
+Run:
+
+```bash
+erk exec objective-plan-setup &lt;objective-number&gt; --session-id "7e7dfd6b-db34-460d-9164-870ab538afad"
+```
+
+**Interpret the JSON result:**
+
+- If `"success": false` with `"error": "not_found"`: Report error and exit.
+- If `"success": false` with `"error": "is_plan"`: Redirect to `/erk:plan-implement`.
+- If `"success": false` with `"error": "validation_error"`: Report error and exit.
+- If `"success": true`: Continue with the roadmap data.
+
+Display any `"warnings"` to the user.
+
+### Step 3: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 4: Display Roadmap and Prompt User
+
+Display the roadmap table from the `roadmap.phases` data in the JSON output.
+
+Then use AskUserQuestion to ask which node to plan:
+
+```
+Which node should I create a plan for?
+- Node 1A.1: &lt;description&gt; (Recommended) ← first pending node without plan in progress
+- Node 1A.2: &lt;description&gt;
+- Node 2B.1: &lt;description&gt; (plan in progress, #456) ← shown but not recommended
+- (Other - specify node number or description)
+```
+
+**Filtering rules (based on node `status` field from phases):**
+
+- **Show as options:** Nodes with status `"pending"`
+- **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
+- **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
+
+**Recommendation rule:** Use `roadmap.next_node` from the JSON as the recommended option. If `next_node` is null, no node is recommended.
+
+If all nodes are complete or have plans in progress, report appropriately:
+
+- All complete: "All roadmap nodes are complete! Consider closing the objective."
+- All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
+
+### Step 5: Invoke Inner Skill
+
+After the user selects a node, invoke the inner skill via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;selected-node-id&gt;
+```
+
+The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
+
+---
+
+## Output Format
+
+- **Start:** "Loading objective #&lt;number&gt;..."
+- **After parsing:** Display roadmap nodes with status
+- **After selection:** "Creating plan for node &lt;step-id&gt;: &lt;description&gt;"
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| No pending nodes                        | Report all nodes complete, suggest closing                       |
+| Invalid argument format                 | Prompt for valid issue number                                    |
+| Roadmap not parseable                   | Ask user to specify which node to plan                           |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+- **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
+
+## Post-Plan Behavior
+
+**CRITICAL: Objective plans must ALWAYS be saved as PRs.** When the exit-plan-mode hook presents save-or-implement options, ALWAYS proceed with "Create a plan PR" by running `/erk:plan-save`. Do NOT offer to implement directly — objective node plans require PR tracking for the objective's roadmap status to work correctly.
+</user>
+  <assistant>
+
+Loading objective #8381...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15359" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15359}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SAvnVLKn5tun6QgVCreByQ">
+    <param name="command">erk exec resolve-objective-ref 8381</param>
+    <param name="description">Resolve objective reference</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15359" cache_read_input_tokens="9738" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SAvnVLKn5tun6QgVCreByQ">
+{"resolved": true, "objective_number": 8381, "source": "argument"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EsWPtLMDMWUpjFE6ZMUxYU">
+    <param name="command">erk exec objective-plan-setup 8381 --session-id "7e7dfd6b-db34-460d-9164-870ab538afad"</param>
+    <param name="description">Fetch and set up objective context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="124" cache_read_input_tokens="25097" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 124, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EsWPtLMDMWUpjFE6ZMUxYU">
+{"success": true, "objective": {"number": 8381, "title": "Objective: Standardize Plan-as-PR Terminology Across Codebase", "state": "OPEN", "labels": ["erk-objective"]}, "roadmap": {"phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "slug": "node-24445d80", "description": "Update CLAUDE.md plan-save description from 'create a GitHub issue' to draft PR language", "status": "done", "pr": "#8382", "depends_on": [], "reason": null}, {"id": "1.2", "slug": "node-fb7a3f56", "description": "Update AGENTS.md plan-save, plan-implement, and plan-dispatch command descriptions", "status": "done", "pr": "#8382", "depends_on": ["1.1"], "reason": null}, {"id": "1.3", "slug": "node-4f2b9a5a", "description": "Update AGENTS.md Codex Users section: remove 'erk pr create --file' old API, fix 'issue-number' placeholders", "status": "done", "pr": "#8382", "depends_on": ["1.2"], "reason": null}, {"id": "1.4", "slug": "node-81eb7b17", "description": "Update AGENTS.md All Backends section: fix '&lt;issue&gt;' placeholders to '&lt;plan&gt;'", "status": "done", "pr": "#8382", "depends_on": ["1.3"], "reason": null}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "slug": "node-51473957", "description": "Rewrite erk-planning/SKILL.md and references/workflow.md around PR-based plan model", "status": "done", "pr": "#8383", "depends_on": ["1.4"], "reason": null}, {"id": "2.2", "slug": "node-f08471e2", "description": "Fix objective/SKILL.md and references/workflow.md: remove 'erk pr create --file', update 'erk-plan' terminology", "status": "done", "pr": "#8383", "depends_on": ["2.1"], "reason": null}, {"id": "2.3", "slug": "node-3712d676", "description": "Fix session-inspector/SKILL.md and references/tools.md: align 'create-pr-from-session' description with its name", "status": "done", "pr": "#8383", "depends_on": ["2.2"], "reason": null}, {"id": "2.4", "slug": "node-ec1b1544", "description": "Fix erk-exec/SKILL.md stale 'plan issue' lines", "status": "done", "pr": "#8383", "depends_on": ["2.3"], "reason": null}, {"id": "2.5", "slug": "node-0a3bd1f2", "description": "Update bundled.py skill description: 'Plan issue management' to 'Plan management'", "status": "done", "pr": "#8383", "depends_on": ["2.4"], "reason": null}]}, {"number": 3, "suffix": "", "name": "Phase 3", "nodes": [{"id": "3.1", "slug": "node-1376690d", "description": "Fix high-severity commands: replan.md, audit-plans.md, learn.md, plan-update.md", "status": "done", "pr": "#8396", "depends_on": ["2.5"], "reason": null}, {"id": "3.2", "slug": "node-2bb23246", "description": "Fix medium-severity commands: plan-save.md (remove issue backend branch), one-shot-plan.md, plan-implement.md, pr-dispatch.md", "status": "done", "pr": "#8396", "depends_on": ["3.1"], "reason": null}, {"id": "3.3", "slug": "node-2b839905", "description": "Fix low-severity commands: check-relevance.md, replan-learn-plans.md, objective-update-with-closed-plan.md, objective-update-with-landed-pr.md, objective-plan.md, objective-plan-node.md, land.md, objective-view.md, objective-create.md, incremental-plan-mode.md", "status": "done", "pr": "#8396", "depends_on": ["3.2"], "reason": null}]}, {"number": 4, "suffix": "", "name": "Phase 4", "nodes": [{"id": "4.1", "slug": "node-90585f1a", "description": "Fix 9 Click help= strings: pr/create_cmd, pr/replan_cmd, branch/create_cmd, branch/checkout_cmd, admin.py, wt/create_cmd, pr/list_cmd, learn/learn_cmd, implement.py", "status": "done", "pr": "#8400", "depends_on": ["3.3"], "reason": null}, {"id": "4.2", "slug": "node-98b86ac6", "description": "Fix ~25 user-facing output messages: 'Closed plan issue', 'Created test issue', 'Opened issue', 'Issue #N not found' etc.", "status": "done", "pr": "#8386", "depends_on": ["4.1"], "reason": null}, {"id": "4.3", "slug": "node-15529a6d", "description": "Fix 2 hardcoded /issues/ URL constructions in submit_pipeline.py and run/list_cmd.py", "status": "done", "pr": "#8386", "depends_on": ["4.2"], "reason": null}, {"id": "4.4", "slug": "node-66b3a92a", "description": "Fix module docstrings in pr/create_cmd.py, pr/replan_cmd.py, implement.py, land_learn.py, land_pipeline.py", "status": "done", "pr": "#8400", "depends_on": ["4.3"], "reason": null}, {"id": "4.5", "slug": "node-ef0f2d79", "description": "Fix core module docstrings: plan_context_provider.py, commit_message_generator.py, plan_duplicate_checker.py, branch_slug_generator.py, context.py, plan_list_service.py", "status": "done", "pr": "#8400", "depends_on": ["4.4"], "reason": null}, {"id": "4.6", "slug": "node-50be06b8", "description": "Fix TUI output: app.py 'Opened issue' notifications", "status": "done", "pr": "#8386", "depends_on": ["4.5"], "reason": null}]}, {"number": 5, "suffix": "", "name": "Phase 5", "nodes": [{"id": "5.1", "slug": "node-7c202aef", "description": "Fix docstrings and help text across 18 exec scripts: replace 'plan issue' with 'plan' throughout", "status": "done", "pr": "#8471", "depends_on": ["4.6"], "reason": null}, {"id": "5.2", "slug": "node-c77b6045", "description": "Fix JSON output key 'issue_number' in create_pr_from_session.py (API contract \u2014 check callers)", "status": "done", "pr": "#8580", "depends_on": ["5.1"], "reason": null}, {"id": "5.3", "slug": "node-9c940ffd", "description": "Fix --plan-issue flag and learn_plan_issue metadata key in track_learn_result.py (coordinate with plan-header schema)", "status": "done", "pr": "#8580", "depends_on": ["5.2"], "reason": null}, {"id": "5.4", "slug": "node-c1c97744", "description": "Fix error codes: 'no-issue-reference' and 'issue-not-found' in impl_signal.py", "status": "done", "pr": "#8580", "depends_on": ["5.3"], "reason": null}, {"id": "5.5", "slug": "node-0290b0ae", "description": "Regenerate erk-exec/reference.md skill doc from updated help text", "status": "done", "pr": "#8580", "depends_on": ["5.4"], "reason": null}]}, {"number": 6, "suffix": "", "name": "Phase 6", "nodes": [{"id": "6.1", "slug": "node-2e743f2d", "description": "Fix high-priority planning/ docs: lifecycle.md, workflow.md, session-deduplication.md, pr-submission-patterns.md, learn-workflow.md, one-shot-workflow.md, workflow-markers.md", "status": "done", "pr": "#8775", "depends_on": ["5.5"], "reason": null}, {"id": "6.2", "slug": "node-24af9b93", "description": "Fix remaining planning/ docs: consolidation-labels.md, learn-plan-validation.md, branch-name-inference.md, plan-execution-patterns.md, planned-pr-backend.md, label-scheme.md, metadata-block-fallback.md, metadata-field-workflow.md, learn-plan-metadata-fields.md, plan-creation-pathways.md, next-steps-output.md, learn-vs-implementation-plans.md", "status": "done", "pr": "#8775", "depends_on": ["6.1"], "reason": null}, {"id": "6.3", "slug": "node-8f2a38da", "description": "Fix issue_number references (now plan_number) across pr-operations/, erk/, desktop-dash/, testing/, architecture/, textual/, cli/ docs", "status": "in_progress", "pr": "#8884", "depends_on": ["6.2"], "reason": null}, {"id": "6.4", "slug": "node-a71c1fe2", "description": "Fix cli/ and erk/ docs: plan-implement.md, command-organization.md, erk-exec-commands.md, issue-pr-linkage-storage.md, pr-address-workflows.md, remote-workflow-template.md, pr-submit-pipeline.md", "status": "pending", "pr": null, "depends_on": ["6.3"], "reason": null}, {"id": "6.5", "slug": "node-5172b9ff", "description": "Fix glossary.md, conventions.md, and index files", "status": "pending", "pr": null, "depends_on": ["6.4"], "reason": null}, {"id": "6.6", "slug": "node-d2fc7fee", "description": "Fix remaining scattered references: integrations/, sessions/, reference/, configuration/ docs", "status": "pending", "pr": null, "depends_on": ["6.5"], "reason": null}]}, {"number": 7, "suffix": "", "name": "Phase 7", "nodes": [{"id": "7.1", "slug": "node-d82407c7", "description": "Remove dead IssuePlanSource class and prepare_plan_source_from_issue() from implement_shared.py", "status": "pending", "pr": null, "depends_on": ["6.6"], "reason": null}, {"id": "7.2", "slug": "node-b9af6cb3", "description": "Remove dead create_plan_from_context.py exec script and its test", "status": "pending", "pr": null, "depends_on": ["7.1"], "reason": null}, {"id": "7.3", "slug": "node-68270e76", "description": "Remove PLAN_BACKEND_SPLIT vestiges and issue backend branches in plan-save.md and plan_save.py", "status": "done", "pr": null, "depends_on": ["7.2"], "reason": null}, {"id": "7.4", "slug": "node-12ecba35", "description": "Rename IssuePlanSource, IssueNextSteps, IssueNumberEvent classes if still used (coordinate with callers)", "status": "pending", "pr": null, "depends_on": ["7.3"], "reason": null}, {"id": "7.5", "slug": "node-8143d3da", "description": "Fix IssueNextSteps test regression: test_next_steps.py uses old issue_number parameter name", "status": "done", "pr": null, "depends_on": ["7.4"], "reason": null}, {"id": "7.6", "slug": "node-535715ab", "description": "Audit plan_issues module name -- rename or add deprecation notice if appropriate", "status": "pending", "pr": null, "depends_on": ["7.5"], "reason": null}]}], "summary": {"total_nodes": 35, "pending": 7, "planning": 0, "done": 27, "in_progress": 1, "blocked": 0, "skipped": 0}, "next_node": {"id": "6.4", "slug": "node-a71c1fe2", "description": "Fix cli/ and erk/ docs: plan-implement.md, command-organization.md, erk-exec-commands.md, issue-pr-linkage-storage.md, pr-address-workflows.md, remote-workflow-template.md, pr-submit-pipeline.md", "phase": "Phase 6", "status": "pending"}, "all_complete": false}, "validation": {"passed": false, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": false, "description": "Done step without PR reference: Step 7.3, Step 7.5"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "objective-header has objective_comment_id"}, {"passed": true, "description": "PR references use '#' prefix"}, {"passed": true, "description": "Roadmap table in sync with YAML"}]}, "marker_created": true, "warnings": []}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3676" cache_read_input_tokens="25221" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3676}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Objective #8381: Standardize Plan-as-PR Terminology Across Codebase**
+
+Progress: 27/35 nodes done, 1 in progress, 7 pending
+
+### Roadmap
+
+| Node | Description | Status |
+|------|-------------|--------|
+| 1.1–5.5 | Phases 1–5 | All done |
+| 6.1–6.2 | Planning docs fixes | Done |
+| 6.3 | Fix issue_number refs across pr-operations/, erk/, testing/, etc. | In progress (#8884) |
+| **6.4** | **Fix cli/ and erk/ docs: plan-implement.md, command-organization.md, etc.** | **Pending** |
+| 6.5 | Fix glossary.md, conventions.md, and index files | Pending |
+| 6.6 | Fix remaining scattered refs: integrations/, sessions/, reference/, config/ | Pending |
+| 7.1 | Remove dead IssuePlanSource class and prepare_plan_source_from_issue() | Pending |
+| 7.2 | Remove dead create_plan_from_context.py exec script and test | Pending |
+| 7.4 | Rename IssuePlanSource, IssueNextSteps, IssueNumberEvent classes | Pending |
+| 7.6 | Audit plan_issues module name | Pending |
+
+Note: Validation warning — nodes 7.3 and 7.5 are marked done without PR references.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3676" cache_read_input_tokens="25221" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3676}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_019MJHd8gneupDWmcQfu7Bs1">
+    <param name="skill">objective</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3676" cache_read_input_tokens="25221" output_tokens="562" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3676, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019MJHd8gneupDWmcQfu7Bs1">
+Launching skill: objective
+  </tool_result>
+  <user>Base directory for this skill: /workspaces/erk/.claude/skills/objective
+
+# Objective Skill
+
+## Overview
+
+Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
+erk-plans (single executable implementations), objectives track progress across related work and
+capture lessons learned along the way.
+
+**Scope range:**
+
+- Small: Feature requiring 2-3 related PRs
+- Medium: Refactor spanning several plans
+- Large: Long-running strategic direction emitting many plans
+
+## Objective vs Erk-Plan
+
+| Aspect   | Erk-Plan                         | Objective                           |
+| -------- | -------------------------------- | ----------------------------------- |
+| Purpose  | Single executable implementation | Coordinate 2+ related plans/PRs     |
+| Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
+| Body     | Machine-parseable metadata       | Human-readable markdown             |
+| Comments | Session context dumps            | Action logs + lessons               |
+| Label    | `erk-plan`                       | `erk-objective`                     |
+| Tooling  | `erk pr dispatch/implement`      | Manual updates via comments         |
+
+## Key Design Principles
+
+1. **Human-first** - Plain markdown, no machine-generated metadata
+2. **Incremental capture** - Each action gets its own comment
+3. **Lessons as first-class** - Every action comment includes lessons learned
+4. **Clear roadmap** - Status visible at a glance in the body
+5. **Body stays current via reconciliation** - After every PR landing, agents audit prose sections against what was actually implemented and correct stale information
+6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
+7. **One PR per phase** - Each phase is sized for a coherent single PR
+8. **Always shippable** - System remains functional after each merged PR
+9. **Body is source of truth** - Body always contains complete current state; comments are the changelog
+10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
+11. **Context over code** - Provide references to patterns, not prescriptive implementations
+12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
+
+## Quick Reference
+
+### Creating an Objective
+
+```bash
+gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat &lt;&lt;'EOF'
+# Objective: [Title]
+
+&gt; [1-2 sentence summary]
+
+## Goal
+
+[What success looks like - concrete end state]
+
+## Design Decisions
+
+1. **[Decision name]**: [What was decided]
+
+## Roadmap
+
+### Phase 1: [Name] Steelthread (1 PR)
+
+Minimal vertical slice proving the concept works.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | [Minimal infrastructure] | pending | |
+| 1.2 | [Wire into one command] | pending | |
+
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 2: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | [Extend to remaining commands] | pending | |
+| 2.2 | [Full test coverage] | pending | |
+
+**Test:** [Full acceptance criteria]
+
+EOF
+)"
+```
+
+### Logging an Action
+
+Post an action comment after completing work. See [format.md](references/format.md#action-comment-template) for full template.
+
+```bash
+gh issue comment &lt;issue-number&gt; --body "$(cat &lt;&lt;'EOF'
+## Action: [Brief title]
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Node:** 1.2
+### What Was Done
+### Lessons Learned
+### Roadmap Updates
+EOF
+)"
+```
+
+After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
+
+### Updating Node Details
+
+Update node description, slug, or reason using `update-objective-node`:
+
+```bash
+# Update description
+erk exec update-objective-node 8470 --node 1.3 --description "Revised description"
+
+# Set slug
+erk exec update-objective-node 8470 --node 1.3 --slug "revised-slug"
+
+# Skip with reason
+erk exec update-objective-node 8470 --node 1.3 --status skipped --reason "Superseded by new approach"
+
+# Combine multiple updates
+erk exec update-objective-node 8470 --node 2.1 --description "New desc" --slug "new-slug" --status planning
+```
+
+### Adding Nodes
+
+Add new nodes to an existing objective's roadmap:
+
+```bash
+# Add to existing phase (auto-assigns next ID, e.g., 1.4)
+erk exec add-objective-node 8470 --phase 1 --description "Clean up dead code"
+
+# With explicit slug and dependencies
+erk exec add-objective-node 8470 --phase 2 \
+  --description "Integration tests" \
+  --slug integration-tests \
+  --depends-on 2.1 --depends-on 2.2
+
+# With reason for adding
+erk exec add-objective-node 8470 --phase 1 \
+  --description "Handle edge case" \
+  --reason "Discovered during re-evaluation"
+```
+
+### Updating Node Status
+
+Always use the programmatic command — never manually edit YAML or prose tables:
+
+```bash
+erk exec update-objective-node &lt;issue&gt; --node &lt;id&gt; --status &lt;status&gt;
+erk exec update-objective-node &lt;issue&gt; --node &lt;id&gt; --pr '#1234'
+```
+
+Then validate: `erk objective check &lt;issue-number&gt;`
+
+### Viewing an Objective
+
+View an objective's dependency graph, dependencies, and next node:
+
+```bash
+# CLI
+erk objective view &lt;issue-number&gt;
+
+# Slash command (in-session)
+/local:objective-view &lt;issue-number&gt;
+```
+
+### Spawning an Erk-Plan
+
+To implement a specific roadmap node, create an erk-plan that references the objective:
+
+```bash
+erk pr create --file plan.md --title "Implement [node description]"
+```
+
+## Workflow Summary
+
+1. **Create objective** - When starting multi-plan work
+2. **Inspect progress** - View dependency graph and next node
+3. **Log actions** - After completing each significant piece of work
+4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
+5. **Spawn erk-plans** - For individual implementation nodes
+6. **Close** - When goal achieved or abandoned (proactively ask when all nodes done)
+
+## Resources
+
+### references/
+
+- `format.md` - Complete templates, examples, and update patterns
+- `workflow.md` - Creating objectives, spawning plans, steelthread structuring
+- `updating.md` - Quick reference for the two-step update workflow
+- `closing.md` - Closing triggers and procedures
+</user>
+  <tool_use name="ToolSearch" id="toolu_016LkJWpdbzXCWTitLPfhSk5">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2374" cache_read_input_tokens="28897" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2374, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016LkJWpdbzXCWTitLPfhSk5">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01DscFcxuDfC4hwd5qxjdVMi">
+    <param name="questions">[{'question': 'Which node should I create a plan for?', 'header': 'Node', 'options': [{'la...[truncated 521 chars]...s and prepare_plan_source_from_issue() from implement_shared.py'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1335" cache_read_input_tokens="31271" output_tokens="271" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DscFcxuDfC4hwd5qxjdVMi">
+User has answered your questions: "Which node should I create a plan for?"="Node 6.4 (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Creating plan for node 6.4: Fix cli/ and erk/ docs.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="324" cache_read_input_tokens="32606" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 324}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_018YLCGHAMMGksCCB4BCNZ2w">
+    <param name="skill">erk:system:objective-plan-node</param>
+    <param name="args">8381 --node 6.4</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="324" cache_read_input_tokens="32606" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 324, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018YLCGHAMMGksCCB4BCNZ2w">
+Launching skill: erk:system:objective-plan-node
+  </tool_result>
+  <user># /erk:system:objective-plan-node
+
+Inner skill for creating an implementation plan when the objective issue and node ID are already known. Called by the outer `/erk:objective-plan` command or directly by `plan_cmd.py` via Claude launch.
+
+This skips interactive node selection (Steps 4-5 of the outer command) since the node is already determined.
+
+## Usage
+
+```bash
+/erk:system:objective-plan-node 3679 --node 2.1
+```
+
+Both `&lt;objective-number&gt;` and `--node &lt;node-id&gt;` are required.
+
+---
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Parse `8381 --node 6.4` to extract:
+
+- **Objective number**: The numeric objective reference (required)
+- **Node ID**: The `--node` value (required)
+
+If either is missing, STOP and report: "ERROR: Both objective number and --node are required. Usage: /erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;"
+
+### Step 2: Create Objective Context Marker
+
+Launch a Task agent to fetch objective data and create the context marker:
+
+Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"`:
+
+**Task Prompt:**
+
+```
+Fetch and validate objective #&lt;objective-number&gt; and return a structured summary.
+
+CRITICAL: Do NOT write scripts or code. Only use the Bash tool to run the erk CLI commands listed below.
+
+Instructions:
+1. Run: erk exec get-issue-body &lt;objective-number&gt;
+2. Validate this is an objective:
+   - Check for 'erk-objective' label
+   - If 'erk-plan' label instead: return error "This is an erk-plan PR, not an objective"
+   - If neither label: include warning but proceed
+3. Create objective context marker:
+   erk exec marker create --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" --associated-objective &lt;objective-number&gt; objective-context
+4. Run: erk objective check &lt;objective-number&gt; --json-output --allow-legacy
+5. Format the JSON output from step 4 into the structured summary below. Do NOT write Python or any other scripts to parse the data — just read the JSON output directly and format it yourself.
+
+OBJECTIVE: #&lt;number&gt; — &lt;title&gt;
+STATUS: &lt;OPEN|CLOSED&gt;
+
+ROADMAP:
+| Node | Phase | Description | Status |
+| 1.1 | Phase 1 | &lt;description&gt; | done (PR #123) |
+| 1.2 | Phase 1 | &lt;description&gt; | pending |
+| 2.1 | Phase 2 | &lt;description&gt; | blocked |
+
+PENDING_NODES:
+- 1.2: &lt;description&gt;
+- 3.1: &lt;description&gt;
+
+RECOMMENDED: &lt;node-id or "none"&gt;
+
+WARNINGS: &lt;any warnings about labels, roadmap format, etc., or "none"&gt;
+
+Status mapping:
+- "pending" → "pending"
+- "done" → "done (PR #XXX)"
+- "in_progress" → "plan in progress (#XXX)"
+- "blocked" → "blocked"
+- "skipped" → "skipped"
+
+Only include nodes with status "pending" in PENDING_NODES section.
+Use the "next_step" field from check output as RECOMMENDED.
+```
+
+Replace `&lt;objective-number&gt;` with the parsed objective number.
+
+### Step 3: Verify Objective Context Marker
+
+```bash
+erk exec marker read --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" objective-context
+```
+
+If this returns a value matching the objective issue number, proceed.
+If it fails or returns wrong value, STOP and report:
+"ERROR: objective-context marker not created. Re-run the marker command manually:
+erk exec marker create --session-id '7e7dfd6b-db34-460d-9164-870ab538afad' --associated-objective &lt;issue-number&gt; objective-context"
+
+### Step 4: Create Roadmap Node Marker and Mark as Planning
+
+Create the roadmap-step marker for the known node:
+
+```bash
+erk exec marker create --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" \
+  --content "&lt;node-id&gt;" roadmap-step
+```
+
+Replace `&lt;node-id&gt;` with the node ID from arguments.
+
+Then mark the node as `planning` in the objective's roadmap (best-effort — may already be marked by the CLI):
+
+```bash
+erk exec update-objective-node &lt;objective-number&gt; --node &lt;node-id&gt; --status planning
+```
+
+If this fails, continue with planning — the CLI may have already marked it.
+
+### Step 5: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 6: Gather Context
+
+Before entering plan mode, gather relevant context:
+
+1. **Objective context:** Goal, design decisions, implementation context
+2. **Node context:** What the specific node requires
+3. **Prior work:** Look at completed nodes and their PRs for patterns
+
+Use this context to inform the plan.
+
+### Step 7: Enter Plan Mode
+
+Enter plan mode to create the implementation plan:
+
+1. Use the EnterPlanMode tool
+2. Focus the plan on the specific node selected
+3. Reference the parent objective in the plan
+
+**Plan should include:**
+
+- Reference to objective: `Part of Objective #&lt;number&gt;, Node &lt;node-id&gt;`
+- Clear goal for this specific node
+- Implementation phases (typically 1-3 for a single node)
+- Files to modify
+- Test requirements
+
+### Step 8: Save Plan as PR (Always Save)
+
+After the plan is approved in plan mode, **always save as a PR** — do not offer direct implementation. When the `exit-plan-mode-hook` fires, proceed directly with `/erk:plan-save`. Objective node plans require PR tracking for the objective's roadmap status to work correctly.
+
+The objective-context marker created in Step 2 is automatically read by `/erk:plan-save`. Simply run `/erk:plan-save` and it will link the plan to the objective.
+
+**If the marker was not created (fallback):**
+Create it manually before saving:
+
+```bash
+erk exec marker create --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" --associated-objective &lt;objective-number&gt; objective-context
+```
+
+Then run `/erk:plan-save`.
+
+### Step 9: Verify Objective Link
+
+After saving, the JSON output includes `objective_issue`. Check that it matches the expected objective number.
+
+If verification is needed:
+
+```bash
+erk exec get-plan-metadata &lt;new-plan-number&gt; objective_issue
+```
+
+Check that `value` matches the expected objective number.
+
+---
+
+## Output Format
+
+- **Start:** "Planning node &lt;node-id&gt; of objective #&lt;number&gt;..."
+- **After context:** Display node description and gathered context
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Missing objective number or node ID     | Report error with usage instructions                             |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| Node not found in roadmap               | Report error and list available nodes                            |
+| Marker creation fails                   | Report error with manual command                                 |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **This is an inner skill** — it expects the node to be pre-selected, not interactive
+- **Best-effort marking** — the `planning` status update may already be done by the CLI before Claude launches
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2099" cache_read_input_tokens="32930" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2099}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Planning node 6.4 of objective #8381...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2099" cache_read_input_tokens="32930" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2099}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018edX1YaWnKHzenNRY42H1S">
+    <param name="command">erk exec marker create --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" --associated-objective 8381 objective-context</param>
+    <param name="description">Create objective context marker</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2099" cache_read_input_tokens="32930" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2099}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KGAZoxzJZvTN9ZrX6aY1sC">
+    <param name="command">erk exec marker create --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" --content "6.4" roadmap-step</param>
+    <param name="description">Create roadmap-step marker</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2099" cache_read_input_tokens="32930" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2099}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019gXt9aVyxwvtsdJm2cgtKG">
+    <param name="command">erk exec update-objective-node 8381 --node 6.4 --status planning</param>
+    <param name="description">Mark node 6.4 as planning</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2099" cache_read_input_tokens="32930" output_tokens="551" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2099, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018edX1YaWnKHzenNRY42H1S">
+{"success": true, "message": "Created marker: objective-context"}
+  </tool_result>
+  <tool_result tool="toolu_01KGAZoxzJZvTN9ZrX6aY1sC">
+{"success": true, "message": "Created marker: roadmap-step"}
+  </tool_result>
+  <tool_result tool="toolu_019gXt9aVyxwvtsdJm2cgtKG">
+{"success": true, "issue_number": 8381, "node_id": "6.4", "previous_pr": null, "new_pr": null, "url": "https://github.com/dagster-io/erk/issues/8381"}
+  </tool_result>
+  <assistant>Good, markers created and node marked as planning. Now let me verify the marker and gather context for the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="928" cache_read_input_tokens="35029" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 928}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GGepHCXN8Mg61TJRaowSWH">
+    <param name="command">erk exec marker read --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" objective-context</param>
+    <param name="description">Verify objective-context marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="928" cache_read_input_tokens="35029" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 928}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GGepHCXN8Mg61TJRaowSWH">
+8381
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01QA5mo91x3jUEzowK2yjK96">
+    <param name="description">Explore node 6.4 target docs</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1490 chars]... for: issue, issue_number, plan issue, create issue, close issue, plan-issue, issue-number</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="928" cache_read_input_tokens="35029" output_tokens="695" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 928, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QA5mo91x3jUEzowK2yjK96">
+Excellent! Now I have all the information I need. Let me compile a comprehensive report of all the stale terminology found in these files:
+
+## Summary Report: Stale Terminology in Node 6.4 Documentation Files
+
+Based on my thorough analysis of the 7 files specified in objective #8381, node 6.4, here are the exact locations and suggested replacements for stale "issue" terminology that should be updated to "plan"/"plan PR" language:
+
+---
+
+### **File 1: `/workspaces/erk/docs/learned/cli/plan-implement.md`**
+
+**Line 7** (read_when metadata)
+```
+- "implementing plans from GitHub issues"
+```
+**Replace with:** `- "implementing plans from GitHub"`
+**Rationale:** The phrase "GitHub issues" is being used to refer to plans; should be "plans on GitHub" or just "GitHub"
+
+**Line 31**
+```
+- Issue number → Fetch from GitHub, create branch, setup `.erk/impl-context/`
+```
+**Replace with:** `- Plan number → Fetch from GitHub, create branch, setup `.erk/impl-context/``
+**Rationale:** Directly corresponds to "plan number," not "issue number"
+
+**Line 32**
+```
+- File path → Local plan, create branch from file, no issue tracking
+```
+**Replace with:** `- File path → Local plan, create branch from file, no plan tracking`
+**Rationale:** "issue tracking" should be "plan tracking"
+
+... [527 lines omitted] ...
+
+    warning: "All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
+**Replace with:** `    warning: "All discovery (branch name, plan number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."`
+Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, issue linkage validation happened in multiple places, and error handling varied between branches.
+**Replace with:** `Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, plan linkage validation happened in multiple places, and error handling varied between branches.`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6971" cache_read_input_tokens="35957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify a few things about the current state of the codebase before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6971" cache_read_input_tokens="35957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BSKxRjZ4qbypHuUXjy6Pq1">
+    <param name="pattern">--issue</param>
+    <param name="path">/workspaces/erk/src/erk/exec</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6971" cache_read_input_tokens="35957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BSKxRjZ4qbypHuUXjy6Pq1">
+&lt;tool_use_error&gt;Path does not exist: /workspaces/erk/src/erk/exec. Note: your current working directory is /workspaces/erk.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012vQGBKhjHu5dfi7no5r9Wc">
+    <param name="pattern">issue\.json</param>
+    <param name="path">/workspaces/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6971" cache_read_input_tokens="35957" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012vQGBKhjHu5dfi7no5r9Wc">
+&lt;tool_use_error&gt;Cancelled: parallel tool call Grep(--issue) errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XYV4oZjbVo4zs2KeFTs2Hg">
+    <param name="pattern">get_prs_linked_to_issues</param>
+    <param name="path">/workspaces/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6971" cache_read_input_tokens="35957" output_tokens="510" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6971, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XYV4oZjbVo4zs2KeFTs2Hg">
+&lt;tool_use_error&gt;Cancelled: parallel tool call Grep(--issue) errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012CkG8VRkV2RxGPuuzEAaUn">
+    <param name="pattern">--issue</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="glob">**/setup_impl*.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="785" cache_read_input_tokens="42928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 785}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012CkG8VRkV2RxGPuuzEAaUn">
+src/erk/cli/commands/exec/scripts/setup_impl.py:9:    erk exec setup-impl --issue 2521                 # Set up from issue #2521
+src/erk/cli/commands/exec/scripts/setup_impl.py:20:    $ erk exec setup-impl --issue 2521
+src/erk/cli/commands/exec/scripts/setup_impl.py:151:@click.option("--issue", "plan_number", type=int, default=None, help="Plan number to set up from")
+src/erk/cli/commands/exec/scripts/setup_impl.py:164:    1. --issue: Set up from a GitHub issue/PR
+src/erk/cli/commands/exec/scripts/setup_impl.py:173:    # Path 1: --issue provided
+src/erk/cli/commands/exec/scripts/setup_impl.py:255:                "message": "No plan found. Provide --issue, --file, or run from a plan branch.",
+src/erk/cli/commands/exec/scripts/setup_impl.py:263:    """Handle setup from a plan number (shared by explicit --issue and auto-detect).
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TbZXaijSQkKLoWDVdbxVoH">
+    <param name="pattern">issue\.json</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="785" cache_read_input_tokens="42928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 785}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TbZXaijSQkKLoWDVdbxVoH">
+No matches found
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014mFujsctCvkp6e7G3N5xfS">
+    <param name="pattern">has_issue_tracking</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="785" cache_read_input_tokens="42928" output_tokens="341" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 785, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014mFujsctCvkp6e7G3N5xfS">
+No matches found
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="880" cache_read_input_tokens="43713" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 880}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good - `issue.json` and `has_issue_tracking` are already gone from code. The `--issue` flag still exists in `setup_impl.py` (though its dest is already `plan_number`). Now I have enough context to write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="880" cache_read_input_tokens="43713" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 880}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CPUisfDTjESxchHxkK21iR">
+    <param name="file_path">/home/vscode/.claude/plans/composed-petting-map.md</param>
+    <param name="content"># Plan: Fix cli/ and erk/ docs terminology (Objective #8381, Node 6.4)
+
+## Context
+
+Part o...[truncated 3499 chars]...s in the modified files
+4. Visual review of each file for coherent language after changes
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="880" cache_read_input_tokens="43713" output_tokens="2024" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 880, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CPUisfDTjESxchHxkK21iR">
+File created successfully at: /home/vscode/.claude/plans/composed-petting-map.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_011o4j6ppGoeoaj3DyxkihtK">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2140" cache_read_input_tokens="44593" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2140, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011o4j6ppGoeoaj3DyxkihtK">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01NBZGtkELtWyV866Br34HYn">
+    <param name="plan"># Plan: Fix cli/ and erk/ docs terminology (Objective #8381, Node 6.4)
+
+## Context
+
+Part o...[truncated 3499 chars]...s in the modified files
+4. Visual review of each file for coherent language after changes
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="46733" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NBZGtkELtWyV866Br34HYn">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /home/vscode/.claude/plans/composed-petting-map.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Fix cli/ and erk/ docs terminology (Objective #8381, Node 6.4)
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 7e7dfd6b-db34-460d-9164-870ab538afad \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011TC1MiXNRgF4aQ7Dfuaa4k">
+    <param name="file_path">/home/vscode/.claude/plans/composed-petting-map.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="47471" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 682, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011TC1MiXNRgF4aQ7Dfuaa4k">
+     1→# Plan: Fix cli/ and erk/ docs terminology (Objective #8381, Node 6.4)
+     2→
+     3→## Context
+     4→
+     5→Part of Objective #8381 (Standardize Plan-as-PR Terminology). Nodes 6.1-6.3 already updated planning/ and cross-cutting docs. This node updates the remaining cli/ and erk/ documentation files to replace stale "issue" terminology with "plan"/"plan PR" language.
+     6→
+     7→## Files to Modify (7 files)
+     8→
+     9→### cli/ docs (4 files)
+    10→
+    11→1. **`docs/learned/cli/plan-implement.md`** (~18 replacements)
+    12→   - "GitHub issues" → "GitHub" (plans aren't stored as issues anymore)
+    13→   - "Issue number" → "Plan number"
+    14→   - "issue tracking" → "plan tracking"
+    15→   - "plan issue" → "plan"
+    16→   - "linked to issue" → "linked to plan"
+    17→   - "issue metadata" → "plan metadata"
+    18→   - `has_issue_tracking` → `has_plan_tracking` (already renamed in code)
+    19→   - "auto-close an issue" → "auto-close a plan"
+    20→   - Remove stale `issue.json` reference (already gone from code)
+    21→
+    22→2. **`docs/learned/cli/command-organization.md`** (~6 replacements)
+    23→   - "plan issue" → "plan" in all command descriptions and tables
+    24→
+    25→3. **`docs/learned/cli/erk-exec-commands.md`** (~10 replacements)
+    26→   - "plan issue metadata" → "plan metadata"
+    27→   - "plan issue" → "plan" in descriptions
+    28→   - `--issue` flag references → `--plan` (flag rename is Phase 7 code work, but docs should reflect target state)
+    29→   - "issue number" → "plan number"
+    30→   - "issue-based plans" → "plan-based implementations"
+
+... [46 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01AeYdXWaaKAdYCad6uVG1EJ">
+    <param name="questions">[{'question': '📋 Plan: Fix cli/ and erk/ docs terminology (Objective #8381, Node 6.4)\nCur...[truncated 396 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="48153" output_tokens="226" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1477, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AeYdXWaaKAdYCad6uVG1EJ">
+User has answered your questions: "📋 Plan: Fix cli/ and erk/ docs terminology (Objective #8381, Node 6.4)
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01AJ7bRiHzBwqEyEjnwHdv4z">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="318" cache_read_input_tokens="49630" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 318, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AJ7bRiHzBwqEyEjnwHdv4z">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="7e7dfd6b-db34-460d-9164-870ab538afad" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="7e7dfd6b-db34-460d-9164-870ab538afad" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "7e7dfd6b-db34-460d-9164-870ab538afad" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Running the plan save flow.
+
+**Branch slug:** `fix-cli-erk-docs-terminology`
+
+**Summary:** Updates 7 documentation files in cli/ and erk/ to replace stale issue-based terminology with plan/plan-PR language, continuing the Phase 6 terminology standardization effort.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3466" cache_read_input_tokens="49948" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3466}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RdfAXDp38kxEEhrEx6jXLR">
+    <param name="command">erk exec plan-save --format json --session-id="7e7dfd6b-db34-460d-9164-870ab538afad" --bra...[truncated 116 chars]...gy with plan/plan-PR language, continuing the Phase 6 terminology standardization effort."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3466" cache_read_input_tokens="49948" output_tokens="255" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3466, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RdfAXDp38kxEEhrEx6jXLR">
+Linked to objective #8381 from session context
+{"success": true, "plan_number": 8944, "plan_url": "https://github.com/dagster-io/erk/pull/8944", "title": "[erk-plan] Plan: Fix cli/ and erk/ docs terminology (Objective #8381, Node 6.4)", "branch_name": "plnd/O8381-fix-cli-erk-docs-ter-03-08-0110", "plan_backend": "planned_pr", "objective_issue": 8381, "archived_to": "/workspaces/erk/.erk/scratch/sessions/7e7dfd6b-db34-460d-9164-870ab538afad/plan_snapshots/000001-9d316d0a"}
+  </tool_result>
+  <assistant>Plan saved. Now verifying the objective link.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="53414" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 461}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0195qAW1zzfTDGPh3wBrpsjk">
+    <param name="command">erk exec get-plan-metadata 8944 objective_issue</param>
+    <param name="description">Verify objective link</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="53414" output_tokens="97" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0195qAW1zzfTDGPh3wBrpsjk">
+{"success": true, "value": 8381, "plan_number": 8944, "field": "objective_issue"}
+  </tool_result>
+  <assistant>Verified objective link: #8381
+
+Now updating the objective roadmap for node 6.4.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="53875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 248}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NfL4AS2KEiZJecM6RdbV5E">
+    <param name="command">erk exec update-objective-node 8381 --node 6.4 --pr '#8944' --status in_progress</param>
+    <param name="description">Update objective roadmap node 6.4</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="53875" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 248, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NfL4AS2KEiZJecM6RdbV5E">
+{"success": true, "issue_number": 8381, "node_id": "6.4", "previous_pr": null, "new_pr": "#8944", "url": "https://github.com/dagster-io/erk/issues/8381"}
+  </tool_result>
+  <assistant>Updated objective #8381 roadmap: node 6.4 → plan #8944
+
+Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="54123" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 297}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HQrDdGKXRV5mRYcfiUjm6r">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="54123" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 297, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HQrDdGKXRV5mRYcfiUjm6r">
+SESSION_ID=7e7dfd6b-db34-460d-9164-870ab538afad
+SESSION_FILE=/home/vscode/.claude/projects/-workspaces-erk/7e7dfd6b-db34-460d-9164-870ab538afad.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WAowFYohHmXk3oPzndtiGQ">
+    <param name="command">erk exec push-session --session-file "/home/vscode/.claude/projects/-workspaces-erk/7e7dfd...[truncated 46 chars]...460d-9164-870ab538afad" --stage planning --source local --plan-id 8944 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="54420" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 197, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
