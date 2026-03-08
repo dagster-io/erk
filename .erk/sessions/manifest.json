@@ -5,8 +5,8 @@
     {
       "session_id": "16097033-cda2-45e7-903b-b47d18587553",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-08T09:37:10.189331+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T09:38:14.877575+00:00",
       "files": [
         "impl-16097033-cda2-45e7-903b-b47d18587553-16097033-cda2-45e7-903b-b47d18587553-part1.xml",
         "impl-16097033-cda2-45e7-903b-b47d18587553-16097033-cda2-45e7-903b-b47d18587553-part2.xml",
@@ -14,9 +14,9 @@
         "impl-16097033-cda2-45e7-903b-b47d18587553-16097033-cda2-45e7-903b-b47d18587553-part4.xml"
       ],
       "user_turns": 2,
-      "duration_minutes": 4,
-      "raw_size_kb": 498,
-      "xml_size_kb": 95,
+      "duration_minutes": 5,
+      "raw_size_kb": 527,
+      "xml_size_kb": 106,
       "git_branch": "plnd/O8381-rename-plan-issues-m-03-08-0929"
     }
   ]
