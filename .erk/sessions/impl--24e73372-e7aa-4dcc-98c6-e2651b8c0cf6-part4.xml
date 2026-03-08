@@ -1,0 +1,514 @@
+<session>
+  <meta source="agent-a219b2c" />
+  <meta branch="plnd/pr-dispatch-remote-03-08-0959" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Perfect! Now I have all the key information. Let me compile a comprehensive report for the user:
+
+## Remote Dispatch Implementation Reference
+
+Here's the complete breakdown of the implementation components for remote dispatch in `pr dispatch`:
+
+### 1. **IssueInfo** (No `head_ref_name`)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py`
+
+```python
+@dataclass(frozen=True)
+class IssueInfo:
+    """Information about a GitHub issue."""
+    number: int
+    title: str
+    body: str
+    state: str  # "OPEN" or "CLOSED"
+    url: str
+    labels: list[str]
+    assignees: list[str]
+    created_at: datetime
+    updated_at: datetime
+    author: str  # GitHub login of the issue creator
+```
+
+**Note:** `IssueInfo` does NOT have `head_ref_name`. This is only on PR objects. For remote dispatch, fetch the PR using `RemoteGitHub.get_issue()` which returns `IssueInfo | IssueNotFound`, but PRs need the full `RemoteGitHub` read methods that work with PR-specific fields.
+
+---
+
+### 2. **RemoteGitHub ABC** (Gateway for no-repo operations)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py`
+
+Key methods for remote dispatch:
+
+```python
+class RemoteGitHub(ABC):
+    
+    # Read operations
+    @abstractmethod
+    def get_authenticated_user(self) -&gt; str:
+        """Get the username of the authenticated GitHub user."""
+        ...
+    
+    @abstractmethod
+    def get_default_branch_name(self, *, owner: str, repo: str) -&gt; str:
+        """Get the default branch name for a repository."""
+        ...
+    
+    @abstractmethod
+    def get_default_branch_sha(self, *, owner: str, repo: str) -&gt; str:
+        """Get the SHA of the default branch HEAD."""
+        ...
+    
+    @abstractmethod
+    def get_issue(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -&gt; IssueInfo | IssueNotFound:
+        """Fetch issue data by number (works for PRs too)."""
+        ...
+    
+    # Write operations
+    @abstractmethod
+    def create_ref(self, *, owner: str, repo: str, ref: str, sha: str) -&gt; None:
+        """Create a git reference (branch)."""
+        ...
+    
+    @abstractmethod
+    def create_file_commit(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        path: str,
+        content: str,
+        message: str,
+        branch: str,
+    ) -&gt; str:
+        """Create a file commit using the GitHub Contents API."""
+        ...
+    
+    @abstractmethod
+    def create_pull_request(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        head: str,
+        base: str,
+        title: str,
+        body: str,
+        draft: bool,
+    ) -&gt; int:
+        """Create a pull request. Returns PR number."""
+        ...
+    
+    @abstractmethod
+    def update_pull_request_body(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        pr_number: int,
+        body: str,
+    ) -&gt; None:
+        """Update a pull request's body."""
+        ...
+    
+    @abstractmethod
+    def add_labels(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        issue_number: int,
+        labels: tuple[str, ...],
+    ) -&gt; None:
+        """Add labels to an issue or PR."""
+        ...
+    
+    @abstractmethod
+    def dispatch_workflow(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        workflow: str,
+        ref: str,
+        inputs: dict[str, str],
+    ) -&gt; str:
+        """Dispatch a workflow and poll for the run ID. Returns run ID string."""
+        ...
+    
+    @abstractmethod
+    def add_issue_comment(
+        self,
+        *,
+        owner: str,
+        repo: str,
+        issue_number: int,
+        body: str,
+    ) -&gt; int:
+        """Add a comment to an issue or PR. Returns comment ID."""
+        ...
+```
+
+---
+
+### 3. **ValidatedPlannedPR** (Local PR validation result)
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py`
+
+```python
+@dataclass(frozen=True)
+class ValidatedPlannedPR:
+    """Draft PR that passed all validation checks."""
+    
+    number: int
+    title: str
+    url: str
+    branch_name: str
+```
+
+Created by `_validate_planned_pr_for_dispatch()` which:
+- Fetches the PR via local `ctx.github.get_pr()`
+- Checks for `erk-plan` label
+- Validates PR is OPEN state
+- Extracts `head_ref_name` from the PR details
+
+---
+
+### 4. **build_impl_context_files()** (File generator, no disk I/O)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_context.py`
+
+```python
+def build_impl_context_files(
+    plan_content: str,
+    plan_id: str,
+    url: str,
+    *,
+    provider: str,
+    objective_id: int | None,
+    now_iso: str,
+    node_ids: tuple[str, ...] | None,
+) -&gt; dict[str, str]:
+    """Build impl-context file contents as an in-memory mapping.
+    
+    Returns the same content as create_impl_context but without writing to disk,
+    suitable for use with commit_files_to_branch.
+    
+    Returns:
+        Mapping of relative file paths to string content:
+        {
+            ".erk/impl-context/plan.md": "&lt;plan content&gt;",
+            ".erk/impl-context/ref.json": "{...}"
+        }
+    """
+    ref_data: dict[str, str | int | list[str] | None] = {
+        "provider": provider,
+        "plan_id": plan_id,
+        "url": url,
+        "created_at": now_iso,
+        "synced_at": now_iso,
+        "labels": [],
+        "objective_id": objective_id,
+        "node_ids": list(node_ids) if node_ids is not None else None,
+    }
+    return {
+        f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
+        f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+    }
+```
+
+**Note:** `IMPL_CONTEXT_DIR = ".erk/impl-context"` (constant from `planned_pr_lifecycle.py`)
+
+---
+
+### 5. **extract_plan_content()** (Plan content extractor)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`
+
+```python
+def extract_plan_content(pr_body: str) -&gt; str:
+    """Extract plan content from a PR body at any lifecycle stage.
+    
+    Looks for &lt;details&gt;/&lt;summary&gt;original-plan&lt;/summary&gt; tags first.
+    Falls back to old flat format for backward compatibility.
+    
+    Args:
+        pr_body: Full PR body string
+    
+    Returns:
+        Plan content portion of the body
+    """
+    # Try new &lt;details&gt;-tagged format first
+    DETAILS_OPEN = "&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n"
+    DETAILS_CLOSE = "\n\n&lt;/details&gt;"
+    
+    for details_open in (DETAILS_OPEN, _LEGACY_DETAILS_OPEN):
+        open_idx = pr_body.find(details_open)
+        if open_idx != -1:
+            content_start = open_idx + len(details_open)
+            close_idx = pr_body.find(DETAILS_CLOSE, content_start)
+            if close_idx != -1:
+                return pr_body[content_start:close_idx]
+    
+    # Backward compat: old flat format
+    PLAN_CONTENT_SEPARATOR = "\n\n---\n\n"
+    separator_index = pr_body.find(PLAN_CONTENT_SEPARATOR)
+    if separator_index == -1:
+        return pr_body
+    candidate_prefix = pr_body[:separator_index]
+    if "&lt;!-- erk:metadata-block:" not in candidate_prefix:
+        return pr_body
+    return pr_body[separator_index + len(PLAN_CONTENT_SEPARATOR) :]
+```
+
+**No equivalent `extract_plan_from_body()` function exists.** Use `extract_plan_content()` from `planned_pr_lifecycle.py` instead.
+
+---
+
+### 6. **repo_option and resolve_owner_repo()** (Repository resolution)
+**File:** `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py`
+
+```python
+def resolve_owner_repo(
+    ctx: ErkContext,
+    *,
+    target_repo: str | None,
+) -&gt; tuple[str, str]:
+    """Resolve owner/repo from --repo flag or local git context.
+    
+    Args:
+        ctx: ErkContext
+        target_repo: Optional "owner/repo" string from --repo flag
+    
+    Returns:
+        Tuple of (owner, repo_name)
+    
+    Raises:
+        UserFacingCliError: If owner/repo cannot be determined
+    """
+    if target_repo is not None:
+        if "/" not in target_repo or target_repo.count("/") != 1:
+            raise UserFacingCliError(
+                f"Invalid --repo format: '{target_repo}'\n"
+                "Expected format: owner/repo (e.g., dagster-io/erk)"
+            )
+        owner, repo_name = target_repo.split("/")
+        return (owner, repo_name)
+    
+    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+        raise UserFacingCliError(
+            "Cannot determine target repository.\n"
+            "Use --repo owner/repo or run from inside a git repository."
+        )
+    return (ctx.repo.github.owner, ctx.repo.github.repo)
+
+
+def get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub:
+    """Get or construct a RemoteGitHub from context.
+    
+    Uses ctx.remote_github if provided (tests inject FakeRemoteGitHub here).
+    Otherwise constructs RealRemoteGitHub from ctx.http_client.
+    """
+    if ctx.remote_github is not None:
+        return ctx.remote_github
+    
+    if ctx.http_client is None:
+        raise UserFacingCliError(
+            "GitHub authentication required.\nRun 'gh auth login' to authenticate."
+        )
+    
+    return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
+
+
+# Click option for --repo flag
+repo_option = click.option(
+    "--repo",
+    "target_repo",
+    type=str,
+    default=None,
+    help="Target repo (owner/repo) for remote operation without local git clone",
+)
+```
+
+---
+
+### 7. **dispatch_one_shot_remote.py** (Canonical remote dispatch pattern)
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py`
+
+This is the existing implementation showing the full remote dispatch flow:
+
+```python
+def dispatch_one_shot_remote(
+    *,
+    remote: RemoteGitHub,
+    owner: str,
+    repo: str,
+    params: OneShotDispatchParams,
+    dry_run: bool,
+    ref: str | None,
+    time_gateway: Time,
+    prompt_executor: PromptExecutor | None,
+) -&gt; OneShotDispatchResult | None:
+    """Execute the full remote dispatch sequence for a one-shot workflow.
+    
+    Creates branch, commits prompt file, creates draft PR, and dispatches
+    workflow — all via GitHub REST API without a local git clone.
+    """
+    # 1. Get authenticated user
+    submitted_by = remote.get_authenticated_user()
+    
+    # 2. Detect trunk branch
+    trunk = remote.get_default_branch_name(owner=owner, repo=repo)
+    
+    # 3. Generate branch name (for timestamp formatting)
+    branch_name = generate_planned_pr_branch_name(...)
+    
+    # 4. Get trunk SHA for branch creation
+    trunk_sha = remote.get_default_branch_sha(owner=owner, repo=repo)
+    
+    # 5. Create branch from trunk
+    remote.create_ref(
+        owner=owner,
+        repo=repo,
+        ref=f"refs/heads/{branch_name}",
+        sha=trunk_sha,
+    )
+    
+    # 6. Write prompt to .erk/impl-context/prompt.md
+    remote.create_file_commit(
+        owner=owner,
+        repo=repo,
+        path=".erk/impl-context/prompt.md",
+        content=params.prompt + "\n",
+        message=f"One-shot: {params.prompt[:60]}",
+        branch=branch_name,
+    )
+    
+    # 7. Create draft PR with metadata header
+    pr_number = remote.create_pull_request(
+        owner=owner,
+        repo=repo,
+        head=branch_name,
+        base=trunk,
+        title=pr_title,
+        body=pr_body_initial,
+        draft=True,
+    )
+    
+    # 8. Add footer now that we have the PR number
+    footer = build_pr_body_footer(pr_number)
+    remote.update_pull_request_body(
+        owner=owner,
+        repo=repo,
+        pr_number=pr_number,
+        body=pr_body_initial + footer,
+    )
+    
+    # 9. Add plan labels
+    remote.add_labels(
+        owner=owner,
+        repo=repo,
+        issue_number=pr_number,
+        labels=("erk-pr", "erk-plan"),
+    )
+    
+    # 10. Dispatch workflow
+    run_id = remote.dispatch_workflow(
+        owner=owner,
+        repo=repo,
+        workflow=ONE_SHOT_WORKFLOW,
+        ref=dispatch_ref,
+        inputs=inputs,
+    )
+    
+    # 11. Post queued comment (best-effort)
+    remote.add_issue_comment(
+        owner=owner,
+        repo=repo,
+        issue_number=pr_number,
+        body=comment_body,
+    )
+    
+    return OneShotDispatchResult(
+        pr_number=pr_number,
+        run_id=run_id,
+        branch_name=branch_name,
+    )
+```
+
+**Key patterns from this implementation:**
+- All operations use explicit `owner`, `repo` parameters
+- No local git clone required
+- Metadata block created with `format_plan_header_body()` before PR creation
+- PR footer added AFTER PR creation (because footer needs PR number)
+- Labels added immediately after footer update
+- Workflow dispatch with `ref` parameter (defaults to trunk if None)
+- Post-dispatch operations are best-effort with error handling
+
+---
+
+### 8. **NoRepoSentinel** (Sentinel for non-repo contexts)
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py`
+
+```python
+@dataclass(frozen=True)
+class NoRepoSentinel:
+    """Sentinel value indicating execution outside a git repository.
+    
+    Used when commands run outside git repositories (e.g., before init,
+    in non-git directories). Commands that require repo context can check
+    for this sentinel and fail fast.
+    """
+    
+    message: str = "Not inside a git repository"
+```
+
+**Usage in context helpers:**
+```python
+def require_repo_root(ctx: click.Context) -&gt; Path:
+    """Get repo root from context, exiting with error if not initialized."""
+    # ...
+    repo = ctx.obj.repo
+    if isinstance(repo, NoRepoSentinel):
+        click.echo("Error: Not in a git repository", err=True)
+        raise SystemExit(1)
+    
+    return repo.root
+```
+
+**In repo resolution:**
+```python
+def resolve_owner_repo(ctx: ErkContext, *, target_repo: str | None) -&gt; tuple[str, str]:
+    # ...
+    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+        raise UserFacingCliError(
+            "Cannot determine target repository.\n"
+            "Use --repo owner/repo or run from inside a git repository."
+        )
+    return (ctx.repo.github.owner, ctx.repo.github.repo)
+```
+
+---
+
+### Summary of Key Differences for Remote Dispatch
+
+**vs. Local Dispatch:**
+1. Use `RemoteGitHub` instead of `LocalGitHub` (no `repo_root` parameter)
+2. Explicitly pass `owner`, `repo` to all gateway methods
+3. Use `build_impl_context_files()` to generate file content without disk I/O
+4. Pass file content dict to `commit_files_to_branch()` (git plumbing)
+5. Use `repo_option` decorator and `resolve_owner_repo()` for CLI arguments
+6. Check for `NoRepoSentinel` when working without local git context
+
+---
+
+All absolute file paths:
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_context.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`
+- `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py`</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="4995" cache_read_input_tokens="70466" cache_creation="{'ephemeral_5m_input_tokens': 4995, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
