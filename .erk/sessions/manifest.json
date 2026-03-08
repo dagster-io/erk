@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "plan_id": 8955,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T02:00:01.740512+00:00",
+      "files": [
+        "impl--f52f11fe-7a26-4477-8f20-50e5251846f4-part1.xml",
+        "impl--f52f11fe-7a26-4477-8f20-50e5251846f4-part2.xml",
+        "impl--f52f11fe-7a26-4477-8f20-50e5251846f4-part3.xml",
+        "impl--f52f11fe-7a26-4477-8f20-50e5251846f4-part4.xml",
+        "impl--f52f11fe-7a26-4477-8f20-50e5251846f4-part5.xml",
+        "impl--f52f11fe-7a26-4477-8f20-50e5251846f4-part6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 4,
+      "raw_size_kb": 543,
+      "xml_size_kb": 93,
+      "git_branch": "plnd/fix-objective-roadmap-sync-03-07-2053"
+    }
+  ]
+}
