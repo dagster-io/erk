@@ -24,7 +24,7 @@ from erk.cli.commands.objective.check_cmd import (
     ObjectiveValidationError,
     validate_objective,
 )
-from erk.cli.commands.pr.repo_resolution import get_remote_github
+from erk.cli.repo_resolution import get_remote_github
 from erk_shared.context.helpers import require_context, require_repo_root
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound

@@ -17,11 +17,11 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk.cli.commands.pr.shared import (
     assemble_pr_body,
     discover_branch_context,
 )
+from erk.cli.repo_resolution import get_remote_github
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.context.types import NoRepoSentinel

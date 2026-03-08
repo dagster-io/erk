@@ -10,7 +10,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk.cli.commands.pr.shared import (
     assemble_pr_body,
     cleanup_diff_file,
@@ -22,6 +21,7 @@ from erk.cli.commands.pr.shared import (
     run_commit_message_generation,
     run_diff_extraction,
 )
+from erk.cli.repo_resolution import get_remote_github
 from erk.core.command_log import get_or_generate_session_id
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext, NoRepoSentinel

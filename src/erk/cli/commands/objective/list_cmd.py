@@ -6,7 +6,7 @@ from rich.markup import escape
 from rich.table import Table
 
 from erk.cli.alias import alias
-from erk.cli.commands.pr.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.gateway.github.metadata.core import extract_objective_slug

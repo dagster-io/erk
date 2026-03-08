@@ -34,7 +34,7 @@ from erk.cli.commands.exec.scripts.update_objective_node import (
     _find_node_refs,
     _replace_node_refs_in_body,
 )
-from erk.cli.commands.pr.repo_resolution import get_remote_github
+from erk.cli.repo_resolution import get_remote_github
 from erk_shared.context.helpers import (
     require_context,
     require_cwd,
