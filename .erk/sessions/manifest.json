@@ -5,20 +5,23 @@
     {
       "session_id": "af028481-5290-49ce-8b2d-9bc0af7bc4c4",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-08T13:16:20.411865+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T13:19:28.685913+00:00",
       "files": [
         "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part1.xml",
         "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part2.xml",
         "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part3.xml",
         "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part4.xml",
         "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part5.xml",
-        "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part6.xml"
+        "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part6.xml",
+        "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part7.xml",
+        "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part8.xml",
+        "impl-af028481-5290-49ce-8b2d-9bc0af7bc4c4-af028481-5290-49ce-8b2d-9bc0af7bc4c4-part9.xml"
       ],
-      "user_turns": 2,
-      "duration_minutes": 3,
-      "raw_size_kb": 235,
-      "xml_size_kb": 92,
+      "user_turns": 3,
+      "duration_minutes": 6,
+      "raw_size_kb": 286,
+      "xml_size_kb": 123,
       "git_branch": "plnd/consolidate-learn-docs-03-08-0908"
     }
   ]
