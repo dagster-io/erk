@@ -1,6 +1,7 @@
 """Tests for FakeRemoteGitHub gateway."""
 
 from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
 
 
 def test_get_authenticated_user_returns_configured_value() -> None:
@@ -242,3 +243,54 @@ def test_mutation_properties_return_copies() -> None:
     refs2 = fake.created_refs
     assert refs1 == refs2
     assert refs1 is not refs2  # different list objects
+
+
+def test_get_pr_returns_configured_pr() -> None:
+    """get_pr returns a pre-configured RemotePRInfo."""
+    pr = RemotePRInfo(
+        number=42,
+        title="Fix bug",
+        state="OPEN",
+        url="https://github.com/o/r/pull/42",
+        head_ref_name="fix-bug",
+        base_ref_name="main",
+        owner="o",
+        repo="r",
+        labels=["erk-pr"],
+    )
+    fake = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
+        prs={42: pr},
+    )
+
+    result = fake.get_pr(owner="o", repo="r", number=42)
+    assert isinstance(result, RemotePRInfo)
+    assert result.number == 42
+    assert result.title == "Fix bug"
+    assert result.head_ref_name == "fix-bug"
+    assert result.labels == ["erk-pr"]
+
+
+def test_get_pr_returns_not_found() -> None:
+    """get_pr returns RemotePRNotFound when PR is not configured."""
+    fake = FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
+    )
+
+    result = fake.get_pr(owner="o", repo="r", number=999)
+    assert isinstance(result, RemotePRNotFound)
+    assert result.pr_number == 999
