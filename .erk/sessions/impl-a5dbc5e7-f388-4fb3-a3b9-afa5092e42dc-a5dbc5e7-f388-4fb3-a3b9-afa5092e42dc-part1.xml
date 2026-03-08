@@ -1,0 +1,1244 @@
+<session>
+  <meta branch="plnd/O8381-phase7-issue-to-plan-03-08-0206" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8960&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8960` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8960.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11330" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11330, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LYs47yN3toGDs52xoeQwUZ">
+    <param name="command">erk exec setup-impl --issue 8960</param>
+    <param name="description">Set up implementation for plan #8960</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11330" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11330, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LYs47yN3toGDs52xoeQwUZ">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O8381-phase7-issue-to-plan-03-08-0206", "plan_number": 8960, "plan_url": "https://github.com/dagster-io/erk/pull/8960", "branch": "plnd/O8381-phase7-issue-to-plan-03-08-0206", "plan_title": "[erk-plan] Plan: Objective #8381 \u2014 Phase 7 Cleanup (Nodes 7.1, 7.2, 7.4)", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8960, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O8381-phase7-issue-to-plan-03-08-0206', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="28585" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01G6KRaj8WqpKn4H4JJKWHXo">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O8381-phase7-issue-to-plan-03-08-0206/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="28585" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G6KRaj8WqpKn4H4JJKWHXo">
+     1→# Plan: Objective #8381 — Phase 7 Cleanup (Nodes 7.1, 7.2, 7.4)
+     2→
+     3→## Context
+     4→
+     5→Objective #8381 standardizes plan-as-PR terminology across the codebase. Phases 1-6 updated docs and user-facing strings. Phase 7 tackles dead code removal and class renaming to eliminate remaining "Issue" terminology from internal code. Nodes 7.1, 7.2, and 7.4 are combined into one PR since they're closely related.
+     6→
+     7→**Key findings**:
+     8→- Node 7.1: `IssuePlanSource` and `prepare_plan_source_from_issue()` are genuinely dead — no callers exist. Remove them.
+     9→- Node 7.2: Script already deleted in prior commit. Only a stale docstring reference remains.
+    10→- Node 7.4: `IssueNextSteps`/`IssueNumberEvent` don't exist. Real rename targets are `IssueBranchSetup`, `IssueValidationFailed`, `PrepareIssueResult` in `issue_workflow.py`, plus the module name itself.
+    11→
+    12→## Changes
+    13→
+    14→### 1. Delete dead code (Node 7.1)
+    15→
+    16→In `src/erk/cli/commands/implement_shared.py`:
+    17→- Delete `IssuePlanSource` class (lines 483-495)
+    18→- Delete `prepare_plan_source_from_issue()` function (lines 498-557)
+    19→- Remove now-unused imports: `IssueBranchSetup`, `IssueValidationFailed` from `erk_shared.issue_workflow` (lines 20-21), `prepare_plan_for_worktree` (line 22), `click` (if only used by deleted code), `user_output` (if only used by deleted code)
+    20→
+    21→### 2. Clean up stale docstring (Node 7.2)
+    22→
+    23→In `packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py` line 6:
+    24→- Remove `- erk exec create-plan-from-context (stdin plan)` from the docstring list
+    25→
+    26→### 3. Rename module `issue_workflow.py` → `plan_workflow.py` (Node 7.4)
+    27→
+    28→- Rename file: `packages/erk-shared/src/erk_shared/issue_workflow.py` → `plan_workflow.py`
+    29→- Update module docstring
+    30→- Update all imports in 4 source files + 1 test file:
+
+... [64 lines omitted] ...
+
+    43→| `IssueValidationFailed` | `PlanValidationFailed` |
+    59→- Error messages referencing "Issue #" → "Plan #" where appropriate (check `IssueValidationFailed` construction sites)
+    80→5. Grep for any remaining `IssueBranchSetup|IssueValidationFailed|IssuePlanSource|PrepareIssueResult|prepare_plan_source_from_issue` to confirm complete rename
+  </tool_result>
+  <assistant>Good, I understand the plan. Now let me set up todos and start reading the files I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2051" cache_read_input_tokens="28971" cache_creation="{'ephemeral_5m_input_tokens': 2051, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01RQX93tgBREH8TceBG2ZSZD">
+    <param name="todos">[{'content': 'Delete dead code: IssuePlanSource and prepare_plan_source_from_issue() from ...[truncated 1094 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2051" cache_read_input_tokens="28971" cache_creation="{'ephemeral_5m_input_tokens': 2051, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RQX93tgBREH8TceBG2ZSZD">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal GitHub started and read all the files I need to modify in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_019AKWhwcfT13qGoszNoYns4">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014xbCT8GHApxGPVngA9wbMx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015auvP7U6kLK1esCHUV8MMP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/issue_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QR5ZobaKpsXeE4GwV8QYFM">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MAjipXsKDJ2N2XVUq4LbPa">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EbCFZ31Toc6nbvpKgm1CHr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/create_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01X9PdDwVSbPvNkjpeKRL9fF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01H7jpgQukqJP1Z7qCcTaoGm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01M2HRDgHacvrcpGASJG8dRG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/shared/test_issue_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="31022" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019AKWhwcfT13qGoszNoYns4">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_014xbCT8GHApxGPVngA9wbMx">
+     1→"""Shared utilities for implement commands.
+     2→
+     3→This module contains the common logic for erk implement.
+     4→"""
+     5→
+     6→import re
+     7→import shlex
+     8→from collections.abc import Callable
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→from typing import NamedTuple, TypeVar
+    12→
+    13→import click
+    14→
+    15→from erk.cli.activation import render_activation_script
+    16→from erk.cli.help_formatter import script_option
+    17→from erk.core.context import ErkContext
+    18→from erk.core.prompt_executor import PromptExecutor
+    19→from erk_shared.issue_workflow import (
+    20→    IssueBranchSetup,
+    21→    IssueValidationFailed,
+    22→    prepare_plan_for_worktree,
+    23→)
+    24→from erk_shared.naming import (
+    25→    sanitize_worktree_name,
+    26→    strip_plan_from_filename,
+    27→)
+    28→from erk_shared.output.output import user_output
+    29→from erk_shared.plan_store.types import PlanNotFound
+    30→
+
+... [654 lines omitted] ...
+
+   121→        click.ClickException: If model name is invalid
+   131→        raise click.ClickException(f"Invalid model: '{model}'\nValid options: {valid_options}")
+   168→    """Validate flag combinations and raise ClickException if invalid.
+   176→        click.ClickException: If flag combination is invalid
+   181→        raise click.ClickException(
+   188→        raise click.ClickException(
+   272→        click.ClickException: If Claude CLI not found
+   287→    except RuntimeError as e:
+   288→        raise click.ClickException(str(e)) from e
+   311→        click.ClickException: If Claude CLI not found or command fails
+   322→        raise click.ClickException(
+   355→        # Stop on first failure
+   365→    # Raise exception if any command failed
+   367→        raise click.ClickException("One or more commands failed")
+   523→        ctx.console.error(f"Error: Plan #{plan_number} not found")
+   533→    if isinstance(result, IssueValidationFailed):
+   534→        user_output(click.style("Error: ", fg="red") + result.message)
+   538→    for warning in setup.warnings:
+   539→        user_output(click.style("Warning: ", fg="yellow") + warning)
+   575→        ctx.console.error(f"Error: Plan file not found: {plan_file}")
+  </tool_result>
+  <tool_result tool="toolu_015auvP7U6kLK1esCHUV8MMP">
+     1→"""Shared workflow for creating worktrees from plans.
+     2→
+     3→This module provides the canonical logic for preparing plans for worktree creation,
+     4→including validation, branch naming, and metadata extraction. Used by both
+     5→`erk wt create --from-plan` and `erk implement`.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from datetime import datetime
+    10→
+    11→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    12→from erk_shared.naming import (
+    13→    InvalidWorktreeName,
+    14→    sanitize_worktree_name,
+    15→    validate_worktree_name,
+    16→)
+    17→from erk_shared.plan_store.types import Plan, PlanState
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class IssueBranchSetup:
+    22→    """Result of successfully preparing an issue for worktree creation.
+    23→
+    24→    Attributes:
+    25→        branch_name: Git branch name (e.g., plnd/fix-bug-01-15-1430)
+    26→        worktree_name: Sanitized directory name for the worktree
+    27→        plan_content: Issue body to use as plan.md content
+    28→        plan_number: Plan number
+    29→        issue_url: Full GitHub issue URL
+    30→        issue_title: Issue title for reference
+
+... [107 lines omitted] ...
+
+    32→        warnings: List of warning messages (e.g., non-OPEN issue)
+    42→    warnings: tuple[str, ...] = ()
+    46→class IssueValidationFailed:
+    50→        message: User-facing error message explaining the failure
+    57→PrepareIssueResult = IssueBranchSetup | IssueValidationFailed
+    74→        warn_non_open: Whether to include warning for non-OPEN plans
+    77→        IssueBranchSetup on success, IssueValidationFailed on validation failure
+    81→        return IssueValidationFailed(
+    89→        return IssueValidationFailed(
+    95→    # Collect warnings
+    96→    warnings: list[str] = []
+    98→        warnings.append(
+   105→        return IssueValidationFailed(
+   117→        return IssueValidationFailed(
+   118→            f"Generated worktree name failed validation.\n{wt_validation.format_message()}"
+   130→        warnings=tuple(warnings),
+  </tool_result>
+  <tool_result tool="toolu_01QR5ZobaKpsXeE4GwV8QYFM">
+     1→"""Create plan as a draft PR with plan content committed to branch.
+     2→
+     3→Shared function used by all plan creation paths:
+     4→- erk pr create (CLI)
+     5→- erk exec create-pr-from-session (session extraction)
+     6→- erk exec create-plan-from-context (stdin plan)
+     7→- land_learn.py (learn plan after landing)
+     8→
+     9→Follows the plan_save.py pattern: creates a branch from origin/trunk,
+    10→commits plan.md + ref.json via git plumbing, pushes, then creates a
+    11→draft PR via PlannedPRBackend.
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→
+    18→from erk_shared.gateway.branch_manager.abc import BranchManager
+    19→from erk_shared.gateway.git.abc import Git
+    20→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    21→from erk_shared.gateway.github.abc import LocalGitHub
+    22→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    23→from erk_shared.gateway.time.abc import Time
+    24→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    25→from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+    26→from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
+    27→
+    28→
+    29→@dataclass(frozen=True)
+    30→class CreatePlanDraftPRResult:
+
+... [180 lines omitted] ...
+
+    35→        plan_number: PR number if created (None on failure)
+    36→        plan_url: PR URL if created (None on failure)
+    37→        branch_name: Branch name if created (None on failure)
+    39→        error: Error message if failed, None if success
+    47→    error: str | None
+   106→        Does NOT raise exceptions. All errors returned in result.
+   123→            error=create_result.message,
+   191→            error=f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}",
+   203→        error=None,
+  </tool_result>
+  <tool_result tool="toolu_01EbCFZ31Toc6nbvpKgm1CHr">
+     1→"""Branch create command - create a new branch with optional slot assignment."""
+     2→
+     3→import sys
+     4→
+     5→import click
+     6→
+     7→from erk.cli.activation import (
+     8→    activation_config_activate_only,
+     9→    activation_config_for_implement,
+    10→    print_activation_instructions,
+    11→    render_activation_script,
+    12→    write_worktree_activate_script,
+    13→)
+    14→from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
+    15→from erk.cli.commands.slot.common import allocate_slot_for_branch, update_slot_assignment_tip
+    16→from erk.cli.core import discover_repo_context
+    17→from erk.cli.github_parsing import parse_issue_identifier
+    18→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    19→from erk.core.context import ErkContext
+    20→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    21→from erk.core.worktree_pool import load_pool_state
+    22→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    23→from erk_shared.impl_folder import create_impl_folder, save_plan_ref
+    24→from erk_shared.issue_workflow import (
+    25→    IssueBranchSetup,
+    26→    IssueValidationFailed,
+    27→    prepare_plan_for_worktree,
+    28→)
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.plan_store.types import PlanNotFound
+
+... [290 lines omitted] ...
+
+   108→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   114→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   118→        user_output("Error: --codespace and --codespace-name cannot be used together.")
+   122→        user_output("Error: --docker and --codespace/--codespace-name cannot be used together.")
+   126→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   139→            raise click.ClickException(f"Plan #{plan_number} not found")
+   143→        if isinstance(result, IssueValidationFailed):
+   144→            user_output(f"Error: {result.message}")
+   150→        for warning in setup.warnings:
+   151→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   160→        user_output("Error: Could not detect trunk branch.")
+   183→                f"Error: Branch '{branch_name}' already exists.\n"
+   197→            user_output(f"Error: {result.message}")
+  </tool_result>
+  <tool_result tool="toolu_01M2HRDgHacvrcpGASJG8dRG">
+     1→"""Unit tests for shared plan workflow helpers.
+     2→
+     3→Tests the shared logic for preparing plans for worktree creation.
+     4→"""
+     5→
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.issue_workflow import (
+     9→    IssueBranchSetup,
+    10→    IssueValidationFailed,
+    11→    prepare_plan_for_worktree,
+    12→)
+    13→from erk_shared.plan_store.types import Plan, PlanState
+    14→
+    15→
+    16→def _make_plan(
+    17→    *,
+    18→    plan_identifier: str = "123",
+    19→    title: str = "Test Issue",
+    20→    body: str = "Plan content",
+    21→    state: PlanState = PlanState.OPEN,
+    22→    url: str = "https://github.com/org/repo/issues/123",
+    23→    labels: list[str] | None = None,
+    24→    header_fields: dict[str, object] | None = None,
+    25→) -&gt; Plan:
+    26→    """Create a minimal Plan for testing."""
+    27→    return Plan(
+    28→        plan_identifier=plan_identifier,
+    29→        title=title,
+    30→        body=body,
+
+... [168 lines omitted] ...
+
+    56→    assert result.warnings == ()
+    59→def test_prepare_plan_missing_label_returns_failure() -&gt; None:
+    60→    """Plan without erk-plan label returns IssueValidationFailed."""
+    66→    assert isinstance(result, IssueValidationFailed)
+    70→def test_prepare_plan_non_open_generates_warning() -&gt; None:
+    71→    """Non-OPEN plan generates warning in result."""
+    82→    assert len(result.warnings) == 1
+    83→    assert "is CLOSED" in result.warnings[0]
+    84→    assert "Proceeding anyway" in result.warnings[0]
+   102→def test_prepare_plan_invalid_identifier_returns_failure() -&gt; None:
+   103→    """Non-numeric plan identifier returns IssueValidationFailed."""
+   109→    assert isinstance(result, IssueValidationFailed)
+   165→def test_missing_branch_returns_failure() -&gt; None:
+   166→    """Plan without branch_name in header_fields returns failure."""
+   176→    assert isinstance(result, IssueValidationFailed)
+   180→def test_empty_branch_returns_failure() -&gt; None:
+   181→    """Plan with empty branch_name in header_fields returns failure."""
+   191→    assert isinstance(result, IssueValidationFailed)
+  </tool_result>
+  <tool_result tool="toolu_01MAjipXsKDJ2N2XVUq4LbPa">
+     1→"""Naming utilities for filenames and worktree names.
+     2→
+     3→This module provides pure utility functions for transforming titles and names
+     4→into sanitized, filesystem-safe identifiers. All functions are pure (no I/O)
+     5→and follow LBYL patterns.
+     6→
+     7→Functions that require git operations accept a git_ops parameter via dependency
+     8→injection to maintain separation from I/O concerns.
+     9→"""
+    10→
+    11→import hashlib
+    12→import re
+    13→import unicodedata
+    14→from dataclasses import dataclass
+    15→from datetime import datetime
+    16→from pathlib import Path
+    17→
+    18→_SAFE_COMPONENT_RE = re.compile(r"[^A-Za-z0-9_/-]+")
+    19→
+    20→# Date suffix format for plan-derived worktree names: -YY-MM-DD-HHMM
+    21→WORKTREE_DATE_SUFFIX_FORMAT = "%y-%m-%d-%H%M"
+    22→
+    23→# Branch timestamp suffix format: -MM-DD-HHMM (appended after truncation)
+    24→BRANCH_TIMESTAMP_SUFFIX_FORMAT = "%m-%d-%H%M"
+    25→
+    26→# Regex pattern to detect existing timestamp suffix (MM-DD-HHMM)
+    27→_TIMESTAMP_SUFFIX_PATTERN = re.compile(r"-\d{2}-\d{2}-\d{4}$")
+    28→
+    29→# Default/fallback titles that extractors return when no real title exists.
+    30→# These must be rejected so agents provide meaningful plan titles.
+
+... [840 lines omitted] ...
+
+   100→    """Validation failure for a plan title.
+   103→        raw_title: The original title value that failed validation.
+   104→        reason: A short description of why validation failed.
+   111→    def error_type(self) -&gt; str:
+   116→        """Full error message with rules, actual value, and examples.
+   139→    titles. On failure, returns ``InvalidPlanTitle`` with actionable feedback
+   220→    """Validation failure for a worktree name."""
+   227→    def error_type(self) -&gt; str:
+   231→        """Full error message with rules and diagnostics for agent self-correction.
+   252→    """Identify specific validation failures in a worktree name."""
+   335→    """Validation failure for an objective slug.
+   338→        raw_slug: The original slug value that failed validation.
+   339→        reason: A short description of why validation failed.
+   347→        """Full error message with pattern, rules, actual value, and examples.
+   368→    Returns ValidObjectiveSlug on success, or InvalidObjectiveSlug describing the failure.
+   412→    a valid worktree name without raising errors. This is the counterpart to
+  </tool_result>
+  <tool_result tool="toolu_01X9PdDwVSbPvNkjpeKRL9fF">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.alias import alias
+    16→from erk.cli.commands.checkout_helpers import (
+    17→    display_sync_status,
+    18→    navigate_to_worktree,
+    19→    script_error_handler,
+    20→)
+    21→from erk.cli.commands.completions import complete_branch_names
+    22→from erk.cli.commands.slot.common import (
+    23→    allocate_slot_for_branch,
+    24→    update_slot_assignment_tip,
+    25→)
+    26→from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+    27→from erk.cli.core import discover_repo_context
+    28→from erk.cli.github_parsing import parse_issue_identifier
+    29→from erk.cli.graphite import find_worktrees_containing_branch
+    30→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+
+... [801 lines omitted] ...
+
+    39→    IssueValidationFailed,
+   396→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   451→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   474→    """Implementation body for branch_checkout — separated for error wrapping."""
+   478→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   484→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   488→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   506→            raise click.ClickException(f"Plan #{plan_number} not found")
+   510→        if isinstance(plan_result, IssueValidationFailed):
+   511→            user_output(f"Error: {plan_result.message}")
+   517→        for warning in setup.warnings:
+   518→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   527→            user_output("Error: Could not detect trunk branch.")
+   578→                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+   601→                                f"Error: Branch '{branch}' does not exist.\n"
+   729→            raise click.ClickException(
+   769→            raise click.ClickException(
+   813→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <tool_result tool="toolu_01H7jpgQukqJP1Z7qCcTaoGm">
+     1→import json
+     2→import shlex
+     3→import subprocess
+     4→from collections.abc import Iterable
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    print_activation_instructions,
+    12→    write_worktree_activate_script,
+    13→)
+    14→from erk.cli.config import LoadedConfig
+    15→from erk.cli.core import discover_repo_context, worktree_path_for
+    16→from erk.cli.ensure import Ensure, UserFacingCliError
+    17→from erk.cli.github_parsing import parse_issue_identifier
+    18→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    19→from erk.cli.shell_utils import render_navigation_script
+    20→from erk.cli.subprocess_utils import run_with_error_reporting
+    21→from erk.core.context import ErkContext
+    22→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    23→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    24→from erk_shared.impl_folder import (
+    25→    create_impl_folder,
+    26→    get_impl_dir,
+    27→    get_impl_path,
+    28→    resolve_impl_dir,
+    29→    save_plan_ref,
+    30→)
+
+... [1025 lines omitted] ...
+
+    33→    IssueValidationFailed,
+   151→        except subprocess.CalledProcessError as e:
+   152→            raise UserFacingCliError(
+   153→                f"Failed to create local tracking branch from {remote_ref}\n"
+   192→                        raise UserFacingCliError(
+   201→                    # Different branch: existing error handling
+   202→                    raise UserFacingCliError(
+   213→        raise UserFacingCliError(
+   278→        # Pre-flight check: error if existing branch is not Graphite-tracked
+   287→            except Exception as e:
+   288→                # Remote unavailable or other error - proceed with warning
+   290→                    click.style("Warning: ", fg="yellow")
+   308→                raise ValueError("Cannot create graphite branch from detached HEAD")
+   321→            run_with_error_reporting(
+   324→                error_prefix=f"Failed to create Graphite branch '{branch}'",
+   536→    the 'origin' remote. If a conflict is detected, the command fails with an error.
+   622→        # Parse plan number from URL or plain number - raises click.ClickException if invalid
+   673→                click.style("Error: ", fg="red")
+   674→                + f"Failed to fetch plan #{plan_number_parsed}\n"
+   688→        if isinstance(result, IssueValidationFailed):
+   689→            user_output(click.style("Error: ", fg="red") + result.message)
+   693→        for warning in setup.warnings:
+   694→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   699→            user_output(f"Error: {create_result.message}")
+  1041→        run_with_error_reporting(
+  1044→            error_prefix="Post-create command failed",
+  1046→                "The worktree was created successfully, but a post-create command failed",
+  </tool_result>
+  <assistant>I've read all the files. Let me now update my todo and start implementing. I'll mark the signal as done (it had a session ID issue but that's a CI env limitation) and begin the actual code changes.</assistant>
+  <usage input_tokens="2764" cache_creation_input_tokens="55878" cache_read_input_tokens="31532" cache_creation="{'ephemeral_5m_input_tokens': 55878, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01VSsCb6dyRm2aH1GiaWCcE8">
+    <param name="todos">[{'content': 'Delete dead code: IssuePlanSource and prepare_plan_source_from_issue() from ...[truncated 997 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="2764" cache_creation_input_tokens="55878" cache_read_input_tokens="31532" cache_creation="{'ephemeral_5m_input_tokens': 55878, 'ephemeral_1h_input_tokens': 0}" output_tokens="443" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VSsCb6dyRm2aH1GiaWCcE8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me start with Step 1: Delete dead code from `implement_shared.py`. I need to remove `IssuePlanSource` class, `prepare_plan_source_from_issue()` function, and their now-unused imports. Let me check which imports will become unused after removing the dead code.
+
+Looking at the imports at lines 19-23:
+- `IssueBranchSetup` — used in `prepare_plan_source_from_issue` at line 537 only. Let me check if it's used elsewhere in the file...
+
+Actually, looking at the file more carefully, `IssueBranchSetup` is used at line 537 in the dead code. But it's NOT used anywhere else in this file. However, after Step 3/4 when we rename the module and classes, this import will need to change anyway. For now, let me remove the dead code and the imports that become unused.
+
+Let me check usage of `IssueBranchSetup`, `IssueValidationFailed`, and `prepare_plan_for_worktree` in the rest of `implement_shared.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3272" cache_read_input_tokens="87410" cache_creation="{'ephemeral_5m_input_tokens': 3272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018YBNgHc54aLvyRYH4A7S42">
+    <param name="pattern">IssueBranchSetup|IssueValidationFailed|prepare_plan_for_worktree|user_output</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3272" cache_read_input_tokens="87410" cache_creation="{'ephemeral_5m_input_tokens': 3272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018YBNgHc54aLvyRYH4A7S42">
+20:    IssueBranchSetup,
+21:    IssueValidationFailed,
+22:    prepare_plan_for_worktree,
+28:from erk_shared.output.output import user_output
+531:    result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
+533:    if isinstance(result, IssueValidationFailed):
+534:        user_output(click.style("Error: ", fg="red") + result.message)
+537:    setup: IssueBranchSetup = result
+539:        user_output(click.style("Warning: ", fg="yellow") + warning)
+655:        user_output("\n" + click.style("Next steps:", fg="cyan", bold=True))
+656:        user_output(f"  1. Change to worktree:  erk br co {branch}")
+659:            user_output("  2. Run implementation, CI, and submit PR:")
+660:            user_output(f"     {impl_cmd}")
+661:            user_output(f"     {build_claude_command('/fast-ci', dangerous, model)}")
+662:            user_output(f"     {build_claude_command('/gt:pr-submit', dangerous, model)}")
+665:            user_output(f"  2. Run implementation:  {claude_cmd}")
+  </tool_result>
+  <assistant>So `IssueBranchSetup`, `IssueValidationFailed`, and `prepare_plan_for_worktree` are ONLY used in the dead code (`prepare_plan_source_from_issue()`). And `user_output` is used in both the dead code AND in `output_activation_instructions()` (lines 655-665), so it must stay. `click` is also used extensively elsewhere.
+
+Let me make the edits now. First, delete the dead imports and dead code:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="739" cache_read_input_tokens="90682" cache_creation="{'ephemeral_5m_input_tokens': 739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01CqnbE9432xmZYvQU9EMtnU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+    <param name="old_string">from erk_shared.issue_workflow import (
+    IssueBranchSetup,
+    IssueValidationFailed,
+    prepare_plan_for_worktree,
+)
+from erk_shared.naming import (</param>
+    <param name="new_string">from erk_shared.naming import (</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="739" cache_read_input_tokens="90682" cache_creation="{'ephemeral_5m_input_tokens': 739, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CqnbE9432xmZYvQU9EMtnU">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Now delete the `IssuePlanSource` class:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="91421" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Fbu4G1C4ti7weNsMHWBEeh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class IssuePlanSource:
+    """Extended plan source with issue-spec...[truncated 2272 chars]...,
+        already_existed=branch_already_exists,
+    )
+
+
+def prepare_plan_source_from_file</param>
+    <param name="new_string">def prepare_plan_source_from_file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="91421" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fbu4G1C4ti7weNsMHWBEeh">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if `PlanNotFound` import is still needed (it was used in the deleted code):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1202" cache_read_input_tokens="91761" cache_creation="{'ephemeral_5m_input_tokens': 1202, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JuUYWqLTSTUDcZYeocJBA3">
+    <param name="pattern">PlanNotFound</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1202" cache_read_input_tokens="91761" cache_creation="{'ephemeral_5m_input_tokens': 1202, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JuUYWqLTSTUDcZYeocJBA3">
+24:from erk_shared.plan_store.types import PlanNotFound
+  </tool_result>
+  <assistant>`PlanNotFound` is only imported but no longer used. Remove it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="173" cache_read_input_tokens="92963" cache_creation="{'ephemeral_5m_input_tokens': 173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SukhDsUq5onB5PPbBryoDd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+    <param name="old_string">from erk_shared.plan_store.types import PlanNotFound
+
+# Valid model names and their aliases</param>
+    <param name="new_string">
+# Valid model names and their aliases</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="173" cache_read_input_tokens="92963" cache_creation="{'ephemeral_5m_input_tokens': 173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SukhDsUq5onB5PPbBryoDd">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me move on to Step 2 (stale docstring) and Step 3 (rename module). I'll do the module rename via git mv and the docstring fix in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="93136" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HpdV7G8HrBDaDndiGFgYqc">
+    <param name="todos">[{'content': 'Delete dead code: IssuePlanSource and prepare_plan_source_from_issue() from ...[truncated 999 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="93136" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HpdV7G8HrBDaDndiGFgYqc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VSrqi1xw7eAyEHKEiDetGe">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py</param>
+    <param name="old_string">Shared function used by all plan creation paths:
+- erk pr create (CLI)
+- erk exec create-p...[truncated 17 chars]... erk exec create-plan-from-context (stdin plan)
+- land_learn.py (learn plan after landing)</param>
+    <param name="new_string">Shared function used by all plan creation paths:
+- erk pr create (CLI)
+- erk exec create-pr-from-session (session extraction)
+- land_learn.py (learn plan after landing)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="93659" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="238" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VSrqi1xw7eAyEHKEiDetGe">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AcPC8xguFq4HAioDQQGtLk">
+    <param name="command">git mv packages/erk-shared/src/erk_shared/issue_workflow.py packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="description">Rename issue_workflow.py to plan_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="94166" cache_creation="{'ephemeral_5m_input_tokens': 296, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01B34Dj6fSLj8CWF4yy6WCmt">
+    <param name="command">git mv tests/unit/shared/test_issue_workflow.py tests/unit/shared/test_plan_workflow.py</param>
+    <param name="description">Rename test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="94166" cache_creation="{'ephemeral_5m_input_tokens': 296, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AcPC8xguFq4HAioDQQGtLk">
+
+  </tool_result>
+  <tool_result tool="toolu_01B34Dj6fSLj8CWF4yy6WCmt">
+
+  </tool_result>
+  <assistant>Good, both files renamed. Now let me do all the class renames and import updates. I'll tackle these in parallel since they're in different files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="94462" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01GbLxMmffiHk9oK3APWs28y">
+    <param name="todos">[{'content': 'Delete dead code: IssuePlanSource and prepare_plan_source_from_issue() from ...[truncated 1009 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="94462" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GbLxMmffiHk9oK3APWs28y">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me update all the files. I'll update the renamed `plan_workflow.py` first (class names + docstrings), then update all importing files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Uf2eApyBLuAfyM78aLF1Wj">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">"""Shared workflow for creating worktrees from plans.
+
+This module provides the canonical ...[truncated 66 chars]...and metadata extraction. Used by both
+`erk wt create --from-plan` and `erk implement`.
+"""</param>
+    <param name="new_string">"""Shared workflow for preparing plans for worktree creation.
+
+This module provides the ca...[truncated 74 chars]...and metadata extraction. Used by both
+`erk wt create --from-plan` and `erk implement`.
+"""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XSzZeA9hoVCmYFHpRVwwHA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">class IssueBranchSetup:
+    """Result of successfully preparing an issue for worktree crea...[truncated 378 chars]...ne if not linked
+        warnings: List of warning messages (e.g., non-OPEN issue)
+    """</param>
+    <param name="new_string">class PlanBranchSetup:
+    """Result of successfully preparing a plan for worktree creatio...[truncated 373 chars]...one if not linked
+        warnings: List of warning messages (e.g., non-OPEN plan)
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01V34P4di6A7nmZDHAGuNVdq">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">class IssueValidationFailed:
+    """Result when issue validation fails.
+
+    Attributes:
+        message: User-facing error message explaining the failure
+    """</param>
+    <param name="new_string">class PlanValidationFailed:
+    """Result when plan validation fails.
+
+    Attributes:
+        message: User-facing error message explaining the failure
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Ev2FFgFWkHKu8JdjQ82nQd">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string"># Union type for prepare results - clients handle both cases
+PrepareIssueResult = IssueBranchSetup | IssueValidationFailed</param>
+    <param name="new_string"># Union type for prepare results - clients handle both cases
+PreparePlanResult = PlanBranchSetup | PlanValidationFailed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019GHGwQbNKc7KiJA9vmKZzd">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">    timestamp: datetime,
+    *,
+    warn_non_open: bool,
+) -&gt; PrepareIssueResult:
+    """P...[truncated 373 chars]...:
+        IssueBranchSetup on success, IssueValidationFailed on validation failure
+    """</param>
+    <param name="new_string">    timestamp: datetime,
+    *,
+    warn_non_open: bool,
+) -&gt; PreparePlanResult:
+    """Pr...[truncated 370 chars]...ns:
+        PlanBranchSetup on success, PlanValidationFailed on validation failure
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VG17PavLAYNuRaW9utxXi8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">    if "erk-plan" not in plan.labels:
+        return IssueValidationFailed(</param>
+    <param name="new_string">    if "erk-plan" not in plan.labels:
+        return PlanValidationFailed(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014GNiLe9wrJfsxobCgiVxcQ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">    if not plan.plan_identifier.isdigit():
+        return IssueValidationFailed(</param>
+    <param name="new_string">    if not plan.plan_identifier.isdigit():
+        return PlanValidationFailed(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01EQgCkP1hvTV1jA1M9CCM4d">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">    if not isinstance(existing_branch, str) or len(existing_branch) == 0:
+        return IssueValidationFailed(</param>
+    <param name="new_string">    if not isinstance(existing_branch, str) or len(existing_branch) == 0:
+        return PlanValidationFailed(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UjHHac4eHzNjBr2kJkAaP2">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">    if isinstance(wt_validation, InvalidWorktreeName):
+        return IssueValidationFailed(</param>
+    <param name="new_string">    if isinstance(wt_validation, InvalidWorktreeName):
+        return PlanValidationFailed(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01GmGdSTjXYommnZpZPyCh6d">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">    return IssueBranchSetup(</param>
+    <param name="new_string">    return PlanBranchSetup(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="94737" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Uf2eApyBLuAfyM78aLF1Wj">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01XSzZeA9hoVCmYFHpRVwwHA">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01V34P4di6A7nmZDHAGuNVdq">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Ev2FFgFWkHKu8JdjQ82nQd">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_019GHGwQbNKc7KiJA9vmKZzd">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01VG17PavLAYNuRaW9utxXi8">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_014GNiLe9wrJfsxobCgiVxcQ">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01EQgCkP1hvTV1jA1M9CCM4d">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01UjHHac4eHzNjBr2kJkAaP2">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01GmGdSTjXYommnZpZPyCh6d">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>The file was renamed, so I need to read it at the new path first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3015" cache_read_input_tokens="95236" cache_creation="{'ephemeral_5m_input_tokens': 3015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Rj4QaWvMvMGcJzAXPURRVJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3015" cache_read_input_tokens="95236" cache_creation="{'ephemeral_5m_input_tokens': 3015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018iQnKxpKy4pAjAbejAFwLP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/shared/test_plan_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3015" cache_read_input_tokens="95236" cache_creation="{'ephemeral_5m_input_tokens': 3015, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Rj4QaWvMvMGcJzAXPURRVJ">
+     1→"""Shared workflow for creating worktrees from plans.
+     2→
+     3→This module provides the canonical logic for preparing plans for worktree creation,
+     4→including validation, branch naming, and metadata extraction. Used by both
+     5→`erk wt create --from-plan` and `erk implement`.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from datetime import datetime
+    10→
+    11→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    12→from erk_shared.naming import (
+    13→    InvalidWorktreeName,
+    14→    sanitize_worktree_name,
+    15→    validate_worktree_name,
+    16→)
+    17→from erk_shared.plan_store.types import Plan, PlanState
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class IssueBranchSetup:
+    22→    """Result of successfully preparing an issue for worktree creation.
+    23→
+    24→    Attributes:
+    25→        branch_name: Git branch name (e.g., plnd/fix-bug-01-15-1430)
+    26→        worktree_name: Sanitized directory name for the worktree
+    27→        plan_content: Issue body to use as plan.md content
+    28→        plan_number: Plan number
+    29→        issue_url: Full GitHub issue URL
+    30→        issue_title: Issue title for reference
+
+... [107 lines omitted] ...
+
+    32→        warnings: List of warning messages (e.g., non-OPEN issue)
+    42→    warnings: tuple[str, ...] = ()
+    46→class IssueValidationFailed:
+    50→        message: User-facing error message explaining the failure
+    57→PrepareIssueResult = IssueBranchSetup | IssueValidationFailed
+    74→        warn_non_open: Whether to include warning for non-OPEN plans
+    77→        IssueBranchSetup on success, IssueValidationFailed on validation failure
+    81→        return IssueValidationFailed(
+    89→        return IssueValidationFailed(
+    95→    # Collect warnings
+    96→    warnings: list[str] = []
+    98→        warnings.append(
+   105→        return IssueValidationFailed(
+   117→        return IssueValidationFailed(
+   118→            f"Generated worktree name failed validation.\n{wt_validation.format_message()}"
+   130→        warnings=tuple(warnings),
+  </tool_result>
+  <tool_result tool="toolu_018iQnKxpKy4pAjAbejAFwLP">
+     1→"""Unit tests for shared plan workflow helpers.
+     2→
+     3→Tests the shared logic for preparing plans for worktree creation.
+     4→"""
+     5→
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.issue_workflow import (
+     9→    IssueBranchSetup,
+    10→    IssueValidationFailed,
+    11→    prepare_plan_for_worktree,
+    12→)
+    13→from erk_shared.plan_store.types import Plan, PlanState
+    14→
+    15→
+    16→def _make_plan(
+    17→    *,
+    18→    plan_identifier: str = "123",
+    19→    title: str = "Test Issue",
+    20→    body: str = "Plan content",
+    21→    state: PlanState = PlanState.OPEN,
+    22→    url: str = "https://github.com/org/repo/issues/123",
+    23→    labels: list[str] | None = None,
+    24→    header_fields: dict[str, object] | None = None,
+    25→) -&gt; Plan:
+    26→    """Create a minimal Plan for testing."""
+    27→    return Plan(
+    28→        plan_identifier=plan_identifier,
+    29→        title=title,
+    30→        body=body,
+
+... [168 lines omitted] ...
+
+    56→    assert result.warnings == ()
+    59→def test_prepare_plan_missing_label_returns_failure() -&gt; None:
+    60→    """Plan without erk-plan label returns IssueValidationFailed."""
+    66→    assert isinstance(result, IssueValidationFailed)
+    70→def test_prepare_plan_non_open_generates_warning() -&gt; None:
+    71→    """Non-OPEN plan generates warning in result."""
+    82→    assert len(result.warnings) == 1
+    83→    assert "is CLOSED" in result.warnings[0]
+    84→    assert "Proceeding anyway" in result.warnings[0]
+   102→def test_prepare_plan_invalid_identifier_returns_failure() -&gt; None:
+   103→    """Non-numeric plan identifier returns IssueValidationFailed."""
+   109→    assert isinstance(result, IssueValidationFailed)
+   165→def test_missing_branch_returns_failure() -&gt; None:
+   166→    """Plan without branch_name in header_fields returns failure."""
+   176→    assert isinstance(result, IssueValidationFailed)
+   180→def test_empty_branch_returns_failure() -&gt; None:
+   181→    """Plan with empty branch_name in header_fields returns failure."""
+   191→    assert isinstance(result, IssueValidationFailed)
+  </tool_result>
+  <assistant>Now I can edit the renamed files. Let me use the libcst-refactor agent for the systematic rename across multiple files, or do the edits manually. Since these are specific class renames + import updates, I'll use a batch approach. Let me update `plan_workflow.py` first, then the test file, then all the importing source files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5067" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 5067, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01YGSmiHYvtUB16G682Duzqg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">"""Shared workflow for creating worktrees from plans.
+
+This module provides the canonical ...[truncated 66 chars]...and metadata extraction. Used by both
+`erk wt create --from-plan` and `erk implement`.
+"""</param>
+    <param name="new_string">"""Shared workflow for preparing plans for worktree creation.
+
+This module provides the ca...[truncated 74 chars]...and metadata extraction. Used by both
+`erk wt create --from-plan` and `erk implement`.
+"""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5067" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 5067, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018TBcnf8xw5ggk5NsvYDhyT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">class IssueBranchSetup:
+    """Result of successfully preparing an issue for worktree crea...[truncated 378 chars]...ne if not linked
+        warnings: List of warning messages (e.g., non-OPEN issue)
+    """</param>
+    <param name="new_string">class PlanBranchSetup:
+    """Result of successfully preparing a plan for worktree creatio...[truncated 373 chars]...one if not linked
+        warnings: List of warning messages (e.g., non-OPEN plan)
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5067" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 5067, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011BP2Mb4Fc9EzAyA82E5TUy">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">class IssueValidationFailed:
+    """Result when issue validation fails.
+
+    Attributes:
+        message: User-facing error message explaining the failure
+    """</param>
+    <param name="new_string">class PlanValidationFailed:
+    """Result when plan validation fails.
+
+    Attributes:
+        message: User-facing error message explaining the failure
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5067" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 5067, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VJsuKX2J4sGuEFiiyJs4EV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string"># Union type for prepare results - clients handle both cases
+PrepareIssueResult = IssueBranchSetup | IssueValidationFailed</param>
+    <param name="new_string"># Union type for prepare results - clients handle both cases
+PreparePlanResult = PlanBranchSetup | PlanValidationFailed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5067" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 5067, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JFoeNgBim49f7PUQYRXrAU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">) -&gt; PrepareIssueResult:
+    """Prepare and validate plan data for worktree creation.
+
+   ...[truncated 316 chars]...:
+        IssueBranchSetup on success, IssueValidationFailed on validation failure
+    """</param>
+    <param name="new_string">) -&gt; PreparePlanResult:
+    """Prepare and validate plan data for worktree creation.
+
+    ...[truncated 313 chars]...ns:
+        PlanBranchSetup on success, PlanValidationFailed on validation failure
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5067" cache_read_input_tokens="98251" cache_creation="{'ephemeral_5m_input_tokens': 5067, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+</session>
