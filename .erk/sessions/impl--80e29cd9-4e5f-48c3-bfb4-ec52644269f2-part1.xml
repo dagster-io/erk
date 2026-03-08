@@ -1,0 +1,661 @@
+<session>
+  <meta branch="plnd/fix-teleport-existing-wt-03-08-0603" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8984&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8984` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8984.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28561" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28561, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015Xm7TNmgvkJwVH3yDJmGvU">
+    <param name="command">erk exec setup-impl --issue 8984</param>
+    <param name="description">Set up implementation for plan #8984</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28561" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28561, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015Xm7TNmgvkJwVH3yDJmGvU">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-teleport-existing-wt-03-08-0603", "plan_number": 8984, "plan_url": "https://github.com/dagster-io/erk/pull/8984", "branch": "plnd/fix-teleport-existing-wt-03-08-0603", "plan_title": "[erk-plan] Fix: `erk pr teleport --new-slot` should navigate to existing worktree", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8984, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-teleport-existing-wt-03-08-0603', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="28561" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0196szigEzcH8szGrX4YWHSM">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-teleport-existing-wt-03-08-0603/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="28561" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0196szigEzcH8szGrX4YWHSM">
+     1→# Fix: `erk pr teleport --new-slot` should navigate to existing worktree
+     2→
+     3→## Context
+     4→
+     5→When `erk pr teleport --new-slot` is called and the PR's branch already has a worktree, the command prints an error message and exits with code 1. The user expects it to automatically navigate to the existing worktree (like `_teleport_in_place` does). In `--script` mode this is especially broken: the shell gets an error script instead of a navigation script, so `source "$(erk pr teleport ...)"` fails to cd anywhere.
+     6→
+     7→## Changes
+     8→
+     9→### 1. `src/erk/cli/commands/pr/teleport_cmd.py` - `_teleport_new_slot()` (lines 220-227)
+    10→
+    11→Replace the error-and-exit block with the navigate-to-existing-worktree pattern from `_teleport_in_place` (lines 133-167):
+    12→
+    13→- Call `navigate_and_display_checkout()` with the existing worktree path, `already_existed=True`, and `post_cd_commands=None` (matching convention: no sync for existing worktrees)
+    14→- In non-script mode, call `ensure_worktree_activate_script()` + `print_activation_instructions()` for interactive activation
+    15→- Exit with code 0 (success) instead of code 1 (error)
+    16→- All required imports are already present in the file
+    17→
+    18→### 2. `tests/commands/pr/test_teleport.py` - Add two tests
+    19→
+    20→- **`test_teleport_new_slot_existing_worktree_navigates`**: Non-script mode - exit code 0, branch name and worktree path in output
+    21→- **`test_teleport_new_slot_existing_worktree_script_mode`**: Script mode - produces valid activation script that navigates to the existing worktree, no `gt submit` included
+    22→
+    23→## Verification
+    24→
+    25→Run: `uv run pytest tests/commands/pr/test_teleport.py`
+    26→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Good, the plan is clear. Now let me load the relevant tripwires and read the source files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="754" cache_read_input_tokens="28922" cache_creation="{'ephemeral_5m_input_tokens': 754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01EaX9LiGLHeKfh7DPFe5fVt">
+    <param name="todos">[{'content': 'Modify _teleport_new_slot() to navigate to existing worktree instead of erro...[truncated 447 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="754" cache_read_input_tokens="28922" cache_creation="{'ephemeral_5m_input_tokens': 754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EaX9LiGLHeKfh7DPFe5fVt">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Po9aKCZqGDSkvN8taeiD3S">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="29676" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011E4HmFXRS1vWACGaemKMjc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="29676" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017ind3xM1CfmsfeZ8jqbqk5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="29676" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Po9aKCZqGDSkvN8taeiD3S">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from contextlib import nullcontext
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    activation_config_activate_only,
+    19→    ensure_worktree_activate_script,
+    20→    print_activation_instructions,
+    21→)
+    22→from erk.cli.commands.checkout_helpers import (
+    23→    ensure_branch_has_worktree,
+    24→    navigate_and_display_checkout,
+    25→    script_error_handler,
+    26→)
+    27→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    28→from erk.cli.ensure import Ensure
+    29→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    30→from erk.core.context import ErkContext
+
+... [318 lines omitted] ...
+
+    68→        ctx.console.error("Not in a git repository")
+    73→        ctx_manager = script_error_handler(ctx)
+    81→            ctx.console.error(
+    88→            ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   318→    except RuntimeError:
+   333→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <tool_result tool="toolu_011E4HmFXRS1vWACGaemKMjc">
+     1→"""Tests for erk pr teleport command."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.commands.pr import pr_group
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→from erk_shared.gateway.github.types import PRDetails
+    12→from erk_shared.gateway.graphite.fake import FakeGraphite
+    13→from erk_shared.gateway.graphite.types import BranchMetadata
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→
+    17→
+    18→def _make_pr_details(
+    19→    number: int,
+    20→    head_ref_name: str,
+    21→    *,
+    22→    is_cross_repository: bool = False,
+    23→    state: str = "OPEN",
+    24→    base_ref_name: str = "main",
+    25→) -&gt; PRDetails:
+    26→    return PRDetails(
+    27→        number=number,
+    28→        url=f"https://github.com/owner/repo/pull/{number}",
+    29→        title=f"PR #{number}",
+    30→        body="",
+
+... [366 lines omitted] ...
+
+    44→    """Teleport errors when PR doesn't exist."""
+    59→def test_teleport_cross_repo_errors() -&gt; None:
+  </tool_result>
+  <tool_result tool="toolu_017ind3xM1CfmsfeZ8jqbqk5">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+    22→
+    23→**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+    24→
+    25→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    26→
+    27→**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    28→
+    29→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    30→
+
+... [121 lines omitted] ...
+
+    33→**allowing `import X as Y` for internal/project imports because it's convenient** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt).
+    35→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    59→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    67→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    69→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    77→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    95→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   105→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   115→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   125→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   127→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   137→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   139→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <assistant>Now I have a clear understanding of both the source code and the test patterns. Let me signal the start and implement the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17304" cache_read_input_tokens="29973" cache_creation="{'ephemeral_5m_input_tokens': 17304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012hKcsPK8T14AHfWCWmbiuj">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17304" cache_read_input_tokens="29973" cache_creation="{'ephemeral_5m_input_tokens': 17304, 'ephemeral_1h_input_tokens': 0}" output_tokens="124" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012hKcsPK8T14AHfWCWmbiuj">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01SyCRGDJnv6fvRDXE8eSToW">
+    <param name="todos">[{'content': 'Modify _teleport_new_slot() to navigate to existing worktree instead of erro...[truncated 451 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="47277" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SyCRGDJnv6fvRDXE8eSToW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me implement the fix. The plan says to replace the error-and-exit block in `_teleport_new_slot()` (lines 220-227) with the navigate-to-existing-worktree pattern from `_teleport_in_place` (lines 133-167).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="47475" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Q1y7oz1TgkVNhU68csxCkq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="old_string">    # Check if branch already has a worktree
+    existing_worktree = ctx.git.worktree.find...[truncated 161 chars]....style(str(existing_worktree), fg="cyan", bold=True)
+        )
+        raise SystemExit(1)</param>
+    <param name="new_string">    # Check if branch already has a worktree — navigate to it instead of erroring
+    exis...[truncated 1160 chars]... copy=True,
+                same_worktree=False,
+            )
+        raise SystemExit(0)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="47475" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="657" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q1y7oz1TgkVNhU68csxCkq">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the `user_output` import is no longer needed (it was only used in the deleted code):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="705" cache_read_input_tokens="47751" cache_creation="{'ephemeral_5m_input_tokens': 705, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GtLF63S8yDa814pi4DiGYB">
+    <param name="pattern">user_output</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="705" cache_read_input_tokens="47751" cache_creation="{'ephemeral_5m_input_tokens': 705, 'ephemeral_1h_input_tokens': 0}" output_tokens="145" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GtLF63S8yDa814pi4DiGYB">
+33:from erk_shared.output.output import user_output
+  </tool_result>
+  <assistant>The `user_output` import is now unused. Let me remove it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="48456" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TBDi2mBRWTuhtkrUxUHJdc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="old_string">from erk_shared.output.output import user_output
+
+</param>
+    <param name="new_string">
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="48456" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TBDi2mBRWTuhtkrUxUHJdc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me mark the first task complete and start on the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="48628" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013hRNFQqMA2urHGKauqY2y8">
+    <param name="todos">[{'content': 'Modify _teleport_new_slot() to navigate to existing worktree instead of erro...[truncated 453 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="48628" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="251" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013hRNFQqMA2urHGKauqY2y8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me add both tests. Looking at the existing test `test_teleport_wrong_branch_exists_in_other_worktree` (line 96) as a model for non-script mode, and the `test_teleport_new_slot_script_mode_without_sync_omits_gt_submit` (line 333) for script mode patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="49034" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01ErcNhqZVwAPbUq3Dbfj2Wn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+    <param name="old_string">def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -&gt; None:</param>
+    <param name="new_string">def test_teleport_new_slot_existing_worktree_navigates() -&gt; None:
+    """Teleport --new-sl...[truncated 2442 chars]...t_content
+
+
+def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="49034" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1042" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ErcNhqZVwAPbUq3Dbfj2Wn">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_teleport.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01G3Y2YtWR4EzKbHzU2PB3MA">
+    <param name="todos">[{'content': 'Modify _teleport_new_slot() to navigate to existing worktree instead of erro...[truncated 457 chars]... 'Run CI verification', 'status': 'in_progress', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1085" cache_read_input_tokens="49327" cache_creation="{'ephemeral_5m_input_tokens': 1085, 'ephemeral_1h_input_tokens': 0}" output_tokens="234" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G3Y2YtWR4EzKbHzU2PB3MA">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="50412" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_013F3NqjJ6cEcTv8hdCokb6r">
+    <param name="description">Run teleport tests</param>
+    <param name="prompt">Run `uv run pytest tests/commands/pr/test_teleport.py -v` and report the full output. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="50412" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013F3NqjJ6cEcTv8hdCokb6r">
+pytest passed: 14 tests passed in 1.58s
+
+All tests in `tests/commands/pr/test_teleport.py` passed successfully with no failures or errors.
+agentId: a629e12 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 14 tests pass. Let me also run the type checker and linter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="50688" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01V8rVkF8NHtUcBdiApvvkuX">
+    <param name="description">Run ty type check on changed file</param>
+    <param name="prompt">Run `uv run ty check src/erk/cli/commands/pr/teleport_cmd.py` and report the full output. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="50688" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01DNyA54xSCP9LGiXBhyVtVs">
+    <param name="description">Run ruff on changed files</param>
+    <param name="prompt">Run `uv run ruff check src/erk/cli/commands/pr/teleport_cmd.py tests/commands/pr/test_teleport.py` and report the full output. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="50688" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V8rVkF8NHtUcBdiApvvkuX">
+ty passed: All type checks passed successfully in src/erk/cli/commands/pr/teleport_cmd.py
+agentId: a0e7375 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01DNyA54xSCP9LGiXBhyVtVs">
+ruff failed: 2 errors found
+
+**Line 315 in tests/commands/pr/test_teleport.py**: E501 Line too long (101 &gt; 100)
+- The line with `WorktreeInfo(path=other_worktree_path, branch="feature-existing", is_root=False),` exceeds the 100 character limit
+
+**Line 341 in tests/commands/pr/test_teleport.py**: E501 Line too long (108 &gt; 100)
+- The line with `WorktreeInfo(path=other_worktree_path, branch="feature-existing-script", is_root=False),` exceeds the 100 character limit
+
+No errors found in `src/erk/cli/commands/pr/teleport_cmd.py`.
+agentId: ad96f58 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Let me fix the line length issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="50893" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01MP9fy7giQaQVSsssW8YYCA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+    <param name="old_string">                    WorktreeInfo(path=other_worktree_path, branch="feature-existing", is_r...[truncated 101 chars]...thub)
+        result = runner.invoke(pr_group, ["teleport", "300", "--new-slot"], obj=ctx)</param>
+    <param name="new_string">                    WorktreeInfo(
+                        path=other_worktree_path, branch...[truncated 147 chars]...thub)
+        result = runner.invoke(pr_group, ["teleport", "300", "--new-slot"], obj=ctx)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="50893" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="302" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MP9fy7giQaQVSsssW8YYCA">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_teleport.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DjEvF4f4MZLE3dV1h3Xjo7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+    <param name="old_string">                    WorktreeInfo(path=other_worktree_path, branch="feature-existing-script", is_root=False),
+                ]</param>
+    <param name="new_string">                    WorktreeInfo(
+                        path=other_worktree_path,
+      ...[truncated 21 chars]...g-script",
+                        is_root=False,
+                    ),
+                ]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="553" cache_read_input_tokens="51496" cache_creation="{'ephemeral_5m_input_tokens': 553, 'ephemeral_1h_input_tokens': 0}" output_tokens="194" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DjEvF4f4MZLE3dV1h3Xjo7">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_teleport.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Task" id="toolu_01WNdMc7E2WeQ4pCWKsVkYaf">
+    <param name="description">Re-run ruff and tests</param>
+    <param name="prompt">Run `uv run ruff check src/erk/cli/commands/pr/teleport_cmd.py tests/commands/pr/test_teleport.py` and report the full output. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="52049" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01G5B2RpX7nVLw163ZB5BP7f">
+    <param name="description">Re-run teleport tests</param>
+    <param name="prompt">Run `uv run pytest tests/commands/pr/test_teleport.py -v` and report the full output. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="52049" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WNdMc7E2WeQ4pCWKsVkYaf">
+ruff passed: All checks passed!
+
+Both files (`src/erk/cli/commands/pr/teleport_cmd.py` and `tests/commands/pr/test_teleport.py`) have no linting violations or formatting issues.
+agentId: a4d167b (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01G5B2RpX7nVLw163ZB5BP7f">
+pytest passed: All 14 tests in test_teleport.py passed in 0.68 seconds
+
+The test suite runs successfully with no failures or errors.
+agentId: ab12d7c (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All checks pass. Let me mark CI as complete and proceed with the remaining plan steps.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="665" cache_read_input_tokens="52286" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01JDHm1Rh4iyMfDf3yqhnsbZ">
+    <param name="todos">[{'content': 'Modify _teleport_new_slot() to navigate to existing worktree instead of erro...[truncated 611 chars]...submit PR', 'status': 'in_progress', 'activeForm': 'Completing implementation lifecycle'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="665" cache_read_input_tokens="52286" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="287" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JDHm1Rh4iyMfDf3yqhnsbZ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017Tf89w3jsJWrjEMrRjbx8Y">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="52951" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017Tf89w3jsJWrjEMrRjbx8Y">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8984
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01V5UA9dM1gs7HYGZE4mxfyG">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="53282" cache_creation="{'ephemeral_5m_input_tokens': 135, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+</session>

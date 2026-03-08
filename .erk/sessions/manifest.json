@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "plan_id": 8984,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T10:09:21.234832+00:00",
+      "files": [
+        "impl--80e29cd9-4e5f-48c3-bfb4-ec52644269f2-part1.xml",
+        "impl--80e29cd9-4e5f-48c3-bfb4-ec52644269f2-part2.xml",
+        "impl--80e29cd9-4e5f-48c3-bfb4-ec52644269f2-part3.xml",
+        "impl--80e29cd9-4e5f-48c3-bfb4-ec52644269f2-part4.xml",
+        "impl--80e29cd9-4e5f-48c3-bfb4-ec52644269f2-part5.xml",
+        "impl--80e29cd9-4e5f-48c3-bfb4-ec52644269f2-part6.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 289,
+      "xml_size_kb": 54,
+      "git_branch": "plnd/fix-teleport-existing-wt-03-08-0603"
+    }
+  ]
+}
