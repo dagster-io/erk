@@ -298,6 +298,66 @@ def test_teleport_already_tracked_retracks() -> None:
         assert len(git.created_tracking_branches) == 0  # Fresh tracking not called
 
 
+def test_teleport_new_slot_existing_worktree_navigates() -> None:
+    """Teleport --new-slot navigates to existing worktree instead of erroring."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        other_worktree_path = env.repo.worktrees_dir / "other"
+        pr = _make_pr_details(300, "feature-existing")
+        github = FakeLocalGitHub(pr_details={300: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=other_worktree_path, branch="feature-existing", is_root=False
+                    ),
+                ]
+            },
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(pr_group, ["teleport", "300", "--new-slot"], obj=ctx)
+        assert result.exit_code == 0
+        assert "feature-existing" in result.output
+        assert str(other_worktree_path) in result.output
+
+
+def test_teleport_new_slot_existing_worktree_script_mode() -> None:
+    """Teleport --new-slot --script navigates to existing worktree with valid script."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+        other_worktree_path = env.repo.worktrees_dir / "other"
+        pr = _make_pr_details(301, "feature-existing-script")
+        github = FakeLocalGitHub(pr_details={301: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=other_worktree_path,
+                        branch="feature-existing-script",
+                        is_root=False,
+                    ),
+                ]
+            },
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(pr_group, ["teleport", "301", "--new-slot", "--script"], obj=ctx)
+        assert result.exit_code == 0
+        script_path_str = result.stdout.strip()
+        assert script_path_str != ""
+        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        assert str(other_worktree_path) in script_content
+        assert "gt submit --no-interactive" not in script_content
+
+
 def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -> None:
     """Test teleport --new-slot --script --sync includes gt submit in activation script.
 
