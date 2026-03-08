@@ -1,0 +1,407 @@
+<session>
+  <meta source="agent-a6d49f6" />
+  <meta branch="plnd/canonicalize-session-stora-03-07-1143" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Perform a mechanical rename across test files. Replace ALL occurrences of the old string with the new string in each file listed below. Do NOT change any logic, just string replacements.
+
+## Replacements to make:
+
+1. In ALL files: `async-learn` → `planned-pr-context` (this covers branch names like `async-learn/42`, `async-learn/100`, `async-learn/200`, `async-learn/700` etc.)
+2. In `tests/unit/cli/commands/land/test_land_learn.py` ONLY:
+   - `_fetch_xmls_from_async_learn_branch` → `_fetch_xmls_from_context_branch` (function name in import and all uses)
+   - `test_fetches_from_async_learn_branch_when_local_not_found` → `test_fetches_from_context_branch_when_local_not_found` (test function name)
+   - `test_skips_when_async_learn_branch_not_found` → `test_skips_when_context_branch_not_found` (test function name)
+
+## Files to update:
+
+1. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py`
+2. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py`
+3. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py`
+4. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py`
+5. `/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py`
+
+For each file:
+1. Read the file
+2. Use Edit with `replace_all=true` for `async-learn` → `planned-pr-context`
+3. For test_land_learn.py, also do separate edits for the function name and test function name renames
+
+IMPORTANT: Use `replace_all=true` parameter on the Edit tool for the `async-learn` → `planned-pr-context` replacement in each file. For function renames, also use `replace_all=true`.</user>
+  <assistant>I'll perform the mechanical rename across all the test files. Let me start by reading all the files to understand their current state.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16449" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16449, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017vWQca1WJ96gh9RxkD912A">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16449" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16449, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016y5QtNoqUYMd9RBuX1q3N3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16449" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16449, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KoiShya11Z2u1oWaVHLxoi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16449" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16449, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QLv4Q1ABZ3hiFVAaVbDh9s">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16449" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16449, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C3zkPdaDevdXKr51K9jYoc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16449" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16449, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017vWQca1WJ96gh9RxkD912A">
+     1→"""Unit tests for push-session command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→from unittest.mock import patch
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.push_session import push_session
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→
+    13→
+    14→def _write_session_file(tmp_path: Path) -&gt; Path:
+    15→    """Create a test session JSONL file."""
+    16→    session_file = tmp_path / "session.jsonl"
+    17→    session_file.write_text('{"type": "test"}\n', encoding="utf-8")
+    18→    return session_file
+    19→
+    20→
+    21→def _make_xml_file(tmpdir: str, prefix: str) -&gt; None:
+    22→    """Write a fake XML file to the preprocessing output directory."""
+    23→    xml_path = Path(tmpdir) / f"{prefix}.xml"
+    24→    xml_path.write_text("&lt;session&gt;test&lt;/session&gt;", encoding="utf-8")
+    25→
+    26→
+    27→def _fake_preprocess_success(prefix: str):
+    28→    """Return a subprocess side_effect that fakes successful preprocessing."""
+    29→
+    30→    def fake_preprocess(*args, **kwargs):
+
+... [285 lines omitted] ...
+
+    47→class TestPushSessionPreprocessingFailed:
+    64→            mock_run.return_value.stderr = "preprocessing error"
+    86→        assert output["reason"] == "preprocessing_failed"
+   125→        assert result.exit_code == 0, f"Failed: {result.output}"
+   222→        assert result.exit_code == 0, f"Failed: {result.output}"
+   301→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_016y5QtNoqUYMd9RBuX1q3N3">
+     1→"""Unit tests for fetch-sessions command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→
+    12→
+    13→class TestFetchSessionsBranchNotFound:
+    14→    """Tests for fetch-sessions when the async-learn branch doesn't exist."""
+    15→
+    16→    def test_branch_not_found(self, tmp_path: Path) -&gt; None:
+    17→        """Error when async-learn branch doesn't exist on remote."""
+    18→        repo_root = tmp_path / "repo"
+    19→        repo_root.mkdir()
+    20→        output_dir = tmp_path / "learn"
+    21→        fake_git = FakeGit(
+    22→            current_branches={repo_root: "plan/my-feature"},
+    23→            local_branches={repo_root: []},
+    24→            remote_branches={repo_root: []},
+    25→        )
+    26→        runner = CliRunner()
+    27→
+    28→        result = runner.invoke(
+    29→            fetch_sessions,
+    30→            [
+
+... [132 lines omitted] ...
+
+    42→        assert output["error"] == "branch_not_found"
+   113→        assert result.exit_code == 0, f"Failed: {result.output}"
+   130→        """Error when manifest.json not found on branch."""
+   156→        assert output["error"] == "manifest_not_found"
+  </tool_result>
+  <tool_result tool="toolu_01KoiShya11Z2u1oWaVHLxoi">
+     1→"""Unit tests for download-remote-session exec script.
+     2→
+     3→Tests downloading session files from git branches.
+     4→Uses FakeGit injected into _execute_download for git operations.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from click.testing import CliRunner
+    10→
+    11→from erk.cli.commands.exec.scripts.download_remote_session import (
+    12→    _execute_download,
+    13→    _get_remote_sessions_dir,
+    14→)
+    15→from erk.cli.commands.exec.scripts.download_remote_session import (
+    16→    download_remote_session as download_remote_session_command,
+    17→)
+    18→from erk_shared.context.context import ErkContext
+    19→from erk_shared.gateway.git.fake import FakeGit
+    20→
+    21→# ============================================================================
+    22→# 1. Helper Function Tests (2 tests)
+    23→# ============================================================================
+    24→
+    25→
+    26→def test_get_remote_sessions_dir_creates_directory(tmp_path: Path) -&gt; None:
+    27→    """Test that the remote sessions directory is created if it doesn't exist."""
+    28→    session_id = "test-session-123"
+    29→
+    30→    result = _get_remote_sessions_dir(tmp_path, session_id)
+
+... [132 lines omitted] ...
+
+    39→    """Test that existing directory is returned without error."""
+    87→def test_error_download_fails_when_branch_not_found(tmp_path: Path) -&gt; None:
+    88→    """Test error when file not found at ref.
+   104→    assert "Failed to extract session from branch" in str(output["error"])
+   153→    # Old file should be cleaned up even though download failed
+  </tool_result>
+  <tool_result tool="toolu_01C3zkPdaDevdXKr51K9jYoc">
+     1→"""Tests for land_learn module: learn plan creation logic."""
+     2→
+     3→import json
+     4→from dataclasses import replace
+     5→from datetime import UTC, datetime
+     6→from pathlib import Path
+     7→
+     8→import pytest
+     9→
+    10→from erk.cli.commands.land_learn import (
+    11→    _compute_session_stats,
+    12→    _create_learn_pr_impl,
+    13→    _create_learn_pr_with_sessions,
+    14→    _fetch_xmls_from_async_learn_branch,
+    15→    _log_learn_pr_files,
+    16→    _log_session_discovery,
+    17→    _should_create_learn_pr,
+    18→)
+    19→from erk.cli.commands.land_pipeline import LandState, create_learn_pr
+    20→from erk.core.context import context_for_test
+    21→from erk_shared.context.types import GlobalConfig, LoadedConfig
+    22→from erk_shared.gateway.claude_installation.fake import (
+    23→    FakeClaudeInstallation,
+    24→    FakeProject,
+    25→    FakeSessionData,
+    26→)
+    27→from erk_shared.gateway.git.fake import FakeGit
+    28→from erk_shared.gateway.github.fake import FakeGitHub
+    29→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    30→from erk_shared.gateway.github.types import PRDetails
+
+... [1052 lines omitted] ...
+
+   161→def test_shows_warning_on_exception(
+   166→    """Exception in _create_learn_pr_impl is caught and shown as warning."""
+   170→        raise RuntimeError("simulated network error")
+   177→    # Should NOT raise — exception is caught
+   181→    assert "Warning" in captured.err
+   182→    assert "simulated network error" in captured.err
+   337→    # even though sessions exist (simulating extraction failure)
+   524→    """Logs warning when no sessions discovered."""
+  </tool_result>
+  <tool_result tool="toolu_01QLv4Q1ABZ3hiFVAaVbDh9s">
+     1→"""Unit tests for get-learn-sessions exec script.
+     2→
+     3→Tests session discovery for plans.
+     4→Uses fakes for fast, reliable testing without subprocess calls.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→from unittest.mock import patch
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
+    14→from erk_shared.context.context import ErkContext
+    15→from erk_shared.gateway.claude_installation.fake import (
+    16→    FakeClaudeInstallation,
+    17→    FakeProject,
+    18→    FakeSessionData,
+    19→)
+    20→from erk_shared.gateway.git.fake import FakeGit
+    21→from erk_shared.gateway.github.fake import FakeGitHub
+    22→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    23→from erk_shared.gateway.time.fake import FakeTime
+    24→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    25→from tests.test_utils.github_helpers import create_test_issue
+    26→from tests.test_utils.plan_helpers import (
+    27→    format_plan_header_body_for_test,
+    28→    issue_info_to_pr_details,
+    29→)
+    30→
+
+... [707 lines omitted] ...
+
+   108→    assert "No issue specified" in output["error"]
+   145→# Error Cases (Layer 4: Business Logic over Fakes)
+   150→    """Test error when no issue provided and can't infer from branch."""
+   178→    assert "No issue specified" in output["error"]
+   182→    """Test error with invalid issue identifier."""
+   207→    assert "Invalid issue identifier" in output["error"]
+  </tool_result>
+  <assistant>Now I'll perform the mechanical renames. Let me start with the global `async-learn` → `planned-pr-context` replacement in each file:</assistant>
+  <usage input_tokens="15621" cache_creation_input_tokens="22883" cache_read_input_tokens="16449" cache_creation="{'ephemeral_5m_input_tokens': 22883, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RyE9qxwG8Hu2JbSXA1dmNr">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py</param>
+    <param name="old_string">async-learn</param>
+    <param name="new_string">planned-pr-context</param>
+  </tool_use>
+  <usage input_tokens="15621" cache_creation_input_tokens="22883" cache_read_input_tokens="16449" cache_creation="{'ephemeral_5m_input_tokens': 22883, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0133GrodFK2MwSZNJ7xv2C4e">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py</param>
+    <param name="old_string">async-learn</param>
+    <param name="new_string">planned-pr-context</param>
+  </tool_use>
+  <usage input_tokens="15621" cache_creation_input_tokens="22883" cache_read_input_tokens="16449" cache_creation="{'ephemeral_5m_input_tokens': 22883, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WULN94qmm7Vepe2vXjZquY">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py</param>
+    <param name="old_string">async-learn</param>
+    <param name="new_string">planned-pr-context</param>
+  </tool_use>
+  <usage input_tokens="15621" cache_creation_input_tokens="22883" cache_read_input_tokens="16449" cache_creation="{'ephemeral_5m_input_tokens': 22883, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FESYcqeTj96SSNjWFqW3U5">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py</param>
+    <param name="old_string">async-learn</param>
+    <param name="new_string">planned-pr-context</param>
+  </tool_use>
+  <usage input_tokens="15621" cache_creation_input_tokens="22883" cache_read_input_tokens="16449" cache_creation="{'ephemeral_5m_input_tokens': 22883, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TjAG3Nm9VPxjJYo8zyqsGb">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="old_string">async-learn</param>
+    <param name="new_string">planned-pr-context</param>
+  </tool_use>
+  <usage input_tokens="15621" cache_creation_input_tokens="22883" cache_read_input_tokens="16449" cache_creation="{'ephemeral_5m_input_tokens': 22883, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RyE9qxwG8Hu2JbSXA1dmNr">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py has been updated. All occurrences of 'async-learn' were successfully replaced with 'planned-pr-context'.
+  </tool_result>
+  <tool_result tool="toolu_0133GrodFK2MwSZNJ7xv2C4e">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py has been updated. All occurrences of 'async-learn' were successfully replaced with 'planned-pr-context'.
+  </tool_result>
+  <tool_result tool="toolu_01WULN94qmm7Vepe2vXjZquY">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py has been updated. All occurrences of 'async-learn' were successfully replaced with 'planned-pr-context'.
+  </tool_result>
+  <tool_result tool="toolu_01FESYcqeTj96SSNjWFqW3U5">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py has been updated. All occurrences of 'async-learn' were successfully replaced with 'planned-pr-context'.
+  </tool_result>
+  <tool_result tool="toolu_01TjAG3Nm9VPxjJYo8zyqsGb">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py has been updated. All occurrences of 'async-learn' were successfully replaced with 'planned-pr-context'.
+  </tool_result>
+  <assistant>Now let me do the function name and test function name renames in `test_land_learn.py`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="16855" cache_read_input_tokens="39332" cache_creation="{'ephemeral_5m_input_tokens': 16855, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0194KvvTHuVGfuuy4q4gK1Hw">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="old_string">_fetch_xmls_from_async_learn_branch</param>
+    <param name="new_string">_fetch_xmls_from_context_branch</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16855" cache_read_input_tokens="39332" cache_creation="{'ephemeral_5m_input_tokens': 16855, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017HaLLXUBJXuJxgNUo2uNHZ">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="old_string">test_fetches_from_async_learn_branch_when_local_not_found</param>
+    <param name="new_string">test_fetches_from_context_branch_when_local_not_found</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16855" cache_read_input_tokens="39332" cache_creation="{'ephemeral_5m_input_tokens': 16855, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FZU61HsawrN7CdxU6pw3VC">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="old_string">test_skips_when_async_learn_branch_not_found</param>
+    <param name="new_string">test_skips_when_context_branch_not_found</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16855" cache_read_input_tokens="39332" cache_creation="{'ephemeral_5m_input_tokens': 16855, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0194KvvTHuVGfuuy4q4gK1Hw">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py has been updated. All occurrences of '_fetch_xmls_from_async_learn_branch' were successfully replaced with '_fetch_xmls_from_context_branch'.
+  </tool_result>
+  <tool_result tool="toolu_017HaLLXUBJXuJxgNUo2uNHZ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py has been updated. All occurrences of 'test_fetches_from_async_learn_branch_when_local_not_found' were successfully replaced with 'test_fetches_from_context_branch_when_local_not_found'.
+  </tool_result>
+  <tool_result tool="toolu_01FZU61HsawrN7CdxU6pw3VC">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py has been updated. All occurrences of 'test_skips_when_async_learn_branch_not_found' were successfully replaced with 'test_skips_when_context_branch_not_found'.
+  </tool_result>
+  <assistant>Perfect! All mechanical renames have been completed. Let me verify the changes by reading a sample of the modified sections to confirm:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="919" cache_read_input_tokens="56187" cache_creation="{'ephemeral_5m_input_tokens': 919, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0116wzSCPEEmSQ3JcC8YGcaw">
+    <param name="command">grep -n "planned-pr-context" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py | head -5</param>
+    <param name="description">Verify planned-pr-context in test_push_session.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="919" cache_read_input_tokens="56187" cache_creation="{'ephemeral_5m_input_tokens': 919, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015YrPiTXurWt7EvUfXBySxy">
+    <param name="command">grep -n "_fetch_xmls_from_context_branch" /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="description">Verify function name rename in test_land_learn.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="919" cache_read_input_tokens="56187" cache_creation="{'ephemeral_5m_input_tokens': 919, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JwSamACENKUT49ATpu9oD3">
+    <param name="command">grep -n "test_fetches_from_context_branch_when_local_not_found\|test_skips_when_context_branch_not_found" /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py</param>
+    <param name="description">Verify test function name renames</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="919" cache_read_input_tokens="56187" cache_creation="{'ephemeral_5m_input_tokens': 919, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015YrPiTXurWt7EvUfXBySxy">
+14:    _fetch_xmls_from_context_branch,
+847:# _fetch_xmls_from_context_branch
+855:    result = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, plan_id="100")
+882:    result = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, plan_id="100")
+897:    result = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, plan_id="100")
+929:    result = _fetch_xmls_from_context_branch(fake_git, repo_root=tmp_path, plan_id="200")
+  </tool_result>
+  <tool_result tool="toolu_0116wzSCPEEmSQ3JcC8YGcaw">
+90:    """Tests for push-session when the planned-pr-context branch doesn't exist yet."""
+128:        assert output["session_branch"] == "planned-pr-context/42"
+136:        assert any(b == "planned-pr-context/42" for _, b, _, _ in fake_git.created_branches)
+139:            b == "planned-pr-context/42" and sp == "origin/master"
+146:        assert bc.branch == "planned-pr-context/42"
+  </tool_result>
+  <tool_result tool="toolu_01JwSamACENKUT49ATpu9oD3">
+942:def test_fetches_from_context_branch_when_local_not_found(
+1022:def test_skips_when_context_branch_not_found(
+  </tool_result>
+  <assistant>Excellent! All the renames have been successfully applied. Let me create a summary of what was changed:
+
+## Summary
+
+Successfully performed mechanical rename across all 5 test files:
+
+### Global Replacements (all files):
+- `async-learn` → `planned-pr-context`
+  - This covers all branch name references like `async-learn/42`, `async-learn/100`, `async-learn/200`, `async-learn/700`, etc.
+
+### Files Updated:
+
+1. **`/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py`**
+   - 11 occurrences of `async-learn` → `planned-pr-context`
+
+2. **`/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py`**
+   - 8 occurrences of `async-learn` → `planned-pr-context`
+
+3. **`/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py`**
+   - 3 occurrences of `async-learn` → `planned-pr-context`
+
+4. **`/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py`**
+   - 7 occurrences of `async-learn` → `planned-pr-context`
+
+5. **`/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py`**
+   - 19 occurrences of `async-learn` → `planned-pr-context`
+   - Function name: `_fetch_xmls_from_async_learn_branch` → `_fetch_xmls_from_context_branch` (6 occurrences)
+   - Test function: `test_fetches_from_async_learn_branch_when_local_not_found` → `test_fetches_from_context_branch_when_local_not_found`
+   - Test function: `test_skips_when_async_learn_branch_not_found` → `test_skips_when_context_branch_not_found`
+
+All replacements were performed using `replace_all=true` to ensure complete coverage. No logic was changed, only string replacements as requested.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="910" cache_read_input_tokens="57106" cache_creation="{'ephemeral_5m_input_tokens': 910, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+</session>

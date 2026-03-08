@@ -1,0 +1,285 @@
+<session>
+  <meta source="agent-a3021e3" />
+  <meta branch="plnd/canonicalize-session-stora-03-07-1143" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 8899
+Return the complete JSON output as your final message.</user>
+  <assistant>I'll load the skill and execute it with the specified PR number.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19656" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19656, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PJgs6b6HdwHEfyahzL7Xt1">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19656" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19656, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PJgs6b6HdwHEfyahzL7Xt1">
+     1→---
+     2→name: pr-feedback-classifier
+     3→description: &gt;
+     4→  Fetches and classifies PR review feedback with context isolation.
+     5→  Returns structured JSON with thread IDs for deterministic resolution.
+     6→  Use when analyzing PR comments before addressing them.
+     7→argument-hint: "[--pr &lt;number&gt;] [--include-resolved]"
+     8→context: fork
+     9→agent: general-purpose
+    10→model: sonnet
+    11→---
+    12→
+    13→# PR Feedback Classifier
+    14→
+    15→Fetch and classify all PR review feedback for the current branch's PR.
+    16→
+    17→## Arguments
+    18→
+    19→- `--pr &lt;number&gt;`: Target a specific PR by number (default: current branch's PR)
+    20→- `--include-resolved`: Include resolved threads (for reference)
+    21→
+    22→Check `$ARGUMENTS` for flags.
+    23→
+    24→## Critical Constraints
+    25→
+    26→**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+    27→
+    28→## Steps
+    29→
+    30→1. **Fetch PR info and all comments in a single call:**
+
+... [194 lines omitted] ...
+
+   130→      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+   132→      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
+   170→  "error": null
+   184→## Error Case
+   198→  "error": "No PR found for branch feature-xyz"
+   216→  "error": null
+  </tool_result>
+  <assistant>Now I'll execute the skill by fetching the PR feedback and classifying it:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2951" cache_read_input_tokens="19656" cache_creation="{'ephemeral_5m_input_tokens': 2951, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019E6SPXC2oAbzmgbeXsTpvu">
+    <param name="command">erk exec get-pr-feedback --pr 8899</param>
+    <param name="description">Fetch PR feedback for PR 8899</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2951" cache_read_input_tokens="19656" cache_creation="{'ephemeral_5m_input_tokens': 2951, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EmdrPmK82GinLPQ1xz75hf">
+    <param name="command">git diff --stat -M -C main...HEAD</param>
+    <param name="description">Get file-level restructuring context</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2951" cache_read_input_tokens="19656" cache_creation="{'ephemeral_5m_input_tokens': 2951, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019E6SPXC2oAbzmgbeXsTpvu">
+{
+  "success": true,
+  "pr_number": 8899,
+  "pr_url": "https://github.com/dagster-io/erk/pull/8899",
+  "pr_title": "Canonicalize Session Storage: Rename `async-learn` \u2192 `planned-pr-context` Branch",
+  "review_threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5yyBqd",
+      "path": "docs/learned/cli/learn-command-conditional-pipeline.md",
+      "line": 65,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"How preprocessing creates the gist\" (in the related documentation link description)\nReality: Gists are no longer used. The current implementation uses branch-based storage (`push_session.py` \u2192 `planned-pr-context/{plan_id}` branch). The link description should reflect branch-based preprocessing, not gist creation.\n\nSource: `src/erk/cli/commands/exec/scripts/push_session.py`\n\nSuggested fix: Change the link description to \"How preprocessing creates the planned-pr-context branch\" or similar.",
+          "created_at": "2026-03-07T17:11:00Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5yyBnE",
+      "path": "docs/learned/planning/learn-pipeline-workflow.md",
+      "line": 100,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"files are written to `.erk/impl-context/` using git plumbing (`commit_files_to_branch`)\"\nReality: The new `push_session.py` architecture writes files to `.erk/sessions/` (not `.erk/impl-context/`). See `push_session.py:352` and `fetch_sessions.py:70`.\n\nSource: `src/erk/cli/commands/exec/scripts/push_session.py:349-370`\n\nSuggested fix: Change `.erk/impl-context/` to `.erk/sessions/` in this sentence.",
+          "created_at": "2026-03-07T17:10:50Z"
+        }
+
+... [74 lines omitted] ...
+
+      "body": "Plan Queued for Implementation\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:submission-queued --&gt;\n&lt;details&gt;\n&lt;summary&gt;submission-queued&lt;/summary&gt;\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-03-07T16:44:14.047743+00:00'\nsubmitted_by: schrockn\nplan_number: 8899\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:submission-queued --&gt;\n\n---\n\nPlan submitted by **schrockn** at 2026-03-07T16:44:14.047743+00:00.\n\nThe `plan-implement` workflow has been dispatched via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22802973589",
+      "body": "\u2699\ufe0f GitHub Action Started\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:workflow-started --&gt;\n&lt;details&gt;\n&lt;summary&gt;workflow-started&lt;/summary&gt;\n\n```yaml\n\nstatus: started\nstarted_at: '2026-03-07T16:45:11Z'\nworkflow_run_id: '22802973589'\nworkflow_run_url: https://github.com/dagster-io/erk/actions/runs/22802973589\nplan_number: 8899\nbranch_name: plnd/canonicalize-session-stora-03-07-1143\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:workflow-started --&gt;\n\n---\n\nSetup completed successfully.\n\n**Branch:** `plnd/canonicalize-session-stora-03-07-1143`\n**PR:** [#8899](https://github.com/dagster-io/erk/pull/8899)\n**Status:** Ready for implementation\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22802973589)",
+      "body": "&lt;!-- dignified-python-review --&gt;\n\n## \u2705 Dignified Python Review\n\n**Last updated:** 2026-03-07 09:08:03 PT\n\nNo violations detected. All changes are documentation-only (docstring and comment updates).\n\n&lt;details&gt;\n&lt;summary&gt;Details&lt;/summary&gt;\n\n### Patterns Checked\n\u2705 LBYL over EAFP - None found\n\u2705 Exception handling - None found\n\u2705 Path operations - None found\n\u2705 Import organization - None found\n\u2705 Default parameter values - None found\n\u2705 5+ parameters with keyword-only - None found\n\u2705 Frozen dataclasses - None found\n\u2705 No re-exports (__all__) - None found\n\n### Changes Summary\nAll changes in this PR are documentation updates:\n- Docstring examples updated from `async-learn` to `planned-pr-context`\n- Comments and help text updated for consistency\n- No code logic, structure, or type changes\n\n### Files Reviewed\n- `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py`: Documentation only\n- `src/erk/cli/commands/exec/scripts/download_remote_session.py`: Documentation only\n- `src/erk/cli/commands/exec/scripts/fetch_sessions.py`: Documentation and string literal only\n- `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`: Documentation only\n- `src/erk/cli/commands/exec/scripts/push_session.py`: Documentation only\n- `src/erk/cli/commands/land_learn.py`: Documentation only\n- `tests/unit/cli/commands/exec/scripts/test_download_remote_session.py`: Documentation only\n- `tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py`: Documentation only\n- `tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py`: Documentation only\n- `tests/unit/cli/commands/exec/scripts/test_push_session.py`: Documentation only\n- `tests/unit/cli/commands/land/test_land_learn.py`: Documentation only\n\n---\n\n### Activity Log\n- **2026-03-07 09:08:03 PT**: No violations detected - all changes are documentation updates\n\n&lt;/details&gt;",
+      "body": "&lt;!-- tripwires-review --&gt;\n\n## \u2705 Tripwires Review\n\n**Last updated:** 2026-03-07 09:07:41 PT\n\nFound 0 violations across 29 files. This PR performs a clean terminology rename with no code logic changes.\n\n&lt;details&gt;\n&lt;summary&gt;Details&lt;/summary&gt;\n\n### Analysis Summary\n\nThis PR renames `async-learn` to `planned-pr-context` throughout the codebase. All changes are string literals, comments, and documentation updates. No business logic or code structure was modified.\n\n### Files Reviewed\n\n**Documentation (19 files):**\n- `.claude/commands/erk/learn.md`\n- `.claude/skills/erk-exec/reference.md`\n- `docs/learned/architecture/session-discovery.md`\n- `docs/learned/architecture/session-storage-revert-rationale.md`\n- `docs/learned/architecture/tripwires.md`\n- `docs/learned/cli/learn-command-conditional-pipeline.md`\n- `docs/learned/glossary.md`\n- `docs/learned/planning/index.md`\n- `docs/learned/planning/learn-pipeline-workflow.md`\n- `docs/learned/planning/learn-without-pr-context.md`\n- `docs/learned/planning/planned-pr-context-local-preprocessing.md`\n- `docs/learned/planning/remote-branch-learn.md`\n- `docs/learned/planning/tripwires.md`\n- `docs/learned/sessions/index.md`\n- `docs/learned/sessions/lifecycle.md`\n- `docs/learned/sessions/session-accumulation.md`\n- `docs/learned/sessions/tripwires.md`\n\n**Code (5 files):**\n- `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py` - Comment update only\n- `src/erk/cli/commands/exec/scripts/download_remote_session.py` - Docstring update\n- `src/erk/cli/commands/exec/scripts/fetch_sessions.py` - Docstring update\n- `src/erk/cli/commands/exec/scripts/get_learn_sessions.py` - Comment update\n- `src/erk/cli/commands/exec/scripts/push_session.py` - Help text update\n\n**Tests (4 files):**\n- `tests/unit/cli/commands/exec/scripts/test_download_remote_session.py` - String literal updates\n- `tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py` - String literal updates\n- `tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py` - String literal updates\n- `tests/unit/cli/commands/exec/scripts/test_push_session.py` - String literal updates\n\n**Workflows (2 files):**\n- `.github/workflows/plan-implement.yml` - YAML comment update\n- `.github/workflows/pr-address.yml` - YAML comment update\n\n**Additional (1 file):**\n- `src/erk/cli/commands/land_learn.py` - Comment update\n\n### Tripwire Checks Performed\n\n\u2705 No bare `subprocess.run` calls - All changes in strings/documentation\n\u2705 No gateway ABC modifications - No method signatures changed\n\u2705 No test logic changes - Only string literal updates\n\u2705 No `Path.home()` usage - No filesystem access code added\n\u2705 No exception control flow - No error handling added\n\u2705 No business logic changes - Pure terminology rename\n\n---\n\n### Activity Log\n- **2026-03-07 09:07:41 PT**: Clean rename operation. No tripwire violations detected across 29 files (19 docs, 5 code, 4 tests, 2 workflows, 1 other).\n\n&lt;/details&gt;",
+      "body": "&lt;!-- dignified-code-simplifier-review --&gt;\n\n## \u2705 Dignified Code Simplifier Review\n\n**Last updated:** 2026-03-07 09:08:26 PT\n\nFound 0 violations. Code follows dignified Python standards.\n\n&lt;details&gt;\n&lt;summary&gt;Details&lt;/summary&gt;\n\n### Patterns Checked\n\u2705 LBYL exception handling - Clean LBYL throughout, no EAFP\n\u2705 Path operations - Proper `.exists()` checks before `.resolve()`\n\u2705 Dictionary access - Uses `.get()` and membership tests, no KeyError patterns\n\u2705 Type hints - Modern syntax (`str | None`, `dict[str, str]`)\n\u2705 Frozen dataclasses - New `SessionProvenance` properly frozen\n\u2705 Imports - All absolute imports\n\n### Code Quality Notes\n- Refactoring in `push_session.py` and `land_learn.py` well-structured\n- New helper functions have clear single responsibilities\n- Conditional logic is explicit and readable\n- No unnecessary abstractions introduced\n\n### Files Reviewed\n- `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py`: 0 violations (docstring update only)\n- `src/erk/cli/commands/exec/scripts/download_remote_session.py`: 0 violations (docstring/help text updates)\n- `src/erk/cli/commands/exec/scripts/fetch_sessions.py`: 0 violations (docstring updates)\n- `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`: 0 violations (docstring/comment updates)\n- `src/erk/cli/commands/exec/scripts/push_session.py`: 0 violations (new code follows standards)\n- `src/erk/cli/commands/land_learn.py`: 0 violations (refactoring well-executed)\n- `tests/unit/cli/commands/exec/scripts/test_*.py`: 0 violations (test code)\n- `tests/unit/cli/commands/land/test_land_learn.py`: 0 violations (test code)\n\n---\n\n### Activity Log\n- **2026-03-07 09:08:26 PT**: No violations detected. Code rename and refactoring follows all dignified Python standards.\n\n&lt;/details&gt;",
+  </tool_result>
+  <tool_result tool="toolu_01EmdrPmK82GinLPQ1xz75hf">
+Exit code 128
+fatal: ambiguous argument 'main...HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+  </tool_result>
+  <assistant>Let me check the default branch and try again:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6924" cache_read_input_tokens="22607" cache_creation="{'ephemeral_5m_input_tokens': 6924, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Svf3sJgaAHqF9wmkaLTv5g">
+    <param name="command">git rev-parse --abbrev-ref origin/HEAD | sed 's/origin\///'</param>
+    <param name="description">Get default branch name</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6924" cache_read_input_tokens="22607" cache_creation="{'ephemeral_5m_input_tokens': 6924, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Svf3sJgaAHqF9wmkaLTv5g">
+HEAD
+fatal: ambiguous argument 'origin/HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+  </tool_result>
+  <assistant>Let me check the git log to understand the repository state:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="276" cache_read_input_tokens="29531" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GQDhpAiNMJDWBP7mNB34LF">
+    <param name="command">git log --oneline --all | head -20</param>
+    <param name="description">Check git log for branch information</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="276" cache_read_input_tokens="29531" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQDhpAiNMJDWBP7mNB34LF">
+18fea238d update
+27a4e9372 Remove plan staging dirs before implementation
+49be10269 Add plan for PR #8917
+4a3c09c61 Auto-fix formatting (docs-sync + ruff + Prettier)
+47a3201d8 WIP: Prepare for PR submission
+09c62cc9d Add plan: Plan: Remove hardcoded `uv pip install` from activation script
+d237b558a WIP: Prepare for PR submission
+1f8f7b9e0 Remove .erk/impl-context/ before implementation
+08870d56c Push impl session 15f07b1d-1ce9-4465-bd25-467dc8f0a186 for plan #8915
+503deb833 Add plan: Speed Up Checkout: Remove --sync, Make Teleport the Heavyweight Path
+070b0d56b Remove .erk/impl-context/ before submission
+840bd594b Add plan: Plan: Objective Roadmap Table Sync Validation
+8bd260676 Add plan: Plan: Use AskUserQuestion in rebase skill's final step
+81e1bb5e5 Deployed b7a1805 with MkDocs version: 1.6.1
+b7a18052d Rename GitHub gateway ABC classes to LocalGitHub (#8888)
+d70f56d15 Remove plan staging dirs before implementation
+2e03721ac Add plan for PR #8916
+5e748ac52 Push planning session 431ae126-ce83-4b37-88db-486e094b90be for plan #8916
+632d55e75 Add plan: Plan: Convert PR Read Commands to @no_repo_required
+460f1d956 Auto-fix formatting (docs-sync + ruff + Prettier)
+  </tool_result>
+  <assistant>Now let me get the diff stat using HEAD relative to the current branch's commits:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="530" cache_read_input_tokens="29807" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NowieYAWrP3BzrWSEk7jxz">
+    <param name="command">git diff --stat HEAD~1...HEAD 2&gt;/dev/null || git diff --stat</param>
+    <param name="description">Get current branch file changes</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="530" cache_read_input_tokens="29807" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NowieYAWrP3BzrWSEk7jxz">
+ docs/learned/integrations/github-review-decision.md | 2 +-
+ docs/learned/planning/index.md                      | 2 +-
+ docs/learned/tui/status-indicators.md               | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+  </tool_result>
+  <assistant>Now I have all the information I need. Let me analyze the PR feedback and classify it according to the skill requirements:
+
+Based on the PR feedback data fetched from PR #8899, here's the classification:
+
+**PR 8899 Analysis:**
+- 4 review threads from `github-actions` (bot)
+- 7 discussion comments (mostly bot-generated CI/review summaries)
+- All review threads are about documentation inaccuracies
+- The PR involves renaming `async-learn` → `planned-pr-context` (terminology rename)
+- File changes are minimal (documentation updates only)
+
+**Classification Details:**
+- All 4 review threads are from bots (github-actions)
+- All are about documentation inaccuracies (stale gist references, incorrect storage paths)
+- The PR involves terminology/documentation changes with no file restructuring
+- All issues should be classified as `actionable` with `pre_existing: false` (because they're doc issues introduced/exposed by this PR, not pre-existing code issues)
+
+```json
+{
+  "success": true,
+  "pr_number": 8899,
+  "pr_title": "Canonicalize Session Storage: Rename `async-learn` → `planned-pr-context` Branch",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8899",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5yyBqd",
+      "type": "review",
+      "path": "docs/learned/cli/learn-command-conditional-pipeline.md",
+      "line": 65,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Update link description from 'creates the gist' to reflect branch-based storage",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected. Claim: \"How preprocessing creates the gist\" (in the related documentation link description) Reality: Gists are no longer used. The current implementation uses branch-based storage (`push_session.py` → `planned-pr-context/{plan_id}` branch). The link description should reflect branch-based preprocessing, not gist creation. Source: `src/erk/cli/commands/exec/scripts/push_session.py` Suggested fix: Change the link description to \"How preprocessing creates the planned-pr-context branch\" or similar."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5yyBnE",
+      "type": "review",
+      "path": "docs/learned/planning/learn-pipeline-workflow.md",
+      "line": 100,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Fix storage path reference from .erk/impl-context/ to .erk/sessions/",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected. Claim: \"files are written to `.erk/impl-context/` using git plumbing (`commit_files_to_branch`)\" Reality: The new `push_session.py` architecture writes files to `.erk/sessions/` (not `.erk/impl-context/`). See `push_session.py:352` and `fetch_sessions.py:70`. Source: `src/erk/cli/commands/exec/scripts/push_session.py:349-370` Suggested fix: Change `.erk/impl-context/` to `.erk/sessions/` in this sentence."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5yyBr2",
+      "type": "review",
+      "path": "docs/learned/planning/learn-without-pr-context.md",
+      "line": 58,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Update link description from 'before gist upload' to reflect branch-based storage",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected. Claim: \"How session materials are prepared before gist upload\" (in the related documentation link description) Reality: Gists are no longer used. The current implementation uses branch-based storage via `push-session` → `planned-pr-context/{plan_id}` branch. No gist upload occurs. Source: `src/erk/cli/commands/exec/scripts/push_session.py` Suggested fix: Change the link description to \"How preprocessing stores sessions in the planned-pr-context branch\" or similar."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5yyBli",
+      "type": "review",
+      "path": "docs/learned/planning/planned-pr-context-local-preprocessing.md",
+      "line": 55,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Fix storage path reference from .erk/impl-context/ to .erk/sessions/",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected. Claim: \"All files are committed to a `planned-pr-context/{plan_id}` git branch under `.erk/impl-context/`\" Reality: `push_session.py` stores files under `.erk/sessions/` (not `.erk/impl-context/`). See `push_session.py:352` and `push_session.py:370`. Source: `src/erk/cli/commands/exec/scripts/push_session.py:352-370` Suggested fix: Change `.erk/impl-context/` to `.erk/sessions/` in this sentence."
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 6,
+  "batches": [
+    {
+      "name": "Pre-Existing (Auto-Resolve)",
+      "complexity": "pre_existing",
+      "auto_proceed": true,
+      "item_indices": []
+    },
+    {
+      "name": "Local Fixes",
+      "complexity": "local",
+      "auto_proceed": true,
+      "item_indices": [0, 1, 2, 3]
+    },
+    {
+      "name": "Single-File",
+      "complexity": "single_file",
+      "auto_proceed": true,
+      "item_indices": []
+    },
+    {
+      "name": "Cross-Cutting",
+      "complexity": "cross_cutting",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Complex",
+      "complexity": "complex",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Informational",
+      "complexity": "informational",
+      "auto_proceed": false,
+      "item_indices": []
+    }
+  ],
+  "error": null
+}
+```</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="308" cache_read_input_tokens="30337" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+</session>

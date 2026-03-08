@@ -1,0 +1,20 @@
+<session>
+  <meta source="agent-a9a17fc" />
+  <meta branch="plnd/canonicalize-session-stora-03-07-1143" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `python -m pytest tests/unit/cli/commands/land/test_land_learn.py -x -q` and report the results. Just run the command and report output - do not modify any files.</user>
+  <assistant>I'll run the pytest command for you and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5842" cache_read_input_tokens="6448" cache_creation="{'ephemeral_5m_input_tokens': 5842, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0132haFtpQ4hpxQ4kdXPZYRw">
+    <param name="command">uv run pytest tests/unit/cli/commands/land/test_land_learn.py -x -q</param>
+    <param name="description">Run pytest on land learn test file</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5842" cache_read_input_tokens="6448" cache_creation="{'ephemeral_5m_input_tokens': 5842, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0132haFtpQ4hpxQ4kdXPZYRw">
+..................................                                       [100%]
+  </tool_result>
+  <assistant>pytest passed: 34 tests passed in the test_land_learn.py file
+
+The test execution completed successfully with all 34 tests passing.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="131" cache_read_input_tokens="12290" cache_creation="{'ephemeral_5m_input_tokens': 131, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

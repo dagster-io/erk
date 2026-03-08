@@ -1,0 +1,620 @@
+<session>
+  <meta source="agent-a627209" />
+  <meta branch="plnd/canonicalize-session-stora-03-07-1143" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_use name="Edit" id="toolu_018KBYvfhtJ4DkNHuU3wcUH1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md</param>
+    <param name="old_string">Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and...[truncated 52 chars]...ng
+
+Each plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).</param>
+    <param name="new_string">Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and...[truncated 66 chars]...gets a dedicated branch: `planned-pr-context/&lt;plan-id&gt;` (e.g., `planned-pr-context/2521`).</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GEnBCPDSx7qC37BpmJ3vdc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md</param>
+    <param name="old_string">- `erk exec push-session`: Preprocesses and pushes a session to the async-learn branch
+- `erk exec fetch-sessions`: Downloads sessions from an async-learn branch</param>
+    <param name="new_string">- `erk exec push-session`: Preprocesses and pushes a session to the planned-pr-context branch
+- `erk exec fetch-sessions`: Downloads sessions from a planned-pr-context branch</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0119PQpoBoLk2aufuYHFECPV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md</param>
+    <param name="old_string">| Tier                | Location                                 | Persistence            ...[truncated 759 chars]...           | Inter-process file passing within a single session (e.g., preprocessed XML) |</param>
+    <param name="new_string">| Tier                | Location                                 | Persistence            ...[truncated 766 chars]...           | Inter-process file passing within a single session (e.g., preprocessed XML) |</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TzmbHMoJS1WmZbgGSr83oR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md</param>
+    <param name="old_string">The branch upload tier was added because learn workflows frequently run in a _different_ C...[truncated 599 chars]...t_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.</param>
+    <param name="new_string">The branch upload tier was added because learn workflows frequently run in a _different_ C...[truncated 611 chars]...t_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NFmy5wsLUXvvgi1ASwE3rz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/index.md</param>
+    <param name="old_string">- **[session-accumulation.md](session-accumulation.md)** — working with push-session or fe...[truncated 12 chars]...fying the learn pipeline session discovery, debugging session data on async-learn branches</param>
+    <param name="new_string">- **[session-accumulation.md](session-accumulation.md)** — working with push-session or fe...[truncated 19 chars]...he learn pipeline session discovery, debugging session data on planned-pr-context branches</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013buxCSLCi1hQTh9rfPFVgB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/tripwires.md</param>
+    <param name="old_string">**assuming sessions are stored locally** → Read [Session Accumulation Architecture](sessio...[truncated 13 chars]...s are accumulated on git branches (async-learn/&lt;plan-id&gt;). Use fetch-sessions to download.</param>
+    <param name="new_string">**assuming sessions are stored locally** → Read [Session Accumulation Architecture](sessio...[truncated 20 chars]...ccumulated on git branches (planned-pr-context/&lt;plan-id&gt;). Use fetch-sessions to download.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Pi5M9vJRibs6BMxWag2u4n">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md</param>
+    <param name="old_string">Erk discovers Claude Code sessions associated with plans through branch-based storage on `async-learn/{plan_id}` branches, with local filesystem fallback for backwards compatibility.</param>
+    <param name="new_string">Erk discovers Claude Code sessions associated with plans through branch-based storage on `planned-pr-context/{plan_id}` branches, with local filesystem fallback for backwards compatibility.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011SYLHqms2C1fksyBFEzaZv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md</param>
+    <param name="old_string">Sessions are preprocessed (JSONL to compressed XML) and accumulated on `async-learn/{plan_...[truncated 8 chars]...based tracking. Each lifecycle stage (planning, impl, address) appends to the same branch.</param>
+    <param name="new_string">Sessions are preprocessed (JSONL to compressed XML) and accumulated on `planned-pr-context...[truncated 15 chars]...based tracking. Each lifecycle stage (planning, impl, address) appends to the same branch.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01E3dFydWQSgSttcYuCCsxYx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md</param>
+    <param name="old_string">### Push Flow
+
+Sessions are pushed via `erk exec push-session`:
+
+1. Preprocess session JSO...[truncated 38 chars]...anch, accumulating with existing sessions
+3. Update plan-header metadata with session info</param>
+    <param name="new_string">### Push Flow
+
+Sessions are pushed via `erk exec push-session`:
+
+1. Preprocess session JSO...[truncated 45 chars]...anch, accumulating with existing sessions
+3. Update plan-header metadata with session info</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BiLyjv8fiMjT5mqoRSZCNv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md</param>
+    <param name="old_string">### Download Flow
+
+Remote sessions are downloaded via `erk exec fetch-sessions`:
+
+1. Fetch...[truncated 62 chars]...ML files to the learn output directory
+3. Return JSON with file list and manifest metadata</param>
+    <param name="new_string">### Download Flow
+
+Remote sessions are downloaded via `erk exec fetch-sessions`:
+
+1. Fetch...[truncated 69 chars]...ML files to the learn output directory
+3. Return JSON with file list and manifest metadata</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016VsJqgm2iGiwfTfA68iua1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md</param>
+    <param name="old_string">| Class                 | Use Case                                                        ...[truncated 179 chars]...emoteSessionSource` | Sessions from `async-learn/{plan_id}` branches or legacy artifacts |</param>
+    <param name="new_string">| Class                 | Use Case                                                        ...[truncated 186 chars]...ssionSource` | Sessions from `planned-pr-context/{plan_id}` branches or legacy artifacts |</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Hq9BdgVW6XpZDDjmUQtngY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md</param>
+    <param name="old_string">  - action: "proposing branch-based session storage as a new idea"
+    warning: "Session s...[truncated 127 chars]...→#7765. The current branch-based approach (push_session.py) is the stable implementation."</param>
+    <param name="new_string">  - action: "proposing branch-based session storage as a new idea"
+    warning: "Session s...[truncated 134 chars]...→#7765. The current branch-based approach (push_session.py) is the stable implementation."</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Fs5mX1zUULW2KmP1qz9C6D">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md</param>
+    <param name="old_string">## Current Implementation
+
+`push_session.py` preprocesses session JSONL to compressed XML ...[truncated 338 chars]...on_at`     | ISO timestamp           |
+| `last_session_source` | `"local"` or `"remote"` |</param>
+    <param name="new_string">## Current Implementation
+
+`push_session.py` preprocesses session JSONL to compressed XML ...[truncated 351 chars]...on_at`     | ISO timestamp           |
+| `last_session_source` | `"local"` or `"remote"` |</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01X1NMmyv4ATp3pL6TZW4hDk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md</param>
+    <param name="old_string">- **PR #7757**: Migrated sessions from gists to branch-based storage (initial attempt)
+- *...[truncated 296 chars]... `async-learn/` branches (isolated from feature branches) and atomic force-push semantics.</param>
+    <param name="new_string">- **PR #7757**: Migrated sessions from gists to branch-based storage (initial attempt)
+- *...[truncated 310 chars]...ed-pr-context/` branches (isolated from feature branches) and atomic force-push semantics.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TejXgxdgX28zmfxguSUmN3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+    <param name="old_string">**proposing branch-based session storage as a new idea** → Read [Session Storage Architect...[truncated 184 chars]...7→#7765. The current branch-based approach (push_session.py) is the stable implementation.</param>
+    <param name="new_string">**proposing branch-based session storage as a new idea** → Read [Session Storage Architect...[truncated 191 chars]...7→#7765. The current branch-based approach (push_session.py) is the stable implementation.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01My7vxZZ79smkxhZnqoTBCj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/async-learn-local-preprocessing.md</param>
+    <param name="old_string">All files are committed to an `async-learn/{plan_id}` git branch under `.erk/impl-context/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.</param>
+    <param name="new_string">All files are committed to a `planned-pr-context/{plan_id}` git branch under `.erk/impl-context/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PeQFmwRBrmNsW5es36sZzY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md</param>
+    <param name="old_string">  - action: "adding redundant branch-location guards to learn status checks"
+    warning: ...[truncated 165 chars]...r learn — this is intentional since remote sessions are handled via async-learn branches."</param>
+    <param name="new_string">  - action: "adding redundant branch-location guards to learn status checks"
+    warning: ...[truncated 172 chars]... — this is intentional since remote sessions are handled via planned-pr-context branches."</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DuGvjsJpyTJpseBxZ2RvYY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md</param>
+    <param name="old_string">The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. T...[truncated 42 chars]...arn/{plan_id}` branches by the CI worker and don't need interactive prompting during land.</param>
+    <param name="new_string">The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. T...[truncated 49 chars]...ext/{plan_id}` branches by the CI worker and don't need interactive prompting during land.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014ZQ5cx6eScf2K5DRVMe6bZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/pr-discovery.md</param>
+    <param name="old_string">**Using git history search as a discovery strategy**: The current codebase does not use `g...[truncated 370 chars]...confirm actual implementation (see lifecycle.md, "Detecting Queued vs Implemented Plans").</param>
+    <param name="new_string">**Using git history search as a discovery strategy**: The current codebase does not use `g...[truncated 370 chars]...confirm actual implementation (see lifecycle.md, "Detecting Queued vs Implemented Plans").</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PsL8i9EA4M78axjXrg2NHQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+    <param name="old_string">Finds all session logs related to a plan issue by querying GitHub issue metadata for track...[truncated 286 chars]...
+- **Legacy artifact sessions** — sessions from older CI runs stored as workflow artifacts</param>
+    <param name="new_string">Finds all session logs related to a plan issue by querying GitHub issue metadata for track...[truncated 293 chars]...
+- **Legacy artifact sessions** — sessions from older CI runs stored as workflow artifacts</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01N96biDruGQMuHZoHQbfpm4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+    <param name="old_string">### Stage 4: Commit Materials to Learn Branch
+
+Commits all learn materials (session XMLs, ...[truncated 173 chars]...ranch`), and the branch is force-pushed. Force-push enables idempotent re-learn scenarios.</param>
+    <param name="new_string">### Stage 4: Commit Materials to Learn Branch
+
+Commits all learn materials (session XMLs, ...[truncated 180 chars]...ranch`), and the branch is force-pushed. Force-push enables idempotent re-learn scenarios.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017Q8VZtvsfbEBgvv7Br1ukj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**adding redundant branch-location guards to learn status checks** → Read [Remote Branch L...[truncated 208 chars]...or learn — this is intentional since remote sessions are handled via async-learn branches.</param>
+    <param name="new_string">**adding redundant branch-location guards to learn status checks** → Read [Remote Branch L...[truncated 215 chars]...n — this is intentional since remote sessions are handled via planned-pr-context branches.</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Tay2zSwWSj3D6RxRJjdUQd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+    <param name="old_string">- **[session-accumulation.md](session-accumulation.md)** — working with push-session or fe...[truncated 12 chars]...fying the learn pipeline session discovery, debugging session data on async-learn branches</param>
+    <param name="new_string">- **[session-accumulation.md](session-accumulation.md)** — working with push-session or fe...[truncated 19 chars]...he learn pipeline session discovery, debugging session data on planned-pr-context branches</param>
+  </tool_use>
+  <usage input_tokens="4125" cache_creation_input_tokens="55775" cache_read_input_tokens="16878" cache_creation="{'ephemeral_5m_input_tokens': 55775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TWAac2uBwpqbxX7xZiwpkP">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.
+
+## Branch Naming
+
+Each plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01CfJfFLcPH6tY6m5vYAeWQa">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: | Tier                | Location                                 | Persistence                                  | Purpose                                                                     |
+| ------------------- | ---------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
+| **Claude-managed**  | `~/.claude/projects/&lt;project&gt;/sessions/` | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |
+| **Branch-uploaded** | `async-learn/{plan_id}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |
+| **Scratch**         | `.erk/scratch/sessions/&lt;session-id&gt;/`    | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01MzXDZDWFtga6P2PaEpmv5v">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to an `async-learn/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.
+
+See `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates an `async-learn/{plan_id}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01JYk3WADqY58shFgozkKr31">
+The file /home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018KBYvfhtJ4DkNHuU3wcUH1">
+The file /home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GEnBCPDSx7qC37BpmJ3vdc">
+The file /home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0119PQpoBoLk2aufuYHFECPV">
+The file /home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TzmbHMoJS1WmZbgGSr83oR">
+The file /home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01NFmy5wsLUXvvgi1ASwE3rz">
+The file /home/runner/work/erk/erk/docs/learned/sessions/index.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013buxCSLCi1hQTh9rfPFVgB">
+The file /home/runner/work/erk/erk/docs/learned/sessions/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Pi5M9vJRibs6BMxWag2u4n">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011SYLHqms2C1fksyBFEzaZv">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01E3dFydWQSgSttcYuCCsxYx">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BiLyjv8fiMjT5mqoRSZCNv">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016VsJqgm2iGiwfTfA68iua1">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Hq9BdgVW6XpZDDjmUQtngY">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Fs5mX1zUULW2KmP1qz9C6D">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01X1NMmyv4ATp3pL6TZW4hDk">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TejXgxdgX28zmfxguSUmN3">
+The file /home/runner/work/erk/erk/docs/learned/architecture/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01My7vxZZ79smkxhZnqoTBCj">
+The file /home/runner/work/erk/erk/docs/learned/planning/async-learn-local-preprocessing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PeQFmwRBrmNsW5es36sZzY">
+The file /home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DuGvjsJpyTJpseBxZ2RvYY">
+The file /home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014ZQ5cx6eScf2K5DRVMe6bZ">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01PsL8i9EA4M78axjXrg2NHQ">
+The file /home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01N96biDruGQMuHZoHQbfpm4">
+The file /home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017Q8VZtvsfbEBgvv7Br1ukj">
+The file /home/runner/work/erk/erk/docs/learned/planning/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Tay2zSwWSj3D6RxRJjdUQd">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: - **[session-accumulation.md](session-accumulation.md)** — working with push-session or fetch-sessions exec commands, modifying the learn pipeline session discovery, debugging session data on async-learn branches&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me check the glossary file content more carefully and handle the remaining files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="76342" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 76342, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JYXzXrdTT11b99aGEh3gQw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="offset">930</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76342" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 76342, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LN7CYy1smU1togvQW1pWzk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+    <param name="offset">15</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="76342" cache_read_input_tokens="10086" cache_creation="{'ephemeral_5m_input_tokens': 76342, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JYXzXrdTT11b99aGEh3gQw">
+   930→**Skip condition**: PRs with `erk-skip-learn` label bypass this marking.
+   931→
+   932→**Related**: [erk-skip-learn](#erk-skip-learn), [Learn Plan](#learn-plan)
+   933→
+   934→### Session Branch Fields
+   935→
+   936→Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `async-learn/{plan_id}` branches.
+   937→
+   938→**Fields:**
+   939→
+   940→| Field                 | Type                        | Description                                                                               |
+   941→| --------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
+   942→| `last_session_branch` | string \| null              | Branch containing accumulated preprocessed session XMLs                                   |
+   943→| `last_session_id`     | string \| null              | Claude Code session ID of the last pushed session                                         |
+   944→| `last_session_at`     | string \| null              | ISO 8601 timestamp of when the session was pushed                                         |
+   945→| `last_session_source` | "local" \| "remote" \| null | Where the session originated - "local" for developer machine, "remote" for GitHub Actions |
+   946→
+   947→**Usage:**
+   948→
+   949→These fields are set by:
+   950→
+   951→- `erk exec push-session` - Pushes preprocessed session to learn branch and updates plan-header
+   952→- GitHub Actions workflow (`plan-implement.yml`) - Automatically pushes session after remote implementation
+   953→
+   954→These fields are read by:
+   955→
+   956→- `erk exec get-learn-sessions` - Returns session sources with `preprocessed_manifest` for download
+   957→- `/erk:learn` command - Uses branch reference to download remote sessions for analysis
+   958→
+   959→**Related**: [Learn Plan](#learn-plan), [Plan Header Metadata](architecture/erk-architecture.md)
+
+... [25 lines omitted] ...
+
+   968→- **EAFP**: Easier to Ask for Forgiveness than Permission (exception-based error handling)
+   969→- **LBYL**: Look Before You Leap (check-before-operation error handling)
+  </tool_result>
+  <tool_result tool="toolu_01LN7CYy1smU1togvQW1pWzk">
+    15→- **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
+    16→- **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
+    17→- **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
+    18→- **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
+    19→- **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me handle the remaining edits with the correct content:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1540" cache_read_input_tokens="86428" cache_creation="{'ephemeral_5m_input_tokens': 1540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017Hq6zTgMmtGaiR2Us6mkmn">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `async-learn/{plan_id}` branches.</param>
+    <param name="new_string">Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `planned-pr-context/{plan_id}` branches.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1540" cache_read_input_tokens="86428" cache_creation="{'ephemeral_5m_input_tokens': 1540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QWNh8ob4XXwQRonnMmVsVY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-learn-pipeline.md</param>
+    <param name="old_string">## Metadata Fallback for Learn Materials Branch
+
+For draft-PR plans, the learn materials l...[truncated 119 chars]...ased fallback to retrieve this information when the metadata block lookup returns nothing.</param>
+    <param name="new_string">## Metadata Fallback for Learn Materials Branch
+
+For draft-PR plans, the learn materials l...[truncated 119 chars]...ased fallback to retrieve this information when the metadata block lookup returns nothing.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1540" cache_read_input_tokens="86428" cache_creation="{'ephemeral_5m_input_tokens': 1540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017Hq6zTgMmtGaiR2Us6mkmn">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01QWNh8ob4XXwQRonnMmVsVY">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Good - the planned-pr-learn-pipeline.md file doesn't have any async-learn references that need changing (it just discusses the pipeline). Let me verify the status and create a summary:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="630" cache_read_input_tokens="87968" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HSCTqW9cow2uPhRjZc2PSg">
+    <param name="command">git diff --stat</param>
+    <param name="description">Check modified files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="630" cache_read_input_tokens="87968" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RjjXX126AHoGQdTjNPGC2H">
+    <param name="command">git diff docs/learned/glossary.md | head -100</param>
+    <param name="description">Preview glossary.md changes</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="630" cache_read_input_tokens="87968" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014xijY1rfpZd9XpEvQgzPDV">
+    <param name="command">git diff docs/learned/sessions/session-accumulation.md</param>
+    <param name="description">Preview session-accumulation.md changes</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="630" cache_read_input_tokens="87968" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FmCAMqhMVzmTXT8uuNqgzA">
+    <param name="command">git diff docs/learned/architecture/session-storage-revert-rationale.md</param>
+    <param name="description">Preview session-storage-revert-rationale.md changes</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="630" cache_read_input_tokens="87968" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014xijY1rfpZd9XpEvQgzPDV">
+diff --git a/docs/learned/sessions/session-accumulation.md b/docs/learned/sessions/session-accumulation.md
+index 49e2310e6..ed4d44cb1 100644
+--- a/docs/learned/sessions/session-accumulation.md
++++ b/docs/learned/sessions/session-accumulation.md
+@@ -8,7 +8,7 @@ tripwires:
+   - action: "modifying manifest format without updating version field"
+     warning: "Manifest includes a version field for forward compatibility. Increment on schema changes."
+   - action: "assuming sessions are stored locally"
+-    warning: "Sessions are accumulated on git branches (async-learn/&lt;plan-id&gt;). Use fetch-sessions to download."
++    warning: "Sessions are accumulated on git branches (planned-pr-context/&lt;plan-id&gt;). Use fetch-sessions to download."
+ ---
+ 
+ # Session Accumulation Architecture
+@@ -17,7 +17,7 @@ Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compre
+ 
+ ## Branch Naming
+ 
+-Each plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).
++Each plan gets a dedicated branch: `planned-pr-context/&lt;plan-id&gt;` (e.g., `planned-pr-context/2521`).
+ 
+ ## Manifest Format
+ 
+@@ -58,8 +58,8 @@ Duplicate `session_id` entries are replaced, not appended. Re-uploading the same
+ 
+ ## Key Commands
+ 
+-- `erk exec push-session`: Preprocesses and pushes a session to the async-learn branch
+-- `erk exec fetch-sessions`: Downloads sessions from an async-learn branch
++- `erk exec push-session`: Preprocesses and pushes a session to the planned-pr-context branch
++- `erk exec fetch-sessions`: Downloads sessions from a planned-pr-context branch
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FmCAMqhMVzmTXT8uuNqgzA">
+diff --git a/docs/learned/architecture/session-storage-revert-rationale.md b/docs/learned/architecture/session-storage-revert-rationale.md
+index a44269656..f924bc722 100644
+--- a/docs/learned/architecture/session-storage-revert-rationale.md
++++ b/docs/learned/architecture/session-storage-revert-rationale.md
+@@ -6,7 +6,7 @@ read_when:
+   - "working with push-session exec script"
+ tripwires:
+   - action: "proposing branch-based session storage as a new idea"
+-    warning: "Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation."
++    warning: "Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation."
+ ---
+ 
+ # Session Storage Architecture
+@@ -15,11 +15,11 @@ Sessions are stored on dedicated git branches and referenced via plan metadata.
+ 
+ ## Current Implementation
+ 
+-`push_session.py` preprocesses session JSONL to compressed XML and pushes to an `async-learn/{plan_id}` branch, accumulating multiple sessions across lifecycle stages. Plan metadata is updated with:
++`push_session.py` preprocesses session JSONL to compressed XML and pushes to a `planned-pr-context/{plan_id}` branch, accumulating multiple sessions across lifecycle stages. Plan metadata is updated with:
+ 
+ | Metadata Field        | Value                   |
+ | --------------------- | ----------------------- |
+-| `last_session_branch` | `async-learn/{plan_id}` |
++| `last_session_branch` | `planned-pr-context/{plan_id}` |
+ | `last_session_id`     | Claude Code session ID  |
+ | `last_session_at`     | ISO timestamp           |
+ | `last_session_source` | `"local"` or `"remote"` |
+@@ -28,9 +28,9 @@ Sessions are stored on dedicated git branches and referenced via plan metadata.
+ 
+ - **PR #7757**: Migrated sessions from gists to branch-based storage (initial attempt)
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RjjXX126AHoGQdTjNPGC2H">
+diff --git a/docs/learned/glossary.md b/docs/learned/glossary.md
+index e2214bdad..eb390250a 100644
+--- a/docs/learned/glossary.md
++++ b/docs/learned/glossary.md
+@@ -933,7 +933,7 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
+ 
+ ### Session Branch Fields
+ 
+-Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `async-learn/{plan_id}` branches.
++Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `planned-pr-context/{plan_id}` branches.
+ 
+ **Fields:**
+  </tool_result>
+  <tool_result tool="toolu_01HSCTqW9cow2uPhRjZc2PSg">
+ .claude/commands/erk/learn.md                      |  2 +-
+ .claude/skills/erk-exec/reference.md               | 12 ++---
+ .github/workflows/plan-implement.yml               |  2 +-
+ .github/workflows/pr-address.yml                   |  2 +-
+ docs/learned/architecture/session-discovery.md     | 10 ++--
+ .../session-storage-revert-rationale.md            | 10 ++--
+ docs/learned/architecture/tripwires.md             |  2 +-
+ docs/learned/glossary.md                           |  2 +-
+ .../planning/async-learn-local-preprocessing.md    |  2 +-
+ docs/learned/planning/learn-pipeline-workflow.md   |  4 +-
+ docs/learned/planning/remote-branch-learn.md       |  4 +-
+ docs/learned/planning/tripwires.md                 |  2 +-
+ docs/learned/sessions/index.md                     |  2 +-
+ docs/learned/sessions/lifecycle.md                 |  6 +--
+ docs/learned/sessions/session-accumulation.md      |  8 ++--
+ docs/learned/sessions/tripwires.md                 |  2 +-
+ .../src/erk_shared/gateway/git/commit_ops/abc.py   |  2 +-
+ .../exec/scripts/download_remote_session.py        |  4 +-
+ .../cli/commands/exec/scripts/fetch_sessions.py    | 10 ++--
+ .../commands/exec/scripts/get_learn_sessions.py    |  6 +--
+ src/erk/cli/commands/exec/scripts/push_session.py  | 12 ++---
+ src/erk/cli/commands/land_learn.py                 | 20 ++++----
+ .../exec/scripts/test_download_remote_session.py   | 12 ++---
+ .../commands/exec/scripts/test_fetch_sessions.py   | 18 ++++----
+ .../exec/scripts/test_get_learn_sessions.py        |  6 +--
+ .../cli/commands/exec/scripts/test_push_session.py | 24 +++++-----
+ tests/unit/cli/commands/land/test_land_learn.py    | 54 +++++++++++-----------
+ 27 files changed, 120 insertions(+), 120 deletions(-)
+  </tool_result>
+  <assistant>Perfect! The mechanical rename has been completed successfully. Let me verify the changes are consistent and document what was done:</assistant>
+  <usage input_tokens="1551" cache_creation_input_tokens="1108" cache_read_input_tokens="88598" cache_creation="{'ephemeral_5m_input_tokens': 1108, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RDC1tDkrDJqYGHGMwoo3zD">
+    <param name="command">grep -r "async-learn" docs/learned/ --include="*.md" | grep -v "trigger-async-learn" | grep -v "trigger_async_learn" | head -20</param>
+    <param name="description">Verify no remaining async-learn branch references</param>
+  </tool_use>
+  <usage input_tokens="1551" cache_creation_input_tokens="1108" cache_read_input_tokens="88598" cache_creation="{'ephemeral_5m_input_tokens': 1108, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Nzk2YT2ypKTrqipdb4jG9e">
+    <param name="command">grep -r "planned-pr-context" docs/learned/ --include="*.md" | wc -l</param>
+    <param name="description">Count new planned-pr-context references</param>
+  </tool_use>
+  <usage input_tokens="1551" cache_creation_input_tokens="1108" cache_read_input_tokens="88598" cache_creation="{'ephemeral_5m_input_tokens': 1108, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nzk2YT2ypKTrqipdb4jG9e">
+27
+  </tool_result>
+  <tool_result tool="toolu_01RDC1tDkrDJqYGHGMwoo3zD">
+docs/learned/cli/learn-command-conditional-pipeline.md:- [Async Learn Local Preprocessing](../planning/async-learn-local-preprocessing.md) — How preprocessing creates the gist
+docs/learned/planning/tripwires.md:**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md.
+docs/learned/planning/tripwires.md:**assuming remote sessions skip local preprocessing** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Since PR #6974, remote sessions go through the same \_preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically.
+docs/learned/planning/learn-pipeline-workflow.md:    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
+docs/learned/planning/learn-pipeline-workflow.md:This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Async Learn Local Preprocessing](async-learn-local-preprocessing.md).
+docs/learned/planning/learn-pipeline-workflow.md:- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — Direct-call architecture, session classification, preprocessing internals
+docs/learned/planning/learn-without-pr-context.md:- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — How session materials are prepared before gist upload
+docs/learned/architecture/session-discovery.md:1. **Plan header branch fields** - `last_session_branch` stores the `async-learn/{plan_id}` branch reference
+docs/learned/sessions/session-accumulation.md:  - "debugging session data on async-learn branches"
+  </tool_result>
+  <assistant>I see there are a few remaining occurrences. Let me fix the files that have async-learn branch pattern references (not file name references):</assistant>
+  <usage input_tokens="32" cache_creation_input_tokens="2433" cache_read_input_tokens="89706" cache_creation="{'ephemeral_5m_input_tokens': 2433, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RcDzz2GkeDXruhp16eoNAf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md</param>
+    <param name="old_string">1. **Plan header branch fields** - `last_session_branch` stores the `async-learn/{plan_id}` branch reference</param>
+    <param name="new_string">1. **Plan header branch fields** - `last_session_branch` stores the `planned-pr-context/{plan_id}` branch reference</param>
+  </tool_use>
+  <usage input_tokens="32" cache_creation_input_tokens="2433" cache_read_input_tokens="89706" cache_creation="{'ephemeral_5m_input_tokens': 2433, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ve2TRvbX8bMSmGz4RrVjc6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md</param>
+    <param name="old_string">read_when:
+  - "working with push-session or fetch-sessions exec commands"
+  - "modifying the learn pipeline session discovery"
+  - "debugging session data on async-learn branches"</param>
+    <param name="new_string">read_when:
+  - "working with push-session or fetch-sessions exec commands"
+  - "modifying the learn pipeline session discovery"
+  - "debugging session data on planned-pr-context branches"</param>
+  </tool_use>
+  <usage input_tokens="32" cache_creation_input_tokens="2433" cache_read_input_tokens="89706" cache_creation="{'ephemeral_5m_input_tokens': 2433, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RcDzz2GkeDXruhp16eoNAf">
+The file /home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Ve2TRvbX8bMSmGz4RrVjc6">
+The file /home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md has been updated successfully.
+  </tool_result>
+  <assistant>Good! Now let me check the final status:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="642" cache_read_input_tokens="92139" cache_creation="{'ephemeral_5m_input_tokens': 642, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JkibnnM1fBjQoB3dag1gjL">
+    <param name="command">grep -r "async-learn" docs/learned/ --include="*.md" | grep -v "trigger-async-learn" | grep -v "trigger_async_learn" | grep -v "async-learn-local-preprocessing.md"</param>
+    <param name="description">Verify only file name references remain</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="642" cache_read_input_tokens="92139" cache_creation="{'ephemeral_5m_input_tokens': 642, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TqUcLMk8HNcxW44vpQBJay">
+    <param name="command">git diff --stat docs/learned/</param>
+    <param name="description">Check documentation changes</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="642" cache_read_input_tokens="92139" cache_creation="{'ephemeral_5m_input_tokens': 642, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TqUcLMk8HNcxW44vpQBJay">
+ docs/learned/architecture/session-discovery.md               | 12 ++++++------
+ .../learned/architecture/session-storage-revert-rationale.md | 10 +++++-----
+ docs/learned/architecture/tripwires.md                       |  2 +-
+ docs/learned/glossary.md                                     |  2 +-
+ docs/learned/planning/learn-pipeline-workflow.md             |  4 ++--
+ .../planning/planned-pr-context-local-preprocessing.md       |  2 +-
+ docs/learned/planning/remote-branch-learn.md                 |  4 ++--
+ docs/learned/planning/tripwires.md                           |  2 +-
+ docs/learned/sessions/index.md                               |  2 +-
+ docs/learned/sessions/lifecycle.md                           |  6 +++---
+ docs/learned/sessions/session-accumulation.md                | 10 +++++-----
+ docs/learned/sessions/tripwires.md                           |  2 +-
+ 12 files changed, 29 insertions(+), 29 deletions(-)
+  </tool_result>
+  <tool_result tool="toolu_01JkibnnM1fBjQoB3dag1gjL">
+
+  </tool_result>
+  <assistant>Perfect! The mechanical rename has been completed successfully across all documentation files. All occurrences of `async-learn` as a branch pattern (like `async-learn/{plan_id}`, `async-learn/&lt;plan-id&gt;`, or `async-learn/` branches) have been replaced with `planned-pr-context` equivalents.
+
+The only remaining references to "async-learn" are:
+- References to the file name `async-learn-local-preprocessing.md` (document titles and links)
+- References to the script names `trigger-async-learn` or `trigger_async_learn` (which should NOT be renamed per your instructions)
+
+## Summary
+
+I successfully performed a mechanical rename across 12 documentation files in `/home/runner/work/erk/erk/docs/learned/`, replacing ALL occurrences of the `async-learn` branch pattern with `planned-pr-context`:
+
+### Files Updated:
+1. `/home/runner/work/erk/erk/docs/learned/glossary.md` — 1 change
+2. `/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md` — 5 changes
+3. `/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md` — 3 changes
+4. `/home/runner/work/erk/erk/docs/learned/sessions/index.md` — 1 change
+5. `/home/runner/work/erk/erk/docs/learned/sessions/tripwires.md` — 1 change
+6. `/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md` — 6 changes
+7. `/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md` — 5 changes
+8. `/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md` — 1 change
+9. `/home/runner/work/erk/erk/docs/learned/planning/async-learn-local-preprocessing.md` — 1 change
+10. `/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md` — 2 changes
+11. `/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md` — 2 changes
+12. `/home/runner/work/erk/erk/docs/learned/planning/tripwires.md` — 1 change
+
+### Key Replacements Made:
+- `async-learn/{plan_id}` → `planned-pr-context/{plan_id}`
+- `async-learn/&lt;plan-id&gt;` → `planned-pr-context/&lt;plan-id&gt;`
+- `async-learn/` branches → `planned-pr-context/` branches
+- "async-learn branches" → "planned-pr-context branches"
+
+### Preserved (NOT renamed):
+- `trigger-async-learn` script references (command/script name)
+- `trigger_async_learn` function/module references
+- `async-learn-local-preprocessing.md` file name references (document links and titles)
+
+All changes are ready for review in the git diff.</assistant>
+  <usage input_tokens="310" cache_creation_input_tokens="339" cache_read_input_tokens="92781" cache_creation="{'ephemeral_5m_input_tokens': 339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

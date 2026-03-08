@@ -1,0 +1,653 @@
+<session>
+  <meta branch="plnd/canonicalize-session-stora-03-07-1143" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Task" id="toolu_01TQFh8ixysLfvNzpZF68Yzo">
+    <param name="description">Rename async-learn in docs</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Perform a mechanical rename across documentation files. Replace ALL occurrences of `async-...[truncated 2953 chars]...dit to replace them. If it only contains `trigger_async_learn` script references, skip it.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="907" cache_read_input_tokens="78216" cache_creation="{'ephemeral_5m_input_tokens': 907, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TQFh8ixysLfvNzpZF68Yzo">
+Async agent launched successfully.
+agentId: a627209 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Let me also update the remaining files while the agents work — the `.claude/skills/erk-exec/reference.md` and the `.claude/commands/erk/learn.md`:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1623" cache_read_input_tokens="79123" cache_creation="{'ephemeral_5m_input_tokens': 1623, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DrxZKqRpY5uiuQu9sewp43">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="offset">38</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1623" cache_read_input_tokens="79123" cache_creation="{'ephemeral_5m_input_tokens': 1623, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011kNR2Q2w8BvGBz2icxBw3U">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="offset">85</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1623" cache_read_input_tokens="79123" cache_creation="{'ephemeral_5m_input_tokens': 1623, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ve54hxW2JMA46xUmTzY6kS">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="offset">355</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1623" cache_read_input_tokens="79123" cache_creation="{'ephemeral_5m_input_tokens': 1623, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Vy3NySwVwkoTmJCqgcWbYM">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="offset">379</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1623" cache_read_input_tokens="79123" cache_creation="{'ephemeral_5m_input_tokens': 1623, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Mfwv8n4CkZ4prJSeMebWow">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="offset">1074</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1623" cache_read_input_tokens="79123" cache_creation="{'ephemeral_5m_input_tokens': 1623, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DrxZKqRpY5uiuQu9sewp43">
+    38→| `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                    |
+    39→| `discover-reviews`                | Discover code reviews matching PR changed files.                            |
+    40→| `download-remote-session`         | Download a session from a git branch.                                       |
+    41→| `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                  |
+    42→| `extract-latest-plan`             | Extract the latest plan from Claude session files.                          |
+    43→| `fetch-sessions`                  | Fetch preprocessed sessions from an async-learn branch.                     |
+    44→| `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                       |
+    45→| `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                           |
+    46→| `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).          |
+    47→| `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                       |
+    48→| `get-learn-sessions`              | Get session information for a plan.                                         |
+    49→| `get-plan-info`                   | Retrieve plan info from the appropriate backend.                            |
+    50→| `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                   |
+    51→| `get-plans-for-objective`         | Fetch erk-plans linked to an objective.                                     |
+    52→| `get-pr-body-footer`              | Generate PR body footer with teleport command.                              |
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_011kNR2Q2w8BvGBz2icxBw3U">
+    85→| `post-workflow-started-comment`   | Post a workflow started comment to a GitHub issue.                          |
+    86→| `pr-sync-commit`                  | Sync PR title and body from the latest git commit.                          |
+    87→| `pre-tool-use-hook`               | PreToolUse hook for dignified-python reminders on .py file edits.           |
+    88→| `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                      |
+    89→| `push-and-create-pr`              | Push branch and create/find PR, outputting JSON.                            |
+    90→| `push-session`                    | Preprocess and push a session to the async-learn branch with accumulation.  |
+    91→| `quick-submit`                    | Quick commit all changes and submit.                                        |
+    92→| `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                |
+    93→| `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                   |
+    94→| `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.             |
+    95→| `resolve-objective-ref`           | Resolve an objective reference to an objective number.                      |
+    96→| `resolve-review-thread`           | Resolve a PR review thread.                                                 |
+    97→| `resolve-review-threads`          | Resolve multiple PR review threads from JSON stdin.                         |
+    98→| `run-review`                      | Run a code review using Claude.                                             |
+    99→| `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                  |
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Ve54hxW2JMA46xUmTzY6kS">
+   355→**Usage:** `erk exec download-remote-session`
+   356→
+   357→**Options:**
+   358→
+   359→| Flag               | Type | Required | Default        | Description                                               |
+   360→| ------------------ | ---- | -------- | -------------- | --------------------------------------------------------- |
+   361→| `--session-branch` | TEXT | Yes      | Sentinel.UNSET | Git branch containing the session (e.g., async-learn/123) |
+   362→| `--session-id`     | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to locate file on the branch)     |
+   363→
+   364→### exit-plan-mode-hook
+   365→
+   366→Prompt user about plan saving when ExitPlanMode is called.
+   367→
+   368→**Usage:** `erk exec exit-plan-mode-hook`
+   369→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Vy3NySwVwkoTmJCqgcWbYM">
+   379→| -------------- | ---- | -------- | -------------- | ----------------------------------------------------------------------------- |
+   380→| `--session-id` | TEXT | No       | Sentinel.UNSET | Session ID to search within (optional, searches all sessions if not provided) |
+   381→
+   382→### fetch-sessions
+   383→
+   384→Fetch preprocessed sessions from an async-learn branch.
+   385→
+   386→**Usage:** `erk exec fetch-sessions`
+   387→
+   388→**Options:**
+   389→
+   390→| Flag           | Type    | Required | Default        | Description                           |
+   391→| -------------- | ------- | -------- | -------------- | ------------------------------------- |
+   392→| `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to fetch sessions for |
+   393→| `--output-dir` | PATH    | Yes      | Sentinel.UNSET | Directory to write fetched XML files  |
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Mfwv8n4CkZ4prJSeMebWow">
+  1074→| `--no-graphite` | FLAG | No       | -       | Skip Graphite (use git + gh only) |
+  1075→| `--session-id`  | TEXT | No       | -       | Claude session ID for tracing     |
+  1076→
+  1077→### push-session
+  1078→
+  1079→Preprocess and push a session to the async-learn branch with accumulation.
+  1080→
+  1081→**Usage:** `erk exec push-session`
+  1082→
+  1083→**Options:**
+  1084→
+  1085→| Flag             | Type    | Required | Default        | Description                                             |
+  1086→| ---------------- | ------- | -------- | -------------- | ------------------------------------------------------- |
+  1087→| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to the session JSONL file to preprocess and upload |
+  1088→| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                                  |
+  1089→| `--stage`        | CHOICE  | Yes      | Sentinel.UNSET | Lifecycle stage: planning, impl, or address             |
+  1090→| `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'                     |
+  1091→| `--plan-id`      | INTEGER | Yes      | Sentinel.UNSET | Plan identifier for the async-learn branch              |
+  1092→
+  1093→### quick-submit
+  1094→
+  1095→Quick commit all changes and submit.
+  1096→
+  1097→**Usage:** `erk exec quick-submit`
+  1098→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me edit these reference files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="80746" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KbfEEoDRHqk82sKT7x4yba">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="old_string">| `fetch-sessions`                  | Fetch preprocessed sessions from an async-learn branch.                     |</param>
+    <param name="new_string">| `fetch-sessions`                  | Fetch preprocessed sessions from a planned-pr-context branch.               |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="80746" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016W5ioDKFV2eD5wTp4SPFZ9">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="old_string">| `push-session`                    | Preprocess and push a session to the async-learn branch with accumulation.  |</param>
+    <param name="new_string">| `push-session`                    | Preprocess and push a session to the planned-pr-context branch with accumulation. |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="80746" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01AQDZyrxFSLrc9ZRLHZpNLC">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="old_string">| `--session-branch` | TEXT | Yes      | Sentinel.UNSET | Git branch containing the session (e.g., async-learn/123) |</param>
+    <param name="new_string">| `--session-branch` | TEXT | Yes      | Sentinel.UNSET | Git branch containing the session (e.g., planned-pr-context/123) |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="80746" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018NMVJKRctLUqeEeinLgHiJ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="old_string">Fetch preprocessed sessions from an async-learn branch.</param>
+    <param name="new_string">Fetch preprocessed sessions from a planned-pr-context branch.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="80746" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014agD8dKEVaxBj4arK1QXZV">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="old_string">Preprocess and push a session to the async-learn branch with accumulation.</param>
+    <param name="new_string">Preprocess and push a session to the planned-pr-context branch with accumulation.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="80746" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KfoqfWZMnGMTLec6nQqD8W">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md</param>
+    <param name="old_string">| `--plan-id`      | INTEGER | Yes      | Sentinel.UNSET | Plan identifier for the async-learn branch              |</param>
+    <param name="new_string">| `--plan-id`      | INTEGER | Yes      | Sentinel.UNSET | Plan identifier for the planned-pr-context branch       |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3173" cache_read_input_tokens="80746" cache_creation="{'ephemeral_5m_input_tokens': 3173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KbfEEoDRHqk82sKT7x4yba">
+The file /home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016W5ioDKFV2eD5wTp4SPFZ9">
+The file /home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AQDZyrxFSLrc9ZRLHZpNLC">
+The file /home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018NMVJKRctLUqeEeinLgHiJ">
+The file /home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014agD8dKEVaxBj4arK1QXZV">
+The file /home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KfoqfWZMnGMTLec6nQqD8W">
+The file /home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the learn command and check the `erk_shared/learn/extraction/get_learn_sessions_result.py` file for the trigger-async-learn reference:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1611" cache_read_input_tokens="83919" cache_creation="{'ephemeral_5m_input_tokens': 1611, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PGxdMvM9meCqqM6p2LsbBy">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="offset">144</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1611" cache_read_input_tokens="83919" cache_creation="{'ephemeral_5m_input_tokens': 1611, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LzMYYpPrYF8hXno2mVp8hR">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/learn/extraction/get_learn_sessions_result.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1611" cache_read_input_tokens="83919" cache_creation="{'ephemeral_5m_input_tokens': 1611, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PGxdMvM9meCqqM6p2LsbBy">
+   144→
+   145→**Session discovery priority:**
+   146→
+   147→1. If you copied preprocessed materials from `.erk/impl-context/` in Step 2, skip the "Preprocess Sessions" and "Save PR Comments" subsections. The files are already in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`. Proceed to "Launch Parallel Analysis Agents".
+   148→
+   149→2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the async-learn branch — skip raw session preprocessing:
+   150→
+   151→```bash
+   152→erk exec fetch-sessions --plan-id &lt;plan-number&gt; \
+   153→    --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
+   154→```
+   155→
+   156→This downloads all accumulated preprocessed XML files (planning, impl, address stages) to the learn directory. The manifest contains metadata about which stages and sessions are included. Proceed to "Launch Parallel Analysis Agents".
+   157→
+   158→3. Else — discover local sessions, preprocess, then analyze (existing local path below).
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01LzMYYpPrYF8hXno2mVp8hR">
+     1→"""TypedDict definitions for get-learn-sessions JSON output.
+     2→
+     3→These types are the single source of truth for the JSON schema produced by
+     4→get-learn-sessions and consumed by trigger-async-learn (and other callers).
+     5→Using TypedDict gives static type safety via ty check without runtime overhead,
+     6→and maps directly to the dict access patterns used by JSON consumers.
+     7→"""
+     8→
+     9→from typing import TypedDict
+    10→
+    11→from erk_shared.learn.extraction.session_source import SessionSourceDict
+    12→
+    13→
+    14→class GetLearnSessionsResultDict(TypedDict):
+    15→    """Successful result from get-learn-sessions command."""
+    16→
+    17→    success: bool
+    18→    plan_id: str
+    19→    planning_session_id: str | None
+    20→    implementation_session_ids: list[str]
+    21→    learn_session_ids: list[str]
+    22→    readable_session_ids: list[str]
+    23→    session_paths: list[str]
+    24→    local_session_ids: list[str]
+    25→    last_remote_impl_at: str | None
+    26→    last_remote_impl_run_id: str | None
+    27→    last_remote_impl_session_id: str | None
+    28→    session_sources: list[SessionSourceDict]
+    29→    last_session_branch: str | None
+    30→    last_session_id: str | None
+
+... [15 lines omitted] ...
+
+    35→class GetLearnSessionsErrorDict(TypedDict):
+    36→    """Error result from get-learn-sessions command."""
+    39→    error: str
+  </tool_result>
+  <assistant>The `get_learn_sessions_result.py` references "trigger-async-learn" which is the script name, not the branch — so no change needed there. Let me update the learn command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1518" cache_read_input_tokens="85530" cache_creation="{'ephemeral_5m_input_tokens': 1518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Q7qDbdWQDPeo8g9h5U6wv9">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="old_string">2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the async-learn branch — skip raw session preprocessing:</param>
+    <param name="new_string">2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the planned-pr-context branch — skip raw session preprocessing:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1518" cache_read_input_tokens="85530" cache_creation="{'ephemeral_5m_input_tokens': 1518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q7qDbdWQDPeo8g9h5U6wv9">
+The file /home/runner/work/erk/erk/.claude/commands/erk/learn.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check on the background agents and handle the doc file rename:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="87048" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Vga6sXgKFenjxA9bqXiVRJ">
+    <param name="task_id">a6d49f6</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="87048" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01PvgXcqhX1MNRFbX97RTP4t">
+    <param name="task_id">a627209</param>
+    <param name="block">False</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="87048" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Vga6sXgKFenjxA9bqXiVRJ">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a6d49f6&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py","old_string":"async-learn","new_string":"planned-pr-context"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py","old_string":"async-learn","new_string":"planned-pr-context"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_download_remote_session.py","old_string":"async-learn","new_string":"planned-pr-context"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py","old_string":"async-learn","new_string":"planned-pr-context"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","old_string":"async-learn","new_string":"planned-pr-context"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","old_string":"async-learn","new_string":"planned-pr-context"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","old_string":"_fetch_xmls_from_async_learn_branch","new_string":"_fetch_xmls_from_context_branch"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","old_string":"test_fetches_from_async_learn_branch_when_local_not_found","new_string":"test_fetches_from_context_branch_when_local_not_found"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","old_string":"test_skips_when_async_learn_branch_not_found","new_string":"test_skips_when_context_branch_not_found"}
+[Tool: Edit] {"replace_all":true,"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","old_string":"test_skips_when_async_learn_branch_not_found","new_string":"test_skips_when_context_branch_not_found"}
+[Tool: Bash] {"command":"grep -n \"planned-pr-context\" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_push_session.py | head -5","description":"Verify planned-pr-context in test_push_session.py"}
+[Tool: Bash] {"command":"grep -n \"_fetch_xmls_from_context_branch\" /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","description":"Verify function name rename in test_land_learn.py"}
+[Tool: Bash] {"command":"grep -n \"test_fetches_from_context_branch_when_local_not_found\\|test_skips_when_context_branch_not_found\" /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","description":"Verify test function name renames"}
+[Tool: Bash] {"command":"grep -n \"test_fetches_from_context_branch_when_local_not_found\\|test_skips_when_context_branch_not_found\" /home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py","description":"Verify test function name renames"}
+
+
+... [33 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PvgXcqhX1MNRFbX97RTP4t">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a627209&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/async-learn-local-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/pr-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-learn-pipeline.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/index.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md","old_string":"Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.\n\n## Branch Naming\n\nEach plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).","new_string":"Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.\n\n## Branch Naming\n\nEach plan gets a dedicated branch: `planned-pr-context/&lt;plan-id&gt;` (e.g., `planned-pr-context/2521`)."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md","old_string":"| Tier                | Location                                 | Persistence                                  | Purpose                                                                     |\n| ------------------- | ---------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |\n| **Claude-managed**  | `~/.claude/projects/&lt;project&gt;/sessions/` | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |\n| **Branch-uploaded** | `async-learn/{plan_id}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |\n| **Scratch**         | `.erk/scratch/sessions/&lt;session-id&gt;/`    | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |","new_string":"| Tier                | Location                                 | Persistence                                  | Purpose                                                                     |\n| ------------------- | ---------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |\n| **Claude-managed**  | `~/.claude/projects/&lt;project&gt;/sessions/` | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |\n| **Branch-uploaded** | `planned-pr-context/{plan_id}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |\n| **Scratch**         | `.erk/scratch/sessions/&lt;session-id&gt;/`    | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md","old_string":"The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to an `async-learn/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.\n\nSee `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates an `async-learn/{plan_id}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.","new_string":"The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to a `planned-pr-context/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.\n\nSee `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates a `planned-pr-context/{plan_id}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md","old_string":"  - action: \"assuming sessions are stored locally\"\n    warning: \"Sessions are accumulated on git branches (async-learn/&lt;plan-id&gt;). Use fetch-sessions to download.\"","new_string":"  - action: \"assuming sessions are stored locally\"\n    warning: \"Sessions are accumulated on git branches (planned-pr-context/&lt;plan-id&gt;). Use fetch-sessions to download.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md","old_string":"Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.\n\n## Branch Naming\n\nEach plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).","new_string":"Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.\n\n## Branch Naming\n\nEach plan gets a dedicated branch: `planned-pr-context/&lt;plan-id&gt;` (e.g., `planned-pr-context/2521`)."}
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Test agent completed successfully. Docs agent is still running. Let me wait for it to finish and also handle the doc file rename (`async-learn-local-preprocessing.md`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4570" cache_read_input_tokens="87334" cache_creation="{'ephemeral_5m_input_tokens': 4570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01BHZPbXbw2ohL8WGtR4F1vf">
+    <param name="task_id">a627209</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4570" cache_read_input_tokens="87334" cache_creation="{'ephemeral_5m_input_tokens': 4570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BHZPbXbw2ohL8WGtR4F1vf">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a627209&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/async-learn-local-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/pr-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-learn-pipeline.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/index.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md","old_string":"Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.\n\n## Branch Naming\n\nEach plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).","new_string":"Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.\n\n## Branch Naming\n\nEach plan gets a dedicated branch: `planned-pr-context/&lt;plan-id&gt;` (e.g., `planned-pr-context/2521`)."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md","old_string":"| Tier                | Location                                 | Persistence                                  | Purpose                                                                     |\n| ------------------- | ---------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |\n| **Claude-managed**  | `~/.claude/projects/&lt;project&gt;/sessions/` | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |\n| **Branch-uploaded** | `async-learn/{plan_id}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |\n| **Scratch**         | `.erk/scratch/sessions/&lt;session-id&gt;/`    | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |","new_string":"| Tier                | Location                                 | Persistence                                  | Purpose                                                                     |\n| ------------------- | ---------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |\n| **Claude-managed**  | `~/.claude/projects/&lt;project&gt;/sessions/` | Unpredictable — Claude Code controls cleanup | Primary session storage; most workflows start here                          |\n| **Branch-uploaded** | `planned-pr-context/{plan_id}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |\n| **Scratch**         | `.erk/scratch/sessions/&lt;session-id&gt;/`    | 1 hour TTL, auto-cleaned                     | Inter-process file passing within a single session (e.g., preprocessed XML) |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md","old_string":"The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to an `async-learn/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.\n\nSee `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates an `async-learn/{plan_id}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.","new_string":"The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to a `planned-pr-context/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.\n\nSee `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates a `planned-pr-context/{plan_id}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md","old_string":"  - action: \"assuming sessions are stored locally\"\n    warning: \"Sessions are accumulated on git branches (async-learn/&lt;plan-id&gt;). Use fetch-sessions to download.\"","new_string":"  - action: \"assuming sessions are stored locally\"\n    warning: \"Sessions are accumulated on git branches (planned-pr-context/&lt;plan-id&gt;). Use fetch-sessions to download.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md","old_string":"Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.\n\n## Branch Naming\n\nEach plan gets a dedicated branch: `async-learn/&lt;plan-id&gt;` (e.g., `async-learn/2521`).","new_string":"Sessions from Claude Code are preprocessed (JSONL to compressed XML, ~84% compression) and accumulated on git branches for async learn processing.\n\n## Branch Naming\n\nEach plan gets a dedicated branch: `planned-pr-context/&lt;plan-id&gt;` (e.g., `planned-pr-context/2521`)."}
+
+... [34 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md","old_string":"  - action: \"proposing branch-based session storage as a new idea\"\n    warning: \"Session storage IS branch-based (async-learn/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation.\"","new_string":"  - action: \"proposing branch-based session storage as a new idea\"\n    warning: \"Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md","old_string":"  - action: \"adding redundant branch-location guards to learn status checks\"\n    warning: \"Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via async-learn branches.\"","new_string":"  - action: \"adding redundant branch-location guards to learn status checks\"\n    warning: \"Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via planned-pr-context branches.\""}
+  </tool_result>
+  <assistant>The docs agent is still running but has completed nearly all its edits. Let me check if there are remaining `async-learn` references it might miss. Let me also handle the file rename for `async-learn-local-preprocessing.md` while waiting:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8068" cache_read_input_tokens="91904" cache_creation="{'ephemeral_5m_input_tokens': 8068, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01AinimP1h1pmmjuSDzEY8Pd">
+    <param name="command">git mv docs/learned/planning/async-learn-local-preprocessing.md docs/learned/planning/planned-pr-context-local-preprocessing.md</param>
+    <param name="description">Rename async-learn doc file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8068" cache_read_input_tokens="91904" cache_creation="{'ephemeral_5m_input_tokens': 8068, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AinimP1h1pmmjuSDzEY8Pd">
+
+  </tool_result>
+  <assistant>Now let me update any references to the old filename in docs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="99972" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01DETLufXGXjcqdBdpgpAYZm">
+    <param name="pattern">async-learn-local-preprocessing</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="99972" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DETLufXGXjcqdBdpgpAYZm">
+docs/learned/cli/learn-command-conditional-pipeline.md:65:- [Async Learn Local Preprocessing](../planning/async-learn-local-preprocessing.md) — How preprocessing creates the gist
+docs/learned/planning/learn-without-pr-context.md:58:- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — How session materials are prepared before gist upload
+docs/learned/planning/index.md:10:- **[async-learn-local-preprocessing.md](async-learn-local-preprocessing.md)** — modifying trigger-async-learn orchestration, debugging why learn materials are missing or malformed in CI, understanding the local-to-branch-to-learn data flow
+docs/learned/planning/learn-pipeline-workflow.md:12:    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
+docs/learned/planning/learn-pipeline-workflow.md:23:This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Async Learn Local Preprocessing](async-learn-local-preprocessing.md).
+docs/learned/planning/learn-pipeline-workflow.md:152:- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — Direct-call architecture, session classification, preprocessing internals
+docs/learned/planning/tripwires.md:23:**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md.
+docs/learned/planning/tripwires.md:43:**adding subprocess calls to trigger-async-learn** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. This command uses direct Python function calls, not subprocess invocations. This is intentional — see the direct-call architecture section below.
+docs/learned/planning/tripwires.md:61:**assuming remote sessions skip local preprocessing** → Read [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) first. Since PR #6974, remote sessions go through the same \_preprocess_session_direct() pipeline as local sessions. They are downloaded first, then preprocessed identically.
+  </tool_result>
+  <assistant>Many references to the old filename. Let me update them all:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="100455" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XruwYJJ6DDdPhjn21zgY35">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/learn-command-conditional-pipeline.md</param>
+    <param name="old_string">- [Async Learn Local Preprocessing](../planning/async-learn-local-preprocessing.md) — How preprocessing creates the gist</param>
+    <param name="new_string">- [Planned PR Context Local Preprocessing](../planning/planned-pr-context-local-preprocessing.md) — How preprocessing creates the gist</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="100455" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01YM7ganinDgX4PzeN258vMW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-without-pr-context.md</param>
+    <param name="old_string">- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — How session materials are prepared before gist upload</param>
+    <param name="new_string">- [Planned PR Context Local Preprocessing](planned-pr-context-local-preprocessing.md) — How session materials are prepared before gist upload</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="100455" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014H8DQVreGLbbbXFs2VxgmL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+    <param name="old_string">- **[async-learn-local-preprocessing.md](async-learn-local-preprocessing.md)** — modifying...[truncated 40 chars]...rials are missing or malformed in CI, understanding the local-to-branch-to-learn data flow</param>
+    <param name="new_string">- **[planned-pr-context-local-preprocessing.md](planned-pr-context-local-preprocessing.md)...[truncated 54 chars]...rials are missing or malformed in CI, understanding the local-to-branch-to-learn data flow</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="100455" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UD89wn1MV1NozMsrxB5CyC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+    <param name="old_string">    warning: "New stages must be direct Python function calls, not subprocess invocations....[truncated 25 chars]...formance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."</param>
+    <param name="new_string">    warning: "New stages must be direct Python function calls, not subprocess invocations....[truncated 32 chars]...e. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="100455" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Mqt4Qr76KLf98xnGXu427C">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+    <param name="old_string">This document covers the **data pipeline** that moves session logs from local disk to a Gi...[truncated 136 chars]...sing internals, see [Async Learn Local Preprocessing](async-learn-local-preprocessing.md).</param>
+    <param name="new_string">This document covers the **data pipeline** that moves session logs from local disk to a Gi...[truncated 150 chars]..., see [Planned PR Context Local Preprocessing](planned-pr-context-local-preprocessing.md).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="100455" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DzUggnvcmvp75Afg8zG9Hg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+    <param name="old_string">- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — Direct-call architecture, session classification, preprocessing internals</param>
+    <param name="new_string">- [Planned PR Context Local Preprocessing](planned-pr-context-local-preprocessing.md) — Direct-call architecture, session classification, preprocessing internals</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="100455" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XruwYJJ6DDdPhjn21zgY35">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01YM7ganinDgX4PzeN258vMW">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_014H8DQVreGLbbbXFs2VxgmL">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01UD89wn1MV1NozMsrxB5CyC">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Mqt4Qr76KLf98xnGXu427C">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01DzUggnvcmvp75Afg8zG9Hg">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Need to read these files first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="101190" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HzRgb3NMouQ8FXdx5dXYiS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/learn-command-conditional-pipeline.md</param>
+    <param name="offset">60</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="101190" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LiN4B6qEf2JE9K1gHXqSr5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-without-pr-context.md</param>
+    <param name="offset">53</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="101190" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013aAw7GpbULi53DPm6AAYWS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+    <param name="offset">5</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="101190" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XpZWD8wPiGfW791BQviR71">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+    <param name="offset">8</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="101190" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Qo6XkvtvRLzDtz95ank7rk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+    <param name="offset">148</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="101190" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KqkemWudq2aHJbtrCe1Yfi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="offset">18</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="101190" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HzRgb3NMouQ8FXdx5dXYiS">
+    60→- Interactive Claude execution via `prompt_executor.execute_interactive()`
+    61→
+    62→## Related Documentation
+    63→
+    64→- [Learn Pipeline Workflow](../planning/learn-pipeline-workflow.md) — Full pipeline architecture
+    65→- [Async Learn Local Preprocessing](../planning/async-learn-local-preprocessing.md) — How preprocessing creates the gist
+    66→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01LiN4B6qEf2JE9K1gHXqSr5">
+    53→
+    54→**Using `gh` CLI for PR detection in Python**: The orchestrator uses typed gateway calls with discriminated union returns, not subprocess calls to `gh`. This provides type safety and LBYL error handling. Don't mix the two approaches.
+    55→
+    56→## Related Documentation
+    57→
+    58→- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — How session materials are prepared before gist upload
+    59→- [Learn Workflow](learn-workflow.md) — Complete async learn flow and agent tier architecture
+    60→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_013aAw7GpbULi53DPm6AAYWS">
+     5→
+     6→- **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
+     7→- **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — passing data between agents via files or inline output, designing multi-agent workflows with parallel and sequential tiers, orchestrating subagents that produce markdown, XML, or other large outputs
+     8→- **[agent-orchestration.md](agent-orchestration.md)** — designing agent workflows with parallel and sequential tiers, choosing between parallel and sequential agent execution, adding or modifying agents in the learn pipeline, deciding which model tier to assign an agent
+     9→- **[agent-output-routing-strategies.md](agent-output-routing-strategies.md)** — deciding how agents should receive and produce outputs, designing multi-agent orchestration prompts, choosing between embedded-prompt and agent-file routing
+    10→- **[async-learn-local-preprocessing.md](async-learn-local-preprocessing.md)** — modifying trigger-async-learn orchestration, debugging why learn materials are missing or malformed in CI, understanding the local-to-branch-to-learn data flow
+    11→- **[backend-naming-conventions.md](backend-naming-conventions.md)** — referencing the plan backend by name in code or documentation, confused about draft_pr vs planned_pr vs github-draft-pr naming, adding user-facing output that mentions the backend
+    12→- **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plan issues, implementing PR lookup from plan issues, modifying branch creation or naming conventions
+    13→- **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
+    14→- **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan issue as complete, creating a consolidation plan from multiple PRs
+    15→- **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
+    16→- **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
+    17→- **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
+    18→- **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
+    19→- **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01XpZWD8wPiGfW791BQviR71">
+     8→  - choosing between local learn and async learn modes
+     9→  - adding a new stage to the learn pipeline
+    10→tripwires:
+    11→  - action: "adding a new pipeline stage to the async learn pipeline"
+    12→    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
+    13→  - action: "changing how sessions are classified as planning vs impl"
+    14→    warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
+    15→  - action: "modifying how learn materials are committed to a branch"
+    16→    warning: "The CI workflow checks out the learn branch and reads materials from .erk/impl-context/. File names and directory structure must match what learn.yml expects."
+    17→---
+    18→
+    19→# Learn Pipeline Workflow
+    20→
+    21→## Purpose
+    22→
+    23→This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Async Learn Local Preprocessing](async-learn-local-preprocessing.md).
+    24→
+    25→## Pipeline Architecture
+    26→
+    27→The learn pipeline has 7 stages that transform raw session JSONL into a documentation plan issue. The key architectural decision is **where processing happens**: stages 1-5 run locally (fast, free), while stages 6-7 run in GitHub Actions (background, billed).
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Qo6XkvtvRLzDtz95ank7rk">
+   148→For CI issues (stage 6), use `gh run view &lt;run-id&gt;` to inspect workflow logs.
+   149→
+   150→## Related Documentation
+   151→
+   152→- [Async Learn Local Preprocessing](async-learn-local-preprocessing.md) — Direct-call architecture, session classification, preprocessing internals
+   153→- [Learn Workflow](learn-workflow.md) — Agent tier architecture, status tracking, /erk:learn skill
+   154→- [Session Preprocessing](../sessions/preprocessing.md) — What preprocessing does to session XML
+   155→- [Learn Plan Land Flow](../cli/learn-plan-land-flow.md) — Integration with PR landing
+   156→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+</session>
