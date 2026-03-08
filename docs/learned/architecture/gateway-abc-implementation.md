@@ -76,14 +76,14 @@ These gateways have dry-run because they participate in erk's `--dry-run` CLI mo
 
 ## Gateway Locations
 
-| Gateway     | Pattern | Location                                                |
-| ----------- | ------- | ------------------------------------------------------- |
-| Git         | 4-file  | `packages/erk-shared/src/erk_shared/gateway/git/`       |
-| LocalGitHub | 4-file  | `packages/erk-shared/src/erk_shared/gateway/github/`    |
-| Graphite    | 4-file  | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
-| AgentDocs   | 4-file  | `packages/erk-shared/src/erk_shared/gateway/agent_docs/`|
-| Cmux        | 3-file  | `packages/erk-shared/src/erk_shared/gateway/cmux/`      |
-| Codespace   | 3-file  | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
+| Gateway     | Pattern | Location                                                 |
+| ----------- | ------- | -------------------------------------------------------- |
+| Git         | 4-file  | `packages/erk-shared/src/erk_shared/gateway/git/`        |
+| LocalGitHub | 4-file  | `packages/erk-shared/src/erk_shared/gateway/github/`     |
+| Graphite    | 4-file  | `packages/erk-shared/src/erk_shared/gateway/graphite/`   |
+| AgentDocs   | 4-file  | `packages/erk-shared/src/erk_shared/gateway/agent_docs/` |
+| Cmux        | 3-file  | `packages/erk-shared/src/erk_shared/gateway/cmux/`       |
+| Codespace   | 3-file  | `packages/erk-shared/src/erk_shared/gateway/codespace/`  |
 
 ## Checklist for New Gateway Methods
 
@@ -99,7 +99,7 @@ When adding a new method to any gateway ABC:
    - Read-only methods: delegate to wrapped
    - Mutation methods: no-op, return success value
 5. [ ] Add unit tests for Fake behavior
-7. [ ] Add integration tests for Real (if feasible)
+6. [ ] Add integration tests for Real (if feasible)
 
 ## Non-Ideal State Decision Checklist
 

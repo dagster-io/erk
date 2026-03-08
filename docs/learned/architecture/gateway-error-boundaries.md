@@ -92,12 +92,12 @@ result = fake.merge_pr(repo_root, pr_number, ...)
 
 ## Implementation Responsibilities by File
 
-| File         | Error Mechanism                          | Uses try/except? |
-| ------------ | ---------------------------------------- | ---------------- |
-| `abc.py`     | Defines discriminated union return types | No               |
-| `real.py`    | Catches subprocess/system exceptions     | **Yes**          |
+| File         | Error Mechanism                            | Uses try/except? |
+| ------------ | ------------------------------------------ | ---------------- |
+| `abc.py`     | Defines discriminated union return types   | No               |
+| `real.py`    | Catches subprocess/system exceptions       | **Yes**          |
 | `fake.py`    | Returns discriminants based on constructor | No               |
-| `dry_run.py` | Always returns success discriminant      | No               |
+| `dry_run.py` | Always returns success discriminant        | No               |
 
 ### abc.py: Type Definitions
 

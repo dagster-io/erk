@@ -38,12 +38,12 @@ The `HttpClient` ABC is defined in `packages/erk-shared/src/erk_shared/gateway/h
 
 HttpClient follows the standard gateway pattern:
 
-| Place    | File              | Purpose                |
-| -------- | ----------------- | ---------------------- |
-| ABC      | `http/abc.py`     | Interface definition   |
-| Real     | `http/real.py`    | Production HTTP client |
-| Fake     | `http/fake.py`    | In-memory test double  |
-| Dry Run  | `http/dry_run.py` | No-op for dry-run mode |
+| Place   | File              | Purpose                |
+| ------- | ----------------- | ---------------------- |
+| ABC     | `http/abc.py`     | Interface definition   |
+| Real    | `http/real.py`    | Production HTTP client |
+| Fake    | `http/fake.py`    | In-memory test double  |
+| Dry Run | `http/dry_run.py` | No-op for dry-run mode |
 
 ## Required http_client Parameter
 

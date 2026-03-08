@@ -19,12 +19,12 @@ GitHubAdmin manages GitHub repository administration operations, primarily secre
 
 ## 4-Place Implementation
 
-| File         | Role                                                    |
-| ------------ | ------------------------------------------------------- |
-| `abc.py`     | Abstract interface defining the contract                |
-| `real.py`    | Production implementation using `gh` CLI                |
-| `fake.py`    | Test double with mutation tracking                      |
-| `noop.py`    | No-op for dry-run mode (reads delegate, mutations skip) |
+| File      | Role                                                    |
+| --------- | ------------------------------------------------------- |
+| `abc.py`  | Abstract interface defining the contract                |
+| `real.py` | Production implementation using `gh` CLI                |
+| `fake.py` | Test double with mutation tracking                      |
+| `noop.py` | No-op for dry-run mode (reads delegate, mutations skip) |
 
 ## Security: stdin for Secrets
 
