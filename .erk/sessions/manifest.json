@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plan_id": 8961,
+  "sessions": [
+    {
+      "session_id": "66d5811b-b81c-4ec7-9b85-be8f06ecba93",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-07T21:09:54.019424+00:00",
+      "files": [
+        "impl-66d5811b-b81c-4ec7-9b85-be8f06ecba93-66d5811b-b81c-4ec7-9b85-be8f06ecba93.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 365,
+      "xml_size_kb": 29,
+      "git_branch": "plnd/update-changelog-unrelease-03-07-2107"
+    }
+  ]
+}
