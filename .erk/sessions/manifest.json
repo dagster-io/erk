@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "plan_id": 9003,
+  "sessions": [
+    {
+      "session_id": "unknown",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T11:48:46.988199+00:00",
+      "files": [
+        "impl-unknown-4723d29e-e521-4784-9435-10e808c215a1-part1.xml",
+        "impl-unknown-4723d29e-e521-4784-9435-10e808c215a1-part2.xml",
+        "impl-unknown-4723d29e-e521-4784-9435-10e808c215a1-part3.xml",
+        "impl-unknown-4723d29e-e521-4784-9435-10e808c215a1-part4.xml",
+        "impl-unknown-4723d29e-e521-4784-9435-10e808c215a1-part5.xml",
+        "impl-unknown-4723d29e-e521-4784-9435-10e808c215a1-part6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 7,
+      "raw_size_kb": 1052,
+      "xml_size_kb": 137,
+      "git_branch": "plnd/O8950-per-pr-reconcile-rep-03-08-1136"
+    }
+  ]
+}
