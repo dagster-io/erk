@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "plan_id": 8960,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-08T02:15:58.319327+00:00",
+      "files": [
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part1.xml",
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part2.xml",
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part3.xml",
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part4.xml",
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part5.xml",
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part6.xml",
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part7.xml",
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part8.xml",
+        "impl--a5dbc5e7-f388-4fb3-a3b9-afa5092e42dc-part9.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 7,
+      "raw_size_kb": 1111,
+      "xml_size_kb": 132,
+      "git_branch": "plnd/O8381-phase7-issue-to-plan-03-08-0206"
+    }
+  ]
+}
