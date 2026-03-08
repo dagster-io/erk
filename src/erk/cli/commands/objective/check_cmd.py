@@ -118,7 +118,7 @@ def validate_objective(
     5. Phase numbering is sequential
     6. v2 format integrity (objective-header has objective_comment_id)
     7. Plan/PR references use # prefix
-    8. Roadmap table sync
+    8. Roadmap table sync (rendered table matches YAML source)
 
     This function does not produce output or raise SystemExit.
 
@@ -281,7 +281,8 @@ def check_objective(
     OBJECTIVE_REF can be an issue number (42) or a full GitHub URL.
 
     Checks: erk-objective label, roadmap parsing, status/PR consistency,
-    orphaned statuses, and phase numbering.
+    orphaned statuses, phase numbering, v2 format integrity, PR reference
+    format, and roadmap table sync.
 
     Use --json-output for structured JSON output (replaces erk exec objective-roadmap-check).
     """

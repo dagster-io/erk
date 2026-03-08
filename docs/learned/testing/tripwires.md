@@ -116,6 +116,8 @@ Rules triggered by matching actions in code.
 
 **tracking only the primary argument in a mutation tuple, omitting flags or options** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. Track ALL call parameters in tuples (e.g., (branch, force) not just branch). Lost context leads to undertested behavior.
 
+**unit test calling create_context() or scanning real filesystem** → Read [Test Layer Migration](test-layer-migration.md) first. move to integration. Unit tests must use fakes only.
+
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
 **using branch names with '/' in test data for resolve_impl_dir() tests** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Branch name sanitization (\_sanitize_branch_for_dirname() at packages/erk-shared/src/erk_shared/impl_folder.py) replaces '/' with '--'. Test data must account for this: branch 'plnd/my-feature' becomes directory 'plnd--my-feature'.

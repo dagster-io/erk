@@ -39,6 +39,7 @@
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for a new submit pipeline step, writing \_make_state helpers for pipeline step tests, deciding what to test at the step level vs the runner level
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
 - **[test-file-organization.md](test-file-organization.md)** — splitting a large test file into a test subdirectory, deciding whether a test file is too large, organizing tests for a complex module
+- **[test-layer-migration.md](test-layer-migration.md)** — moving tests between unit and integration layers, deciding whether a test belongs in unit or integration, test calls create_context() or uses real filesystem
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
 - **[time-injection-patterns.md](time-injection-patterns.md)** — writing time-dependent tests, using FakeTime in tests, fixing flaky timestamp tests, calling datetime.now() or time.sleep() in erk code
 - **[tui-subprocess-testing.md](tui-subprocess-testing.md)** — testing TUI features that use subprocess.Popen, writing tests for background worker methods, creating fake subprocess objects for TUI tests
