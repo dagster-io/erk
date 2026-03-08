@@ -165,18 +165,24 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
             else:
                 slug = slugify_node_description(step_desc)
 
+            status = step_data.get("status", "pending")
+            pr = step_data.get("pr")
+            pr_display = pr if pr is not None else "-"
+
             if any_has_depends_on:
                 depends_display = ", ".join(depends_on) if depends_on else "-"
-                sections.append(f"| {step_id} | {step_desc} | {depends_display} | pending | - |")
+                sections.append(
+                    f"| {step_id} | {step_desc} | {depends_display} | {status} | {pr_display} |"
+                )
             else:
-                sections.append(f"| {step_id} | {step_desc} | pending | - |")
+                sections.append(f"| {step_id} | {step_desc} | {status} | {pr_display} |")
 
             all_steps.append(
                 RoadmapNode(
                     id=step_id,
                     description=step_desc,
-                    status="pending",
-                    pr=None,
+                    status=status,
+                    pr=pr,
                     depends_on=depends_on,
                     slug=slug,
                     reason=None,

@@ -15,6 +15,9 @@ from erk_shared.gateway.claude_installation.fake import (
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
+from erk_shared.gateway.github.plan_issues import create_objective_issue
+from erk_shared.gateway.time.fake import FakeTime
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Objective
@@ -634,3 +637,44 @@ This objective has no slug.
     # Verify slug does NOT appear in the issue body metadata
     created_body = fake_gh.created_issues[0][1]
     assert "slug:" not in created_body
+
+
+# --- Round-trip invariant tests ---
+
+
+def test_create_objective_comment_passes_validation(tmp_path: Path) -> None:
+    """Newly-created objective comment should already be in canonical format.
+
+    This is the generate-validate roundtrip invariant: after create_objective_issue()
+    runs, the comment body should match what rerender_comment_roadmap() produces.
+    If they differ, `erk objective check` would fail on a brand-new objective.
+    """
+    fake_gh = FakeGitHubIssues()
+
+    result = create_objective_issue(
+        github_issues=fake_gh,
+        repo_root=tmp_path,
+        plan_content=OBJECTIVE_WITH_ROADMAP,
+        time=FakeTime(),
+        title=None,
+        extra_labels=None,
+        slug=None,
+    )
+
+    assert result.success
+    assert result.plan_number is not None
+
+    # Get the final issue body (after update_issue_body with comment_id)
+    final_issue_body = fake_gh.updated_bodies[-1][1]
+
+    # Get the final comment body: if updated_comments has entries, the last
+    # one is the normalized version; otherwise it's the original added comment
+    if fake_gh.updated_comments:
+        final_comment_body = fake_gh.updated_comments[-1][1]
+    else:
+        final_comment_body = fake_gh.added_comments[-1][1]
+
+    # The roundtrip invariant: re-rendering should produce the same comment
+    rerendered = rerender_comment_roadmap(final_issue_body, final_comment_body)
+    # rerendered is None when no roadmap markers found, or same content when already canonical
+    assert rerendered is None or rerendered == final_comment_body
