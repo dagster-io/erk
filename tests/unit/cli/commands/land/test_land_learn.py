@@ -30,7 +30,9 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.plan_store.planned_pr_lifecycle import DETAILS_CLOSE, DETAILS_OPEN
 from erk_shared.sessions.discovery import SessionsForPlan
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_pr_details(
@@ -42,11 +44,14 @@ def _make_pr_details(
     labels: tuple[str, ...] = (),
 ) -> PRDetails:
     now = datetime(2024, 1, 1, tzinfo=UTC)
+    # Wrap body in plan lifecycle format so PlannedPRBackend can parse it
+    plan_header = format_plan_header_body_for_test(branch_name=branch)
+    pr_body = DETAILS_OPEN + body + DETAILS_CLOSE + "\n\n" + plan_header
     return PRDetails(
         number=pr_number,
         url=f"https://github.com/owner/repo/pull/{pr_number}",
         title=title,
-        body=body,
+        body=pr_body,
         state="OPEN",
         base_ref_name="main",
         head_ref_name=branch,

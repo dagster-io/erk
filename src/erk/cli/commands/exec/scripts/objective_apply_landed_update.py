@@ -235,14 +235,22 @@ def objective_apply_landed_update(
     roadmap = _build_roadmap_context(objective.body, plan_id)
     pr_ref = f"#{pr_number}"
 
+    # Build lookup of already-done nodes to skip (idempotency guard)
+    done_node_ids = {
+        node["id"]
+        for phase in roadmap["phases"]
+        for node in phase["nodes"]
+        if node["status"] == "done"
+    }
+
     if node_ids:
-        matched_steps = list(node_ids)
+        matched_steps = [nid for nid in node_ids if nid not in done_node_ids]
     else:
         matched_steps = [
             node["id"]
             for phase in roadmap["phases"]
             for node in phase["nodes"]
-            if node["pr"] == pr_ref
+            if node["pr"] == pr_ref and node["status"] != "done"
         ]
 
     # --- Fetch objective prose content ---
@@ -265,24 +273,26 @@ def objective_apply_landed_update(
         # Rebuild roadmap from the updated body
         roadmap = _build_roadmap_context(updated_body, plan_id)
 
-    # --- Post action comment ---
-    date_str = time.now().strftime("%Y-%m-%d")
-    phase_step = ", ".join(matched_steps) if matched_steps else "N/A"
+    # --- Post action comment only if nodes were updated ---
+    action_comment_id: int | None = None
+    if node_updates:
+        date_str = time.now().strftime("%Y-%m-%d")
+        phase_step = ", ".join(matched_steps)
 
-    roadmap_updates = [f"Node {nid}: -> done" for nid in matched_steps]
+        roadmap_updates = [f"Node {nid}: -> done" for nid in matched_steps]
 
-    comment_body = _format_action_comment(
-        title=f"Landed PR #{pr_number}",
-        date=date_str,
-        pr_number=pr_number,
-        phase_step=phase_step,
-        what_was_done=[f"Landed {pr.title} (#{pr_number})"],
-        lessons_learned=[],
-        roadmap_updates=roadmap_updates,
-        body_reconciliation=[],
-    )
+        comment_body = _format_action_comment(
+            title=f"Landed PR #{pr_number}",
+            date=date_str,
+            pr_number=pr_number,
+            phase_step=phase_step,
+            what_was_done=[f"Landed {pr.title} (#{pr_number})"],
+            lessons_learned=[],
+            roadmap_updates=roadmap_updates,
+            body_reconciliation=[],
+        )
 
-    action_comment_id = issues.add_comment(repo_root, objective_number, comment_body)
+        action_comment_id = issues.add_comment(repo_root, objective_number, comment_body)
 
     # --- Emit result ---
     objective_info: ObjectiveInfoDict = {

@@ -265,8 +265,8 @@ class TestApplyLandedUpdateHappyPath:
 
 
 class TestApplyLandedUpdateNoNodes:
-    def test_no_node_flags_still_posts_comment(self, tmp_path: Path) -> None:
-        """When no --node flags are passed, still posts action comment."""
+    def test_no_node_flags_no_matching_nodes_skips_comment(self, tmp_path: Path) -> None:
+        """When no --node flags and no nodes match the PR, no comment is posted."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
         plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
@@ -312,8 +312,9 @@ class TestApplyLandedUpdateNoNodes:
         assert data["success"] is True
         assert data["node_updates"] == []
 
-        # Action comment still posted
-        assert len(fake_issues.added_comments) == 1
+        # No action comment posted (no nodes matched)
+        assert data["action_comment_id"] is None
+        assert len(fake_issues.added_comments) == 0
 
         # Issue body NOT updated (no nodes to update)
         assert len(fake_issues.updated_bodies) == 0
@@ -653,3 +654,259 @@ class TestApplyLandedUpdateDiscovery:
         data = json.loads(result.output)
         assert data["success"] is False
         assert "9999" in data["error"]
+
+
+ROADMAP_BODY_WITH_DONE_NODE = textwrap.dedent("""\
+    # My Objective
+
+    <!-- erk:metadata-block:objective-header -->
+
+    <details>
+    <summary><code>objective-header</code></summary>
+
+    ```yaml
+    created_at: '2026-01-01T00:00:00Z'
+    created_by: testuser
+    objective_comment_id: 55555
+    slug: null
+    ```
+
+    </details>
+
+    <!-- /erk:metadata-block:objective-header -->
+
+    <!-- erk:metadata-block:objective-roadmap -->
+
+    <details>
+    <summary><code>objective-roadmap</code></summary>
+
+    ```yaml
+    schema_version: "2"
+    steps:
+    - id: "1.1"
+      description: "Add user model"
+      status: "done"
+      pr: "#6517"
+    - id: "1.2"
+      description: "Add JWT library"
+      status: "in_progress"
+      pr: "#6517"
+    - id: "2.1"
+      description: "Implement login"
+      status: "pending"
+      pr: null
+    ```
+
+    </details>
+
+    <!-- /erk:metadata-block:objective-roadmap -->
+
+    ## Roadmap
+""")
+
+
+class TestApplyLandedUpdateIdempotency:
+    def test_done_node_not_updated_on_rerun(self, tmp_path: Path) -> None:
+        """Node already done with same PR is excluded from updates. No duplicate comment."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY_WITH_DONE_NODE)
+        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        pr = _make_pr_details(number=6517, title="Add auth system", body="pr body")
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6513: plan},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeLocalGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+
+        # Only node 1.2 was updated (1.1 was already done)
+        assert len(data["node_updates"]) == 1
+        assert data["node_updates"][0]["node_id"] == "1.2"
+
+        # Action comment was posted (because 1.2 was updated)
+        assert data["action_comment_id"] is not None
+        assert len(fake_issues.added_comments) == 1
+
+    def test_all_done_nodes_skip_comment(self, tmp_path: Path) -> None:
+        """When all matched nodes are already done, no action comment is posted."""
+        all_done_body = textwrap.dedent("""\
+            # My Objective
+
+            <!-- erk:metadata-block:objective-header -->
+
+            <details>
+            <summary><code>objective-header</code></summary>
+
+            ```yaml
+            created_at: '2026-01-01T00:00:00Z'
+            created_by: testuser
+            objective_comment_id: 55555
+            slug: null
+            ```
+
+            </details>
+
+            <!-- /erk:metadata-block:objective-header -->
+
+            <!-- erk:metadata-block:objective-roadmap -->
+
+            <details>
+            <summary><code>objective-roadmap</code></summary>
+
+            ```yaml
+            schema_version: "2"
+            steps:
+            - id: "1.1"
+              description: "Add user model"
+              status: "done"
+              pr: "#6517"
+            - id: "2.1"
+              description: "Implement login"
+              status: "pending"
+              pr: null
+            ```
+
+            </details>
+
+            <!-- /erk:metadata-block:objective-roadmap -->
+
+            ## Roadmap
+        """)
+        objective = _make_issue(number=6423, title="My Objective", body=all_done_body)
+        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        pr = _make_pr_details(number=6517, title="Add auth system", body="pr body")
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6513: plan},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeLocalGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+
+        # No nodes were updated
+        assert data["node_updates"] == []
+
+        # No action comment posted
+        assert data["action_comment_id"] is None
+        assert len(fake_issues.added_comments) == 0
+
+    def test_explicit_node_ids_skip_done_nodes(self, tmp_path: Path) -> None:
+        """When --node flags specify nodes that are already done, those are skipped."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY_WITH_DONE_NODE)
+        plan = _make_issue(number=6513, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        pr = _make_pr_details(number=6517, title="Add auth system", body="pr body")
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6513: plan},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeLocalGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--plan",
+                "6513",
+                "--node",
+                "1.1",  # Already done — should be skipped
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                repo_root=tmp_path,
+                cwd=tmp_path,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+
+        # Node 1.1 was already done, so no updates
+        assert data["node_updates"] == []
+
+        # No action comment posted since nothing changed
+        assert data["action_comment_id"] is None
+        assert len(fake_issues.added_comments) == 0

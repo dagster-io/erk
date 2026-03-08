@@ -135,6 +135,15 @@ def _create_learn_pr_for_merged_branch(
     if "erk-learn" in plan_result.labels:
         return
 
+    # Idempotency guard: skip if a learn plan already exists for this plan
+    existing_learn = plan_result.header_fields.get("learn_plan_issue")
+    if existing_learn is not None:
+        user_output(
+            click.style("\u2139", fg="blue")
+            + f" Learn plan already exists (#{existing_learn}) for plan #{plan_id}, skipping"
+        )
+        return
+
     # Discover sessions for the plan
     sessions = ctx.plan_backend.find_sessions_for_plan(main_repo_root, plan_id)
     all_session_ids = sessions.all_session_ids()
@@ -208,7 +217,13 @@ def _create_learn_pr_for_merged_branch(
         extra_files=xml_files or None,
     )
 
-    if result.success:
+    if result.success and result.plan_number is not None:
+        # Set backpointer on source plan so re-runs are idempotent
+        ctx.plan_backend.update_metadata(
+            main_repo_root,
+            plan_id,
+            {"learn_plan_issue": result.plan_number, "learn_status": "completed_with_plan"},
+        )
         user_output(
             click.style("\u2713", fg="green")
             + f" Created learn plan #{result.plan_number} for plan #{plan_id}"
@@ -545,6 +560,15 @@ def _create_learn_pr_impl(
     if "erk-learn" in plan_result.labels:
         return
 
+    # Idempotency guard: skip if a learn plan already exists for this plan
+    existing_learn = plan_result.header_fields.get("learn_plan_issue")
+    if existing_learn is not None:
+        user_output(
+            click.style("\u2139", fg="blue")
+            + f" Learn plan already exists (#{existing_learn}) for plan #{plan_id}, skipping"
+        )
+        return
+
     # Discover sessions for the plan
     sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
     all_session_ids = sessions.all_session_ids()
@@ -618,7 +642,13 @@ def _create_learn_pr_impl(
         extra_files=xml_files or None,
     )
 
-    if result.success:
+    if result.success and result.plan_number is not None:
+        # Set backpointer on source plan so re-runs are idempotent
+        ctx.plan_backend.update_metadata(
+            state.main_repo_root,
+            plan_id,
+            {"learn_plan_issue": result.plan_number, "learn_status": "completed_with_plan"},
+        )
         user_output(
             click.style("✓", fg="green")
             + f" Created learn plan #{result.plan_number} for plan #{plan_id}"
