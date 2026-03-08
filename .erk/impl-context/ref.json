@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix Objective Auto-Close When Auto-Match Fails But All Nodes Are Complete"
+}
