@@ -13,6 +13,7 @@ import click
 from erk.cli.commands.one_shot import _get_remote_github
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
+    OneShotDispatchResult,
     dispatch_one_shot_remote,
 )
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
@@ -101,8 +102,11 @@ def run_smoke_test(
     except (click.ClickException, RuntimeError, ValueError, KeyError) as exc:
         return SmokeTestError(step="dispatch", message=str(exc))
 
-    if result is None:
-        return SmokeTestError(step="dispatch", message="dispatch_one_shot_remote returned None")
+    if not isinstance(result, OneShotDispatchResult):
+        return SmokeTestError(
+            step="dispatch",
+            message="dispatch_one_shot_remote did not return a dispatch result",
+        )
 
     # Compute run URL from result
     run_url = construct_workflow_run_url(owner, repo_name, result.run_id)
