@@ -28,11 +28,6 @@ from erk_shared.impl_folder import (
     resolve_impl_dir,
     save_plan_ref,
 )
-from erk_shared.issue_workflow import (
-    IssueBranchSetup,
-    IssueValidationFailed,
-    prepare_plan_for_worktree,
-)
 from erk_shared.naming import (
     default_branch_for_worktree,
     ensure_simple_worktree_name,
@@ -43,6 +38,11 @@ from erk_shared.naming import (
 )
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan, PlanNotFound
+from erk_shared.plan_workflow import (
+    PlanBranchSetup,
+    PlanValidationFailed,
+    prepare_plan_for_worktree,
+)
 
 
 def run_post_worktree_setup(
@@ -657,7 +657,7 @@ def create_wt(
 
     # Track linked branch name and setup for plan-based worktrees
     linked_branch_name: str | None = None
-    setup: IssueBranchSetup | None = None
+    setup: PlanBranchSetup | None = None
 
     # Handle plan fetching after repo discovery
     if from_plan:
@@ -685,7 +685,7 @@ def create_wt(
         trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
         result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
 
-        if isinstance(result, IssueValidationFailed):
+        if isinstance(result, PlanValidationFailed):
             user_output(click.style("Error: ", fg="red") + result.message)
             raise SystemExit(1) from None
 

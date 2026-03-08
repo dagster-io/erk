@@ -3,7 +3,6 @@
 Shared function used by all plan creation paths:
 - erk pr create (CLI)
 - erk exec create-pr-from-session (session extraction)
-- erk exec create-plan-from-context (stdin plan)
 - land_learn.py (learn plan after landing)
 
 Follows the plan_save.py pattern: creates a branch from origin/trunk,

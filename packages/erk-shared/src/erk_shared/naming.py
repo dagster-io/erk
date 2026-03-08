@@ -280,7 +280,7 @@ def validate_worktree_name(name: str) -> ValidWorktreeName | InvalidWorktreeName
     then validate to confirm the result is stable.
 
     Agent-facing callers:
-        - ``prepare_plan_for_worktree`` (in ``issue_workflow.py``)
+        - ``prepare_plan_for_worktree`` (in ``plan_workflow.py``)
         - ``setup_impl_from_issue`` (exec script)
 
     Human-facing counterpart:
