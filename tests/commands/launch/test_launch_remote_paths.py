@@ -94,9 +94,7 @@ def test_pr_rebase_remote_requires_pr_option() -> None:
     ctx = _build_remote_context(fake_remote)
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["launch", "pr-rebase", "--repo", "owner/repo"], obj=ctx
-    )
+    result = runner.invoke(cli, ["launch", "pr-rebase", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
     assert "--pr is required for pr-rebase in remote mode" in result.output
@@ -179,9 +177,7 @@ def test_pr_address_remote_requires_pr() -> None:
     ctx = _build_remote_context(fake_remote)
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["launch", "pr-address", "--repo", "owner/repo"], obj=ctx
-    )
+    result = runner.invoke(cli, ["launch", "pr-address", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
     assert "--pr is required for pr-address" in result.output
@@ -220,9 +216,7 @@ def test_pr_rewrite_remote_requires_pr() -> None:
     ctx = _build_remote_context(fake_remote)
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["launch", "pr-rewrite", "--repo", "owner/repo"], obj=ctx
-    )
+    result = runner.invoke(cli, ["launch", "pr-rewrite", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
     assert "--pr is required for pr-rewrite" in result.output
@@ -256,9 +250,7 @@ def test_learn_remote_requires_plan() -> None:
     ctx = _build_remote_context(fake_remote)
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["launch", "learn", "--repo", "owner/repo"], obj=ctx
-    )
+    result = runner.invoke(cli, ["launch", "learn", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
     assert "--plan is required for learn" in result.output
