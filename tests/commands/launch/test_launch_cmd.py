@@ -11,6 +11,48 @@ from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from erk_shared.gateway.remote_github.types import RemotePRInfo
+
+
+def _make_fake_remote(
+    *,
+    prs: dict[int, RemotePRInfo] | None = None,
+) -> FakeRemoteGitHub:
+    """Create a FakeRemoteGitHub with sensible defaults."""
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-123",
+        issues=None,
+        issue_comments=None,
+        pr_references=None,
+        prs=prs,
+    )
+
+
+def _make_remote_pr(
+    number: int,
+    *,
+    head_ref_name: str = "feature-branch",
+    base_ref_name: str = "main",
+    state: str = "OPEN",
+    title: str = "Test PR",
+) -> RemotePRInfo:
+    """Create a RemotePRInfo for testing."""
+    return RemotePRInfo(
+        number=number,
+        title=title,
+        state=state,
+        url=f"https://github.com/owner/repo/pull/{number}",
+        head_ref_name=head_ref_name,
+        base_ref_name=base_ref_name,
+        owner="owner",
+        repo="repo",
+        labels=[],
+    )
 
 
 def _make_pr_info(
@@ -19,7 +61,7 @@ def _make_pr_info(
     state: str,
     title: str | None,
 ) -> PullRequestInfo:
-    """Create a PullRequestInfo for testing."""
+    """Create a PullRequestInfo for branch-inference tests."""
     return PullRequestInfo(
         number=number,
         state=state,
@@ -40,7 +82,7 @@ def _make_pr_details(
     base_ref_name: str,
     title: str | None,
 ) -> PRDetails:
-    """Create a PRDetails for testing."""
+    """Create a PRDetails for branch-inference tests."""
     return PRDetails(
         number=number,
         url=f"https://github.com/owner/repo/pull/{number}",
@@ -69,7 +111,8 @@ def test_workflow_launch_unknown_workflow(tmp_path: Path) -> None:
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        fake_remote = _make_fake_remote()
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "unknown-workflow"], obj=ctx)
 
@@ -78,11 +121,12 @@ def test_workflow_launch_unknown_workflow(tmp_path: Path) -> None:
 
 
 def test_workflow_launch_pr_rebase_triggers_workflow(tmp_path: Path) -> None:
-    """Test pr-rebase workflow trigger."""
+    """Test pr-rebase workflow trigger via branch inference."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
+        # FakeLocalGitHub for branch inference (get_pr_for_branch)
         pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
         pr_details = _make_pr_details(
             number=123,
@@ -96,12 +140,18 @@ def test_workflow_launch_pr_rebase_triggers_workflow(tmp_path: Path) -> None:
             pr_details={123: pr_details},
         )
 
+        # FakeRemoteGitHub for PR lookup and dispatch
+        remote_pr = _make_remote_pr(
+            123, head_ref_name="feature-branch", base_ref_name="main", title="Add feature"
+        )
+        fake_remote = _make_fake_remote(prs={123: remote_pr})
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "feature-branch"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, github=github, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "pr-rebase"], obj=ctx)
 
@@ -111,14 +161,14 @@ def test_workflow_launch_pr_rebase_triggers_workflow(tmp_path: Path) -> None:
         assert "Base branch: main" in result.output
         assert "Workflow dispatched" in result.output
 
-        # Verify workflow was triggered with correct inputs
-        assert len(github.triggered_workflows) == 1
-        workflow, inputs, _ref = github.triggered_workflows[0]
-        assert workflow == WORKFLOW_COMMAND_MAP["pr-rebase"]
-        assert inputs["branch_name"] == "feature-branch"
-        assert inputs["base_branch"] == "main"
-        assert inputs["pr_number"] == "123"
-        assert inputs["squash"] == "true"
+        # Verify workflow was dispatched via RemoteGitHub
+        assert len(fake_remote.dispatched_workflows) == 1
+        dispatched = fake_remote.dispatched_workflows[0]
+        assert dispatched.workflow == WORKFLOW_COMMAND_MAP["pr-rebase"]
+        assert dispatched.inputs["branch_name"] == "feature-branch"
+        assert dispatched.inputs["base_branch"] == "main"
+        assert dispatched.inputs["pr_number"] == "123"
+        assert dispatched.inputs["squash"] == "true"
 
 
 def test_workflow_launch_pr_rebase_with_pr_option(tmp_path: Path) -> None:
@@ -127,25 +177,17 @@ def test_workflow_launch_pr_rebase_with_pr_option(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        pr_info = _make_pr_info(456, "other-branch", "OPEN", "Other feature")
-        pr_details = _make_pr_details(
-            number=456,
-            head_ref_name="other-branch",
-            state="OPEN",
-            base_ref_name="main",
-            title="Other feature",
+        remote_pr = _make_remote_pr(
+            456, head_ref_name="other-branch", base_ref_name="main", title="Other feature"
         )
-        github = FakeLocalGitHub(
-            prs={"other-branch": pr_info},
-            pr_details={456: pr_details},
-        )
+        fake_remote = _make_fake_remote(prs={456: remote_pr})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "pr-rebase", "--pr", "456"], obj=ctx)
 
@@ -153,9 +195,8 @@ def test_workflow_launch_pr_rebase_with_pr_option(tmp_path: Path) -> None:
         assert "PR #456" in result.output
 
         # Verify workflow used PR's branch, not current branch
-        assert len(github.triggered_workflows) == 1
-        _, inputs, _ref = github.triggered_workflows[0]
-        assert inputs["branch_name"] == "other-branch"
+        assert len(fake_remote.dispatched_workflows) == 1
+        assert fake_remote.dispatched_workflows[0].inputs["branch_name"] == "other-branch"
 
 
 def test_workflow_launch_pr_rebase_with_no_squash(tmp_path: Path) -> None:
@@ -164,6 +205,7 @@ def test_workflow_launch_pr_rebase_with_no_squash(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
+        # FakeLocalGitHub for branch inference
         pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Feature")
         pr_details = _make_pr_details(
             number=123,
@@ -177,21 +219,23 @@ def test_workflow_launch_pr_rebase_with_no_squash(tmp_path: Path) -> None:
             pr_details={123: pr_details},
         )
 
+        remote_pr = _make_remote_pr(123, head_ref_name="feature-branch", title="Feature")
+        fake_remote = _make_fake_remote(prs={123: remote_pr})
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "feature-branch"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, github=github, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "pr-rebase", "--no-squash"], obj=ctx)
 
         assert result.exit_code == 0
 
         # Verify squash is false
-        assert len(github.triggered_workflows) == 1
-        _, inputs, _ref = github.triggered_workflows[0]
-        assert inputs["squash"] == "false"
+        assert len(fake_remote.dispatched_workflows) == 1
+        assert fake_remote.dispatched_workflows[0].inputs["squash"] == "false"
 
 
 def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
@@ -200,25 +244,15 @@ def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
-        pr_details = _make_pr_details(
-            number=123,
-            head_ref_name="feature-branch",
-            state="OPEN",
-            base_ref_name="main",
-            title="Add feature",
-        )
-        github = FakeLocalGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={123: pr_details},
-        )
+        remote_pr = _make_remote_pr(123, head_ref_name="feature-branch", title="Add feature")
+        fake_remote = _make_fake_remote(prs={123: remote_pr})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "pr-address", "--pr", "123"], obj=ctx)
 
@@ -226,11 +260,11 @@ def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
         assert "PR #123" in result.output
         assert "Workflow dispatched" in result.output
 
-        # Verify workflow was triggered
-        assert len(github.triggered_workflows) == 1
-        workflow, inputs, _ref = github.triggered_workflows[0]
-        assert workflow == WORKFLOW_COMMAND_MAP["pr-address"]
-        assert inputs["pr_number"] == "123"
+        # Verify workflow was dispatched
+        assert len(fake_remote.dispatched_workflows) == 1
+        dispatched = fake_remote.dispatched_workflows[0]
+        assert dispatched.workflow == WORKFLOW_COMMAND_MAP["pr-address"]
+        assert dispatched.inputs["pr_number"] == "123"
 
 
 def test_workflow_launch_pr_address_requires_pr_option(tmp_path: Path) -> None:
@@ -244,7 +278,8 @@ def test_workflow_launch_pr_address_requires_pr_option(tmp_path: Path) -> None:
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        fake_remote = _make_fake_remote()
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "pr-address"], obj=ctx)
 
@@ -258,29 +293,29 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        github = FakeLocalGitHub()
+        fake_remote = _make_fake_remote()
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "learn", "--plan", "123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Workflow dispatched" in result.output
 
-        # Verify workflow was triggered
-        assert len(github.triggered_workflows) == 1
-        workflow, inputs, _ref = github.triggered_workflows[0]
-        assert workflow == WORKFLOW_COMMAND_MAP["learn"]
-        assert inputs["plan_number"] == "123"
+        # Verify workflow was dispatched
+        assert len(fake_remote.dispatched_workflows) == 1
+        dispatched = fake_remote.dispatched_workflows[0]
+        assert dispatched.workflow == WORKFLOW_COMMAND_MAP["learn"]
+        assert dispatched.inputs["plan_number"] == "123"
 
 
 def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
-    """Test learn requires --issue option."""
+    """Test learn requires --plan option."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -290,7 +325,8 @@ def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        fake_remote = _make_fake_remote()
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "learn"], obj=ctx)
 
@@ -309,7 +345,8 @@ def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> Non
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        fake_remote = _make_fake_remote()
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "plan-implement", "--plan", "123"], obj=ctx)
 
@@ -323,25 +360,15 @@ def test_workflow_launch_with_model_option(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Feature")
-        pr_details = _make_pr_details(
-            number=123,
-            head_ref_name="feature-branch",
-            state="OPEN",
-            base_ref_name="main",
-            title="Feature",
-        )
-        github = FakeLocalGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={123: pr_details},
-        )
+        remote_pr = _make_remote_pr(123, head_ref_name="feature-branch", title="Feature")
+        fake_remote = _make_fake_remote(prs={123: remote_pr})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(
             cli,
@@ -352,9 +379,8 @@ def test_workflow_launch_with_model_option(tmp_path: Path) -> None:
         assert result.exit_code == 0
 
         # Verify model is passed
-        assert len(github.triggered_workflows) == 1
-        _, inputs, _ref = github.triggered_workflows[0]
-        assert inputs["model_name"] == "claude-opus-4"
+        assert len(fake_remote.dispatched_workflows) == 1
+        assert fake_remote.dispatched_workflows[0].inputs["model_name"] == "claude-opus-4"
 
 
 def test_workflow_launch_pr_rewrite_triggers_workflow(tmp_path: Path) -> None:
@@ -363,25 +389,17 @@ def test_workflow_launch_pr_rewrite_triggers_workflow(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
-        pr_details = _make_pr_details(
-            number=123,
-            head_ref_name="feature-branch",
-            state="OPEN",
-            base_ref_name="main",
-            title="Add feature",
+        remote_pr = _make_remote_pr(
+            123, head_ref_name="feature-branch", base_ref_name="main", title="Add feature"
         )
-        github = FakeLocalGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={123: pr_details},
-        )
+        fake_remote = _make_fake_remote(prs={123: remote_pr})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "pr-rewrite", "--pr", "123"], obj=ctx)
 
@@ -389,13 +407,13 @@ def test_workflow_launch_pr_rewrite_triggers_workflow(tmp_path: Path) -> None:
         assert "PR #123" in result.output
         assert "Workflow dispatched" in result.output
 
-        # Verify workflow was triggered
-        assert len(github.triggered_workflows) == 1
-        workflow, inputs, _ref = github.triggered_workflows[0]
-        assert workflow == WORKFLOW_COMMAND_MAP["pr-rewrite"]
-        assert inputs["branch_name"] == "feature-branch"
-        assert inputs["base_branch"] == "main"
-        assert inputs["pr_number"] == "123"
+        # Verify workflow was dispatched
+        assert len(fake_remote.dispatched_workflows) == 1
+        dispatched = fake_remote.dispatched_workflows[0]
+        assert dispatched.workflow == WORKFLOW_COMMAND_MAP["pr-rewrite"]
+        assert dispatched.inputs["branch_name"] == "feature-branch"
+        assert dispatched.inputs["base_branch"] == "main"
+        assert dispatched.inputs["pr_number"] == "123"
 
 
 def test_workflow_launch_pr_rewrite_requires_pr_option(tmp_path: Path) -> None:
@@ -409,7 +427,8 @@ def test_workflow_launch_pr_rewrite_requires_pr_option(tmp_path: Path) -> None:
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        fake_remote = _make_fake_remote()
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "pr-rewrite"], obj=ctx)
 
@@ -423,25 +442,15 @@ def test_workflow_launch_one_shot_triggers_workflow(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
-        pr_details = _make_pr_details(
-            number=123,
-            head_ref_name="feature-branch",
-            state="OPEN",
-            base_ref_name="main",
-            title="Add feature",
-        )
-        github = FakeLocalGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={123: pr_details},
-        )
+        remote_pr = _make_remote_pr(123, head_ref_name="feature-branch", title="Add feature")
+        fake_remote = _make_fake_remote(prs={123: remote_pr})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(
             cli,
@@ -453,14 +462,14 @@ def test_workflow_launch_one_shot_triggers_workflow(tmp_path: Path) -> None:
         assert "PR #123" in result.output
         assert "Workflow dispatched" in result.output
 
-        # Verify workflow was triggered with correct inputs
-        assert len(github.triggered_workflows) == 1
-        workflow, inputs, _ref = github.triggered_workflows[0]
-        assert workflow == WORKFLOW_COMMAND_MAP["one-shot"]
-        assert inputs["prompt"] == "fix the auth bug"
-        assert inputs["branch_name"] == "feature-branch"
-        assert inputs["pr_number"] == "123"
-        assert inputs["submitted_by"] == "test-user"
+        # Verify workflow was dispatched with correct inputs
+        assert len(fake_remote.dispatched_workflows) == 1
+        dispatched = fake_remote.dispatched_workflows[0]
+        assert dispatched.workflow == WORKFLOW_COMMAND_MAP["one-shot"]
+        assert dispatched.inputs["prompt"] == "fix the auth bug"
+        assert dispatched.inputs["branch_name"] == "feature-branch"
+        assert dispatched.inputs["pr_number"] == "123"
+        assert dispatched.inputs["submitted_by"] == "test-user"
 
 
 def test_workflow_launch_one_shot_with_file(tmp_path: Path) -> None:
@@ -473,25 +482,15 @@ def test_workflow_launch_one_shot_with_file(tmp_path: Path) -> None:
         prompt_file = env.cwd / "prompt.md"
         prompt_file.write_text("fix the auth bug from file", encoding="utf-8")
 
-        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
-        pr_details = _make_pr_details(
-            number=123,
-            head_ref_name="feature-branch",
-            state="OPEN",
-            base_ref_name="main",
-            title="Add feature",
-        )
-        github = FakeLocalGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={123: pr_details},
-        )
+        remote_pr = _make_remote_pr(123, head_ref_name="feature-branch", title="Add feature")
+        fake_remote = _make_fake_remote(prs={123: remote_pr})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(
             cli,
@@ -503,9 +502,8 @@ def test_workflow_launch_one_shot_with_file(tmp_path: Path) -> None:
         assert "Workflow dispatched" in result.output
 
         # Verify prompt was read from file
-        assert len(github.triggered_workflows) == 1
-        _, inputs, _ref = github.triggered_workflows[0]
-        assert inputs["prompt"] == "fix the auth bug from file"
+        assert len(fake_remote.dispatched_workflows) == 1
+        assert fake_remote.dispatched_workflows[0].inputs["prompt"] == "fix the auth bug from file"
 
 
 def test_workflow_launch_one_shot_requires_pr(tmp_path: Path) -> None:
@@ -519,7 +517,8 @@ def test_workflow_launch_one_shot_requires_pr(tmp_path: Path) -> None:
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        fake_remote = _make_fake_remote()
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(
             cli,
@@ -542,7 +541,8 @@ def test_workflow_launch_one_shot_requires_prompt(tmp_path: Path) -> None:
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        fake_remote = _make_fake_remote()
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(
             cli,
@@ -569,7 +569,8 @@ def test_workflow_launch_one_shot_prompt_and_file_exclusive(tmp_path: Path) -> N
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git)
+        fake_remote = _make_fake_remote()
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(
             cli,
@@ -591,39 +592,28 @@ def test_workflow_launch_one_shot_prompt_and_file_exclusive(tmp_path: Path) -> N
 
 
 def test_workflow_launch_with_ref_option(tmp_path: Path) -> None:
-    """Test --ref option is threaded through to trigger_workflow."""
+    """Test --ref option is threaded through to dispatch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
-        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
-        pr_details = _make_pr_details(
-            number=123,
-            head_ref_name="feature-branch",
-            state="OPEN",
-            base_ref_name="main",
-            title="Add feature",
-        )
-        github = FakeLocalGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={123: pr_details},
-        )
+        remote_pr = _make_remote_pr(123, head_ref_name="feature-branch", title="Add feature")
+        fake_remote = _make_fake_remote(prs={123: remote_pr})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "master"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
         result = runner.invoke(
             cli, ["launch", "pr-address", "--pr", "123", "--ref", "custom-branch"], obj=ctx
         )
 
         assert result.exit_code == 0
-        assert len(github.triggered_workflows) == 1
-        _workflow, _inputs, ref = github.triggered_workflows[0]
-        assert ref == "custom-branch"
+        assert len(fake_remote.dispatched_workflows) == 1
+        assert fake_remote.dispatched_workflows[0].ref == "custom-branch"
 
 
 def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -> None:
@@ -632,6 +622,7 @@ def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
 
+        # FakeLocalGitHub for branch inference
         pr_info = _make_pr_info(111, "closed-branch", "CLOSED", "Closed PR")
         pr_details = _make_pr_details(
             number=111,
@@ -645,12 +636,15 @@ def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -> None:
             pr_details={111: pr_details},
         )
 
+        remote_pr = _make_remote_pr(111, state="CLOSED", head_ref_name="closed-branch")
+        fake_remote = _make_fake_remote(prs={111: remote_pr})
+
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "closed-branch"},
         )
 
-        ctx = build_workspace_test_context(env, git=git, github=github)
+        ctx = build_workspace_test_context(env, git=git, github=github, remote_github=fake_remote)
 
         result = runner.invoke(cli, ["launch", "pr-rebase"], obj=ctx)
 
