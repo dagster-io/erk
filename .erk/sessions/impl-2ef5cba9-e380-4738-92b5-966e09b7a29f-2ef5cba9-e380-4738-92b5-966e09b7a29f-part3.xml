@@ -1,0 +1,119 @@
+<session>
+  <meta source="agent-a1cfcd3" />
+  <meta branch="plnd/consolidate-learn-docs-03-07-2352" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Check if `docs/learned/commands/skill-patterns.md` exists. Also check for any existing docs about skill patterns in the `docs/learned/commands/` directory - list all files there.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll check the documentation index first, then look for files related to skill patterns in the commands directory.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0181v2yiBUWgGFn7FNsD26Ju">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01L2mKEULsLALRrxbJkQwV2B">
+    <param name="pattern">docs/learned/commands/*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0181v2yiBUWgGFn7FNsD26Ju">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01L2mKEULsLALRrxbJkQwV2B">
+/home/runner/work/erk/erk/docs/learned/commands/audit-doc.md
+/home/runner/work/erk/erk/docs/learned/commands/optimization-patterns.md
+/home/runner/work/erk/erk/docs/learned/commands/index.md
+/home/runner/work/erk/erk/docs/learned/commands/command-rename-pattern.md
+/home/runner/work/erk/erk/docs/learned/commands/tripwires.md
+/home/runner/work/erk/erk/docs/learned/commands/tool-restriction-safety.md
+/home/runner/work/erk/erk/docs/learned/commands/preview-command-pattern.md
+/home/runner/work/erk/erk/docs/learned/commands/session-id-substitution.md
+/home/runner/work/erk/erk/docs/learned/commands/step-renumbering-checklist.md
+  </tool_result>
+  <assistant>Now let me check what files exist in the commands directory. I see there are several files, but I don't see "skill-patterns.md" specifically. Let me read the index to understand the structure better:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1513" cache_read_input_tokens="15080" cache_creation="{'ephemeral_5m_input_tokens': 1513, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0114GvswLb9V5CdJRXJD3HPi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/commands/index.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1513" cache_read_input_tokens="15080" cache_creation="{'ephemeral_5m_input_tokens': 1513, 'ephemeral_1h_input_tokens': 0}" output_tokens="119" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0114GvswLb9V5CdJRXJD3HPi">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Commands Documentation
+     5→
+     6→- **[audit-doc.md](audit-doc.md)** — understanding why audit-doc works the way it does, modifying the /local:audit-doc command, understanding collateral finding tiers, debugging unexpected audit verdicts
+     7→- **[command-rename-pattern.md](command-rename-pattern.md)** — renaming a slash command or skill, migrating command invocations across the codebase, performing a terminology shift that affects command names
+     8→- **[optimization-patterns.md](optimization-patterns.md)** — reducing command file size, using @ reference in commands, modularizing command content
+     9→- **[preview-command-pattern.md](preview-command-pattern.md)** — pairing destructive commands with preview commands, implementing dry-run for slash commands, adding preview functionality to existing commands
+    10→- **[session-id-substitution.md](session-id-substitution.md)** — writing slash commands or skills that need session context, developing hooks that interact with Claude sessions, debugging session ID unavailable or empty string errors, deciding where to place session-dependent logic (root agent vs sub-agent)
+    11→- **[step-renumbering-checklist.md](step-renumbering-checklist.md)** — merging, removing, or reordering steps in slash commands, refactoring command workflows that use numbered steps, encountering broken step references after editing a command
+    12→- **[tool-restriction-safety.md](tool-restriction-safety.md)** — adding allowed-tools to a command or agent frontmatter, designing a read-only slash command, creating commands intended for use within plan mode, deciding which tools a restricted command needs
+    13→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have a complete answer. Let me provide a summary of my findings.
+
+## Summary
+
+Based on my investigation of the documentation:
+
+**Does `docs/learned/commands/skill-patterns.md` exist?**
+No, the file `skill-patterns.md` does not exist in the `docs/learned/commands/` directory.
+
+**Files in `docs/learned/commands/` directory:**
+
+1. `/home/runner/work/erk/erk/docs/learned/commands/audit-doc.md`
+2. `/home/runner/work/erk/erk/docs/learned/commands/optimization-patterns.md`
+3. `/home/runner/work/erk/erk/docs/learned/commands/index.md`
+4. `/home/runner/work/erk/erk/docs/learned/commands/command-rename-pattern.md`
+5. `/home/runner/work/erk/erk/docs/learned/commands/tripwires.md`
+6. `/home/runner/work/erk/erk/docs/learned/commands/tool-restriction-safety.md`
+7. `/home/runner/work/erk/erk/docs/learned/commands/preview-command-pattern.md`
+8. `/home/runner/work/erk/erk/docs/learned/commands/session-id-substitution.md`
+9. `/home/runner/work/erk/erk/docs/learned/commands/step-renumbering-checklist.md`
+
+**Related Documentation:**
+The `commands/` directory focuses on slash command authoring patterns. The closest existing documentation is:
+- `optimization-patterns.md` — covers using @ references in commands and modularizing command content
+- `preview-command-pattern.md` — covers pairing commands with preview functionality
+- `tool-restriction-safety.md` — covers adding allowed-tools and designing restricted commands
+
+There is no dedicated `skill-patterns.md` document in this directory currently.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="697" cache_read_input_tokens="16593" cache_creation="{'ephemeral_5m_input_tokens': 697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
