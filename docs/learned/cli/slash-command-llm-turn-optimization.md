@@ -44,7 +44,7 @@ Optimized slash commands follow a two-phase structure:
 <!-- Source: .claude/commands/erk/system/objective-update-with-landed-pr.md, Step 1 -->
 <!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py, objective_fetch_context -->
 
-The `system:objective-update-with-landed-pr` command demonstrates this: Step 1 calls `erk exec objective-fetch-context` once to fetch the objective issue, plan issue, PR details, and parsed roadmap context. The command then has everything it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.
+The `system:objective-update-with-landed-pr` command demonstrates this: Step 1 calls `erk exec objective-fetch-context` once to fetch the objective issue, plan, PR details, and parsed roadmap context. The command then has everything it needs to compose the update and post the comment in parallel — reducing ~8 turns to ~4.
 
 ## Write-Side Parallelism
 

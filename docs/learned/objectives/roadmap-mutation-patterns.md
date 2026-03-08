@@ -73,7 +73,7 @@ The full-body update is handled by `objective-apply-landed-update`, which combin
 
 <!-- Source: src/erk/cli/commands/exec/scripts/objective_fetch_context.py -->
 
-The full-body workflow uses a **bundled context fetch** (`erk exec objective-fetch-context`) to retrieve the objective issue, plan issue, and PR details in a single CLI call. This exists because the command needs all three to compose the update, and fetching them in separate LLM turns would waste tokens and add latency.
+The full-body workflow uses a **bundled context fetch** (`erk exec objective-fetch-context`) to retrieve the objective issue, plan, and PR details in a single CLI call. This exists because the command needs all three to compose the update, and fetching them in separate LLM turns would waste tokens and add latency.
 
 ## Integration Points
 

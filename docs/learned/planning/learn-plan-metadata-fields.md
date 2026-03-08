@@ -29,14 +29,14 @@ Tracks the status of learn plan processing:
 
 ### `learn_plan_issue`
 
-For learn plans, the issue number of the original plan that generated this learn plan. Used to link learn plans back to their source implementation.
+For learn plans, the number of the original plan that generated this learn plan. Used to link learn plans back to their source implementation.
 
-- `int` - The parent plan's issue number
+- `int` - The parent plan's number
 - `None` - Not a learn plan, or source unknown
 
 ### `created_from_workflow_run_url`
 
-GitHub Actions workflow run URL that created this plan. Provides a backlink from the plan issue to the workflow that generated it.
+GitHub Actions workflow run URL that created this plan. Provides a backlink from the plan to the workflow that generated it.
 
 - **Type**: `string` (nullable)
 - **When populated**: During GitHub Actions workflow execution (e.g., `learn.yml`)
@@ -58,7 +58,7 @@ This field enables:
 
 - Debugging failed plan creations by linking to the workflow run
 - Tracing provenance of automatically generated plans
-- Quick navigation from plan issue to the workflow that created it
+- Quick navigation from plan to the workflow that created it
 
 ## Field Naming Clarification: `learned_from_issue` vs `learn_plan_issue`
 
@@ -66,7 +66,7 @@ Two related fields exist with similar names but different scopes:
 
 | Field                | Where It Lives                       | What It Stores                           | Direction           |
 | -------------------- | ------------------------------------ | ---------------------------------------- | ------------------- |
-| `learned_from_issue` | Plan-header metadata (PR/issue body) | Parent plan's issue number               | Learn plan → parent |
+| `learned_from_issue` | Plan-header metadata (PR/issue body) | Parent plan's number                     | Learn plan → parent |
 | `learn_plan_issue`   | Plan object (in-memory)              | Same value, surfaced through the gateway | Learn plan → parent |
 
 `learned_from_issue` is the **storage-layer** field name (in the plan-header metadata block written to GitHub issue/PR bodies). `learn_plan_issue` is the **application-layer** field name (on the `Plan` dataclass used in pipelines).

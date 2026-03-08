@@ -52,7 +52,7 @@ Compare to the Python version in `packages/erk-shared/src/erk_shared/env.py`, wh
 
 **Why auto-proceed in CI?** GitHub Actions has no interactive terminal. Commands that prompt for input (`click.confirm()`, `input()`, etc.) will hang indefinitely waiting for stdin that never arrives.
 
-**Why skip confirmations entirely?** The learn workflow was designed to be safe to run automatically — it creates a plan issue but doesn't merge code or modify production state. Auto-proceeding in CI reduces friction without introducing risk.
+**Why skip confirmations entirely?** The learn workflow was designed to be safe to run automatically — it creates a plan but doesn't merge code or modify production state. Auto-proceeding in CI reduces friction without introducing risk.
 
 ## Session ID Availability in CI
 

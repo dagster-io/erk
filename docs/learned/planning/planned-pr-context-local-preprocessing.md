@@ -50,7 +50,7 @@ The learn materials directory (`.erk/scratch/learn-{issue_number}`) is a staging
 
 PR comments are fetched via gateway calls, not `gh` CLI. This matters because the gateway provides typed results with LBYL error handling (checking `isinstance(result, PRNotFound)` rather than catching exceptions), consistent with erk's error handling patterns.
 
-**Graceful degradation**: If no PR exists for the plan issue, comment fetching is skipped entirely. Missing PR comments don't block the learn workflow — sessions alone contain sufficient material for insight extraction.
+**Graceful degradation**: If no PR exists for the plan, comment fetching is skipped entirely. Missing PR comments don't block the learn workflow — sessions alone contain sufficient material for insight extraction.
 
 All files are committed to a `planned-pr-context/{plan_id}` git branch under `.erk/sessions/`, then the branch name is passed to the `learn.yml` workflow via `workflow_dispatch`.
 

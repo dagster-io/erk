@@ -7,7 +7,7 @@ read_when:
 tripwires:
   - action: "estimating effort for a plan without checking actual files changed"
     warning: "Run a file inventory first. Plans that skip inventory systematically undercount configuration, test, and documentation changes."
-  - action: "closing a plan issue without verifying all items were addressed"
+  - action: "closing a plan without verifying all items were addressed"
     warning: "Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
@@ -32,7 +32,7 @@ These aren't edge cases — they're the norm. A plan that says "add a new gatewa
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | Before creating a consolidation plan from multiple PRs | Each PR may have touched files the others didn't — the union is larger than any individual PR suggests |
 | Before estimating remaining work on a partial plan     | Completed work may have introduced files not in the original plan                                      |
-| Before closing a plan issue as "complete"              | The only reliable completion check is comparing actual files against planned items                     |
+| Before closing a plan as "complete"                    | The only reliable completion check is comparing actual files against planned items                     |
 | Before scoping a replan                                | Understanding what already shipped prevents duplicate work items                                       |
 
 ## The Comparison Step

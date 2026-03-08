@@ -33,12 +33,12 @@ See `build_pr_body_footer()` in `packages/erk-shared/src/erk_shared/gateway/gith
 
 ## PR Number vs Issue Number
 
-The single most common agent mistake is using the issue number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:
+The single most common agent mistake is using the plan number from `.erk/impl-context/plan-ref.json` instead of the PR number in the checkout command. These are different GitHub entities:
 
-| Source                            | Use for checkout footer?    | Why                                                  |
-| --------------------------------- | --------------------------- | ---------------------------------------------------- |
-| `create_pr()` return value        | Yes — this is the PR number | `erk pr checkout` requires a PR number               |
-| `.erk/impl-context/plan-ref.json` | Never                       | Plan issue number != PR number; validation will fail |
+| Source                            | Use for checkout footer?    | Why                                            |
+| --------------------------------- | --------------------------- | ---------------------------------------------- |
+| `create_pr()` return value        | Yes — this is the PR number | `erk pr checkout` requires a PR number         |
+| `.erk/impl-context/plan-ref.json` | Never                       | Plan number != PR number; validation will fail |
 
 ```python
 # WRONG: Using issue number

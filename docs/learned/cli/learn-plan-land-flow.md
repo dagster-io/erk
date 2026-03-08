@@ -31,7 +31,7 @@ When landing a PR from a learn plan branch, the land execution pipeline runs add
 
 <!-- Source: src/erk/cli/commands/land_pipeline.py, check_learn_status() step -->
 
-The validation pipeline's `check_learn_status()` step extracts the issue number from the branch name prefix. If a plan issue exists for that number, it triggers downstream execution steps. See `check_learn_status()` in `src/erk/cli/commands/land_pipeline.py`.
+The validation pipeline's `check_learn_status()` step extracts the issue number from the branch name prefix. If a plan exists for that number, it triggers downstream execution steps. See `check_learn_status()` in `src/erk/cli/commands/land_pipeline.py`.
 
 **Why extract from branch name instead of PR labels?**
 
@@ -66,7 +66,7 @@ The `update_learn_plan()` step reads the `learned_from_issue` field from the cur
 
 **Why update a different issue's body?**
 
-Learn plans are child plans (they document parent features). The parent plan issue is the canonical place to track learning status. Updating the parent creates a bidirectional link:
+Learn plans are child plans (they document parent features). The parent plan is the canonical place to track learning status. Updating the parent creates a bidirectional link:
 
 - Parent → Learn: `learn_plan_pr: 456` (PR that implemented the docs)
 - Learn → Parent: `learned_from_issue: 123` (feature that was documented)
@@ -76,7 +76,7 @@ Learn plans are child plans (they document parent features). The parent plan iss
 **Critical fields updated**:
 
 ```yaml
-# In parent plan issue body
+# In parent plan body
 learn_status: plan_completed # Was: completed_with_plan
 learn_plan_pr: 456 # The landed PR number
 ```

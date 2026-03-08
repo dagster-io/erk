@@ -10,7 +10,7 @@ tripwires:
   - action: "choosing between exceptions and discriminated unions for operation failures"
     warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
   - action: "migrating a gateway method to return discriminated union"
-    warning: "Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety."
+    warning: "Update all implementations (ABC, real, fake; add dry_run only for dry-run-participating gateways) AND all call sites AND tests. Incomplete migrations break type safety."
   - action: "accessing properties on a discriminated union result without isinstance() check"
     warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
   - action: "using None as a success return value in a validation function (ErrorType | None where None = success)"
@@ -274,7 +274,7 @@ if isinstance(merge_result, MergeError):
 
 1. Define types in appropriate `types.py` module
 2. Update ABC signature
-3. Update all 5 implementations (real, fake, dry_run, printing, and any subclass)
+3. Update all implementations (real, fake; add dry_run only for dry-run-participating gateways)
 4. Update all call sites to use `isinstance()` checks
 5. Update tests to check `isinstance(result, ErrorType)`
 

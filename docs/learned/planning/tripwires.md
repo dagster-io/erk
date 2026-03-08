@@ -92,7 +92,7 @@ Rules triggered by matching actions in code.
 
 **classifying a single-artifact API reference as NEW_DOC** → Read [Cornerstone Enforcement in Learn Pipeline](cornerstone-enforcement.md) first. Apply the three-rule SHOULD_BE_CODE test first. Single-artifact knowledge belongs in code (types, docstrings, or comments), not docs/learned/.
 
-**closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
 
 **committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
 

@@ -54,7 +54,7 @@ Extracts the diff between current branch and parent using the shared `execute_di
 
 Uses `CommitMessageGenerator` with identical context priority to `pr submit`:
 
-1. **Plan context** - From linked erk-plan issue (highest priority)
+1. **Plan context** - From linked erk plan (highest priority)
 2. **Objective context** - From parent objective if plan is linked
 3. **Commit messages** - Not used in summarize (only in submit with multiple commits)
 
@@ -70,7 +70,7 @@ Combines title and body into a single commit message and amends the current comm
 
 <!-- Source: src/erk/cli/commands/pr/summarize_cmd.py, plan context feedback -->
 
-When a branch is associated with a plan, the command automatically fetches plan context from the linked erk-plan issue.
+When a branch is associated with a plan, the command automatically fetches plan context from the linked erk plan.
 
 **Feedback styling:**
 

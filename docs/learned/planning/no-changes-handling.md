@@ -27,7 +27,7 @@ Instead of failing, the workflow:
 1. **Detects no changes**: Checks if the branch has any commits beyond the base
 2. **Creates diagnostic PR**: Updates the PR body with diagnostic information
 3. **Applies label**: Adds `no-changes` label (orange, `#FFA500`)
-4. **Posts issue comment**: Notifies the plan issue with a link to the PR
+4. **Posts plan comment**: Notifies the plan with a link to the PR
 5. **Exits gracefully**: Returns exit code 0 (success)
 
 ## Label Definition
@@ -52,7 +52,7 @@ The diagnostic PR body includes:
 When encountering a no-changes PR:
 
 1. **Review recent commits**: Check if the work appears in trunk
-2. **If already done**: Close both the PR and the linked plan issue
+2. **If already done**: Close both the PR and the linked plan
 3. **If not done**: Investigate why no changes were produced (plan may need revision)
 
 ## Exit Code Semantics

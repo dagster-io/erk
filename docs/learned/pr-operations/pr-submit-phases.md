@@ -57,7 +57,7 @@ Diff extraction and plan context fetching run **concurrently** using `ThreadPool
 - Includes all commits since parent branch
 
 **Plan context fetching:**
-The `PlanContextProvider` checks for a linked erk-plan issue:
+The `PlanContextProvider` checks for a linked erk plan:
 
 1. Looks for `.erk/impl-context/plan-ref.json` (or legacy `.impl/issue.json`) in repo root
 2. Extracts issue number from metadata

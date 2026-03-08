@@ -24,7 +24,7 @@ This document covers the **data pipeline** that moves session logs from local di
 
 ## Pipeline Architecture
 
-The learn pipeline has 7 stages that transform raw session JSONL into a documentation plan issue. The key architectural decision is **where processing happens**: stages 1-5 run locally (fast, free), while stages 6-7 run in GitHub Actions (background, billed).
+The learn pipeline has 7 stages that transform raw session JSONL into a documentation plan. The key architectural decision is **where processing happens**: stages 1-5 run locally (fast, free), while stages 6-7 run in GitHub Actions (background, billed).
 
 ```
 Local machine                              GitHub Actions
@@ -57,7 +57,7 @@ The async path was designed for the `erk land` flow, where learn runs automatica
 
 <!-- Source: src/erk/cli/commands/exec/scripts/get_learn_sessions.py, _discover_sessions -->
 
-Finds all session logs related to a plan issue by querying GitHub issue metadata for tracked session IDs, then resolving those IDs to local file paths. Three session source types exist:
+Finds all session logs related to a plan by querying GitHub issue metadata for tracked session IDs, then resolving those IDs to local file paths. Three session source types exist:
 
 - **Local sessions** — JSONL files under `~/.claude/projects/<repo>/sessions/`
 - **Branch-based sessions** — preprocessed sessions accumulated on `planned-pr-context/{plan_id}` branches (from local and remote stages)
@@ -115,7 +115,7 @@ The workflow runs with `claude-opus-4-6` as the base model, though individual ag
 
 ### Stage 7: PR Review and Merge
 
-Human reviews the learn plan issue, optionally edits it, and submits for implementation through the standard `plan-implement` workflow.
+Human reviews the learn plan, optionally edits it, and submits for implementation through the standard `plan-implement` workflow.
 
 ## Failure Modes
 

@@ -40,7 +40,7 @@ Shared utilities for constructing PR bodies live in `src/erk/cli/commands/pr/sha
 
 ## No "Closes #N" References
 
-PR bodies no longer contain `Closes #N` references. Plan issue closure is handled directly via the GitHub API in `erk land` (see `objective_helpers.py`). This avoids unreliable GitHub auto-close behavior.
+PR bodies no longer contain `Closes #N` references. Plan closure is handled directly via the GitHub API in `erk land` (see `objective_helpers.py`). This avoids unreliable GitHub auto-close behavior.
 
 ## Consumers
 

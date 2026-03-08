@@ -18,7 +18,7 @@ Pattern for migrating exec scripts from direct GitHub CLI calls to the `PlanBack
 
 ## Context
 
-Exec scripts historically used direct `gh` CLI calls to update plan issue metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
+Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
 
 ## Migration Pattern
 

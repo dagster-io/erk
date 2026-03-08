@@ -16,7 +16,7 @@ audit_result: clean
 
 # Gateway vs Backend ABC Pattern
 
-Erk uses two distinct ABC patterns for dependency injection. Choosing the wrong one creates unnecessary boilerplate (gateway for business logic) or missing dry-run/printing support (backend for external tools).
+Erk uses two distinct ABC patterns for dependency injection. Choosing the wrong one creates unnecessary boilerplate (gateway for business logic) or missing dry-run support (backend for external tools).
 
 ## Gateway ABCs: External System Wrappers
 

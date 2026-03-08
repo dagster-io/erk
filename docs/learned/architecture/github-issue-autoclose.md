@@ -2,14 +2,14 @@
 title: GitHub Issue Auto-Close Behavior (Historical)
 read_when:
   - "understanding why erk no longer uses Closes #N"
-  - "understanding plan issue closure strategy"
+  - "understanding plan closure strategy"
 last_audited: "2026-02-26 12:00 PT"
 audit_result: clean
 ---
 
 # GitHub Issue Auto-Close Behavior (Historical)
 
-Erk previously used `Closes #N` in PR bodies to auto-close plan issues on merge. This approach was abandoned due to unreliable behavior.
+Erk previously used `Closes #N` in PR bodies to auto-close plans on merge. This approach was abandoned due to unreliable behavior.
 
 ## Why "Closes #N" Was Removed
 
@@ -23,7 +23,7 @@ These issues caused frequent "issue didn't close" bugs that required retry logic
 
 ## Current Strategy: Direct API Closure
 
-Plan issues are now closed directly via the GitHub API during `erk land`:
+Plans are now closed directly via the GitHub API during `erk land`:
 
 - `check_and_display_plan_issue_closure()` in `objective_helpers.py` calls `plan_store.close_plan()` directly
 - No dependency on PR body content

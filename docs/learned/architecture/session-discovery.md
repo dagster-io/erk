@@ -73,7 +73,7 @@ Remote sessions are downloaded via `erk exec fetch-sessions`:
 
 ### Primary: GitHub Issue Metadata
 
-Sessions are tracked in the plan issue through:
+Sessions are tracked in the plan through:
 
 1. **Plan header branch fields** - `last_session_branch` stores the `planned-pr-context/{plan_id}` branch reference
 2. **Plan header metadata** - `created_from_session` field stores the planning session ID

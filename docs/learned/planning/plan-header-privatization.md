@@ -11,7 +11,7 @@ tripwires:
 
 # Plan Header Privatization
 
-The `plan_header.py` module contains low-level functions for reading/writing plan issue metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.
+The `plan_header.py` module contains low-level functions for reading/writing plan metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.
 
 ## Migration Status
 
