@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Phase 2: Idempotent Reconcile (Objective #8950, Nodes 2.1\u20132.3)",
+  "objective_id": 8950,
+  "node_ids": [
+    "2.1"
+  ]
+}
