@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Remove `shell_integration` config and rename `output_for_shell_integration()`"
-}
