@@ -8,7 +8,7 @@ from erk.tui.data.types import PlanRowData
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
-def testserialize_plan_row_basic() -> None:
+def test_serialize_plan_row_basic() -> None:
     """Test basic serialization of PlanRowData to dict."""
     row = make_plan_row(123, "Test Plan")
     result = serialize_plan_row(row)
@@ -21,7 +21,7 @@ def testserialize_plan_row_basic() -> None:
     assert result["last_remote_impl_at"] is None
 
 
-def testserialize_plan_row_datetime_fields() -> None:
+def test_serialize_plan_row_datetime_fields() -> None:
     """Test that datetime fields are converted to ISO 8601 strings."""
     now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
     row = PlanRowData(
@@ -90,7 +90,7 @@ def testserialize_plan_row_datetime_fields() -> None:
     assert result["last_remote_impl_at"] == "2025-06-15T12:30:00+00:00"
 
 
-def testserialize_plan_row_tuple_to_list() -> None:
+def test_serialize_plan_row_tuple_to_list() -> None:
     """Test that tuple fields (log_entries) are converted to lists."""
     row = PlanRowData(
         plan_id=789,
@@ -159,7 +159,7 @@ def testserialize_plan_row_tuple_to_list() -> None:
     assert result["log_entries"][0] == ["started", "2025-01-01T00:00:00Z", "https://example.com"]
 
 
-def testserialize_plan_row_with_pr_data() -> None:
+def test_serialize_plan_row_with_pr_data() -> None:
     """Test serialization includes PR data when present."""
     row = make_plan_row(
         100,
@@ -177,7 +177,7 @@ def testserialize_plan_row_with_pr_data() -> None:
     assert result["pr_state"] == "OPEN"
 
 
-def testserialize_plan_row_all_fields_present() -> None:
+def test_serialize_plan_row_all_fields_present() -> None:
     """Test that all PlanRowData fields appear in serialized output."""
     row = make_plan_row(1, "All Fields")
     result = serialize_plan_row(row)
@@ -244,7 +244,7 @@ def testserialize_plan_row_all_fields_present() -> None:
     assert set(result.keys()) == expected_fields
 
 
-def testserialize_plan_row_json_roundtrip() -> None:
+def test_serialize_plan_row_json_roundtrip() -> None:
     """Test that serialized output is valid JSON."""
     now = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
     row = PlanRowData(
