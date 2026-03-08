@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Convert `pr dispatch` to @no_repo_required with --repo flag",
+  "objective_id": 8832,
+  "node_ids": [
+    "3.2"
+  ]
+}
