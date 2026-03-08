@@ -7,9 +7,21 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     extract_diff_and_fetch_plan_context,
 )
-from erk.core.context import context_for_test
+from erk.core.context import RepoContext, context_for_test
 from erk.core.plan_context_provider import PlanContext
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.types import GitHubRepoId
+
+
+def _test_repo(tmp_path: Path) -> RepoContext:
+    return RepoContext(
+        root=tmp_path,
+        repo_name="repo",
+        repo_dir=tmp_path,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=tmp_path / "pool.json",
+        github=GitHubRepoId(owner="test", repo="repo"),
+    )
 
 
 def _make_state(
@@ -65,7 +77,7 @@ def _make_state(
 
 def test_skip_description_returns_state_unchanged(tmp_path: Path) -> None:
     """skip_description=True causes early return with state unchanged."""
-    ctx = context_for_test(cwd=tmp_path)
+    ctx = context_for_test(cwd=tmp_path, repo=_test_repo(tmp_path))
     state = _make_state(cwd=tmp_path, skip_description=True)
 
     result = extract_diff_and_fetch_plan_context(ctx, state)
@@ -78,7 +90,7 @@ def test_sets_both_diff_file_and_plan_context(tmp_path: Path) -> None:
     fake_git = FakeGit(
         diff_to_branch={(tmp_path, "main"): "diff --git a/file.py\n+hello"},
     )
-    ctx = context_for_test(git=fake_git, cwd=tmp_path)
+    ctx = context_for_test(git=fake_git, cwd=tmp_path, repo=_test_repo(tmp_path))
     state = _make_state(cwd=tmp_path, base_branch="main")
 
     result = extract_diff_and_fetch_plan_context(ctx, state)
@@ -92,7 +104,7 @@ def test_sets_both_diff_file_and_plan_context(tmp_path: Path) -> None:
 
 def test_extract_diff_error_propagated(tmp_path: Path) -> None:
     """SubmitError from extract_diff is returned by the combined step."""
-    ctx = context_for_test(cwd=tmp_path)
+    ctx = context_for_test(cwd=tmp_path, repo=_test_repo(tmp_path))
     state = _make_state(cwd=tmp_path)
 
     result = extract_diff_and_fetch_plan_context(ctx, state)

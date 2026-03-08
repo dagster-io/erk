@@ -7,8 +7,8 @@ enabling more accurate PR descriptions that understand the "why" behind changes.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -35,19 +35,20 @@ class PlanContextProvider:
     is associated with a plan. Uses PlanBackend.get_plan_for_branch() to
     encapsulate the branch→plan resolution strategy.
 
-    GitHubIssues is retained solely for objective title lookup (objectives
-    are issues, not plans).
+    Uses RemoteGitHub for objective title lookup (objectives are issues, not plans).
     """
 
-    def __init__(self, *, plan_backend: PlanBackend, github_issues: GitHubIssues) -> None:
+    def __init__(self, *, plan_backend: PlanBackend, remote_github: RemoteGitHub) -> None:
         self._plan_backend = plan_backend
-        self._github_issues = github_issues
+        self._remote_github = remote_github
 
     def get_plan_context(
         self,
         *,
         repo_root: Path,
         branch_name: str,
+        owner: str,
+        repo: str,
     ) -> PlanContext | None:
         """Get plan context for a branch, if available.
 
@@ -57,20 +58,14 @@ class PlanContextProvider:
 
         Returns None on any failure, allowing graceful degradation for
         branches not linked to plans.
-
-        Args:
-            repo_root: Repository root path
-            branch_name: Current branch name
-
-        Returns:
-            PlanContext if plan found, None otherwise
         """
         result = self._plan_backend.get_plan_for_branch(repo_root, branch_name)
         if isinstance(result, PlanNotFound):
             return None
 
         objective_summary = self._get_objective_summary(
-            repo_root=repo_root,
+            owner=owner,
+            repo=repo,
             objective_id=result.objective_id,
         )
 
@@ -83,22 +78,15 @@ class PlanContextProvider:
     def _get_objective_summary(
         self,
         *,
-        repo_root: Path,
+        owner: str,
+        repo: str,
         objective_id: int | None,
     ) -> str | None:
-        """Get objective summary if plan is linked to an objective.
-
-        Args:
-            repo_root: Repository root path
-            objective_id: Parent objective issue number, or None
-
-        Returns:
-            Summary like "Objective #123: Title" if linked, None otherwise
-        """
+        """Get objective summary if plan is linked to an objective."""
         if objective_id is None:
             return None
 
-        objective_info = self._github_issues.get_issue(repo_root, objective_id)
+        objective_info = self._remote_github.get_issue(owner=owner, repo=repo, number=objective_id)
         if isinstance(objective_info, IssueNotFound):
             return None
         return f"Objective #{objective_id}: {objective_info.title}"

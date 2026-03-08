@@ -1,7 +1,6 @@
 """Create a plan from an objective node."""
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import click
 
@@ -26,7 +25,6 @@ from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.context.types import InteractiveAgentConfig
 from erk_shared.core.prompt_executor import PromptExecutor
-from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import extract_metadata_value
 from erk_shared.gateway.github.metadata.dependency_graph import (
@@ -40,7 +38,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     rerender_comment_roadmap,
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys
-from erk_shared.gateway.github.types import BodyText
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
 
@@ -137,7 +135,15 @@ def _resolve_next(
             )
         issue_number = objective_id
 
-    result = validate_objective(ctx.issues, repo.root, issue_number)
+    if repo.github is None:
+        raise click.ClickException("Repository has no GitHub remote configured")
+
+    result = validate_objective(
+        _get_remote_github(ctx),
+        owner=repo.github.owner,
+        repo=repo.github.repo,
+        issue_number=issue_number,
+    )
     if isinstance(result, ObjectiveValidationError):
         raise click.ClickException(result.error)
     assert isinstance(result, ObjectiveValidationSuccess)  # type narrowing
@@ -212,7 +218,15 @@ def _resolve_all_unblocked(
             )
         issue_number = objective_id
 
-    result = validate_objective(ctx.issues, repo.root, issue_number)
+    if repo.github is None:
+        raise click.ClickException("Repository has no GitHub remote configured")
+
+    result = validate_objective(
+        _get_remote_github(ctx),
+        owner=repo.github.owner,
+        repo=repo.github.repo,
+        issue_number=issue_number,
+    )
     if isinstance(result, ObjectiveValidationError):
         raise click.ClickException(result.error)
     assert isinstance(result, ObjectiveValidationSuccess)  # type narrowing
@@ -315,11 +329,11 @@ def _handle_all_unblocked(
 
     # Single atomic update after all dispatches complete
     if successful_dispatches:
-        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
         user_output("Updating objective roadmap...")
         _batch_update_objective_nodes(
-            ctx.issues,
-            ctx.repo.root,
+            _get_remote_github(ctx),
+            owner=owner,
+            repo=repo_name,
             issue_number=resolved.issue_number,
             node_updates=successful_dispatches,
         )
@@ -337,9 +351,10 @@ def _handle_all_unblocked(
 
 
 def _update_objective_node(
-    issues: GitHubIssues,
-    repo_root: Path,
+    remote: RemoteGitHub,
     *,
+    owner: str,
+    repo: str,
     issue_number: int,
     node_id: str,
     pr_number: int,
@@ -348,15 +363,8 @@ def _update_objective_node(
 
     Fetches the current issue body, updates the node's status to 'planning'
     and sets the PR column to the draft PR number, then writes back.
-
-    Args:
-        issues: GitHub issues gateway
-        repo_root: Repository root path
-        issue_number: Objective issue number
-        node_id: Node ID to update (e.g., "1.1")
-        pr_number: Draft PR number from one-shot dispatch
     """
-    issue = issues.get_issue(repo_root, issue_number)
+    issue = remote.get_issue(owner=owner, repo=repo, number=issue_number)
     if isinstance(issue, IssueNotFound):
         return
 
@@ -373,23 +381,28 @@ def _update_objective_node(
     if updated_body is None:
         return
 
-    issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+    remote.update_issue_body(owner=owner, repo=repo, number=issue_number, body=updated_body)
 
     # v2 format: re-render the comment table from updated YAML
     objective_comment_id = extract_metadata_value(
         updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
     )
     if objective_comment_id is not None:
-        comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
+        comment_body = remote.get_comment_by_id(
+            owner=owner, repo=repo, comment_id=objective_comment_id
+        )
         updated_comment = rerender_comment_roadmap(updated_body, comment_body)
         if updated_comment is not None and updated_comment != comment_body:
-            issues.update_comment(repo_root, objective_comment_id, updated_comment)
+            remote.update_comment(
+                owner=owner, repo=repo, comment_id=objective_comment_id, body=updated_comment
+            )
 
 
 def _batch_update_objective_nodes(
-    issues: GitHubIssues,
-    repo_root: Path,
+    remote: RemoteGitHub,
     *,
+    owner: str,
+    repo: str,
     issue_number: int,
     node_updates: list[tuple[str, int]],
 ) -> None:
@@ -397,17 +410,11 @@ def _batch_update_objective_nodes(
 
     Fetches the issue body once, applies all node updates in memory, then writes
     back once. Same for the v2 comment if present.
-
-    Args:
-        issues: GitHub issues gateway
-        repo_root: Repository root path
-        issue_number: Objective issue number
-        node_updates: List of (node_id, pr_number) pairs to update
     """
     if not node_updates:
         return
 
-    issue = issues.get_issue(repo_root, issue_number)
+    issue = remote.get_issue(owner=owner, repo=repo, number=issue_number)
     if isinstance(issue, IssueNotFound):
         return
 
@@ -430,23 +437,28 @@ def _batch_update_objective_nodes(
 
     # Single write for all body changes
     if body_changed:
-        issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+        remote.update_issue_body(owner=owner, repo=repo, number=issue_number, body=updated_body)
 
     # v2 format: re-render comment table from updated YAML (single write)
     objective_comment_id = extract_metadata_value(
         updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
     )
     if objective_comment_id is not None:
-        comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
+        comment_body = remote.get_comment_by_id(
+            owner=owner, repo=repo, comment_id=objective_comment_id
+        )
         updated_comment = rerender_comment_roadmap(updated_body, comment_body)
         if updated_comment is not None and updated_comment != comment_body:
-            issues.update_comment(repo_root, objective_comment_id, updated_comment)
+            remote.update_comment(
+                owner=owner, repo=repo, comment_id=objective_comment_id, body=updated_comment
+            )
 
 
 def _mark_node_planning(
-    issues: GitHubIssues,
-    repo_root: Path,
+    remote: RemoteGitHub,
     *,
+    owner: str,
+    repo: str,
     issue_number: int,
     node_id: str,
 ) -> None:
@@ -458,7 +470,7 @@ def _mark_node_planning(
 
     Silently catches all errors — the inner skill will retry if needed.
     """
-    issue = issues.get_issue(repo_root, issue_number)
+    issue = remote.get_issue(owner=owner, repo=repo, number=issue_number)
     if isinstance(issue, IssueNotFound):
         return
 
@@ -475,17 +487,21 @@ def _mark_node_planning(
     if updated_body is None:
         return
 
-    issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+    remote.update_issue_body(owner=owner, repo=repo, number=issue_number, body=updated_body)
 
     # v2 format: re-render the comment table from updated YAML
     objective_comment_id = extract_metadata_value(
         updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
     )
     if objective_comment_id is not None:
-        comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
+        comment_body = remote.get_comment_by_id(
+            owner=owner, repo=repo, comment_id=objective_comment_id
+        )
         updated_comment = rerender_comment_roadmap(updated_body, comment_body)
         if updated_comment is not None and updated_comment != comment_body:
-            issues.update_comment(repo_root, objective_comment_id, updated_comment)
+            remote.update_comment(
+                owner=owner, repo=repo, comment_id=objective_comment_id, body=updated_comment
+            )
 
 
 @click.command("plan")
@@ -669,9 +685,11 @@ def _handle_interactive(
     if known_issue_number is not None and known_node_id is not None:
         # Known node: pre-mark as planning in Python, then launch inner command
         assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        assert ctx.repo.github is not None
         _mark_node_planning(
-            ctx.issues,
-            ctx.repo.root,
+            _get_remote_github(ctx),
+            owner=ctx.repo.github.owner,
+            repo=ctx.repo.github.repo,
             issue_number=known_issue_number,
             node_id=known_node_id,
         )
@@ -732,9 +750,16 @@ def _handle_one_shot(
             raise click.ClickException("Not in a git repository")
         assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
         repo: RepoContext = ctx.repo
+        if repo.github is None:
+            raise click.ClickException("Repository has no GitHub remote configured")
 
         # Validate objective
-        result = validate_objective(ctx.issues, repo.root, issue_number)
+        result = validate_objective(
+            _get_remote_github(ctx),
+            owner=repo.github.owner,
+            repo=repo.github.repo,
+            issue_number=issue_number,
+        )
 
         if isinstance(result, ObjectiveValidationError):
             raise click.ClickException(result.error)
@@ -824,11 +849,11 @@ def _handle_one_shot(
     # After successful dispatch, immediately mark node as "planning" with draft PR
     if dispatch_result is not None:
         # repo is guaranteed to be RepoContext here (validated above)
-        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
         user_output("Updating objective roadmap...")
         _update_objective_node(
-            ctx.issues,
-            ctx.repo.root,
+            remote,
+            owner=owner,
+            repo=repo_name,
             issue_number=issue_number,
             node_id=target_node.id,
             pr_number=dispatch_result.pr_number,

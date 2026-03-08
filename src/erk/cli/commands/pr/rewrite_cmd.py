@@ -10,6 +10,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.pr.repo_resolution import get_remote_github
 from erk.cli.commands.pr.shared import (
     assemble_pr_body,
     cleanup_diff_file,
@@ -23,7 +24,7 @@ from erk.cli.commands.pr.shared import (
 )
 from erk.core.command_log import get_or_generate_session_id
 from erk.core.commit_message_generator import CommitMessageGenerator
-from erk.core.context import ErkContext
+from erk.core.context import ErkContext, NoRepoSentinel
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.github.label_ops import add_labels_resilient
@@ -113,11 +114,15 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     click.echo(click.style("Phase 3: Generating commit message", bold=True))
 
     plan_provider = PlanContextProvider(
-        plan_backend=ctx.plan_backend, github_issues=ctx.github_issues
+        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
     )
+    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
+        raise click.ClickException("Repository has no GitHub remote configured")
     plan_context = plan_provider.get_plan_context(
         repo_root=discovery.repo_root,
         branch_name=discovery.current_branch,
+        owner=ctx.repo.github.owner,
+        repo=ctx.repo.github.repo,
     )
 
     echo_plan_context_status(plan_context)

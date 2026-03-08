@@ -184,7 +184,17 @@ class TestResolveAllUnblocked:
                 trunk_branches={env.cwd: "main"},
                 current_branches={env.cwd: "main"},
             )
-            ctx = build_workspace_test_context(env, git=git, issues=issues)
+            remote = FakeRemoteGitHub(
+                authenticated_user="testuser",
+                default_branch_name="main",
+                default_branch_sha="abc123",
+                next_pr_number=1,
+                dispatch_run_id="run-1",
+                issues={42: issue},
+                issue_comments=None,
+                pr_references=None,
+            )
+            ctx = build_workspace_test_context(env, git=git, issues=issues, remote_github=remote)
 
             resolved = _resolve_all_unblocked(ctx, issue_ref="42")
 
@@ -208,7 +218,17 @@ class TestResolveAllUnblocked:
                 trunk_branches={env.cwd: "main"},
                 current_branches={env.cwd: "main"},
             )
-            ctx = build_workspace_test_context(env, git=git, issues=issues)
+            remote = FakeRemoteGitHub(
+                authenticated_user="testuser",
+                default_branch_name="main",
+                default_branch_sha="abc123",
+                next_pr_number=1,
+                dispatch_run_id="run-1",
+                issues={42: issue},
+                issue_comments=None,
+                pr_references=None,
+            )
+            ctx = build_workspace_test_context(env, git=git, issues=issues, remote_github=remote)
 
             with pytest.raises(click.ClickException, match="no pending unblocked nodes"):
                 _resolve_all_unblocked(ctx, issue_ref="42")
@@ -241,7 +261,7 @@ class TestHandleAllUnblocked:
                 default_branch_sha="abc123",
                 next_pr_number=1,
                 dispatch_run_id="run-1",
-                issues=None,
+                issues={42: issue},
                 issue_comments=None,
                 pr_references=None,
             )
@@ -290,7 +310,7 @@ class TestHandleAllUnblocked:
                 default_branch_sha="abc123",
                 next_pr_number=1,
                 dispatch_run_id="run-1",
-                issues=None,
+                issues={42: issue},
                 issue_comments=None,
                 pr_references=None,
             )
@@ -340,7 +360,7 @@ class TestHandleAllUnblocked:
                 default_branch_sha="abc123",
                 next_pr_number=1,
                 dispatch_run_id="run-1",
-                issues=None,
+                issues={42: issue},
                 issue_comments=None,
                 pr_references=None,
             )
@@ -359,12 +379,12 @@ class TestHandleAllUnblocked:
 
             # Filter to only objective issue #42 body updates (exclude plan issue updates)
             objective_body_updates = [
-                (num, body) for num, body in issues.updated_bodies if num == 42
+                update for update in remote.updated_issue_bodies if update.number == 42
             ]
 
             # Verify a single body write (atomic batch) instead of N writes
             assert len(objective_body_updates) == 1
 
             # Verify both nodes appear as 'planning' in the single written body
-            _issue_number, written_body = objective_body_updates[0]
+            written_body = objective_body_updates[0].body
             assert "planning" in written_body

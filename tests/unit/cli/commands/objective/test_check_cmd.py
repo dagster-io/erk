@@ -2,7 +2,6 @@
 
 import json
 from datetime import UTC, datetime
-from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -15,7 +14,44 @@ from erk.cli.commands.objective.check_cmd import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import RepoInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+
+_TEST_REPO_INFO = RepoInfo(owner="test", name="repo")
+
+
+def _make_remote(
+    issues: dict[int, IssueInfo],
+    *,
+    comments_by_id: dict[int, str] | None = None,
+) -> FakeRemoteGitHub:
+    """Create a FakeRemoteGitHub from an issue dict."""
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues,
+        issue_comments=None,
+        pr_references=None,
+        comments_by_id=comments_by_id,
+    )
+
+
+def _test_ctx(
+    *,
+    fake_gh: FakeGitHubIssues,
+    issues: dict[int, IssueInfo],
+    comments_by_id: dict[int, str] | None = None,
+) -> ErkContext:
+    """Create a test context with both local and remote GitHub."""
+    return ErkContext.for_test(
+        github=FakeLocalGitHub(issues_gateway=fake_gh),
+        remote_github=_make_remote(issues, comments_by_id=comments_by_id),
+        repo_info=_TEST_REPO_INFO,
+    )
 
 
 def _make_issue(
@@ -103,7 +139,7 @@ def test_valid_objective_passes_all_checks() -> None:
     result = runner.invoke(
         check_objective,
         ["100"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={100: issue}),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -120,7 +156,7 @@ def test_valid_objective_json_output() -> None:
     result = runner.invoke(
         check_objective,
         ["100", "--json-output"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={100: issue}),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -153,7 +189,7 @@ def test_missing_objective_label_fails() -> None:
     result = runner.invoke(
         check_objective,
         ["200"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={200: issue}),
     )
 
     assert result.exit_code == 1
@@ -174,7 +210,7 @@ This objective has no roadmap tables.
     result = runner.invoke(
         check_objective,
         ["300"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={300: issue}),
     )
 
     assert result.exit_code == 0
@@ -195,7 +231,7 @@ This objective has no roadmap tables.
     result = runner.invoke(
         check_objective,
         ["350", "--json-output"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={350: issue}),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -245,7 +281,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["400"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={400: issue}),
     )
 
     assert result.exit_code == 0
@@ -260,7 +296,7 @@ def test_issue_not_found_fails() -> None:
     result = runner.invoke(
         check_objective,
         ["999"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={}),
     )
 
     assert result.exit_code == 1
@@ -275,7 +311,7 @@ def test_issue_not_found_json() -> None:
     result = runner.invoke(
         check_objective,
         ["999", "--json-output"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={}),
     )
 
     assert result.exit_code == 1
@@ -324,7 +360,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["500"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={500: issue}),
     )
 
     assert result.exit_code == 0
@@ -371,7 +407,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["600"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={600: issue}),
     )
 
     assert result.exit_code == 0
@@ -425,7 +461,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["900"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={900: issue}),
     )
 
     assert result.exit_code == 0
@@ -436,9 +472,13 @@ steps:
 def test_validate_objective_returns_success_type() -> None:
     """Test that validate_objective returns proper result types."""
     issue = _make_issue(700, "Objective: Test", VALID_OBJECTIVE_BODY)
-    fake_gh = FakeGitHubIssues(issues={700: issue})
 
-    result = validate_objective(fake_gh, Path("/fake/repo"), 700)
+    result = validate_objective(
+        _make_remote({700: issue}),
+        owner="test",
+        repo="repo",
+        issue_number=700,
+    )
 
     assert isinstance(result, ObjectiveValidationSuccess)
     assert result.passed is True
@@ -448,9 +488,12 @@ def test_validate_objective_returns_success_type() -> None:
 
 def test_validate_objective_returns_error_for_missing_issue() -> None:
     """Test that validate_objective returns error type for missing issue."""
-    fake_gh = FakeGitHubIssues()
-
-    result = validate_objective(fake_gh, Path("/fake/repo"), 999)
+    result = validate_objective(
+        _make_remote({}),
+        owner="test",
+        repo="repo",
+        issue_number=999,
+    )
 
     assert isinstance(result, ObjectiveValidationError)
     assert "999" in result.error
@@ -494,7 +537,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["800", "--json-output"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={800: issue}),
     )
 
     assert result.exit_code == 0
@@ -595,7 +638,7 @@ def test_v2_valid_header_passes_check_6() -> None:
     result = runner.invoke(
         check_objective,
         ["1200"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={1200: issue}),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -612,7 +655,7 @@ def test_v2_missing_comment_id_fails_check_6() -> None:
     result = runner.invoke(
         check_objective,
         ["1300"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={1300: issue}),
     )
 
     assert result.exit_code == 1
@@ -652,7 +695,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["1800"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={1800: issue}),
     )
 
     assert result.exit_code == 1
@@ -693,7 +736,7 @@ steps:
     result = runner.invoke(
         check_objective,
         ["2000"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={2000: issue}),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -710,7 +753,7 @@ def test_valid_hash_prefix_refs_pass() -> None:
     result = runner.invoke(
         check_objective,
         ["1900"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={1900: issue}),
     )
 
     assert result.exit_code == 0
@@ -781,7 +824,7 @@ def test_fan_out_fan_in_passes_validation() -> None:
     result = runner.invoke(
         check_objective,
         ["2100"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={2100: issue}),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -797,7 +840,7 @@ def test_fan_out_fan_in_json_output() -> None:
     result = runner.invoke(
         check_objective,
         ["2200", "--json-output"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={2200: issue}),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -891,22 +934,19 @@ More content.
 def test_roadmap_table_in_sync_passes() -> None:
     """Check 8: comment table matches YAML → PASS."""
     issue = _make_issue(2300, "Objective: Sync Test", _CHECK8_ISSUE_BODY)
-    comment = IssueComment(
-        body=_CHECK8_COMMENT_IN_SYNC,
-        url="https://github.com/test/repo/issues/2300#issuecomment-42",
-        id=42,
-        author="testuser",
-    )
     fake_gh = FakeGitHubIssues(
         issues={2300: issue},
-        comments_with_urls={2300: [comment]},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         check_objective,
         ["2300"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(
+            fake_gh=fake_gh,
+            issues={2300: issue},
+            comments_by_id={42: _CHECK8_COMMENT_IN_SYNC},
+        ),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -917,22 +957,19 @@ def test_roadmap_table_in_sync_passes() -> None:
 def test_roadmap_table_out_of_sync_fails() -> None:
     """Check 8: comment has stale status → FAIL."""
     issue = _make_issue(2400, "Objective: Drift Test", _CHECK8_ISSUE_BODY)
-    comment = IssueComment(
-        body=_CHECK8_COMMENT_OUT_OF_SYNC,
-        url="https://github.com/test/repo/issues/2400#issuecomment-42",
-        id=42,
-        author="testuser",
-    )
     fake_gh = FakeGitHubIssues(
         issues={2400: issue},
-        comments_with_urls={2400: [comment]},
     )
     runner = CliRunner()
 
     result = runner.invoke(
         check_objective,
         ["2400"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(
+            fake_gh=fake_gh,
+            issues={2400: issue},
+            comments_by_id={42: _CHECK8_COMMENT_OUT_OF_SYNC},
+        ),
     )
 
     assert result.exit_code == 1
@@ -948,7 +985,7 @@ def test_roadmap_table_check_skipped_without_comment_id() -> None:
     result = runner.invoke(
         check_objective,
         ["2500"],
-        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+        obj=_test_ctx(fake_gh=fake_gh, issues={2500: issue}),
     )
 
     assert result.exit_code == 0

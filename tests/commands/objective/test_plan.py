@@ -18,6 +18,7 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -161,8 +162,9 @@ def test_plan_with_node_flag() -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
+        objective_issue = _make_objective_issue(42, OBJECTIVE_BODY)
         issues = FakeGitHubIssues(
-            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
+            issues={42: objective_issue},
         )
         fake_launcher = FakeAgentLauncher()
         git = FakeGit(
@@ -172,8 +174,23 @@ def test_plan_with_node_flag() -> None:
             current_branches={env.cwd: "main"},
         )
         github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+        remote = FakeRemoteGitHub(
+            authenticated_user="testuser",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={42: objective_issue},
+            issue_comments=None,
+            pr_references=None,
+        )
         ctx = build_workspace_test_context(
-            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+            env,
+            git=git,
+            github=github,
+            issues=issues,
+            agent_launcher=fake_launcher,
+            remote_github=remote,
         )
 
         result = runner.invoke(
@@ -188,11 +205,12 @@ def test_plan_with_node_flag() -> None:
         assert fake_launcher.last_call is not None
         # Should launch inner command instead of outer
         assert fake_launcher.last_call.command == "/erk:system:objective-plan-node 42 --node 1.1"
-        # Should have pre-marked the node as planning via API
-        assert len(issues.updated_bodies) == 1
-        issue_number, updated_body = issues.updated_bodies[0]
-        assert issue_number == 42
-        assert "planning" in updated_body
+        # Should have pre-marked the node as planning via RemoteGitHub API
+        objective_body_updates = [
+            update for update in remote.updated_issue_bodies if update.number == 42
+        ]
+        assert len(objective_body_updates) == 1
+        assert "planning" in objective_body_updates[0].body
 
 
 def test_plan_next_and_node_mutually_exclusive() -> None:
@@ -325,8 +343,24 @@ def test_plan_next_with_issue_ref() -> None:
             current_branches={env.cwd: "main"},
         )
         github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+        objective_issue = _make_objective_issue(42, OBJECTIVE_BODY)
+        remote = FakeRemoteGitHub(
+            authenticated_user="testuser",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={42: objective_issue},
+            issue_comments=None,
+            pr_references=None,
+        )
         ctx = build_workspace_test_context(
-            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+            env,
+            git=git,
+            github=github,
+            issues=issues,
+            agent_launcher=fake_launcher,
+            remote_github=remote,
         )
 
         result = runner.invoke(
@@ -342,11 +376,12 @@ def test_plan_next_with_issue_ref() -> None:
         # Should launch inner command instead of outer
         assert fake_launcher.last_call.command == "/erk:system:objective-plan-node 42 --node 1.1"
         assert "Next node: 1.1: Setup infra" in result.output
-        # Should have pre-marked the node as planning via API
-        assert len(issues.updated_bodies) == 1
-        issue_number, updated_body = issues.updated_bodies[0]
-        assert issue_number == 42
-        assert "planning" in updated_body
+        # Should have pre-marked the node as planning via RemoteGitHub API
+        objective_body_updates = [
+            update for update in remote.updated_issue_bodies if update.number == 42
+        ]
+        assert len(objective_body_updates) == 1
+        assert "planning" in objective_body_updates[0].body
 
 
 def test_plan_without_node_launches_outer_command() -> None:
@@ -368,71 +403,88 @@ def test_mark_node_planning_updates_body() -> None:
     """Test _mark_node_planning updates the objective body with planning status."""
     from erk.cli.commands.objective.plan_cmd import _mark_node_planning
 
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
+    objective_issue = _make_objective_issue(42, OBJECTIVE_BODY)
+    remote = FakeRemoteGitHub(
+        authenticated_user="testuser",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues={42: objective_issue},
+        issue_comments=None,
+        pr_references=None,
+    )
 
-        issues = FakeGitHubIssues(
-            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
-        )
+    _mark_node_planning(
+        remote,
+        owner="owner",
+        repo="repo",
+        issue_number=42,
+        node_id="1.1",
+    )
 
-        _mark_node_planning(
-            issues,
-            env.cwd,
-            issue_number=42,
-            node_id="1.1",
-        )
-
-        # Should have updated the issue body
-        assert len(issues.updated_bodies) == 1
-        issue_number, updated_body = issues.updated_bodies[0]
-        assert issue_number == 42
-        assert "planning" in updated_body
+    # Should have updated the issue body
+    objective_body_updates = [
+        update for update in remote.updated_issue_bodies if update.number == 42
+    ]
+    assert len(objective_body_updates) == 1
+    assert "planning" in objective_body_updates[0].body
 
 
 def test_mark_node_planning_silent_on_missing_issue() -> None:
     """Test _mark_node_planning silently handles missing issues."""
     from erk.cli.commands.objective.plan_cmd import _mark_node_planning
 
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
+    remote = FakeRemoteGitHub(
+        authenticated_user="testuser",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues={},
+        issue_comments=None,
+        pr_references=None,
+    )
 
-        issues = FakeGitHubIssues(issues={})
+    # Should not raise — silently returns
+    _mark_node_planning(
+        remote,
+        owner="owner",
+        repo="repo",
+        issue_number=999,
+        node_id="1.1",
+    )
 
-        # Should not raise — silently returns
-        _mark_node_planning(
-            issues,
-            env.cwd,
-            issue_number=999,
-            node_id="1.1",
-        )
-
-        assert len(issues.updated_bodies) == 0
+    assert len(remote.updated_issue_bodies) == 0
 
 
 def test_mark_node_planning_silent_on_unknown_node() -> None:
     """Test _mark_node_planning silently handles unknown node IDs."""
     from erk.cli.commands.objective.plan_cmd import _mark_node_planning
 
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
+    objective_issue = _make_objective_issue(42, OBJECTIVE_BODY)
+    remote = FakeRemoteGitHub(
+        authenticated_user="testuser",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues={42: objective_issue},
+        issue_comments=None,
+        pr_references=None,
+    )
 
-        issues = FakeGitHubIssues(
-            issues={42: _make_objective_issue(42, OBJECTIVE_BODY)},
-        )
+    # Node 9.9 doesn't exist in the roadmap
+    _mark_node_planning(
+        remote,
+        owner="owner",
+        repo="repo",
+        issue_number=42,
+        node_id="9.9",
+    )
 
-        # Node 9.9 doesn't exist in the roadmap
-        _mark_node_planning(
-            issues,
-            env.cwd,
-            issue_number=42,
-            node_id="9.9",
-        )
-
-        # Should not have updated the body since node wasn't found
-        assert len(issues.updated_bodies) == 0
+    # Should not have updated the body since node wasn't found
+    assert len(remote.updated_issue_bodies) == 0
 
 
 def test_plan_next_fails_on_branch_without_objective() -> None:
@@ -477,8 +529,9 @@ def test_plan_next_no_pending_nodes() -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
+        objective_issue = _make_objective_issue(42, OBJECTIVE_ALL_DONE_BODY)
         issues = FakeGitHubIssues(
-            issues={42: _make_objective_issue(42, OBJECTIVE_ALL_DONE_BODY)},
+            issues={42: objective_issue},
         )
         fake_launcher = FakeAgentLauncher()
         git = FakeGit(
@@ -488,8 +541,23 @@ def test_plan_next_no_pending_nodes() -> None:
             current_branches={env.cwd: "main"},
         )
         github = FakeLocalGitHub(authenticated=True, issues_gateway=issues)
+        remote = FakeRemoteGitHub(
+            authenticated_user="testuser",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={42: objective_issue},
+            issue_comments=None,
+            pr_references=None,
+        )
         ctx = build_workspace_test_context(
-            env, git=git, github=github, issues=issues, agent_launcher=fake_launcher
+            env,
+            git=git,
+            github=github,
+            issues=issues,
+            agent_launcher=fake_launcher,
+            remote_github=remote,
         )
 
         result = runner.invoke(

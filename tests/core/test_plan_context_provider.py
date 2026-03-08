@@ -11,6 +11,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
 )
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
@@ -37,11 +38,26 @@ def _make_issue_info(
     )
 
 
+def _make_remote(
+    issues: dict[int, IssueInfo] | None = None,
+) -> FakeRemoteGitHub:
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues if issues is not None else {},
+        issue_comments=None,
+        pr_references=None,
+    )
+
+
 def _make_provider(github_issues: FakeGitHubIssues) -> PlanContextProvider:
     """Create a PlanContextProvider with PlannedPRBackend backed by fake GitHub."""
     fake_github = FakeLocalGitHub(issues_gateway=github_issues)
     plan_backend = PlannedPRBackend(fake_github, github_issues, time=FakeTime())
-    return PlanContextProvider(plan_backend=plan_backend, github_issues=github_issues)
+    return PlanContextProvider(plan_backend=plan_backend, remote_github=_make_remote())
 
 
 def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> None:
@@ -51,6 +67,8 @@ def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> No
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="feature-branch",
+        owner="test-owner",
+        repo="test-repo",
     )
 
     assert result is None
@@ -66,6 +84,8 @@ def test_get_plan_context_returns_none_for_missing_issue(tmp_path: Path) -> None
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="P123-fix-bug",
+        owner="test-owner",
+        repo="test-repo",
     )
 
     assert result is None
@@ -86,6 +106,8 @@ def test_get_plan_context_returns_content_for_old_format_issue(tmp_path: Path) -
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="P123-fix-bug",
+        owner="test-owner",
+        repo="test-repo",
     )
 
     # Branch-based resolution no longer works
@@ -132,6 +154,8 @@ def test_get_plan_context_falls_back_to_body_for_missing_comment(tmp_path: Path)
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="P123-fix-bug",
+        owner="test-owner",
+        repo="test-repo",
     )
 
     # Branch-based resolution no longer works
@@ -200,6 +224,8 @@ Fix the session token expiration logic."""
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="P123-fix-auth-bug",
+        owner="test-owner",
+        repo="test-repo",
     )
 
     # Branch-based resolution no longer works
@@ -267,6 +293,8 @@ def test_get_plan_context_includes_objective_summary(tmp_path: Path) -> None:
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="P123-implement-feature",
+        owner="test-owner",
+        repo="test-repo",
     )
 
     # Branch-based resolution no longer works
@@ -328,6 +356,8 @@ def test_get_plan_context_handles_missing_objective(tmp_path: Path) -> None:
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="P123-implement-feature",
+        owner="test-owner",
+        repo="test-repo",
     )
 
     # Branch-based resolution no longer works
@@ -387,6 +417,8 @@ def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
     result = provider.get_plan_context(
         repo_root=tmp_path,
         branch_name="456-fix-bug",
+        owner="test-owner",
+        repo="test-repo",
     )
 
     # Branch-based resolution no longer works

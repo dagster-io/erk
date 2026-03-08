@@ -12,11 +12,12 @@ from rich.text import Text
 
 from erk.cli.alias import alias
 from erk.cli.commands.objective_helpers import get_objective_for_branch
-from erk.cli.core import discover_repo_context
+from erk.cli.commands.pr.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.cli.ensure import UserFacingCliError
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_raw_metadata_blocks,
@@ -175,8 +176,15 @@ def _display_json(
     default=False,
     help="Output structured JSON for programmatic use",
 )
+@repo_option
 @click.pass_obj
-def view_objective(ctx: ErkContext, objective_ref: str | None, *, json_mode: bool) -> None:
+def view_objective(
+    ctx: ErkContext,
+    objective_ref: str | None,
+    *,
+    json_mode: bool,
+    target_repo: str | None,
+) -> None:
     """Fetch and display an objective by identifier.
 
     OBJECTIVE_REF can be a plain number (e.g., "42"), P-prefixed ("P42"),
@@ -184,20 +192,25 @@ def view_objective(ctx: ErkContext, objective_ref: str | None, *, json_mode: boo
 
     If omitted, infers the objective from the current branch.
     """
-    repo = discover_repo_context(ctx, ctx.cwd)
-    repo_root = repo.root
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_remote_github(ctx)
 
     # Resolve issue number: explicit ref or inferred from branch
     if objective_ref is not None:
         issue_number = parse_issue_identifier(objective_ref)
     else:
-        branch = ctx.git.branch.get_current_branch(repo_root)
+        if isinstance(ctx.repo, NoRepoSentinel):
+            raise UserFacingCliError(
+                "No objective reference provided and no local repository.\n"
+                "Usage: erk objective view <objective_ref>"
+            )
+        branch = ctx.git.branch.get_current_branch(ctx.repo.root)
         if branch is None:
             raise UserFacingCliError(
                 "No objective reference provided and not on a branch.\n"
                 "Usage: erk objective view <objective_ref>"
             )
-        objective_id = get_objective_for_branch(ctx, repo_root, branch)
+        objective_id = get_objective_for_branch(ctx, ctx.repo.root, branch)
         if objective_id is None:
             raise UserFacingCliError(
                 f"No objective reference provided and branch '{branch}' "
@@ -207,7 +220,7 @@ def view_objective(ctx: ErkContext, objective_ref: str | None, *, json_mode: boo
         issue_number = objective_id
 
     # Fetch issue from GitHub
-    result = ctx.issues.get_issue(repo_root, issue_number)
+    result = remote.get_issue(owner=owner, repo=repo_name, number=issue_number)
     if isinstance(result, IssueNotFound):
         raise UserFacingCliError(f"Issue #{issue_number} not found")
     issue = result

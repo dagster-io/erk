@@ -649,3 +649,52 @@ def test_http_error_propagates() -> None:
 
     with pytest.raises(HttpError, match="401"):
         remote.get_authenticated_user()
+
+
+# --- get_comment_by_id ---
+
+
+def test_get_comment_by_id_returns_body() -> None:
+    remote, http, _ = _make_remote()
+    http.set_response("repos/o/r/issues/comments/123", response={"body": "Comment text"})
+
+    result = remote.get_comment_by_id(owner="o", repo="r", comment_id=123)
+
+    assert result == "Comment text"
+
+
+def test_get_comment_by_id_returns_empty_string_when_no_body() -> None:
+    remote, http, _ = _make_remote()
+    http.set_response("repos/o/r/issues/comments/123", response={})
+
+    result = remote.get_comment_by_id(owner="o", repo="r", comment_id=123)
+
+    assert result == ""
+
+
+# --- update_issue_body ---
+
+
+def test_update_issue_body_patches_correct_endpoint() -> None:
+    remote, http, _ = _make_remote()
+
+    remote.update_issue_body(owner="o", repo="r", number=42, body="new body")
+
+    req = http.requests[0]
+    assert req.method == "PATCH"
+    assert req.endpoint == "repos/o/r/issues/42"
+    assert req.data == {"body": "new body"}
+
+
+# --- update_comment ---
+
+
+def test_update_comment_patches_correct_endpoint() -> None:
+    remote, http, _ = _make_remote()
+
+    remote.update_comment(owner="o", repo="r", comment_id=123, body="updated text")
+
+    req = http.requests[0]
+    assert req.method == "PATCH"
+    assert req.endpoint == "repos/o/r/issues/comments/123"
+    assert req.data == {"body": "updated text"}

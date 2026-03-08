@@ -15,9 +15,30 @@ from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
-from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.github.types import PRDetails, RepoInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
+
+_TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
+
+
+def _make_remote(
+    issues: dict[int, IssueInfo] | None = None,
+    *,
+    comments_by_id: dict[int, str] | None = None,
+) -> FakeRemoteGitHub:
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues if issues is not None else {},
+        issue_comments=None,
+        pr_references=None,
+        comments_by_id=comments_by_id,
+    )
 
 
 def _make_issue(*, number: int, title: str, body: str) -> IssueInfo:
@@ -157,6 +178,10 @@ class TestApplyLandedUpdateHappyPath:
             issues_gateway=fake_issues,
             pr_details={6517: pr},
         )
+        remote = _make_remote(
+            {6423: objective, 6513: plan},
+            comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+        )
 
         runner = CliRunner()
         result = runner.invoke(
@@ -176,8 +201,10 @@ class TestApplyLandedUpdateHappyPath:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=remote,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -196,14 +223,14 @@ class TestApplyLandedUpdateHappyPath:
 
         # Action comment was posted
         assert data["action_comment_id"] is not None
-        assert len(fake_issues.added_comments) == 1
-        issue_number, body, _comment_id = fake_issues.added_comments[0]
-        assert issue_number == 6423
-        assert "Landed PR #6517" in body
-        assert "Add auth system" in body
+        assert len(remote.added_issue_comments) == 1
+        added_comment = remote.added_issue_comments[0]
+        assert added_comment.issue_number == 6423
+        assert "Landed PR #6517" in added_comment.body
+        assert "Add auth system" in added_comment.body
 
         # Issue body was updated
-        assert len(fake_issues.updated_bodies) == 1
+        assert len(remote.updated_issue_bodies) == 1
 
         # Roadmap reflects the updates
         roadmap = data["roadmap"]
@@ -248,8 +275,13 @@ class TestApplyLandedUpdateHappyPath:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=_make_remote(
+                    {6423: objective, 6513: plan},
+                    comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+                ),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -280,6 +312,10 @@ class TestApplyLandedUpdateNoNodes:
             issues_gateway=fake_issues,
             pr_details={6517: pr},
         )
+        remote = _make_remote(
+            {6423: objective, 6513: plan},
+            comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+        )
 
         runner = CliRunner()
         result = runner.invoke(
@@ -295,8 +331,10 @@ class TestApplyLandedUpdateNoNodes:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=remote,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -306,10 +344,10 @@ class TestApplyLandedUpdateNoNodes:
         assert data["node_updates"] == []
 
         # Action comment still posted
-        assert len(fake_issues.added_comments) == 1
+        assert len(remote.added_issue_comments) == 1
 
         # Issue body NOT updated (no nodes to update)
-        assert len(fake_issues.updated_bodies) == 0
+        assert len(remote.updated_issue_bodies) == 0
 
 
 ROADMAP_BODY_WITH_PR_REF = textwrap.dedent("""\
@@ -382,6 +420,10 @@ class TestApplyLandedUpdateAutoMatch:
             issues_gateway=fake_issues,
             pr_details={6517: pr},
         )
+        remote = _make_remote(
+            {6423: objective, 6513: plan},
+            comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+        )
 
         runner = CliRunner()
         result = runner.invoke(
@@ -397,8 +439,10 @@ class TestApplyLandedUpdateAutoMatch:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=remote,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -412,7 +456,7 @@ class TestApplyLandedUpdateAutoMatch:
         assert node_updates[0]["node_id"] == "1.1"
 
         # Issue body was updated
-        assert len(fake_issues.updated_bodies) == 1
+        assert len(remote.updated_issue_bodies) == 1
 
 
 class TestApplyLandedUpdateErrors:
@@ -441,8 +485,10 @@ class TestApplyLandedUpdateErrors:
             obj=context_for_test(
                 github=fake_github,
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=_make_remote({6513: plan}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -474,6 +520,7 @@ class TestApplyLandedUpdateErrors:
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -503,6 +550,7 @@ class TestApplyLandedUpdateErrors:
                 plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 
@@ -554,6 +602,7 @@ class TestApplyLandedUpdateDiscovery:
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
             ),
         )
 

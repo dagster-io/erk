@@ -8,8 +8,23 @@ from click.testing import CliRunner
 from erk.cli.commands.objective.view_cmd import view_objective
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.output_helpers import strip_ansi
+
+
+def _make_remote(issues: dict[int, IssueInfo]) -> FakeRemoteGitHub:
+    """Create a FakeRemoteGitHub from an issue dict."""
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues,
+        issue_comments=None,
+        pr_references=None,
+    )
 
 
 def _make_issue(
@@ -119,7 +134,7 @@ def test_view_objective_success() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({100: issue}))
         result = runner.invoke(
             view_objective,
             ["100"],
@@ -141,7 +156,7 @@ def test_view_objective_with_issue_url() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({200: issue}))
         result = runner.invoke(
             view_objective,
             ["https://github.com/test/repo/issues/200"],
@@ -158,7 +173,7 @@ def test_view_objective_not_found() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({}))
         result = runner.invoke(
             view_objective,
             ["999"],
@@ -183,7 +198,7 @@ def test_view_objective_missing_label() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({300: issue}))
         result = runner.invoke(
             view_objective,
             ["300"],
@@ -203,7 +218,7 @@ def test_view_objective_empty_roadmap() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({400: issue}))
         result = runner.invoke(
             view_objective,
             ["400"],
@@ -221,7 +236,7 @@ def test_view_objective_displays_summary() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({500: issue}))
         result = runner.invoke(
             view_objective,
             ["500"],
@@ -245,7 +260,7 @@ def test_view_objective_displays_timestamps() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({600: issue}))
         result = runner.invoke(
             view_objective,
             ["600"],
@@ -264,7 +279,7 @@ def test_view_objective_p_prefix() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({700: issue}))
         result = runner.invoke(
             view_objective,
             ["P700"],
@@ -282,7 +297,7 @@ def test_view_objective_phase_completion_counts() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({800: issue}))
         result = runner.invoke(
             view_objective,
             ["800"],
@@ -304,7 +319,7 @@ def test_view_objective_status_emojis() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({900: issue}))
         result = runner.invoke(
             view_objective,
             ["900"],
@@ -328,7 +343,7 @@ def test_view_objective_pr_column() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({950: issue}))
         result = runner.invoke(
             view_objective,
             ["950"],
@@ -350,7 +365,7 @@ def test_view_objective_table_only_shows_as_roadmap_free() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1000: issue}))
         result = runner.invoke(
             view_objective,
             ["1000"],
@@ -368,7 +383,7 @@ def test_view_objective_v1_schema_rejected() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1100: issue}))
         result = runner.invoke(
             view_objective,
             ["1100"],
@@ -386,7 +401,7 @@ def test_view_objective_depends_on_column() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1200: issue}))
         result = runner.invoke(
             view_objective,
             ["1200"],
@@ -408,7 +423,7 @@ def test_view_objective_unblocked_annotation() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1300: issue}))
         result = runner.invoke(
             view_objective,
             ["1300"],
@@ -431,7 +446,7 @@ def test_view_objective_unblocked_count_in_summary() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1350: issue}))
         result = runner.invoke(
             view_objective,
             ["1350"],
@@ -454,7 +469,7 @@ def test_view_objective_json_output() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1400: issue}))
         result = runner.invoke(
             view_objective,
             ["1400", "--json-output"],
@@ -480,7 +495,7 @@ def test_view_objective_json_includes_depends_on() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1500: issue}))
         result = runner.invoke(
             view_objective,
             ["1500", "--json-output"],
@@ -563,7 +578,7 @@ def test_view_fan_out_json_shows_multiple_unblocked() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1600: issue}))
         result = runner.invoke(
             view_objective,
             ["1600", "--json-output"],
@@ -587,7 +602,7 @@ def test_view_fan_out_human_shows_unblocked_status() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1700: issue}))
         result = runner.invoke(
             view_objective,
             ["1700"],
@@ -671,7 +686,7 @@ def test_view_planning_status_renders() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1800: issue}))
         result = runner.invoke(
             view_objective,
             ["1800"],
@@ -689,7 +704,7 @@ def test_view_in_flight_line_in_summary() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({1900: issue}))
         result = runner.invoke(
             view_objective,
             ["1900"],
@@ -710,7 +725,7 @@ def test_view_planning_count_in_nodes_line() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({2000: issue}))
         result = runner.invoke(
             view_objective,
             ["2000"],
@@ -730,7 +745,7 @@ def test_view_multiple_unblocked_nodes_listed() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({2100: issue}))
         result = runner.invoke(
             view_objective,
             ["2100"],
@@ -752,7 +767,7 @@ def test_view_json_includes_in_flight_and_pending_unblocked() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({2200: issue}))
         result = runner.invoke(
             view_objective,
             ["2200", "--json-output"],
@@ -781,7 +796,7 @@ def test_view_fan_out_json_includes_pending_unblocked() -> None:
     runner = CliRunner()
 
     with erk_inmem_env(runner) as env:
-        test_ctx = env.build_context(issues=fake_gh)
+        test_ctx = env.build_context(issues=fake_gh, remote_github=_make_remote({2300: issue}))
         result = runner.invoke(
             view_objective,
             ["2300", "--json-output"],
@@ -815,6 +830,7 @@ def test_view_objective_inferred_from_branch_name() -> None:
     with erk_inmem_env(runner) as env:
         test_ctx = env.build_context(
             issues=fake_gh,
+            remote_github=_make_remote({8832: issue}),
             current_branch="plnd/O8832-rename-thing-03-06-1802",
         )
         result = runner.invoke(
@@ -833,6 +849,7 @@ def test_view_objective_no_ref_no_inference() -> None:
 
     with erk_inmem_env(runner) as env:
         test_ctx = env.build_context(
+            remote_github=_make_remote({}),
             current_branch="feature-branch",
         )
         result = runner.invoke(

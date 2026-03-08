@@ -9,8 +9,9 @@ from erk.cli.cli import cli
 from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.console.fake import FakeConsole
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import GitHubRepoId
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 
 
 def _create_issue(
@@ -35,6 +36,20 @@ def _create_issue(
     )
 
 
+def _make_remote(issues: dict[int, IssueInfo]) -> FakeRemoteGitHub:
+    """Create a FakeRemoteGitHub from an issue dict."""
+    return FakeRemoteGitHub(
+        authenticated_user="test-user",
+        default_branch_name="main",
+        default_branch_sha="abc123",
+        next_pr_number=1,
+        dispatch_run_id="run-1",
+        issues=issues,
+        issue_comments=None,
+        pr_references=None,
+    )
+
+
 def _create_repo_context(tmp_path: Path) -> RepoContext:
     """Create a RepoContext for testing."""
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
@@ -44,18 +59,19 @@ def _create_repo_context(tmp_path: Path) -> RepoContext:
         repo_dir=repo_dir,
         worktrees_dir=repo_dir / "worktrees",
         pool_json_path=repo_dir / "pool.json",
+        github=GitHubRepoId(owner="owner", repo="repo"),
     )
 
 
 def test_close_objective_successfully(tmp_path: Path) -> None:
     """Test closing an objective issue with --force flag."""
     issue = _create_issue(42, state="OPEN", labels=["erk-objective"])
-    issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
+    fake_remote = _make_remote({42: issue})
 
     ctx = context_for_test(
-        issues=issues_ops,
         cwd=tmp_path,
         repo=_create_repo_context(tmp_path),
+        remote_github=fake_remote,
     )
 
     runner = CliRunner()
@@ -63,13 +79,14 @@ def test_close_objective_successfully(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "Closed objective #42" in result.output
-    assert issues_ops.closed_issues == [42]
+    assert len(fake_remote.closed_issues) == 1
+    assert fake_remote.closed_issues[0].number == 42
 
 
 def test_close_objective_requires_confirmation(tmp_path: Path) -> None:
     """Test that closing without --force prompts for confirmation."""
     issue = _create_issue(42, state="OPEN", labels=["erk-objective"], title="My Objective")
-    issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
+    fake_remote = _make_remote({42: issue})
 
     # User confirms
     console = FakeConsole(
@@ -79,9 +96,9 @@ def test_close_objective_requires_confirmation(tmp_path: Path) -> None:
         confirm_responses=[True],
     )
     ctx = context_for_test(
-        issues=issues_ops,
         cwd=tmp_path,
         repo=_create_repo_context(tmp_path),
+        remote_github=fake_remote,
         console=console,
     )
 
@@ -90,13 +107,14 @@ def test_close_objective_requires_confirmation(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "Closed objective #42" in result.output
-    assert issues_ops.closed_issues == [42]
+    assert len(fake_remote.closed_issues) == 1
+    assert fake_remote.closed_issues[0].number == 42
 
 
 def test_close_objective_cancelled_when_user_declines(tmp_path: Path) -> None:
     """Test that declining confirmation cancels the close."""
     issue = _create_issue(42, state="OPEN", labels=["erk-objective"], title="My Objective")
-    issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
+    fake_remote = _make_remote({42: issue})
 
     # User declines
     console = FakeConsole(
@@ -106,9 +124,9 @@ def test_close_objective_cancelled_when_user_declines(tmp_path: Path) -> None:
         confirm_responses=[False],
     )
     ctx = context_for_test(
-        issues=issues_ops,
         cwd=tmp_path,
         repo=_create_repo_context(tmp_path),
+        remote_github=fake_remote,
         console=console,
     )
 
@@ -117,19 +135,19 @@ def test_close_objective_cancelled_when_user_declines(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "Cancelled" in result.output
-    assert issues_ops.closed_issues == []
+    assert fake_remote.closed_issues == []
 
 
 def test_close_objective_error_when_not_objective(tmp_path: Path) -> None:
     """Test that closing fails if issue lacks erk-objective label."""
     # Issue without erk-objective label
     issue = _create_issue(42, state="OPEN", labels=["bug"])
-    issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
+    fake_remote = _make_remote({42: issue})
 
     ctx = context_for_test(
-        issues=issues_ops,
         cwd=tmp_path,
         repo=_create_repo_context(tmp_path),
+        remote_github=fake_remote,
     )
 
     runner = CliRunner()
@@ -138,18 +156,18 @@ def test_close_objective_error_when_not_objective(tmp_path: Path) -> None:
     assert result.exit_code == 1
     assert "is not an objective" in result.output
     assert "missing 'erk-objective' label" in result.output
-    assert issues_ops.closed_issues == []
+    assert fake_remote.closed_issues == []
 
 
 def test_close_objective_error_when_already_closed(tmp_path: Path) -> None:
     """Test that closing fails if issue is already closed."""
     issue = _create_issue(42, state="CLOSED", labels=["erk-objective"])
-    issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
+    fake_remote = _make_remote({42: issue})
 
     ctx = context_for_test(
-        issues=issues_ops,
         cwd=tmp_path,
         repo=_create_repo_context(tmp_path),
+        remote_github=fake_remote,
     )
 
     runner = CliRunner()
@@ -157,18 +175,18 @@ def test_close_objective_error_when_already_closed(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "already closed" in result.output
-    assert issues_ops.closed_issues == []
+    assert fake_remote.closed_issues == []
 
 
 def test_close_objective_accepts_github_url(tmp_path: Path) -> None:
     """Test closing with a full GitHub URL."""
     issue = _create_issue(123, state="OPEN", labels=["erk-objective"])
-    issues_ops = FakeGitHubIssues(username="testuser", issues={123: issue})
+    fake_remote = _make_remote({123: issue})
 
     ctx = context_for_test(
-        issues=issues_ops,
         cwd=tmp_path,
         repo=_create_repo_context(tmp_path),
+        remote_github=fake_remote,
     )
 
     runner = CliRunner()
@@ -180,18 +198,19 @@ def test_close_objective_accepts_github_url(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "Closed objective #123" in result.output
-    assert issues_ops.closed_issues == [123]
+    assert len(fake_remote.closed_issues) == 1
+    assert fake_remote.closed_issues[0].number == 123
 
 
 def test_close_objective_accepts_p_prefix(tmp_path: Path) -> None:
     """Test closing with P-prefixed issue number."""
     issue = _create_issue(456, state="OPEN", labels=["erk-objective"])
-    issues_ops = FakeGitHubIssues(username="testuser", issues={456: issue})
+    fake_remote = _make_remote({456: issue})
 
     ctx = context_for_test(
-        issues=issues_ops,
         cwd=tmp_path,
         repo=_create_repo_context(tmp_path),
+        remote_github=fake_remote,
     )
 
     runner = CliRunner()
@@ -199,18 +218,19 @@ def test_close_objective_accepts_p_prefix(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "Closed objective #456" in result.output
-    assert issues_ops.closed_issues == [456]
+    assert len(fake_remote.closed_issues) == 1
+    assert fake_remote.closed_issues[0].number == 456
 
 
 def test_close_objective_alias_c_works(tmp_path: Path) -> None:
     """Test that 'c' alias works for close command."""
     issue = _create_issue(42, state="OPEN", labels=["erk-objective"])
-    issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
+    fake_remote = _make_remote({42: issue})
 
     ctx = context_for_test(
-        issues=issues_ops,
         cwd=tmp_path,
         repo=_create_repo_context(tmp_path),
+        remote_github=fake_remote,
     )
 
     runner = CliRunner()
@@ -218,7 +238,8 @@ def test_close_objective_alias_c_works(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert "Closed objective #42" in result.output
-    assert issues_ops.closed_issues == [42]
+    assert len(fake_remote.closed_issues) == 1
+    assert fake_remote.closed_issues[0].number == 42
 
 
 def test_close_objective_requires_issue_ref_argument() -> None:
