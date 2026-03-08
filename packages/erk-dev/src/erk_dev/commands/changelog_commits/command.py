@@ -110,6 +110,11 @@ def get_commit_details(commit_hash: str) -> dict[str, str | list[str] | int | No
     )
     files_changed = [f for f in files_result.stdout.strip().split("\n") if f]
 
+    # Truncate body to reduce JSON output size for agent consumption
+    max_body_length = 300
+    if len(body) > max_body_length:
+        body = body[:max_body_length] + "..."
+
     return {
         "hash": commit_hash,
         "subject": subject,

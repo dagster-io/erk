@@ -44,13 +44,15 @@ This command:
     {
       "hash": "af8fa25c9",
       "subject": "Fix artifact sync... (#3619)",
-      "body": "...",
+      "body": "..." (truncated to 300 chars),
       "files_changed": ["src/erk/artifacts/sync.py", ...],
       "pr_number": 3619
     }
   ]
 }
 ```
+
+**Note:** Commit bodies are truncated to 300 characters for context window efficiency. Full file lists are preserved for pattern detection.
 
 **Error handling:**
 
