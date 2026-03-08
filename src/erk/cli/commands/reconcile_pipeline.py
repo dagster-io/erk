@@ -186,7 +186,6 @@ def process_merged_branch(
                 objective=info.objective_number,
                 pr=info.pr_number,
                 branch=info.branch,
-                plan=int(info.plan_id) if info.plan_id is not None else None,
                 worktree_path=cwd,
             )
             objective_updated = True

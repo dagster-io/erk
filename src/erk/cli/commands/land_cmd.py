@@ -936,7 +936,6 @@ def _execute_land_directly(
             objective=objective_number,
             pr=pr_number,
             branch=branch,
-            plan=int(plan_id) if plan_id is not None else None,
             worktree_path=main_repo_root,
         )
 

@@ -197,7 +197,6 @@ def land_execute(
             objective=objective_number,
             pr=pr_number,
             branch=branch,
-            plan=plan_number,
             worktree_path=main_repo_root,
         )
 
