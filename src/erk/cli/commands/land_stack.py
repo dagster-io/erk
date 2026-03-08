@@ -621,7 +621,8 @@ def _pull_trunk_after_stack_land(
         ctx.git.remote.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
     except RuntimeError:
         user_output(
-            click.style("Warning: ", fg="yellow") + "git pull failed (try running manually)"
+            click.style("Warning: ", fg="yellow")
+            + "git pull failed (try running manually)"
         )
 
 
@@ -636,8 +637,9 @@ def _write_stack_activation_script_if_needed(
         return
 
     target_path = ctx.cwd
-    worktree_gone = current_worktree_path is not None and not ctx.git.worktree.path_exists(
-        current_worktree_path
+    worktree_gone = (
+        current_worktree_path is not None
+        and not ctx.git.worktree.path_exists(current_worktree_path)
     )
     if worktree_gone:
         target_path = main_repo_root
