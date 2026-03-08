@@ -4,6 +4,7 @@
 # Cli Documentation
 
 - **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
+- **[agent-friendly-cli.md](agent-friendly-cli.md)** — adding --json flag to a CLI command, creating or modifying MCP tools, implementing structured JSON output for CLI commands, working on agent-friendly CLI patterns, implementing erk schema command
 - **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
 - **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, CI fails with exec reference check error
 - **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output

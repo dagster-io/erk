@@ -24,6 +24,8 @@ Rules triggered by matching actions in code.
 
 **adding --from-current-branch without handling detached HEAD** → Read [Slot Assign --from-current-branch](slot-assign-from-current-branch.md) first. When the target branch is checked out in another worktree, fall back to detached HEAD checkout. See slot-assign-from-current-branch.md.
 
+**adding --json flag to a command without using @json_output decorator** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands.
+
 **adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
 
 **adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
@@ -74,6 +76,8 @@ Rules triggered by matching actions in code.
 
 **committing .impl/ folder to git** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/ lives in .gitignore and should never be committed. Only .erk/impl-context/ (remote execution artifact) gets committed and later removed.
 
+**creating an MCP tool that parses human-readable CLI output** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. MCP tools must call CLI commands with --json flag and parse structured JSON. Never parse human-readable text output.
+
 **creating exec scripts for operations requiring LLM reasoning between steps** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront.
 
 **deleting a CLI command without checking integration tests** → Read [Command Deletion Patterns](command-deletion-patterns.md) first. Grep tests/integration/ before deleting gateway methods used by the command. Integration tests may directly exercise the deleted method.
@@ -83,6 +87,8 @@ Rules triggered by matching actions in code.
 **displaying user-provided text in Rich CLI tables without escaping** → Read [Objective Commands](objective-commands.md) first. Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear.
 
 **editing or deleting .impl/ folder during implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .erk/impl-context/ should be auto-deleted.
+
+**emitting human-readable text to stdout when --json is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. When --json is active, stdout must contain only the JSON result object. Human output goes to stderr via user_output().
 
 **exec reference check fails in CI** → Read [Auto-Generated Reference Documentation](auto-generated-reference-docs.md) first. Run 'erk-dev gen-exec-reference-docs' via devrun agent. This is routine maintenance after exec script changes, not a bug to investigate.
 
@@ -126,6 +132,8 @@ Rules triggered by matching actions in code.
 
 **mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
+**naming a JSON output flag --json-output instead of --json** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Standardized flag name is --json (not --json-output). See agent-friendly-cli.md for the naming decision.
+
 **parsing roadmap tables to update PR cells** → Read [Update Objective Node Command](commands/update-objective-node.md) first. Use the update-objective-node command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers.
 
 **passing --pr flag to erk pr rewrite** → Read [PR Rewrite Command](pr-rewrite.md) first. Do NOT pass --pr to erk pr rewrite; the command auto-discovers the PR from the current branch. The --pr flag does not exist.
@@ -153,6 +161,8 @@ Rules triggered by matching actions in code.
 **renaming an exec command without updating all 9 reference locations** → Read [Command Rename Checklist](command-rename-checklist.md) first. Follow the 9-place checklist in command-rename-checklist.md to avoid stale references.
 
 **retrieving dependencies in Click commands** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
+
+**returning non-zero exit code when --json flag is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. JSON mode must always exit 0. Errors are communicated via {success: false, error_type, message} in stdout JSON, not via exit codes.
 
 **running any erk exec subcommand** → Read [erk exec Commands](erk-exec-commands.md) first. Check syntax with `erk exec <command> -h` first, or load erk-exec skill for workflow guidance.
 
