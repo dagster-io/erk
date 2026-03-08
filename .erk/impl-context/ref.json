@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Eliminate dual code paths in `erk launch` \u2014 single path via RemoteGitHub"
+}
