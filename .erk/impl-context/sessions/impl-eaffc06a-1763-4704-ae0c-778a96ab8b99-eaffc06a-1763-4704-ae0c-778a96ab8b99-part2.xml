@@ -1,0 +1,40 @@
+<session>
+  <meta branch="plnd/manifest-per-file-metadata-03-08-0533" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_017MRnsAPraYYnAEYsBhwBVu">
+Checking PR #8975 for branch plnd/manifest-per-file-metadata-03-08-0533...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="83849" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01ANHgAR65L6nvaw2VYME9wb">
+    <param name="todos">[{'content': 'Read and understand the current implementation in land_learn.py', 'status': ...[truncated 905 chars]...nt': 'Submit PR via erk pr submit', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="83849" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ANHgAR65L6nvaw2VYME9wb">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of what was implemented:
+
+**Changes made:**
+
+1. **`src/erk/cli/commands/land_learn.py`**:
+   - Updated `_log_session_summary_from_manifest` to accept `xml_files` and `plan_id` keyword arguments
+   - Added manifest source line: `Manifest: planned-pr-context/{plan_id} :: .erk/sessions/manifest.json (N session(s))`
+   - Added per-file rows (dimmed) under each session showing filename and size
+   - Added `_file_size_from_xml_files` helper to look up file sizes by suffix matching
+   - Updated `_collect_session_material` call site to pass the new parameters
+   - Updated `_log_learn_pr_files` to no longer list XML files individually (they're shown in the manifest table), while still counting them in the total
+
+2. **`tests/unit/cli/commands/land/test_land_learn.py`**:
+   - Added tests for `_log_session_summary_from_manifest` (per-file sizes, empty sessions)
+   - Added tests for `_file_size_from_xml_files` (match by suffix, missing file)
+   - Updated `_log_learn_pr_files` tests to reflect that XML filenames are no longer listed individually
+
+**PR:** https://github.com/dagster-io/erk/pull/8975</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="84255" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
