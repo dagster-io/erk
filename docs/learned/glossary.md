@@ -9,7 +9,7 @@ read_when:
   - "working with objectives or turns"
 tripwires:
   - action: "parsing objective roadmap PR column status"
-    warning: "Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan issue), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated."
+    warning: "Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan PR), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated."
 ---
 
 # Erk Glossary
@@ -159,7 +159,7 @@ Erk plan branches follow the pattern `plnd/{slug}-{timestamp}`:
 - `plnd/add-p-prefix-to-branch-nam-12-09-0934`
 - `plnd/fix-auth-bug-01-15-1430`
 
-**Plan-to-branch mapping**: Plan issue numbers are **not** encoded in branch names. `.erk/impl-context/plan-ref.json` is the sole source of truth for mapping plans to branches.
+**Plan-to-branch mapping**: Plan numbers are **not** encoded in branch names. `.erk/impl-context/plan-ref.json` is the sole source of truth for mapping plans to branches.
 
 #### With Objective ID
 
@@ -343,10 +343,10 @@ max_slots = 6
 commands = ["git fetch origin"]
 
 [plans]
-repo = "owner/plans-repo"  # Store plan issues in separate repo
+repo = "owner/plans-repo"  # Store plans in separate repo
 ```
 
-When `[plans] repo` is configured, plan issues are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
+When `[plans] repo` is configured, plans are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
 
 **Access**: Via `load_config(repo_root)` function.
 
@@ -852,7 +852,7 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 
 **Identifying Learn Plans in Code**:
 
-- Issue label: Check for `erk-learn` in `issue.labels`
+- Label: Check for `erk-learn` in the plan's labels
 - Helper function: `is_issue_learn_plan(labels)` in `src/erk/cli/commands/pr/dispatch_cmd.py`
 - Plan metadata: Check `plan_type: learn` in plan-header
 - PR label: PRs from learn plans have `erk-skip-extraction`
@@ -860,7 +860,7 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 **Special Behaviors**:
 
 - `erk land` skips the "not learned from" warning for learn plans (they don't need learning)
-- `/erk:learn` validates the issue has the `erk-learn` label
+- `/erk:learn` validates the plan has the `erk-learn` label
 
 **Purpose**: Prevent valuable learnings from being lost after implementation sessions by systematically documenting patterns, decisions, and discoveries.
 
@@ -874,7 +874,7 @@ A GitHub label added to PRs that originate from learn plans. When `erk land` det
 
 **Applied by**:
 
-- `erk pr dispatch` when the source issue has `plan_type: learn`
+- `erk pr dispatch` when the source plan has `plan_type: learn`
 - `gt finalize` when the `.erk/impl-context/plan.md` has `plan_type: learn`
 
 **Checked by**:
@@ -892,25 +892,25 @@ A GitHub label added to PRs that originate from learn plans. When `erk land` det
 
 ### erk-consolidated
 
-A GitHub label added to issues created by consolidating multiple learn plans. Prevents re-consolidation by `/local:replan-learn-plans`.
+A GitHub label added to plans created by consolidating multiple learn plans. Prevents re-consolidation by `/local:replan-learn-plans`.
 
 **Purpose**: State machine marker that stops the consolidation workflow from picking up its own output.
 
 **Applied by**:
 
-- `/erk:replan` when operating in consolidation mode (multiple source issues)
+- `/erk:replan` when operating in consolidation mode (multiple source plans)
 
 **Checked by**:
 
-- `/local:replan-learn-plans` - Filters out issues with this label before consolidation
+- `/local:replan-learn-plans` - Filters out plans with this label before consolidation
 
 **Lifecycle**:
 
-1. Multiple `erk-learn` issues exist
-2. `/local:replan-learn-plans` consolidates them into single new issue
-3. New issue gets both `erk-learn` and `erk-consolidated` labels
-4. Original issues are closed with reference to new one
-5. Future consolidation runs skip the `erk-consolidated` issue
+1. Multiple `erk-learn` plans exist
+2. `/local:replan-learn-plans` consolidates them into single new plan
+3. New plan gets both `erk-learn` and `erk-consolidated` labels
+4. Original plans are closed with reference to new one
+5. Future consolidation runs skip the `erk-consolidated` plan
 
 **Related**: [Consolidation Labels](planning/consolidation-labels.md), [Learn Plan](#learn-plan)
 

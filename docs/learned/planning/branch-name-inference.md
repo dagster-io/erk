@@ -10,8 +10,8 @@ tripwires:
   - action: "recovering a branch name from a PR number using UI or truncated display"
     warning: "Use `gh pr view <pr-number> --json headRefName` to recover exact branch names. UI display may truncate long branch names."
 read_when:
-  - "debugging missing branch_name in plan issues"
-  - "implementing PR lookup from plan issues"
+  - "debugging missing branch_name in plans"
+  - "implementing PR lookup from plans"
   - "modifying branch creation or naming conventions"
 ---
 

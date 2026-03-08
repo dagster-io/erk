@@ -3,7 +3,7 @@ title: Session-Based Plan Deduplication
 read_when:
   - "understanding duplicate plan prevention"
   - "working with exit-plan-mode hook"
-  - "debugging duplicate issue creation"
+  - "debugging duplicate plan creation"
 tripwires:
   - action: "modifying marker deletion behavior in exit-plan-mode hook"
     warning: "Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates."

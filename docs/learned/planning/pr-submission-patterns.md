@@ -4,12 +4,12 @@ read_when:
   - "creating or updating PRs programmatically in erk"
   - "debugging why a duplicate PR or issue was created"
   - "fixing erk pr check validation failures"
-  - "understanding the PR number vs issue number distinction"
+  - "understanding the PR number vs plan number distinction"
 last_audited: "2026-02-17 16:00 PT"
 audit_result: clean
 tripwires:
-  - action: "using issue number from .erk/impl-context/plan-ref.json in a checkout footer"
-    warning: "Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section."
+  - action: "using plan number from .erk/impl-context/plan-ref.json in a checkout footer"
+    warning: "Checkout footers require the PR number, not the plan number. The plan is the source, the PR is the implementation. See the PR Number vs Plan Number section."
   - action: "creating a PR without first checking if one already exists for the branch"
     warning: "The dispatch pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
   - action: "constructing a PR footer manually instead of using build_pr_body_footer()"
@@ -49,16 +49,16 @@ This two-phase pattern only applies to the core git+gh flow. The Graphite-first 
 
 See `_core_submit_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py` for the placeholder-then-update sequence.
 
-## PR Number vs Issue Number: The Most Common Agent Confusion
+## PR Number vs Plan Number: The Most Common Agent Confusion
 
 Agents regularly confuse these two identifiers because both are readily available during submission. The distinction is critical:
 
-| Identifier   | Source                            | Used for                   |
-| ------------ | --------------------------------- | -------------------------- |
-| Issue number | `.erk/impl-context/plan-ref.json` | `Closes #N` in PR body     |
-| PR number    | `gh pr create` output             | `erk pr checkout N` footer |
+| Identifier  | Source                            | Used for                   |
+| ----------- | --------------------------------- | -------------------------- |
+| Plan number | `.erk/impl-context/plan-ref.json` | `Closes #N` in PR body     |
+| PR number   | `gh pr create` output             | `erk pr checkout N` footer |
 
-**Why agents get this wrong:** During plan-based workflows, `.erk/impl-context/plan-ref.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the _PR_ number, not the issue number, and `erk pr checkout` only accepts PR numbers.
+**Why agents get this wrong:** During plan-based workflows, `.erk/impl-context/plan-ref.json` is immediately accessible and contains a number. The checkout footer also needs a number. The temptation to use the available number for both purposes is strong — but the checkout footer validator matches the _PR_ number, not the plan number, and `erk pr checkout` only accepts PR numbers.
 
 **The diagnostic signal:** If `erk pr check` reports "PR body missing checkout footer" but the footer visually appears present, the number is probably wrong. Compare the number in the footer against `gh pr view --json number`.
 
@@ -83,7 +83,7 @@ See `_extract_closing_ref_from_pr()` in `src/erk/cli/commands/pr/submit_pipeline
 
 ## Related Documentation
 
-- [Issue-PR Closing Integration](../integrations/issue-pr-closing-integration.md) — Full cross-repo closing reference patterns and issue number discovery
+- [Issue-PR Closing Integration](../integrations/issue-pr-closing-integration.md) — Full cross-repo closing reference patterns and plan number discovery
 - [PR Validation Rules](../pr-operations/pr-validation-rules.md) — Complete `erk pr check` validation ruleset and regex patterns
 - [Source Investigation Over Trial-and-Error](debugging-patterns.md) — When to stop guessing and read validator source
 - [Plan Lifecycle](lifecycle.md) — Full plan lifecycle including PR creation phases

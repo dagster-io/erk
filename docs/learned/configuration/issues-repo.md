@@ -1,5 +1,5 @@
 ---
-title: External Issues Repository Configuration
+title: External Plans Repository Configuration
 last_audited: "2026-02-17 09:00 PT"
 audit_result: clean
 read_when:
@@ -7,9 +7,9 @@ read_when:
   - "setting up plans.repo in config.toml"
 ---
 
-# External Issues Repository Configuration
+# External Plans Repository Configuration
 
-Configure erk to store plan issues in a separate repository from your working repository.
+Configure erk to store plans in a separate repository from your working repository.
 
 ## Configuration
 
@@ -20,7 +20,7 @@ In `.erk/config.toml`:
 repo = "owner/repo"
 ```
 
-**Format:** `"owner/repo"` - the GitHub repository where plan issues will be created.
+**Format:** `"owner/repo"` - the GitHub repository where plans will be created.
 
 **Example:**
 
@@ -33,13 +33,13 @@ repo = "myorg/engineering-plans"
 
 When `plans.repo` is set:
 
-- Plan issues are created in the target repository instead of the working repository
+- Plans are created in the target repository instead of the working repository
 - `erk implement` fetches plans from the target repository
 - `erk doctor` checks that required labels exist in the target repository
 
 ## Required Labels
 
-Erk uses these labels to organize plan issues:
+Erk uses these labels to organize plans:
 
 | Label            | Color              | Description                              |
 | ---------------- | ------------------ | ---------------------------------------- |
@@ -61,11 +61,11 @@ If automatic setup fails, create labels manually in GitHub:
 
 ## Use Cases
 
-**Centralized planning:** Store all plan issues in a dedicated repository while implementing in multiple code repositories.
+**Centralized planning:** Store all plans in a dedicated repository while implementing in multiple code repositories.
 
-**Team visibility:** Keep plan issues visible to the team without cluttering the code repository's issue tracker.
+**Team visibility:** Keep plans visible to the team without cluttering the code repository's issue tracker.
 
-**Access separation:** Allow broader access to plan issues while restricting code repository access.
+**Access separation:** Allow broader access to plans while restricting code repository access.
 
 ## Verification
 

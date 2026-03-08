@@ -2,20 +2,20 @@
 title: Branch Naming Conventions
 read_when:
   - "creating or modifying branch name generation"
-  - "extracting issue or objective numbers from branch names"
+  - "extracting objective numbers from branch names"
   - "working with generate_planned_pr_branch_name(), or extract functions"
 tripwires:
   - action: "constructing branch names manually"
     warning: "Use generate_planned_pr_branch_name() for consistent objective ID encoding."
-  - action: "trying to extract plan issue number from branch name"
-    warning: "Plan issue numbers are NOT encoded in branch names. Use plan-ref.json as the sole source of truth."
+  - action: "trying to extract plan number from branch name"
+    warning: "Plan numbers are NOT encoded in branch names. Use plan-ref.json as the sole source of truth."
 last_audited: "2026-02-24 00:00 PT"
 audit_result: clean
 ---
 
 # Branch Naming Conventions
 
-All erk-managed plan branches use the `plnd/` prefix. Plan issue numbers are **not** encoded in branch names — `.erk/impl-context/plan-ref.json` is the sole source of truth for plan-to-branch mapping.
+All erk-managed plan branches use the `plnd/` prefix. Plan numbers are **not** encoded in branch names — `.erk/impl-context/plan-ref.json` is the sole source of truth for plan-to-branch mapping.
 
 ## Canonical Function
 
@@ -51,7 +51,7 @@ plnd/O{objective}-{slug}-{MM-DD-HHMM}
 
 ## Plan-to-Branch Mapping
 
-Since branch names do not encode plan issue numbers, `plan-ref.json` is the sole mechanism for mapping plans to branches:
+Since branch names do not encode plan numbers, `plan-ref.json` is the sole mechanism for mapping plans to branches:
 
 - **`.erk/impl-context/plan-ref.json`** in each worktree contains `provider`, `plan_id`, `url`, etc.
 - **`PlannedPRBackend.get_plan_for_branch()`** resolves plans by looking up the PR associated with the branch

@@ -36,7 +36,7 @@ Rules triggered by matching actions in code.
 
 **putting Closes keyword in PR title or commit message** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. GitHub only processes closing keywords in the PR body. Title and commit message references are ignored.
 
-**resolving issue number from a single source without checking for mismatches** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. Both .erk/impl-context/plan-ref.json and branch name may contain issue numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong issue.
+**resolving plan number from a single source without checking for mismatches** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. Both .erk/impl-context/plan-ref.json and branch name may contain plan numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong plan.
 
 **reusing ClaudePromptExecutor parsing logic for Codex** → Read [Codex CLI JSONL Output Format](codex/codex-jsonl-format.md) first. The two formats share almost nothing structurally. A CodexPromptExecutor needs its own parser — don't parameterize the existing Claude parser.
 
@@ -48,4 +48,4 @@ Rules triggered by matching actions in code.
 
 **using --system-prompt or --allowedTools with codex** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. Codex has no --system-prompt or --allowedTools. Prepend system prompt to user prompt. Tool restriction is not available — this affects execute_prompt() porting.
 
-**using issue number from .erk/impl-context/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the issue number. These are different values — the issue is the plan, the PR is the implementation.
+**using plan number from .erk/impl-context/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the plan number. These are different values — the plan is the source, the PR is the implementation.

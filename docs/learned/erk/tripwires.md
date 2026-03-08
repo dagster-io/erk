@@ -56,7 +56,7 @@ Rules triggered by matching actions in code.
 
 **treating informational_count as including review threads** → Read [PR Feedback Classifier Schema](pr-feedback-classifier-schema.md) first. informational_count covers ONLY discussion comments, not review threads. All unresolved review threads must appear individually in actionable_threads.
 
-**trying to extract plan issue number from branch name** → Read [Branch Naming Conventions](branch-naming.md) first. Plan issue numbers are NOT encoded in branch names. Use plan-ref.json as the sole source of truth.
+**trying to extract plan number from branch name** → Read [Branch Naming Conventions](branch-naming.md) first. Plan numbers are NOT encoded in branch names. Use plan-ref.json as the sole source of truth.
 
 **using `gh codespace create` to create a codespace** → Read [Codespace Machine Types](codespace-machine-types.md) first. The machines endpoint returns HTTP 500 for this repo. Use `POST /user/codespaces` REST API directly. See the workaround section below.
 

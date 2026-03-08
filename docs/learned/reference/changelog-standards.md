@@ -75,7 +75,7 @@ Major Changes use a different format with explanatory prose:
 **Example:**
 
 ```markdown
-- **Plan Review via Temporary PR**: New workflow for asynchronous plan review through draft PRs. Plans can be submitted as temporary PRs for review, with feedback incorporated back into the plan issue. Includes automatic branch management, PR lifecycle handling, and integration with `/erk:pr-address`. (03b9e3a9d, 260f8a059, 46a916ddb, 436045eee, df3bda1a2, 90887e08b, 8f7b8811d, 8c7c66480, 712fffabf, f1c6fcb08, 91c06aaba)
+- **Plan Review via Temporary PR**: New workflow for asynchronous plan review through draft PRs. Plans can be submitted as temporary PRs for review, with feedback incorporated back into the plan. Includes automatic branch management, PR lifecycle handling, and integration with `/erk:pr-address`. (03b9e3a9d, 260f8a059, 46a916ddb, 436045eee, df3bda1a2, 90887e08b, 8f7b8811d, 8c7c66480, 712fffabf, f1c6fcb08, 91c06aaba)
 ```
 
 **Key elements:**

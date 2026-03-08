@@ -30,7 +30,7 @@ This document defines conventions that supplement AGENTS.md. For basic naming (s
 | Type                  | Convention               | Example                          |
 | --------------------- | ------------------------ | -------------------------------- |
 | Issue numbers (`int`) | `_id` suffix             | `objective_id`, `plan_id`        |
-| Issue objects         | No suffix or `_issue`    | `objective`, `plan_issue`        |
+| GitHub Issue objects  | No suffix or `_issue`    | `objective`, `plan_issue`        |
 | String identifiers    | `_identifier` or `_name` | `plan_identifier`, `branch_name` |
 
 **Rationale:** When a variable holds an integer ID (like a GitHub issue number), the `_id` suffix makes the type immediately clear. This distinguishes `objective_id: int` (an issue number) from `objective: ObjectiveInfo` (an object).

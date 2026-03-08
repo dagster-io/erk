@@ -3,7 +3,7 @@ title: PR Discovery Strategies for Plans
 last_audited: "2026-02-16 00:00 PT"
 audit_result: clean
 read_when:
-  - "finding the PR associated with an erk plan issue"
+  - "finding the PR associated with an erk plan"
   - "debugging why get-pr-for-plan returns no-branch-in-plan"
   - "understanding how erk learn finds PRs"
   - "working with plan-header branch_name field"
@@ -16,7 +16,7 @@ tripwires:
 
 # PR Discovery Strategies for Plans
 
-Finding the PR associated with a plan issue is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `erk pr co`, `erk pr close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
+Finding the PR associated with a plan is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `erk pr co`, `erk pr close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
 
 ## Why Two Strategies Exist
 

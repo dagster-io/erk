@@ -864,13 +864,12 @@ Apply mechanical updates to an objective after landing a PR.
 
 **Options:**
 
-| Flag          | Type    | Required | Default        | Description                                               |
-| ------------- | ------- | -------- | -------------- | --------------------------------------------------------- |
-| `--pr`        | INTEGER | No       | -              | PR number (auto-discovered if omitted)                    |
-| `--objective` | INTEGER | No       | -              | Objective issue (auto-discovered if omitted)              |
-| `--branch`    | TEXT    | No       | -              | Branch name (auto-discovered if omitted)                  |
-| `--plan`      | INTEGER | No       | -              | Plan number (direct lookup, skips branch-based discovery) |
-| `--node`      | TEXT    | No       | Sentinel.UNSET | Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2)  |
+| Flag          | Type    | Required | Default        | Description                                              |
+| ------------- | ------- | -------- | -------------- | -------------------------------------------------------- |
+| `--pr`        | INTEGER | No       | -              | PR number (auto-discovered if omitted)                   |
+| `--objective` | INTEGER | No       | -              | Objective issue (auto-discovered if omitted)             |
+| `--branch`    | TEXT    | No       | -              | Branch name (auto-discovered if omitted)                 |
+| `--node`      | TEXT    | No       | Sentinel.UNSET | Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2) |
 
 ### objective-fetch-context
 

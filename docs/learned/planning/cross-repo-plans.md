@@ -3,18 +3,18 @@ title: Cross-Repo Plans
 read_when:
   - "setting up plans in a separate repository"
   - "configuring [plans] repo in config.toml"
-  - "understanding cross-repo issue closing syntax"
+  - "understanding cross-repo plan closing syntax"
 ---
 
 # Cross-Repo Plans
 
-Store plan issues in a dedicated repository while implementing in another.
+Store plans in a dedicated repository while implementing in another.
 
 ## When to Use
 
-- **Private plans**: Keep plan issues in a private repo while implementing in a public repo
+- **Private plans**: Keep plans in a private repo while implementing in a public repo
 - **Centralized planning**: Consolidate all plans across multiple implementation repos
-- **Separation of concerns**: Keep implementation repos focused on code, not planning issues
+- **Separation of concerns**: Keep implementation repos focused on code, not planning
 
 ## Configuration
 
@@ -25,7 +25,7 @@ Add to `{erks_dir}/config.toml`:
 repo = "owner/plans-repo"
 ```
 
-Where `owner/plans-repo` is the GitHub repository that will hold plan issues.
+Where `owner/plans-repo` is the GitHub repository that will hold plans.
 
 ## Behavior
 
