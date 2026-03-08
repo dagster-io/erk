@@ -8,6 +8,7 @@ from erk.cli.cli import cli
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.types import Plan, PlanState
@@ -41,7 +42,32 @@ def test_close_plan_with_plan_number() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store, fake_github = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_github.issues)
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Test Issue",
+                    body="This is a test issue",
+                    state="OPEN",
+                    url="https://github.com/owner/repo/issues/42",
+                    labels=["erk-pr", "erk-plan"],
+                    assignees=[],
+                    created_at=datetime(2024, 1, 1, tzinfo=UTC),
+                    updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+                    author="test-author",
+                )
+            },
+            issue_comments=None,
+            pr_references=None,
+        )
+        ctx = build_workspace_test_context(
+            env, plan_store=store, issues=fake_github.issues, remote_github=fake_remote
+        )
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "42"], obj=ctx)
@@ -60,7 +86,17 @@ def test_close_plan_not_found() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store, _ = create_plan_store_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store)
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={},
+            issue_comments=None,
+            pr_references=None,
+        )
+        ctx = build_workspace_test_context(env, plan_store=store, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "999"], obj=ctx)
@@ -122,8 +158,18 @@ def test_close_plan_closes_linked_open_prs() -> None:
             issues_gateway=fake_issues,
         )
         store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={42: issue},
+            issue_comments=None,
+            pr_references={42: [open_draft_pr, open_non_draft_pr]},
+        )
         ctx = build_workspace_test_context(
-            env, plan_store=store, github=fake_github, issues=fake_issues
+            env, plan_store=store, github=fake_github, issues=fake_issues, remote_github=fake_remote
         )
 
         # Act
@@ -133,9 +179,9 @@ def test_close_plan_closes_linked_open_prs() -> None:
         assert result.exit_code == 0
         assert "Closed plan #42" in result.output
         assert "Closed 2 linked PR(s): #100, #101" in result.output
-        # Verify both linked PRs were closed via FakeLocalGitHub
-        assert 100 in fake_github.closed_prs
-        assert 101 in fake_github.closed_prs
+        # Verify both linked PRs were closed via RemoteGitHub
+        assert any(cp.number == 100 for cp in fake_remote.closed_prs)
+        assert any(cp.number == 101 for cp in fake_remote.closed_prs)
 
 
 def test_close_plan_skips_closed_and_merged_prs() -> None:
@@ -172,8 +218,18 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
             issues_gateway=fake_issues,
         )
         store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={42: issue},
+            issue_comments=None,
+            pr_references={42: [open_pr, closed_pr, merged_pr]},
+        )
         ctx = build_workspace_test_context(
-            env, plan_store=store, github=fake_github, issues=fake_issues
+            env, plan_store=store, github=fake_github, issues=fake_issues, remote_github=fake_remote
         )
 
         # Act
@@ -183,10 +239,10 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
         assert result.exit_code == 0
         assert "Closed plan #42" in result.output
         assert "Closed 1 linked PR(s): #100" in result.output
-        # Only the OPEN linked PR should be in the linked-PR closed output
-        assert 100 in fake_github.closed_prs
-        assert 101 not in fake_github.closed_prs
-        assert 102 not in fake_github.closed_prs
+        # Only the OPEN linked PR should be closed via RemoteGitHub
+        assert any(cp.number == 100 for cp in fake_remote.closed_prs)
+        assert not any(cp.number == 101 for cp in fake_remote.closed_prs)
+        assert not any(cp.number == 102 for cp in fake_remote.closed_prs)
 
 
 def test_close_plan_no_linked_prs() -> None:
@@ -218,8 +274,18 @@ def test_close_plan_no_linked_prs() -> None:
             issues_gateway=fake_issues,
         )
         store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={42: issue},
+            issue_comments=None,
+            pr_references={},  # No linked PRs
+        )
         ctx = build_workspace_test_context(
-            env, plan_store=store, github=fake_github, issues=fake_issues
+            env, plan_store=store, github=fake_github, issues=fake_issues, remote_github=fake_remote
         )
 
         # Act
@@ -238,7 +304,17 @@ def test_close_plan_invalid_identifier() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store, _ = create_plan_store_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store)
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={},
+            issue_comments=None,
+            pr_references=None,
+        )
+        ctx = build_workspace_test_context(env, plan_store=store, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "not-a-number"], obj=ctx)
@@ -255,7 +331,17 @@ def test_close_plan_invalid_url_format() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store, _ = create_plan_store_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store)
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={},
+            issue_comments=None,
+            pr_references=None,
+        )
+        ctx = build_workspace_test_context(env, plan_store=store, remote_github=fake_remote)
 
         # Act - GitHub URL but pointing to pulls instead of issues
         result = runner.invoke(
@@ -302,8 +388,18 @@ def test_close_plan_reports_closed_prs() -> None:
             issues_gateway=fake_issues,
         )
         store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={42: issue},
+            issue_comments=None,
+            pr_references={42: [pr1, pr2, pr3]},
+        )
         ctx = build_workspace_test_context(
-            env, plan_store=store, github=fake_github, issues=fake_issues
+            env, plan_store=store, github=fake_github, issues=fake_issues, remote_github=fake_remote
         )
 
         # Act
@@ -337,8 +433,35 @@ def test_close_plan_with_objective_invokes_update() -> None:
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor()
         store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Test Issue",
+                    body=body_with_header,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/issues/42",
+                    labels=["erk-pr", "erk-plan"],
+                    assignees=[],
+                    created_at=datetime(2024, 1, 1, tzinfo=UTC),
+                    updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+                    author="test-author",
+                )
+            },
+            issue_comments=None,
+            pr_references=None,
+        )
         ctx = build_workspace_test_context(
-            env, plan_store=store, issues=fake_github.issues, prompt_executor=executor
+            env,
+            plan_store=store,
+            issues=fake_github.issues,
+            prompt_executor=executor,
+            remote_github=fake_remote,
         )
 
         # Act
@@ -376,8 +499,35 @@ def test_close_plan_without_objective_skips_update() -> None:
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor()
         store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Test Issue",
+                    body="This is a test issue",
+                    state="OPEN",
+                    url="https://github.com/owner/repo/issues/42",
+                    labels=["erk-pr", "erk-plan"],
+                    assignees=[],
+                    created_at=datetime(2024, 1, 1, tzinfo=UTC),
+                    updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+                    author="test-author",
+                )
+            },
+            issue_comments=None,
+            pr_references=None,
+        )
         ctx = build_workspace_test_context(
-            env, plan_store=store, issues=fake_github.issues, prompt_executor=executor
+            env,
+            plan_store=store,
+            issues=fake_github.issues,
+            prompt_executor=executor,
+            remote_github=fake_remote,
         )
 
         # Act
@@ -413,8 +563,35 @@ def test_close_plan_objective_update_failure_does_not_break_close() -> None:
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor(command_should_fail=True)
         store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        fake_remote = FakeRemoteGitHub(
+            authenticated_user="test-user",
+            default_branch_name="main",
+            default_branch_sha="abc123",
+            next_pr_number=1,
+            dispatch_run_id="run-1",
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Test Issue",
+                    body=body_with_header,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/issues/42",
+                    labels=["erk-pr", "erk-plan"],
+                    assignees=[],
+                    created_at=datetime(2024, 1, 1, tzinfo=UTC),
+                    updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+                    author="test-author",
+                )
+            },
+            issue_comments=None,
+            pr_references=None,
+        )
         ctx = build_workspace_test_context(
-            env, plan_store=store, issues=fake_github.issues, prompt_executor=executor
+            env,
+            plan_store=store,
+            issues=fake_github.issues,
+            prompt_executor=executor,
+            remote_github=fake_remote,
         )
 
         # Act

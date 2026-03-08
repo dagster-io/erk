@@ -9,19 +9,15 @@ import click
 
 from erk.cli.commands.pr.repo_resolution import (
     get_remote_github,
-    is_remote_mode,
     repo_option,
     resolve_owner_repo,
 )
-from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
-from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
 from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
 
 # Event type literals
 EventType: TypeAlias = Literal[
@@ -143,88 +139,22 @@ def pr_log(
         # View from outside a git repo
         $ erk pr log 42 --repo owner/repo
     """
-    if is_remote_mode(ctx, target_repo=target_repo):
-        _pr_log_remote(ctx, identifier, output_json=output_json, target_repo=target_repo)
-    else:
-        _pr_log_local(ctx, identifier, output_json=output_json)
-
-
-def _pr_log_remote(
-    ctx: ErkContext,
-    identifier: str,
-    *,
-    output_json: bool,
-    target_repo: str | None,
-) -> None:
-    """Remote path for pr log using RemoteGitHub."""
     try:
         owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
         remote = get_remote_github(ctx)
 
         plan_number = parse_issue_identifier(identifier)
 
-        # Verify plan exists
         issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
         if isinstance(issue, IssueNotFound):
             user_output(click.style("Error: ", fg="red") + f"Plan '{identifier}' not found")
             raise SystemExit(1)
 
-        # Fetch all comments
         comment_bodies = remote.get_issue_comments(owner=owner, repo=repo_name, number=plan_number)
 
-        # Extract events from all comments
         events = _extract_events_from_comments(comment_bodies)
         events.sort(key=lambda e: e["timestamp"])
 
-        if output_json:
-            _output_json(events)
-        else:
-            _output_timeline(events, plan_number)
-
-    except (RuntimeError, ValueError) as e:
-        user_output(click.style("Error: ", fg="red") + str(e))
-        raise SystemExit(1) from e
-
-
-def _pr_log_local(
-    ctx: ErkContext,
-    identifier: str,
-    *,
-    output_json: bool,
-) -> None:
-    """Local path for pr log using local git context."""
-    try:
-        repo = discover_repo_context(ctx, ctx.cwd)
-        ensure_erk_metadata_dir(repo)
-        repo_root = repo.root
-
-        # Resolve plan identifier to issue number
-        result = ctx.plan_store.get_plan(repo_root, identifier)
-        if isinstance(result, PlanNotFound):
-            user_output(click.style("Error: ", fg="red") + f"Plan '{identifier}' not found")
-            raise SystemExit(1)
-        plan = result
-
-        # Convert plan identifier to issue number (GitHub: issue number as string)
-        if not plan.plan_identifier.isdigit():
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"Invalid plan identifier '{plan.plan_identifier}': not a valid issue number"
-            )
-            raise SystemExit(1)
-
-        plan_number = int(plan.plan_identifier)
-
-        # Fetch all comments for the plan issue
-        comment_bodies = ctx.issues.get_issue_comments(repo_root, plan_number)
-
-        # Extract events from all comments
-        events = _extract_events_from_comments(comment_bodies)
-
-        # Sort events chronologically (oldest first)
-        events.sort(key=lambda e: e["timestamp"])
-
-        # Output events
         if output_json:
             _output_json(events)
         else:

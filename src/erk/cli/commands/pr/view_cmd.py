@@ -6,14 +6,12 @@ import click
 
 from erk.cli.commands.pr.repo_resolution import (
     get_remote_github,
-    is_remote_mode,
     repo_option,
     resolve_owner_repo,
 )
-from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
-from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.core.typing_utils import narrow_to_literal
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.schemas import (
@@ -255,61 +253,19 @@ def pr_view(
         erk pr view 42 --full
         erk pr view 42 --repo owner/repo
     """
-    if is_remote_mode(ctx, target_repo=target_repo):
-        _pr_view_remote(ctx, identifier, full=full, target_repo=target_repo)
-    else:
-        _pr_view_local(ctx, identifier, full=full)
+    repo_root = None if isinstance(ctx.repo, NoRepoSentinel) else ctx.repo.root
+    plan_id: str | None = None
 
-
-def _pr_view_remote(
-    ctx: ErkContext,
-    identifier: str | None,
-    *,
-    full: bool,
-    target_repo: str | None,
-) -> None:
-    """Remote path for pr view using RemoteGitHub."""
+    # If no identifier, infer from branch (local only)
     if identifier is None:
-        user_output(
-            click.style("Error: ", fg="red")
-            + "A plan identifier is required in remote mode (cannot infer from branch).\n"
-            "Usage: erk pr view <number> --repo owner/repo"
-        )
-        raise SystemExit(1)
-
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
-    remote = get_remote_github(ctx)
-
-    plan_number = parse_issue_identifier(identifier)
-
-    issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
-    if isinstance(issue, IssueNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
-        raise SystemExit(1)
-
-    # Convert IssueInfo to Plan using existing conversion
-    plan = github_issue_to_plan(issue)
-    header_info = plan.header_fields
-
-    _display_plan(plan, plan_id=str(plan_number), header_info=header_info, full=full)
-
-
-def _pr_view_local(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
-    """Local path for pr view using local git context."""
-    repo = discover_repo_context(ctx, ctx.cwd)
-    ensure_erk_metadata_dir(repo)
-    repo_root = repo.root
-
-    # Resolve plan: explicit argument or infer from branch
-    if identifier is not None:
-        plan_number = parse_issue_identifier(identifier)
-        if plan_number is None:
-            user_output(click.style("Error: ", fg="red") + f"Invalid identifier: {identifier}")
+        if isinstance(ctx.repo, NoRepoSentinel):
+            user_output(
+                click.style("Error: ", fg="red")
+                + "A plan identifier is required in remote mode (cannot infer from branch).\n"
+                "Usage: erk pr view <number> --repo owner/repo"
+            )
             raise SystemExit(1)
-        result = ctx.plan_store.get_plan(repo_root, str(plan_number))
-        plan_id = str(plan_number)
-    else:
-        # Try to infer from current branch
+
         branch = ctx.git.branch.get_current_branch(ctx.cwd)
         if branch is None:
             user_output(
@@ -319,8 +275,8 @@ def _pr_view_local(ctx: ErkContext, identifier: str | None, *, full: bool) -> No
             user_output("Usage: erk pr view <identifier>")
             user_output("Or run from a plan branch with a plan reference file")
             raise SystemExit(1)
-        result = ctx.plan_backend.get_plan_for_branch(repo_root, branch)
-        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo_root, branch)
+
+        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.repo.root, branch)
         if plan_id is None:
             user_output(
                 click.style("Error: ", fg="red")
@@ -330,17 +286,31 @@ def _pr_view_local(ctx: ErkContext, identifier: str | None, *, full: bool) -> No
             user_output("Or run from a plan branch with a plan reference file")
             raise SystemExit(1)
 
-    if isinstance(result, PlanNotFound):
+        identifier = plan_id
+
+    plan_number = parse_issue_identifier(identifier)
+    if plan_id is None:
+        plan_id = str(plan_number)
+
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+    remote = get_remote_github(ctx)
+
+    issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
+    if isinstance(issue, IssueNotFound):
         user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
         raise SystemExit(1)
-    plan = result
 
-    # Extract header info via plan_backend for branch display and later header section
-    all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, plan_id)
-    if isinstance(all_meta, PlanNotFound):
-        header_info: dict[str, object] = {}
+    plan = github_issue_to_plan(issue)
+
+    # Optional local enrichment for richer header metadata
+    if repo_root is not None:
+        all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, plan_id)
+        if isinstance(all_meta, PlanNotFound):
+            header_info: dict[str, object] = plan.header_fields
+        else:
+            header_info = all_meta
     else:
-        header_info = all_meta
+        header_info = plan.header_fields
 
     _display_plan(plan, plan_id=plan_id, header_info=header_info, full=full)
 
