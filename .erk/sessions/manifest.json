@@ -5,8 +5,8 @@
     {
       "session_id": "c7fde458-616f-44fd-9a37-17d9ab828c8b",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-08T01:16:08.117140+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T01:17:01.173354+00:00",
       "files": [
         "impl-c7fde458-616f-44fd-9a37-17d9ab828c8b-c7fde458-616f-44fd-9a37-17d9ab828c8b-part1.xml",
         "impl-c7fde458-616f-44fd-9a37-17d9ab828c8b-c7fde458-616f-44fd-9a37-17d9ab828c8b-part2.xml",
@@ -14,12 +14,13 @@
         "impl-c7fde458-616f-44fd-9a37-17d9ab828c8b-c7fde458-616f-44fd-9a37-17d9ab828c8b-part4.xml",
         "impl-c7fde458-616f-44fd-9a37-17d9ab828c8b-c7fde458-616f-44fd-9a37-17d9ab828c8b-part5.xml",
         "impl-c7fde458-616f-44fd-9a37-17d9ab828c8b-c7fde458-616f-44fd-9a37-17d9ab828c8b-part6.xml",
-        "impl-c7fde458-616f-44fd-9a37-17d9ab828c8b-c7fde458-616f-44fd-9a37-17d9ab828c8b-part7.xml"
+        "impl-c7fde458-616f-44fd-9a37-17d9ab828c8b-c7fde458-616f-44fd-9a37-17d9ab828c8b-part7.xml",
+        "impl-c7fde458-616f-44fd-9a37-17d9ab828c8b-c7fde458-616f-44fd-9a37-17d9ab828c8b-part8.xml"
       ],
       "user_turns": 2,
       "duration_minutes": 6,
-      "raw_size_kb": 524,
-      "xml_size_kb": 97,
+      "raw_size_kb": 543,
+      "xml_size_kb": 104,
       "git_branch": "plnd/remove-plan-flag-03-08-0106"
     }
   ]

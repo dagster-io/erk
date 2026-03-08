@@ -1,20 +1,160 @@
 <session>
-  <meta source="agent-ac78130" />
+  <meta source="agent-a86e866" />
   <meta branch="plnd/remove-plan-flag-03-08-0106" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Run `uv run ruff check src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py` and report results. Do NOT fix anything.</user>
-  <assistant>I'll run the ruff check on that file and report the results.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="5871" cache_read_input_tokens="6466" cache_creation="{'ephemeral_5m_input_tokens': 5871, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01BTp64zryiboyFBE1acuvWX">
-    <param name="command">uv run ruff check src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
-    <param name="description">Run ruff check on objective_apply_landed_update.py</param>
+  <user>Find the implementation of `PlannedPRBackend.get_plan` in the codebase. Read the file that contains it. I need to understand how it resolves a plan from a number. Look in src/erk_shared/plan_store/ or similar paths.</user>
+  <assistant>I'll help you find and understand the implementation of `PlannedPRBackend.get_plan`. Let me search for it in the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="12062" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012AGXzYoxT3rVH3jiFNBJ6G">
+    <param name="pattern">class PlannedPRBackend</param>
+    <param name="path">/home/runner/work/erk/erk</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="5871" cache_read_input_tokens="6466" cache_creation="{'ephemeral_5m_input_tokens': 5871, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01BTp64zryiboyFBE1acuvWX">
-All checks passed!
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="12062" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MZjQaVYUBPp2Whbhc9P8up">
+    <param name="pattern">def get_plan</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6792" cache_read_input_tokens="12062" cache_creation="{'ephemeral_5m_input_tokens': 6792, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012AGXzYoxT3rVH3jiFNBJ6G">
+Found 2 files
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+.claude/skills/fake-driven-testing/references/gateway-architecture.md
   </tool_result>
-  <assistant>**Result:** ruff check passed
+  <tool_result tool="toolu_01MZjQaVYUBPp2Whbhc9P8up">
+Found 19 files
+src/erk/core/services/plan_list_service.py
+src/erk/core/plan_context_provider.py
+src/erk/cli/commands/exec/scripts/get_plan_info.py
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+packages/erk-statusline/src/erk_statusline/statusline.py
+packages/erk-shared/src/erk_shared/scratch/plan_snapshots.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+packages/erk-shared/src/erk_shared/gateway/erk_installation/abc.py
+packages/erk-shared/src/erk_shared/gateway/erk_installation/fake.py
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py
+packages/erk-shared/src/erk_shared/gateway/claude_installation/abc.py
+packages/erk-shared/src/erk_shared/gateway/claude_installation/fake.py
+packages/erk-shared/src/erk_shared/gateway/claude_installation/real.py
+packages/erk-shared/src/erk_shared/core/fakes.py
+packages/erk-shared/src/erk_shared/core/plan_list_service.py
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <assistant>Found it! Let me read the PlannedPRBackend implementation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="742" cache_read_input_tokens="18854" cache_creation="{'ephemeral_5m_input_tokens': 742, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JAbmz5FKaSkLF9rQe7azCH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="742" cache_read_input_tokens="18854" cache_creation="{'ephemeral_5m_input_tokens': 742, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JAbmz5FKaSkLF9rQe7azCH">
+     1→"""Draft PR implementation of plan storage.
+     2→
+     3→Uses GitHub draft pull requests as the backing store for plans.
+     4→PR body contains the plan-header metadata block followed by plan content.
+     5→The "erk-plan" label identifies plan PRs vs regular draft PRs.
+     6→"""
+     7→
+     8→import logging
+     9→from collections.abc import Mapping
+    10→from datetime import UTC
+    11→from pathlib import Path
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    add_metadata_block,
+    18→    find_metadata_block,
+    19→    has_metadata_block,
+    20→    render_metadata_block,
+    21→    replace_metadata_block_in_body,
+    22→)
+    23→from erk_shared.gateway.github.metadata.plan_header import (
+    24→    format_plan_header_body,
+    25→)
+    26→from erk_shared.gateway.github.metadata.schemas import (
+    27→    CREATED_FROM_SESSION,
+    28→    CREATED_FROM_WORKFLOW_RUN_URL,
+    29→    LEARNED_FROM_ISSUE,
+    30→    OBJECTIVE_ISSUE,
 
-All checks passed on `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py`</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="138" cache_read_input_tokens="12337" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+... [691 lines omitted] ...
+
+    47→    PlanHeaderNotFoundError,
+    68→        ValueError: If value cannot be converted to int
+    76→    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+   241→            RuntimeError: If PR not found
+   247→            raise RuntimeError(msg)
+   284→            RuntimeError: If branch_name not in metadata or creation fails
+   288→            raise RuntimeError("branch_name is required in metadata for PlannedPRBackend")
+   370→        # Add labels with retry on transient errors
+   380→                _logger.warning(
+   381→                    "Failed to add labels to PR #%d: %s",
+   383→                    label_result.failed_labels,
+   465→            PlanHeaderNotFoundError: If PR body has no plan-header metadata block
+   466→            RuntimeError: If PR not found or update fails
+   472→            raise RuntimeError(msg)
+   476→            raise PlanHeaderNotFoundError("plan-header block not found in PR body")
+   516→            RuntimeError: If PR not found
+   522→            raise RuntimeError(msg)
+   553→            RuntimeError: If PR not found or update fails
+   559→            raise RuntimeError(msg)
+   582→            RuntimeError: If PR not found
+   588→            raise RuntimeError(msg)
+   608→            RuntimeError: If PR not found
+   614→            raise RuntimeError(msg)
+   633→            RuntimeError: If PR not found
+   639→            raise RuntimeError(msg)
+   696→            RuntimeError: If PR not found
+  </tool_result>
+  <assistant>Perfect! I found the implementation. Here's the analysis of `PlannedPRBackend.get_plan`:
+
+## Implementation of `PlannedPRBackend.get_plan`
+
+Located at: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py` (lines 153-167)
+
+```python
+def get_plan(self, repo_root: Path, plan_id: str) -&gt; Plan | PlanNotFound:
+    """Fetch plan from a draft PR by PR number.
+
+    Args:
+        repo_root: Repository root directory
+        plan_id: PR number as string (e.g., "42")
+
+    Returns:
+        Plan with converted data, or PlanNotFound if PR does not exist
+    """
+    pr_number = int(plan_id)
+    result = self._github.get_pr(repo_root, pr_number)
+    if isinstance(result, PRNotFound):
+        return PlanNotFound(plan_id=plan_id)
+    return self._convert_to_plan(result)
+```
+
+### How It Resolves a Plan from a Number:
+
+1. **String to Integer Conversion**: Takes the `plan_id` string (e.g., "42") and converts it to an integer with `int(plan_id)`
+
+2. **GitHub API Call**: Calls `self._github.get_pr(repo_root, pr_number)` to fetch the PR details from the GitHub gateway. This is a direct API call to get the PR by its number.
+
+3. **Error Handling**: Uses discriminated union pattern - checks if the result is a `PRNotFound` error:
+   - If not found: Returns a `PlanNotFound` object with the original plan_id
+   - If found: Proceeds to conversion
+
+4. **Conversion**: Calls `self._convert_to_plan(result)` (lines 702-715) which:
+   - Extracts the plan content from the PR body using `extract_plan_content(pr.body)`
+   - Converts the `PRDetails` to a `Plan` object using `pr_details_to_plan(pr, plan_body=plan_body)`
+   - Returns the constructed `Plan` object
+
+### Key Architecture Points:
+
+- **Backing Store**: Plans are stored as GitHub draft pull requests
+- **Plan Storage Format**: PR body contains a metadata block followed by the actual plan content
+- **Gateway Composition**: Uses injected `LocalGitHub` gateway to handle all GitHub API interactions
+- **Error Pattern**: Uses discriminated unions (`Plan | PlanNotFound`) instead of exceptions for error handling
+
+The implementation is straightforward and delegates the actual GitHub API work to the `LocalGitHub` gateway abstraction, following the gateway pattern used throughout erk.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="9066" cache_read_input_tokens="19596" cache_creation="{'ephemeral_5m_input_tokens': 9066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>

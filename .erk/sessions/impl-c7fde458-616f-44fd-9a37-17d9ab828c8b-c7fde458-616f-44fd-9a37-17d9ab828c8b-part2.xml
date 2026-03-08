@@ -1,20 +1,56 @@
 <session>
-  <meta source="agent-a179f29" />
   <meta branch="plnd/remove-plan-flag-03-08-0106" />
-  <meta model="claude-haiku-4-5-20251001" />
-  <user>Run `uv run ty check src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py` and report results. Do NOT fix anything.</user>
-  <assistant>I'll run the type checker on that file and report the results.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="5870" cache_read_input_tokens="6466" cache_creation="{'ephemeral_5m_input_tokens': 5870, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01Gx3Z8Gtx7NW42Loq6iKVaF">
-    <param name="command">uv run ty check src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
-    <param name="description">Run type check on objective_apply_landed_update.py</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="5870" cache_read_input_tokens="6466" cache_creation="{'ephemeral_5m_input_tokens': 5870, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Gx3Z8Gtx7NW42Loq6iKVaF">
-All checks passed!
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01VodAD4BjF3AitDZsPq1pkF">
+plan.md
+plnd--remove-plan-flag-03-08-0106
+ref.json
+run-info.json
   </tool_result>
-  <assistant>ty passed: All checks passed!
+  <tool_use name="Bash" id="toolu_01AMxY9Ya5ey6oF5ztsvJX9N">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/ &amp;&amp; git -C /home/runner/work/erk/erk add -A .erk/impl-context/ 2&gt;/dev/null; git -C /home/runner/work/erk/erk status --short .erk/</param>
+    <param name="description">Remove impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="84378" cache_creation="{'ephemeral_5m_input_tokens': 160, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AMxY9Ya5ey6oF5ztsvJX9N">
 
-The file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py` has no type checking errors.</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="135" cache_read_input_tokens="12336" cache_creation="{'ephemeral_5m_input_tokens': 135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  </tool_result>
+  <assistant>The directory was untracked (no git changes). Let me check if `erk pr check` looks for the directory on disk:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="84538" cache_creation="{'ephemeral_5m_input_tokens': 264, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DLqjBCPTDggGf73Lb2mgr5">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Re-validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="84538" cache_creation="{'ephemeral_5m_input_tokens': 264, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DLqjBCPTDggGf73Lb2mgr5">
+Checking PR #8943 for branch plnd/remove-plan-flag-03-08-0106...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass. Plan execution complete.
+
+**Summary of changes:**
+
+1. **`src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py`**:
+   - Removed `--plan` Click option and `plan_number` parameter
+   - Removed branch-based plan discovery fallback (`get_plan_for_branch`)
+   - Moved PR resolution before plan resolution
+   - Plan is now resolved using `pr_number` directly (the PR IS the plan)
+
+2. **`tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py`**:
+   - Removed all `--plan` args from test invocations
+   - Aligned plan number = PR number (6517) across all tests
+   - Removed `test_plan_direct_lookup_skips_branch_discovery` and `test_plan_direct_lookup_not_found` (tested the `--plan` flag specifically)
+   - Replaced `test_bad_branch_no_plan` with `test_plan_not_found_for_pr` (tests plan-not-found for a given PR number)
+   - Removed unused `issue_info_to_pr_details` import
+
+3. **`.claude/commands/erk/system/objective-update-with-landed-pr.md`**:
+   - Removed `--plan &lt;number&gt;` from documented flags and examples
+   - Updated `--pr` description to note it's also used as the plan number
+
+PR: https://github.com/dagster-io/erk/pull/8943</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="84802" cache_creation="{'ephemeral_5m_input_tokens': 179, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
