@@ -20,6 +20,28 @@
       "raw_size_kb": 1052,
       "xml_size_kb": 137,
       "git_branch": "plnd/O8950-per-pr-reconcile-rep-03-08-1136"
+    },
+    {
+      "session_id": "4723d29e-e521-4784-9435-10e808c215a1",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-08T11:51:15.944412+00:00",
+      "files": [
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part1.xml",
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part2.xml",
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part3.xml",
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part4.xml",
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part5.xml",
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part6.xml",
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part7.xml",
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part8.xml",
+        "impl-4723d29e-e521-4784-9435-10e808c215a1-4723d29e-e521-4784-9435-10e808c215a1-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 9,
+      "raw_size_kb": 1091,
+      "xml_size_kb": 159,
+      "git_branch": "plnd/O8950-per-pr-reconcile-rep-03-08-1136"
     }
   ]
 }
