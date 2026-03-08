@@ -1,0 +1,874 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>➜  erk git:(master) erk config list
+Global configuration:
+  erk_root=/Users/schrockn/.erk
+  use_graphite=true
+  github_planning=true
+  live_dangerously=true
+  show_hidden_commands=true
+  prompt_learn_on_land=true
+  shell_integration=false
+  cmux_integration=true
+
+Interactive Claude configuration:
+  interactive_claude.backend=claude
+  interactive_claude.verbose=true
+  interactive_claude.permission_mode=edits
+  interactive_claude.dangerous=true
+  interactive_claude.allow_dangerous=true
+
+
+Repository configuration:
+  trunk-branch=master
+  pool.max_slots=64 (local)
+
+let's clean this up
+
+delete   shell_integration=false
+
+first
+
+and then scour codebase for references to it</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14485" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14485}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011VsWmfgDkKwWjzPQgguAGN">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find shell_integration references</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+Find ALL refe...[truncated 151 chars]... that reads or uses this setting
+
+Report every file path and line number where it appears.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14485" cache_read_input_tokens="9738" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011VsWmfgDkKwWjzPQgguAGN">
+Perfect! Now let me compile the complete findings. Based on my thorough search, here are ALL the references to `shell_integration` across the entire codebase:
+
+## Summary of All `shell_integration` References
+
+### Configuration Definition &amp; Registration
+
+**1. /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py**
+- Line 239: Field definition in GlobalConfig dataclass: `shell_integration: bool = False`
+- Line 253: Test helper parameter: `shell_integration: bool = False`
+- Line 266: Test helper assignment: `shell_integration=shell_integration`
+
+**2. /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/config/schema.py**
+- Line 110-113: GlobalConfigSchema field definition with metadata
+  ```python
+  shell_integration: bool = Field(
+      description="Enable auto-navigation shell integration (opt-in)",
+      json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "shell_integration"},
+  )
+  ```
+
+**3. /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py**
+- Line 81: Reading from TOML config: `shell_integration=bool(data.get("shell_integration", False))`
+- Line 141: Writing to TOML config: `doc["shell_integration"] = config.shell_integration`
+
+**4. /Users/schrockn/code/erk/packages/erk-shared/tests/unit/config/test_schema.py**
+- Line 32: Expected field in schema: `"shell_integration"`
+- Line 144: Assertion that shell_integration is overridable: `assert "shell_integration" in keys`
+
+### Usage/Reference in Code
+
+
+... [90 lines omitted] ...
+
+- Line 63: Error message about `output_for_shell_integration()`
+  </tool_result>
+  <assistant>This is a substantial feature with references across ~15+ files. Let me read the key files to understand what shell_integration actually does and how deep the removal goes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2278" cache_read_input_tokens="24223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KJ9BwqG1H1gaBMovRrSvat">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/script_writer.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2278" cache_read_input_tokens="24223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KJ9BwqG1H1gaBMovRrSvat">
+     1→"""Shell activation script writing abstraction - ABC and types.
+     2→
+     3→This module provides ScriptResult and the abstract ScriptWriter interface.
+     4→The real implementation (RealScriptWriter) remains in erk.core.script_writer.
+     5→
+     6→ScriptResult is a self-documenting return type for commands that generate shell
+     7→activation scripts. The key insight is that ScriptResult knows how to output
+     8→itself correctly to the right stream (stdout vs stderr), preventing an entire
+     9→class of shell integration bugs.
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class ScriptResult:
+    19→    """Result of writing an activation script.
+    20→
+    21→    Attributes:
+    22→        path: Path to the script file (may be sentinel in tests)
+    23→        content: Full content of the script including headers
+    24→        _output_performed: Private flag tracking if output has been performed (for idempotency)
+    25→    """
+    26→
+    27→    path: Path
+    28→    content: str
+    29→    _output_performed: bool = False
+    30→
+
+... [141 lines omitted] ...
+
+    40→        times on the same instance will raise ValueError.
+    58→            ValueError: If output has already been performed for this ScriptResult.
+    62→            raise ValueError(
+    86→        times on the same instance will raise ValueError.
+    95→            ValueError: If output has already been performed for this ScriptResult.
+    99→            raise ValueError(
+  </tool_result>
+  <tool_use name="Read" id="toolu_0152Xqfm3FaK5L65SFNi6SFb">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">420</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2278" cache_read_input_tokens="24223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0152Xqfm3FaK5L65SFNi6SFb">
+   420→def branch_checkout(
+   421→    ctx: ErkContext,
+   422→    branch: str | None,
+   423→    for_plan: str | None,
+   424→    no_slot: bool,
+   425→    new_slot: bool,
+   426→    force: bool,
+   427→    script: bool,
+   428→) -&gt; None:
+   429→    """Checkout BRANCH by finding and switching to its worktree.
+   430→
+   431→    Prints the activation path for the target worktree. Enable shell integration
+   432→    for automatic navigation: erk config set shell_integration true
+   433→
+   434→    This command finds which worktree has the specified branch checked out
+   435→    and switches to it. If the branch exists but isn't checked out anywhere,
+   436→    a worktree is automatically created. If the branch exists on origin but
+   437→    not locally, a tracking branch and worktree are created automatically.
+   438→
+   439→    Use --for-plan to resolve a plan and set up .erk/impl-context/ after checkout.
+   440→
+   441→    Examples:
+   442→
+   443→        erk br co feature/user-auth      # Checkout existing worktree
+   444→
+   445→        erk br co unchecked-branch       # Auto-create worktree
+   446→
+   447→        erk br co --for-plan 123         # Checkout plan branch with .erk/impl-context/ setup
+   448→
+   449→    If multiple worktrees contain the branch, all options are shown.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XmZKmK2unKaQVKcmMUoYtq">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/stack/consolidate_cmd.py</param>
+    <param name="offset">455</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2278" cache_read_input_tokens="24223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XmZKmK2unKaQVKcmMUoYtq">
+   455→            final_message='echo "✓ Went to consolidated worktree."',
+   456→            comment="work activate-script (consolidate)",
+   457→        )
+   458→        activation_result = ctx.script_writer.write_activation_script(
+   459→            script_content,
+   460→            command_name="consolidate",
+   461→            comment=f"activate {name}",
+   462→        )
+   463→        activation_result.output_for_shell_integration()
+   464→
+   465→    # Remove worktrees and collect paths for progress output
+   466→    removed_paths: list[Path] = []
+   467→    unassigned_slots: list[str] = []
+   468→
+   469→    for wt in worktrees_to_remove:
+   470→        removed_path, slot_name = _remove_worktree_slot_aware(ctx, repo, wt)
+   471→        if removed_path is not None:
+   472→            removed_paths.append(removed_path)
+   473→        if slot_name is not None:
+   474→            unassigned_slots.append(slot_name)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3187" cache_read_input_tokens="26501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3187}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015ixkh2HTrhQwdw2WtxJZYu">
+    <param name="pattern">shell_integration</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+    <param name="-C">3</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3187" cache_read_input_tokens="26501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3187}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015ixkh2HTrhQwdw2WtxJZYu">
+src/erk/cli/commands/navigation_helpers.py-392-        debug_log(f"{command_name.capitalize()}: Script content:\n{activation_script}")
+src/erk/cli/commands/navigation_helpers.py-393-        debug_log(f"{command_name.capitalize()}: File exists? {result.path.exists()}")
+/Users/schrockn/code/erk/src/erk/cli/commands/navigation_helpers.py-394-
+src/erk/cli/commands/navigation_helpers.py:395:        result.output_for_shell_integration()
+src/erk/cli/commands/navigation_helpers.py-396-    else:
+/Users/schrockn/code/erk/src/erk/cli/commands/navigation_helpers.py-397-        script_path = ensure_worktree_activate_script(
+/Users/schrockn/code/erk/src/erk/cli/commands/navigation_helpers.py-398-            worktree_path=target_path,
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/wt/create_cmd.py-977-            command_name="create",
+/Users/schrockn/code/erk/src/erk/cli/commands/wt/create_cmd.py-978-            comment=f"cd to {name}",
+/Users/schrockn/code/erk/src/erk/cli/commands/wt/create_cmd.py-979-        )
+src/erk/cli/commands/wt/create_cmd.py:980:        result.output_for_shell_integration()
+src/erk/cli/commands/wt/create_cmd.py-981-    elif output_json:
+/Users/schrockn/code/erk/src/erk/cli/commands/wt/create_cmd.py-982-        # Output JSON with worktree information
+/Users/schrockn/code/erk/src/erk/cli/commands/wt/create_cmd.py-983-        json_response = _create_json_response(
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-337-            command_name="branch-checkout",
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-338-            comment=f"branch checkout --for-plan {setup.plan_number}",
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-339-        )
+src/erk/cli/commands/branch/checkout_cmd.py:340:        result.output_for_shell_integration()
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-341-        sys.exit(0)
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-342-
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-343-    user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-429-    """Checkout BRANCH by finding and switching to its worktree.
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-430-
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-431-    Prints the activation path for the target worktree. Enable shell integration
+src/erk/cli/commands/branch/checkout_cmd.py:432:    for automatic navigation: erk config set shell_integration true
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-433-
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-434-    This command finds which worktree has the specified branch checked out
+
+... [41 lines omitted] ...
+
+/Users/schrockn/code/erk/src/erk/cli/commands/checkout_helpers.py-41-        comment="checkout error",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JXcL6LfZbMuX8MoNNsBqab">
+    <param name="pattern">\.shell_integration</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3187" cache_read_input_tokens="26501" output_tokens="386" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3187, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JXcL6LfZbMuX8MoNNsBqab">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-136-        doc["shell_setup_complete"] = config.shell_setup_complete
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-137-        doc["github_planning"] = config.github_planning
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-138-        doc["live_dangerously"] = config.live_dangerously
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-139-        doc["show_hidden_commands"] = config.show_hidden_commands
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-140-        doc["prompt_learn_on_land"] = config.prompt_learn_on_land
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py:141:        doc["shell_integration"] = config.shell_integration
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-142-        doc["cmux_integration"] = config.cmux_integration
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-143-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-144-        # Add [interactive-agent] section if any non-default values are set
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-145-        ic = config.interactive_agent
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py-146-        ic_default = InteractiveAgentConfig.default()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3439" cache_read_input_tokens="29688" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3439}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AFeWPhAVGJMuG2srxwzaWn">
+    <param name="pattern">config\.shell_integration|global_config\.shell_integration|ctx\..*shell_integration</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+    <param name="glob">*.py</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3439" cache_read_input_tokens="29688" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3439}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AFeWPhAVGJMuG2srxwzaWn">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DoBVejgKyAjyZ69bRnwJtz">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/navigation_helpers.py</param>
+    <param name="offset">375</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3439" cache_read_input_tokens="29688" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3439}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DoBVejgKyAjyZ69bRnwJtz">
+   375→        activate_comment = f"activate {target_name}"
+   376→
+   377→    if script:
+   378→        activation_script = render_activation_script(
+   379→            worktree_path=target_path,
+   380→            target_subpath=relative_path,
+   381→            post_cd_commands=post_cd_commands,
+   382→            final_message=final_message,
+   383→            comment=script_comment,
+   384→        )
+   385→        result = ctx.script_writer.write_activation_script(
+   386→            activation_script,
+   387→            command_name=command_name,
+   388→            comment=activate_comment,
+   389→        )
+   390→
+   391→        debug_log(f"{command_name.capitalize()}: Generated script at {result.path}")
+   392→        debug_log(f"{command_name.capitalize()}: Script content:\n{activation_script}")
+   393→        debug_log(f"{command_name.capitalize()}: File exists? {result.path.exists()}")
+   394→
+   395→        result.output_for_shell_integration()
+   396→    else:
+   397→        script_path = ensure_worktree_activate_script(
+   398→            worktree_path=target_path,
+   399→            post_create_commands=None,
+   400→        )
+   401→        print_activation_instructions(
+   402→            script_path,
+   403→            source_branch=source_branch,
+   404→            force=force,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ttc4c6mcjcCzLqYm2LRbaz">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/implement_shared.py</param>
+    <param name="offset">560</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3439" cache_read_input_tokens="29688" output_tokens="488" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ttc4c6mcjcCzLqYm2LRbaz">
+   560→    """
+   561→    if script:
+   562→        # Build command sequence
+   563→        commands = build_command_sequence(submit)
+   564→
+   565→        # Generate activation script with commands
+   566→        full_script = build_activation_script_with_commands(wt_path, commands, dangerous, model)
+   567→
+   568→        comment_suffix = "implement, CI, and submit" if submit else "implement"
+   569→        result = ctx.script_writer.write_activation_script(
+   570→            full_script,
+   571→            command_name="implement",
+   572→            comment=f"activate {wt_path.name} and {comment_suffix}",
+   573→        )
+   574→
+   575→        result.output_for_shell_integration()
+   576→    else:
+   577→        # Provide manual instructions
+   578→        user_output("\n" + click.style("Next steps:", fg="cyan", bold=True))
+   579→        user_output(f"  1. Change to worktree:  erk br co {branch}")
+   580→        if submit:
+   581→            impl_cmd = build_claude_command("/erk:plan-implement", dangerous, model)
+   582→            user_output("  2. Run implementation, CI, and submit PR:")
+   583→            user_output(f"     {impl_cmd}")
+   584→            user_output(f"     {build_claude_command('/fast-ci', dangerous, model)}")
+   585→            user_output(f"     {build_claude_command('/gt:pr-submit', dangerous, model)}")
+   586→        else:
+   587→            claude_cmd = build_claude_command("/erk:plan-implement", dangerous, model)
+   588→            user_output(f"  2. Run implementation:  {claude_cmd}")
+   589→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1723" cache_read_input_tokens="33127" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1723}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The config value `shell_integration` is never actually read in source code - the `--script` flag controls behavior, not the config. The `output_for_shell_integration()` method name is just a naming convention on `ScriptResult`, unrelated to the config boolean.
+
+Let me check where `shell_integration` config is actually consumed (if anywhere beyond read/write).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1723" cache_read_input_tokens="33127" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1723}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RbaVFx9VRHwWg5KPFzPcyp">
+    <param name="pattern">shell_integration</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1723" cache_read_input_tokens="33127" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1723}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RbaVFx9VRHwWg5KPFzPcyp">
+src/erk/cli/commands/wt/create_cmd.py:980:        result.output_for_shell_integration()
+src/erk/cli/commands/navigation_helpers.py:395:        result.output_for_shell_integration()
+src/erk/cli/commands/stack/consolidate_cmd.py:463:        activation_result.output_for_shell_integration()
+src/erk/cli/commands/implement_shared.py:575:        result.output_for_shell_integration()
+src/erk/cli/commands/checkout_helpers.py:43:    result.output_for_shell_integration()
+src/erk/cli/commands/checkout_helpers.py:212:        result.output_for_shell_integration()
+src/erk/cli/commands/branch/checkout_cmd.py:340:        result.output_for_shell_integration()
+src/erk/cli/commands/branch/checkout_cmd.py:432:    for automatic navigation: erk config set shell_integration true
+src/erk/cli/commands/branch/create_cmd.py:277:            result.output_for_shell_integration()
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UE3oapAotSEHKqjVXRpeJ6">
+    <param name="pattern">shell_integration</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.md</param>
+    <param name="path">/Users/schrockn/code/erk/docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1723" cache_read_input_tokens="33127" output_tokens="460" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1723, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UE3oapAotSEHKqjVXRpeJ6">
+docs/ref/configuration.md:22:| `shell_integration` | boolean | Enable auto-navigation when switching worktrees |
+docs/ref/configuration.md:30:shell_integration = true
+docs/learned/configuration/config-layers.md:35:- `shell_integration` - Enable auto-navigation shell integration (default: `false`)
+docs/learned/glossary.md:315:shell_integration = true  # Enable auto-navigation for erk up/down/checkout
+docs/learned/architecture/globalconfig-field-addition.md:73:- `shell_integration: bool` — shell integration active
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01AF3xy11FG6fd3MEfXFeAQu">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="34850" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 955, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AF3xy11FG6fd3MEfXFeAQu">
+
+  </tool_result>
+  <assistant>
+
+Good news: the `shell_integration` config boolean is **dead code** — it's stored and serialized but never actually read to gate any behavior. The `output_for_shell_integration()` method on `ScriptResult` is a separate concept (it's about outputting to stdout for the shell handler) and should be kept.
+
+Scope of removal:
+
+**Config infrastructure (remove `shell_integration` field):**
+1. `packages/erk-shared/src/erk_shared/context/types.py` — field in `GlobalConfig` + test helper
+2. `packages/erk-shared/src/erk_shared/config/schema.py` — schema field
+3. `packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py` — TOML read/write
+4. `packages/erk-shared/tests/unit/config/test_schema.py` — schema tests
+
+**Documentation references (remove mentions):**
+5. `src/erk/cli/commands/branch/checkout_cmd.py:432` — docstring mention
+6. `docs/ref/configuration.md` — config reference
+7. `docs/learned/configuration/config-layers.md` — config layers doc
+8. `docs/learned/glossary.md` — glossary mention
+9. `docs/learned/architecture/globalconfig-field-addition.md` — field list
+
+**NOT touching** (different concept):
+- `ScriptResult.output_for_shell_integration()` — this is about stdout routing, not the config
+- All `result.output_for_shell_integration()` call sites — these use the `--script` flag, not the config</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="35805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01YQfthPcoC9URsYwa6sWpWB">
+    <param name="questions">[{'question': 'The `output_for_shell_integration()` method on ScriptResult and all its cal...[truncated 396 chars]...() to something else to avoid confusion with the removed config'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="35805" output_tokens="591" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YQfthPcoC9URsYwa6sWpWB">
+User has answered your questions: "The `output_for_shell_integration()` method on ScriptResult and all its call sites are a separate concept (stdout routing for --script flag). Should I leave those completely untouched, or do you also want to rename/remove that method?"="Also rename the method". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01TPxULb1a92is2geSW6GmhA">
+    <param name="questions">[{'question': 'What should `output_for_shell_integration()` be renamed to? It outputs the ...[truncated 352 chars]... instead of 'output' to differentiate from output_path_for_user"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="784" cache_read_input_tokens="37138" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 784, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TPxULb1a92is2geSW6GmhA">
+User has answered your questions: "What should `output_for_shell_integration()` be renamed to? It outputs the script path to stdout for the shell handler to pick up."="output_for_script_handler". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Write" id="toolu_01BAzFUy2hNRYErvcgb3hCCX">
+    <param name="file_path">/Users/schrockn/.claude/plans/snoopy-frolicking-snail.md</param>
+    <param name="content"># Remove `shell_integration` config and rename `output_for_shell_integration()`
+
+## Contex...[truncated 3137 chars]... for any remaining `shell_integration` references (should be zero outside of git history)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="37922" output_tokens="1118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BAzFUy2hNRYErvcgb3hCCX">
+File created successfully at: /Users/schrockn/.claude/plans/snoopy-frolicking-snail.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01H8N59WrNZH8saJEdAaZwMQ">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1159" cache_read_input_tokens="38195" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1159, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H8N59WrNZH8saJEdAaZwMQ">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01XQktswEKfQRQhamxL5dwu6">
+    <param name="plan"># Remove `shell_integration` config and rename `output_for_shell_integration()`
+
+## Contex...[truncated 3137 chars]... for any remaining `shell_integration` references (should be zero outside of git history)
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="39354" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XQktswEKfQRQhamxL5dwu6">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/snoopy-frolicking-snail.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Remove `shell_integration` config and rename `output_for_shell_integration()`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 2518bc01-e7f9-438d-a673-32ed7be4fedf \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Remove `shell_integration` config and rename `output_for_shell_integration()`
+
+## Context
+
+The `shell_integration` global config boolean is dead code — it's stored/serialized but never read to gate behavior. The `--script` flag on CLI commands controls shell integration behavior, not this config. Removing it to reduce confusion and clean up the config surface.
+
+Additionally, renaming `ScriptResult.output_for_shell_integration()` → `output_for_script_handler()` to avoid naming confusion with the removed config.
+
+## Part 1: Remove `shell_integration` config field
+
+### Config infrastructure
+1. **`packages/erk-shared/src/erk_shared/context/types.py`** — Remove `shell_integration: bool = False` from `GlobalConfig` dataclass, and from the test helper factory function
+2. **`packages/erk-shared/src/erk_shared/config/schema.py`** — Remove `shell_integration` field from `GlobalConfigSchema`
+3. **`packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`** — Remove read and write of `shell_integration`
+4. **`packages/erk-shared/tests/unit/config/test_schema.py`** — Remove from expected fields and overridable keys assertion
+
+### Documentation
+5. **`src/erk/cli/commands/branch/checkout_cmd.py:431-432`** — Remove docstring mention
+6. **`docs/ref/configuration.md`** — Remove shell_integration row and example
+7. **`docs/learned/configuration/config-layers.md`** — Remove shell_integration line
+8. **`docs/learned/glossary.md`** — Remove shell_integration example line
+9. **`docs/learned/architecture/globalconfig-field-addition.md`** — Remove from field list
+
+## Part 2: Rename method → `output_for_script_handler()`
+
+### Definition + 8 call sites + 3 test files
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="40092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 805}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01McXTJ3tUcthfyo5qnZnpB5">
+    <param name="questions">[{'question': 'Remove `shell_integration` config and rename `output_for_shell_integration(...[truncated 403 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="40092" output_tokens="698" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 805, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01McXTJ3tUcthfyo5qnZnpB5">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>in the plan instruct the agent to use the /batch skill</user>
+  <usage input_tokens="3" cache_creation_input_tokens="1053" cache_read_input_tokens="40897" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1053}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UxL1EDvxZv3oFGuB7MbcTc">
+    <param name="file_path">/Users/schrockn/.claude/plans/snoopy-frolicking-snail.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1053" cache_read_input_tokens="40897" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1053, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UxL1EDvxZv3oFGuB7MbcTc">
+     1→# Remove `shell_integration` config and rename `output_for_shell_integration()`
+     2→
+     3→## Context
+     4→
+     5→The `shell_integration` global config boolean is dead code — it's stored/serialized but never read to gate behavior. The `--script` flag on CLI commands controls shell integration behavior, not this config. Removing it to reduce confusion and clean up the config surface.
+     6→
+     7→Additionally, renaming `ScriptResult.output_for_shell_integration()` → `output_for_script_handler()` to avoid naming confusion with the removed config.
+     8→
+     9→## Part 1: Remove `shell_integration` config field
+    10→
+    11→### Config infrastructure
+    12→1. **`packages/erk-shared/src/erk_shared/context/types.py`** — Remove `shell_integration: bool = False` from `GlobalConfig` dataclass (~line 239), and from the test helper factory function (~lines 253, 266)
+    13→2. **`packages/erk-shared/src/erk_shared/config/schema.py`** — Remove `shell_integration` field from `GlobalConfigSchema` (~lines 110-113)
+    14→3. **`packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`** — Remove read (~line 81) and write (~line 141) of `shell_integration`
+    15→4. **`packages/erk-shared/tests/unit/config/test_schema.py`** — Remove from expected fields (~line 32) and overridable keys assertion (~line 144)
+    16→
+    17→### Documentation
+    18→5. **`src/erk/cli/commands/branch/checkout_cmd.py:431-432`** — Remove docstring line "Enable shell integration for automatic navigation: erk config set shell_integration true"
+    19→6. **`docs/ref/configuration.md`** — Remove shell_integration row and example
+    20→7. **`docs/learned/configuration/config-layers.md:35`** — Remove shell_integration line
+    21→8. **`docs/learned/glossary.md:315`** — Remove shell_integration example line
+    22→9. **`docs/learned/architecture/globalconfig-field-addition.md:73`** — Remove shell_integration from field list
+    23→
+    24→## Part 2: Rename `output_for_shell_integration()` → `output_for_script_handler()`
+    25→
+    26→### Definition
+    27→1. **`packages/erk-shared/src/erk_shared/core/script_writer.py`** — Rename method, update docstring and error messages (~lines 31-75)
+    28→
+    29→### Call sites (all in `src/erk/cli/commands/`)
+    30→2. `checkout_helpers.py:43` — `result.output_for_shell_integration()`
+
+... [19 lines omitted] ...
+
+    46→1. Run `ruff check` and `ty` for lint/type errors
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014v6sUEnFmQyc2vBXbRt8Zq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/snoopy-frolicking-snail.md</param>
+    <param name="old_string">## Part 2: Rename `output_for_shell_integration()` → `output_for_script_handler()`
+
+### De...[truncated 990 chars].../commands/test_wt_checkout.py:133,172`** — Update test names referencing shell_integration</param>
+    <param name="new_string">## Part 2: Rename `output_for_shell_integration()` → `output_for_script_handler()`
+
+Use `/...[truncated 570 chars]...nds/test_create.py`, `tests/commands/test_wt_checkout.py` (rename in test names and calls)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1321" cache_read_input_tokens="41950" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1321}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014v6sUEnFmQyc2vBXbRt8Zq">
+The file /Users/schrockn/.claude/plans/snoopy-frolicking-snail.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me present the plan again.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="838" cache_read_input_tokens="43271" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 838}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01HMnPdEqi5iviLqZRm1uKdW">
+    <param name="questions">[{'question': 'Remove `shell_integration` config and rename `output_for_shell_integration(...[truncated 403 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="838" cache_read_input_tokens="43271" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 838, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HMnPdEqi5iviLqZRm1uKdW">
+User has answered your questions: "Remove `shell_integration` config and rename `output_for_shell_integration()`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01PxPkqyL8LFnhRbtTCWz8Mt">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="44109" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 308, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PxPkqyL8LFnhRbtTCWz8Mt">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="2518bc01-e7f9-438d-a673-32ed7be4fedf" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="2518bc01-e7f9-438d-a673-32ed7be4fedf" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2518bc01-e7f9-438d-a673-32ed7be4fedf" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "2518bc01-e7f9-438d-a673-32ed7be4fedf" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "2518bc01-e7f9-438d-a673-32ed7be4fedf" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2518bc01-e7f9-438d-a673-32ed7be4fedf" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="3478" cache_read_input_tokens="44417" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3478}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Branch slug:** `remove-shell-integration-config`
+
+**Plan summary:** Removes the dead shell_integration global config boolean that is stored but never read to gate any behavior. Also renames the unrelated ScriptResult.output_for_shell_integration() method to output_for_script_handler() to avoid naming confusion with the removed config.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3478" cache_read_input_tokens="44417" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3478}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019JKSp6oAhg2HCfXftZ3sW9">
+    <param name="command">erk exec plan-save --format json --session-id="2518bc01-e7f9-438d-a673-32ed7be4fedf" --bra...[truncated 213 chars]... method to output_for_script_handler() to avoid naming confusion with the removed config."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3478" cache_read_input_tokens="44417" output_tokens="367" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3478, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019JKSp6oAhg2HCfXftZ3sW9">
+{"success": true, "plan_number": 8997, "plan_url": "https://github.com/dagster-io/erk/pull/8997", "title": "[erk-plan] Remove `shell_integration` config and rename `output_for_shell_integration()`", "branch_name": "plnd/remove-shell-integration-c-03-08-0705", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/2518bc01-e7f9-438d-a673-32ed7be4fedf/plan_snapshots/000001-0b2a7312"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8997: https://github.com/dagster-io/erk/pull/8997</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="47895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 551}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ScUcRAp5pAJGAbyDQsgfak">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="47895" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 551, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ScUcRAp5pAJGAbyDQsgfak">
+SESSION_ID=2518bc01-e7f9-438d-a673-32ed7be4fedf
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/2518bc01-e7f9-438d-a673-32ed7be4fedf.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CSSbdmBUryx7BmfjgnCQr4">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...438d-a673-32ed7be4fedf" --stage planning --source local --plan-id 8997 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="48446" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 340, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
