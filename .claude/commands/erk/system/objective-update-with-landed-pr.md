@@ -69,6 +69,14 @@ If `objective_content` is null, skip prose reconciliation entirely (objective ha
 - Read upcoming node descriptions. Did this PR change the landscape?
 - If nothing is stale, skip prose update entirely.
 
+**If `node_updates` from Step 1 was empty** (auto-match found no nodes) and the roadmap has non-terminal nodes (`in_progress` or `pending`), assess during prose reconciliation whether any of those nodes were completed by this PR. For each node the PR completed:
+
+```bash
+erk exec update-objective-node <objective_number> --node <node_id> --status done --pr "#<pr_number>"
+```
+
+This keeps the YAML accurate and ensures `all_complete` reflects the true state for Step 3.
+
 | Contradiction Type          | Example                                                      | Section to Update                             |
 | --------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
 | **Decision override**       | Objective says "Use polling", PR implemented WebSockets      | Design Decisions                              |
@@ -85,12 +93,13 @@ gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="<upda
 
 ### Step 3: Closing Triggers
 
+**If `auto_closed: true` in Step 1 output:** The exec command already closed the objective and posted the "Objective Complete" comment. Report: "All nodes complete - objective closed automatically" and show the objective URL. Skip the rest of Step 3.
+
 Use `roadmap.all_complete` from Step 1 output as the primary signal. Additionally, if `node_updates` from Step 1 was empty (auto-match found no nodes) AND Step 2 prose reconciliation confirmed all roadmap nodes are now done, treat `all_complete` as `true` for the purposes of this step.
 
 **If `all_complete` is `true`:**
 
-- **If `--auto-close` was provided:** Post "Action: Objective Complete" comment, close the issue (`gh issue close <issue-number>`), report: "All nodes complete - objective closed automatically"
-- **Otherwise:** Ask the user directly:
+- Ask the user directly:
   ```
   All roadmap nodes are complete. Should I close objective #<number> now?
   - Yes, close with final summary

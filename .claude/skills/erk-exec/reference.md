@@ -864,12 +864,13 @@ Apply mechanical updates to an objective after landing a PR.
 
 **Options:**
 
-| Flag          | Type    | Required | Default        | Description                                              |
-| ------------- | ------- | -------- | -------------- | -------------------------------------------------------- |
-| `--pr`        | INTEGER | No       | -              | PR number (auto-discovered if omitted)                   |
-| `--objective` | INTEGER | No       | -              | Objective issue (auto-discovered if omitted)             |
-| `--branch`    | TEXT    | No       | -              | Branch name (auto-discovered if omitted)                 |
-| `--node`      | TEXT    | No       | Sentinel.UNSET | Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2) |
+| Flag           | Type    | Required | Default        | Description                                                 |
+| -------------- | ------- | -------- | -------------- | ----------------------------------------------------------- |
+| `--pr`         | INTEGER | No       | -              | PR number (auto-discovered if omitted)                      |
+| `--objective`  | INTEGER | No       | -              | Objective issue (auto-discovered if omitted)                |
+| `--branch`     | TEXT    | No       | -              | Branch name (auto-discovered if omitted)                    |
+| `--node`       | TEXT    | No       | Sentinel.UNSET | Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2)    |
+| `--auto-close` | FLAG    | No       | -              | Automatically close the objective if all nodes are complete |
 
 ### objective-fetch-context
 
@@ -951,12 +952,11 @@ Update objective after landing a PR.
 
 **Options:**
 
-| Flag            | Type    | Required | Default        | Description                    |
-| --------------- | ------- | -------- | -------------- | ------------------------------ |
-| `--objective`   | INTEGER | Yes      | Sentinel.UNSET | Linked objective issue number  |
-| `--pr`          | INTEGER | Yes      | Sentinel.UNSET | PR number that was just landed |
-| `--branch`      | TEXT    | Yes      | Sentinel.UNSET | Branch name that was landed    |
-| `--plan-number` | INTEGER | No       | -              | Linked plan number             |
+| Flag          | Type    | Required | Default        | Description                    |
+| ------------- | ------- | -------- | -------------- | ------------------------------ |
+| `--objective` | INTEGER | Yes      | Sentinel.UNSET | Linked objective issue number  |
+| `--pr`        | INTEGER | Yes      | Sentinel.UNSET | PR number that was just landed |
+| `--branch`    | TEXT    | Yes      | Sentinel.UNSET | Branch name that was landed    |
 
 ### plan-save
 

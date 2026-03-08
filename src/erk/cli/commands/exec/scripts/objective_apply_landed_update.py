@@ -159,6 +159,13 @@ def _update_comment_table(
     multiple=True,
     help="Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2)",
 )
+@click.option(
+    "--auto-close",
+    "auto_close",
+    is_flag=True,
+    default=False,
+    help="Automatically close the objective if all nodes are complete",
+)
 @click.pass_context
 def objective_apply_landed_update(
     ctx: click.Context,
@@ -167,6 +174,7 @@ def objective_apply_landed_update(
     objective_number: int | None,
     branch_name: str | None,
     node_ids: tuple[str, ...],
+    auto_close: bool,
 ) -> None:
     """Apply mechanical updates to an objective after landing a PR.
 
@@ -272,14 +280,20 @@ def objective_apply_landed_update(
         # Rebuild roadmap from the updated body
         roadmap = _build_roadmap_context(updated_body, plan_id)
 
+    # --- Auto-close if all nodes complete ---
+    auto_closed = False
+    if auto_close and roadmap["all_complete"]:
+        auto_closed = True
+
     # --- Post action comment ---
     date_str = time.now().strftime("%Y-%m-%d")
     phase_step = ", ".join(matched_steps) if matched_steps else "N/A"
 
     roadmap_updates = [f"Node {nid}: -> done" for nid in matched_steps]
 
+    comment_title = "Objective Complete" if auto_closed else f"Landed PR #{pr_number}"
     comment_body = _format_action_comment(
-        title=f"Landed PR #{pr_number}",
+        title=comment_title,
         date=date_str,
         pr_number=pr_number,
         phase_step=phase_step,
@@ -292,6 +306,9 @@ def objective_apply_landed_update(
     action_comment_id = remote.add_issue_comment(
         owner=owner, repo=repo_name, issue_number=objective_number, body=comment_body
     )
+
+    if auto_closed:
+        github.issues.close_issue(repo_root, objective_number)
 
     # --- Emit result ---
     objective_info: ObjectiveInfoDict = {
@@ -322,5 +339,6 @@ def objective_apply_landed_update(
         "roadmap": roadmap,
         "node_updates": node_updates,
         "action_comment_id": action_comment_id,
+        "auto_closed": auto_closed,
     }
     click.echo(json.dumps(result))

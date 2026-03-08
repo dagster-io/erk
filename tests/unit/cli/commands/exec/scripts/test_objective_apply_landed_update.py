@@ -560,6 +560,173 @@ class TestApplyLandedUpdateErrors:
         assert "6517" in data["error"]
 
 
+ROADMAP_BODY_ALL_DONE = textwrap.dedent("""\
+    # My Objective
+
+    <!-- erk:metadata-block:objective-header -->
+
+    <details>
+    <summary><code>objective-header</code></summary>
+
+    ```yaml
+    created_at: '2026-01-01T00:00:00Z'
+    created_by: testuser
+    objective_comment_id: 55555
+    slug: null
+    ```
+
+    </details>
+
+    <!-- /erk:metadata-block:objective-header -->
+
+    <!-- erk:metadata-block:objective-roadmap -->
+
+    <details>
+    <summary><code>objective-roadmap</code></summary>
+
+    ```yaml
+    schema_version: "2"
+    steps:
+    - id: "1.1"
+      description: "Add user model"
+      status: "done"
+      pr: "#6500"
+    - id: "1.2"
+      description: "Add JWT library"
+      status: "done"
+      pr: "#6510"
+    ```
+
+    </details>
+
+    <!-- /erk:metadata-block:objective-roadmap -->
+
+    ## Roadmap
+""")
+
+
+class TestApplyLandedUpdateAutoClose:
+    def test_auto_close_when_all_nodes_complete(self, tmp_path: Path) -> None:
+        """All nodes done + --auto-close → auto_closed: true, issue closed."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY_ALL_DONE)
+        plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        pr = _make_pr_details(number=6517, title="Final cleanup", body="pr body")
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6517: plan},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeLocalGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr},
+        )
+        remote = _make_remote(
+            {6423: objective, 6517: plan},
+            comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--auto-close",
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=remote,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert data["auto_closed"] is True
+
+        # Issue was closed
+        assert 6423 in fake_issues.closed_issues
+
+        # Action comment says "Objective Complete"
+        assert len(remote.added_issue_comments) == 1
+        assert "Objective Complete" in remote.added_issue_comments[0].body
+
+    def test_no_auto_close_when_not_all_complete(self, tmp_path: Path) -> None:
+        """Some nodes pending + --auto-close → auto_closed: false, issue stays open."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+        plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
+        pr = _make_pr_details(number=6517, title="Add auth system", body="pr body")
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6517: plan},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeLocalGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr},
+        )
+        remote = _make_remote(
+            {6423: objective, 6517: plan},
+            comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--node",
+                "1.1",
+                "--auto-close",
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=remote,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert data["auto_closed"] is False
+
+        # Issue was NOT closed
+        assert 6423 not in fake_issues.closed_issues
+
+        # Action comment says "Landed PR" (not "Objective Complete")
+        assert len(remote.added_issue_comments) == 1
+        assert "Landed PR #6517" in remote.added_issue_comments[0].body
+
+
 class TestApplyLandedUpdateDiscovery:
     def test_discover_branch_from_git(self, tmp_path: Path) -> None:
         """Auto-discovers branch when --branch is omitted."""

@@ -32,6 +32,7 @@ class ApplyLandedUpdateResultDict(TypedDict):
     roadmap: RoadmapContextDict
     node_updates: list[NodeUpdateDict]
     action_comment_id: int
+    auto_closed: bool
 
 
 class ApplyLandedUpdateErrorDict(TypedDict):
