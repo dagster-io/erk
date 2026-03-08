@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "plan_id": 8939,
+  "sessions": [
+    {
+      "session_id": "c93c516b-a645-47d2-a667-428756ef95c7",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-07T19:11:47.031803+00:00",
+      "files": [
+        "impl-c93c516b-a645-47d2-a667-428756ef95c7-c93c516b-a645-47d2-a667-428756ef95c7-part1.xml",
+        "impl-c93c516b-a645-47d2-a667-428756ef95c7-c93c516b-a645-47d2-a667-428756ef95c7-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 8,
+      "raw_size_kb": 1370,
+      "xml_size_kb": 126,
+      "git_branch": "plnd/consolidate-session-manife-03-07-1902"
+    }
+  ]
+}
