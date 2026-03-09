@@ -100,6 +100,24 @@ def plan_view(plan_id: int) -> str:
     return result.stdout
 
 
+def release_notes(version: str | None = None) -> str:
+    """View erk release notes and changelog — useful for "what's new" queries.
+
+    Returns release notes text from the erk changelog.
+    When version is None, shows the current version's release notes.
+    When version is a specific version string like "0.2.1", shows that version's notes.
+    When version is "all", shows the full changelog.
+    """
+    args = ["release-notes"]
+    if version is not None:
+        if version == "all":
+            args.append("--all")
+        else:
+            args.extend(["--version", version])
+    result = _run_erk(args)
+    return result.stdout
+
+
 def create_mcp() -> FastMCP:
     """Create and configure the FastMCP server instance."""
     from fastmcp import FastMCP
@@ -108,6 +126,7 @@ def create_mcp() -> FastMCP:
     # Hand-written tools (no input schema class yet)
     server.tool()(plan_list)
     server.tool()(plan_view)
+    server.tool()(release_notes)
     # Auto-discovered @mcp_exposed @json_command tools
     for tool in _build_json_command_tools():
         server.add_tool(tool)

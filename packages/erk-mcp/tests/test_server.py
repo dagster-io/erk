@@ -16,6 +16,7 @@ from erk_mcp.server import (
     create_mcp,
     plan_list,
     plan_view,
+    release_notes,
 )
 
 
@@ -134,6 +135,44 @@ class TestPlanView:
         args = mock_run_erk.call_args[0][0]
         assert args[2] == "100"
         assert isinstance(args[2], str)
+
+
+class TestReleaseNotes:
+    """Tests for release_notes MCP tool."""
+
+    @patch("erk_mcp.server._run_erk")
+    def test_without_version(self, mock_run_erk: patch) -> None:
+        notes = "[0.3.0] - 2025-01-15\n  Added\n    - New feature"
+        mock_run_erk.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=notes, stderr=""
+        )
+
+        result = release_notes(version=None)
+
+        assert result == notes
+        mock_run_erk.assert_called_once_with(["release-notes"])
+
+    @patch("erk_mcp.server._run_erk")
+    def test_with_specific_version(self, mock_run_erk: patch) -> None:
+        mock_run_erk.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="[0.2.1] notes", stderr=""
+        )
+
+        result = release_notes(version="0.2.1")
+
+        assert result == "[0.2.1] notes"
+        mock_run_erk.assert_called_once_with(["release-notes", "--version", "0.2.1"])
+
+    @patch("erk_mcp.server._run_erk")
+    def test_with_all(self, mock_run_erk: patch) -> None:
+        mock_run_erk.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="Full changelog content", stderr=""
+        )
+
+        result = release_notes(version="all")
+
+        assert result == "Full changelog content"
+        mock_run_erk.assert_called_once_with(["release-notes", "--all"])
 
 
 class TestRunErkJson:
@@ -282,4 +321,4 @@ class TestCreateMcp:
         tools = asyncio.run(server.list_tools())
         tool_names = {t.name for t in tools}
 
-        assert tool_names == {"plan_list", "plan_view", "one_shot"}
+        assert tool_names == {"plan_list", "plan_view", "one_shot", "release_notes"}
