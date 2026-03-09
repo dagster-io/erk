@@ -1,0 +1,20 @@
+<session>
+  <meta branch="plnd/move-ci-cmd-system-folder-03-09-0920" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Plan execution complete. Here's a summary of changes:
+
+**Moved:**
+- `.claude/commands/erk/consolidate-learn-plans-plan.md` → `.claude/commands/erk/system/consolidate-learn-plans-plan.md`
+
+**Updated 3 references** from `/erk:consolidate-learn-plans-plan` to `/erk:system:consolidate-learn-plans-plan`:
+- `.github/workflows/consolidate-learn-plans.yml` (lines 85 and 104)
+- `src/erk/cli/commands/consolidate_learn_plans_dispatch.py` (line 125)
+
+**Created documentation:**
+- `docs/learned/commands/system-folder-convention.md` — documents when commands belong in `system/`, with a tripwire for CI-only commands created outside the folder
+
+**Regenerated indexes** via `erk docs sync` (3 files updated)
+
+**PR:** https://github.com/dagster-io/erk/pull/9057</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="56975" cache_creation="{'ephemeral_5m_input_tokens': 339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
