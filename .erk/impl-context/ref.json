@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Stale branch checkout in plan-implement workflow"
+  "plan_id": "9102",
+  "url": "https://github.com/dagster-io/erk/pull/9102",
+  "created_at": "2026-03-09T16:28:39.451185",
+  "synced_at": "2026-03-09T16:28:39.451185",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
