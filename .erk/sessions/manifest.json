@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "plan_id": 9053,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T13:17:59.924170+00:00",
+      "files": [
+        "impl--7c609792-cc7f-4555-bf56-5d0994728575-part1.xml",
+        "impl--7c609792-cc7f-4555-bf56-5d0994728575-part2.xml",
+        "impl--7c609792-cc7f-4555-bf56-5d0994728575-part3.xml",
+        "impl--7c609792-cc7f-4555-bf56-5d0994728575-part4.xml",
+        "impl--7c609792-cc7f-4555-bf56-5d0994728575-part5.xml",
+        "impl--7c609792-cc7f-4555-bf56-5d0994728575-part6.xml",
+        "impl--7c609792-cc7f-4555-bf56-5d0994728575-part7.xml",
+        "impl--7c609792-cc7f-4555-bf56-5d0994728575-part8.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 11,
+      "raw_size_kb": 1065,
+      "xml_size_kb": 219,
+      "git_branch": "plnd/O9009-add-pr-json-mcp-03-09-0904"
+    }
+  ]
+}
