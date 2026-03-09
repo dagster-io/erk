@@ -1,0 +1,477 @@
+<session>
+  <meta source="agent-a7397be" />
+  <meta branch="plnd/fix-objective-plan-backlin-03-09-1638" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+
+I need to find:
+1. The existing test file for plan_header: `packages/erk-shared/tests/unit/gateway/github/metadata/test_plan_header.py` - read the last 100 lines to understand the pattern
+2. The existing test file for update_objective_node: `tests/unit/cli/commands/exec/scripts/test_update_objective_node.py` - read the whole file to understand how tests are structured
+3. The existing test file for check_cmd (if it exists): `tests/unit/cli/commands/objective/test_check_cmd.py`
+4. The RemoteGitHub ABC to understand the `get_issue` method signature: look in `packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py`
+
+Read all of these files and provide a complete summary of:
+- How plan_header tests are structured (test patterns used)
+- How update_objective_node tests are structured (fakes used, click testing patterns)
+- What methods RemoteGitHub has that are relevant (get_issue, update_issue_body, get_comment_by_id)
+- Whether test_check_cmd.py exists and what it contains</user>
+  <assistant>I'll help you find and analyze these test files and the RemoteGitHub ABC. Let me search for all of these systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19171, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Bdiwq6bUL6YnH7aDJGQ47A">
+    <param name="command">find /home/runner/work/erk/erk -name "test_plan_header.py" -o -name "test_update_objective_node.py" -o -name "test_check_cmd.py" 2&gt;/dev/null</param>
+    <param name="description">Find the test files mentioned in the request</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19171, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01D2BqcSgzXrWxDSsbyUV5NT">
+    <param name="command">find /home/runner/work/erk/erk -path "*gateway/remote_github/abc.py" 2&gt;/dev/null</param>
+    <param name="description">Find RemoteGitHub ABC file</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19171, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D2BqcSgzXrWxDSsbyUV5NT">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py
+  </tool_result>
+  <tool_result tool="toolu_01Bdiwq6bUL6YnH7aDJGQ47A">
+/home/runner/work/erk/erk/tests/unit/cli/commands/init/capability/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/docs/test_check_cmd.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+  </tool_result>
+  <assistant>Now let me search for the plan_header test file:</assistant>
+  <usage input_tokens="66" cache_creation_input_tokens="449" cache_read_input_tokens="19171" cache_creation="{'ephemeral_5m_input_tokens': 449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NAPMUf2fct9LksfbP1KP86">
+    <param name="command">find /home/runner/work/erk/erk -name "*plan_header*" 2&gt;/dev/null</param>
+    <param name="description">Find plan_header related files</param>
+  </tool_use>
+  <usage input_tokens="66" cache_creation_input_tokens="449" cache_read_input_tokens="19171" cache_creation="{'ephemeral_5m_input_tokens': 449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NAPMUf2fct9LksfbP1KP86">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_plan_header.py
+/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/__pycache__/plan_header.cpython-312.pyc
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__pycache__/update_plan_header.cpython-312.pyc
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_plan_header.py
+  </tool_result>
+  <assistant>Great! Now let me read all the relevant test files and the ABC:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="19620" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PDiYNHz2rdXV23AvaBioWr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="19620" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UoUixkcixzNBvEHcS47Zjz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="19620" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dvq1ALpNGTqVwrJLvinANk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="19620" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PbburmAG4kfByEFAkWCBHw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="19620" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HCdf4Db2f9rt62bcEQ8TrK">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="451" cache_read_input_tokens="19620" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PDiYNHz2rdXV23AvaBioWr">
+     1→"""Unit tests for update-plan-header exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    15→from erk_shared.gateway.github.types import PRNotFound
+    16→from erk_shared.gateway.time.fake import FakeTime
+    17→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    18→from tests.test_utils.plan_helpers import (
+    19→    format_plan_header_body_for_test,
+    20→    issue_info_to_pr_details,
+    21→)
+    22→
+    23→
+    24→def _make_issue(number: int, body: str) -&gt; IssueInfo:
+    25→    """Create test IssueInfo with given number and body."""
+    26→    now = datetime.now(UTC)
+    27→    return IssueInfo(
+    28→        number=number,
+    29→        title="Test Issue",
+    30→        body=body,
+
+... [520 lines omitted] ...
+
+   355→# Schema Validation Errors
+   444→# Input Validation Errors
+   466→    assert output["error"] == "no_fields"
+   487→    assert output["error"] == "invalid_field_format"
+  </tool_result>
+  <tool_result tool="toolu_01PbburmAG4kfByEFAkWCBHw">
+     1→"""Unit tests for erk objective check command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.objective.check_cmd import (
+     9→    ObjectiveValidationError,
+    10→    ObjectiveValidationSuccess,
+    11→    check_objective,
+    12→    validate_objective,
+    13→)
+    14→from erk_shared.context.context import ErkContext
+    15→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.gateway.github.issues.types import IssueInfo
+    18→from erk_shared.gateway.github.types import RepoInfo
+    19→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    20→
+    21→_TEST_REPO_INFO = RepoInfo(owner="test", name="repo")
+    22→
+    23→
+    24→def _make_remote(
+    25→    issues: dict[int, IssueInfo],
+    26→    *,
+    27→    comments_by_id: dict[int, str] | None = None,
+    28→) -&gt; FakeRemoteGitHub:
+    29→    """Create a FakeRemoteGitHub from an issue dict."""
+    30→    return FakeRemoteGitHub(
+
+... [968 lines omitted] ...
+
+   145→    assert result.exit_code == 0, f"Failed: {result.output}"
+   162→    assert result.exit_code == 0, f"Failed: {result.output}"
+   237→    assert result.exit_code == 0, f"Failed: {result.output}"
+   243→    assert output["validation_errors"] == []
+   292→    """Test that a non-existent issue returns an error."""
+   320→    assert "999" in output["error"]
+   489→def test_validate_objective_returns_error_for_missing_issue() -&gt; None:
+   490→    """Test that validate_objective returns error type for missing issue."""
+   498→    assert isinstance(result, ObjectiveValidationError)
+   499→    assert "999" in result.error
+   555→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   571→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   597→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   612→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   644→    assert result.exit_code == 0, f"Failed: {result.output}"
+   742→    assert result.exit_code == 0, f"Failed: {result.output}"
+   830→    assert result.exit_code == 0, f"Failed: {result.output}"
+   846→    assert result.exit_code == 0, f"Failed: {result.output}"
+   860→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   876→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   952→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01HCdf4Db2f9rt62bcEQ8TrK">
+     1→"""Abstract interface for remote GitHub operations without a local git clone.
+     2→
+     3→This gateway enables GitHub operations (branch creation, file commits, PR management,
+     4→workflow dispatch) using the GitHub REST API directly, without requiring a local
+     5→git repository. All methods take explicit owner/repo parameters.
+     6→"""
+     7→
+     8→from abc import ABC, abstractmethod
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+    11→from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
+    12→
+    13→
+    14→class RemoteGitHub(ABC):
+    15→    """GitHub operations that don't require a local git clone.
+    16→
+    17→    Every method takes explicit owner/repo parameters instead of repo_root: Path.
+    18→    Uses the GitHub REST API via HttpClient.
+    19→    """
+    20→
+    21→    @abstractmethod
+    22→    def get_authenticated_user(self) -&gt; str:
+    23→        """Get the username of the authenticated GitHub user.
+    24→
+    25→        Returns:
+    26→            GitHub username string
+    27→        """
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [392 lines omitted] ...
+
+   414→            Tuple of (is_authenticated, username, error_message)
+  </tool_result>
+  <tool_result tool="toolu_01Dvq1ALpNGTqVwrJLvinANk">
+     1→"""Unit tests for update-objective-node command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    13→
+    14→ROADMAP_BODY_V2 = """\
+    15→# Objective: Build Feature X
+    16→
+    17→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    18→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    19→&lt;details&gt;
+    20→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    21→
+    22→```yaml
+    23→
+    24→schema_version: '2'
+    25→steps:
+    26→  - id: '1.1'
+    27→    description: Set up project structure
+    28→    status: done
+    29→    pr: '#100'
+    30→  - id: '1.2'
+
+... [894 lines omitted] ...
+
+   106→    assert result.exit_code == 0, f"Failed: {result.output}"
+   134→    assert result.exit_code == 0, f"Failed: {result.output}"
+   145→    """Error when step ID doesn't exist in roadmap."""
+   159→    assert output["error"] == "node_not_found"
+   164→    """Error when issue doesn't exist."""
+   177→    assert output["error"] == "issue_not_found"
+   182→    """Error when issue has no roadmap table."""
+   196→    assert output["error"] == "no_roadmap"
+   211→    assert result.exit_code == 0, f"Failed: {result.output}"
+   234→    assert result.exit_code == 0, f"Failed: {result.output}"
+   277→    assert result.exit_code == 0, f"Failed: {result.output}"
+   297→    assert result.exit_code == 0, f"Failed: {result.output}"
+   318→def test_update_multiple_steps_partial_failure() -&gt; None:
+   346→    replacement_failed path is defensive (parse_roadmap and
+   354→        {"node_id": "1.3", "success": False, "error": "replacement_failed"},
+   366→    # AND semantics: success=false because step 1.3 failed
+   386→    assert result.exit_code == 0, f"Failed: {result.output}"
+   410→    assert result.exit_code == 0, f"Failed: {result.output}"
+   433→    assert result.exit_code == 0, f"Failed: {result.output}"
+   453→    assert result.exit_code == 0, f"Failed: {result.output}"
+   473→    assert result.exit_code == 0, f"Failed: {result.output}"
+   531→    assert result.exit_code == 0, f"Failed: {result.output}"
+   540→def test_include_body_on_failure() -&gt; None:
+   541→    """updated_body field is absent on failure even with --include-body."""
+   559→    """When issue body has no metadata block, returns no_roadmap error."""
+   584→    assert output["error"] == "no_roadmap"
+   590→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   606→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   635→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   680→    assert result.exit_code == 0, f"Failed: {result.output}"
+   730→    assert result.exit_code == 0, f"Failed: {result.output}"
+   752→    assert result.exit_code == 0, f"Failed: {result.output}"
+   765→def test_neither_pr_nor_status_returns_error() -&gt; None:
+   766→    """Omitting all update flags returns a no_update error."""
+   780→    assert output["error"] == "no_update"
+   796→    assert result.exit_code == 0, f"Failed: {result.output}"
+   817→    assert result.exit_code == 0, f"Failed: {result.output}"
+   837→    assert result.exit_code == 0, f"Failed: {result.output}"
+   852→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   883→    assert result.exit_code == 0, f"Failed: {result.output}"
+   912→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01UoUixkcixzNBvEHcS47Zjz">
+     1→"""Tests for PlanHeaderSchema validation.
+     2→
+     3→Layer 3 (Pure Unit Tests): Tests for plan header schema validation with
+     4→zero dependencies.
+     5→"""
+     6→
+     7→import pytest
+     8→
+     9→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    10→from erk_shared.gateway.github.metadata.plan_header import (
+    11→    create_plan_header_block,
+    12→    extract_plan_header_branch_name,
+    13→    extract_plan_header_ci_summary_comment_id,
+    14→    extract_plan_header_last_learn_at,
+    15→    extract_plan_header_last_learn_session,
+    16→    extract_plan_header_learn_materials_branch,
+    17→    extract_plan_header_learn_plan_issue,
+    18→    extract_plan_header_learn_plan_pr,
+    19→    extract_plan_header_learn_status,
+    20→    extract_plan_header_learned_from_issue,
+    21→    extract_plan_header_objective_issue,
+    22→    extract_plan_header_remote_impl_run_id,
+    23→    extract_plan_header_remote_impl_session_id,
+    24→    update_plan_header_ci_summary_comment_id,
+    25→    update_plan_header_learn_event,
+    26→    update_plan_header_learn_materials_branch,
+    27→    update_plan_header_learn_plan_completed,
+    28→    update_plan_header_learn_result,
+    29→    update_plan_header_learn_status,
+    30→    update_plan_header_remote_impl_event,
+
+... [1755 lines omitted] ...
+
+   123→    with pytest.raises(ValueError, match="Missing required fields: schema_version"):
+   135→    with pytest.raises(ValueError, match="Missing required fields: created_at"):
+   147→    with pytest.raises(ValueError, match="Missing required fields: created_by"):
+   414→    with pytest.raises(ValueError, match="last_learn_session must not be empty"):
+   428→    with pytest.raises(ValueError, match="last_learn_at must not be empty"):
+   587→    """update_plan_header_learn_event raises ValueError if no plan-header block."""
+   590→    with pytest.raises(ValueError, match="plan-header block not found"):
+   757→    with pytest.raises(ValueError, match="branch_name must not be empty"):
+   877→    """update_plan_header_worktree_and_branch raises ValueError if no plan-header."""
+   880→    with pytest.raises(ValueError, match="plan-header block not found"):
+  1250→    """update_plan_header_remote_impl_event raises ValueError if no plan-header block."""
+  1253→    with pytest.raises(ValueError, match="plan-header block not found"):
+  1303→    with pytest.raises(ValueError, match="learn_status must be one of"):
+  1460→    """update_plan_header_learn_status raises ValueError if no plan-header block."""
+  1463→    with pytest.raises(ValueError, match="plan-header block not found"):
+  1551→        with pytest.raises(ValueError, match=msg):
+  1555→        with pytest.raises(ValueError, match=msg):
+  1642→    """update_plan_header_learn_result raises ValueError if no plan-header."""
+  1645→    with pytest.raises(ValueError, match="plan-header block not found"):
+  1673→    """update_plan_header_learn_plan_completed raises ValueError if no plan-header."""
+  1676→    with pytest.raises(ValueError, match="plan-header block not found"):
+  1730→    """update_plan_header_learn_materials_branch raises ValueError if no plan-header."""
+  1733→    with pytest.raises(ValueError, match="plan-header block not found"):
+  1775→    """update_plan_header_ci_summary_comment_id raises ValueError if no plan-header."""
+  1778→    with pytest.raises(ValueError, match="plan-header block not found"):
+  </tool_result>
+  <assistant>Perfect! I've successfully read all the requested files. Let me provide you with a comprehensive summary.
+
+## Summary of Test Files and RemoteGitHub ABC
+
+### 1. Plan Header Tests (`test_update_plan_header.py`)
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_plan_header.py`
+
+**Test Patterns Used:**
+- Uses `CliRunner` from Click to test CLI commands
+- Dependency injection via `ErkContext.for_test()` with:
+  - `FakeLocalGitHub` - local GitHub gateway fake
+  - `FakeGitHubIssues` - issues gateway fake
+  - `PlannedPRBackend` - plan store
+  - `FakeTime` - time abstraction
+- Tests use helper function `_make_issue_with_plan_header()` to create test data
+- Tests use `format_plan_header_body_for_test()` from `test_utils.plan_helpers` to create test bodies
+- Tests use `find_metadata_block()` to verify metadata was updated
+- Validates output via `json.loads(result.output)` - commands return JSON
+- Assertions check both exit code and output structure
+
+**Test Organization:**
+- Plain functions (no test classes)
+- Organized into logical sections with comments:
+  - "Success Cases" (lines 50-157)
+  - "Type Coercion" (lines 159-321)
+  - "Schema Validation Errors" (lines 354-409)
+  - "Input Validation Errors" (lines 443-487)
+  - "Plan Not Found / No Header Block" (lines 490-544)
+
+**Key Assertions:**
+- `result.exit_code == 0` for success, `== 1` for failure
+- JSON output with `success`, `plan_id`, `fields_updated` keys
+- Verify metadata blocks using `find_metadata_block(updated_pr.body, "plan-header")`
+- Check data types (int vs string preservation)
+
+---
+
+### 2. Update Objective Node Tests (`test_update_objective_node.py`)
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py`
+
+**Test Patterns:**
+- Same Click `CliRunner` pattern as above
+- Context injection: `ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh))`
+- Uses `ROADMAP_BODY_V2` constant for test data (lines 14-68)
+- Tests use `FakeGitHubIssues` with `updated_bodies` tracking for assertions
+- Tests also track `updated_comments` for v2 format (objective-header with comment updates)
+- Commands return structured JSON with `success`, `issue_number`, `node_id`, `previous_pr`, `new_pr`
+
+**Key Test Behaviors:**
+1. **Single node updates** - tests individual node modifications
+2. **Multiple node updates** - tests batch updates with AND semantics (`success=false` if any node fails)
+3. **Multi-step support** - tests `--node` flag used multiple times (lines 291-315)
+4. **Explicit status setting** - `--status` flag overrides default status
+5. **v2 format handling** - updates both issue body (frontmatter) and comment table (lines 659-693)
+
+**Assertions Pattern:**
+- Exit code and JSON output
+- `assert output["success"] is True` or `False`
+- Check output fields: `issue_number`, `node_id`, `previous_pr`, `new_pr`
+- Verify mutations via `fake_gh.updated_bodies[0][1]` - the updated body text
+
+---
+
+### 3. Check Objective Tests (`test_check_cmd.py`)
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py`
+
+**Test Patterns:**
+- Uses custom test context builder `_test_ctx()` (lines 43-54)
+- Injects both `FakeLocalGitHub` (local) AND `FakeRemoteGitHub` (remote)
+- `FakeRemoteGitHub` initialized with:
+  - `issues` dict
+  - `comments_by_id` dict for comment lookup
+- Tests use `VALID_OBJECTIVE_BODY` constant with metadata block (lines 80-130)
+- Supports both v1 (roadmap only) and v2 (objective-header + roadmap) formats
+
+**Key Test Behaviors:**
+1. **Validation checks** - multiple validation checks (Check 1-8):
+   - Label presence, roadmap structure, status consistency, etc.
+   - PR reference formatting (`#` prefix requirement)
+   - Comment table sync with YAML
+2. **JSON output structure** - returns phases, summary, next_node, all_complete
+3. **Return types** - validates return types: `ObjectiveValidationSuccess` or `ObjectiveValidationError`
+4. **Fan-out/fan-in support** - tests schema v3 with explicit `depends_on` (lines 765-854)
+
+**Assertions:**
+- Exit codes for PASS/FAIL states
+- JSON output with `success`, `issue_number`, `phases`, `summary`, `validation_errors`
+- Text assertions checking for `[PASS]` and `[FAIL]` markers
+
+---
+
+### 4. RemoteGitHub ABC Methods (`remote_github/abc.py`)
+
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py`
+
+**Key Methods Relevant to Objective Plans:**
+
+| Method | Signature | Purpose |
+|--------|-----------|---------|
+| `get_issue()` | `(owner, repo, number) -&gt; IssueInfo \| IssueNotFound` | Fetch issue by number, returns issue or error type |
+| `update_issue_body()` | `(owner, repo, number, body) -&gt; None` | Update issue body content |
+| `get_comment_by_id()` | `(owner, repo, comment_id) -&gt; str` | Fetch comment body by comment ID |
+| `update_comment()` | `(owner, repo, comment_id, body) -&gt; None` | Update comment body |
+| `add_issue_comment()` | `(owner, repo, issue_number, body) -&gt; int` | Add comment, returns comment ID |
+| `get_issue_comments()` | `(owner, repo, number) -&gt; list[str]` | Fetch all comment bodies for issue |
+
+**Other Relevant Methods:**
+- `create_pull_request()` - create PR (used for plan PRs)
+- `update_pull_request_body()` - update PR body
+- `add_labels()` - add labels to issues/PRs
+- `close_issue()` / `close_pr()` - close issues/PRs
+- `get_pr()` - fetch PR-specific data (head/base ref names)
+- `get_prs_referencing_issue()` - find PRs that reference an issue
+
+---
+
+## Test File Summary Table
+
+| File | Layer | Fakes Used | Pattern | Return Format |
+|------|-------|-----------|---------|---|
+| `test_update_plan_header.py` | Unit (CLI) | FakeLocalGitHub, FakeGitHubIssues | CliRunner + ErkContext | JSON with success, plan_id, fields_updated |
+| `test_update_objective_node.py` | Unit (CLI) | FakeLocalGitHub, FakeGitHubIssues | CliRunner + ErkContext | JSON with success, node_id, previous_pr, new_pr |
+| `test_check_cmd.py` | Unit (CLI) | FakeLocalGitHub, FakeRemoteGitHub | CliRunner + custom _test_ctx | JSON with success, phases, summary, validation_errors |
+
+All three test files follow the same foundational pattern:
+1. Create test data (issue with body)
+2. Inject fakes into ErkContext
+3. Use CliRunner.invoke() to run command
+4. Assert exit code and JSON output
+5. Verify mutations via fake state tracking</assistant>
+  <usage input_tokens="27657" cache_creation_input_tokens="37603" cache_read_input_tokens="20071" cache_creation="{'ephemeral_5m_input_tokens': 37603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

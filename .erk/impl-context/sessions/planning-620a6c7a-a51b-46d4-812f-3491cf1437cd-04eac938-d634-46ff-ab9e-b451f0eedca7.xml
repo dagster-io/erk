@@ -1,0 +1,947 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>we need to complete the transition from plan to pr. there is no more plan noun. there are PRs that contain plans and are in a planned state.
+
+first priority is the audit external apis. e.g. we are still returning "plan_id" out of json payloads. but we need to a thorough audit</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14401" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14401}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll launch parallel Explore agents to audit the external API surface for plan terminology that needs to transition to PR terminology.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14401" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14401}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Qu1JA2rcbr5XMhf3PaDNSf">
+    <param name="description">Audit JSON/API plan references</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 911 chars]...rough - list every file and line where plan terminology appears in external-facing output.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14401" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14401}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KekpPyafBBS6zLFepf4PEn">
+    <param name="description">Audit CLI help text and labels</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 727 chars]....claude/commands/
+- .claude/skills/
+
+List every occurrence with file path and line number.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14401" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14401}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Puxm4DTu7YfB5vQpSsCgxg">
+    <param name="description">Audit data models and schemas</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 951 chars]...come part of the external contract?
+
+List every occurrence with file path and line number.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14401" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14401}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qu1JA2rcbr5XMhf3PaDNSf">
+Perfect! Now I have enough information to compile a thorough audit. Let me compile the comprehensive report:
+
+## Thorough Audit: Plan Terminology in External-Facing APIs
+
+Based on my systematic search of the erk codebase, I've identified **extensive use of "plan" terminology in external-facing APIs** that should be updated to reflect the concept rename to "PR". Here's the complete audit:
+
+### Summary
+
+The codebase has **widespread plan terminology** across:
+- 40+ exec script JSON outputs
+- Status data structures
+- TUI data models
+- CLI command parameters
+- REST API-adjacent gateway code
+
+---
+
+### 1. JSON OUTPUT FIELDS IN EXEC SCRIPTS
+
+#### Direct JSON field names that appear in external output:
+
+**plan_number** (very common):
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py:347` - JSON output
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:210-213` - `plan_number`, `plan_url`, `plan_title`
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/close_prs.py:34,112` - TypedDict `plan_number` field
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py:34,112` - TypedDict `plan_number` field
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:36` - Example output
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py:23` - CLI argument
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py:12,20,53` - JSON output with `plan_number`
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py:123` - JSON output
+
+... [250 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KekpPyafBBS6zLFepf4PEn">
+Perfect! Now let me compile the complete audit report. I have gathered comprehensive information. Let me create a final summary organized by category:
+
+## Audit Report: User-Facing CLI Text Referencing "plan"
+
+Based on a comprehensive search of the erk codebase, I've identified all user-facing CLI text that still references "plan" when the concept has been renamed to "PR". Here's the complete inventory:
+
+### **1. CLICK COMMAND DEFINITIONS (Command Names)**
+
+The following commands have "plan" in their command names:
+
+| File | Line | Command Name |
+|------|------|------|
+| src/erk/cli/commands/codespace/run/objective/plan_cmd.py | 10 | `@click.command("plan")` |
+| src/erk/cli/commands/exec/scripts/add_plan_label.py | 22 | `@click.command(name="add-plan-label")` |
+| src/erk/cli/commands/exec/scripts/add_plan_labels.py | 117 | `@click.command(name="add-plan-labels")` |
+| src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py | 38 | `@click.command(name="create-impl-context-from-plan")` |
+| src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py | 58 | `@click.command(name="detect-plan-from-branch")` |
+| src/erk/cli/commands/exec/scripts/extract_latest_plan.py | 24 | `@click.command(name="extract-latest-plan")` |
+| src/erk/cli/commands/exec/scripts/get_plan_info.py | 27 | `@click.command(name="get-plan-info")` |
+| src/erk/cli/commands/exec/scripts/get_plan_metadata.py | 43 | `@click.command(name="get-plan-metadata")` |
+| src/erk/cli/commands/exec/scripts/get_plans_for_objective.py | 28 | `@click.command(name="get-plans-for-objective")` |
+| src/erk/cli/commands/exec/scripts/get_pr_for_plan.py | 49 | `@click.command(name="get-pr-for-plan")` |
+| src/erk/cli/commands/exec/scripts/objective_plan_setup.py | 131 | `@click.command(name="objective-plan-setup")` |
+| src/erk/cli/commands/exec/scripts/plan_save.py | 487 | `@click.command(name="plan-save")` |
+| src/erk/cli/commands/exec/scripts/plan_update.py | 44 | `@click.command(name="plan-update")` |
+| src/erk/cli/commands/exec/scripts/register_one_shot_plan.py | 23 | `@click.command(name="register-one-shot-plan")` |
+| src/erk/cli/commands/exec/scripts/update_plan_header.py | 97 | `@click.command(name="update-plan-header")` |
+| src/erk/cli/commands/exec/scripts/validate_plan_content.py | 84 | `@click.command(name="validate-plan-content")` |
+| src/erk/cli/commands/objective/plan_cmd.py | 522 | `@click.command("plan")` |
+| src/erk/cli/commands/pr/replan_cmd.py | 9 | `@click.command("replan")` |
+
+... [128 lines omitted] ...
+
+### **6. ERROR AND STATUS MESSAGES**
+Multiple error messages reference "plan" (this is a sample):
+| src/erk/cli/commands/objective/objective_save_to_issue.py | 179 | "Error: No plan found in ~/.claude/plans/" |
+| src/erk/cli/commands/implement.py | 169 | "Error: Plan #&lt;number&gt; not found" |
+| src/erk/cli/commands/branch/checkout_cmd.py | 478 | "Error: Cannot specify both BRANCH and --for-plan." |
+- **Widespread usage** of plan-related terminology throughout error messages, docstrings, and status output
+The terminology shift from "plan" to "PR" is pervasive, touching CLI command names, argument names, help text, docstrings, error messages, and documentation files.
+  </tool_result>
+  <tool_result tool="toolu_01Puxm4DTu7YfB5vQpSsCgxg">
+Excellent! Now I have a comprehensive view. Let me create a final summary report by compiling all the findings:
+
+## Comprehensive Audit Report: "Plan" Terminology in Data Models and External Formats
+
+Based on my thorough audit of the erk codebase, here are ALL occurrences of "plan" terminology in data models, schemas, and external-facing interfaces that could potentially need to be renamed to "PR":
+
+### 1. **Event Types (Serializable)**
+
+**File:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+
+- **Line 67-70:** `@dataclass(frozen=True) class PlanNumberEvent:` - Event type with `number: int` field
+
+This is part of the `ExecutorEvent` union type (line 102-114) that gets serialized/deserialized during Claude CLI streaming.
+
+---
+
+### 2. **Result Dataclasses (Serializable)**
+
+**File:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+
+- **Line 141:** `plan_number: int | None` in `CommandResult` dataclass
+  - This field gets populated from executor events and returned to callers
+
+**File:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/types.py`
+
+- **Line 37:** `plan_identifier: str` in `Plan` dataclass - provider-specific ID (GitHub PR number as string)
+- **Line 75:** `plan_id: str` in `CreatePlanResult` dataclass - the created PR number
+
+**File:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py`
+
+
+... [124 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="14252" cache_read_input_tokens="24139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14252}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The audit is comprehensive. Let me organize these findings into the plan file, but first I have a key question about the target naming.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14252" cache_read_input_tokens="24139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14252}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_0194TCy4qSWk2x1z1XkbWocB">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14252" cache_read_input_tokens="24139" output_tokens="385" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14252, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0194TCy4qSWk2x1z1XkbWocB">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01BCQQHDCQnvmV6bGL7wnti3">
+    <param name="questions">[{'question': 'What should `plan_number` become in JSON output? The underlying thing is a ...[truncated 1382 chars]...g: JSON fields, CLI args, command names, constants, data models'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1730" cache_read_input_tokens="38391" output_tokens="547" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1730, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BCQQHDCQnvmV6bGL7wnti3">
+User has answered your questions: "What should `plan_number` become in JSON output? The underlying thing is a GitHub PR number."="pr_number", "What about the `erk-plan` GitHub label and `[erk-plan]` title prefix on PRs?"="Keep erk-plan", "What's the scope for this first PR? Just the audit, or audit + fix?"="Audit only". You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="40121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 624}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01WScESCcBtrFS39pHD72zY8">
+    <param name="file_path">/Users/schrockn/.claude/plans/bubbly-foraging-tower.md</param>
+    <param name="content"># Audit: External API "plan" Terminology → "pr" Rename
+
+## Context
+
+The concept formerly c...[truncated 12455 chars]...- All tests pass
+- `erk exec` JSON outputs use `pr_number`, `pr_id`, `pr_url`, `pr_title`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="40121" output_tokens="4985" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 624, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WScESCcBtrFS39pHD72zY8">
+File created successfully at: /Users/schrockn/.claude/plans/bubbly-foraging-tower.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01Nds5ATCfUVQm7TMG73SZc1">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5021" cache_read_input_tokens="40745" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5021, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nds5ATCfUVQm7TMG73SZc1">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01QbRpyzahfYnPLo7mEXMEQo">
+    <param name="plan"># Audit: External API "plan" Terminology → "pr" Rename
+
+## Context
+
+The concept formerly c...[truncated 12455 chars]...- All tests pass
+- `erk exec` JSON outputs use `pr_number`, `pr_id`, `pr_url`, `pr_title`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="45766" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QbRpyzahfYnPLo7mEXMEQo">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/bubbly-foraging-tower.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Audit: External API "plan" Terminology → "pr" Rename
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 04eac938-d634-46ff-ab9e-b451f0eedca7 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="46504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 797}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the audit plan:
+
+---
+
+# Audit: External API "plan" Terminology → "pr" Rename
+
+**Rename mapping:** `plan_number` → `pr_number`, `plan_id` → `pr_id`, `plan_url` → `pr_url`, `plan_title` → `pr_title`
+
+**Kept as-is:** `erk-plan` GitHub label and `[erk-plan]` title prefix.
+
+## Summary Statistics
+
+| Category | Count |
+|----------|-------|
+| JSON output fields | ~50 occurrences across ~25 files |
+| Data model fields | ~15 fields across ~11 files |
+| CLI arguments/options | ~14 parameters |
+| CLI command names | ~17 commands |
+| Help strings | ~44 strings |
+| Gateway ABC methods | 4 methods |
+| TUI provider interface | ~6 methods/fields |
+| Skill/command files | ~9 files |
+| **Total files affected** | **~53+ source files** |
+
+The full plan file contains detailed file-by-file listings organized into 11 categories with exact file paths and line numbers for every occurrence.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="46504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 797}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01E5n1TwLJF6EJoexQQK4ihV">
+    <param name="questions">[{'question': '📋 Audit: External API "plan" Terminology → "pr" Rename\nCurrent context: (w...[truncated 380 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="46504" output_tokens="528" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 797, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E5n1TwLJF6EJoexQQK4ihV">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>just plan the entire change</user>
+  <usage input_tokens="3" cache_creation_input_tokens="873" cache_read_input_tokens="47301" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 873}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Afo1NKw5pEcbTM5kBRcdhF">
+    <param name="questions">[{'question': "For CLI command names like `plan-save`, `plan-update`, `detect-plan-from-br...[truncated 1335 chars]...name to [prs]', 'description': 'Consistent with the full rename'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="873" cache_read_input_tokens="47301" output_tokens="1067" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 873, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Afo1NKw5pEcbTM5kBRcdhF">
+User has answered your questions: "For CLI command names like `plan-save`, `plan-update`, `detect-plan-from-branch`, `get-plan-info` — what's the rename pattern?"="plan-save makes sense because you are operating on a plan in the claude session and saving it as a pr" user notes: plan-save makes sense because you are operating on a plan in the claude session and saving it as a pr, "For internal Python names (class `PlanStatus`, `PlanRowData`, file `plan_save.py`, package `plan_service/`) — rename those too?"="PlanStatus`, `PlanRowData` plan_service/ probably make sense as prs" user notes: PlanStatus`, `PlanRowData` plan_service/ probably make sense as prs, "For the `[plans]` config section in .erk/config.toml and `plans_repo` field — rename?"="what is in that config block?" user notes: what is in that config block?. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1329" cache_read_input_tokens="48174" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1329}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Hvdrt9oATmCn6wdwWv7R7H">
+    <param name="pattern">\[plans\]</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">*.toml</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1329" cache_read_input_tokens="48174" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1329}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hvdrt9oATmCn6wdwWv7R7H">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B5D1xJt2dPUCQJobQyBX3N">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/config.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1329" cache_read_input_tokens="48174" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1329, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B5D1xJt2dPUCQJobQyBX3N">
+     1→import tomllib
+     2→from dataclasses import dataclass
+     3→from pathlib import Path
+     4→
+     5→# Re-export LoadedConfig from erk_shared for backwards compatibility
+     6→from erk_shared.context.types import LoadedConfig as LoadedConfig
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class ProjectConfig:
+    11→    """In-memory representation of `.erk/project.toml`.
+    12→
+    13→    Example project.toml:
+    14→      # Optional: custom name (defaults to directory name)
+    15→      # name = "dagster-open-platform"
+    16→
+    17→      [env]
+    18→      # Project-specific env vars (merged with repo-level)
+    19→      DAGSTER_HOME = "{project_root}"
+    20→
+    21→      [post_create]
+    22→      # Runs AFTER repo-level commands, FROM project directory
+    23→      shell = "bash"
+    24→      commands = [
+    25→        "source .venv/bin/activate",
+    26→      ]
+    27→    """
+    28→
+    29→    name: str | None  # Custom project name (None = use directory name)
+    30→    env: dict[str, str]
+
+... [362 lines omitted] ...
+  </tool_result>
+  <assistant>The `[plans]` config section has a single key: `repo` — it specifies an alternate GitHub repo to store plans in (e.g., a separate private plans repo). The TOML looks like:
+
+```toml
+[plans]
+repo = "owner/plans-repo"
+```
+
+This maps to `plans_repo` on `LoadedConfig`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5252" cache_read_input_tokens="49503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5252}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01TuLbN4psbskVfDFF4a1R9x">
+    <param name="questions">[{'question': 'The `[plans]` config section has one key: `repo` — specifies an alternate G...[truncated 262 chars]... with the terminology shift — PRs are the top-level concept now'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5252" cache_read_input_tokens="49503" output_tokens="258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5252, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TuLbN4psbskVfDFF4a1R9x">
+User has answered your questions: "The `[plans]` config section has one key: `repo` — specifies an alternate GitHub repo for storing plans. Should this rename?"="we should have a github config seciton " user notes: we should have a github config seciton. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="54755" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have enough to write the full plan. Let me also check what the `plan_service` gateway looks like to understand the scope there.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="54755" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V7wfnVfnAciPPsQUzGf8Lz">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="54755" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V7wfnVfnAciPPsQUzGf8Lz">
+     1→"""Domain service ABC for plan operations (no TUI type dependencies)."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.browser.abc import BrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+     9→
+    10→
+    11→class PlanService(ABC):
+    12→    """Abstract base class for plan domain operations.
+    13→
+    14→    Contains operations that are independent of TUI display concerns:
+    15→    closing plans, dispatching, fetching content, and GitHub PR data.
+    16→    No TUI type imports (PlanRowData, FetchTimings, PlanFilters, BranchActivity).
+    17→    """
+    18→
+    19→    @property
+    20→    @abstractmethod
+    21→    def repo_root(self) -&gt; Path:
+    22→        """Get the repository root path."""
+    23→        ...
+    24→
+    25→    @property
+    26→    @abstractmethod
+    27→    def clipboard(self) -&gt; Clipboard:
+    28→        """Get the clipboard interface for copy operations."""
+    29→        ...
+    30→
+
+... [109 lines omitted] ...
+
+   124→        """Fetch CI failure summaries for a pull request.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HeDxDWyikEefGZepaKXgTH">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="448" cache_read_input_tokens="54755" output_tokens="565" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 448, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HeDxDWyikEefGZepaKXgTH">
+     1→"""Context types for erk and erk-kits.
+     2→
+     3→This module provides the core data types used by ErkContext:
+     4→- RepoContext: Repository discovery result
+     5→- NoRepoSentinel: Sentinel for when not in a repository
+     6→- GlobalConfig: Global erk configuration
+     7→- LoadedConfig: Repository-level configuration
+     8→- InteractiveAgentConfig: Configuration for interactive agent launches (Claude or Codex)
+     9→- AgentBackend: Type for agent backend selection
+    10→- PermissionMode: Generic permission mode for both Claude and Codex
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal, Self
+    19→
+    20→from erk_shared.gateway.github.types import GitHubRepoId
+    21→
+    22→# Agent backend types
+    23→AgentBackend = Literal["claude", "codex"]
+    24→
+    25→# Claude CLI permission modes:
+    26→# - "default": Default mode with permission prompts
+    27→# - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
+    28→# - "plan": Plan mode for exploration and planning (--permission-mode plan)
+    29→# - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
+    30→ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
+
+... [298 lines omitted] ...
+
+    51→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    75→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    99→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6677" cache_read_input_tokens="55203" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6677}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me write the comprehensive implementation plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6677" cache_read_input_tokens="55203" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6677}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DuStYXjfJfEx1tmnHuNDmu">
+    <param name="file_path">/Users/schrockn/.claude/plans/bubbly-foraging-tower.md</param>
+    <param name="content"># Plan: Complete "plan" → "pr" Terminology Rename
+
+## Context
+
+The "plan" noun is being re...[truncated 9611 chars]...rk pr list --json` uses new field names
+7. TUI displays correctly with renamed data types
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6677" cache_read_input_tokens="55203" output_tokens="3914" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6677, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DuStYXjfJfEx1tmnHuNDmu">
+The file /Users/schrockn/.claude/plans/bubbly-foraging-tower.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012nHoJEar4r5jw6HYDBo1ND">
+    <param name="plan"># Plan: Complete "plan" → "pr" Terminology Rename
+
+## Context
+
+The "plan" noun is being re...[truncated 9611 chars]...rk pr list --json` uses new field names
+7. TUI displays correctly with renamed data types
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4041" cache_read_input_tokens="61880" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4041, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012nHoJEar4r5jw6HYDBo1ND">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/bubbly-foraging-tower.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Complete "plan" → "pr" Terminology Rename
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 04eac938-d634-46ff-ab9e-b451f0eedca7 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the complete plan:
+
+## Plan: Complete "plan" → "pr" Terminology Rename
+
+**Rename mapping:** `plan_number` → `pr_number`, `plan_id` → `pr_number`, `plan_url` → `pr_url`, `plan_title` → `pr_title`
+
+**Kept as-is:** `erk-plan` label, `[erk-plan]` title prefix, CLI command names (`plan-save` etc.)
+
+**Config:** `[plans] repo` → `[github] repo`
+
+**12 phases, bottom-up by dependency:**
+1. erk-shared foundation types (gateway ABC, plan store, prompt executor, metadata schemas)
+2. Config parsing (`[plans]` → `[github]` with backwards compat)
+3. Status models (`PlanStatus` → `PrStatus`)
+4. Core output filter
+5. TUI data layer (`PlanRowData` → `PrRowData`)
+6. Exec script JSON outputs (~25 scripts)
+7. CLI argument/option renames (~14 params)
+8. Help strings &amp; error messages (~44 strings)
+9. Top-level CLI commands
+10. Gateway implementations
+11. Tests
+12. Skills/commands in .claude/
+
+~53+ source files affected. Mechanical rename using `rename-swarm` or `libcst-refactor`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="683" cache_read_input_tokens="65921" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 683}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01XaWg8o1DMZd4dE96vsHpRR">
+    <param name="questions">[{'question': '📋 Plan: Complete "plan" → "pr" Terminology Rename\nCurrent context: (wt:erk...[truncated 399 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="683" cache_read_input_tokens="65921" output_tokens="553" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 683, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XaWg8o1DMZd4dE96vsHpRR">
+User has answered your questions: "📋 Plan: Complete "plan" → "pr" Terminology Rename
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="let's create an objective instead" user notes: let's create an objective instead. You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_015cwrZGq24WMKeLqGikptET">
+    <param name="skill">erk:objective-create</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="645" cache_read_input_tokens="66604" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 645, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015cwrZGq24WMKeLqGikptET">
+Launching skill: erk:objective-create
+  </tool_result>
+  <user># /erk:objective-create
+
+Create a new objective through an interactive, guided process. You describe what you want to accomplish, and Claude proposes a structured objective for your approval.
+
+## Usage
+
+```bash
+/erk:objective-create
+```
+
+---
+
+## Agent Instructions
+
+### Step 1: Prompt for Description
+
+Ask the user to describe what they want to accomplish:
+
+```
+What do you want to accomplish? Describe it however makes sense to you - goals,
+constraints, design decisions you've already made, context about the codebase, etc.
+
+I'll structure it into a formal objective for your review.
+```
+
+Wait for the user's response. They may provide:
+
+- A brief summary
+- A detailed brain dump
+- Existing notes or documentation
+- A combination of the above
+
+### Step 2: Analyze and Explore
+
+Based on the user's description:
+
+1. **Identify key elements:**
+   - What is the transformation/goal?
+   - What design decisions are mentioned or implied?
+   - What constraints exist?
+   - What's the scope?
+
+2. **Explore the codebase if needed:**
+   - If the user references specific code, read it to understand context
+   - If architecture decisions are mentioned, verify current state
+   - Gather enough context to propose realistic phases
+
+3. **Capture context for downstream implementers:**
+
+   During objective creation, you gather valuable context that would otherwise be lost: web searches, codebase exploration, user feedback, and your reasoning. **This context belongs in the objective issue.**
+
+   Ask yourself: "What would a future agent (or human) implementing this need to know?"
+
+   Examples of valuable context:
+   - **Inventories**: Grep results showing all instances of a pattern, categorized by type
+   - **Root cause analysis**: Why the current state exists, what caused the problem
+   - **Codebase findings**: Relevant files, existing patterns, architectural constraints
+   - **External research**: API docs, library behavior, migration guides discovered via web search
+   - **Design rationale**: Why certain approaches were chosen or rejected
+   - **User preferences**: Feedback and decisions made during the conversation
+
+   This context goes in a dedicated section after the Roadmap (see template below)
+
+### Step 3: Ask for Structure Preference
+
+After understanding the user's goals, present structure options using AskUserQuestion:
+
+```
+How would you like the objective structured?
+```
+
+**Options:**
+
+1. **Steelthread (Recommended)** - Phase 1 is a minimal vertical slice proving the concept works end-to-end, followed by Phase 2 to complete the feature. Best when you can demonstrate value with a partial implementation.
+2. **Linear** - Sequential phases, each building on the previous. Good when infrastructure must exist before any use case works (e.g., database schema before queries).
+3. **Single** - One phase, one PR. For small, focused objectives that don't need phasing.
+4. **Custom** - User describes their preferred structure
+
+**Selection guidelines:**
+
+- **Steelthread**: Default choice. Use when feasible - it de-risks the approach early by proving the concept works.
+- **Linear**: Use when a steelthread doesn't make sense - e.g., building a new abstraction layer that has no value until complete.
+- **Single**: Use for objectives small enough to implement in one PR (typically 1-2 days of work).
+- **Custom**: Use when the user has a specific structure in mind.
+
+### Step 4: Propose Structured Objective
+
+Write a structured objective proposal and show it to the user. Use the appropriate template based on their structure choice:
+
+**Generating the Roadmap Section**
+
+Do NOT manually write roadmap tables or metadata blocks. Instead, construct a JSON object describing the phases and steps, then generate the complete roadmap section:
+
+```bash
+echo '&lt;json&gt;' | erk exec objective-render-roadmap
+```
+
+This outputs a complete `## Roadmap` section with phase headers, tables, test sections, and a machine-readable metadata block (auto-generated, guaranteed consistent with tables). Include the command's output directly in the objective body.
+
+**JSON input format:** Each phase needs `name` (string) and `steps` (list of `{"id": "...", "description": "..."}`). Optional fields: `description` (phase description), `pr_count` (defaults to "1 PR"), `test` (acceptance test description). Each step can optionally include `"slug": "kebab-case-slug"` — if omitted, a slug is auto-generated from the description.
+
+#### Steelthread Template (Recommended)
+
+The objective body follows this structure. The `## Roadmap` section is generated by `erk exec objective-render-roadmap`.
+
+```markdown
+# Objective: [Clear, Concise Title]
+
+[1-2 sentence summary of the transformation]
+
+## Goal
+
+[What the end state looks like - concrete examples of the new API/behavior/architecture]
+
+## Design Decisions
+
+- **[Decision 1]**: [rationale]
+- **[Decision 2]**: [rationale]
+
+## Roadmap
+
+[INSERT OUTPUT from: echo '&lt;json&gt;' | erk exec objective-render-roadmap]
+
+## Implementation Context
+
+[Current architecture, target architecture, patterns to follow - include if helpful]
+
+## Exploration Notes
+
+[Context gathered during objective creation that implementers will need]
+
+## Related Documentation
+
+- Skills to load: [relevant skills]
+- Docs to reference: [relevant docs]
+```
+
+**Steelthread JSON example:**
+
+```json
+{
+  "phases": [
+    {
+      "name": "[Name] Steelthread",
+      "description": "Minimal vertical slice proving the concept works end-to-end.",
+      "steps": [
+        { "id": "1.1", "description": "[Minimal infrastructure]" },
+        { "id": "1.2", "description": "[Wire into one command/path]" }
+      ],
+      "test": "[End-to-end acceptance test for steelthread]"
+    },
+    {
+      "name": "Complete [Name]",
+      "description": "Fill out remaining functionality.",
+      "steps": [
+        { "id": "2.1", "description": "[Extend to remaining commands]" },
+        { "id": "2.2", "description": "[Full test coverage]" }
+      ],
+      "test": "[Full acceptance criteria]"
+    }
+  ]
+}
+```
+
+#### Linear Template
+
+Same body structure as Steelthread. Use this JSON pattern for the roadmap:
+
+```json
+{
+  "phases": [
+    {
+      "name": "[Foundation]",
+      "description": "[Infrastructure needed by subsequent phases]",
+      "steps": [{ "id": "1.1", "description": "..." }],
+      "test": "[Verification criteria]"
+    },
+    {
+      "name": "[Build on Foundation]",
+      "description": "[Uses Phase 1 infrastructure]",
+      "steps": [{ "id": "2.1", "description": "..." }],
+      "test": "[Verification criteria]"
+    }
+  ]
+}
+```
+
+#### Single Template
+
+Same body structure with one phase:
+
+```json
+{
+  "phases": [
+    {
+      "name": "[Implementation]",
+      "steps": [
+        { "id": "1", "description": "..." },
+        { "id": "2", "description": "..." }
+      ],
+      "test": "[Acceptance criteria]"
+    }
+  ]
+}
+```
+
+**Key structuring principles:**
+
+1. **One PR per phase**: Each phase should be a self-contained PR that:
+   - Has a coherent, reviewable scope
+   - Includes its own tests (unit + integration as appropriate)
+   - Leaves the system in a working state when merged
+
+2. **Always shippable**: After each merged PR, the system must remain functional. Never leave the codebase in a broken state between phases.
+
+3. **Test per phase**: Every phase needs a **Test:** section describing acceptance criteria. This becomes the definition of "done" for that PR.
+
+**Section guidelines:**
+
+- **Goal**: Always include - this is the north star
+- **Design Decisions**: Include if there are meaningful choices already made
+- **Roadmap**: Include for bounded objectives - break into shippable phases (1 PR each typically)
+- **Principles/Guidelines**: Include for perpetual objectives instead of a roadmap
+- **Implementation Context**: Include for larger refactors where current/target state matters
+- **Exploration Notes**: Include when you gathered valuable context during creation (inventories, research, reasoning). This is often the most valuable section for implementers
+- **Related Documentation**: Include if specific skills or docs are relevant
+
+**For perpetual objectives**, replace the Roadmap section with:
+
+```markdown
+## Principles
+
+- [Guiding principle 1]
+- [Guiding principle 2]
+```
+
+After showing the proposal, ask:
+
+```
+Does this capture what you're thinking? I can adjust any section, add more detail
+to the roadmap, or restructure the phases.
+```
+
+### Step 5: Iterate Until Approved
+
+The user may:
+
+- **Approve as-is**: Proceed to Step 6
+- **Request changes**: Make the requested adjustments and show again
+- **Add information**: Incorporate new details and show again
+- **Restructure**: Reorganize phases/nodes based on feedback
+
+Continue iterating until the user approves.
+
+### Step 6: Write to Plan File and Create Objective
+
+Once approved:
+
+1. **Write the objective to scratch storage:**
+
+   ```bash
+   mkdir -p .erk/scratch/sessions/04eac938-d634-46ff-ab9e-b451f0eedca7/
+   ```
+
+   Write the approved objective content to:
+
+   ```
+   .erk/scratch/sessions/04eac938-d634-46ff-ab9e-b451f0eedca7/objective-body.md
+   ```
+
+   This is the Priority 1 lookup path for `objective-save-to-issue --session-id`.
+
+2. **Generate a slug** from the objective content:
+   - Create a concise, descriptive slug (3-5 words, kebab-case) that captures the essence of the objective
+   - **Pattern:** `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`
+   - **Length:** 3-40 characters
+   - **Rules:** lowercase only, must start with a letter, hyphens between words only, no consecutive hyphens, no underscores/spaces/dots
+   - **Valid:** `build-auth-system`, `refactor-gateway`, `add-dark-mode`, `fix-tui-layout`
+   - **Invalid:** `Build-Auth` (uppercase), `123-start` (starts with digit), `my--slug` (consecutive hyphens), `ab` (too short)
+   - If the backend rejects the slug, fix it according to the rules above and retry
+
+3. **Create the objective with validation:**
+
+   ```bash
+   erk exec objective-save-to-issue --session-id=&lt;session-id&gt; --slug=&lt;generated-slug&gt; --format=display --validate
+   ```
+
+   This creates the objective and validates the roadmap in one step.
+   If validation fails, fix the objective content and re-run.
+
+4. **Report success:**
+
+   ```
+   Objective #&lt;number&gt; created
+   URL: &lt;issue-url&gt;
+   Roadmap validation: clean (or "none (objective has no roadmap)" if no roadmap)
+
+   Next steps:
+   - Use /local:objective-view &lt;number&gt; to view the dependency graph
+   - Use /erk:objective-plan &lt;number&gt; to create plans for specific nodes
+   - Track progress by updating node status in the issue
+   ```
+
+---
+
+## Output Format
+
+- **Start**: Single prompt asking what they want to accomplish
+- **After description**: Ask for structure preference
+- **After structure choice**: Show proposed structured objective
+- **Iteration**: Show updated objective after each change
+- **Success**: Issue number, URL, and next steps
+
+---
+
+## Differences from /erk:plan-save
+
+| Feature          | /erk:plan-save      | /erk:objective-create           |
+| ---------------- | ------------------- | ------------------------------- |
+| Label            | `erk-plan`          | `erk-objective` only            |
+| Purpose          | Implementation plan | Roadmap or perpetual focus area |
+| Title prefix     | `[erk-plan]`        | None                            |
+| Metadata block   | Yes                 | No                              |
+| Commands section | Yes                 | No                              |
+| Body content     | Metadata only       | Objective directly              |
+| Input            | Existing plan file  | Interactive creation            |
+
+---
+
+## Types of Objectives
+
+**Bounded objectives** - Have a clear end state and roadmap:
+
+- "Refactor GitHub gateway into facade pattern"
+- "Add dark mode support"
+
+**Perpetual objectives** - Ongoing areas of focus without a defined end:
+
+- "Improve test coverage"
+- "Documentation maintenance"
+- "Performance optimization"
+
+The structure adapts to the type - perpetual objectives may have principles/guidelines instead of a phased roadmap.
+
+---
+
+## Error Cases
+
+| Scenario                     | Action                           |
+| ---------------------------- | -------------------------------- |
+| User provides no description | Re-prompt with examples          |
+| Not authenticated            | Report GitHub auth error         |
+| Issue creation fails         | Report API error, offer to retry |
+| Plan file write fails        | Report error with path           |
+</user>
+  <assistant>The plan we just created has all the context needed for this objective. Let me structure it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3242" cache_read_input_tokens="67249" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3242}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_013upkfcePPBse9jN8s5w5G7">
+    <param name="questions">[{'question': 'How would you like the objective structured?', 'header': 'Structure', 'opti...[truncated 337 chars]...'description': 'One massive PR that renames everything at once.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3242" cache_read_input_tokens="67249" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3242, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013upkfcePPBse9jN8s5w5G7">
+User has answered your questions: "How would you like the objective structured?"="Linear (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1463" cache_read_input_tokens="70491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1463}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me construct the objective. I need to render the roadmap first.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1463" cache_read_input_tokens="70491" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1463}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W4xsFbuYcQLmhB1BBMHpoW">
+    <param name="command">echo '{
+  "phases": [
+    {
+      "name": "Foundation: erk-shared types and gateway ABCs",...[truncated 4288 chars]...lan-as-noun terminology in code or docs."
+    }
+  ]
+}' | erk exec objective-render-roadmap</param>
+    <param name="description">Render objective roadmap from JSON</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1463" cache_read_input_tokens="70491" output_tokens="2173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1463, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W4xsFbuYcQLmhB1BBMHpoW">
+## Roadmap
+
+### Phase 1: Foundation: erk-shared types and gateway ABCs (1 PR)
+
+Rename all plan terminology in the shared package that everything depends on.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|----|
+| 1.1 | Rename gateway ABC: PlanService → PrService, plan_service/ → pr_service/, method params (plan_id → pr_number, plan_url → pr_url) | pending | - |
+| 1.2 | Rename plan_store types: Plan.plan_identifier → pr_number, CreatePlanResult.plan_id → pr_number, CreatePlanDraftPRResult fields | pending | - |
+| 1.3 | Rename prompt executor types: PlanNumberEvent → PrNumberEvent, CommandResult.plan_number → pr_number | pending | - |
+| 1.4 | Rename output types: PlanNextSteps.plan_number → pr_number, format functions | pending | - |
+| 1.5 | Rename metadata schemas: plan_number → pr_number in all schema classes, add migration from plan_number | pending | - |
+| 1.6 | Rename LoadedConfig.plans_repo → github_repo | pending | - |
+| 1.7 | Update all gateway implementations to match new ABC signatures | pending | - |
+| 1.8 | Update all direct importers/consumers of renamed types | pending | - |
+
+**Test:** All imports resolve. Type checker passes. Existing tests pass after updating assertions.
+
+### Phase 2: CLI layer: JSON output, arguments, and help text (1 PR)
+
+Rename all user-facing plan terminology in CLI commands, exec scripts, and output formatting.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|----|
+| 2.1 | Rename JSON output fields in ~25 exec scripts: plan_number → pr_number, plan_id → pr_number, plan_url → pr_url, plan_title → pr_title | pending | - |
+| 2.2 | Rename TypedDict fields: PlanCloseItem.plan_number, PlanLabelItem.plan_number, SignalSuccess.plan_number | pending | - |
+| 2.3 | Rename Click arguments/options: plan_number → pr_number, plan_id → pr_number across ~14 commands | pending | - |
+| 2.4 | Update ~44 help strings and error messages referencing plan as a noun | pending | - |
+| 2.5 | Update output_filter.py and output.py: plan_number dict keys → pr_number | pending | - |
+
+... [181 lines omitted] ...
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  description: Update ~44 help strings and error messages referencing plan as a noun
+  </tool_result>
+  <assistant>Good, the roadmap rendered. Now let me write the full objective body and save it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4930" cache_read_input_tokens="71954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4930}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

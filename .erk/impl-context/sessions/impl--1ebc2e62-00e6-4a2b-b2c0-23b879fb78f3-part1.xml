@@ -1,0 +1,1285 @@
+<session>
+  <meta branch="plnd/fix-objective-plan-backlin-03-09-1638" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9106&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9106` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9106.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28635" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28635, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018Hi3exRzGckN3pnepW2azJ">
+    <param name="command">erk exec setup-impl --issue 9106</param>
+    <param name="description">Set up implementation for plan #9106</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28635" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28635, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Hi3exRzGckN3pnepW2azJ">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-objective-plan-backlin-03-09-1638", "plan_number": 9106, "plan_url": "https://github.com/dagster-io/erk/pull/9106", "branch": "plnd/fix-objective-plan-backlin-03-09-1638", "plan_title": "[erk-plan] Fix: Bidirectional Objective-Plan Linkage", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9106, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-objective-plan-backlin-03-09-1638', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="28635" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011FhNcDWDqHomvi5XMEhCuM">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-objective-plan-backlin-03-09-1638/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="28635" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011FhNcDWDqHomvi5XMEhCuM">
+     1→# Fix: Bidirectional Objective-Plan Linkage
+     2→
+     3→## Context
+     4→
+     5→PR #9033 was merged but its associated objective #9009 was never updated (node 1.5 stayed `in_progress`). Root cause: the plan PR had no `objective_issue` in its plan-header metadata, so `erk land`/`erk reconcile` couldn't trace the PR back to its objective. The roadmap referenced `pr: '#9033'` on node 1.5 (one-way link), but the plan didn't reference the objective back (missing backlink).
+     6→
+     7→This happens when a plan is created outside `/erk:objective-plan` and later linked to an objective via `erk exec update-objective-node --pr "#9033"`.
+     8→
+     9→## Part A: Prevention — `update_objective_node` writes the backlink
+    10→
+    11→When `update_objective_node` sets `--pr "#NNN"` on a node, it should also ensure the referenced plan PR has `objective_issue` in its plan-header metadata pointing back to this objective.
+    12→
+    13→### 1. Add `update_plan_header_objective_issue()` helper
+    14→
+    15→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
+    16→
+    17→Follow the exact pattern of `update_plan_header_comment_id()` (line 474):
+    18→- Extract plan-header block via `find_metadata_block()`
+    19→- Copy data dict, set `objective_issue` field
+    20→- Validate via `PlanHeaderSchema().validate()`
+    21→- Render and replace block in body
+    22→
+    23→### 2. Add backlink logic to `update_objective_node`
+    24→
+    25→**File:** `src/erk/cli/commands/exec/scripts/update_objective_node.py`
+    26→
+    27→After successfully writing the objective roadmap update (line 389), if `--pr` was provided with a non-empty value:
+    28→
+    29→1. Parse PR number from `pr_ref` (strip `#` prefix)
+    30→2. Fetch the PR body via `github.get_issue(repo_root, pr_number)` (PRs are issues)
+
+... [76 lines omitted] ...
+
+    33→5. If already set to a *different* objective, log a warning in the JSON output but don't overwrite (a plan shouldn't be silently re-parented)
+    34→6. This is **fail-open**: backlink failure doesn't prevent the node update from succeeding. Add a `backlink_set` field to JSON output.
+    44→- If plan PR has a different `objective_issue`, warning emitted, no overwrite
+  </tool_result>
+  <assistant>Now let me explore the relevant files to understand the current codebase before implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1941" cache_read_input_tokens="28986" cache_creation="{'ephemeral_5m_input_tokens': 1941, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01VgPmQwwetBqxzTyvhpujsq">
+    <param name="todos">[{'content': 'Part A.1: Add update_plan_header_objective_issue() helper', 'status': 'pendi...[truncated 704 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1941" cache_read_input_tokens="28986" cache_creation="{'ephemeral_5m_input_tokens': 1941, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VgPmQwwetBqxzTyvhpujsq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012o2VFPpeWdBem5w8sTZL25">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="30927" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012o2VFPpeWdBem5w8sTZL25">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Let me load the relevant skills and explore the codebase in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="31304" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01M9oRbWZq2UnqnD2oMxRStW">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="31304" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M9oRbWZq2UnqnD2oMxRStW">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the core dignified-python rules and detect the Python version:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31475" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FVn794gmBXxBQhq4xJZVVZ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31475" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01L1icXY9SS5Yy63dVGKk3Tc">
+    <param name="command">grep -m1 'requires-python' /home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="description">Check Python version requirement</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="891" cache_read_input_tokens="31475" cache_creation="{'ephemeral_5m_input_tokens': 891, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FVn794gmBXxBQhq4xJZVVZ">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01L1icXY9SS5Yy63dVGKk3Tc">
+requires-python = "&gt;=3.11"
+  </tool_result>
+  <assistant>Python 3.11+. Now let me read the key source files in parallel to understand the current patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6512" cache_read_input_tokens="32366" cache_creation="{'ephemeral_5m_input_tokens': 6512, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TJAuSnjJC9HvkqZ26ed2GS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6512" cache_read_input_tokens="32366" cache_creation="{'ephemeral_5m_input_tokens': 6512, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017yhQ6iAQxzBtAYQebWjEEX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6512" cache_read_input_tokens="32366" cache_creation="{'ephemeral_5m_input_tokens': 6512, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UhCWpe9kpSokiZSDDGja7N">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6512" cache_read_input_tokens="32366" cache_creation="{'ephemeral_5m_input_tokens': 6512, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017yhQ6iAQxzBtAYQebWjEEX">
+     1→"""Update node PR cells in an objective's roadmap table.
+     2→
+     3→Why this command exists (instead of using update-issue-body directly):
+     4→
+     5→    The alternative is "fetch body -&gt; parse markdown table -&gt; find node row -&gt;
+     6→    surgically edit the PR cell -&gt; write entire body back". That's ~15
+     7→    lines of fragile ad-hoc Python that every caller (skills, hooks, scripts)
+     8→    must duplicate. The roadmap table has a specific structure
+     9→    (| node_id | description | status | pr |) and the update has
+    10→    specific semantics:
+    11→
+    12→    1. Find the row by node ID across all phases
+    13→    2. Compute display status from the PR value
+    14→    3. Write status and PR cells atomically so the table is
+    15→       always human-readable without requiring a parse pass
+    16→
+    17→    Encoding this once in a tested CLI command means:
+    18→    - No duplicated table-parsing logic across callers
+    19→    - Testable edge cases (node not found, no roadmap, clearing PR)
+    20→    - Atomic mental model: "update node 1.3's PR to X"
+    21→    - Resilient to roadmap format changes (one command updates, not N sites)
+    22→
+    23→Usage:
+    24→    # Single node -- landed PR
+    25→    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
+    26→
+    27→    # Clear PR
+    28→    erk exec update-objective-node 6423 --node 1.3 --pr ""
+    29→
+    30→    # Status-only update (preserve existing PR)
+
+... [387 lines omitted] ...
+
+    41→        Each node result: {node_id, success, previous_pr, error}
+    70→def _node_error_message(node_id: str, issue_number: int, error: object) -&gt; str:
+    71→    if error == "node_not_found":
+    73→    return f"Failed to replace cells for node '{node_id}'"
+   105→            "error": single_result["error"],
+   106→            "message": _node_error_message(node[0], issue_number, single_result["error"]),
+   192→    except ValueError:
+   269→                    "error": "no_update",
+   287→                    "error": "issue_not_found",
+   301→                    "error": "no_roadmap",
+   313→            {"node_id": n, "success": False, "error": "node_not_found"} for n in missing_nodes
+   330→    any_failure = False
+   339→                    "error": "node_not_found",
+   342→            any_failure = True
+   359→                    "error": "replacement_failed",
+   362→            any_failure = True
+   374→    # Exit early if all nodes failed
+   375→    if any_failure and not any(r["success"] for r in results):
+  </tool_result>
+  <tool_result tool="toolu_01UhCWpe9kpSokiZSDDGja7N">
+     1→"""Validate an objective's format and roadmap consistency."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→
+     6→import click
+     7→
+     8→from erk.cli.alias import alias
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.gateway.github.issues.types import IssueNotFound
+    13→from erk_shared.gateway.github.metadata.core import (
+    14→    find_metadata_block,
+    15→    has_metadata_block,
+    16→)
+    17→from erk_shared.gateway.github.metadata.dependency_graph import (
+    18→    DependencyGraph,
+    19→    build_graph,
+    20→    compute_graph_summary,
+    21→    find_graph_next_node,
+    22→    phases_from_graph,
+    23→)
+    24→from erk_shared.gateway.github.metadata.roadmap import (
+    25→    parse_roadmap,
+    26→    rerender_comment_roadmap,
+    27→    serialize_phases,
+    28→)
+    29→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
+    30→from erk_shared.gateway.github.types import GitHubRepoId
+
+... [351 lines omitted] ...
+
+    39→    """Validation completed (may have passed or failed checks).
+    44→        failed_count: Number of failed checks
+    45→        graph: Dependency graph of roadmap nodes (empty if parsing failed)
+    48→        validation_errors: Parser-level warnings from roadmap parsing
+    54→    failed_count: int
+    58→    validation_errors: list[str]
+    63→class ObjectiveValidationError:
+    66→    error: str
+    69→ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+   128→        ObjectiveValidationError if unable to complete validation
+   135→        return ObjectiveValidationError(error=f"Issue #{issue_number} not found")
+   145→    phases, validation_errors = parse_roadmap(issue.body)
+   152→        failed_count = sum(1 for passed, _ in checks if not passed)
+   154→            passed=failed_count == 0,
+   156→            failed_count=failed_count,
+   160→            validation_errors=[],
+   167→        # Block exists but failed to parse
+   168→        checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
+   169→        failed_count = sum(1 for passed, _ in checks if not passed)
+   173→            failed_count=failed_count,
+   177→            validation_errors=validation_errors,
+   251→    failed_count = sum(1 for passed, _ in checks if not passed)
+   254→        passed=failed_count == 0,
+   256→        failed_count=failed_count,
+   260→        validation_errors=validation_errors,
+   308→    if isinstance(result, ObjectiveValidationError):
+   313→                    "error": result.error,
+   332→                "validation_errors": result.validation_errors,
+   343→    if isinstance(result, ObjectiveValidationError):
+   345→            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.error}"
+   369→        check_word = "checks" if result.failed_count &gt; 1 else "check"
+   372→                f"Objective validation failed ({result.failed_count} {check_word} failed)", fg="red"
+  </tool_result>
+  <tool_result tool="toolu_01TJAuSnjJC9HvkqZ26ed2GS">
+     1→"""Schema v2 plan header operations for erk-plan issues.
+     2→
+     3→These support the new plan issue structure where:
+     4→- Issue body contains only compact metadata (for fast querying)
+     5→- First comment contains the plan content
+     6→- last_dispatched_run_id is stored in issue body
+     7→
+     8→Optional fields (added over time, backward compatible):
+     9→- source_repo: For cross-repo plans, the repo where this plan will be
+    10→  implemented (e.g., "owner/impl-repo"). When set, the plan issue lives in
+    11→  a different repo (the plans repo) than where code changes will be made.
+    12→"""
+    13→
+    14→import re
+    15→from typing import Any
+    16→
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_metadata_block,
+    19→    create_plan_body_block,
+    20→    find_metadata_block,
+    21→    render_metadata_block,
+    22→    render_plan_body_block,
+    23→    replace_metadata_block_in_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    BRANCH_NAME,
+    27→    CI_SUMMARY_COMMENT_ID,
+    28→    CREATED_AT,
+    29→    CREATED_BY,
+    30→    CREATED_FROM_SESSION,
+
+... [1396 lines omitted] ...
+
+   378→        ValueError: If plan-header block not found or invalid
+   383→        raise ValueError("plan-header block not found in issue body")
+   492→        ValueError: If plan-header block not found or invalid
+   497→        raise ValueError("plan-header block not found in issue body")
+   533→        ValueError: If plan-header block not found or invalid
+   538→        raise ValueError("plan-header block not found in issue body")
+   574→        ValueError: If plan-header block not found or invalid
+   579→        raise ValueError("plan-header block not found in issue body")
+   617→        ValueError: If plan-header block not found or invalid
+   622→        raise ValueError("plan-header block not found in issue body")
+   679→        ValueError: If plan-header block not found or invalid
+   684→        raise ValueError("plan-header block not found in issue body")
+   739→        ValueError: If plan-header block not found or invalid
+   744→        raise ValueError("plan-header block not found in issue body")
+   863→        ValueError: If plan-header block not found or invalid
+   868→        raise ValueError("plan-header block not found in issue body")
+   975→        ValueError: If plan-header block not found or invalid
+   980→        raise ValueError("plan-header block not found in issue body")
+  1053→        ValueError: If plan-header block not found or invalid
+  1058→        raise ValueError("plan-header block not found in issue body")
+  1105→        ValueError: If plan-header block not found or invalid
+  1110→        raise ValueError("plan-header block not found in issue body")
+  1258→        ValueError: If plan-header block not found or invalid
+  1263→        raise ValueError("plan-header block not found in issue body")
+  1303→        ValueError: If plan-header block not found or invalid
+  1308→        raise ValueError("plan-header block not found in issue body")
+  1357→        ValueError: If plan-header block not found or invalid
+  1361→        raise ValueError("plan-header block not found in issue body")
+  1399→        comment_id: GitHub comment ID containing CI failure summaries
+  1405→        ValueError: If plan-header block not found or invalid
+  1409→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <assistant>I now have a clear picture of all three files. Let me also check the existing test files and look at the `RemoteGitHub` ABC for the methods we need:</assistant>
+  <usage input_tokens="10022" cache_creation_input_tokens="19421" cache_read_input_tokens="38878" cache_creation="{'ephemeral_5m_input_tokens': 19421, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_019jz5JxMhFkpck7P7JH6KEb">
+    <param name="description">Explore test files and ABC</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+I need to fin...[truncated 865 chars]...ate_issue_body, get_comment_by_id)
+- Whether test_check_cmd.py exists and what it contains</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="10022" cache_creation_input_tokens="19421" cache_read_input_tokens="38878" cache_creation="{'ephemeral_5m_input_tokens': 19421, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019jz5JxMhFkpck7P7JH6KEb">
+Perfect! I've successfully read all the requested files. Let me provide you with a comprehensive summary.
+
+## Summary of Test Files and RemoteGitHub ABC
+
+### 1. Plan Header Tests (`test_update_plan_header.py`)
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_plan_header.py`
+
+**Test Patterns Used:**
+- Uses `CliRunner` from Click to test CLI commands
+- Dependency injection via `ErkContext.for_test()` with:
+  - `FakeLocalGitHub` - local GitHub gateway fake
+  - `FakeGitHubIssues` - issues gateway fake
+  - `PlannedPRBackend` - plan store
+  - `FakeTime` - time abstraction
+- Tests use helper function `_make_issue_with_plan_header()` to create test data
+- Tests use `format_plan_header_body_for_test()` from `test_utils.plan_helpers` to create test bodies
+- Tests use `find_metadata_block()` to verify metadata was updated
+- Validates output via `json.loads(result.output)` - commands return JSON
+- Assertions check both exit code and output structure
+
+**Test Organization:**
+- Plain functions (no test classes)
+- Organized into logical sections with comments:
+  - "Success Cases" (lines 50-157)
+  - "Type Coercion" (lines 159-321)
+  - "Schema Validation Errors" (lines 354-409)
+  - "Input Validation Errors" (lines 443-487)
+  - "Plan Not Found / No Header Block" (lines 490-544)
+
+
+... [104 lines omitted] ...
+
+- `result.exit_code == 0` for success, `== 1` for failure
+3. **Return types** - validates return types: `ObjectiveValidationSuccess` or `ObjectiveValidationError`
+- JSON output with `success`, `issue_number`, `phases`, `summary`, `validation_errors`
+| `get_issue()` | `(owner, repo, number) -&gt; IssueInfo \| IssueNotFound` | Fetch issue by number, returns issue or error type |
+| `test_check_cmd.py` | Unit (CLI) | FakeLocalGitHub, FakeRemoteGitHub | CliRunner + custom _test_ctx | JSON with success, phases, summary, validation_errors |
+  </tool_result>
+  <assistant>Excellent. Now let me also read the existing plan_header tests more specifically to understand the unit test pattern for the plan_header module directly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12476" cache_read_input_tokens="58299" cache_creation="{'ephemeral_5m_input_tokens': 12476, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01MCvA4ZwdMpaB8bP7PymAg5">
+    <param name="pattern">packages/erk-shared/tests/unit/gateway/github/metadata/test_plan_header*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12476" cache_read_input_tokens="58299" cache_creation="{'ephemeral_5m_input_tokens': 12476, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UZqMEtNGpZ29eVVxsXHtzs">
+    <param name="pattern">extract_plan_header_objective_issue</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12476" cache_read_input_tokens="58299" cache_creation="{'ephemeral_5m_input_tokens': 12476, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UZqMEtNGpZ29eVVxsXHtzs">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01MCvA4ZwdMpaB8bP7PymAg5">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01DswNysdKctDPxY3gz18dyV">
+    <param name="pattern">packages/erk-shared/tests/**/test_plan*.py</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="491" cache_read_input_tokens="70775" cache_creation="{'ephemeral_5m_input_tokens': 491, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DswNysdKctDPxY3gz18dyV">
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/plan_store/test_plan_content.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/scratch/test_plan_snapshots.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_plan_utils.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01BNH4zFUJEUiwzDQo7jrN2a">
+    <param name="pattern">packages/erk-shared/tests/**/metadata/test_*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="71266" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BNH4zFUJEUiwzDQo7jrN2a">
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/metadata/test_roadmap_frontmatter.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/metadata/test_objective_functions.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/metadata/test_dependency_graph.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/metadata/test_objective_header_schema.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/metadata/test_roadmap_markers.py
+  </tool_result>
+  <assistant>There's no existing `test_plan_header.py` in the shared package. The plan says to create it there but let me check how existing tests in the metadata directory are structured:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="71478" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Rv4Z4bQHAqKf6yQVTSEdqJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/metadata/test_objective_functions.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="71478" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01RdQXa5CKhQZLa2PJL348g3">
+    <param name="pattern">format_plan_header_body_for_test|def _make_plan_header_body</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="71478" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Rv4Z4bQHAqKf6yQVTSEdqJ">
+     1→"""Tests for objective metadata functions in core.py.
+     2→
+     3→Tests the 4 new functions:
+     4→- create_objective_header_block
+     5→- render_objective_body_block
+     6→- format_objective_content_comment
+     7→- update_objective_header_comment_id
+     8→"""
+     9→
+    10→import pytest
+    11→
+    12→from erk_shared.gateway.github.metadata.core import (
+    13→    create_objective_header_block,
+    14→    format_objective_content_comment,
+    15→    render_metadata_block,
+    16→    render_objective_body_block,
+    17→    update_objective_header_comment_id,
+    18→)
+    19→
+    20→
+    21→class TestCreateObjectiveHeaderBlock:
+    22→    """Test create_objective_header_block creates valid metadata blocks."""
+    23→
+    24→    def test_creates_block_with_required_fields(self) -&gt; None:
+    25→        """Creates block with created_at, created_by, and null comment_id."""
+    26→        block = create_objective_header_block(
+    27→            created_at="2025-11-25T14:37:43+00:00",
+    28→            created_by="testuser",
+    29→            objective_comment_id=None,
+    30→            slug=None,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RdQXa5CKhQZLa2PJL348g3">
+tests/shared/github/test_plan_header_extraction.py:34:from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+tests/shared/github/test_plan_header_extraction.py:273:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:308:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:470:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:505:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:549:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:600:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:631:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:670:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:701:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:763:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:794:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:834:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:893:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:924:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1031:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1062:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1101:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1132:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1164:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1210:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1309:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1340:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1380:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1423:    body = format_plan_header_body_for_test(
+tests/shared/github/test_plan_header_extraction.py:1561:    body = format_plan_header_body_for_test(learn_plan_issue=456)
+tests/shared/github/test_plan_header_extraction.py:1569:    body = format_plan_header_body_for_test()
+tests/shared/github/test_plan_header_extraction.py:1577:    body = format_plan_header_body_for_test(learn_plan_pr=789)
+tests/shared/github/test_plan_header_extraction.py:1585:    body = format_plan_header_body_for_test()
+tests/shared/github/test_plan_header_extraction.py:1593:    body = format_plan_header_body_for_test(learned_from_issue=123)
+
+... [91 lines omitted] ...
+  </tool_result>
+  <assistant>Let me read the `format_plan_header_body_for_test` helper and the existing test file for plan_header extraction (where `update_plan_header_*` tests live):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6066" cache_read_input_tokens="71776" cache_creation="{'ephemeral_5m_input_tokens': 6066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FeyYLPeBhzGJDFSDXkjDuU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6066" cache_read_input_tokens="71776" cache_creation="{'ephemeral_5m_input_tokens': 6066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018wjHPq5BA3vgc3D3PHmjH8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/shared/github/test_plan_header_extraction.py</param>
+    <param name="offset">1540</param>
+    <param name="limit">230</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6066" cache_read_input_tokens="71776" cache_creation="{'ephemeral_5m_input_tokens': 6066, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FeyYLPeBhzGJDFSDXkjDuU">
+     1→"""Helpers for creating plan stores with Plan objects in tests.
+     2→
+     3→This module provides utilities for tests that need to set up plan state.
+     4→It converts Plan objects to PlannedPRBackend backed by FakeLocalGitHub.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.fake import FakeLocalGitHub
+     8→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    11→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    12→from erk_shared.gateway.time.fake import FakeTime
+    13→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    14→from erk_shared.plan_store.planned_pr_lifecycle import (
+    15→    DETAILS_CLOSE,
+    16→    DETAILS_OPEN,
+    17→)
+    18→from erk_shared.plan_store.types import Plan, PlanState
+    19→
+    20→_PLAN_HEADER_END_MARKER = "&lt;!-- /erk:metadata-block:plan-header --&gt;"
+    21→
+    22→
+    23→def _plan_to_pr_details(plan: Plan) -&gt; PRDetails:
+    24→    """Convert a Plan to PRDetails for FakeLocalGitHub.
+    25→
+    26→    Handles two body formats:
+    27→    1. Body with plan-header metadata block: reformats into PR body format
+    28→       (metadata block + separator + plan content)
+    29→    2. Plain body without metadata: uses body directly as PR body
+    30→
+
+... [240 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018wjHPq5BA3vgc3D3PHmjH8">
+  1540→        "created_at": "2024-01-15T10:30:00Z",
+  1541→        "created_by": "user123",
+  1542→    }
+  1543→
+  1544→    # Test each field with invalid values
+  1545→    for field, msg in [
+  1546→        ("learn_plan_issue", "learn_plan_issue must be positive"),
+  1547→        ("learn_plan_pr", "learn_plan_pr must be positive"),
+  1548→        ("learned_from_issue", "learned_from_issue must be positive"),
+  1549→    ]:
+  1550→        data = {**base_data, field: 0}
+  1551→        with pytest.raises(ValueError, match=msg):
+  1552→            schema.validate(data)
+  1553→
+  1554→        data = {**base_data, field: -1}
+  1555→        with pytest.raises(ValueError, match=msg):
+  1556→            schema.validate(data)
+  1557→
+  1558→
+  1559→def test_extract_plan_header_learn_plan_issue() -&gt; None:
+  1560→    """extract_plan_header_learn_plan_issue returns the value."""
+  1561→    body = format_plan_header_body_for_test(learn_plan_issue=456)
+  1562→
+  1563→    result = extract_plan_header_learn_plan_issue(body)
+  1564→    assert result == 456
+  1565→
+  1566→
+  1567→def test_extract_plan_header_learn_plan_issue_returns_none_if_missing() -&gt; None:
+  1568→    """extract_plan_header_learn_plan_issue returns None when field not set."""
+  1569→    body = format_plan_header_body_for_test()
+
+... [205 lines omitted] ...
+
+  1642→    """update_plan_header_learn_result raises ValueError if no plan-header."""
+  1645→    with pytest.raises(ValueError, match="plan-header block not found"):
+  1673→    """update_plan_header_learn_plan_completed raises ValueError if no plan-header."""
+  1676→    with pytest.raises(ValueError, match="plan-header block not found"):
+  1730→    """update_plan_header_learn_materials_branch raises ValueError if no plan-header."""
+  1733→    with pytest.raises(ValueError, match="plan-header block not found"):
+  </tool_result>
+  <assistant>Now I have a thorough understanding of the patterns. Let me also quickly check how the `FakeGitHubIssues` tracks updated bodies and the `FakeRemoteGitHub` pattern for check_cmd tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8166" cache_read_input_tokens="77842" cache_creation="{'ephemeral_5m_input_tokens': 8166, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JhjE7HKo3cxQVZgbhSzvGh">
+    <param name="pattern">class FakeRemoteGitHub</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8166" cache_read_input_tokens="77842" cache_creation="{'ephemeral_5m_input_tokens': 8166, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JhjE7HKo3cxQVZgbhSzvGh">
+packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py:127:class FakeRemoteGitHub(RemoteGitHub):
+  </tool_result>
+  <tool_use name="Read" id="toolu_018c3GLAeX59qB7DU31ZoD8L">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py</param>
+    <param name="offset">127</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="86008" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MpeSLwuHiXtFo9xTvXv565">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="86008" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018c3GLAeX59qB7DU31ZoD8L">
+   127→class FakeRemoteGitHub(RemoteGitHub):
+   128→    """In-memory fake for testing remote GitHub operations.
+   129→
+   130→    Constructor-injected values for reads, mutation tracking for writes.
+   131→    """
+   132→
+   133→    def __init__(
+   134→        self,
+   135→        *,
+   136→        authenticated_user: str,
+   137→        default_branch_name: str,
+   138→        default_branch_sha: str,
+   139→        next_pr_number: int,
+   140→        dispatch_run_id: str,
+   141→        issues: dict[int, IssueInfo] | None,
+   142→        issue_comments: dict[int, list[str]] | None,
+   143→        pr_references: dict[int, list[PRReference]] | None,
+   144→        comments_by_id: dict[int, str] | None = None,
+   145→        prs: dict[int, RemotePRInfo] | None = None,
+   146→    ) -&gt; None:
+   147→        """Create FakeRemoteGitHub with configurable responses.
+   148→
+   149→        Args:
+   150→            authenticated_user: Username to return from get_authenticated_user
+   151→            default_branch_name: Branch name to return from get_default_branch_name
+   152→            default_branch_sha: SHA to return from get_default_branch_sha
+   153→            next_pr_number: PR number to return from create_pull_request
+   154→            dispatch_run_id: Run ID to return from dispatch_workflow
+   155→            issues: Pre-configured issues keyed by number
+   156→            issue_comments: Pre-configured comment bodies keyed by issue number
+
+... [105 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MpeSLwuHiXtFo9xTvXv565">
+     1→"""Unit tests for erk objective check command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.objective.check_cmd import (
+     9→    ObjectiveValidationError,
+    10→    ObjectiveValidationSuccess,
+    11→    check_objective,
+    12→    validate_objective,
+    13→)
+    14→from erk_shared.context.context import ErkContext
+    15→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.gateway.github.issues.types import IssueInfo
+    18→from erk_shared.gateway.github.types import RepoInfo
+    19→from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    20→
+    21→_TEST_REPO_INFO = RepoInfo(owner="test", name="repo")
+    22→
+    23→
+    24→def _make_remote(
+    25→    issues: dict[int, IssueInfo],
+    26→    *,
+    27→    comments_by_id: dict[int, str] | None = None,
+    28→) -&gt; FakeRemoteGitHub:
+    29→    """Create a FakeRemoteGitHub from an issue dict."""
+    30→    return FakeRemoteGitHub(
+
+... [105 lines omitted] ...
+  </tool_result>
+  <assistant>I also need to see how `FakeRemoteGitHub` reads issues (get_issue) and tracks body updates:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3813" cache_read_input_tokens="86208" cache_creation="{'ephemeral_5m_input_tokens': 3813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017X95ZxroP8ASCMk1aY7PNh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py</param>
+    <param name="offset">255</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3813" cache_read_input_tokens="86208" cache_creation="{'ephemeral_5m_input_tokens': 3813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017X95ZxroP8ASCMk1aY7PNh">
+   255→        self,
+   256→        *,
+   257→        owner: str,
+   258→        repo: str,
+   259→        pr_number: int,
+   260→        body: str,
+   261→    ) -&gt; None:
+   262→        self._updated_pr_bodies.append(
+   263→            UpdatedPullRequestBody(owner=owner, repo=repo, pr_number=pr_number, body=body)
+   264→        )
+   265→
+   266→    def add_labels(
+   267→        self,
+   268→        *,
+   269→        owner: str,
+   270→        repo: str,
+   271→        issue_number: int,
+   272→        labels: tuple[str, ...],
+   273→    ) -&gt; None:
+   274→        self._added_labels.append(
+   275→            AddedLabels(owner=owner, repo=repo, issue_number=issue_number, labels=labels)
+   276→        )
+   277→
+   278→    def dispatch_workflow(
+   279→        self,
+   280→        *,
+   281→        owner: str,
+   282→        repo: str,
+   283→        workflow: str,
+   284→        ref: str,
+
+... [95 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_014QwVWsxVkutH7VAjxw8zeG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/remote_github/fake.py</param>
+    <param name="offset">372</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1516" cache_read_input_tokens="90021" cache_creation="{'ephemeral_5m_input_tokens': 1516, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014QwVWsxVkutH7VAjxw8zeG">
+   372→    def get_comment_by_id(
+   373→        self,
+   374→        *,
+   375→        owner: str,
+   376→        repo: str,
+   377→        comment_id: int,
+   378→    ) -&gt; str:
+   379→        return self._comments_by_id.get(comment_id, "")
+   380→
+   381→    def update_issue_body(
+   382→        self,
+   383→        *,
+   384→        owner: str,
+   385→        repo: str,
+   386→        number: int,
+   387→        body: str,
+   388→    ) -&gt; None:
+   389→        self._updated_issue_bodies.append(
+   390→            UpdatedIssueBody(owner=owner, repo=repo, number=number, body=body)
+   391→        )
+   392→        # Also update internal state so subsequent get_issue() calls see the new body
+   393→        if number in self._issues:
+   394→            self._issues[number] = replace(self._issues[number], body=body)
+   395→
+   396→    def update_comment(
+   397→        self,
+   398→        *,
+   399→        owner: str,
+   400→        repo: str,
+   401→        comment_id: int,
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to understand how `update_objective_node` gets access to the GitHub issues gateway and how to also get the PR body. Let me check the `require_issues` context helper and `FakeGitHubIssues`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1379" cache_read_input_tokens="91537" cache_creation="{'ephemeral_5m_input_tokens': 1379, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01QzznTM8r1ifs8DNMqp3ff4">
+    <param name="pattern">def get_issue\b</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1379" cache_read_input_tokens="91537" cache_creation="{'ephemeral_5m_input_tokens': 1379, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QzznTM8r1ifs8DNMqp3ff4">
+packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py:59:    def get_issue(self, repo_root: Path, number: int) -&gt; IssueInfo | IssueNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:188:    def get_issue(self, repo_root: Path, number: int) -&gt; IssueInfo | IssueNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:47:    def get_issue(self, repo_root: Path, number: int) -&gt; IssueInfo | IssueNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:139:    def get_issue(self, repo_root: Path, number: int) -&gt; IssueInfo | IssueNotFound:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HYFVxECmuH7cW7tsYjThR3">
+    <param name="pattern">def update_issue_body</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="92916" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HYFVxECmuH7cW7tsYjThR3">
+packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py:92:    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:204:    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:212:    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:58:    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -&gt; None:
+  </tool_result>
+  <assistant>Good, the `update_objective_node` script uses `github` (from `require_issues(ctx)`) which is a `GitHubIssues` gateway. It has `get_issue` and `update_issue_body`. So the backlink logic will use the same gateway. Now I have all context needed.
+
+Let me start implementing. I'll begin with Part A.1 - the `update_plan_header_objective_issue()` helper.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="93351" cache_creation="{'ephemeral_5m_input_tokens': 627, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01PgoHUJd9HB5NFyXxkNrzyH">
+    <param name="todos">[{'content': 'Part A.1: Add update_plan_header_objective_issue() helper', 'status': 'in_pr...[truncated 708 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="93351" cache_creation="{'ephemeral_5m_input_tokens': 627, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PgoHUJd9HB5NFyXxkNrzyH">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DtdeNPVYRGodQvTz45LY3z">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_comment_id(
+    issue_body: str,
+    comment_id: int,
+) -&gt; str:
+   ...[truncated 438 chars]...d field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """</param>
+    <param name="new_string">def update_plan_header_objective_issue(
+    issue_body: str,
+    objective_issue: int,
+) -...[truncated 1519 chars]...d field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="93978" cache_creation="{'ephemeral_5m_input_tokens': 464, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DtdeNPVYRGodQvTz45LY3z">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01NSPCKQeeWiYc4GHwcDnPE9">
+    <param name="todos">[{'content': 'Part A.1: Add update_plan_header_objective_issue() helper', 'status': 'compl...[truncated 710 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="811" cache_read_input_tokens="94442" cache_creation="{'ephemeral_5m_input_tokens': 811, 'ephemeral_1h_input_tokens': 0}" output_tokens="319" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NSPCKQeeWiYc4GHwcDnPE9">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Part A.2 - add the backlink logic to `update_objective_node`. After the issue body is written (line 389), I need to add the backlink logic. The `update_objective_node` uses the `github` gateway (a `GitHubIssues` instance). Since PRs are issues on GitHub, `get_issue` and `update_issue_body` work for both.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="95253" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019AjBr33WqQs5iuh43XDVm9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.core import (
+    extract_metadata_value,
+    extr...[truncated 267 chars]...ithub.metadata.types import BlockKeys
+from erk_shared.gateway.github.types import BodyText</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.core import (
+    extract_metadata_value,
+    extr...[truncated 411 chars]...ithub.metadata.types import BlockKeys
+from erk_shared.gateway.github.types import BodyText</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="95253" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019AjBr33WqQs5iuh43XDVm9">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the backlink logic after the issue body is written (after line 389). The backlink should happen after the API call to update the objective body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="95614" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SA3tDb4R6bXqjSZGJs2Gio">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+    <param name="offset">385</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="95614" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SA3tDb4R6bXqjSZGJs2Gio">
+   385→            results=results,
+   386→            include_body=False,
+   387→            updated_body=None,
+   388→        )
+   389→        click.echo(json.dumps(output))
+   390→        raise SystemExit(0)
+   391→
+   392→    # Single API call to write all updates
+   393→    github.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+   394→
+   395→    # v2 format: deterministically re-render the comment table from updated YAML
+   396→    objective_comment_id = extract_metadata_value(
+   397→        updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
+   398→    )
+   399→    if objective_comment_id is not None:
+   400→        comment_body = github.get_comment_by_id(repo_root, objective_comment_id)
+   401→        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+   402→        if updated_comment is not None and updated_comment != comment_body:
+   403→            github.update_comment(repo_root, objective_comment_id, updated_comment)
+   404→
+   405→    # Build and emit output
+   406→    output = _build_output(
+   407→        issue_number=issue_number,
+   408→        node=node,
+   409→        pr_value=pr_ref,
+   410→        url=issue.url,
+   411→        results=results,
+   412→        include_body=include_body,
+   413→        updated_body=updated_body,
+   414→    )
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to add the backlink logic between the comment update and the build-and-emit output section. I also need to add the `backlink_set` field to the output. Let me also look at the `_build_output` function to understand how to add extra fields:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="96218" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JqvUGiHdarQPnyKLFgfAZp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+    <param name="old_string">    # v2 format: deterministically re-render the comment table from updated YAML
+    objec...[truncated 666 chars]...=include_body,
+        updated_body=updated_body,
+    )
+    click.echo(json.dumps(output))</param>
+    <param name="new_string">    # v2 format: deterministically re-render the comment table from updated YAML
+    objec...[truncated 1122 chars]...ult is not None:
+        output.update(backlink_result)
+    click.echo(json.dumps(output))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="96218" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JqvUGiHdarQPnyKLFgfAZp">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to add the `_set_plan_backlink` helper function. I'll add it before the click command definition. Let me also add the necessary imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1115" cache_read_input_tokens="96896" cache_creation="{'ephemeral_5m_input_tokens': 1115, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GxFHQh31ETzbug9TK1YJAL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+    <param name="offset">46</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1115" cache_read_input_tokens="96896" cache_creation="{'ephemeral_5m_input_tokens': 1115, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+</session>
