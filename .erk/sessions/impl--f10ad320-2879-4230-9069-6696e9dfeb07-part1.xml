@@ -1,0 +1,1276 @@
+<session>
+  <meta branch="plnd/spike-skills-cli-backend-03-09-0604" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9036&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9036` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9036.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11301" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11301, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01L8JwSL8g6XMEVy9R5gktyP">
+    <param name="command">erk exec setup-impl --issue 9036</param>
+    <param name="description">Set up implementation for plan #9036</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11301" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11301, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L8JwSL8g6XMEVy9R5gktyP">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--spike-skills-cli-backend-03-09-0604", "plan_number": 9036, "plan_url": "https://github.com/dagster-io/erk/pull/9036", "branch": "plnd/spike-skills-cli-backend-03-09-0604", "plan_title": "[erk-plan] Spike: Validate vercel-labs/skills CLI as erk skill install backend", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9036, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/spike-skills-cli-backend-03-09-0604', teleporting from remote...
+  </tool_result>
+  <assistant>Setup complete. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28556" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Aky6MS6Ns2zECZpekzQGZ3">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--spike-skills-cli-backend-03-09-0604/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28556" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Aky6MS6Ns2zECZpekzQGZ3">
+     1→# Spike: Validate vercel-labs/skills CLI as erk skill install backend
+     2→
+     3→## Context
+     4→
+     5→Erk currently maintains its own multi-backend skill installation code (`codex_portable.py`, `backend_agent_dir()`, wheel bundling via pyproject.toml). The vercel-labs/skills CLI (`npx skills`) already handles 40+ agent backends, uses the same SKILL.md format erk uses, and discovers skills in `.claude/skills/*/SKILL.md` — erk's exact layout.
+     6→
+     7→This spike validates that the skills CLI can discover and install erk skills from the erk repo before committing to a full architectural integration. No changes to `erk init` or the capability system.
+     8→
+     9→**Decision context:**
+    10→- Source: erk repo itself (not a separate repo)
+    11→- Fallback: None — Node.js will be a hard requirement (no wheel-copy fallback)
+    12→- Scope: POC only — gateway + manual validation
+    13→
+    14→## Step 1: Manual validation
+    15→
+    16→Run these commands from a scratch directory to validate the skills CLI works with erk's layout:
+    17→
+    18→```bash
+    19→# 1. List available skills from local erk repo
+    20→npx skills add /Users/schrockn/code/erk --list
+    21→
+    22→# 2. Install a single skill to a test project
+    23→mkdir /tmp/erk-skills-spike &amp;&amp; cd /tmp/erk-skills-spike
+    24→git init
+    25→npx skills add /Users/schrockn/code/erk --skill dignified-python -a claude-code -y
+    26→
+    27→# 3. Verify the installed skill matches source
+    28→diff -r .claude/skills/dignified-python /Users/schrockn/code/erk/.claude/skills/dignified-python
+    29→
+    30→# 4. Test GitHub remote path (validates distribution story)
+
+... [104 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me load the relevant documentation before coding. Let me search for related gateway patterns and load necessary context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2265" cache_read_input_tokens="28909" cache_creation="{'ephemeral_5m_input_tokens': 2265, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01Xj5qTH8QVCnYgnZ8dEFJAs">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2265" cache_read_input_tokens="28909" cache_creation="{'ephemeral_5m_input_tokens': 2265, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xj5qTH8QVCnYgnZ8dEFJAs">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <tool_use name="Read" id="toolu_016d4GxgssqvS52fm7Kabwwa">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="898" cache_read_input_tokens="31174" cache_creation="{'ephemeral_5m_input_tokens': 898, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01VEftugUSBscMMapkhnkcrH">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.10.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="898" cache_read_input_tokens="31174" cache_creation="{'ephemeral_5m_input_tokens': 898, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GiLMkeL6N35XCmeHxpAJkZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="898" cache_read_input_tokens="31174" cache_creation="{'ephemeral_5m_input_tokens': 898, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016d4GxgssqvS52fm7Kabwwa">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01VEftugUSBscMMapkhnkcrH">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.10
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.10. This is the baseline for modern Python type syntax.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.10 introduced major improvements to type annotation syntax through PEP 604 (union types via `|`) and PEP 585 (generic types in standard collections). These features eliminated the need for most `typing` module imports and made type annotations more concise and readable.
+    11→
+    12→**What's new in 3.10:**
+    13→
+    14→- Union types with `|` operator (PEP 604)
+    15→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    16→- No more need for `List`, `Dict`, `Union`, `Optional` from typing
+    17→
+    18→**What you need from typing module:**
+    19→
+    20→- `TypeVar` for generic functions/classes
+    21→- `Protocol` for structural typing (rare - prefer ABC)
+    22→- `TYPE_CHECKING` for conditional imports
+    23→- `Any` (use sparingly)
+    24→
+    25→## Complete Type Annotation Syntax for Python 3.10
+    26→
+    27→### Basic Collection Types
+    28→
+    29→✅ **PREFERRED** - Use built-in generic types:
+    30→
+
+... [493 lines omitted] ...
+
+   303→            raise ValueError("Entity must have id")
+   375→        raise FileNotFoundError(f"Config not found: {path}")
+   385→### API Client with Error Handling
+   394→    """Container for API response with data or error."""
+   396→    def __init__(self, data: T | None = None, error: str | None = None) -&gt; None:
+   398→        self.error = error
+   401→        return self.error is None
+   407→        return ApiResponse(error=self.error)
+   445→All code should pass type checking without errors.
+  </tool_result>
+  <tool_result tool="toolu_01GiLMkeL6N35XCmeHxpAJkZ">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "creating a new gateway ABC"
+    11→    warning: "Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not."
+    12→  - action: "adding a new method to a dry-run-enabled gateway ABC (Git, LocalGitHub, Graphite)"
+    13→    warning: "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py."
+    14→  - action: "adding a new method to a 3-file gateway ABC"
+    15→    warning: "Must implement in 3 places: abc.py, real.py, fake.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from all implementation files simultaneously (3 or 4 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all implementations import the new types. For 4-file gateways: abc.py, real.py, fake.py, dry_run.py. For 3-file gateways: abc.py, real.py, fake.py."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [782 lines omitted] ...
+
+    31→    warning: "All implementations must be updated (3 or 4 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests."
+    33→    warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
+    35→    warning: "Must also wire into ErkContext: add field to context.py dataclass, add parameter to for_test(), and wire Real* in production factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section."
+    44→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   172→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   174→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   176→### Decision: Discriminated Union or Exception?
+   180→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   181→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   182→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   186→- [ ] At least one caller branches on the error and continues with different logic
+   187→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   188→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   192→### Checklist: Use Exceptions When
+   194→- [ ] All callers terminate on failure (extract message and stop)
+   195→- [ ] No caller inspects error type or branches on error content
+   196→- [ ] Use `UserFacingCliError` at CLI boundary
+   202→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   217→**Methods using discriminated unions** (callers branch on error):
+   221→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   222→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   223→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   225→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   227→**Methods using exceptions** (all callers terminate):
+   229→| Method              | Exception      | Why                                                         |
+   231→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   232→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   236→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   243→   - [ ] `real.py` - Return appropriate error types for failure cases
+   245→   - [ ] `dry_run.py` - Return appropriate success/error based on mode (4-file gateways only)
+   247→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   252→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   256→- Updated tests to use `isinstance(result, MergeError)`
+   274→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   282→- When error messages from `get_X()` on missing resources are unclear
+   305→    user_output(f"Error: Issue #{issue_number} not found")
+   380→6. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   610→The worktree sub-gateway follows the same 4-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   697→**Partial removal causes type checker errors** - if you remove from abc.py but forget another implementation, the type checker will complain about missing abstract method implementations.
+   715→1. Run type checker (`ty`) to verify no abstract method errors
+   772→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   774→├── fake.py       # Constructor-injected errors, mutation tracking
+   780→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   781→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   782→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   805→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <assistant>Now let me look at an existing gateway as a reference pattern, and also check the ErkContext and subprocess utilities.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="24075" cache_read_input_tokens="32072" cache_creation="{'ephemeral_5m_input_tokens': 24075, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01QkgSvG2pMyA3oqd115GoM7">
+    <param name="todos">[{'content': 'Step 1: Manual validation - test npx skills CLI', 'status': 'in_progress', '...[truncated 425 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24075" cache_read_input_tokens="32072" cache_creation="{'ephemeral_5m_input_tokens': 24075, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QkgSvG2pMyA3oqd115GoM7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me start with manual validation and explore the existing gateway patterns in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="56147" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_013WHRzdJmQ3zZ4BpoPs5DTi">
+    <param name="command">which npx &amp;&amp; npx --version 2&gt;&amp;1 || echo "npx not found"</param>
+    <param name="description">Check if npx is available</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="56147" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01CThNVH215nQQ1pcnAgnmYJ">
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 873 chars]...or patterns
+
+Give me the full content of all these files so I can understand the patterns.</param>
+    <param name="description">Explore gateway patterns</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="56147" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013WHRzdJmQ3zZ4BpoPs5DTi">
+/usr/local/bin/npx
+10.8.2
+  </tool_result>
+  <tool_result tool="toolu_01CThNVH215nQQ1pcnAgnmYJ">
+Async agent launched successfully.
+agentId: a87e720 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Good, npx is available. Let me test the skills CLI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="761" cache_read_input_tokens="56452" cache_creation="{'ephemeral_5m_input_tokens': 761, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01ALpcvULjGvyqcB7YvXXUVR">
+    <param name="command">mkdir -p /tmp/erk-skills-spike &amp;&amp; cd /tmp/erk-skills-spike &amp;&amp; git init 2&gt;&amp;1</param>
+    <param name="description">Create test directory for skills spike</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="761" cache_read_input_tokens="56452" cache_creation="{'ephemeral_5m_input_tokens': 761, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ALpcvULjGvyqcB7YvXXUVR">
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch &lt;name&gt;
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m &lt;name&gt;
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /tmp/erk-skills-spike/.git/
+Shell cwd was reset to /home/runner/work/erk/erk
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Nb22V5afG8JSpbkQSRGd29">
+    <param name="command">cd /tmp/erk-skills-spike &amp;&amp; npx skills add /home/runner/work/erk/erk --list 2&gt;&amp;1</param>
+    <param name="description">List available skills from erk repo</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="57213" cache_creation="{'ephemeral_5m_input_tokens': 389, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Nb22V5afG8JSpbkQSRGd29">
+npm warn exec The following package was not found and will be installed: skills@1.4.4
+
+[38;5;250m███████╗██╗  ██╗██╗██╗     ██╗     ███████╗[0m
+[38;5;248m██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝[0m
+[38;5;245m███████╗█████╔╝ ██║██║     ██║     ███████╗[0m
+[38;5;243m╚════██║██╔═██╗ ██║██║     ██║     ╚════██║[0m
+[38;5;240m███████║██║  ██╗██║███████╗███████╗███████║[0m
+[38;5;238m╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝[0m
+
+[90m┌[39m  [46m[30m skills [39m[49m
+[90m│[39m
+[90m│[39m  [2mTip: use the --yes (-y) and --global (-g) flags to install without prompts.[22m
+[?25l[90m│[39m
+[32m◇[39m  Source: /home/runner/work/erk/erk
+[?25h[?25l[90m│[39m
+[32m◇[39m  Local path validated
+[?25h[?25l[90m│[39m
+[32m◇[39m  Found [32m23[39m skills
+[?25h
+[90m│[39m
+[32m◇[39m  [1mAvailable Skills[22m
+[90m│[39m
+[90m│[39m    [36mci-iteration[39m
+[90m│[39m
+[90m│[39m      [2mThis skill should be used when running CI checks iteratively and fixing failures. Use when executing make targets (fast-ci, all-ci, ci), iterating on lint/format/type/test errors, or needing the devrun agent pattern for pytest/ty/ruff/prettier/make/gt commands.
+[90m│[39m  [22m
+[90m│[39m
+[90m│[39m    [36mcli-skill-creator[39m
+[90m│[39m
+[90m│[39m      [2mThis skill should be used when creating a skill for a CLI tool. Use when users ask to document a command-line tool, create CLI guidance, or build a skill for terminal commands. Essential for systematically introspecting CLI tools through help text, man pages, GitHub repos, and online research, then organizing findings into effective skill documentation.[22m
+
+... [96 lines omitted] ...
+
+[90m│[39m      [2mPython coding standards with automatic version detection. Use when writing, reviewing, or refactoring Python to ensure adherence to LBYL exception handling patterns, modern type syntax (list[str], str | None), pathlib operations, ABC-based interfaces, absolute imports, and explicit error boundaries at CLI level. Also provides production-tested code smell patterns from Dagster Labs for API design, parameter complexity, and code organization. Essential for maintaining erk's dignified Python standards.[22m
+  </tool_result>
+  <assistant>The `--list` command found 23 skills. Now let me test installing a single skill:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3475" cache_read_input_tokens="57602" cache_creation="{'ephemeral_5m_input_tokens': 3475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LCxWMaKjHrp6zWZ44TDUpc">
+    <param name="command">cd /tmp/erk-skills-spike &amp;&amp; npx skills add /home/runner/work/erk/erk --skill dignified-python -a claude-code -y --no-telemetry 2&gt;&amp;1</param>
+    <param name="description">Install a single skill to test project</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3475" cache_read_input_tokens="57602" cache_creation="{'ephemeral_5m_input_tokens': 3475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LCxWMaKjHrp6zWZ44TDUpc">
+[38;5;250m███████╗██╗  ██╗██╗██╗     ██╗     ███████╗[0m
+[38;5;248m██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝[0m
+[38;5;245m███████╗█████╔╝ ██║██║     ██║     ███████╗[0m
+[38;5;243m╚════██║██╔═██╗ ██║██║     ██║     ╚════██║[0m
+[38;5;240m███████║██║  ██╗██║███████╗███████╗███████║[0m
+[38;5;238m╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝[0m
+
+[90m┌[39m  [46m[30m skills [39m[49m
+[90m│[39m
+[90m│[39m  [2mTip: use the --yes (-y) and --global (-g) flags to install without prompts.[22m
+[?25l[90m│[39m
+[32m◇[39m  Source: /home/runner/work/erk/erk
+[?25h[?25l[90m│[39m
+[32m◇[39m  Local path validated
+[?25h[?25l[90m│[39m
+[32m◇[39m  Found [32m23[39m skills
+[?25h[90m│[39m
+[34m●[39m  Selected 1 skill: [36mdignified-python[39m
+
+[90m│[39m
+[32m◇[39m  [0mInstallation Summary[0m [90m──────────────╮[39m
+[90m│[39m  [2m[22m                                   [90m│[39m
+[90m│[39m  [2m[36m./.agents/skills/dignified-python[39m[22m  [90m│[39m
+[90m│[39m  [2m  [2msymlink →[22m[2m Claude Code[22m            [90m│[39m
+[90m│[39m  [2m[22m                                   [90m│[39m
+[90m├─────────────────────────────────────╯[39m
+[?25l[90m│[39m
+[32m◇[39m  Installation complete
+[?25h
+[90m│[39m
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UFFpyf46Ktt2rqU3qboYYq">
+    <param name="command">ls -la /tmp/erk-skills-spike/.agents/skills/dignified-python/ 2&gt;&amp;1 &amp;&amp; echo "---" &amp;&amp; ls -la /tmp/erk-skills-spike/.claude/skills/ 2&gt;&amp;1 &amp;&amp; echo "---" &amp;&amp; ls /tmp/erk-skills-spike/ 2&gt;&amp;1</param>
+    <param name="description">Check installed skill structure</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1153" cache_read_input_tokens="61077" cache_creation="{'ephemeral_5m_input_tokens': 1153, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UFFpyf46Ktt2rqU3qboYYq">
+total 44
+drwxr-xr-x 4 runner runner  4096 Mar  9 10:12 .
+drwxr-xr-x 3 runner runner  4096 Mar  9 10:12 ..
+-rw-r--r-- 1 runner runner  3433 Mar  9 10:12 SKILL.md
+-rw-r--r-- 1 runner runner  4006 Mar  9 10:12 cli-patterns.md
+-rw-r--r-- 1 runner runner 15545 Mar  9 10:12 dignified-python-core.md
+drwxr-xr-x 2 runner runner  4096 Mar  9 10:12 references
+-rw-r--r-- 1 runner runner  2432 Mar  9 10:12 subprocess.md
+drwxr-xr-x 2 runner runner  4096 Mar  9 10:12 versions
+---
+total 8
+drwxr-xr-x 2 runner runner 4096 Mar  9 10:12 .
+drwxr-xr-x 3 runner runner 4096 Mar  9 10:12 ..
+lrwxrwxrwx 1 runner runner   37 Mar  9 10:12 dignified-python -&gt; ../../.agents/skills/dignified-python
+---
+skills-lock.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013xaWtApjZC9KPAvZw6UPFZ">
+    <param name="command">cat /tmp/erk-skills-spike/skills-lock.json 2&gt;&amp;1</param>
+    <param name="description">Check skills-lock.json contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="711" cache_read_input_tokens="62230" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013xaWtApjZC9KPAvZw6UPFZ">
+{
+  "version": 1,
+  "skills": {
+    "dignified-python": {
+      "source": "/home/runner/work/erk/erk",
+      "sourceType": "local",
+      "computedHash": "ea64f00ca88f7a645e1b19efc25526a5193def5735b6090cc5e81fe375390f26"
+    }
+  }
+}
+  </tool_result>
+  <assistant>Let me also verify the content matches and test multiple skills:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="62941" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01YMPXB1btrue5ArnEFMSxX3">
+    <param name="command">diff -r /tmp/erk-skills-spike/.agents/skills/dignified-python /home/runner/work/erk/erk/.claude/skills/dignified-python 2&gt;&amp;1</param>
+    <param name="description">Verify installed skill matches source</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="62941" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01X671hByH5svdmbHfkw9GZc">
+    <param name="command">cd /tmp/erk-skills-spike &amp;&amp; npx skills add /home/runner/work/erk/erk --skill fake-driven-testing -a claude-code -y --no-telemetry 2&gt;&amp;1</param>
+    <param name="description">Test installing a second skill</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="62941" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YMPXB1btrue5ArnEFMSxX3">
+
+  </tool_result>
+  <tool_result tool="toolu_01X671hByH5svdmbHfkw9GZc">
+[38;5;250m███████╗██╗  ██╗██╗██╗     ██╗     ███████╗[0m
+[38;5;248m██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝[0m
+[38;5;245m███████╗█████╔╝ ██║██║     ██║     ███████╗[0m
+[38;5;243m╚════██║██╔═██╗ ██║██║     ██║     ╚════██║[0m
+[38;5;240m███████║██║  ██╗██║███████╗███████╗███████║[0m
+[38;5;238m╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝[0m
+
+[90m┌[39m  [46m[30m skills [39m[49m
+[90m│[39m
+[90m│[39m  [2mTip: use the --yes (-y) and --global (-g) flags to install without prompts.[22m
+[?25l[90m│[39m
+[32m◇[39m  Source: /home/runner/work/erk/erk
+[?25h[?25l[90m│[39m
+[32m◇[39m  Local path validated
+[?25h[?25l[90m│[39m
+[32m◇[39m  Found [32m23[39m skills
+[?25h[90m│[39m
+[34m●[39m  Selected 1 skill: [36mfake-driven-testing[39m
+
+[90m│[39m
+[32m◇[39m  [0mInstallation Summary[0m [90m─────────────────╮[39m
+[90m│[39m  [2m[22m                                      [90m│[39m
+[90m│[39m  [2m[36m./.agents/skills/fake-driven-testing[39m[22m  [90m│[39m
+[90m│[39m  [2m  [2msymlink →[22m[2m Claude Code[22m               [90m│[39m
+[90m│[39m  [2m[22m                                      [90m│[39m
+[90m├────────────────────────────────────────╯[39m
+[?25l[90m│[39m
+[32m◇[39m  Installation complete
+[?25h
+[90m│[39m
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Manual validation passed. Let me also test the `remove` command and then get the explore agent results:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1508" cache_read_input_tokens="63149" cache_creation="{'ephemeral_5m_input_tokens': 1508, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01D3xfZpfDhWjUs75QZms7tg">
+    <param name="command">cd /tmp/erk-skills-spike &amp;&amp; npx skills remove --skill dignified-python -a claude-code -y 2&gt;&amp;1</param>
+    <param name="description">Test removing a skill</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1508" cache_read_input_tokens="63149" cache_creation="{'ephemeral_5m_input_tokens': 1508, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01ThJ5HY4KgAsRUvm2a6FjrM">
+    <param name="task_id">a87e720</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1508" cache_read_input_tokens="63149" cache_creation="{'ephemeral_5m_input_tokens': 1508, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D3xfZpfDhWjUs75QZms7tg">
+[?25l[90m│[39m
+[32m◇[39m  Found 2 unique installed skill(s)
+[?25h[?25l[90m│[39m
+[32m◇[39m  Removal process complete
+[?25h[90m│[39m
+[32m◆[39m  [32mSuccessfully removed 1 skill(s)[39m
+
+[90m│[39m
+[90m└[39m  [32mDone![39m
+Shell cwd was reset to /home/runner/work/erk/erk
+  </tool_result>
+  <tool_result tool="toolu_01ThJ5HY4KgAsRUvm2a6FjrM">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a87e720&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/index.md"}
+[Tool: Grep] {"pattern":"gateway","path":"/home/runner/work/erk/erk/docs/learned","glob":"*.md","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"gateway","path":"/home/runner/work/erk/erk/docs/learned","glob":"*.md","output_mode":"files_with_matches"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/gateway/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/gateway-hierarchy.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/gateway-hierarchy.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/__init__.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/abc.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/real.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/fake.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/shell/fake.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py","limit":150}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py","limit":150}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py","offset":150,"limit":250}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py","offset":150,"limit":250}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/context.py","limit":150}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/context.py","limit":150}
+[Tool: Glob] {"pattern":"**/test*shell*.py"}
+[Tool: Bash] {"command":"find /home/runner/work/erk/erk/tests -name \"*shell*\" -type f 2&gt;/dev/null | head -20","description":"Find shell-related test files"}
+
+... [638 lines omitted] ...
+
+        except (subprocess.TimeoutExpired, OSError):
+- Wraps `subprocess.run()` with proper error handling
+    """Execute subprocess with enriched error reporting.
+    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+        error_msg = f"Timed out after {timeout}s trying to {operation_context}"
+        error_msg += f"\nCommand: {cmd_str}"
+        raise RuntimeError(error_msg) from e
+    except subprocess.CalledProcessError as e:
+        error_msg = f"Failed to {operation_context}"
+        error_msg += f"\nCommand: {cmd_str}"
+        error_msg += f"\nExit code: {e.returncode}"
+            error_msg += f"\nstdout: {stdout_text.strip()}"
+            error_msg += f"\nstderr: {stderr_text.strip()}"
+        raise RuntimeError(error_msg) from e
+    except FileNotFoundError as e:
+        error_msg = f"Command not found while trying to {operation_context}: {cmd[0]}"
+        error_msg += f"\nFull command: {cmd_str}"
+        raise RuntimeError(error_msg) from e
+- **Operation context**: Human-readable description for error messages
+- **Error enrichment**: Adds command, exit code, stdout/stderr to errors
+- **Consistent error type**: Everything becomes RuntimeError for consistent handling
+5. **Error Handling Pattern**
+   - Wraps errors with operation context + command + output
+   - Converts all subprocess errors to RuntimeError
+  </tool_result>
+  <assistant>Excellent. Manual validation is complete and I have a thorough understanding of the gateway patterns. Let me now read the actual files I need to modify for wiring, and then start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7808" cache_read_input_tokens="64657" cache_creation="{'ephemeral_5m_input_tokens': 7808, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_014xe7n43fGUk7vAvNpkY6ov">
+    <param name="todos">[{'content': 'Step 1: Manual validation - test npx skills CLI', 'status': 'completed', 'ac...[truncated 427 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7808" cache_read_input_tokens="64657" cache_creation="{'ephemeral_5m_input_tokens': 7808, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014xe7n43fGUk7vAvNpkY6ov">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_015V8PyXKxobv38xTHDUbcbv">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="72465" cache_creation="{'ephemeral_5m_input_tokens': 320, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EiHTjzExQ7VTdrHZhpQwnP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="72465" cache_creation="{'ephemeral_5m_input_tokens': 320, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011FCDMZt3814fYbqoVc7mNW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="72465" cache_creation="{'ephemeral_5m_input_tokens': 320, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015V8PyXKxobv38xTHDUbcbv">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PlanListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk_shared.core.health_check_runner import HealthCheckRunner
+    27→    from erk_shared.core.objective_list_service import ObjectiveListService
+    28→
+    29→from erk_shared.core.plan_list_service import PlanListService
+    30→from erk_shared.core.prompt_executor import PromptExecutor
+
+... [250 lines omitted] ...
+
+   141→            RuntimeError: If not in a git repository
+   144→            raise RuntimeError("Not in a git repository")
+   204→            raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
+  </tool_result>
+  <tool_result tool="toolu_011FCDMZt3814fYbqoVc7mNW">
+     1→"""Simple subprocess utilities for erk-shared.
+     2→
+     3→This module provides basic subprocess execution for GitHub CLI commands.
+     4→It's intentionally minimal to avoid pulling in complex dependencies.
+     5→"""
+     6→
+     7→import logging
+     8→import os
+     9→import subprocess
+    10→import time
+    11→from collections.abc import Sequence
+    12→from pathlib import Path
+    13→from typing import IO, Any
+    14→
+    15→from erk_shared.gateway.github.retry import (
+    16→    RETRY_DELAYS,
+    17→    RetriesExhausted,
+    18→    RetryRequested,
+    19→    with_retries,
+    20→)
+    21→from erk_shared.gateway.github.transient_errors import is_transient_error
+    22→from erk_shared.gateway.time.abc import Time
+    23→
+    24→logger = logging.getLogger(__name__)
+    25→
+    26→
+    27→def copied_env_for_git_subprocess() -&gt; dict[str, str]:
+    28→    """Return a copy of the environment for git subprocess calls.
+    29→
+    30→    Sets GIT_TERMINAL_PROMPT=0 so git commands fail fast with an error
+
+... [225 lines omitted] ...
+
+    87→    """Execute subprocess with enriched error reporting for integration layer.
+    89→    Wraps subprocess.run() to catch CalledProcessError and re-raise as RuntimeError
+   109→        RuntimeError: If command fails or times out, with enriched error context
+   110→        FileNotFoundError: If command binary is not found
+   140→        error_msg = f"Timed out after {timeout}s trying to {operation_context}"
+   141→        error_msg += f"\nCommand: {cmd_str}"
+   142→        raise RuntimeError(error_msg) from e
+   144→    except subprocess.CalledProcessError as e:
+   146→        error_msg = f"Failed to {operation_context}"
+   147→        error_msg += f"\nCommand: {cmd_str}"
+   148→        error_msg += f"\nExit code: {e.returncode}"
+   154→                error_msg += f"\nstdout: {stdout_stripped}"
+   160→                error_msg += f"\nstderr: {stderr_stripped}"
+   162→        raise RuntimeError(error_msg) from e
+   164→    except FileNotFoundError as e:
+   166→        error_msg = f"Command not found while trying to {operation_context}: {cmd[0]}"
+   167→        error_msg += f"\nFull command: {cmd_str}"
+   168→        raise RuntimeError(error_msg) from e
+   173→# transient errors, but each attempt won't hang indefinitely.
+   188→        RuntimeError: If command fails or times out, with enriched error context
+   189→        FileNotFoundError: If gh is not installed
+   210→    """Execute gh command with automatic retry on transient network errors.
+   213→    Transient errors (network timeouts, connection failures) trigger automatic
+   226→        RuntimeError: If command fails after all retries, or with non-transient error
+   227→        FileNotFoundError: If gh is not installed
+   234→        except RuntimeError as e:
+   235→            if is_transient_error(str(e)):
+   243→        msg = f"GitHub command failed after retries: {result.reason}"
+   244→        raise RuntimeError(msg)
+  </tool_result>
+  <tool_result tool="toolu_01EiHTjzExQ7VTdrHZhpQwnP">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [729 lines omitted] ...
+
+   511→        tuple[Path | None, str | None]: (path, error_message)
+   513→        - If directory deleted: (None, error_message)
+   522→    except (FileNotFoundError, OSError):
+   540→        debug: If True, enable debug mode for error handling (default False)
+   552→    cwd_result, error_msg = safe_cwd()
+   554→        assert error_msg is not None
+   555→        # Emit clear error and exit
+   556→        user_output(click.style("Error: ", fg="red") + error_msg)
+   607→        except ValueError:
+  </tool_result>
+  <assistant>Now I also need to see the context_for_test in erk_shared to understand how the for_test delegation works:</assistant>
+  <usage input_tokens="3297" cache_creation_input_tokens="15772" cache_read_input_tokens="72785" cache_creation="{'ephemeral_5m_input_tokens': 15772, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019rk1xu85dyHZzGUWNbKzQG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py</param>
+  </tool_use>
+  <usage input_tokens="3297" cache_creation_input_tokens="15772" cache_read_input_tokens="72785" cache_creation="{'ephemeral_5m_input_tokens': 15772, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ADaNxyPjH1dDor5qLiHyX4">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="3297" cache_creation_input_tokens="15772" cache_read_input_tokens="72785" cache_creation="{'ephemeral_5m_input_tokens': 15772, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019rk1xu85dyHZzGUWNbKzQG">
+     1→"""Test factories for creating ErkContext instances.
+     2→
+     3→This module provides factory functions for creating test contexts with
+     4→fake implementations. These are used by both erk and erk-kits tests.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→from erk_shared.context.context import ErkContext
+    13→from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk.artifacts.paths import ErkPackageInfo
+    17→from erk_shared.core.fakes import (
+    18→    FakeCodespaceRegistry,
+    19→    FakeObjectiveListService,
+    20→    FakePlanListService,
+    21→    FakePromptExecutor,
+    22→    FakeScriptWriter,
+    23→)
+    24→from erk_shared.core.prompt_executor import PromptExecutor
+    25→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    26→from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+    27→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    28→from erk_shared.gateway.cmux.abc import Cmux
+    29→from erk_shared.gateway.codespace.abc import Codespace
+    30→from erk_shared.gateway.git.abc import Git
+
+... [203 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01ADaNxyPjH1dDor5qLiHyX4">
+     1→"""Codespace SSH execution integration.
+     2→
+     3→Import from submodules:
+     4→- abc: Codespace
+     5→- real: RealCodespace
+     6→- fake: FakeCodespace
+     7→"""
+     8→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I have a complete understanding of the patterns. Let me create the SkillsCli gateway files. I'll create all 4 files (init, types, abc, real, fake) for the 3-file gateway pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7687" cache_read_input_tokens="88557" cache_creation="{'ephemeral_5m_input_tokens': 7687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BJfy9XcQ1JCDZ2bBKT41Sr">
+    <param name="command">mkdir -p /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli</param>
+    <param name="description">Create skills_cli gateway directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7687" cache_read_input_tokens="88557" cache_creation="{'ephemeral_5m_input_tokens': 7687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BJfy9XcQ1JCDZ2bBKT41Sr">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Dhy3wyVkFGEKx4nU2oxP89">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/__init__.py</param>
+    <param name="content">"""Skills CLI gateway for vercel-labs/skills integration.
+
+Import from submodules:
+- abc: SkillsCli
+- real: RealSkillsCli
+- fake: FakeSkillsCli
+- types: SkillsCliResult
+"""
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="96244" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_017Hpdi3Z1kES8pQEwQoqqwP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/types.py</param>
+    <param name="content">"""Types for the Skills CLI gateway."""
+
+from dataclasses import dataclass
+
+
+@dataclass(fr...[truncated 25 chars]...lt from a skills CLI operation."""
+
+    success: bool
+    exit_code: int
+    message: str
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="96244" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_013YarQKttW6y9mcbbxnNnJu">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/abc.py</param>
+    <param name="content">"""Abstract interface for the vercel-labs/skills CLI."""
+
+from abc import ABC, abstractmet...[truncated 1545 chars]...       Returns:
+            SkillsCliResult with removal outcome.
+        """
+        ...
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="96244" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01G7wzLB6AsCjpqfbFnGJFQL">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/real.py</param>
+    <param name="content">"""Real implementation of the Skills CLI gateway using npx."""
+
+import shutil
+
+from erk_sh...[truncated 2262 chars]... 0,
+            exit_code=result.returncode,
+            message=result.stdout,
+        )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="96244" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01M9C9KmDsB5r1c1t5GPBdPA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/fake.py</param>
+    <param name="content">"""Fake implementation of the Skills CLI gateway for testing."""
+
+from dataclasses import ...[truncated 2553 chars]...veSkillsCall]:
+        """For test assertions."""
+        return list(self._remove_calls)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="96244" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dhy3wyVkFGEKx4nU2oxP89">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/__init__.py
+  </tool_result>
+  <tool_result tool="toolu_017Hpdi3Z1kES8pQEwQoqqwP">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/types.py
+  </tool_result>
+  <tool_result tool="toolu_013YarQKttW6y9mcbbxnNnJu">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/abc.py
+  </tool_result>
+  <tool_result tool="toolu_01G7wzLB6AsCjpqfbFnGJFQL">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/real.py
+  </tool_result>
+  <tool_result tool="toolu_01M9C9KmDsB5r1c1t5GPBdPA">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/skills_cli/fake.py
+  </tool_result>
+  <assistant>Gateway files created. Now let me wire into ErkContext.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3048" cache_read_input_tokens="96429" cache_creation="{'ephemeral_5m_input_tokens': 3048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0154zR2i3ZhXGvF5DdeM4d5V">
+    <param name="todos">[{'content': 'Step 1: Manual validation - test npx skills CLI', 'status': 'completed', 'ac...[truncated 429 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3048" cache_read_input_tokens="96429" cache_creation="{'ephemeral_5m_input_tokens': 3048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0154zR2i3ZhXGvF5DdeM4d5V">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now I need to wire the gateway into 3 places:
+1. ErkContext dataclass field (`packages/erk-shared/src/erk_shared/context/context.py`)
+2. Test factory (`packages/erk-shared/src/erk_shared/context/testing.py`)
+3. Production context factory (`src/erk/core/context.py`)
+
+Also need to update `minimal_context` and `context_for_test` in `src/erk/core/context.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="99477" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01U92YY3KjNLxjDdYHJfJE67">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="old_string">from erk_shared.gateway.shell.abc import Shell
+from erk_shared.gateway.time.abc import Time</param>
+    <param name="new_string">from erk_shared.gateway.shell.abc import Shell
+from erk_shared.gateway.skills_cli.abc import SkillsCli
+from erk_shared.gateway.time.abc import Time</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="99477" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U92YY3KjNLxjDdYHJfJE67">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ESdLtxDvi5msRWBbUKAyQm">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="old_string">    # Shell/CLI integrations (moved to erk_shared)
+    shell: Shell
+    completion: Completion
+    codespace: Codespace
+    cmux: Cmux
+    agent_launcher: AgentLauncher</param>
+    <param name="new_string">    # Shell/CLI integrations (moved to erk_shared)
+    shell: Shell
+    skills_cli: SkillsCli
+    completion: Completion
+    codespace: Codespace
+    cmux: Cmux
+    agent_launcher: AgentLauncher</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="363" cache_read_input_tokens="99771" cache_creation="{'ephemeral_5m_input_tokens': 363, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ESdLtxDvi5msRWBbUKAyQm">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py has been updated successfully.
+  </tool_result>
+</session>
