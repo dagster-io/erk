@@ -1,0 +1,541 @@
+<session>
+  <meta branch="plnd/move-fakes-to-tests-03-09-1534" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Bash" id="toolu_014S95z9gifZihNmCtJc5ohc">
+    <param name="command">git diff HEAD~5 -- packages/erk-dev/tests/test_release_tag.py | head -30</param>
+    <param name="description">Check original imports in test_release_tag.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="48330" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01U6Z27hzDWrW18xE44e98ku">
+    <param name="command">git diff HEAD~5 -- packages/erk-statusline/tests/test_statusline.py | head -30</param>
+    <param name="description">Check original imports in test_statusline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="48330" cache_creation="{'ephemeral_5m_input_tokens': 641, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U6Z27hzDWrW18xE44e98ku">
+diff --git a/packages/erk-statusline/tests/test_statusline.py b/packages/erk-statusline/tests/test_statusline.py
+index 3b9e2732c..fd2cac7f0 100644
+--- a/packages/erk-statusline/tests/test_statusline.py
++++ b/packages/erk-statusline/tests/test_statusline.py
+@@ -9,12 +9,12 @@ import time
+ from pathlib import Path
+ from unittest.mock import MagicMock, patch
+ 
+-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
++from tests.fakes.gateway.branch_manager import FakeBranchManager
++from tests.fakes.gateway.git import FakeGit
++from tests.fakes.gateway.github import FakeLocalGitHub
++from tests.fakes.gateway.graphite import FakeGraphite
+ from erk_shared.gateway.branch_manager.types import PrInfo
+ from erk_shared.gateway.git.abc import WorktreeInfo
+-from erk_shared.gateway.git.fake import FakeGit
+-from erk_shared.gateway.github.fake import FakeLocalGitHub
+-from erk_shared.gateway.graphite.fake import FakeGraphite
+ from erk_statusline.context import StatuslineContext
+ from erk_statusline.statusline import (
+     CACHE_TTL_SECONDS,
+  </tool_result>
+  <tool_result tool="toolu_014S95z9gifZihNmCtJc5ohc">
+diff --git a/packages/erk-dev/tests/test_release_tag.py b/packages/erk-dev/tests/test_release_tag.py
+index 88c0b7a42..8c7216ecc 100644
+--- a/packages/erk-dev/tests/test_release_tag.py
++++ b/packages/erk-dev/tests/test_release_tag.py
+@@ -6,8 +6,8 @@ from click.testing import CliRunner
+ 
+ from erk_dev.cli import cli
+ from erk_dev.context import ErkDevContext
+-from erk_shared.gateway.git.fake import FakeGit
+-from erk_shared.gateway.github.fake import FakeLocalGitHub
++from tests.fakes.gateway.git import FakeGit
++from tests.fakes.gateway.github import FakeLocalGitHub
+ 
+ 
+ class TestReleaseTagCommand:
+  </tool_result>
+  <assistant>The original imports were `from erk_shared.gateway.git.fake import FakeGit` etc. — these worked because `erk_shared` is an installed package. Now that fakes live in `tests/`, which is NOT an installed package, these sub-package tests can't find them.
+
+The proper fix is to make the `tests` directory importable for the sub-package test runs. I need to check how pytest discovers rootdir and what conftest paths are used.
+
+The simplest approach: add a `conftest.py` at the repo root that ensures the repo root is on `sys.path`, or add `pythonpath` to the pytest config. Let me check what's most consistent with the project:</assistant>
+  <usage input_tokens="397" cache_creation_input_tokens="945" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 945, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CErGKjEMZvxvnTdKkntSCB">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="offset">127</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="397" cache_creation_input_tokens="945" cache_read_input_tokens="48971" cache_creation="{'ephemeral_5m_input_tokens': 945, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CErGKjEMZvxvnTdKkntSCB">
+   127→[tool.pytest.ini_options]
+   128→addopts = "-q"
+   129→testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
+   130→asyncio_mode = "auto"
+   131→asyncio_default_fixture_loop_scope = "function"
+   132→filterwarnings = [
+   133→    "ignore:codecs.open\\(\\) is deprecated:DeprecationWarning:frontmatter",
+   134→]
+   135→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The cleanest solution: add `pythonpath = ["."]` to `[tool.pytest.ini_options]`. This tells pytest to add the repo root to `sys.path`, making `tests` importable as a package. This is the standard pytest approach for this pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="884" cache_read_input_tokens="49916" cache_creation="{'ephemeral_5m_input_tokens': 884, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013uQtEtQPdbYCBEmLJmYiBo">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="old_string">[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]</param>
+    <param name="new_string">[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
+testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="884" cache_read_input_tokens="49916" cache_creation="{'ephemeral_5m_input_tokens': 884, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013uQtEtQPdbYCBEmLJmYiBo">
+The file /home/runner/work/erk/erk/pyproject.toml has been updated successfully.
+  </tool_result>
+  <assistant>Now let me fix the import ordering and prettier issues in parallel. First let me fix ruff and prettier via devrun:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="727" cache_read_input_tokens="50800" cache_creation="{'ephemeral_5m_input_tokens': 727, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01PSmDPHgsyGzNhdUqCFUAFn">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make fix and make format</param>
+    <param name="prompt">Change to the repository root at /home/runner/work/erk/erk and execute: make fix &amp;&amp; make format
+
+Report the results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="727" cache_read_input_tokens="50800" cache_creation="{'ephemeral_5m_input_tokens': 727, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0182LNGdm3SQtCesbyC2gGS4">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run prettier formatting</param>
+    <param name="prompt">Change to the repository root at /home/runner/work/erk/erk and execute: prettier --write '**/*.md' --ignore-path .gitignore
+
+Report the results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="727" cache_read_input_tokens="50800" cache_creation="{'ephemeral_5m_input_tokens': 727, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0182LNGdm3SQtCesbyC2gGS4">
+Prettier successfully checked all markdown files in the repository. Here's the summary:
+
+**prettier passed: All markdown files are properly formatted (unchanged)**
+
+The output shows that prettier checked 474+ markdown files across the entire repository (including `.claude/`, `docs/learned/`, `.github/`, `.erk/`, and root-level markdown files). All files are already compliant with Prettier's code style - no files needed to be reformatted.
+
+The full list includes:
+- Command and skill documentation in `.claude/`
+- Learned documentation in `docs/learned/`
+- Development documentation in `docs/`
+- GitHub workflows documentation
+- Agent specifications and references
+- Changelog and configuration files
+
+All files passed the check with no modifications required.
+agentId: a2089c0 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01PSmDPHgsyGzNhdUqCFUAFn">
+## Results
+
+The command execution completed with mixed outcomes:
+
+**Status:** `make fix` succeeded, `make format` failed (target does not exist)
+
+**Detailed Results:**
+
+1. **make fix** - PASSED
+   - Built erk package successfully
+   - `uv run ruff check --fix --unsafe-fixes` found and fixed 332 errors
+   - `uv run ruff format` ran successfully (1681 files left unchanged)
+   - `prettier --write` processed markdown files (all unchanged)
+
+2. **make format** - FAILED
+   - Error: `make: *** No rule to make target 'format'. Stop.`
+   - The Makefile does not have a `format` target defined
+
+**Summary:**
+
+The `make fix` target completed successfully, fixing all detected linting issues (332 errors were corrected by ruff). The `make format` target does not exist in the Makefile, causing the second command to fail. The output from prettier indicates the markdown files are already properly formatted.
+agentId: a384558 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+`make fix` fixed 332 ruff errors (import ordering) and prettier is already clean. Now let me re-run CI to verify everything passes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1196" cache_read_input_tokens="51527" cache_creation="{'ephemeral_5m_input_tokens': 1196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01R52KxPBoiUgVt3JUL4sAEJ">
+    <param name="todos">[{'content': 'Phase 2: Create dirs and git mv gateway fakes to tests/fakes/gateway/', 'sta...[truncated 1856 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1196" cache_read_input_tokens="51527" cache_creation="{'ephemeral_5m_input_tokens': 1196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R52KxPBoiUgVt3JUL4sAEJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_015ZStuKS6SNsoCjNLERsHAD">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run make fast-ci iteration 2</param>
+    <param name="prompt">Change to the repository root at /home/runner/work/erk/erk and execute: make fast-ci
+
+Repo...[truncated 33 chars]...eration 2 after fixing import ordering, prettier, and adding pythonpath to pyproject.toml.</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="733" cache_read_input_tokens="52723" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="175" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015ZStuKS6SNsoCjNLERsHAD">
+Async agent launched successfully.
+agentId: a1bb865 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_use name="TaskOutput" id="toolu_017yXJPkPNA6VAVN4Rg8cxKK">
+    <param name="task_id">a1bb865</param>
+    <param name="block">True</param>
+    <param name="timeout">600000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="53456" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017yXJPkPNA6VAVN4Rg8cxKK">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a1bb865&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"make fast-ci","description":"Execute make fast-ci in repository root","timeout":120000}
+[Tool: Bash] {"command":"make fast-ci","description":"Execute make fast-ci in repository root","timeout":120000}
+
+--- RESULT ---
+Perfect! The `make fast-ci` completed successfully. Here's the summary:
+
+## CI Results - PASSED
+
+**All checks passed:**
+
+1. **Lint** - All checks passed
+2. **Format Check** - 1681 files already formatted
+3. **Prettier Check** - All matched files use Prettier code style
+4. **Markdown Check** - OK
+5. **Exec Reference Check** - OK
+6. **Type Checking (ty)** - All checks passed
+7. **Unit Tests (erk)** - 6012 passed, 2 warnings in 21.02s
+8. **Tests (erk-dev)** - 136 passed in 4.56s
+9. **Tests (erk-statusline)** - 115 passed in 0.82s
+10. **Tests (erk-mcp)** - 28 passed
+11. **CLAUDE.md/AGENTS.md Pairing** - PASSED (19 files checked, 0 violations)
+
+... [5 lines omitted] ...
+
+The two DeprecationWarnings in the pytest output are expected - they relate to Click deprecating `BaseCommand` in favor of `Command` in Click 9.0, but are not failures.
+Total test count: **6,297 tests passed** across all modules with no failures.
+  </tool_result>
+  <assistant>All CI checks pass — 6,297 tests, linting, formatting, type checking, everything green. Let me update the todo and proceed to submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="525" cache_read_input_tokens="53809" cache_creation="{'ephemeral_5m_input_tokens': 525, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_011kZEsVkcD3gwA2p1atTJGJ">
+    <param name="todos">[{'content': 'Phase 2: Create dirs and git mv gateway fakes to tests/fakes/gateway/', 'sta...[truncated 1858 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="525" cache_read_input_tokens="53809" cache_creation="{'ephemeral_5m_input_tokens': 525, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011kZEsVkcD3gwA2p1atTJGJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal implementation ended and submit the PR using the plan-implement workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="731" cache_read_input_tokens="54334" cache_creation="{'ephemeral_5m_input_tokens': 731, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0154JMZRyz73FExZaBDj4jTH">
+    <param name="command">erk exec impl-signal ended 2&gt;&amp;1 || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="731" cache_read_input_tokens="54334" cache_creation="{'ephemeral_5m_input_tokens': 731, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0154JMZRyz73FExZaBDj4jTH">
+⚠️  Your erk (0.9.11) doesn't match required (0.9.9)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9097
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0117idmQn9iqcZHnAkV26XDw">
+    <param name="command">git add -A &amp;&amp; git status --short | head -30</param>
+    <param name="description">Stage all changes and check status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="55065" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="100" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0117idmQn9iqcZHnAkV26XDw">
+M  .claude/skills/fake-driven-testing/references/quick-reference.md
+M  docs/learned/architecture/erk-architecture.md
+M  docs/learned/architecture/gateway-abc-implementation.md
+M  docs/learned/architecture/github-api-retry-mechanism.md
+M  docs/learned/erk-dev/testing.md
+M  docs/learned/integrations/github-review-decision.md
+M  docs/learned/testing/admin-command-testing.md
+M  docs/learned/testing/cli-testing.md
+M  docs/learned/testing/context-builder-signatures.md
+M  docs/learned/testing/exec-script-testing.md
+M  docs/learned/testing/fake-api-migration-pattern.md
+M  docs/learned/testing/fake-git-divergence.md
+M  docs/learned/testing/hook-testing.md
+M  docs/learned/testing/rebase-conflicts.md
+M  docs/learned/testing/testing.md
+M  docs/learned/testing/tripwires.md
+M  docs/learned/tui/architecture.md
+M  docs/learned/tui/plan-row-data.md
+M  docs/learned/tui/status-indicators.md
+M  packages/erk-dev/tests/test_release_info.py
+M  packages/erk-dev/tests/test_release_tag.py
+M  packages/erk-shared/src/erk_shared/context/context.py
+M  packages/erk-shared/src/erk_shared/context/factories.py
+D  packages/erk-shared/src/erk_shared/fakes/gt.py
+M  packages/erk-shared/src/erk_shared/gateway/github/real.py
+M  packages/erk-shared/tests/unit/branch_manager/test_graphite_branch_manager.py
+M  packages/erk-shared/tests/unit/gateway/time/test_fake_time.py
+M  packages/erk-shared/tests/unit/git/test_lock.py
+M  packages/erk-shared/tests/unit/github/test_execute_gh_command_with_retry.py
+M  packages/erk-shared/tests/unit/github/test_github_checks.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015UmBMrsaL98tMWCCe3xajn">
+    <param name="command">git status --short | wc -l</param>
+    <param name="description">Count total changed files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="55253" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015UmBMrsaL98tMWCCe3xajn">
+490
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011EfjfyqW2Vj2akEqLm4ZGQ">
+    <param name="command">git diff --cached --stat | tail -3</param>
+    <param name="description">Check staged diff stats</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="55904" cache_creation="{'ephemeral_5m_input_tokens': 93, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011EfjfyqW2Vj2akEqLm4ZGQ">
+ tests/unit/status/test_impl_collector.py           |   4 +-
+ tests/unit/status/test_orchestrator.py             |   6 +-
+ 490 files changed, 1686 insertions(+), 1783 deletions(-)
+  </tool_result>
+  <assistant>Now let me commit and use `erk pr submit`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="55997" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01MtZ6u4u7XiMyeSgLouFmt1">
+    <param name="command">git commit -m "$(cat &lt;&lt;'EOF'
+Move fakes from erk_shared to tests/fakes/
+
+Relocate all fake...[truncated 496 chars]...de](https://claude.com/claude-code)
+
+Co-Authored-By: Claude &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit all changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="55997" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MtZ6u4u7XiMyeSgLouFmt1">
+[plnd/move-fakes-to-tests-03-09-1534 fecda3d2a] Move fakes from erk_shared to tests/fakes/
+ 490 files changed, 1686 insertions(+), 1783 deletions(-)
+ delete mode 100644 packages/erk-shared/src/erk_shared/fakes/gt.py
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/__init__.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/agent_docs.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/agent_launcher.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/branch_manager.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/browser.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/ci_runner.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/claude_installation.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/clipboard.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/cmux.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/codespace.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/codespace_registry.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/command_executor.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/completion.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/console.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/core.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/erk_installation.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git.py (98%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_analysis_ops.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_branch_ops.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_commit_ops.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_config_ops.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_rebase_ops.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_remote_ops.py (98%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_repo_ops.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_status_ops.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_tag_ops.py (100%)
+ rename {packages/erk-shared/src/erk_shared/fakes =&gt; tests/fakes/gateway}/git_worktree.py (100%)
+
+... [23 lines omitted] ...
+  </tool_result>
+  <assistant>Commit succeeded. Now let me submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2499" cache_read_input_tokens="56154" cache_creation="{'ephemeral_5m_input_tokens': 2499, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NosvEBdRHDKH7KSSqavTCh">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2499" cache_read_input_tokens="56154" cache_creation="{'ephemeral_5m_input_tokens': 2499, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NosvEBdRHDKH7KSSqavTCh">
+⚠️  Your erk (0.9.11) doesn't match required (0.9.9)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9097 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9097
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (522,387 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   Still waiting... (12s)
+   Still waiting... (14s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me run the post-submit checks and cleanup:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="58653" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018v4DgQQcYDdRtbPvr7dCCx">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Run post-submit PR checks</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="58653" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018v4DgQQcYDdRtbPvr7dCCx">
+Exit code 1
+⚠️  Your erk (0.9.11) doesn't match required (0.9.9)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+Checking PR #9097 for branch plnd/move-fakes-to-tests-03-09-1534...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9097)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>Need to clean up the impl-context directory first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="693" cache_read_input_tokens="59137" cache_creation="{'ephemeral_5m_input_tokens': 693, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_019s1fR6QoJ7A3h3nrW5AmLq">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up impl context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="693" cache_read_input_tokens="59137" cache_creation="{'ephemeral_5m_input_tokens': 693, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019s1fR6QoJ7A3h3nrW5AmLq">
+⚠️  Your erk (0.9.11) doesn't match required (0.9.9)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018BmUqp5zXVtJGNJxjQiRG4">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;/dev/null</param>
+    <param name="description">Check impl-context contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="167" cache_read_input_tokens="59830" cache_creation="{'ephemeral_5m_input_tokens': 167, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018BmUqp5zXVtJGNJxjQiRG4">
+plan.md
+plnd--move-fakes-to-tests-03-09-1534
+ref.json
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BYTFcj9iVbhRHYinXB7j3V">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/ &amp;&amp; git add -A &amp;&amp; git status --short</param>
+    <param name="description">Remove impl-context and stage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="571" cache_read_input_tokens="59997" cache_creation="{'ephemeral_5m_input_tokens': 571, 'ephemeral_1h_input_tokens': 0}" output_tokens="106" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BYTFcj9iVbhRHYinXB7j3V">
+
+  </tool_result>
+  <assistant>The impl-context was already gitignored (no staged changes). Let me check if it's in gitignore:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="60568" cache_creation="{'ephemeral_5m_input_tokens': 132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01EhN1hULCye7nfq6B7gSFER">
+    <param name="pattern">impl-context</param>
+    <param name="path">/home/runner/work/erk/erk/.gitignore</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="60568" cache_creation="{'ephemeral_5m_input_tokens': 132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EhN1hULCye7nfq6B7gSFER">
+20:.erk/impl-context/
+  </tool_result>
+  <assistant>It's in `.gitignore` so the check is about local presence, not git tracking. The directory is now removed. Let me re-run the check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="60700" cache_creation="{'ephemeral_5m_input_tokens': 580, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Y7rZWWAGoy6zg9Jbicgn4b">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Re-run PR checks after cleanup</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="60700" cache_creation="{'ephemeral_5m_input_tokens': 580, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y7rZWWAGoy6zg9Jbicgn4b">
+⚠️  Your erk (0.9.11) doesn't match required (0.9.9)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+Checking PR #9097 for branch plnd/move-fakes-to-tests-03-09-1534...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass. Now let me upload the session and mark the PR ready:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="61280" cache_creation="{'ephemeral_5m_input_tokens': 259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RdPkYwM67bgRC8CV1xigfr">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;&amp;1 || true</param>
+    <param name="description">Upload session for async learn</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="259" cache_read_input_tokens="61280" cache_creation="{'ephemeral_5m_input_tokens': 259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RdPkYwM67bgRC8CV1xigfr">
+⚠️  Your erk (0.9.11) doesn't match required (0.9.9)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Session upload skipped since we cleaned up impl-context already (expected). Let me mark the PR as ready for review:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="636" cache_read_input_tokens="61539" cache_creation="{'ephemeral_5m_input_tokens': 636, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01U2BXfgscyF2jaUnZajRJFY">
+    <param name="command">gh pr ready 9097 2&gt;&amp;1</param>
+    <param name="description">Mark PR as ready for review</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="636" cache_read_input_tokens="61539" cache_creation="{'ephemeral_5m_input_tokens': 636, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U2BXfgscyF2jaUnZajRJFY">
+✓ Pull request dagster-io/erk#9097 is marked as "ready for review"
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01UeXKSU4NGYxcpbtvD5DULf">
+    <param name="todos">[{'content': 'Phase 2: Create dirs and git mv gateway fakes to tests/fakes/gateway/', 'sta...[truncated 1856 chars]... checks'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="145" cache_read_input_tokens="62175" cache_creation="{'ephemeral_5m_input_tokens': 145, 'ephemeral_1h_input_tokens': 0}" output_tokens="651" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UeXKSU4NGYxcpbtvD5DULf">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>## Implementation Complete
+
+Plan #9097 has been fully implemented and submitted as PR #9097: https://github.com/dagster-io/erk/pull/9097
+
+### Summary of changes (490 files, +1686/-1783 lines):
+
+**File moves:**
+- 40+ gateway fakes: `erk_shared/fakes/` → `tests/fakes/gateway/`
+- 6 test fakes: `tests/fakes/` → `tests/fakes/tests/`
+- `erk_shared/context/testing.py` → `tests/fakes/tests/shared_context.py`
+
+**Production cleanup:**
+- Removed `FakeShell`/`FakeCompletion` re-exports from `src/erk/core/`
+- Removed `RealLocalGitHub.for_test()` classmethod → `real_github_for_test()` in `tests/test_utils/context_builders.py`
+- Moved `context_for_test()`/`minimal_context()` from `src/erk/core/context.py` → `tests/test_utils/test_context.py`
+- Removed `create_minimal_context()` from `erk_shared/context/factories.py`
+
+**Infrastructure:**
+- Added `pythonpath = ["."]` to pytest config so sub-package tests can import `tests.fakes.*`
+- Updated 17 documentation files with new import paths
+
+**CI:** All 6,297 tests pass, lint/format/type checks clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="693" cache_read_input_tokens="62320" cache_creation="{'ephemeral_5m_input_tokens': 693, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>

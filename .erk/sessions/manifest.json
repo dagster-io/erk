@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "plan_id": 9097,
+  "sessions": [
+    {
+      "session_id": "7d10b866-be41-4c4c-8ab4-349e52e2cae2",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T20:14:27.976543+00:00",
+      "files": [
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part1.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part10.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part11.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part12.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part13.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part14.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part15.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part16.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part17.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part18.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part2.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part3.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part4.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part5.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part6.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part7.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part8.xml",
+        "impl-7d10b866-be41-4c4c-8ab4-349e52e2cae2-7d10b866-be41-4c4c-8ab4-349e52e2cae2-part9.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 38,
+      "raw_size_kb": 1871,
+      "xml_size_kb": 839,
+      "git_branch": "plnd/move-fakes-to-tests-03-09-1534"
+    }
+  ]
+}
