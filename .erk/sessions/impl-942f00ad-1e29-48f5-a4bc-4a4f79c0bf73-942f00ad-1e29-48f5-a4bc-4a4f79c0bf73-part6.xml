@@ -1,0 +1,901 @@
+<session>
+  <meta source="agent-a06ca9e" />
+  <meta branch="plnd/add-runs-tab-tui-dash-03-09-0622" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the existing TUI test structure to write tests for a new "Runs" tab. Explore and provide the FULL content of:
+
+1. `tests/tui/views/test_types.py` - ViewMode tests
+2. `tests/tui/test_view_bar.py` - ViewBar tests  
+3. `tests/tui/widgets/test_plan_table.py` - PlanDataTable tests (to use as pattern for RunDataTable tests)
+
+Also show the full content of these files needed for utility functions:
+4. `packages/erk-shared/src/erk_shared/gateway/github/emoji.py` - format_checks_cell
+5. `src/erk/cli/commands/pr/list_cmd.py` - format_pr_cell
+6. `src/erk/core/pr_utils.py` - select_display_pr
+
+For each file, provide the FULL content.</user>
+  <assistant>I'll explore the codebase to understand the TUI test structure and the utility functions. Let me start by checking the documentation, then read the requested files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6084" cache_read_input_tokens="9171" cache_creation="{'ephemeral_5m_input_tokens': 6084, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HVjreMmVkFizvbh9tV8ScR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6084" cache_read_input_tokens="9171" cache_creation="{'ephemeral_5m_input_tokens': 6084, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_016ABnSyKTosUpcUUnrsdtgK">
+    <param name="pattern">tests/tui/**</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6084" cache_read_input_tokens="9171" cache_creation="{'ephemeral_5m_input_tokens': 6084, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HVjreMmVkFizvbh9tV8ScR">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016ABnSyKTosUpcUUnrsdtgK">
+/home/runner/work/erk/erk/tests/tui/__init__.py
+/home/runner/work/erk/erk/tests/tui/app/__init__.py
+/home/runner/work/erk/erk/tests/tui/app/test_actions.py
+/home/runner/work/erk/erk/tests/tui/commands/__init__.py
+/home/runner/work/erk/erk/tests/tui/app/test_status_bar.py
+/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py
+/home/runner/work/erk/erk/tests/tui/app/test_streaming.py
+/home/runner/work/erk/erk/tests/tui/app/test_command_palette.py
+/home/runner/work/erk/erk/tests/tui/app/test_filter_mode.py
+/home/runner/work/erk/erk/tests/tui/app/test_utils.py
+/home/runner/work/erk/erk/tests/tui/app/test_app_filtering.py
+/home/runner/work/erk/erk/tests/tui/app/test_core.py
+/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py
+/home/runner/work/erk/erk/tests/tui/app/test_incremental_dispatch.py
+/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py
+/home/runner/work/erk/erk/tests/tui/app/test_async_operations.py
+/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py
+/home/runner/work/erk/erk/tests/tui/app/test_plan_body_screen.py
+/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py
+/home/runner/work/erk/erk/tests/tui/commands/test_node_command_provider.py
+/home/runner/work/erk/erk/tests/tui/commands/test_registry.py
+/home/runner/work/erk/erk/tests/tui/data/__init__.py
+/home/runner/work/erk/erk/tests/tui/filtering/__init__.py
+/home/runner/work/erk/erk/tests/tui/data/test_fetch_timings.py
+/home/runner/work/erk/erk/tests/tui/data/test_provider.py
+/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py
+/home/runner/work/erk/erk/tests/tui/data/test_fetch_plan_content.py
+/home/runner/work/erk/erk/tests/tui/filtering/test_logic.py
+/home/runner/work/erk/erk/tests/tui/filtering/test_types.py
+/home/runner/work/erk/erk/tests/tui/formatting/__init__.py
+
+... [16 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I found the test files. Now let me check the TUI documentation and read all the requested files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2552" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 2552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01263MDYUu5zEkYTcbevYMdp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2552" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 2552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WoZ5xFrk6cQH96iFw3rqUW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/views/test_types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2552" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 2552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Udg9K5XNikxZbUtTCY5Ers">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/test_view_bar.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2552" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 2552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JZ3nX4LgzxNLBYS77iaD26">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/test_plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2552" cache_read_input_tokens="15255" cache_creation="{'ephemeral_5m_input_tokens': 2552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01263MDYUu5zEkYTcbevYMdp">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01WoZ5xFrk6cQH96iFw3rqUW">
+     1→"""Tests for view mode types."""
+     2→
+     3→from erk.tui.views.types import (
+     4→    LEARN_VIEW,
+     5→    OBJECTIVES_VIEW,
+     6→    PLANS_VIEW,
+     7→    VIEW_CONFIGS,
+     8→    ViewConfig,
+     9→    ViewMode,
+    10→    get_next_view_mode,
+    11→    get_previous_view_mode,
+    12→    get_view_config,
+    13→)
+    14→
+    15→
+    16→class TestViewMode:
+    17→    """Tests for ViewMode enum."""
+    18→
+    19→    def test_has_three_modes(self) -&gt; None:
+    20→        """ViewMode has exactly three modes."""
+    21→        assert len(ViewMode) == 3
+    22→        assert ViewMode.PLANS is not None
+    23→        assert ViewMode.LEARN is not None
+    24→        assert ViewMode.OBJECTIVES is not None
+    25→
+    26→
+    27→class TestViewConfig:
+    28→    """Tests for ViewConfig dataclass."""
+    29→
+    30→    def test_plans_view_config(self) -&gt; None:
+
+... [100 lines omitted] ...
+
+    68→            raise AssertionError("Should have raised FrozenInstanceError")
+    69→        except AttributeError:
+  </tool_result>
+  <tool_result tool="toolu_01Udg9K5XNikxZbUtTCY5Ers">
+     1→"""Tests for ViewBar widget."""
+     2→
+     3→from erk.tui.views.types import ViewMode
+     4→from erk.tui.widgets.view_bar import ViewBar, _build_view_bar_content
+     5→
+     6→
+     7→class TestViewBar:
+     8→    """Tests for ViewBar rendering and state management."""
+     9→
+    10→    def test_initial_active_view(self) -&gt; None:
+    11→        """ViewBar stores the initial active view."""
+    12→        bar = ViewBar(active_view=ViewMode.PLANS, plans_display_name="PRs")
+    13→        assert bar._active_view == ViewMode.PLANS
+    14→
+    15→    def test_set_active_view_updates_state(self) -&gt; None:
+    16→        """set_active_view updates the active view mode."""
+    17→        bar = ViewBar(active_view=ViewMode.PLANS, plans_display_name="PRs")
+    18→        bar._active_view = ViewMode.LEARN
+    19→        assert bar._active_view == ViewMode.LEARN
+    20→
+    21→    def test_set_active_view_to_objectives(self) -&gt; None:
+    22→        """set_active_view can switch to objectives."""
+    23→        bar = ViewBar(active_view=ViewMode.PLANS, plans_display_name="PRs")
+    24→        bar._active_view = ViewMode.OBJECTIVES
+    25→        assert bar._active_view == ViewMode.OBJECTIVES
+    26→
+    27→
+    28→class TestBuildViewBarContent:
+    29→    """Tests for _build_view_bar_content pure function."""
+    30→
+
+... [65 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JZ3nX4LgzxNLBYS77iaD26">
+     1→"""Tests for PlanDataTable widget."""
+     2→
+     3→from rich.text import Text
+     4→
+     5→from erk.core.display_utils import strip_rich_markup
+     6→from erk.tui.data.types import PlanFilters
+     7→from erk.tui.views.types import ViewMode
+     8→from erk.tui.widgets.plan_table import PlanDataTable
+     9→from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+    10→
+    11→
+    12→def _text_to_str(value: str | Text) -&gt; str:
+    13→    """Convert Text or str to plain string for assertions."""
+    14→    if isinstance(value, Text):
+    15→        return value.plain
+    16→    return strip_rich_markup(value)
+    17→
+    18→
+    19→class TestStripRichMarkup:
+    20→    """Tests for strip_rich_markup utility function."""
+    21→
+    22→    def test_removes_link_tags(self) -&gt; None:
+    23→        """Link markup is removed."""
+    24→        text = "[link=https://example.com]click here[/link]"
+    25→        result = strip_rich_markup(text)
+    26→        assert result == "click here"
+    27→
+    28→    def test_removes_color_tags(self) -&gt; None:
+    29→        """Color markup is removed."""
+    30→        text = "[cyan]colored text[/cyan]"
+
+... [710 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the utility function files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="17164" cache_read_input_tokens="17807" cache_creation="{'ephemeral_5m_input_tokens': 17164, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Djx9oeYT3GMPsnBuErzdoN">
+    <param name="pattern">**/emoji.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17164" cache_read_input_tokens="17807" cache_creation="{'ephemeral_5m_input_tokens': 17164, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01TBufEjATonxFrrB9YnAxg3">
+    <param name="pattern">**/pr_utils.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17164" cache_read_input_tokens="17807" cache_creation="{'ephemeral_5m_input_tokens': 17164, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01XnMMwwAfSXm3X8s1tXupfQ">
+    <param name="pattern">**/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="17164" cache_read_input_tokens="17807" cache_creation="{'ephemeral_5m_input_tokens': 17164, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Djx9oeYT3GMPsnBuErzdoN">
+/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages/rich/emoji.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/emoji.py
+  </tool_result>
+  <tool_result tool="toolu_01TBufEjATonxFrrB9YnAxg3">
+/home/runner/work/erk/erk/src/erk/core/pr_utils.py
+  </tool_result>
+  <tool_result tool="toolu_01XnMMwwAfSXm3X8s1tXupfQ">
+/home/runner/work/erk/erk/src/erk/cli/commands/artifact/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/branch/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/cc/session/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/codespace/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/init/capability/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/slot/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/stack/list_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/wt/list_cmd.py
+  </tool_result>
+  <assistant>Now let me read all the utility files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="796" cache_read_input_tokens="34971" cache_creation="{'ephemeral_5m_input_tokens': 796, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KKJZz6ZW7YmnEhYS2tBFpc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/emoji.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="796" cache_read_input_tokens="34971" cache_creation="{'ephemeral_5m_input_tokens': 796, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TTwmnrKXaaxeWJjfxetgC8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="796" cache_read_input_tokens="34971" cache_creation="{'ephemeral_5m_input_tokens': 796, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VsDPRgqS9D5nTssMergiSa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/pr_utils.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="796" cache_read_input_tokens="34971" cache_creation="{'ephemeral_5m_input_tokens': 796, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KKJZz6ZW7YmnEhYS2tBFpc">
+     1→"""GitHub PR and checks status emojis.
+     2→
+     3→This module provides emoji constants and formatting functions for displaying
+     4→GitHub PR states, checks status, and merge conflicts in CLI output.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.types import PullRequestInfo
+     8→
+     9→# PR state emojis (aligned with erk-statusline conventions)
+    10→PR_STATE_EMOJIS = {
+    11→    "OPEN": "👀",  # published/open PR
+    12→    "DRAFT": "🚧",  # draft PR
+    13→    "MERGED": "🎉",  # merged PR
+    14→    "CLOSED": "⛔",  # closed PR
+    15→}
+    16→
+    17→# Additional status indicators
+    18→CONFLICTS_EMOJI = "💥"  # merge conflicts
+    19→CHECKS_PENDING_EMOJI = "🔄"  # checks pending or no checks
+    20→CHECKS_PASSING_EMOJI = "✅"  # all checks passing
+    21→CHECKS_FAILING_EMOJI = "🚫"  # any checks failing
+    22→
+    23→
+    24→def get_pr_status_emoji(pr: PullRequestInfo) -&gt; str:
+    25→    """Get emoji representation of PR status (state + conflicts).
+    26→
+    27→    Returns a combination of state emoji (👀/🚧/🎉/⛔) and optionally
+    28→    a conflicts indicator (💥) for open/draft PRs with merge conflicts.
+    29→
+    30→    Args:
+
+... [91 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01TTwmnrKXaaxeWJjfxetgC8">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from pathlib import Path
+     6→from typing import ParamSpec, TypeVar
+     7→
+     8→import click
+     9→from rich.console import Console
+    10→from rich.table import Table
+    11→from rich.text import Text
+    12→
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    15→from erk.core.context import ErkContext
+    16→from erk.core.display_utils import strip_rich_markup
+    17→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    18→from erk.tui.app import ErkDashApp
+    19→from erk.tui.data.real_provider import RealPlanDataProvider
+    20→from erk.tui.data.types import PlanFilters, PlanRowData
+    21→from erk.tui.sorting.logic import sort_plans
+    22→from erk.tui.sorting.types import SortKey, SortState
+    23→from erk_shared.context.types import NoRepoSentinel
+    24→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    25→from erk_shared.gateway.clipboard.real import RealClipboard
+    26→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    27→from erk_shared.gateway.github.types import (
+    28→    GitHubRepoId,
+    29→    GitHubRepoLocation,
+    30→    IssueFilterState,
+
+... [511 lines omitted] ...
+
+    86→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   255→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   302→    if timings is not None and timings.warnings:
+   303→        for warning in timings.warnings:
+   304→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   365→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   387→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_result tool="toolu_01VsDPRgqS9D5nTssMergiSa">
+     1→"""Utility functions for PR handling."""
+     2→
+     3→from erk_shared.gateway.github.types import PullRequestInfo
+     4→
+     5→
+     6→def select_display_pr(
+     7→    prs: list[PullRequestInfo],
+     8→    *,
+     9→    exclude_pr_numbers: set[int] | None,
+    10→) -&gt; PullRequestInfo | None:
+    11→    """Select PR to display: prefer open, then merged, then closed.
+    12→
+    13→    Excludes PRs matching exclude_pr_numbers so the implementation PR is
+    14→    preferred.  Falls back to unfiltered selection if excluding leaves no
+    15→    candidates.
+    16→
+    17→    Args:
+    18→        prs: List of PRs sorted by created_at descending (most recent first)
+    19→        exclude_pr_numbers: PR numbers to exclude from selection
+    20→
+    21→    Returns:
+    22→        PR to display, or None if no PRs
+    23→    """
+    24→    candidates = prs
+    25→    if exclude_pr_numbers is not None:
+    26→        filtered = [pr for pr in prs if pr.number not in exclude_pr_numbers]
+    27→        if filtered:
+    28→            candidates = filtered
+    29→
+    30→    # Check for open PRs (published or draft)
+
+... [21 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the requested files. Let me create a comprehensive summary document with the full content of all files:
+
+## Complete TUI Test Structure and Utility Functions
+
+I've successfully explored the codebase and gathered all the requested files. Here's the complete content:
+
+---
+
+### 1. **tests/tui/views/test_types.py** - ViewMode Tests
+
+```python
+"""Tests for view mode types."""
+
+from erk.tui.views.types import (
+    LEARN_VIEW,
+    OBJECTIVES_VIEW,
+    PLANS_VIEW,
+    VIEW_CONFIGS,
+    ViewConfig,
+    ViewMode,
+    get_next_view_mode,
+    get_previous_view_mode,
+    get_view_config,
+)
+
+
+class TestViewMode:
+    """Tests for ViewMode enum."""
+
+    def test_has_three_modes(self) -&gt; None:
+        """ViewMode has exactly three modes."""
+        assert len(ViewMode) == 3
+        assert ViewMode.PLANS is not None
+        assert ViewMode.LEARN is not None
+        assert ViewMode.OBJECTIVES is not None
+
+
+class TestViewConfig:
+    """Tests for ViewConfig dataclass."""
+
+    def test_plans_view_config(self) -&gt; None:
+        """PLANS_VIEW has correct configuration."""
+        assert PLANS_VIEW.mode == ViewMode.PLANS
+        assert PLANS_VIEW.display_name == "PRs"
+        assert PLANS_VIEW.labels == ("erk-pr",)
+        assert PLANS_VIEW.key_hint == "1"
+
+    def test_learn_view_config(self) -&gt; None:
+        """LEARN_VIEW has correct configuration."""
+        assert LEARN_VIEW.mode == ViewMode.LEARN
+        assert LEARN_VIEW.display_name == "Learn"
+        assert LEARN_VIEW.labels == ("erk-learn",)
+        assert LEARN_VIEW.key_hint == "2"
+
+    def test_objectives_view_config(self) -&gt; None:
+        """OBJECTIVES_VIEW has correct configuration."""
+        assert OBJECTIVES_VIEW.mode == ViewMode.OBJECTIVES
+        assert OBJECTIVES_VIEW.display_name == "Objectives"
+        assert OBJECTIVES_VIEW.labels == ("erk-objective",)
+        assert OBJECTIVES_VIEW.key_hint == "3"
+
+    def test_view_configs_tuple_has_all_views(self) -&gt; None:
+        """VIEW_CONFIGS contains all three view configs."""
+        assert len(VIEW_CONFIGS) == 3
+        modes = {c.mode for c in VIEW_CONFIGS}
+        assert modes == {ViewMode.PLANS, ViewMode.LEARN, ViewMode.OBJECTIVES}
+
+    def test_view_config_is_frozen(self) -&gt; None:
+        """ViewConfig is a frozen dataclass."""
+        config = ViewConfig(
+            mode=ViewMode.PLANS,
+            display_name="Test",
+            labels=("test",),
+            key_hint="x",
+            exclude_labels=(),
+        )
+        try:
+            config.display_name = "Changed"  # type: ignore[misc]
+            raise AssertionError("Should have raised FrozenInstanceError")
+        except AttributeError:
+            pass
+
+
+class TestGetViewConfig:
+    """Tests for get_view_config function."""
+
+    def test_returns_plans_config(self) -&gt; None:
+        """get_view_config returns PLANS_VIEW for ViewMode.PLANS."""
+        config = get_view_config(ViewMode.PLANS)
+        assert config.mode == ViewMode.PLANS
+        assert config.display_name == "PRs"
+
+    def test_returns_learn_config(self) -&gt; None:
+        """get_view_config returns LEARN_VIEW for ViewMode.LEARN."""
+        config = get_view_config(ViewMode.LEARN)
+        assert config.mode == ViewMode.LEARN
+        assert config.display_name == "Learn"
+
+    def test_returns_objectives_config(self) -&gt; None:
+        """get_view_config returns OBJECTIVES_VIEW for ViewMode.OBJECTIVES."""
+        config = get_view_config(ViewMode.OBJECTIVES)
+        assert config.mode == ViewMode.OBJECTIVES
+        assert config.display_name == "Objectives"
+
+
+class TestGetNextViewMode:
+    """Tests for get_next_view_mode function."""
+
+    def test_plans_to_learn(self) -&gt; None:
+        """Next after PLANS is LEARN."""
+        assert get_next_view_mode(ViewMode.PLANS) == ViewMode.LEARN
+
+    def test_learn_to_objectives(self) -&gt; None:
+        """Next after LEARN is OBJECTIVES."""
+        assert get_next_view_mode(ViewMode.LEARN) == ViewMode.OBJECTIVES
+
+    def test_objectives_wraps_to_plans(self) -&gt; None:
+        """Next after OBJECTIVES wraps to PLANS."""
+        assert get_next_view_mode(ViewMode.OBJECTIVES) == ViewMode.PLANS
+
+
+class TestGetPreviousViewMode:
+    """Tests for get_previous_view_mode function."""
+
+    def test_plans_wraps_to_objectives(self) -&gt; None:
+        """Previous before PLANS wraps to OBJECTIVES."""
+        assert get_previous_view_mode(ViewMode.PLANS) == ViewMode.OBJECTIVES
+
+    def test_learn_to_plans(self) -&gt; None:
+        """Previous before LEARN is PLANS."""
+        assert get_previous_view_mode(ViewMode.LEARN) == ViewMode.PLANS
+
+    def test_objectives_to_learn(self) -&gt; None:
+        """Previous before OBJECTIVES is LEARN."""
+        assert get_previous_view_mode(ViewMode.OBJECTIVES) == ViewMode.LEARN
+```
+
+---
+
+### 2. **tests/tui/test_view_bar.py** - ViewBar Tests
+
+```python
+"""Tests for ViewBar widget."""
+
+from erk.tui.views.types import ViewMode
+from erk.tui.widgets.view_bar import ViewBar, _build_view_bar_content
+
+
+class TestViewBar:
+    """Tests for ViewBar rendering and state management."""
+
+    def test_initial_active_view(self) -&gt; None:
+        """ViewBar stores the initial active view."""
+        bar = ViewBar(active_view=ViewMode.PLANS, plans_display_name="PRs")
+        assert bar._active_view == ViewMode.PLANS
+
+    def test_set_active_view_updates_state(self) -&gt; None:
+        """set_active_view updates the active view mode."""
+        bar = ViewBar(active_view=ViewMode.PLANS, plans_display_name="PRs")
+        bar._active_view = ViewMode.LEARN
+        assert bar._active_view == ViewMode.LEARN
+
+    def test_set_active_view_to_objectives(self) -&gt; None:
+        """set_active_view can switch to objectives."""
+        bar = ViewBar(active_view=ViewMode.PLANS, plans_display_name="PRs")
+        bar._active_view = ViewMode.OBJECTIVES
+        assert bar._active_view == ViewMode.OBJECTIVES
+
+
+class TestBuildViewBarContent:
+    """Tests for _build_view_bar_content pure function."""
+
+    def test_tab_regions_with_default_plans_name(self) -&gt; None:
+        """Tab regions computed correctly with 'PRs' display name."""
+        _text, regions = _build_view_bar_content(
+            active_view=ViewMode.PLANS,
+            plans_display_name="PRs",
+        )
+
+        # "1:PRs" = 5 chars, "  " gap, "2:Learn" = 7 chars, "  " gap, "3:Objectives" = 12 chars
+        assert len(regions) == 3
+        assert regions[0] == (0, 5, ViewMode.PLANS)
+        assert regions[1] == (7, 14, ViewMode.LEARN)
+        assert regions[2] == (16, 28, ViewMode.OBJECTIVES)
+
+    def test_tab_regions_with_custom_plans_name(self) -&gt; None:
+        """Tab regions adjust when plans display name is longer."""
+        _text, regions = _build_view_bar_content(
+            active_view=ViewMode.PLANS,
+            plans_display_name="Planned PRs",
+        )
+
+        # "1:Planned PRs" = 13 chars
+        assert len(regions) == 3
+        assert regions[0] == (0, 13, ViewMode.PLANS)
+        assert regions[1] == (15, 22, ViewMode.LEARN)
+        assert regions[2] == (24, 36, ViewMode.OBJECTIVES)
+
+    def test_text_content_matches_labels(self) -&gt; None:
+        """Built text contains all tab labels."""
+        text, _regions = _build_view_bar_content(
+            active_view=ViewMode.PLANS,
+            plans_display_name="PRs",
+        )
+
+        plain = text.plain
+        assert "1:PRs" in plain
+        assert "2:Learn" in plain
+        assert "3:Objectives" in plain
+
+    def test_active_view_does_not_affect_regions(self) -&gt; None:
+        """Active view changes styling but not region positions."""
+        _text1, regions1 = _build_view_bar_content(
+            active_view=ViewMode.PLANS,
+            plans_display_name="PRs",
+        )
+        _text2, regions2 = _build_view_bar_content(
+            active_view=ViewMode.LEARN,
+            plans_display_name="PRs",
+        )
+
+        assert regions1 == regions2
+
+
+class TestViewBarTabRegions:
+    """Tests for ViewBar tab region initialization."""
+
+    def test_tab_regions_empty_before_mount(self) -&gt; None:
+        """Tab regions are empty before on_mount fires."""
+        bar = ViewBar(active_view=ViewMode.PLANS, plans_display_name="PRs")
+        assert bar._tab_regions == []
+```
+
+---
+
+### 3. **tests/tui/test_plan_table.py** - PlanDataTable Tests (Pattern for RunDataTable)
+
+This is a comprehensive test file with 735 lines. Key sections include:
+
+**Helper Functions:**
+- `_text_to_str()` - Convert Text or str to plain string
+- `_deduplicate_rows()` - Apply deduplication logic
+
+**Test Classes:**
+- `TestStripRichMarkup` - Tests for strip_rich_markup utility (lines 19-50)
+- `TestPlanRowData` - Tests for make_plan_row fake factory (lines 53-144)
+- `TestPlanDataTableRowConversion` - Tests for _row_to_values() conversion (lines 147-307)
+- `TestLocalWtColumnIndex` - Tests for column tracking (lines 309-340)
+- `TestObjectivesViewRowConversion` - Objectives view specific tests (lines 343-392)
+- `TestObjectivesViewDepsColumn` - Dependency rendering tests (lines 394-469)
+- `TestObjectivesViewNextColumn` - Next column rendering tests (lines 471-495)
+- `TestShowPrColumnFalse` - PR column conditional rendering (lines 497-570)
+- Various module-level test functions for stage, status, and dedup logic (lines 572-735)
+
+**Key Testing Patterns:**
+1. Row conversion tests use `_text_to_str()` helper to normalize Rich markup
+2. Tests verify column indices and order (critical for proper table alignment)
+3. Deduplication logic tested with multi-label scenarios
+4. Status emoji logic tests (local, remote, or both)
+5. Conditional column inclusion based on filter flags
+
+See full file at: `/home/runner/work/erk/erk/tests/tui/test_plan_table.py`
+
+---
+
+### 4. **packages/erk-shared/src/erk_shared/gateway/github/emoji.py** - format_checks_cell
+
+```python
+"""GitHub PR and checks status emojis.
+
+This module provides emoji constants and formatting functions for displaying
+GitHub PR states, checks status, and merge conflicts in CLI output.
+"""
+
+from erk_shared.gateway.github.types import PullRequestInfo
+
+# PR state emojis (aligned with erk-statusline conventions)
+PR_STATE_EMOJIS = {
+    "OPEN": "👀",  # published/open PR
+    "DRAFT": "🚧",  # draft PR
+    "MERGED": "🎉",  # merged PR
+    "CLOSED": "⛔",  # closed PR
+}
+
+# Additional status indicators
+CONFLICTS_EMOJI = "💥"  # merge conflicts
+CHECKS_PENDING_EMOJI = "🔄"  # checks pending or no checks
+CHECKS_PASSING_EMOJI = "✅"  # all checks passing
+CHECKS_FAILING_EMOJI = "🚫"  # any checks failing
+
+
+def get_pr_status_emoji(pr: PullRequestInfo) -&gt; str:
+    """Get emoji representation of PR status (state + conflicts).
+
+    Returns a combination of state emoji (👀/🚧/🎉/⛔) and optionally
+    a conflicts indicator (💥) for open/draft PRs with merge conflicts.
+
+    Args:
+        pr: PR information
+
+    Returns:
+        Emoji string representing PR status (e.g., "👀" or "👀💥")
+    """
+    # Draft PRs have state="OPEN" but is_draft=True, so check is_draft first
+    if pr.is_draft:
+        emoji = PR_STATE_EMOJIS["DRAFT"]
+    else:
+        emoji = PR_STATE_EMOJIS.get(pr.state, "")
+
+    # Add conflicts indicator for open/draft PRs (draft PRs also have state="OPEN")
+    if pr.state == "OPEN" and pr.has_conflicts:
+        emoji += CONFLICTS_EMOJI
+
+    return emoji
+
+
+def get_checks_status_emoji(pr: PullRequestInfo | None) -&gt; str:
+    """Get emoji representation of checks status.
+
+    Returns:
+        - "-" if no PR provided
+        - "🔄" if checks are pending or no checks configured
+        - "✅" if all checks are passing
+        - "🚫" if any checks are failing
+
+    Args:
+        pr: PR information, or None if no PR
+
+    Returns:
+        Emoji string representing checks status
+    """
+    if pr is None:
+        return "-"
+
+    if pr.checks_passing is None:
+        return CHECKS_PENDING_EMOJI  # Pending or no checks
+    if pr.checks_passing:
+        return CHECKS_PASSING_EMOJI  # All pass
+    return CHECKS_FAILING_EMOJI  # Any failing
+
+
+def get_issue_state_emoji(state: str) -&gt; str:
+    """Get emoji for issue state.
+
+    Args:
+        state: Issue state ("OPEN" or "CLOSED")
+
+    Returns:
+        🟢 for OPEN, 🔴 for CLOSED
+    """
+    return "🟢" if state == "OPEN" else "🔴"
+
+
+def format_checks_cell(pr: PullRequestInfo | None) -&gt; str:
+    """Format checks status with emoji and counts.
+
+    Returns:
+        - "-" if no PR provided
+        - "🔄" if checks are pending or no checks configured
+        - "✅ 3/3" if all checks passing (with counts)
+        - "🚫 2/5" if any checks failing (with counts)
+
+    Args:
+        pr: PR information, or None if no PR
+
+    Returns:
+        Formatted string with emoji and optional counts
+    """
+    if pr is None:
+        return "-"
+
+    if pr.checks_passing is None:
+        return CHECKS_PENDING_EMOJI  # Pending or no checks
+
+    # Determine emoji
+    emoji = CHECKS_PASSING_EMOJI if pr.checks_passing else CHECKS_FAILING_EMOJI
+
+    # Add counts if available
+    if pr.checks_counts is not None:
+        passing, total = pr.checks_counts
+        return f"{emoji} {passing}/{total}"
+
+    return emoji
+```
+
+---
+
+### 5. **src/erk/cli/commands/pr/list_cmd.py** - format_pr_cell
+
+Key function (lines 40-68):
+
+```python
+def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -&gt; str:
+    """Format PR cell with clickable link and emoji: #123 👀 or #123 👀🔗
+
+    The 🔗 emoji is appended for PRs that will auto-close the linked issue when merged.
+
+    Args:
+        pr: PR information
+        use_graphite: If True, use Graphite URL; if False, use GitHub URL
+        graphite_url: Graphite URL for the PR (None if unavailable)
+
+    Returns:
+        Formatted string for table cell with OSC 8 hyperlink
+    """
+    emoji = get_pr_status_emoji(pr)
+    pr_text = f"#{pr.number}"
+
+    # Append 🔗 for PRs that will close the issue when merged
+    if pr.will_close_target:
+        emoji += "🔗"
+
+    # Determine which URL to use
+    url = graphite_url if use_graphite else pr.url
+
+    # Make PR number clickable if URL is available
+    # Rich supports OSC 8 via [link=...] markup
+    if url:
+        return f"[link={url}]{pr_text}[/link] {emoji}"
+    else:
+        return f"{pr_text} {emoji}"
+```
+
+The full file also contains:
+- `pr_filter_options()` - Decorator for CLI filter options (lines 71-116)
+- `dash_options()` - TUI-specific options (lines 119-127)
+- `_build_static_table()` - Rich table builder (lines 130-168)
+- `_row_to_static_values()` - Row conversion for static display (lines 171-238)
+- `_pr_list_impl()` - Implementation for static list view (lines 241-327)
+- `_run_interactive_mode()` - TUI app launcher (lines 330-434)
+- CLI command definitions: `@click.command pr_list()` and `@click.command dash()` (lines 437-535)
+
+---
+
+### 6. **src/erk/core/pr_utils.py** - select_display_pr
+
+```python
+"""Utility functions for PR handling."""
+
+from erk_shared.gateway.github.types import PullRequestInfo
+
+
+def select_display_pr(
+    prs: list[PullRequestInfo],
+    *,
+    exclude_pr_numbers: set[int] | None,
+) -&gt; PullRequestInfo | None:
+    """Select PR to display: prefer open, then merged, then closed.
+
+    Excludes PRs matching exclude_pr_numbers so the implementation PR is
+    preferred.  Falls back to unfiltered selection if excluding leaves no
+    candidates.
+
+    Args:
+        prs: List of PRs sorted by created_at descending (most recent first)
+        exclude_pr_numbers: PR numbers to exclude from selection
+
+    Returns:
+        PR to display, or None if no PRs
+    """
+    candidates = prs
+    if exclude_pr_numbers is not None:
+        filtered = [pr for pr in prs if pr.number not in exclude_pr_numbers]
+        if filtered:
+            candidates = filtered
+
+    # Check for open PRs (published or draft)
+    open_prs = [pr for pr in candidates if pr.state in ("OPEN", "DRAFT")]
+    if open_prs:
+        return open_prs[0]  # Most recent open
+
+    # Fallback to merged PRs
+    merged_prs = [pr for pr in candidates if pr.state == "MERGED"]
+    if merged_prs:
+        return merged_prs[0]  # Most recent merged
+
+    # Fallback to closed PRs
+    closed_prs = [pr for pr in candidates if pr.state == "CLOSED"]
+    if closed_prs:
+        return closed_prs[0]  # Most recent closed
+
+    return None
+```
+
+---
+
+## Key Patterns for Runs Tab Tests
+
+Based on my analysis, here are the critical patterns for writing RunDataTable tests:
+
+### 1. **Test Organization**
+- Use plain `def test_*()` functions (not test classes unless testing a class itself)
+- Group related tests with clear class organization (as shown in test_plan_table.py)
+- Use helper functions like `_text_to_str()` for Rich markup normalization
+
+### 2. **PlanDataTable Pattern to Mirror for RunDataTable**
+- `_row_to_values()` method converts row data to table cell values
+- Column indices tracked and tested for correct ordering
+- Conditional column inclusion based on filter flags
+- Rich markup in cells requires stripping for assertions
+
+### 3. **Emoji and Status Formatting**
+- Use `format_checks_cell()` from emoji.py for checks status
+- Use `get_pr_status_emoji()` for PR state indicators
+- Status cell shows laptop emoji (local), cloud emoji (remote), or both
+- Emoji constants defined in emoji.py module
+
+### 4. **Helper Factories**
+- `make_plan_row()` factory creates test rows with sensible defaults
+- Similar factory pattern needed for run rows: `make_run_row()`
+- Factories support optional parameters for test variations
+
+### 5. **Column Index Testing**
+- Tests verify exact column positions (critical for table alignment)
+- Column order must match implementation exactly
+- PR column, checks column, comments column positions matter
+
+All files are located at the absolute paths shown above. The test structure follows erk's 5-layer fake-driven architecture with comprehensive fakes and no direct subprocess calls.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9395" cache_read_input_tokens="35767" cache_creation="{'ephemeral_5m_input_tokens': 9395, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

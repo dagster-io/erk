@@ -1,0 +1,1353 @@
+<session>
+  <meta branch="plnd/add-runs-tab-tui-dash-03-09-0622" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9041&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9041` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9041.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11301" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11301, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01G1qHNJQ7KzNNZqLoEasAE8">
+    <param name="command">erk exec setup-impl --issue 9041</param>
+    <param name="description">Set up implementation for plan #9041</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11301" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11301, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G1qHNJQ7KzNNZqLoEasAE8">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--add-runs-tab-tui-dash-03-09-0622", "plan_number": 9041, "plan_url": "https://github.com/dagster-io/erk/pull/9041", "branch": "plnd/add-runs-tab-tui-dash-03-09-0622", "plan_title": "[erk-plan] Plan: Add \"Runs\" Tab (4th Tab) to TUI Dashboard", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9041, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/add-runs-tab-tui-dash-03-09-0622', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="28556" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015qDKggjGqm9qVwbpcobtJ5">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--add-runs-tab-tui-dash-03-09-0622/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="28556" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015qDKggjGqm9qVwbpcobtJ5">
+     1→# Plan: Add "Runs" Tab (4th Tab) to TUI Dashboard
+     2→
+     3→## Context
+     4→
+     5→The `erk dash` TUI currently has 3 tabs: Planned PRs, Learn, and Objectives. All show GitHub issues filtered by labels. There's no way to monitor GitHub Actions workflow runs (plan-implement, pr-address, pr-rewrite, learn, one-shot, pr-rebase) from the dashboard. The `erk run list` CLI command shows this data, but switching between the dash and CLI is cumbersome. A 4th "Runs" tab will let users track in-progress and completed remote work directly from the dashboard.
+     6→
+     7→## Approach: Separate RunDataTable Widget
+     8→
+     9→The Runs tab fetches **workflow runs** (not issues), so it uses a fundamentally different API and data shape. Rather than bloating PlanRowData (already 50+ fields) or stretching PlanDataTable further, we'll add:
+    10→- A new `RunRowData` frozen dataclass
+    11→- A new `RunDataTable` widget (DataTable subclass)
+    12→- A `fetch_runs()` method on `PlanDataProvider`
+    13→- Hide/show logic in the app to swap between tables on view switch
+    14→
+    15→No filtering/sorting for the Runs tab initially.
+    16→
+    17→## Implementation Steps
+    18→
+    19→### 1. Add `ViewMode.RUNS` and `RUNS_VIEW` config
+    20→
+    21→**File:** `src/erk/tui/views/types.py`
+    22→
+    23→- Add `RUNS = auto()` to `ViewMode` enum
+    24→- Add `RUNS_VIEW = ViewConfig(mode=ViewMode.RUNS, display_name="Runs", labels=(), key_hint="4", exclude_labels=())`
+    25→- Append `RUNS_VIEW` to `VIEW_CONFIGS` tuple
+    26→
+    27→The empty `labels=()` tuple is fine -- it serves as the cache key for the runs data. `get_next_view_mode`, `get_previous_view_mode`, and the ViewBar all iterate `VIEW_CONFIGS` dynamically, so they work automatically.
+    28→
+    29→### 2. Create `RunRowData` frozen dataclass
+    30→
+
+... [148 lines omitted] ...
+
+    39→    conclusion: str | None   # "success", "failure", "cancelled", None
+  </tool_result>
+  <assistant>Now let me load the relevant documentation and skills for TUI development, and explore the existing codebase structure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3140" cache_read_input_tokens="28917" cache_creation="{'ephemeral_5m_input_tokens': 3140, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01BjLbDDcs9s2BwMKj9Nrhy9">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3140" cache_read_input_tokens="28917" cache_creation="{'ephemeral_5m_input_tokens': 3140, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BjLbDDcs9s2BwMKj9Nrhy9">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+Now let me load the TUI tripwires and explore the existing codebase:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="899" cache_read_input_tokens="32057" cache_creation="{'ephemeral_5m_input_tokens': 899, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Vj2tgpCB8CCFmxxBWpZGtb">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="899" cache_read_input_tokens="32057" cache_creation="{'ephemeral_5m_input_tokens': 899, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01L6EvUg2uuzKss3UXKFv66W">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="899" cache_read_input_tokens="32057" cache_creation="{'ephemeral_5m_input_tokens': 899, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011iJ78T5ATWeNsDKQT6DSgB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="899" cache_read_input_tokens="32057" cache_creation="{'ephemeral_5m_input_tokens': 899, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Vj2tgpCB8CCFmxxBWpZGtb">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01L6EvUg2uuzKss3UXKFv66W">
+     1→---
+     2→title: Tui Tripwires
+     3→read_when:
+     4→  - "working on tui code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from tui/*.md frontmatter --&gt;
+    10→
+    11→# Tui Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**accessing \_status_bar without null guard** → Read [TUI Streaming Output Patterns](streaming-output.md) first. Guard \_status_bar access with `if self._status_bar is not None:` — timing issue during widget lifecycle can cause AttributeError.
+    16→
+    17→**accessing optional gateway fields without null checks in TUI event handlers** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Gateway fields like plan_body or objective_content may be None. Always check before accessing in event handlers.
+    18→
+    19→**adding CI check formatting to TUI screens** → Read [TUI Architecture Overview](architecture.md) first. Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic.
+    20→
+    21→**adding a CLI flag that affects behavior without checking TUI command palette** → Read [TUI Command Registration](tui-command-registration.md) first. TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too.
+    22→
+    23→**adding a DataTable column with add_column(key=...)** → Read [TUI Architecture Overview](architecture.md) first. Column key is a data binding contract — must match data field name. Silent failure when mismatched.
+    24→
+    25→**adding a column to PlanDataTable without updating make_plan_row** → Read [Column Addition Pattern](column-addition-pattern.md) first. Column additions require 5 coordinated changes. See column-addition-pattern.md for the complete checklist.
+    26→
+    27→**adding a command without an availability predicate** → Read [TUI Command Architecture](action-inventory.md) first. Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute.
+    28→
+    29→**adding a field to PlanRowData without updating make_plan_row** → Read [TUI Data Contract](data-contract.md) first. The fake's make_plan_row() helper must stay in sync. Add the new field with a sensible default there too, or all TUI tests will break.
+    30→
+
+... [111 lines omitted] ...
+
+    35→**adding a new ViewMode without updating VIEW_CONFIGS** → Read [TUI View Switching](view-switching.md) first. Every ViewMode must have a corresponding ViewConfig in VIEW_CONFIGS. Missing configs cause KeyError at runtime.
+    43→**adding a subprocess call to the TUI without stderr inspection** → Read [TUI Subprocess Feedback Patterns](subprocess-feedback.md) first. TUI subprocess calls should inspect stderr for known success/failure markers. See subprocess-feedback.md for the pattern.
+    63→**calling start_operation() without a matching finish_operation() in the error path** → Read [TUI Multi-Operation Tracking](multi-operation-tracking.md) first. Always call finish_operation() in both success and error paths. Use try/finally or explicit error handling. Missing finish calls leave ghost operations in the status bar.
+    73→**constructing PlanFilters without copying all fields from existing filters** → Read [TUI Data Contract](data-contract.md) first. All fields must be explicitly copied in \_load_data() PlanFilters construction. Missing fields (like creator) cause silent filtering failures.
+    87→**extending PlanDataProvider ABC** → Read [TUI Architecture Overview](architecture.md) first. Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in **init**. Missing init causes AttributeError at test time.
+   115→**removing a field from a frozen dataclass** → Read [Frozen Dataclass Field Management](frozen-dataclass-field-management.md) first. Grep for the class name across ALL constructor sites. Frozen dataclasses have 5+ places to update: field definition, real provider, fake provider, test helpers, and filtering/display logic. Missing one causes runtime TypeError.
+  </tool_result>
+  <tool_result tool="toolu_011iJ78T5ATWeNsDKQT6DSgB">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+    22→
+    23→**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+    24→
+    25→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    26→
+    27→**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    28→
+    29→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    30→
+
+... [123 lines omitted] ...
+
+    33→**allowing `import X as Y` for internal/project imports because it's convenient** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt).
+    35→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    59→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    67→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    69→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    77→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    95→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   105→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   115→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   127→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   129→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   139→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   141→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <assistant>Now let me explore the existing TUI codebase to understand the current structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17179" cache_read_input_tokens="32956" cache_creation="{'ephemeral_5m_input_tokens': 17179, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01QbcC8V812jYxqAf1a1jhXy">
+    <param name="todos">[{'content': 'Add ViewMode.RUNS and RUNS_VIEW config', 'status': 'pending', 'activeForm': ...[truncated 968 chars]...s'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17179" cache_read_input_tokens="32956" cache_creation="{'ephemeral_5m_input_tokens': 17179, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QbcC8V812jYxqAf1a1jhXy">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01DEjnVExSPBV9EAGNoD37kA">
+    <param name="description">Explore TUI codebase structure</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1256 chars]...e FULL content. I need to understand every detail to implement the new Runs tab correctly.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="50135" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DEjnVExSPBV9EAGNoD37kA">
+Async agent launched successfully.
+agentId: a8ef845 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_use name="Task" id="toolu_01P69ifgGMqCpdPjdbdC7aG6">
+    <param name="description">Explore test files for TUI</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 608 chars].... `src/erk/core/pr_utils.py` - select_display_pr
+
+For each file, provide the FULL content.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="789" cache_read_input_tokens="50575" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P69ifgGMqCpdPjdbdC7aG6">
+Async agent launched successfully.
+agentId: a06ca9e (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Let me retrieve the results from both exploration agents:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="602" cache_read_input_tokens="51364" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Qwb7GnaF5DFaH4ABKRzJ5i">
+    <param name="task_id">a8ef845</param>
+    <param name="block">True</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="602" cache_read_input_tokens="51364" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Npq8YY7gWz7iSQE69zGY3d">
+    <param name="task_id">a06ca9e</param>
+    <param name="block">True</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="602" cache_read_input_tokens="51364" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qwb7GnaF5DFaH4ABKRzJ5i">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a8ef845&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/views/types.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/types.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/fake_provider.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/data/fake_provider.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/widgets/plan_table.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/app.py","limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/app.py","limit":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/app.py","limit":500,"offset":200}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/tui/screens/help_screen.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/display_utils.py","limit":150}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/constants.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/constants.py"}
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Npq8YY7gWz7iSQE69zGY3d">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a06ca9e&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/index.md"}
+[Tool: Glob] {"pattern":"tests/tui/**"}
+[Tool: Glob] {"pattern":"tests/tui/**"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/tui/views/test_types.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/tui/test_view_bar.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/tui/test_plan_table.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/tui/test_plan_table.py"}
+[Tool: Glob] {"pattern":"**/emoji.py"}
+[Tool: Glob] {"pattern":"**/pr_utils.py"}
+[Tool: Glob] {"pattern":"**/list_cmd.py"}
+[Tool: Glob] {"pattern":"**/list_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/emoji.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/pr_utils.py"}
+&lt;/output&gt;
+  </tool_result>
+  <assistant>Both agents are still running. Let me read their outputs directly and start reading the key files I need:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1941" cache_read_input_tokens="51966" cache_creation="{'ephemeral_5m_input_tokens': 1941, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01R66vgEBsDhAZsxPJvx2bP7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/views/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1941" cache_read_input_tokens="51966" cache_creation="{'ephemeral_5m_input_tokens': 1941, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QABXXzrdtFxiBHNvy4i6Wm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1941" cache_read_input_tokens="51966" cache_creation="{'ephemeral_5m_input_tokens': 1941, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WLnfYc1wHdcErmwPypX2Xa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1941" cache_read_input_tokens="51966" cache_creation="{'ephemeral_5m_input_tokens': 1941, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UPwVz6aWDU93Xu2uU8SRqg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/fake_provider.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1941" cache_read_input_tokens="51966" cache_creation="{'ephemeral_5m_input_tokens': 1941, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R66vgEBsDhAZsxPJvx2bP7">
+     1→"""View mode types for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from enum import Enum, auto
+     7→
+     8→
+     9→class ViewMode(Enum):
+    10→    """Available view modes for the dashboard."""
+    11→
+    12→    PLANS = auto()
+    13→    LEARN = auto()
+    14→    OBJECTIVES = auto()
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class ViewConfig:
+    19→    """Configuration for a specific view mode.
+    20→
+    21→    Attributes:
+    22→        mode: The view mode this config describes
+    23→        display_name: Human-readable name for the view
+    24→        labels: GitHub labels to use when fetching data
+    25→        key_hint: Key binding hint (e.g., "1", "2", "3")
+    26→        exclude_labels: Labels to exclude from results (client-side filtering
+    27→            applied before expensive enrichment). Empty tuple means no exclusion.
+    28→    """
+    29→
+    30→    mode: ViewMode
+
+... [83 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QABXXzrdtFxiBHNvy4i6Wm">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.gateway.github.types import IssueFilterState
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class PlanRowData:
+    13→    """Row data for displaying a plan in the TUI table.
+    14→
+    15→    Contains pre-formatted display strings and raw data needed for actions.
+    16→    Immutable to ensure table state consistency.
+    17→
+    18→    **Display vs Raw convention:** Many data points have both a raw field (for
+    19→    logic/predicates) and a display field (for table rendering). Raw fields are
+    20→    often nullable (None when absent), while display fields are always strings
+    21→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    22→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    23→
+    24→    Attributes:
+    25→
+    26→        plan_id: GitHub issue number (e.g., 123). Never None.
+    27→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    28→        full_title: Complete untruncated plan title. Empty string possible.
+    29→        plan_body: Raw issue body text (markdown). Empty string possible.
+    30→
+
+... [202 lines omitted] ...
+
+    56→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   169→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_result tool="toolu_01WLnfYc1wHdcErmwPypX2Xa">
+     1→"""TUI data provider ABC for plan table display assembly."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→
+     5→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     6→from erk.tui.sorting.types import BranchActivity
+     7→
+     8→
+     9→class PlanDataProvider(ABC):
+    10→    """Abstract base class for TUI plan data assembly.
+    11→
+    12→    Contains only the methods that produce TUI-specific types
+    13→    (PlanRowData, FetchTimings, BranchActivity). Domain operations
+    14→    (close_plan, dispatch, fetch_content, etc.) live in PlanService.
+    15→    """
+    16→
+    17→    @abstractmethod
+    18→    def fetch_plans(self, filters: PlanFilters) -&gt; tuple[list[PlanRowData], FetchTimings | None]:
+    19→        """Fetch plans matching the given filters.
+    20→
+    21→        Args:
+    22→            filters: Filter options for the query
+    23→
+    24→        Returns:
+    25→            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
+    26→        """
+    27→        ...
+    28→
+    29→    @abstractmethod
+    30→    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+
+... [39 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UPwVz6aWDU93Xu2uU8SRqg">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk.tui.data.provider_abc import PlanDataProvider
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→
+     9→
+    10→class FakePlanDataProvider(PlanDataProvider):
+    11→    """Fake implementation of PlanDataProvider for testing.
+    12→
+    13→    Returns canned data without making any API calls.
+    14→    Only handles TUI data assembly methods (fetch_plans, etc.).
+    15→    Domain operations (close_plan, dispatch, etc.) are on FakePlanService.
+    16→    """
+    17→
+    18→    def __init__(
+    19→        self,
+    20→        *,
+    21→        plans: list[PlanRowData] | None = None,
+    22→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    23→        fetch_error: str | None = None,
+    24→    ) -&gt; None:
+    25→        """Initialize with optional canned plan data.
+    26→
+    27→        Args:
+    28→            plans: List of PlanRowData to return, or None for empty list
+    29→            plans_by_labels: Per-label-set responses for testing view switching.
+    30→                When set, fetch_plans() checks this first using the filter labels.
+
+... [295 lines omitted] ...
+
+    31→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    32→                Use to simulate API failures.
+    37→        self._fetch_error = fetch_error
+    50→            RuntimeError: If fetch_error is set
+    53→        if self._fetch_error is not None:
+    54→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <assistant>Now let me read the remaining key files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10727" cache_read_input_tokens="53907" cache_creation="{'ephemeral_5m_input_tokens': 10727, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PTf7sBet4SGdusSSJfMAUo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/plan_table.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10727" cache_read_input_tokens="53907" cache_creation="{'ephemeral_5m_input_tokens': 10727, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BPmyTBt5xJ329tHLvjzHYs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10727" cache_read_input_tokens="53907" cache_creation="{'ephemeral_5m_input_tokens': 10727, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0134uRZprMv1npiFoUkzbYZB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10727" cache_read_input_tokens="53907" cache_creation="{'ephemeral_5m_input_tokens': 10727, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PTf7sBet4SGdusSSJfMAUo">
+     1→"""Plan table widget for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from rich.text import Text
+     8→from textual.events import Click
+     9→from textual.message import Message
+    10→from textual.widgets import DataTable
+    11→
+    12→from erk.core.display_utils import strip_rich_markup
+    13→from erk.tui.data.types import PlanFilters, PlanRowData
+    14→from erk.tui.views.types import ViewMode
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk.tui.app import ErkDashApp
+    18→
+    19→
+    20→class PlanDataTable(DataTable):
+    21→    """DataTable subclass for displaying plans.
+    22→
+    23→    Manages column configuration and row population from PlanRowData.
+    24→    Uses row selection mode (not cell selection) for simpler navigation.
+    25→    """
+    26→
+    27→    class LocalWtClicked(Message):
+    28→        """Posted when user clicks local-wt column on a row with existing worktree."""
+    29→
+    30→        def __init__(self, row_index: int) -&gt; None:
+
+... [432 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01BPmyTBt5xJ329tHLvjzHYs">
+     1→"""List workflow runs command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→import click
+     6→from rich.console import Console
+     7→from rich.markup import escape as escape_markup
+     8→from rich.table import Table
+     9→
+    10→from erk.cli.commands.pr.list_cmd import format_pr_cell
+    11→from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+    12→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.cli.ensure import Ensure
+    15→from erk.core.context import ErkContext
+    16→from erk.core.display_utils import (
+    17→    format_submission_time,
+    18→    format_workflow_outcome,
+    19→    format_workflow_run_id,
+    20→)
+    21→from erk.core.pr_utils import select_display_pr
+    22→from erk_shared.gateway.github.emoji import format_checks_cell
+    23→from erk_shared.gateway.github.parsing import github_repo_location_from_url
+    24→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo, WorkflowRun
+    25→from erk_shared.output.output import user_output
+    26→
+    27→_MAX_DISPLAY_RUNS = 50
+    28→_PER_WORKFLOW_LIMIT = 20
+    29→_MAX_TITLE_LENGTH = 50
+    30→
+
+... [167 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0134uRZprMv1npiFoUkzbYZB">
+     1→"""Shared utilities for run commands."""
+     2→
+     3→import re
+     4→
+     5→
+     6→def extract_pr_number(display_title: str | None) -&gt; int | None:
+     7→    """Extract PR number from display_title containing '#NNN'.
+     8→
+     9→    Handles:
+    10→    - "pr-address:#456:abc123" → 456
+    11→    - "8559:#460:abc123" → 460
+    12→    - "one-shot:#458:abc123" → 458
+    13→    - "rebase:#456:abc123" → 456
+    14→    - "8559:abc123" (old format, no #) → None
+    15→    - "Some title [abc123]" (legacy) → None
+    16→    - None or empty → None
+    17→    """
+    18→    if not display_title:
+    19→        return None
+    20→    match = re.search(r"#(\d+)", display_title)
+    21→    if match is None:
+    22→        return None
+    23→    return int(match.group(1))
+    24→
+    25→
+    26→def extract_plan_number(display_title: str | None) -&gt; int | None:
+    27→    """Extract plan number from display_title format '123:abc456'.
+    28→
+    29→    Handles:
+    30→    - Legacy format: "123:abc456" → 123 (plan_id at start, no #pr_number)
+
+... [19 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the remaining critical files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10609" cache_read_input_tokens="64634" cache_creation="{'ephemeral_5m_input_tokens': 10609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WQw8uaJpyfJzXJNM3mXtnw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/app.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10609" cache_read_input_tokens="64634" cache_creation="{'ephemeral_5m_input_tokens': 10609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CSE4Hj55f3n2duW874anQX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/display_utils.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10609" cache_read_input_tokens="64634" cache_creation="{'ephemeral_5m_input_tokens': 10609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LJSUhoLkibJ3dLnPV2VbZr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/constants.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10609" cache_read_input_tokens="64634" cache_creation="{'ephemeral_5m_input_tokens': 10609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NyPWshw77ue4XPZzGPYVwm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/help_screen.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10609" cache_read_input_tokens="64634" cache_creation="{'ephemeral_5m_input_tokens': 10609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WQw8uaJpyfJzXJNM3mXtnw">
+     1→"""Main Textual application for erk dash interactive mode."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→import time
+     7→from collections.abc import Iterator
+     8→from datetime import datetime
+     9→from pathlib import Path
+    10→
+    11→from textual import on
+    12→from textual.app import App, ComposeResult, SystemCommand
+    13→from textual.binding import Binding
+    14→from textual.containers import Container
+    15→from textual.screen import Screen
+    16→from textual.widgets import Header, Input, Label
+    17→
+    18→from erk.tui.actions.filter_actions import FilterActionsMixin
+    19→from erk.tui.actions.navigation import NavigationActionsMixin
+    20→from erk.tui.actions.palette import PaletteActionsMixin
+    21→from erk.tui.commands.provider import MainListCommandProvider
+    22→from erk.tui.data.provider_abc import PlanDataProvider
+    23→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    24→from erk.tui.filtering.logic import filter_plans
+    25→from erk.tui.filtering.types import FilterMode, FilterState
+    26→from erk.tui.operations.logic import build_github_url
+    27→from erk.tui.operations.streaming import StreamingOperationsMixin
+    28→from erk.tui.operations.workers import BackgroundWorkersMixin
+    29→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    30→from erk.tui.sorting.logic import sort_plans
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CSE4Hj55f3n2duW874anQX">
+     1→"""Display formatting utilities for erk.
+     2→
+     3→This module contains pure business logic for formatting and displaying worktree
+     4→information in the CLI. All functions are pure (no I/O) and can be tested without
+     5→filesystem access.
+     6→"""
+     7→
+     8→import base64
+     9→import re
+    10→from datetime import datetime
+    11→
+    12→import click
+    13→
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→
+    16→
+    17→def get_visible_length(text: str) -&gt; int:
+    18→    """Calculate the visible length of text, excluding ANSI and OSC escape sequences.
+    19→
+    20→    Args:
+    21→        text: Text that may contain escape sequences
+    22→
+    23→    Returns:
+    24→        Number of visible characters
+    25→    """
+    26→    # Remove ANSI color codes (\033[...m)
+    27→    text = re.sub(r"\033\[[0-9;]*m", "", text)
+    28→    # Remove OSC 8 hyperlink sequences (\033]8;;URL\033\\)
+    29→    text = re.sub(r"\033\]8;;[^\033]*\033\\", "", text)
+    30→    return len(text)
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LJSUhoLkibJ3dLnPV2VbZr">
+     1→"""Shared constants for erk CLI commands."""
+     2→
+     3→# GitHub issue label for erk plans
+     4→ERK_PLAN_LABEL = "erk-plan"
+     5→
+     6→# Title prefix for erk-plan issues (with trailing space for easy stripping)
+     7→ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+     8→
+     9→# Plan markdown heading prefix (with trailing space for easy stripping)
+    10→PLAN_HEADING_PREFIX = "Plan: "
+    11→
+    12→# PR title prefix for plan-originated PRs
+    13→PLANNED_PR_TITLE_PREFIX = "plnd/"
+    14→
+    15→# GitHub Actions workflow for remote implementation dispatch
+    16→DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+    17→DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+    18→
+    19→# GitHub Actions workflow for remote rebase with conflict resolution
+    20→REBASE_WORKFLOW_NAME = "pr-rebase.yml"
+    21→
+    22→# GitHub Actions workflow for remote PR comment addressing
+    23→PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+    24→
+    25→# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+    26→PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+    27→
+    28→# GitHub Actions workflow for one-shot autonomous execution
+    29→ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+    30→
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NyPWshw77ue4XPZzGPYVwm">
+     1→"""Modal screen showing keyboard shortcuts."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from textual.app import ComposeResult
+     6→from textual.binding import Binding
+     7→from textual.containers import Vertical
+     8→from textual.events import Key
+     9→from textual.screen import ModalScreen
+    10→from textual.widgets import Label
+    11→
+    12→from erk.tui.views.types import ViewMode
+    13→
+    14→
+    15→class HelpScreen(ModalScreen):
+    16→    """Modal screen showing keyboard shortcuts."""
+    17→
+    18→    BINDINGS = [
+    19→        Binding("escape", "dismiss", "Close"),
+    20→        Binding("q", "dismiss", "Close"),
+    21→        Binding("?", "dismiss", "Close"),
+    22→    ]
+    23→
+    24→    DEFAULT_CSS = """
+    25→    HelpScreen {
+    26→        align: center middle;
+    27→    }
+    28→
+    29→    #help-dialog {
+    30→        width: 60;
+
+... [113 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the rest of app.py to understand the _switch_view and _load_data methods:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6358" cache_read_input_tokens="75243" cache_creation="{'ephemeral_5m_input_tokens': 6358, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013Pm4tjP6aAd2Qyg2LuBYSp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/app.py</param>
+    <param name="offset">100</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6358" cache_read_input_tokens="75243" cache_creation="{'ephemeral_5m_input_tokens': 6358, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0171r7Jib67FWrG4wL77Uatf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/display_utils.py</param>
+    <param name="offset">100</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6358" cache_read_input_tokens="75243" cache_creation="{'ephemeral_5m_input_tokens': 6358, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013Pm4tjP6aAd2Qyg2LuBYSp">
+   100→        # Hide system commands on main list when a row is selected
+   101→        if self._get_selected_row() is not None:
+   102→            return iter(())
+   103→        yield from super().get_system_commands(screen)
+   104→
+   105→    def __init__(
+   106→        self,
+   107→        *,
+   108→        provider: PlanDataProvider,
+   109→        service: PlanService,
+   110→        filters: PlanFilters,
+   111→        refresh_interval: float = 15.0,
+   112→        initial_sort: SortState | None = None,
+   113→        cmux_integration: bool = False,
+   114→    ) -&gt; None:
+   115→        """Initialize the dashboard app.
+   116→
+   117→        Args:
+   118→            provider: Data provider for fetching plan display data
+   119→            service: Plan service for domain operations (close, dispatch, content)
+   120→            filters: Filter options for the plan list
+   121→            refresh_interval: Seconds between auto-refresh (0 to disable)
+   122→            initial_sort: Initial sort state (defaults to by plan number)
+   123→            cmux_integration: Whether cmux workspace integration is enabled
+   124→        """
+   125→        super().__init__()
+   126→        self._provider = provider
+   127→        self._service = service
+   128→        self._plan_filters = filters
+   129→        self._refresh_interval = refresh_interval
+
+... [175 lines omitted] ...
+
+   235→        except Exception as e:
+   236→            # GitHub API failure, network error, etc.
+   237→            self.notify(f"Failed to load plans: {e}", severity="error", timeout=5)
+  </tool_result>
+  <tool_result tool="toolu_0171r7Jib67FWrG4wL77Uatf">
+   100→        return ""
+   101→
+   102→    emoji = get_pr_status_emoji(pr)
+   103→
+   104→    # Format PR number text
+   105→    pr_text = f"#{pr.number}"
+   106→
+   107→    # Determine which URL to use based on use_graphite setting
+   108→    url = graphite_url if use_graphite else pr.url
+   109→
+   110→    # If we have a URL, make it clickable using OSC 8 terminal escape sequence
+   111→    if url:
+   112→        # Wrap the link text in cyan color to distinguish from non-clickable bright_blue indicators
+   113→        colored_pr_text = click.style(pr_text, fg="cyan")
+   114→        clickable_link = f"\033]8;;{url}\033\\{colored_pr_text}\033]8;;\033\\"
+   115→        return f"{emoji} {clickable_link}"
+   116→    else:
+   117→        # No URL available - just show colored text without link
+   118→        colored_pr_text = click.style(pr_text, fg="cyan")
+   119→        return f"{emoji} {colored_pr_text}"
+   120→
+   121→
+   122→def get_workflow_status_emoji(workflow_run: WorkflowRun) -&gt; str:
+   123→    """Determine the emoji to display for a workflow run based on its status.
+   124→
+   125→    Args:
+   126→        workflow_run: Workflow run information
+   127→
+   128→    Returns:
+   129→        Emoji character representing the workflow's current state
+
+... [175 lines omitted] ...
+
+   134→        if workflow_run.conclusion == "failure":
+   211→        One of: "queued", "in_progress", "success", "failure", "cancelled"
+   216→        if workflow_run.conclusion == "failure":
+   217→            return "failure"
+   220→        # Other conclusions (skipped, timed_out, etc.) map to failure
+   221→        return "failure"
+   249→    if state == "failure":
+   250→        return "[red]❌ Failure[/red]"
+  </tool_result>
+  <assistant>Let me also read the remaining parts of app.py, focusing on _switch_view and key action methods:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6073" cache_read_input_tokens="81601" cache_creation="{'ephemeral_5m_input_tokens': 6073, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MtYptDZXCmXmmTEznpALQ6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/app.py</param>
+    <param name="offset">300</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6073" cache_read_input_tokens="81601" cache_creation="{'ephemeral_5m_input_tokens': 6073, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015w1nVkrRodgpJdAiQXMcwM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/display_utils.py</param>
+    <param name="offset">440</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6073" cache_read_input_tokens="81601" cache_creation="{'ephemeral_5m_input_tokens': 6073, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MtYptDZXCmXmmTEznpALQ6">
+   300→        Filter pipeline: objective filter → stack filter → text filter → sort.
+   301→
+   302→        Args:
+   303→            rows: Raw rows to process
+   304→
+   305→        Returns:
+   306→            Filtered and sorted rows
+   307→        """
+   308→        # Apply objective filter first
+   309→        if self._objective_filter_issue is not None:
+   310→            rows = [r for r in rows if r.objective_issue == self._objective_filter_issue]
+   311→
+   312→        # Apply stack filter
+   313→        if self._stack_filter_branches is not None:
+   314→            rows = [
+   315→                r
+   316→                for r in rows
+   317→                if r.pr_head_branch is not None and r.pr_head_branch in self._stack_filter_branches
+   318→            ]
+   319→
+   320→        # Apply text filter
+   321→        if self._filter_state.mode == FilterMode.ACTIVE and self._filter_state.query:
+   322→            filtered = filter_plans(rows, self._filter_state.query)
+   323→        else:
+   324→            filtered = rows
+   325→
+   326→        # Apply sort
+   327→        return sort_plans(
+   328→            filtered,
+   329→            self._sort_state.key,
+
+... [175 lines omitted] ...
+
+   363→            if severity in ("information", "warning", "error"):
+  </tool_result>
+  <tool_result tool="toolu_015w1nVkrRodgpJdAiQXMcwM">
+   440→    if url:
+   441→        colored_id = click.style(id_text, fg="cyan")
+   442→        clickable_id = f"\033]8;;{url}\033\\{colored_id}\033]8;;\033\\"
+   443→    else:
+   444→        clickable_id = click.style(id_text, fg="cyan")
+   445→
+   446→    # Format labels
+   447→    labels_str = ""
+   448→    if labels:
+   449→        labels_str = " " + " ".join(
+   450→            click.style(f"[{label}]", fg="bright_magenta") for label in labels
+   451→        )
+   452→
+   453→    return f"{clickable_id} ({state_str}){labels_str} {title}"
+   454→
+   455→
+   456→def format_submission_time(created_at: datetime | None) -&gt; str:
+   457→    """Format workflow run submission time as MM-DD HH:MM in local timezone.
+   458→
+   459→    Args:
+   460→        created_at: UTC datetime when run was created, or None
+   461→
+   462→    Returns:
+   463→        Formatted string like "11-26 14:30" in local timezone, or "[dim]-[/dim]" if None
+   464→    """
+   465→    if created_at is None:
+   466→        return "[dim]-[/dim]"
+   467→
+   468→    # Convert UTC to local timezone
+   469→    local_time = created_at.astimezone()
+
+... [55 lines omitted] ...
+
+   498→    except ValueError:
+  </tool_result>
+  <assistant>Now let me read the remaining part of app.py (event handlers) and the shared fake provider, test files, and the view bar:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4363" cache_read_input_tokens="87674" cache_creation="{'ephemeral_5m_input_tokens': 4363, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WrcsakBQM6wo9RDh9uzSbM">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4363" cache_read_input_tokens="87674" cache_creation="{'ephemeral_5m_input_tokens': 4363, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HsSSywBfEQeKtgDaf9zun9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/view_bar.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4363" cache_read_input_tokens="87674" cache_creation="{'ephemeral_5m_input_tokens': 4363, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TYzyRLckyrDfeoHzkvvNj9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/views/test_types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4363" cache_read_input_tokens="87674" cache_creation="{'ephemeral_5m_input_tokens': 4363, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WrcsakBQM6wo9RDh9uzSbM">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.provider_abc import PlanDataProvider
+     7→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     8→from erk.tui.sorting.types import BranchActivity
+     9→from erk_shared.gateway.browser.abc import BrowserLauncher
+    10→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    11→from erk_shared.gateway.clipboard.abc import Clipboard
+    12→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    13→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [491 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    84→            RuntimeError: If fetch_error is set
+    87→        if self._fetch_error is not None:
+    88→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+</session>

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "plan_id": 9041,
+  "sessions": [
+    {
+      "session_id": "942f00ad-1e29-48f5-a4bc-4a4f79c0bf73",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T10:44:17.390854+00:00",
+      "files": [
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part1.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part10.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part11.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part12.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part13.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part14.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part2.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part3.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part4.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part5.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part6.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part7.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part8.xml",
+        "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 18,
+      "raw_size_kb": 1948,
+      "xml_size_kb": 394,
+      "git_branch": "plnd/add-runs-tab-tui-dash-03-09-0622"
+    }
+  ]
+}
