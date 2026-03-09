@@ -1,4 +1,4 @@
-.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-v2-build docs-v2-serve
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-v2-build docs-v2-serve pre-push-check install-hooks
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -187,3 +187,19 @@ docs-v2-build:
 
 docs-v2-serve:
 	cd docs-v2 && npm install && npm run dev
+
+# === Git Hooks ===
+
+# Pre-push checks: lint, format, type check (called by githooks/pre-push)
+pre-push-check:
+	@echo "=== Pre-push Checks ===" && \
+	exit_code=0; \
+	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
+	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
+	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
+	exit $$exit_code
+
+# Install git hooks by setting core.hooksPath
+install-hooks:
+	git config core.hooksPath githooks
+	@echo "Git hooks installed (core.hooksPath = githooks)"
