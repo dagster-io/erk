@@ -12,23 +12,6 @@ You are running autonomously in a CI workflow. Your job is to read a prompt, exp
 
 Read `.erk/impl-context/prompt.md` to understand what you need to do.
 
-## Step 1.5: Validate the Prompt
-
-Assess whether the prompt contains a valid, actionable task description. A valid prompt describes a specific software engineering task (feature, bug fix, refactor, etc.) that can be planned and implemented.
-
-If the prompt is clearly invalid — garbled terminal output, empty/whitespace-only, nonsensical text, not a task description, or otherwise not actionable — skip directly to the rejection flow:
-
-1. Write `.erk/impl-context/plan-result.json` with:
-   ```json
-   {
-     "rejected": true,
-     "reason": "<brief explanation of why the prompt is invalid>"
-   }
-   ```
-2. **Stop immediately** — do not proceed to exploration, planning, or saving.
-
-If the prompt is valid, continue to Step 2.
-
 ## Step 2: Read Objective Context (if present)
 
 If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
@@ -111,3 +94,4 @@ Use the `plan_number` and `title` extracted from the Step 7 output.
 - The plan must be detailed enough for another agent to implement without additional context
 - Keep the plan focused on the prompt
 - Never modify CHANGELOG.md
+- If after exploring the codebase you determine you cannot produce an actionable plan from the prompt, write `.erk/impl-context/plan-result.json` with `{"rejected": true, "reason": "<explanation>"}` and stop — do not proceed to saving
