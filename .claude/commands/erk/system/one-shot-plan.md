@@ -20,7 +20,10 @@ If the prompt is clearly invalid — garbled terminal output, empty/whitespace-o
 
 1. Write `.erk/impl-context/plan-result.json` with:
    ```json
-   {"rejected": true, "reason": "<brief explanation of why the prompt is invalid>"}
+   {
+     "rejected": true,
+     "reason": "<brief explanation of why the prompt is invalid>"
+   }
    ```
 2. **Stop immediately** — do not proceed to exploration, planning, or saving.
 
