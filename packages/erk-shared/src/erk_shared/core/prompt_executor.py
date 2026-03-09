@@ -161,6 +161,11 @@ class PromptExecutor(ABC):
     execution an injectable dependency.
     """
 
+    @property
+    def prompt_label(self) -> str:
+        """Human-readable label for progress messages (e.g., 'Claude', 'Anthropic API')."""
+        return "Claude"
+
     @abstractmethod
     def is_available(self) -> bool:
         """Check if the prompt executor backend is available.

@@ -42,6 +42,10 @@ def _resolve_model(model: str) -> str:
 class AnthropicApiPromptExecutor(PromptExecutor):
     """PromptExecutor backed by the Anthropic SDK (no CLI subprocess)."""
 
+    @property
+    def prompt_label(self) -> str:
+        return "Anthropic API"
+
     def is_available(self) -> bool:
         """Check if ANTHROPIC_API_KEY is set."""
         return os.environ.get("ANTHROPIC_API_KEY") is not None

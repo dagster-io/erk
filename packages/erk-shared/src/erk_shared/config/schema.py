@@ -111,6 +111,10 @@ class GlobalConfigSchema(BaseModel):
         description="Enable cmux workspace creation on PR checkout",
         json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "cmux_integration"},
     )
+    anthropic_api_fast_path: bool = Field(
+        description="Use Anthropic API fast path for reduced latency",
+        json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "anthropic_api_fast_path"},
+    )
 
 
 class RepoConfigSchema(BaseModel):

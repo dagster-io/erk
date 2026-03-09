@@ -108,3 +108,15 @@ def test_passthrough_delegates_to_cli() -> None:
     )
     assert len(cli.passthrough_calls) == 1
     assert len(api.passthrough_calls) == 0
+
+
+def test_prompt_label_returns_api_label_when_available() -> None:
+    """prompt_label returns api_executor's label when API is available."""
+    fallback, api, cli = _make_executor(api_available=True, cli_available=True)
+    assert fallback.prompt_label == api.prompt_label
+
+
+def test_prompt_label_returns_cli_label_when_api_unavailable() -> None:
+    """prompt_label returns cli_executor's label when API is unavailable."""
+    fallback, api, cli = _make_executor(api_available=False, cli_available=True)
+    assert fallback.prompt_label == cli.prompt_label
