@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "plan_id": 9046,
+  "sessions": [
+    {
+      "session_id": "0b90fedd-a837-4503-9db6-1e977e2367ac",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T11:49:43.037925+00:00",
+      "files": [
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part1.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part10.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part11.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part12.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part13.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part14.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part2.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part3.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part4.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part5.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part6.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part7.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part8.xml",
+        "impl-0b90fedd-a837-4503-9db6-1e977e2367ac-0b90fedd-a837-4503-9db6-1e977e2367ac-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 8,
+      "raw_size_kb": 896,
+      "xml_size_kb": 176,
+      "git_branch": "plnd/O8832-objective-plan-repo-03-09-0735"
+    }
+  ]
+}

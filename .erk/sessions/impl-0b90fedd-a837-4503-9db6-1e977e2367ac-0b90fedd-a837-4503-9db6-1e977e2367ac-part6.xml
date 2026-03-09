@@ -1,0 +1,206 @@
+<session>
+  <meta source="agent-a475da0" />
+  <meta branch="plnd/O8832-objective-plan-repo-03-09-0735" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read src/erk/cli/commands/one_shot.py and find the _get_remote_github function. Return its full implementation and line numbers. Also check how it differs from get_remote_github in repo_resolution.py.</user>
+  <assistant>I'll help you find and analyze the `_get_remote_github` function in the one_shot.py file and compare it with `get_remote_github` in repo_resolution.py.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15059" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15059, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014SHBKFmZr7mNfDgxEJyxhd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15059" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15059, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011DjmabgtxjYpGWeQthSkdp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/repo_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15059" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15059, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011DjmabgtxjYpGWeQthSkdp">
+&lt;tool_use_error&gt;File does not exist.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_014SHBKFmZr7mNfDgxEJyxhd">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.implement_shared import normalize_model_name
+    20→from erk.cli.commands.one_shot_remote_dispatch import (
+    21→    OneShotDispatchParams,
+    22→    dispatch_one_shot_remote,
+    23→)
+    24→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    25→from erk.cli.ensure import Ensure, UserFacingCliError
+    26→from erk.core.context import ErkContext, NoRepoSentinel
+    27→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    28→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    29→from erk_shared.output.output import user_output
+    30→
+
+... [186 lines omitted] ...
+
+    45→        UserFacingCliError: If no http_client is available
+    51→        raise UserFacingCliError(
+   178→            raise UserFacingCliError(
+   185→            raise UserFacingCliError(
+   193→        raise click.UsageError("--repo and --ref-current are mutually exclusive")
+  </tool_result>
+  <assistant>The file `repo_resolution.py` doesn't exist at that path. Let me search for the `get_remote_github` function and the correct location of the repo resolution module.</assistant>
+  <usage input_tokens="46" cache_creation_input_tokens="2922" cache_read_input_tokens="15059" cache_creation="{'ephemeral_5m_input_tokens': 2922, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016eeUZsdv5VZoAQrxYar7tf">
+    <param name="pattern">def get_remote_github</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+  </tool_use>
+  <usage input_tokens="46" cache_creation_input_tokens="2922" cache_read_input_tokens="15059" cache_creation="{'ephemeral_5m_input_tokens': 2922, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_016AEKeX3DjndHAhYeYCF7qv">
+    <param name="pattern">**/repo_resolution.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="46" cache_creation_input_tokens="2922" cache_read_input_tokens="15059" cache_creation="{'ephemeral_5m_input_tokens': 2922, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016AEKeX3DjndHAhYeYCF7qv">
+/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py
+  </tool_result>
+  <tool_result tool="toolu_016eeUZsdv5VZoAQrxYar7tf">
+Found 1 file
+src/erk/cli/repo_resolution.py
+  </tool_result>
+  <assistant>Now let me read the correct file:</assistant>
+  <usage input_tokens="55" cache_creation_input_tokens="325" cache_read_input_tokens="17981" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FAUkafVZc8Hq3XJWmEGi6x">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="55" cache_creation_input_tokens="325" cache_read_input_tokens="17981" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FAUkafVZc8Hq3XJWmEGi6x">
+     1→"""Shared --repo infrastructure for CLI commands.
+     2→
+     3→Provides helpers for resolving owner/repo from either a --repo flag
+     4→or local git context, and constructing RemoteGitHub instances.
+     5→"""
+     6→
+     7→import functools
+     8→
+     9→import click
+    10→
+    11→from erk.cli.ensure import UserFacingCliError
+    12→from erk.core.context import ErkContext, NoRepoSentinel
+    13→from erk_shared.gateway.github.types import GitHubRepoId
+    14→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    15→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    16→
+    17→
+    18→def resolve_owner_repo(
+    19→    ctx: ErkContext,
+    20→    *,
+    21→    target_repo: str | None,
+    22→) -&gt; tuple[str, str]:
+    23→    """Resolve owner/repo from --repo flag or local git context.
+    24→
+    25→    Args:
+    26→        ctx: ErkContext
+    27→        target_repo: Optional "owner/repo" string from --repo flag
+    28→
+    29→    Returns:
+    30→        Tuple of (owner, repo_name)
+
+... [79 lines omitted] ...
+
+    33→        UserFacingCliError: If owner/repo cannot be determined
+    37→            raise UserFacingCliError(
+    45→        raise UserFacingCliError(
+    65→        UserFacingCliError: If no http_client is available
+    71→        raise UserFacingCliError(
+  </tool_result>
+  <assistant>Perfect! Now I have both functions. Let me provide you with a comprehensive comparison:
+
+## `_get_remote_github` in one_shot.py
+
+**Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py`  
+**Lines:** 32-55
+
+```python
+def _get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub:
+    """Get or construct a RemoteGitHub from context.
+
+    Uses ctx.remote_github if provided (tests inject FakeRemoteGitHub here).
+    Otherwise constructs RealRemoteGitHub from ctx.http_client.
+
+    Args:
+        ctx: ErkContext with http_client and time
+
+    Returns:
+        RemoteGitHub instance
+
+    Raises:
+        UserFacingCliError: If no http_client is available
+    """
+    if ctx.remote_github is not None:
+        return ctx.remote_github
+
+    if ctx.http_client is None:
+        raise UserFacingCliError(
+            "GitHub authentication required.\nRun 'gh auth login' to authenticate."
+        )
+
+    return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
+```
+
+---
+
+## `get_remote_github` in repo_resolution.py
+
+**Location:** `/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py`  
+**Lines:** 52-75
+
+```python
+def get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub:
+    """Get or construct a RemoteGitHub from context.
+
+    Uses ctx.remote_github if provided (tests inject FakeRemoteGitHub here).
+    Otherwise constructs RealRemoteGitHub from ctx.http_client.
+
+    Args:
+        ctx: ErkContext with http_client and time
+
+    Returns:
+        RemoteGitHub instance
+
+    Raises:
+        UserFacingCliError: If no http_client is available
+    """
+    if ctx.remote_github is not None:
+        return ctx.remote_github
+
+    if ctx.http_client is None:
+        raise UserFacingCliError(
+            "GitHub authentication required.\nRun 'gh auth login' to authenticate."
+        )
+
+    return RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
+```
+
+---
+
+## Key Differences
+
+| Aspect | one_shot.py | repo_resolution.py |
+|--------|------------|-------------------|
+| **Function Name** | `_get_remote_github` (private with underscore) | `get_remote_github` (public) |
+| **Location** | Local to one_shot.py command module | Shared utility module |
+| **Purpose** | Used only in the one_shot command | Reusable across multiple commands |
+| **Imports** | Imported types at top of file | Defined in repo_resolution module |
+| **Implementation** | Identical to repo_resolution version | Base/canonical version |
+
+**Important Note:** The implementations are **100% identical** - they have the exact same logic and docstring. The main difference is that `_get_remote_github` in one_shot.py is a private local copy (underscore prefix), while `get_remote_github` in repo_resolution.py is the canonical public version shared across the codebase. It appears that one_shot.py has its own local version rather than importing the shared utility from repo_resolution.py.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1667" cache_read_input_tokens="18306" cache_creation="{'ephemeral_5m_input_tokens': 1667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
