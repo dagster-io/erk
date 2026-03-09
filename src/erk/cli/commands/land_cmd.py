@@ -20,6 +20,7 @@ from typing import Literal, NamedTuple, assert_never
 import click
 
 from erk.cli.activation import print_temp_script_instructions, render_activation_script
+from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
 from erk.cli.commands.land_pipeline import (
     LandError,
     make_execution_state,
@@ -42,7 +43,6 @@ from erk.cli.commands.slot.common import (
     get_placeholder_branch_name,
 )
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
-from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -1229,9 +1229,9 @@ def _navigate_after_land(
             raise SystemExit(0)
         target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target_child_branch)
         if target_path is None:
-            # Auto-create worktree for child
-            target_path, _ = ensure_worktree_for_branch(
-                ctx, post_deletion_repo, target_child_branch
+            # Auto-create worktree for child via slot allocation
+            target_path, _ = ensure_branch_has_worktree(
+                ctx, post_deletion_repo, branch_name=target_child_branch, no_slot=False, force=False
             )
         # Suggest running gt restack --downstack to update child branch's PR base
         # Use --downstack to only restack the current branch, avoiding errors if

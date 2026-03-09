@@ -153,12 +153,12 @@ def test_down_at_trunk() -> None:
 
 
 def test_down_parent_has_no_worktree() -> None:
-    """Test down command when parent branch exists but has no worktree - should auto-create."""
+    """Test down command when parent branch exists but has no worktree - should allocate a slot."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
-        # Only feature-2 has a worktree, feature-1 does not (will be auto-created)
+        # Only feature-2 has a worktree, feature-1 does not (will get a slot)
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-2"], repo_dir=repo_dir),
             current_branches={env.cwd: "feature-2"},  # Simulate being in feature-2 worktree
@@ -194,12 +194,16 @@ def test_down_parent_has_no_worktree() -> None:
 
         result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
 
-        # Should succeed and create worktree
+        # Should succeed and allocate a slot
         assert result.exit_code == 0
 
-        # Verify worktree was created for feature-1
-        # added_worktrees is a list of (path, branch) tuples
+        # Verify worktree was created via slot allocation for feature-1
         assert any(branch == "feature-1" for _path, branch in git_ops.added_worktrees)
+
+        # Verify pool state was updated with slot assignment
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert any(a.branch_name == "feature-1" for a in state.assignments)
 
 
 def test_down_graphite_not_enabled() -> None:

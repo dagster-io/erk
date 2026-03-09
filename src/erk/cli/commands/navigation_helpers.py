@@ -13,8 +13,8 @@ from erk.cli.activation import (
     print_activation_instructions,
     render_activation_script,
 )
+from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
-from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -543,9 +543,11 @@ def resolve_up_navigation(
         # Worktree exists (checkout will be handled by orchestrator if needed)
         return target_branch, False
 
-    # No worktree found - auto-create
-    _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, target_branch)
-    return target_branch, was_created
+    # No worktree found - allocate a slot
+    _worktree_path, already_existed = ensure_branch_has_worktree(
+        ctx, repo, branch_name=target_branch, no_slot=False, force=False
+    )
+    return target_branch, not already_existed
 
 
 def resolve_down_navigation(
@@ -601,9 +603,11 @@ def resolve_down_navigation(
             # Worktree exists (checkout will be handled by orchestrator if needed)
             return parent_branch, False
 
-        # No worktree found - auto-create
-        _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, parent_branch)
-        return parent_branch, was_created
+        # No worktree found - allocate a slot
+        _worktree_path, already_existed = ensure_branch_has_worktree(
+            ctx, repo, branch_name=parent_branch, no_slot=False, force=False
+        )
+        return parent_branch, not already_existed
 
 
 @dataclass(frozen=True)
@@ -777,11 +781,11 @@ def execute_stack_navigation(
             )
             break
 
-    # Show creation message if worktree was just created
+    # Show creation message if slot was just assigned
     if was_created and not script:
         user_output(
             click.style("✓", fg="green")
-            + f" Created worktree for {click.style(target_name, fg='yellow')} and moved to it"
+            + f" Assigned slot for {click.style(target_name, fg='yellow')} and moved to it"
         )
 
     # Prepare deferred deletion commands if --delete-current is set
