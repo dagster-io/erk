@@ -147,12 +147,39 @@ def _generate_summary(
     return result.output.strip()
 
 
-CONFLICT_RESOLUTION_PROMPT = (
-    "Fix all merge conflicts in this repository. "
-    "For each conflicted file, read it, resolve the conflict markers appropriately, "
-    "and save the file. After fixing all conflicts, stage the resolved files with "
-    "'git add' and then run 'git rebase --continue' to continue the rebase."
-)
+CONFLICT_RESOLUTION_PROMPT = """\
+Fix all merge conflicts in this repository and continue the rebase.
+
+Steps:
+
+1. Run `git status` to identify all conflicted files.
+
+2. For each conflicted file, check for the `<!-- AUTO-GENERATED FILE -->` header comment:
+   - Auto-generated files (e.g., tripwires.md, index.md with the auto-generated header): \
+accept either side with `git checkout --theirs <file>`, stage with `git add`. \
+After the rebase completes, regenerate them (e.g., `erk docs sync` for tripwires/index files).
+   - Real content files: proceed to step 3.
+
+3. For each real content file:
+   a. Read the file and understand both sides of the conflict:
+      - `<<<<<<< HEAD` = local changes
+      - `=======` separates local from incoming
+      - `>>>>>>> <commit>` = incoming changes
+   b. Determine what each side was trying to accomplish.
+   c. Resolve intelligently:
+      - If changes are complementary, merge both
+      - If changes conflict semantically, prefer the more recent/complete version
+      - If genuinely unclear, prefer the incoming (upstream) version
+   d. Remove all conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`).
+   e. Stage the resolution: `git add <file>`
+
+4. After resolving all conflicts, stage resolved files and run `git rebase --continue`.
+
+5. If more conflicts appear, repeat from step 1.
+
+6. After rebase completes, regenerate any auto-generated files resolved in step 2 \
+(e.g., run `erk docs sync`).
+"""
 
 
 def _invoke_claude_for_conflicts(
