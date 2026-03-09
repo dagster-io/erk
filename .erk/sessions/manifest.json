@@ -18,6 +18,23 @@
       "raw_size_kb": 61,
       "xml_size_kb": 33,
       "git_branch": "plnd/example-pr-of-minor-update-03-09-1527"
+    },
+    {
+      "session_id": "019a49ba-ee69-425a-8b0a-0a562c351ce9",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T15:34:42.880560+00:00",
+      "files": [
+        "impl-019a49ba-ee69-425a-8b0a-0a562c351ce9-019a49ba-ee69-425a-8b0a-0a562c351ce9-part1.xml",
+        "impl-019a49ba-ee69-425a-8b0a-0a562c351ce9-019a49ba-ee69-425a-8b0a-0a562c351ce9-part2.xml",
+        "impl-019a49ba-ee69-425a-8b0a-0a562c351ce9-019a49ba-ee69-425a-8b0a-0a562c351ce9-part3.xml",
+        "impl-019a49ba-ee69-425a-8b0a-0a562c351ce9-019a49ba-ee69-425a-8b0a-0a562c351ce9-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 4,
+      "raw_size_kb": 74,
+      "xml_size_kb": 37,
+      "git_branch": "plnd/example-pr-of-minor-update-03-09-1527"
     }
   ]
 }
