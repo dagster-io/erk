@@ -403,3 +403,178 @@ def test_branch_behind_remote_returns_error(tmp_path: Path) -> None:
     assert isinstance(result, SubmitError)
     assert result.error_type == "remote_diverged"
     assert "behind" in result.message
+
+
+def test_fetch_skipped_when_remote_matches_local(tmp_path: Path) -> None:
+    """When remote SHA matches local tracking ref, fetch_branch is not called."""
+    sha = "abc123def456abc123def456abc123def456abc1"
+    pr = _pr_details(number=42, branch="feature")
+    fake_graphite = FakeGraphite()
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+    )
+    fake_git = FakeGit(
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+        repository_roots={tmp_path: tmp_path},
+        remote_branches={tmp_path: ["origin/feature"]},
+        remote_refs={(tmp_path, "origin", "feature"): sha},
+        local_tracking_refs={(tmp_path, "origin", "feature"): sha},
+        branch_divergence={
+            (tmp_path, "feature", "origin"): BranchDivergence(
+                is_diverged=False,
+                ahead=1,
+                behind=0,
+            )
+        },
+    )
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        github=fake_github,
+        cwd=tmp_path,
+        global_config=global_config,
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = _graphite_first_flow(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert result.pr_number == 42
+    # No fetch should have been performed since SHAs matched
+    assert fake_git.fetched_branches == []
+
+
+def test_fetch_happens_when_remote_differs_from_local(tmp_path: Path) -> None:
+    """When remote SHA differs from local tracking ref, fetch_branch is called."""
+    pr = _pr_details(number=42, branch="feature")
+    fake_graphite = FakeGraphite()
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+    )
+    fake_git = FakeGit(
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+        repository_roots={tmp_path: tmp_path},
+        remote_branches={tmp_path: ["origin/feature"]},
+        remote_refs={(tmp_path, "origin", "feature"): "remote_sha_new"},
+        local_tracking_refs={(tmp_path, "origin", "feature"): "local_sha_old"},
+        branch_divergence={
+            (tmp_path, "feature", "origin"): BranchDivergence(
+                is_diverged=False,
+                ahead=1,
+                behind=0,
+            )
+        },
+    )
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        github=fake_github,
+        cwd=tmp_path,
+        global_config=global_config,
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = _graphite_first_flow(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert result.pr_number == 42
+    # Fetch should have happened since SHAs differed
+    assert ("origin", "feature") in fake_git.fetched_branches
+
+
+def test_fetch_happens_when_remote_ref_unavailable(tmp_path: Path) -> None:
+    """When get_remote_ref returns None, fall back to full fetch."""
+    pr = _pr_details(number=42, branch="feature")
+    fake_graphite = FakeGraphite()
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+    )
+    fake_git = FakeGit(
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+        repository_roots={tmp_path: tmp_path},
+        remote_branches={tmp_path: ["origin/feature"]},
+        # No remote_refs configured — get_remote_ref returns None
+        local_tracking_refs={(tmp_path, "origin", "feature"): "some_sha"},
+        branch_divergence={
+            (tmp_path, "feature", "origin"): BranchDivergence(
+                is_diverged=False,
+                ahead=1,
+                behind=0,
+            )
+        },
+    )
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        github=fake_github,
+        cwd=tmp_path,
+        global_config=global_config,
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = _graphite_first_flow(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    # Fetch should happen as fallback
+    assert ("origin", "feature") in fake_git.fetched_branches
+
+
+def test_fetch_happens_when_no_local_tracking_ref(tmp_path: Path) -> None:
+    """When local tracking ref doesn't exist, fall back to full fetch."""
+    pr = _pr_details(number=42, branch="feature")
+    fake_graphite = FakeGraphite()
+    fake_github = FakeGitHub(
+        prs_by_branch={"feature": pr},
+    )
+    fake_git = FakeGit(
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
+        repository_roots={tmp_path: tmp_path},
+        remote_branches={tmp_path: ["origin/feature"]},
+        remote_refs={(tmp_path, "origin", "feature"): "abc123"},
+        # No local_tracking_refs configured
+        branch_divergence={
+            (tmp_path, "feature", "origin"): BranchDivergence(
+                is_diverged=False,
+                ahead=1,
+                behind=0,
+            )
+        },
+    )
+    global_config = GlobalConfig(
+        erk_root=Path("/test/erks"),
+        use_graphite=True,
+        shell_setup_complete=False,
+        github_planning=True,
+    )
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        github=fake_github,
+        cwd=tmp_path,
+        global_config=global_config,
+    )
+    state = _make_state(cwd=tmp_path)
+
+    result = _graphite_first_flow(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    # Fetch should happen since local tracking ref is None
+    assert ("origin", "feature") in fake_git.fetched_branches

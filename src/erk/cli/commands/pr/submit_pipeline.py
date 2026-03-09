@@ -279,23 +279,23 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     effective_force = state.force or is_plan_impl
 
     # Pre-check: detect remote divergence before gt submit
-    # Use lightweight ls-remote to check if remote SHA matches local (avoids full fetch)
-    remote_sha = ctx.git.remote.get_remote_ref(state.repo_root, "origin", state.branch_name)
-    if remote_sha is not None:
-        local_sha = ctx.git.branch.get_branch_head(state.repo_root, state.branch_name)
-        if local_sha == remote_sha:
-            # SHAs match: no divergence possible, skip expensive fetch
-            divergence = BranchDivergence(is_diverged=False, ahead=0, behind=0)
-        else:
-            # SHAs differ: need full fetch to determine ahead/behind counts
+    if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branch_name):
+        # Lightweight divergence pre-check: compare remote ref with local tracking ref.
+        # If they match, the expensive fetch can be skipped entirely.
+        remote_sha = ctx.git.remote.get_remote_ref(state.repo_root, "origin", state.branch_name)
+        local_sha = ctx.git.remote.get_local_tracking_ref_sha(
+            state.repo_root, "origin", state.branch_name
+        )
+        needs_fetch = remote_sha is None or local_sha is None or remote_sha != local_sha
+        if needs_fetch:
             ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
-            divergence = ctx.git.branch.is_branch_diverged_from_remote(
-                state.cwd, state.branch_name, "origin"
-            )
+        divergence = ctx.git.branch.is_branch_diverged_from_remote(
+            state.cwd, state.branch_name, "origin"
+        )
         if divergence.behind > 0 and not effective_force:
-            ahead_msg = ""
-            if divergence.ahead > 0:
-                ahead_msg = f" and ahead by {divergence.ahead} commit(s)"
+            ahead_msg = (
+                f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead > 0 else ""
+            )
             return SubmitError(
                 phase="push_and_create_pr",
                 error_type="remote_diverged",
