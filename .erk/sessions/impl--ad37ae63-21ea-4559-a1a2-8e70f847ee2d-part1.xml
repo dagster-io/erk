@@ -1,0 +1,622 @@
+<session>
+  <meta branch="plnd/update-node-desc-reconcili-03-09-1239" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9071&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9071` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9071.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28596" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28596, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RWjxhC5PH3uwujcwEvRNjf">
+    <param name="command">erk exec setup-impl --issue 9071</param>
+    <param name="description">Set up implementation for plan #9071</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28596" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28596, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RWjxhC5PH3uwujcwEvRNjf">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--update-node-desc-reconcili-03-09-1239", "plan_number": 9071, "plan_url": "https://github.com/dagster-io/erk/pull/9071", "branch": "plnd/update-node-desc-reconcili-03-09-1239", "plan_title": "[erk-plan] Plan: Add Roadmap Node Description Reconciliation to Objective Updates", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9071, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/update-node-desc-reconcili-03-09-1239', teleporting from remote...
+  </tool_result>
+  <assistant>Setup complete. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28596" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XK8G1b4WW6Fvm8JpVxXQYD">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--update-node-desc-reconcili-03-09-1239/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28596" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XK8G1b4WW6Fvm8JpVxXQYD">
+     1→# Plan: Add Roadmap Node Description Reconciliation to Objective Updates
+     2→
+     3→## Context
+     4→
+     5→When `erk land` updates an objective after merging a PR, the system command `/erk:system:objective-update-with-landed-pr` runs two steps:
+     6→
+     7→1. **Mechanical** (`erk exec objective-apply-landed-update`): Marks nodes as "done" with PR reference, but passes `description=None` — preserving the original description verbatim
+     8→2. **Prose reconciliation** (LLM): Updates stale design decisions in the objective's prose body comment
+     9→
+    10→**The gap:** Node descriptions in the YAML roadmap are never updated. A node that says "Add `@json_output` decorator" stays that way even after the PR implemented it as `@json_command`. The contradiction table in Step 2 mentions "Node description in roadmap" as a scope change type, but never tells the LLM *how* to act on it — there's no instruction to call `erk exec update-objective-node --description`.
+    11→
+    12→The tooling already exists — `update-objective-node` accepts `--description` and handles the full YAML + comment table re-render. The only change needed is in the system command's instructions.
+    13→
+    14→## Changes
+    15→
+    16→**Single file:** `.claude/commands/erk/system/objective-update-with-landed-pr.md`
+    17→
+    18→### 1. Add "Naming divergence" row to the contradiction table (line 83)
+    19→
+    20→Add after the "Scope change" row:
+    21→
+    22→```markdown
+    23→| **Naming divergence**       | Node says `@json_output`, PR implemented `@json_command`     | Node description (via `update-objective-node --description`) |
+    24→```
+    25→
+    26→### 2. Update "Scope change" action column (line 83)
+    27→
+    28→Change from:
+    29→```
+    30→| **Scope change**            | Node says "Add 3 methods", PR only needed 2                  | Node description in roadmap                   |
+
+... [43 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. It's a single-file change to `.claude/commands/erk/system/objective-update-with-landed-pr.md`. Let me read the current file to understand the context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1366" cache_read_input_tokens="28949" cache_creation="{'ephemeral_5m_input_tokens': 1366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0169TuuHaSeYN4EmPwoa4FDR">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1366" cache_read_input_tokens="28949" cache_creation="{'ephemeral_5m_input_tokens': 1366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0169TuuHaSeYN4EmPwoa4FDR">
+     1→---
+     2→description: Update objective issue after landing a PR
+     3→---
+     4→
+     5→# /erk:system:objective-update-with-landed-pr
+     6→
+     7→Update an objective issue after landing a PR from a plan branch.
+     8→
+     9→## Usage
+    10→
+    11→Run after landing a PR:
+    12→
+    13→```bash
+    14→/erk:system:objective-update-with-landed-pr
+    15→```
+    16→
+    17→---
+    18→
+    19→## Agent Instructions
+    20→
+    21→&gt; **Design note:** All steps run inline in the caller's context (no subagent delegation).
+    22→&gt; Step 2 (prose reconciliation) requires LLM judgment, and Step 3 (closing prompt)
+    23→&gt; requires direct user interaction.
+    24→
+    25→### Step 1: Apply Mechanical Updates
+    26→
+    27→Check `$ARGUMENTS` for optional overrides:
+    28→
+    29→- `--pr &lt;number&gt;`: PR number that was just landed (also used as the plan number)
+    30→- `--objective &lt;number&gt;`: Objective number to update
+
+... [108 lines omitted] ...
+
+    59→If this returns `success: false`, display the error and stop.
+   126→## Error Cases
+   130→| `objective-apply-landed-update` fails | Display error from JSON and stop             |
+   131→| Issue not found                       | Report error and exit                        |
+  </tool_result>
+  <assistant>Now I have full context. Let me create the todo list and implement the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2210" cache_read_input_tokens="30315" cache_creation="{'ephemeral_5m_input_tokens': 2210, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_018ELadK9W4bXejmet8chpXD">
+    <param name="todos">[{'content': "Add 'Naming divergence' row to contradiction table", 'status': 'in_progress'...[truncated 562 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2210" cache_read_input_tokens="30315" cache_creation="{'ephemeral_5m_input_tokens': 2210, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01STcyHC6328jmFxnRz2XAZs">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2210" cache_read_input_tokens="30315" cache_creation="{'ephemeral_5m_input_tokens': 2210, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018ELadK9W4bXejmet8chpXD">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01STcyHC6328jmFxnRz2XAZs">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Now let me implement all three changes to the file. First, the "Naming divergence" row and "Scope change" update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="32525" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012gAsANvuGcDoZyv9QyzAzj">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md</param>
+    <param name="old_string">| **Scope change**            | Node says "Add 3 methods", PR only needed 2                  | Node description in roadmap                   |</param>
+    <param name="new_string">| **Scope change**            | Node says "Add 3 methods", PR only needed 2               ...[truncated 115 chars]...ented `@json_command`     | Node description (via `update-objective-node --description`) |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="32525" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012gAsANvuGcDoZyv9QyzAzj">
+The file /home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_0198Vf4qW9kAnsoZzTvQPFfK">
+    <param name="todos">[{'content': "Add 'Naming divergence' row to contradiction table", 'status': 'completed', ...[truncated 568 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="33024" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0198Vf4qW9kAnsoZzTvQPFfK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now add the node description reconciliation instructions after the table, before the "If prose reconciliation found stale sections" paragraph:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="33340" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017MucrrFC6GatxAAkXYieJ4">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md</param>
+    <param name="old_string">**If prose reconciliation found stale sections**, update the objective's first comment.</param>
+    <param name="new_string">**Node description reconciliation:** For each node in `roadmap.phases[].nodes[]`, compare ...[truncated 673 chars]....
+
+**If prose reconciliation found stale sections**, update the objective's first comment.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="33340" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017MucrrFC6GatxAAkXYieJ4">
+The file /home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify the final file looks correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="33629" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BuPcjewKTHuUVa8c5DfbAz">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md</param>
+    <param name="offset">78</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="33629" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BuPcjewKTHuUVa8c5DfbAz">
+    78→This keeps the YAML accurate and ensures `all_complete` reflects the true state for Step 3.
+    79→
+    80→| Contradiction Type          | Example                                                      | Section to Update                             |
+    81→| --------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
+    82→| **Decision override**       | Objective says "Use polling", PR implemented WebSockets      | Design Decisions                              |
+    83→| **Scope change**            | Node says "Add 3 methods", PR only needed 2                  | Node description (via `update-objective-node --description`) |
+    84→| **Naming divergence**       | Node says `@json_output`, PR implemented `@json_command`     | Node description (via `update-objective-node --description`) |
+    85→| **Architecture drift**      | Context says "config in config.py", PR moved it to settings/ | Implementation Context                        |
+    86→| **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                        |
+    87→| **New discovery**           | PR revealed a caching bug affecting future nodes             | Implementation Context or new Design Decision |
+    88→
+    89→**Node description reconciliation:** For each node in `roadmap.phases[].nodes[]`, compare the `description` against what the PR actually implemented:
+    90→
+    91→- **Done nodes** (from `node_updates` in Step 1): Did the implementation rename, reshape, or change scope? Update if the description no longer accurately describes what was built.
+    92→- **Pending/in_progress nodes**: Did this PR change APIs, types, or patterns that make a future node's description inaccurate?
+    93→
+    94→For each stale description:
+    95→
+    96→```bash
+    97→erk exec update-objective-node &lt;objective_number&gt; --node &lt;node_id&gt; --description "&lt;corrected description&gt;"
+    98→```
+    99→
+   100→Keep descriptions concise (same style/length as existing nodes). Do node description updates *before* prose updates, since `update-objective-node` re-renders the comment table.
+   101→
+   102→**If prose reconciliation found stale sections**, update the objective's first comment. Parse `objective_comment_id` from `objective.body`'s `objective-header` metadata block, then update:
+   103→
+   104→```bash
+   105→gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="&lt;updated comment body&gt;"
+   106→```
+   107→
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>All three changes are in place and look correct. Let me mark the implementation task as complete and move to CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1033" cache_read_input_tokens="34046" cache_creation="{'ephemeral_5m_input_tokens': 1033, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0143aEf1oXyMAY7qywuvC1nC">
+    <param name="todos">[{'content': "Add 'Naming divergence' row to contradiction table", 'status': 'completed', ...[truncated 570 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1033" cache_read_input_tokens="34046" cache_creation="{'ephemeral_5m_input_tokens': 1033, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0143aEf1oXyMAY7qywuvC1nC">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me check if there's a post-plan-implement CI hook:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="35079" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01XVMeU8F2jZ6PtjNhnobPXt">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="35079" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XVMeU8F2jZ6PtjNhnobPXt">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Hno8ESXvqwy1zEqn9Ngjox">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="124" cache_read_input_tokens="35392" cache_creation="{'ephemeral_5m_input_tokens': 124, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Hno8ESXvqwy1zEqn9Ngjox">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>This is a markdown-only change so CI should pass trivially, but let me run it as instructed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="35516" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0115DEqzp4Y3zSrPV3NggPpB">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Do not fix anything, just report.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="35516" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0115DEqzp4Y3zSrPV3NggPpB">
+## Results: `make fast-ci` FAILED
+
+**Summary:** Prettier code formatting check failed with 3 files that need formatting.
+
+### Failures:
+- **Prettier Check** — Code style issues found in 3 files
+  1. `.claude/commands/erk/system/objective-update-with-landed-pr.md`
+  2. `docs/learned/integrations/github-review-decision.md`
+  3. `docs/learned/tui/status-indicators.md`
+
+### Passing Checks:
+- Lint (ruff): All checks passed
+- Format check (ruff): 1676 files already formatted
+- Markdown check: Passed
+- Exec reference check: Up to date
+- Type checking (ty): All checks passed
+- Unit tests (erk): 5977 passed in 23.88s
+- Unit tests (erk-dev): 136 passed in 5.41s
+- Unit tests (erk-statusline): 115 passed in 0.97s
+- Unit tests (erk-mcp): 24 passed (truncated output)
+
+### Root Cause:
+The make target exited with code 1 due to Prettier formatting violations in 3 markdown/documentation files. These require formatting with `prettier --write` to pass the check.
+agentId: a89f359 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Prettier formatting issue on the file I edited. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="35745" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SxPY2yanegzo79pKW1Yuf1">
+    <param name="command">npx prettier --write /home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md</param>
+    <param name="description">Format markdown with prettier</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="35745" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SxPY2yanegzo79pKW1Yuf1">
+.claude/commands/erk/system/objective-update-with-landed-pr.md 97ms
+  </tool_result>
+  <assistant>Let me verify the formatted file still has the correct content:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="36217" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JzED9Kb2eMYAyA9gsDgWuw">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md</param>
+    <param name="offset">78</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="36217" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JzED9Kb2eMYAyA9gsDgWuw">
+    78→This keeps the YAML accurate and ensures `all_complete` reflects the true state for Step 3.
+    79→
+    80→| Contradiction Type          | Example                                                      | Section to Update                                            |
+    81→| --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+    82→| **Decision override**       | Objective says "Use polling", PR implemented WebSockets      | Design Decisions                                             |
+    83→| **Scope change**            | Node says "Add 3 methods", PR only needed 2                  | Node description (via `update-objective-node --description`) |
+    84→| **Naming divergence**       | Node says `@json_output`, PR implemented `@json_command`     | Node description (via `update-objective-node --description`) |
+    85→| **Architecture drift**      | Context says "config in config.py", PR moved it to settings/ | Implementation Context                                       |
+    86→| **Constraint invalidation** | Requirement listed is no longer valid                        | Implementation Context                                       |
+    87→| **New discovery**           | PR revealed a caching bug affecting future nodes             | Implementation Context or new Design Decision                |
+    88→
+    89→**Node description reconciliation:** For each node in `roadmap.phases[].nodes[]`, compare the `description` against what the PR actually implemented:
+    90→
+    91→- **Done nodes** (from `node_updates` in Step 1): Did the implementation rename, reshape, or change scope? Update if the description no longer accurately describes what was built.
+    92→- **Pending/in_progress nodes**: Did this PR change APIs, types, or patterns that make a future node's description inaccurate?
+    93→
+    94→For each stale description:
+    95→
+    96→```bash
+    97→erk exec update-objective-node &lt;objective_number&gt; --node &lt;node_id&gt; --description "&lt;corrected description&gt;"
+    98→```
+    99→
+   100→Keep descriptions concise (same style/length as existing nodes). Do node description updates _before_ prose updates, since `update-objective-node` re-renders the comment table.
+   101→
+   102→**If prose reconciliation found stale sections**, update the objective's first comment. Parse `objective_comment_id` from `objective.body`'s `objective-header` metadata block, then update:
+   103→
+   104→```bash
+   105→gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="&lt;updated comment body&gt;"
+   106→```
+   107→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Prettier just aligned the table columns and changed `*before*` to `_before_` — content is correct. Now let me re-run CI to confirm it passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="837" cache_read_input_tokens="36576" cache_creation="{'ephemeral_5m_input_tokens': 837, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01PGGATV11a2xMhdf7w4zsf8">
+    <param name="description">Re-run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Do not fix anything, just report.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="837" cache_read_input_tokens="36576" cache_creation="{'ephemeral_5m_input_tokens': 837, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PGGATV11a2xMhdf7w4zsf8">
+## make fast-ci Results
+
+**Status: FAILED** (Exit code 2)
+
+### Summary
+The fast-ci target completed most checks successfully but failed due to Prettier formatting issues.
+
+### Issues Found
+
+**Prettier Check** - Code style issues in 2 files:
+- `docs/learned/integrations/github-review-decision.md`
+- `docs/learned/tui/status-indicators.md`
+
+These files need formatting with `prettier --write`.
+
+### Passing Checks
+- Lint: All checks passed
+- Format check: 1676 files already formatted
+- Markdown check: OK
+- Exec reference check: OK
+- Type checking (ty): All checks passed
+- Unit tests (erk): 5977 passed
+- Unit tests (erk-dev): 136 passed
+- Unit tests (erk-statusline): 115 passed
+- Unit tests (erk-mcp): 24 passed (partial output shown)
+agentId: acbc8bc (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The file I edited now passes prettier. The remaining 2 failures are pre-existing in other files (not part of this plan). Let me fix them quickly and move to submission.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="605" cache_read_input_tokens="37413" cache_creation="{'ephemeral_5m_input_tokens': 605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LBNurXD1aKr8jv96MhViHF">
+    <param name="command">npx prettier --write /home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md /home/runner/work/erk/erk/docs/learned/tui/status-indicators.md</param>
+    <param name="description">Format pre-existing prettier violations</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="605" cache_read_input_tokens="37413" cache_creation="{'ephemeral_5m_input_tokens': 605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LBNurXD1aKr8jv96MhViHF">
+docs/learned/integrations/github-review-decision.md 74ms
+docs/learned/tui/status-indicators.md 21ms
+  </tool_result>
+  <assistant>Now let me clean up the impl context and signal ended in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="38018" cache_creation="{'ephemeral_5m_input_tokens': 216, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SjeVJLyLN2TrBsLtzJ9NZ9">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="38018" cache_creation="{'ephemeral_5m_input_tokens': 216, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01KyhraJQA8ykLb4dpq23Q4P">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="38018" cache_creation="{'ephemeral_5m_input_tokens': 216, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SjeVJLyLN2TrBsLtzJ9NZ9">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9071
+}
+  </tool_result>
+</session>
