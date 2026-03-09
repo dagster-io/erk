@@ -1,0 +1,1031 @@
+<session>
+  <meta source="agent-add1956" />
+  <meta branch="plnd/fix-slot-reuse-worktree-03-09-0759" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand how `allocate_slot_for_branch` works with FakeGit in tests. Specifically:
+1. What does `allocate_slot_for_branch` in `src/erk/cli/commands/slot/common.py` do?
+2. How does FakeGit handle the operations called by slot allocation (e.g., `checkout_branch`)?
+3. What test infrastructure exists for pool/slot tests (look at existing tests that use `allocate_slot_for_branch` with fakes)
+4. Look at `tests/test_utils/env_helpers.py` to understand `erk_isolated_fs_env` and what `build_context` supports
+
+I need to understand what assertions I should use in tests when `ensure_branch_has_worktree` is called with `no_slot=False` instead of the old `ensure_worktree_for_branch`.</user>
+  <assistant>I'll help you understand how `allocate_slot_for_branch` works with FakeGit in tests. Let me start by checking the documentation and then exploring the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19111" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19111, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014C5BBWetzDrd9VTV5Mmakz">
+    <param name="pattern">allocate_slot_for_branch|ensure_branch_has_worktree</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19111" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19111, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XJY3osszzQMFHzzFAvVxuS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19111" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19111, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XJY3osszzQMFHzzFAvVxuS">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014C5BBWetzDrd9VTV5Mmakz">
+Found 6 files
+docs/learned/erk/slot-pool-architecture.md
+docs/learned/cli/checkout-helpers.md
+docs/learned/cli/checkout-three-path-logic.md
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/slot-pool-state-sync.md
+docs/learned/architecture/multi-worktree-state.md
+  </tool_result>
+  <assistant>Great! I found several relevant documentation files. Let me read them:</assistant>
+  <usage input_tokens="1083" cache_creation_input_tokens="375" cache_read_input_tokens="19111" cache_creation="{'ephemeral_5m_input_tokens': 375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0116NNC4MXbxbuJWwBYjpHmL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/slot-pool-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="375" cache_read_input_tokens="19111" cache_creation="{'ephemeral_5m_input_tokens': 375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M84KuA8x5VrAgcsFKZnh2Q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/checkout-helpers.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="375" cache_read_input_tokens="19111" cache_creation="{'ephemeral_5m_input_tokens': 375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UCTXtTtViDcqUTKZ58C2Hg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/slot-pool-state-sync.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="375" cache_read_input_tokens="19111" cache_creation="{'ephemeral_5m_input_tokens': 375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NJvALK5cf5iF1X4VJGiRAX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/multi-worktree-state.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="375" cache_read_input_tokens="19111" cache_creation="{'ephemeral_5m_input_tokens': 375, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0116NNC4MXbxbuJWwBYjpHmL">
+     1→---
+     2→title: Slot Pool Architecture
+     3→read_when:
+     4→  - "understanding slot pool design"
+     5→  - "implementing slot-related features"
+     6→  - "debugging slot assignment issues"
+     7→tripwires:
+     8→  - action: "using has_uncommitted_changes() to check slot reuse eligibility"
+     9→    warning: "Untracked files are safe for branch switching — use get_file_status() and check only staged/modified files. has_uncommitted_changes() includes untracked files which would incorrectly block slot reuse."
+    10→last_audited: "2026-02-16 14:20 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Slot Pool Architecture
+    15→
+    16→The worktree slot pool is a reusable pool of pre-allocated git worktrees for fast branch switching. Instead of creating and destroying worktrees on demand, erk maintains a fixed-size pool of worktree directories that can be reassigned to different branches.
+    17→
+    18→## Core Concepts
+    19→
+    20→### Pool Basics
+    21→
+    22→- **Pool size**: Default 4 slots, configurable via `[pool] max_slots` in `.erk/config.toml`
+    23→- **Slot names**: `erk-slot-NN` format (e.g., `erk-slot-01`, `erk-slot-02`)
+    24→- **Placeholder branches**: `__erk-slot-NN-br-stub__` for unassigned slots
+    25→- **Pool persistence**: `~/.erk/repos/{repo_name}/pool.json`
+    26→
+    27→### Why a Pool?
+    28→
+    29→Creating git worktrees is relatively slow (file system operations, git setup). The pool enables:
+    30→
+
+... [163 lines omitted] ...
+
+    82→- **Non-interactive**: Error with instructions
+   104→The pool treats manual `git checkout` and `gt create` operations in pool slots as valid. When a user changes branches directly inside a worktree slot, the pool silently corrects its state on the next allocation call rather than raising an error.
+  </tool_result>
+  <tool_result tool="toolu_01M84KuA8x5VrAgcsFKZnh2Q">
+     1→---
+     2→title: Checkout Helpers Module
+     3→last_audited: "2026-02-16 03:30 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "writing checkout commands"
+     7→  - "creating worktrees in checkout commands"
+     8→  - "implementing branch checkout logic"
+     9→tripwires:
+    10→  - action: "putting checkout-specific helpers in navigation_helpers.py"
+    11→    warning: "`src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead."
+    12→---
+    13→
+    14→# Checkout Helpers Module
+    15→
+    16→## Overview
+    17→
+    18→&lt;!-- Source: src/erk/cli/commands/checkout_helpers.py --&gt;
+    19→
+    20→The `src/erk/cli/commands/checkout_helpers.py` module contains shared helper functions used by checkout commands. See `ensure_branch_has_worktree()` and `navigate_and_display_checkout()` in that file for the full API.
+    21→
+    22→These helpers are used by four checkout commands: `wt/checkout_cmd.py`, `branch/checkout_cmd.py`, `plan/checkout_cmd.py`, and `pr/checkout_cmd.py`.
+    23→
+    24→## Why This Module Exists Separately
+    25→
+    26→The helpers live in `checkout_helpers.py` instead of `navigation_helpers.py` **to break a circular import cycle**:
+    27→
+    28→- `navigation_helpers` imports from `wt.create_cmd`
+    29→- `wt.create_cmd` is in a module where `wt/__init__.py` imports `wt.checkout_cmd`
+    30→- If `navigation_helpers` contains checkout-specific helpers, it creates a cycle: `navigation_helpers` -&gt; `wt.create_cmd` -&gt; `wt` -&gt; `wt.checkout_cmd`
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UCTXtTtViDcqUTKZ58C2Hg">
+     1→---
+     2→title: Slot Pool State Sync
+     3→read_when:
+     4→  - "modifying slot pool allocation or assignment logic"
+     5→  - "debugging branch mismatches in pool slots"
+     6→  - "understanding how manual git operations interact with the pool"
+     7→tripwires:
+     8→  - action: "calling allocate_slot_for_branch without sync_pool_assignments running first"
+     9→    warning: "Pool sync must run BEFORE find_branch_assignment call. Without it, stale pool.json entries cause silent misassignment — a slot may appear free when it's actually occupied by a different branch."
+    10→    score: 9
+    11→---
+    12→
+    13→# Slot Pool State Sync
+    14→
+    15→The pool sync algorithm reconciles `pool.json` assignments with actual git worktree branch state. It runs lazily — only before allocation decisions — and skips disk writes when no changes are detected.
+    16→
+    17→## Why Sync Exists
+    18→
+    19→Users may run `gt create` or `git checkout` directly inside a pool slot worktree, causing the recorded branch in `pool.json` to diverge from the actual branch. Without sync, the pool would make allocation decisions based on stale data: a slot might appear assigned to branch A when it's actually on branch B.
+    20→
+    21→## Sync Timing
+    22→
+    23→&lt;!-- Source: src/erk/cli/commands/slot/common.py:609, allocate_slot_for_branch --&gt;
+    24→
+    25→`sync_pool_assignments()` is called at the beginning of `allocate_slot_for_branch()` (line 609 in `common.py`), before any allocation decisions. This ensures the pool state reflects reality before checking if a branch is already assigned or if slots are available.
+    26→
+    27→## Algorithm
+    28→
+    29→&lt;!-- Source: src/erk/cli/commands/slot/common.py:223-287, sync_pool_assignments --&gt;
+    30→
+
+... [39 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NJvALK5cf5iF1X4VJGiRAX">
+     1→---
+     2→title: Multi-Worktree State Handling
+     3→read_when:
+     4→  - "checkout operations in multi-worktree repositories"
+     5→  - "landing PRs with worktree cleanup"
+     6→  - "understanding git single-checkout constraint"
+     7→  - "debugging checkout failures across worktrees"
+     8→tripwires:
+     9→  - action: "calling checkout_branch() in a multi-worktree repository"
+    10→    warning: "Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures."
+    11→---
+    12→
+    13→# Multi-Worktree State Handling
+    14→
+    15→## The Core Constraint
+    16→
+    17→Git enforces a fundamental invariant: **a branch can only be checked out in one worktree at a time**. This is not a configuration option or a safety feature that can be disabled—it's part of git's core state management. Attempting to checkout a branch that's already active elsewhere fails with an error.
+    18→
+    19→This constraint exists because a branch ref points to exactly one HEAD. Two worktrees can't both be "on branch X" because there's no way to represent which worktree's commits should advance the branch.
+    20→
+    21→## Why LBYL Is Required
+    22→
+    23→Most of erk's codebase avoids checking conditions before operations (LBYL), relying on explicit return types to surface failure modes. Multi-worktree checkout operations are an exception. The single-checkout constraint means:
+    24→
+    25→1. **Checkout failures are ambiguous** — git returns non-zero exit code for many reasons (invalid branch, already checked out, uncommitted changes)
+    26→2. **Post-failure state is unclear** — after a failed checkout, you don't know if the branch exists, where it's checked out, or if it's safe to retry
+    27→3. **Defensive operations require precise decisions** — when landing a PR, you need to know "is trunk available for checkout?" before deciding between checkout vs detached HEAD
+    28→
+    29→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py, Worktree.find_worktree_for_branch --&gt;
+    30→
+
+... [109 lines omitted] ...
+
+    43→| (error)          | Unchanged              | Defensive check failed - abort rather than corrupt state |
+    47→See `_cleanup_non_slot_worktree()` in `src/erk/cli/commands/land_cmd.py` for the implementation. The key insight: detached HEAD is not an error condition—it's the correct outcome when trunk is unavailable.
+    65→### WRONG: Try checkout and catch errors
+    68→# DON'T DO THIS - failure reason is ambiguous
+    71→except RuntimeError:
+    76→This violates LBYL and provides no path to recovery. The error message from git doesn't distinguish "already checked out" from "branch doesn't exist."
+   103→The query result drives the decision. If trunk is unavailable, detached HEAD is the fallback strategy, not an error.
+   122→Detached HEAD is a valid worktree state, not an error. Users can:
+  </tool_result>
+  <assistant>Excellent! Now I have the documentation. Let me explore the actual source code files to understand the implementation details:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9377" cache_read_input_tokens="19486" cache_creation="{'ephemeral_5m_input_tokens': 9377, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018zRVK8sSBAaCCG7S3gBx4L">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9377" cache_read_input_tokens="19486" cache_creation="{'ephemeral_5m_input_tokens': 9377, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018B7XPEhVsruUTk7BUwf2Xb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9377" cache_read_input_tokens="19486" cache_creation="{'ephemeral_5m_input_tokens': 9377, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01QYn61VSxMGGVupTPQKdher">
+    <param name="pattern">**/test_utils/env_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9377" cache_read_input_tokens="19486" cache_creation="{'ephemeral_5m_input_tokens': 9377, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018zRVK8sSBAaCCG7S3gBx4L">
+     1→"""Shared utilities for slot commands."""
+     2→
+     3→import re
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→import click
+     9→
+    10→from erk.cli.activation import write_worktree_activate_script
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    13→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    14→from erk_shared.gateway.console.abc import Console
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.impl_folder import IMPL_DIR_RELATIVE
+    17→from erk_shared.output.output import user_output
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class SlotAllocationResult:
+    22→    """Result of allocating a slot for a branch."""
+    23→
+    24→    slot_name: str
+    25→    worktree_path: Path
+    26→    already_assigned: bool  # True if branch was already in a slot
+    27→
+    28→
+    29→# Default pool configuration
+    30→DEFAULT_POOL_SIZE = 4
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018B7XPEhVsruUTk7BUwf2Xb">
+     1→"""Checkout navigation helpers - shared across checkout commands.
+     2→
+     3→This module is separate from navigation_helpers.py to avoid circular imports.
+     4→navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
+     5→which imports wt.checkout_cmd. By having checkout-specific helpers here,
+     6→we break that cycle.
+     7→"""
+     8→
+     9→import contextlib
+    10→import logging
+    11→import sys
+    12→from collections.abc import Generator, Sequence
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    ensure_worktree_activate_script,
+    19→    render_activation_script,
+    20→    render_error_script,
+    21→)
+    22→from erk.cli.commands.slot.common import allocate_slot_for_branch
+    23→from erk.cli.core import worktree_path_for
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import RepoContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→logger = logging.getLogger(__name__)
+    29→
+    30→
+
+... [304 lines omitted] ...
+
+    31→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+    32→    """Write a minimal error script and output its path, then exit 1.
+    34→    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    35→    always receives a valid file path — even on failure — so the shell never
+    39→        render_error_script(),
+    41→        comment="checkout error",
+    48→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    49→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    51→    Wraps the checkout body so that any error path produces a valid script
+    54→    ``source: no such file or directory:`` error.
+    56→    Exception handling:
+    58→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    59→      write error script and exit 1.
+    60→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    61→      won't run since we catch first), write error script, exit 1.
+    62→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    69→        _write_error_script_and_exit(ctx)
+    70→    except click.ClickException as exc:
+    71→        user_output(f"Error: {exc.format_message()}")
+    72→        _write_error_script_and_exit(ctx)
+    73→    except RuntimeError as exc:
+    74→        user_output(f"Error: {exc}")
+    75→        _write_error_script_and_exit(ctx)
+   116→    - Diverged: Warning with instructions
+   129→    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+   132→    except RuntimeError:
+   133→        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+   143→        # Diverged - most important case, needs warning
+   144→        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+   146→        user_output(f"  {warning} {styled_sync}")
+  </tool_result>
+  <tool_result tool="toolu_01QYn61VSxMGGVupTPQKdher">
+/home/runner/work/erk/erk/tests/test_utils/env_helpers.py
+  </tool_result>
+  <assistant>Now let me read the env_helpers.py and continue exploring the slot allocation code:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6147" cache_read_input_tokens="28863" cache_creation="{'ephemeral_5m_input_tokens': 6147, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FQg3PVsqQdUA3QMZ5NA4vQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/env_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6147" cache_read_input_tokens="28863" cache_creation="{'ephemeral_5m_input_tokens': 6147, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AyxdPSu7kHQ7ZaDfA22a3E">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="offset">100</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6147" cache_read_input_tokens="28863" cache_creation="{'ephemeral_5m_input_tokens': 6147, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AyxdPSu7kHQ7ZaDfA22a3E">
+   100→
+   101→    Returns:
+   102→        Formatted slot name like "erk-slot-01"
+   103→    """
+   104→    return f"{SLOT_NAME_PREFIX}-{slot_number:02d}"
+   105→
+   106→
+   107→def find_next_available_slot(state: PoolState, worktrees_dir: Path | None) -&gt; int | None:
+   108→    """Find the next available slot number for on-demand worktree creation.
+   109→
+   110→    This function finds a slot number that is:
+   111→    1. Not currently assigned to a branch (not in state.assignments)
+   112→    2. Not already initialized as a worktree (not in state.slots)
+   113→    3. Does not have an orphaned directory on disk (if worktrees_dir provided)
+   114→
+   115→    This ensures on-demand creation only targets slots where no worktree
+   116→    exists on disk.
+   117→
+   118→    Args:
+   119→        state: Current pool state
+   120→        worktrees_dir: Directory containing worktrees, or None to skip disk check
+   121→
+   122→    Returns:
+   123→        1-based slot number if available, None if pool is full
+   124→    """
+   125→    assigned_slots = {a.slot_name for a in state.assignments}
+   126→    initialized_slots = {s.name for s in state.slots}
+   127→
+   128→    for slot_num in range(1, state.pool_size + 1):
+   129→        slot_name = generate_slot_name(slot_num)
+
+... [275 lines omitted] ...
+
+   314→    3. Worktree has wrong branch → fix it or error if uncommitted changes
+   327→        - both None: Should not happen (raises SystemExit on error)
+   365→            click.style("Error: ", fg="red")
+  </tool_result>
+  <tool_result tool="toolu_01FQg3PVsqQdUA3QMZ5NA4vQ">
+     1→"""Centralized test environment helpers for simulating erk scenarios.
+     2→
+     3→This module provides helpers for setting up realistic erk test environments
+     4→with Click's CliRunner. It provides two patterns:
+     5→
+     6→1. erk_isolated_fs_env(): Filesystem-based (uses isolated_filesystem(),
+     7→   creates real directories)
+     8→2. erk_inmem_env(): In-memory (uses fakes only, no filesystem I/O)
+     9→
+    10→Key Components:
+    11→    - ErkIsolatedFsEnv: Helper class for filesystem-based testing
+    12→    - ErkInMemEnv: Helper class for in-memory testing
+    13→    - erk_isolated_fs_env(): Context manager for filesystem-based tests
+    14→    - erk_inmem_env(): Context manager for in-memory tests
+    15→
+    16→Usage Pattern:
+    17→
+    18→    Before (raw isolated_filesystem pattern - 20-30 lines per test):
+    19→    ```python
+    20→    def test_something() -&gt; None:
+    21→        runner = CliRunner()
+    22→        with runner.isolated_filesystem():
+    23→            cwd = Path.cwd()
+    24→            git_dir = cwd / ".git"
+    25→            git_dir.mkdir()
+    26→            erk_root = cwd / "erks"
+    27→            erk_root.mkdir()
+    28→
+    29→            git = FakeGit(git_common_dirs={cwd: git_dir})
+    30→            global_config = GlobalConfig.test(...)
+
+... [1195 lines omitted] ...
+
+  1156→    Sentinel paths throw errors if filesystem operations are attempted (.exists(),
+  </tool_result>
+  <assistant>Now let me continue reading the allocate_slot_for_branch function and look for existing tests:</assistant>
+  <usage input_tokens="3969" cache_creation_input_tokens="19484" cache_read_input_tokens="35010" cache_creation="{'ephemeral_5m_input_tokens': 19484, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017GGFzvHhLHbes89qi46bpL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="offset">400</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="3969" cache_creation_input_tokens="19484" cache_read_input_tokens="35010" cache_creation="{'ephemeral_5m_input_tokens': 19484, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01CWbsXVXMbcm5zmLckSp1Qt">
+    <param name="pattern">**/test_*slot*common*.py</param>
+  </tool_use>
+  <usage input_tokens="3969" cache_creation_input_tokens="19484" cache_read_input_tokens="35010" cache_creation="{'ephemeral_5m_input_tokens': 19484, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01WHEn1hbK7ghUDB7tfRmzzy">
+    <param name="pattern">**/test_*checkout*helpers*.py</param>
+  </tool_use>
+  <usage input_tokens="3969" cache_creation_input_tokens="19484" cache_read_input_tokens="35010" cache_creation="{'ephemeral_5m_input_tokens': 19484, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017GGFzvHhLHbes89qi46bpL">
+   400→        git: Git gateway for repository operations
+   401→        cwd: Current working directory
+   402→
+   403→    Returns:
+   404→        SlotAssignment if cwd is within a managed slot, None otherwise
+   405→    """
+   406→    worktree_root = git.repo.get_repository_root(cwd)
+   407→    for assignment in state.assignments:
+   408→        if assignment.worktree_path == worktree_root:
+   409→            return assignment
+   410→    return None
+   411→
+   412→
+   413→def find_oldest_assignment(state: PoolState) -&gt; SlotAssignment | None:
+   414→    """Find the oldest assignment by assigned_at timestamp.
+   415→
+   416→    Args:
+   417→        state: Current pool state
+   418→
+   419→    Returns:
+   420→        The oldest SlotAssignment, or None if no assignments
+   421→    """
+   422→    if not state.assignments:
+   423→        return None
+   424→
+   425→    oldest: SlotAssignment | None = None
+   426→    for assignment in state.assignments:
+   427→        if oldest is None or assignment.assigned_at &lt; oldest.assigned_at:
+   428→            oldest = assignment
+   429→    return oldest
+
+... [225 lines omitted] ...
+
+   453→    """Handle pool-full condition: prompt to unassign oldest or error.
+   458→    - If non-interactive (no TTY): error with instructions
+   466→        SlotAssignment to unassign, or None if user declined/error
+   478→            f"Error: Pool is full ({state.pool_size} slots). "
+  </tool_result>
+  <tool_result tool="toolu_01CWbsXVXMbcm5zmLckSp1Qt">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01WHEn1hbK7ghUDB7tfRmzzy">
+/home/runner/work/erk/erk/tests/unit/cli/test_checkout_helpers_error.py
+  </tool_result>
+  <assistant>Let me finish reading the allocate_slot_for_branch function and look for test examples:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7535" cache_read_input_tokens="54494" cache_creation="{'ephemeral_5m_input_tokens': 7535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AnSudkEJLV6XLLChbaRev3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="offset">640</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7535" cache_read_input_tokens="54494" cache_creation="{'ephemeral_5m_input_tokens': 7535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AdwCcduAmf5o2jPDhbBiFX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_checkout_helpers_error.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7535" cache_read_input_tokens="54494" cache_creation="{'ephemeral_5m_input_tokens': 7535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_014LEExmoo1yJMxo2p5p1R3c">
+    <param name="pattern">**/test_common.py</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/slot</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7535" cache_read_input_tokens="54494" cache_creation="{'ephemeral_5m_input_tokens': 7535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AnSudkEJLV6XLLChbaRev3">
+   640→        ctx.branch_manager.checkout_branch(worktree_path, branch_name)
+   641→    else:
+   642→        # Fall back to on-demand slot creation
+   643→        slot_num = find_next_available_slot(state, repo.worktrees_dir)
+   644→        if slot_num is None:
+   645→            # Pool is full - handle interactively or with --force
+   646→            to_unassign = handle_pool_full_interactive(ctx.console, state, force=force)
+   647→            if to_unassign is None:
+   648→                raise SystemExit(1) from None
+   649→
+   650→            # Remove the assignment from state
+   651→            new_assignments = tuple(
+   652→                a for a in state.assignments if a.slot_name != to_unassign.slot_name
+   653→            )
+   654→            state = PoolState(
+   655→                version=state.version,
+   656→                pool_size=state.pool_size,
+   657→                slots=state.slots,
+   658→                assignments=new_assignments,
+   659→            )
+   660→            save_pool_state(repo.pool_json_path, state)
+   661→            user_output(
+   662→                click.style("✓ ", fg="green")
+   663→                + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
+   664→                + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
+   665→            )
+   666→
+   667→            # Reuse the unassigned slot
+   668→            slot_name = to_unassign.slot_name
+   669→            worktree_path = to_unassign.worktree_path
+
+... [67 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AdwCcduAmf5o2jPDhbBiFX">
+     1→"""Tests for checkout_helpers error handling.
+     2→
+     3→Layer 4 (business logic over fakes) tests for ensure_branch_has_worktree
+     4→when add_worktree raises RuntimeError.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→import pytest
+    10→
+    11→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    12→from erk.core.context import ErkContext
+    13→from erk_shared.context.types import RepoContext
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→
+    16→
+    17→def test_ensure_branch_has_worktree_raises_on_add_error(tmp_path: Path) -&gt; None:
+    18→    """Test that ensure_branch_has_worktree raises RuntimeError on add_worktree failure."""
+    19→    worktrees_dir = tmp_path / "worktrees"
+    20→    worktrees_dir.mkdir()
+    21→
+    22→    git = FakeGit(
+    23→        add_worktree_error="fatal: branch already checked out",
+    24→    )
+    25→    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
+    26→
+    27→    repo = RepoContext(
+    28→        root=tmp_path,
+    29→        repo_name="test-repo",
+    30→        repo_dir=tmp_path / ".erk",
+
+... [18 lines omitted] ...
+
+    35→    with pytest.raises(RuntimeError, match="fatal: branch already checked out"):
+  </tool_result>
+  <tool_result tool="toolu_014LEExmoo1yJMxo2p5p1R3c">
+/home/runner/work/erk/erk/tests/unit/cli/commands/slot/test_common.py
+  </tool_result>
+  <assistant>Now let me read the actual test file for slot common:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3806" cache_read_input_tokens="62029" cache_creation="{'ephemeral_5m_input_tokens': 3806, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017EprRVEx98rvwzfw68zdKB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/slot/test_common.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3806" cache_read_input_tokens="62029" cache_creation="{'ephemeral_5m_input_tokens': 3806, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017EprRVEx98rvwzfw68zdKB">
+     1→"""Unit tests for slot common module utilities."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.slot.common import (
+     6→    DEFAULT_POOL_SIZE,
+     7→    extract_slot_number,
+     8→    find_assignment_by_worktree,
+     9→    find_inactive_slot,
+    10→    find_next_available_slot,
+    11→    find_oldest_assignment,
+    12→    get_placeholder_branch_name,
+    13→    get_pool_size,
+    14→    is_placeholder_branch,
+    15→    is_slot_initialized,
+    16→    sync_pool_assignments,
+    17→)
+    18→from erk.cli.config import LoadedConfig
+    19→from erk.core.context import context_for_test
+    20→from erk.core.worktree_pool import (
+    21→    PoolState,
+    22→    SlotAssignment,
+    23→    SlotInfo,
+    24→    load_pool_state,
+    25→    save_pool_state,
+    26→)
+    27→from erk_shared.gateway.git.abc import WorktreeInfo
+    28→from erk_shared.gateway.git.fake import FakeGit
+    29→
+    30→
+
+... [125 lines omitted] ...
+  </tool_result>
+  <assistant>Let me continue reading and search for tests that use allocate_slot_for_branch:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2189" cache_read_input_tokens="65835" cache_creation="{'ephemeral_5m_input_tokens': 2189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013ySvVGU2Ey6RCX2FF6eWK3">
+    <param name="pattern">allocate_slot_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="glob">**/*.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2189" cache_read_input_tokens="65835" cache_creation="{'ephemeral_5m_input_tokens': 2189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HsttGvzhCZSK1ncv8decec">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/slot/test_common.py</param>
+    <param name="offset">150</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2189" cache_read_input_tokens="65835" cache_creation="{'ephemeral_5m_input_tokens': 2189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HsttGvzhCZSK1ncv8decec">
+   150→
+   151→        assert result is not None
+   152→        slot_name, worktree_path = result
+   153→        assert slot_name == "erk-slot-01"
+   154→        assert worktree_path == wt1_path
+   155→
+   156→    def test_returns_none_when_all_slots_assigned(self, tmp_path: Path) -&gt; None:
+   157→        """Returns None when all worktrees have assignments."""
+   158→        repo_root = tmp_path / "repo"
+   159→        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+   160→        wt2_path = tmp_path / "worktrees" / "erk-slot-02"
+   161→        git = FakeGit(
+   162→            worktrees={
+   163→                repo_root: [
+   164→                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+   165→                    WorktreeInfo(path=wt2_path, branch="feature-b"),
+   166→                ]
+   167→            }
+   168→        )
+   169→        assignment1 = SlotAssignment(
+   170→            slot_name="erk-slot-01",
+   171→            branch_name="feature-a",
+   172→            assigned_at="2024-01-01T12:00:00+00:00",
+   173→            worktree_path=wt1_path,
+   174→        )
+   175→        assignment2 = SlotAssignment(
+   176→            slot_name="erk-slot-02",
+   177→            branch_name="feature-b",
+   178→            assigned_at="2024-01-01T13:00:00+00:00",
+   179→            worktree_path=wt2_path,
+
+... [175 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013ySvVGU2Ey6RCX2FF6eWK3">
+Found 1 file
+tests/commands/branch/test_checkout_cmd.py
+  </tool_result>
+  <assistant>Now let me check the checkout_cmd test:</assistant>
+  <usage input_tokens="3132" cache_creation_input_tokens="419" cache_read_input_tokens="68024" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UvfJsAafRcCmkYyZQ9xAdi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="3132" cache_creation_input_tokens="419" cache_read_input_tokens="68024" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UvfJsAafRcCmkYyZQ9xAdi">
+     1→"""Tests for erk br co (branch checkout) command."""
+     2→
+     3→import os
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from unittest.mock import patch
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk.cli.commands.branch import branch_group
+    12→from erk.cli.config import LoadedConfig
+    13→from erk.core.repo_discovery import RepoContext
+    14→from erk.core.worktree_pool import (
+    15→    PoolState,
+    16→    SlotAssignment,
+    17→    SlotInfo,
+    18→    load_pool_state,
+    19→    save_pool_state,
+    20→)
+    21→from erk_shared.gateway.git.abc import WorktreeInfo
+    22→from erk_shared.gateway.git.fake import FakeGit
+    23→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+    24→from erk_shared.gateway.graphite.fake import FakeGraphite
+    25→from erk_shared.plan_store.types import Plan, PlanState
+    26→from tests.test_utils.context_builders import build_workspace_test_context
+    27→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    28→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    29→
+    30→# Fixed timestamp for test Plan objects
+
+... [125 lines omitted] ...
+
+    70→            cli, ["br", "co", "feature-branch", "--script"], obj=test_ctx, catch_exceptions=False
+    75→        # Should not show Graphite error
+   115→            cli, ["br", "co", "feature-branch", "--script"], obj=test_ctx, catch_exceptions=False
+   120→        # Should not show Graphite error
+   144→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Perfect! Now let me look at more checkout tests to understand the pattern better:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="7620" cache_read_input_tokens="68443" cache_creation="{'ephemeral_5m_input_tokens': 7620, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qc5aoAv9JEKTvj5FNqg3Z6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">150</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="7620" cache_read_input_tokens="68443" cache_creation="{'ephemeral_5m_input_tokens': 7620, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011Zm4pQYYPXqiSCXi7eK7bv">
+    <param name="pattern">no_slot.*=.*True|ensure_branch_has_worktree</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="7620" cache_read_input_tokens="68443" cache_creation="{'ephemeral_5m_input_tokens': 7620, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qc5aoAv9JEKTvj5FNqg3Z6">
+   150→        assert len(state.assignments) == 1
+   151→        assert state.assignments[0].branch_name == "feature-branch"
+   152→        assert state.assignments[0].slot_name == "erk-slot-01"
+   153→
+   154→
+   155→def test_branch_checkout_no_slot_skips_assignment() -&gt; None:
+   156→    """Test that --no-slot creates worktree without slot assignment."""
+   157→    runner = CliRunner()
+   158→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   159→        env.setup_repo_structure()
+   160→
+   161→        git = FakeGit(
+   162→            git_common_dirs={env.cwd: env.git_dir},
+   163→            default_branches={env.cwd: "main"},
+   164→            local_branches={env.cwd: ["main", "no-slot-branch"]},
+   165→            remote_branches={env.cwd: ["origin/main", "origin/no-slot-branch"]},
+   166→            existing_paths={env.cwd, env.repo.worktrees_dir},
+   167→        )
+   168→        ctx = build_workspace_test_context(env, git=git)
+   169→
+   170→        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+   171→            result = runner.invoke(
+   172→                branch_group, ["checkout", "--no-slot", "no-slot-branch"], obj=ctx
+   173→            )
+   174→
+   175→        assert result.exit_code == 0, f"Failed: {result.output}"
+   176→        # Should NOT have slot assignment message
+   177→        assert "Assigned" not in result.output
+   178→
+   179→        # Verify worktree was created using branch name, not slot name
+
+... [125 lines omitted] ...
+
+   227→        assert result.exit_code == 0, f"Failed: {result.output}"
+   258→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_011Zm4pQYYPXqiSCXi7eK7bv">
+Found 5 files
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/navigation_helpers.py
+src/erk/cli/commands/pr/teleport_cmd.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/checkout_helpers.py
+  </tool_result>
+  <assistant>Perfect! Now I have enough context. Let me create a comprehensive summary document:
+
+## Summary: `allocate_slot_for_branch` with FakeGit in Tests
+
+Based on my exploration of the erk codebase, here's a comprehensive guide to understanding how `allocate_slot_for_branch` works with FakeGit in tests:
+
+### 1. What `allocate_slot_for_branch` Does
+
+**Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/slot/common.py` (lines 566-730)
+
+`allocate_slot_for_branch()` is the unified slot allocation algorithm that:
+
+- **Takes existing branches and assigns them to managed worktree slots** in a fixed-size pool
+- **Implements a 4-step algorithm:**
+  1. Check if branch already assigned → return existing assignment (idempotent)
+  2. Fast path: Find inactive (unassigned) slots with clean state → reuse worktree
+  3. Slow path: Find next available slot number → create new worktree
+  4. Pool full: Evict oldest assignment (auto with `--force` or interactive prompt)
+
+- **Key inputs:**
+  - `ctx: ErkContext` (for git operations, console, time)
+  - `repo: RepoContext` (pool.json path, worktrees directory)
+  - `branch_name: str` (existing branch to assign)
+  - `force: bool` (auto-unassign if pool full)
+  - `reuse_inactive_slots: bool` (try to reuse before creating new)
+  - `cleanup_artifacts: bool` (remove .erk/impl-context/ on reuse)
+
+- **Returns:** `SlotAllocationResult(slot_name, worktree_path, already_assigned)`
+
+- **Side effects:** Creates worktrees, updates pool.json, generates activation scripts
+
+### 2. How FakeGit Handles Slot Allocation Operations
+
+**Location:** `erk_shared/gateway/git/fake.py`
+
+FakeGit tracks operations called by slot allocation:
+
+| Operation | FakeGit Method | Tracked As | Test Assertion |
+|-----------|---|---|---|
+| **List worktrees** | `git.worktree.list_worktrees()` | `_worktrees` dict | `assert len(git.added_worktrees) == 1` |
+| **Checkout branch** | `ctx.branch_manager.checkout_branch()` | `checked_out_branches` | `assert ("path", "branch") in git.checked_out_branches` |
+| **Get file status** | `git.status.get_file_status()` | `_file_statuses` dict | `file_statuses={path: ([], ["dirty"], [])}` |
+| **Get current branch** | `git.branch.get_current_branch()` | Returns from `_current_branches` | Asserts via git setup |
+| **Add worktree** | `ctx.git.worktree.add_worktree()` | `added_worktrees` | `assert len(git.added_worktrees) == 1` |
+
+**Critical FakeGit Configuration for Slot Tests:**
+
+```python
+git = FakeGit(
+    # All worktrees in the repo (git worktree list)
+    worktrees={
+        env.cwd: [
+            WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+            WorktreeInfo(path=slot_path, branch="feature"),
+        ]
+    },
+    # Current branch per worktree
+    current_branches={env.cwd: "main", slot_path: "feature"},
+    # Where .git directory is for each worktree
+    git_common_dirs={env.cwd: env.git_dir, slot_path: env.git_dir},
+    # File status per worktree (staged, modified, untracked)
+    file_statuses={slot_path: ([], [], [".erk/bin"])},  # only untracked = reusable
+    # Existing paths on "filesystem"
+    existing_paths={env.cwd, slot_path, env.repo.worktrees_dir},
+)
+```
+
+### 3. Test Infrastructure for Pool/Slot Tests
+
+**Two main test helpers exist:**
+
+#### A. `erk_isolated_fs_env(runner)` - Filesystem-based tests
+- **Location:** `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py`
+- **Creates actual directories** inside Click's `CliRunner.isolated_filesystem()`
+- **Use when:** Testing worktree creation, directory cleanup, actual I/O
+- **Provides:** `env.setup_repo_structure()`, `env.build_context()`, real ScriptWriter
+
+```python
+with erk_isolated_fs_env(runner) as env:
+    env.setup_repo_structure()  # Creates actual repo/worktrees/ dirs
+    git = FakeGit(...)
+    ctx = env.build_context(git=git)
+```
+
+#### B. `erk_inmem_env(runner)` - Pure in-memory tests
+- **Location:** `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py`
+- **Uses sentinel paths** (no actual filesystem I/O)
+- **Use when:** Testing logic without filesystem overhead
+- **Provides:** Same API as isolated_fs but faster
+- **Enforces:** All filesystem ops must go through fakes (sentinel paths error on `.exists()`)
+
+```python
+with erk_inmem_env(runner) as env:
+    git = FakeGit(existing_paths={env.cwd, env.repo.worktrees_dir})
+    ctx = env.build_context(git=git)
+```
+
+**Both provide `env.build_context()` which:**
+- Takes custom `git=`, `graphite=`, `github=`, `shell=` parameters
+- Automatically configures `GlobalConfig`, `RepoContext`, script_writer
+- Eliminates 10-15 lines of boilerplate per test
+- Sets up paths correctly for pool.json discovery
+
+### 4. `build_context()` Method Capabilities
+
+**Location:** `/home/runner/work/erk/erk/tests/test_utils/env_helpers.py` (lines 380-573)
+
+**Supported parameters:**
+
+```python
+ctx = env.build_context(
+    # Git/integration operations
+    git=FakeGit(...),              # Custom git ops
+    graphite=FakeGraphite(...),    # Custom graphite ops
+    github=FakeLocalGitHub(...),   # Custom github ops
+    shell=FakeShell(...),          # Custom shell ops
+    
+    # Repo context
+    repo=RepoContext(...),         # Custom repo paths (default: auto-computed)
+    
+    # Configuration
+    current_branch="feature",      # Auto-sets current_branches in FakeGit
+    trunk_branch="main",           # Default branch (default: "main")
+    use_graphite=False,            # Enable graphite integration
+    dry_run=False,                 # Wrap git with DryRunGit
+    
+    # Console interaction
+    confirm_responses=[True, False],  # Queue responses for console.confirm()
+    console=FakeConsole(...),      # Custom console (overrides confirm_responses)
+    
+    # Paths (ErkIsolatedFsEnv only)
+    cwd=Path(...),                 # Override working directory
+    
+    # Additional context_for_test() kwargs
+    **kwargs                       # Passed to context_for_test()
+)
+```
+
+### 5. Existing Test Patterns for `allocate_slot_for_branch`
+
+**Location:** `/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py`
+
+These tests use `ensure_branch_has_worktree()` which calls `allocate_slot_for_branch()`:
+
+| Test | Key Assertions |
+|------|---|
+| `test_branch_checkout_creates_slot_assignment_by_default()` | `"Assigned feature-branch to erk-slot-01" in output` |
+| `test_branch_checkout_no_slot_skips_assignment()` | `state = load_pool_state(env.repo.pool_json_path)` → `assert state is None` |
+| `test_branch_checkout_reuses_inactive_slot()` | `assert len(git.checked_out_branches) == 1` (reuse) vs `assert len(git.added_worktrees) == 0` |
+| `test_branch_checkout_force_unassigns_oldest()` | Pool full, `--force` unassigns oldest |
+| `test_branch_checkout_creates_tracking_branch_for_remote()` | Tracking branch creation logic |
+
+### 6. What Assertions to Use When `ensure_branch_has_worktree()` is Called
+
+**When `no_slot=False` (default - uses slot allocation):**
+
+```python
+# Verify slot assignment was created
+assert "Assigned feature-branch to erk-slot-01" in result.output
+
+# Verify pool state was saved
+state = load_pool_state(env.repo.pool_json_path)
+assert state is not None
+assert len(state.assignments) == 1
+assert state.assignments[0].branch_name == "feature-branch"
+assert state.assignments[0].slot_name == "erk-slot-01"
+
+# Verify worktree was created (new slot)
+assert len(git.added_worktrees) == 1
+worktree_path = git.added_worktrees[0][0]
+assert "erk-slot" in worktree_path
+
+# OR verify worktree was reused (inactive slot)
+assert len(git.checked_out_branches) == 1
+checkout_path, checkout_branch = git.checked_out_branches[0]
+assert "erk-slot" in checkout_path.name
+assert checkout_branch == "feature-branch"
+assert len(git.added_worktrees) == 0  # Not created, reused
+```
+
+**When `no_slot=True` (creates direct worktree without slot):**
+
+```python
+# Verify NO slot assignment
+assert "Assigned" not in result.output
+state = load_pool_state(env.repo.pool_json_path)
+assert state is None or len(state.assignments) == 0
+
+# Verify direct worktree (branch name, not slot name)
+assert len(git.added_worktrees) == 1
+worktree_path = git.added_worktrees[0][0]
+assert "erk-slot" not in worktree_path.name
+assert "feature-branch" in worktree_path.name
+```
+
+### 7. Key FakeGit Setup Points for Slot Tests
+
+**Worktrees configuration** (enables `find_inactive_slot()`):
+```python
+worktrees={
+    env.cwd: [
+        WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+        WorktreeInfo(path=slot_path, branch="old-branch", is_root=False),
+    ]
+},
+```
+
+**File status** (controls slot reusability - untracked files OK, modified blocks):
+```python
+file_statuses={
+    slot_path: ([], [], [".erk/bin", "build/"])  # Clean - reusable
+    # OR
+    slot_path: ([], ["dirty.py"], [])             # Modified - skip
+},
+```
+
+**Current branches** (sync_pool_assignments needs this):
+```python
+current_branches={
+    env.cwd: "main",
+    slot_path: "feature",  # Must match actual checkout state for sync
+},
+```
+
+**Existing paths** (pool.json discovery, path checks):
+```python
+existing_paths={
+    env.cwd,
+    env.git_dir,
+    env.repo.worktrees_dir,
+    env.repo.repo_dir,
+}
+```
+
+### 8. Documentation References
+
+For deeper understanding:
+- **Slot Pool Architecture:** `/home/runner/work/erk/erk/docs/learned/erk/slot-pool-architecture.md`
+- **State Sync Algorithm:** `/home/runner/work/erk/erk/docs/learned/architecture/slot-pool-state-sync.md`
+- **Checkout Helpers:** `/home/runner/work/erk/erk/docs/learned/cli/checkout-helpers.md`
+- **Multi-Worktree Constraints:** `/home/runner/work/erk/erk/docs/learned/architecture/multi-worktree-state.md`</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3010" cache_read_input_tokens="76063" cache_creation="{'ephemeral_5m_input_tokens': 3010, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
