@@ -1220,4 +1220,126 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 9114
 }
   </tool_result>
+  <tool_result tool="toolu_01SoK6X7CdhwX5Ew7eXRiaLZ">
+{"uploaded": true, "plan_id": 9114}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SueaaX4L3jCoBgd3XA7a8E">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="57475" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SueaaX4L3jCoBgd3XA7a8E">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DnjT1Mp6DfhG6umL7z1mNh">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="57805" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="95" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DnjT1Mp6DfhG6umL7z1mNh">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9114 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9114
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (5,410 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   Still waiting... (12s)
+   Still waiting... (14s)
+   Still waiting... (16s)
+   Still waiting... (18s)
+   Still waiting... (20s)
+   Still waiting... (22s)
+   Still waiting... (24s)
+   Still waiting... (26s)
+   Still waiting... (28s)
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AGJ6yPTyu2ceToDQfDstdH">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal lifecycle submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="57910" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01CM1VSCx2NmCFLT6jhq4PbE">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="57910" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AGJ6yPTyu2ceToDQfDstdH">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 9114
+}
+  </tool_result>
+  <tool_result tool="toolu_01CM1VSCx2NmCFLT6jhq4PbE">
+Exit code 1
+Checking PR #9114 for branch plnd/fix-pr-list-exclude-learn-03-09-1854...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9114)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context directory still exists. Let me clean it up properly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="58453" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01V5YQCEj8c4i7GTJfNHpV2y">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Check impl-context contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="58453" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V5YQCEj8c4i7GTJfNHpV2y">
+plan.md
+plnd--fix-pr-list-exclude-learn-03-09-1854
+ref.json
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Fr8dMrDsoPBez5mhubWzUd">
+    <param name="command">git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove .erk/impl-context/" &amp;&amp; git push</param>
+    <param name="description">Remove impl-context and push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="58983" cache_creation="{'ephemeral_5m_input_tokens': 154, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fr8dMrDsoPBez5mhubWzUd">
+Exit code 128
+fatal: pathspec '.erk/impl-context/' did not match any files
+  </tool_result>
+  <assistant>It's untracked. Let me check git status:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="59137" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012s4EzzBGuo3hNNeCzqkywq">
+    <param name="command">git -C /home/runner/work/erk/erk status --short</param>
+    <param name="description">Check git status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="59137" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012s4EzzBGuo3hNNeCzqkywq">
+
+  </tool_result>
+  <assistant>Working tree is clean — the `.erk/impl-context/` directory is likely gitignored. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="59493" cache_creation="{'ephemeral_5m_input_tokens': 127, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WWR2H6cA6hJQ27P1iFJyeD">
+    <param name="command">git -C /home/runner/work/erk/erk check-ignore .erk/impl-context/</param>
+    <param name="description">Check if impl-context is gitignored</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="59493" cache_creation="{'ephemeral_5m_input_tokens': 127, 'ephemeral_1h_input_tokens': 0}" output_tokens="129" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WWR2H6cA6hJQ27P1iFJyeD">
+.erk/impl-context/
+  </tool_result>
+  <assistant>It's gitignored. Let me just remove it from the filesystem:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="59620" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
