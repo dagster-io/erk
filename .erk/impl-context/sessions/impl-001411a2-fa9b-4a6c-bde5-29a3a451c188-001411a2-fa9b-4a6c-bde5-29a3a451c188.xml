@@ -1,0 +1,673 @@
+<session>
+  <meta branch="plnd/test-output-types-match-03-08-1452" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="001411a2-fa9b-4a6c-bde5-29a3a451c188" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="001411a2-fa9b-4a6c-bde5-29a3a451c188" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="001411a2-fa9b-4a6c-bde5-29a3a451c188" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="001411a2-fa9b-4a6c-bde5-29a3a451c188" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="25090" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25090}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="25090" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25090}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SvpWJ3Fa65cCqEVYTVwdE8">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Run setup-impl to auto-detect plan from branch or impl directory</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="25090" cache_read_input_tokens="0" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 25090, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SvpWJ3Fa65cCqEVYTVwdE8">
+Found existing impl dir for plan #9024, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/.erk/impl-context/plnd--test-output-types-match-03-08-1452", "plan_number": 9024, "plan_url": "https://github.com/dagster-io/erk/pull/9024", "branch": "plnd/test-output-types-match-03-08-1452", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9024, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready, reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="25090" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 402}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AVcxn3Vt8Rxj8JmDAwHuUP">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/.erk/impl-context/plnd--test-output-types-match-03-08-1452/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="25090" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 402, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AVcxn3Vt8Rxj8JmDAwHuUP">
+     1→# Plan: Dynamic test that output_types matches return type for all @json_command commands
+     2→
+     3→## Context
+     4→
+     5→`@json_command(output_types=(...))` declares what types a command returns, used for `--schema` generation. Nothing enforces that `output_types` matches the function's return annotation. If someone adds a new `@json_command` or changes a return type, the schema silently drifts. We want a single test that dynamically discovers all `@json_command` commands and validates each one — no per-command test maintenance needed.
+     6→
+     7→## Approach
+     8→
+     9→### 1. Store original callback on the command object
+    10→
+    11→**File:** `src/erk/cli/json_command.py` — in `_apply_json_command()`, one line after `original_callback = cmd.callback`:
+    12→
+    13→```python
+    14→cmd._json_command_original_callback = original_callback  # type: ignore[attr-defined]
+    15→```
+    16→
+    17→This gives reliable access to the pre-wrapped function's type hints (closure introspection is fragile).
+    18→
+    19→### 2. Walk CLI tree and validate every @json_command
+    20→
+    21→**File:** `tests/unit/cli/test_json_command.py` — one new test function:
+    22→
+    23→```python
+    24→def test_output_types_matches_return_annotation() -&gt; None:
+    25→    """Every @json_command's output_types must match its return annotation."""
+    26→```
+    27→
+    28→Logic:
+    29→1. Import the root CLI group from `erk.cli.cli`
+    30→2. Recursively walk all commands (groups and leaf commands)
+
+... [30 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1037" cache_read_input_tokens="25492" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1037}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UdnSSNqJbm1fPmdMwgY5Rk">
+    <param name="command">erk exec impl-signal started --session-id="001411a2-fa9b-4a6c-bde5-29a3a451c188" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1037" cache_read_input_tokens="25492" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1037, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UdnSSNqJbm1fPmdMwgY5Rk">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9024
+}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TN76exH678FdHfVcFdvnjt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/json_command.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="26529" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 222}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TN76exH678FdHfVcFdvnjt">
+     1→"""JSON command harness for CLI commands (input + output + schema).
+     2→
+     3→Adds --json and --schema flags to Click commands with:
+     4→- JSON error serialization (catches UserFacingCliError)
+     5→- JSON input from stdin (when piped, maps keys to Click params)
+     6→- emit_json_result() for structured output via to_json_dict() protocol
+     7→- --schema flag to output JSON Schema for input/output/error shapes
+     8→
+     9→Commands return a result object with to_json_dict() or as a dataclass;
+    10→the decorator auto-serializes it via emit_json_result() when --json is active.
+    11→Commands may also call emit_json()/emit_json_result() inline and return None.
+    12→"""
+    13→
+    14→import dataclasses
+    15→import json
+    16→import sys
+    17→from dataclasses import dataclass
+    18→from typing import Any, overload
+    19→
+    20→import click
+    21→
+    22→from erk.cli.ensure import UserFacingCliError
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class JsonCommandMeta:
+    27→    """Metadata stored on Command objects decorated with @json_command."""
+    28→
+    29→    exclude_json_input: frozenset[str]
+    30→    required_json_input: frozenset[str]
+
+... [230 lines omitted] ...
+
+    54→    """Add --json/--schema flags, JSON input mapping, and JSON error handling to a Click command.
+    66→    - UserFacingCliError is caught and serialized as JSON to stdout
+    67→    - SystemExit and other exceptions pass through unchanged
+    70→    - Outputs JSON Schema document for the command's input/output/error shapes
+    95→        json.JSONDecodeError: If stdin contains invalid JSON
+    96→        ValueError: If stdin JSON is not an object
+   105→        raise ValueError("JSON input must be an object")
+   163→        except json.JSONDecodeError as exc:
+   164→            error_data = {
+   166→                "error_type": "invalid_json_input",
+   169→            click.echo(json.dumps(error_data))
+   171→        except ValueError as exc:
+   172→            error_data = {
+   174→                "error_type": "invalid_json_input",
+   177→            click.echo(json.dumps(error_data))
+   185→                    error_data = {
+   187→                        "error_type": "invalid_json_input",
+   190→                    click.echo(json.dumps(error_data))
+   201→                error_data = {
+   203→                    "error_type": "invalid_json_input",
+   206→                click.echo(json.dumps(error_data))
+   214→        except UserFacingCliError as exc:
+   215→            error_data = {
+   217→                "error_type": exc.error_type,
+   220→            click.echo(json.dumps(error_data))
+   245→        TypeError: If result has no to_json_dict() and is not a dataclass
+   253→        raise TypeError(f"Cannot serialize {type_name}: no to_json_dict() and not a dataclass")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01U8JvUFZhdTHSCahiUnufZA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="26529" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 222, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U8JvUFZhdTHSCahiUnufZA">
+     1→"""Tests for @json_command decorator, emit_json, emit_json_result, and --schema flag."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→from typing import Any
+     6→from unittest.mock import patch
+     7→
+     8→import click
+     9→from click.testing import CliRunner
+    10→
+    11→from erk.cli.ensure import UserFacingCliError
+    12→from erk.cli.json_command import JsonCommandMeta, emit_json, emit_json_result, json_command
+    13→
+    14→# -- Helpers --
+    15→
+    16→
+    17→def _make_test_command() -&gt; click.Command:
+    18→    """Create a minimal Click command decorated with @json_command for testing."""
+    19→
+    20→    @json_command
+    21→    @click.command("test-cmd")
+    22→    def test_cmd(*, json_mode: bool) -&gt; None:
+    23→        if json_mode:
+    24→            emit_json({"key": "value"})
+    25→            return
+    26→        click.echo("human output")
+    27→
+    28→    return test_cmd
+    29→
+    30→
+
+... [489 lines omitted] ...
+
+    66→def test_catches_user_facing_error() -&gt; None:
+    67→    """UserFacingCliError is serialized as JSON when --json is active."""
+    70→    @click.command("error-cmd")
+    71→    def error_cmd(*, json_mode: bool) -&gt; None:
+    72→        raise UserFacingCliError("something went wrong", error_type="cli_error")
+    75→    result = runner.invoke(error_cmd, ["--json"])
+    79→    assert data["error_type"] == "cli_error"
+    83→def test_preserves_error_type() -&gt; None:
+    84→    """Custom error_type is preserved in JSON output."""
+    87→    @click.command("typed-error-cmd")
+    88→    def typed_error_cmd(*, json_mode: bool) -&gt; None:
+    89→        raise UserFacingCliError("auth failed", error_type="auth_required")
+    92→    result = runner.invoke(typed_error_cmd, ["--json"])
+    96→    assert data["error_type"] == "auth_required"
+    97→    assert data["message"] == "auth failed"
+   113→def test_error_without_json_flag_uses_normal_handling() -&gt; None:
+   114→    """Without --json, UserFacingCliError uses Click's normal error handling."""
+   117→    @click.command("normal-error-cmd")
+   118→    def normal_error_cmd(*, json_mode: bool) -&gt; None:
+   119→        raise UserFacingCliError("normal error", error_type="cli_error")
+   122→    result = runner.invoke(normal_error_cmd, [])
+   124→    # Should NOT be JSON — Click's normal error handling
+   125→    assert "normal error" in result.output
+   126→    # Verify it's not valid JSON (it's the styled Click error)
+   133→        except json.JSONDecodeError:
+   157→    assert result.exit_code == 0, f"Failed: {result.output}"
+   164→def test_json_input_unknown_keys_error() -&gt; None:
+   165→    """Unknown keys produce JSON error."""
+   180→    assert data["error_type"] == "invalid_json_input"
+   219→    assert data["error_type"] == "invalid_json_input"
+   224→    """Missing required field produces JSON error."""
+   239→    assert data["error_type"] == "invalid_json_input"
+   351→        except json.JSONDecodeError:
+   444→    """--schema outputs a valid schema document with input/output/error schemas."""
+   460→    assert "error_schema" in doc
+   461→    assert doc["error_schema"]["properties"]["success"]["const"] is False
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="14273" cache_read_input_tokens="26751" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14273}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the test directory structure first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14273" cache_read_input_tokens="26751" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14273}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01YFvcq1AYwXXUfSrgR1fdXT">
+    <param name="pattern">tests/unit/cli/**</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14273" cache_read_input_tokens="26751" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YFvcq1AYwXXUfSrgR1fdXT">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/branch/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/exec/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/exec/scripts/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/exec/scripts/test_get_embedded_prompt.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/exec/scripts/test_marker.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/exec/scripts/test_session_id_injector_hook.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/init/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/init/capability/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/land/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/land/test_find_assignment.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/land/test_parse_argument.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/slot/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/stack/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/test_force_flag.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_alias.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_aliases.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_graphite_command.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_help_formatter.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_log_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_project_config.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_shell_utils.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/__pycache__/__init__.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/__pycache__/__init__.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/branch/__pycache__/__init__.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/branch/__pycache__/test_list_cmd.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/exec/__pycache__/__init__.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/exec/scripts/__pycache__/__init__.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/commands/exec/scripts/__pycache__/test_add_remote_execution_note.cpython-313-pytest-9.0.2.pyc
+
+... [71 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6100" cache_read_input_tokens="41024" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6100}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Phase 1**: Store original callback on the command object.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6100" cache_read_input_tokens="41024" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6100}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EMNy5XxF9MUu2jZ9DRgELp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/json_command.py</param>
+    <param name="old_string">    original_callback = cmd.callback
+    if original_callback is None:
+        return cmd</param>
+    <param name="new_string">    original_callback = cmd.callback
+    cmd._json_command_original_callback = original_callback  # type: ignore[attr-defined]
+    if original_callback is None:
+        return cmd</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6100" cache_read_input_tokens="41024" output_tokens="680" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6100, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EMNy5XxF9MUu2jZ9DRgELp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/src/erk/cli/json_command.py has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 2**: Add the validation test to `tests/unit/cli/test_json_command.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="47124" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 861}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VEyKsu997ntpGvbVyPJd2z">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py</param>
+    <param name="old_string">"""Tests for @json_command decorator, emit_json, emit_json_result, and --schema flag."""
+
+import json
+from dataclasses import dataclass
+from typing import Any
+from unittest.mock import patch</param>
+    <param name="new_string">"""Tests for @json_command decorator, emit_json, emit_json_result, and --schema flag."""
+
+...[truncated 4 chars]...g
+from dataclasses import dataclass
+from typing import Any
+from unittest.mock import patch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="47124" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 861, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VEyKsu997ntpGvbVyPJd2z">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the test function at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="47985" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 328}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AJCnBPtUwYMLT86t7Ybqrz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py</param>
+    <param name="old_string">def test_schema_with_output_types() -&gt; None:
+    """--schema output includes output_schema...[truncated 749 chars]... doc = json.loads(result.output)
+
+    assert "value" in doc["output_schema"]["properties"]</param>
+    <param name="new_string">def test_schema_with_output_types() -&gt; None:
+    """--schema output includes output_schema...[truncated 2886 chars]...              )
+
+    assert not failures, "output_types mismatch:\n" + "\n".join(failures)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="47985" output_tokens="1236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AJCnBPtUwYMLT86t7Ybqrz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let's run the new test to verify it passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1294" cache_read_input_tokens="48313" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1294}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01VfyMsbRoGBFwQGMQRmrRMF">
+    <param name="description">Run new test for output_types validation</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following pytest command and report results:
+`uv run pytest tests/unit/cli/test_js...[truncated 66 chars]...os/erk/worktrees/erk-slot-19
+
+Report all output including any failures, errors, or passes.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1294" cache_read_input_tokens="48313" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1294}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VfyMsbRoGBFwQGMQRmrRMF">
+pytest failed: 1 issue found
+
+**Test:** `test_output_types_matches_return_annotation`
+
+**Failure Details:**
+
+The test found a mismatch in the `one-shot` command:
+
+- **Expected:** Return annotation uses a union type `OneShotDispatchResult | OneShotDryRunResult`
+- **Actual:** `output_types` is declared as a tuple of class types `(OneShotDispatchResult, OneShotDryRunResult)`
+
+The issue is that the test compares the unwrapped return types from the annotation (which preserves the union syntax) against the `output_types` tuple. The return annotation interprets the union as a set containing a union type object, while `output_types` contains individual class objects.
+
+Location: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py:570`
+agentId: a2ae00f21c0591a54 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14922
+tool_uses: 1
+duration_ms: 5491&lt;/usage&gt;
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="49607" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 477}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The `_unwrap_return_types` function needs to handle Python 3.10+ `A | B` union syntax (which uses `types.UnionType`, not `typing.Union`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="49607" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 477}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019H8u8oefnHBq4rui1tupGx">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py</param>
+    <param name="old_string">import json
+import typing
+from dataclasses import dataclass
+from typing import Any
+from unittest.mock import patch</param>
+    <param name="new_string">import json
+import types
+import typing
+from dataclasses import dataclass
+from typing import Any
+from unittest.mock import patch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="49607" output_tokens="896" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 477, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019H8u8oefnHBq4rui1tupGx">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TuC9odhCFEGRCcS4UyoNpt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py</param>
+    <param name="old_string">    def _unwrap_return_types(annotation: Any) -&gt; set[type]:
+        """Decompose A | B uni...[truncated 77 chars]...ing.Union:
+            return set(typing.get_args(annotation))
+        return {annotation}</param>
+    <param name="new_string">    def _unwrap_return_types(annotation: Any) -&gt; set[type]:
+        """Decompose A | B uni...[truncated 169 chars]...nionType):
+            return set(typing.get_args(annotation))
+        return {annotation}</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="939" cache_read_input_tokens="50084" output_tokens="317" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 939, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TuC9odhCFEGRCcS4UyoNpt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19/tests/unit/cli/test_json_command.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_012v5ctHeBAHK8MQZmuZn4rm">
+    <param name="description">Re-run output_types test</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following pytest command and report all output:
+`uv run pytest tests/unit/cli/test...[truncated 41 chars]...ry: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-19
+
+Report pass/fail and any output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="375" cache_read_input_tokens="51023" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 375, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012v5ctHeBAHK8MQZmuZn4rm">
+pytest passed: 1 test passed (test_output_types_matches_return_annotation) in 0.35s
+
+The test `test_output_types_matches_return_annotation` passed successfully. There are 2 deprecation warnings about `BaseCommand` being deprecated in favor of `Command` in Click 9.0, but these are warnings only and don't affect the test result.
+agentId: a6453d85e415ef742 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13903
+tool_uses: 1
+duration_ms: 12453&lt;/usage&gt;
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="439" cache_read_input_tokens="51398" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 439}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Test passes. Let me run the full test file to confirm nothing is broken:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="439" cache_read_input_tokens="51398" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 439}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011wm7WY8QE2g5SVALD5ZXgr">
+    <param name="description">Run full json_command test file</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following pytest command and report all output:
+`uv run pytest tests/unit/cli/test...[truncated 26 chars]...s/schrockn/.erk/repos/erk/worktrees/erk-slot-19
+
+Report pass/fail counts and any failures.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="439" cache_read_input_tokens="51398" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011wm7WY8QE2g5SVALD5ZXgr">
+pytest passed: 26 passed in 0.48s
+
+All 26 tests in the test file passed successfully. There are 2 deprecation warnings about `BaseCommand` being deprecated in Click (will be removed in Click 9.0), but these do not cause test failures.
+agentId: ab99ce849d6e2c6a3 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13849
+tool_uses: 1
+duration_ms: 3729&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 26 tests pass. Now continuing with the remaining steps:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="51837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011HEtzPRdUfanXsLjK9BdXz">
+    <param name="command">erk exec impl-signal ended --session-id="001411a2-fa9b-4a6c-bde5-29a3a451c188" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="51837" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 358, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011HEtzPRdUfanXsLjK9BdXz">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9024
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017NLcBnHSs1SetN3qfNKfEd">
+    <param name="command">erk exec upload-impl-session --session-id="001411a2-fa9b-4a6c-bde5-29a3a451c188" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="52195" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 171, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

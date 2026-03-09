@@ -1,0 +1,406 @@
+<session>
+  <meta branch="plnd/O9009-json-schema-infra-03-08-1428" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_016uBw46bEc1TtvwtHQfXKQF">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>Implement the following plan:
+
+# Plan: Dynamic test that output_types matches return type for all @json_command commands
+
+## Context
+
+`@json_command(output_types=(...))` declares what types a command returns, used for `--schema` generation. Nothing enforces that `output_types` matches the function's return annotation. If someone adds a new `@json_command` or changes a return type, the schema silently drifts. We want a single test that dynamically discovers all `@json_command` commands and validates each one — no per-command test maintenance needed.
+
+## Approach
+
+### 1. Store original callback on the command object
+
+**File:** `src/erk/cli/json_command.py` — in `_apply_json_command()`, one line after `original_callback = cmd.callback`:
+
+```python
+cmd._json_command_original_callback = original_callback  # type: ignore[attr-defined]
+```
+
+This gives reliable access to the pre-wrapped function's type hints (closure introspection is fragile).
+
+### 2. Walk CLI tree and validate every @json_command
+
+**File:** `tests/unit/cli/test_json_command.py` — one new test function:
+
+```python
+def test_output_types_matches_return_annotation() -&gt; None:
+    """Every @json_command's output_types must match its return annotation."""
+```
+
+Logic:
+1. Import the root CLI group from `erk.cli.cli`
+2. Recursively walk all commands (groups and leaf commands)
+3. For each command with `_json_command_meta`:
+   - Get `meta.output_types`
+   - Get return annotation from `_json_command_original_callback` via `typing.get_type_hints()`
+   - Decompose `A | B` unions into member types via `typing.get_args()`
+   - Assert `set(output_types) == set(return_annotation_members)`
+   - For `-&gt; None` returns, assert `output_types == ()`
+
+Matching rules:
+- `-&gt; None` → `output_types` must be `()`
+- `-&gt; SomeType` → `output_types` must be `(SomeType,)`
+- `-&gt; A | B` → `set(output_types)` must equal `{A, B}`
+
+This test auto-discovers new `@json_command` commands — no maintenance needed.
+
+## Files Modified
+
+- `src/erk/cli/json_command.py` — 1 line added (store original callback)
+- `tests/unit/cli/test_json_command.py` — ~35 lines added (tree walk + validation)
+
+## Verification
+
+```bash
+uv run pytest tests/unit/cli/test_json_command.py -v -k output_types_matches
+```
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-17/2ecf8ec2-e629-478d-9115-430697b6c5db.jsonl</user>
+  <assistant>
+
+I'll start by reading the files I need to modify and checking for relevant docs/tripwires.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10710" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10710}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ADX8jAzFgT7HzScGdxgho8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/src/erk/cli/json_command.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10710" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10710}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ADX8jAzFgT7HzScGdxgho8">
+     1→"""JSON command harness for CLI commands (input + output + schema).
+     2→
+     3→Adds --json and --schema flags to Click commands with:
+     4→- JSON error serialization (catches UserFacingCliError)
+     5→- JSON input from stdin (when piped, maps keys to Click params)
+     6→- emit_json_result() for structured output via to_json_dict() protocol
+     7→- --schema flag to output JSON Schema for input/output/error shapes
+     8→
+     9→Commands return a result object with to_json_dict() or as a dataclass;
+    10→the decorator auto-serializes it via emit_json_result() when --json is active.
+    11→Commands may also call emit_json()/emit_json_result() inline and return None.
+    12→"""
+    13→
+    14→import dataclasses
+    15→import json
+    16→import sys
+    17→from dataclasses import dataclass
+    18→from typing import Any, overload
+    19→
+    20→import click
+    21→
+    22→from erk.cli.ensure import UserFacingCliError
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class JsonCommandMeta:
+    27→    """Metadata stored on Command objects decorated with @json_command."""
+    28→
+    29→    exclude_json_input: frozenset[str]
+    30→    required_json_input: frozenset[str]
+
+... [225 lines omitted] ...
+
+    54→    """Add --json/--schema flags, JSON input mapping, and JSON error handling to a Click command.
+    66→    - UserFacingCliError is caught and serialized as JSON to stdout
+    67→    - SystemExit and other exceptions pass through unchanged
+    70→    - Outputs JSON Schema document for the command's input/output/error shapes
+    95→        json.JSONDecodeError: If stdin contains invalid JSON
+    96→        ValueError: If stdin JSON is not an object
+   105→        raise ValueError("JSON input must be an object")
+   163→        except json.JSONDecodeError as exc:
+   164→            error_data = {
+   166→                "error_type": "invalid_json_input",
+   169→            click.echo(json.dumps(error_data))
+   171→        except ValueError as exc:
+   172→            error_data = {
+   174→                "error_type": "invalid_json_input",
+   177→            click.echo(json.dumps(error_data))
+   185→                    error_data = {
+   187→                        "error_type": "invalid_json_input",
+   190→                    click.echo(json.dumps(error_data))
+   201→                error_data = {
+   203→                    "error_type": "invalid_json_input",
+   206→                click.echo(json.dumps(error_data))
+   214→        except UserFacingCliError as exc:
+   215→            error_data = {
+   217→                "error_type": exc.error_type,
+   220→            click.echo(json.dumps(error_data))
+   245→        TypeError: If result has no to_json_dict() and is not a dataclass
+   253→        raise TypeError(f"Cannot serialize {type_name}: no to_json_dict() and not a dataclass")
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;command-message&gt;erk:plan-save&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-save&lt;/command-name&gt;</user>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="0a3067df-bdf6-4539-a6da-7aff7f1a708d" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="0a3067df-bdf6-4539-a6da-7aff7f1a708d" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "0a3067df-bdf6-4539-a6da-7aff7f1a708d" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "0a3067df-bdf6-4539-a6da-7aff7f1a708d" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "0a3067df-bdf6-4539-a6da-7aff7f1a708d" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "0a3067df-bdf6-4539-a6da-7aff7f1a708d" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="8748" cache_read_input_tokens="20448" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8748}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Step 1:** No flags passed — all flags empty.
+
+**Step 2:** Branch slug from plan title "Dynamic test that output_types matches return type for all @json_command commands": `test-output-types-match`
+
+**Step 3:** Plan summary: "Adds a dynamic test that discovers all @json_command-decorated CLI commands and validates that each command's output_types tuple matches its callback's return type annotation. This prevents silent schema drift when return types change. Requires storing the original callback on the command object for reliable type hint access."
+
+**Step 4:** Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="8748" cache_read_input_tokens="20448" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8748}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Qh8KSWLrsTknbV3sXag2pd">
+    <param name="command">erk exec plan-save --format json --session-id="0a3067df-bdf6-4539-a6da-7aff7f1a708d" --bra...[truncated 264 chars]...quires storing the original callback on the command object for reliable type hint access."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="8748" cache_read_input_tokens="20448" output_tokens="568" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8748, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qh8KSWLrsTknbV3sXag2pd">
+{"success": true, "plan_number": 9024, "plan_url": "https://github.com/dagster-io/erk/pull/9024", "title": "[erk-plan] Plan: Dynamic test that output_types matches return type for all @json_command commands", "branch_name": "plnd/test-output-types-match-03-08-1452", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-17/.erk/scratch/sessions/0a3067df-bdf6-4539-a6da-7aff7f1a708d/plan_snapshots/000001-75f162b8"}
+  </tool_result>
+  <assistant>No objective link — skipping Steps 5-6.
+
+Now pushing the planning session and displaying results.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="736" cache_read_input_tokens="29196" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 736}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BZVn8S9NRbYUwNbn8KmPCQ">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="736" cache_read_input_tokens="29196" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 736, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BZVn8S9NRbYUwNbn8KmPCQ">
+SESSION_ID=0a3067df-bdf6-4539-a6da-7aff7f1a708d
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-17/0a3067df-bdf6-4539-a6da-7aff7f1a708d.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01H5hhUmH1EqoEbjBBU66xRh">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...4539-a6da-7aff7f1a708d" --stage planning --source local --plan-id 9024 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="29932" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 241, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
