@@ -159,7 +159,17 @@ jobs:
 
       - name: Verify plan outputs exist
         if: steps.plan.outputs.plan_success == 'true'
+        id: verify
         run: |
+          if [ -f .erk/impl-context/plan-result.json ]; then
+            REJECTED=$(jq -r '.rejected // false' .erk/impl-context/plan-result.json)
+            if [ "$REJECTED" = "true" ]; then
+              REASON=$(jq -r '.reason // "No reason provided"' .erk/impl-context/plan-result.json)
+              echo "::warning::Plan rejected: $REASON"
+              echo "rejected=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
           if [ ! -f .erk/impl-context/plan.md ]; then
             echo "::error::Planning succeeded but .erk/impl-context/plan.md not found"
             exit 1
@@ -168,11 +178,21 @@ jobs:
             echo "::error::Planning succeeded but .erk/impl-context/plan-result.json not found"
             exit 1
           fi
-          echo "Plan outputs found: .erk/impl-context/plan.md and .erk/impl-context/plan-result.json"
+          echo "Plan outputs found"
+          echo "rejected=false" >> $GITHUB_OUTPUT
+
+      - name: Update plan on rejection
+        if: steps.verify.outputs.rejected == 'true' && inputs.plan_issue_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          PLAN_ISSUE_NUMBER: ${{ inputs.plan_issue_number }}
+        run: |
+          REASON=$(jq -r '.reason // "Invalid prompt"' .erk/impl-context/plan-result.json)
+          gh issue close "$PLAN_ISSUE_NUMBER" --comment "Plan rejected by planning agent: $REASON"
 
       - name: Read plan result
         id: read_result
-        if: steps.plan.outputs.plan_success == 'true'
+        if: steps.plan.outputs.plan_success == 'true' && steps.verify.outputs.rejected != 'true'
         run: |
           PLAN_ID=$(jq -r '.plan_number' .erk/impl-context/plan-result.json)
           PLAN_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
@@ -181,14 +201,20 @@ jobs:
           echo "Plan saved as #$PLAN_ID: $PLAN_TITLE"
 
       - name: Validate plan format
-        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.plan_id != ''
+        if: >
+          steps.plan.outputs.plan_success == 'true'
+          && steps.verify.outputs.rejected != 'true'
+          && steps.read_result.outputs.plan_id != ''
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
           erk pr check ${{ steps.read_result.outputs.plan_id }}
 
       - name: Register one-shot plan with issue and PR
-        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.plan_id != ''
+        if: >
+          steps.plan.outputs.plan_success == 'true'
+          && steps.verify.outputs.rejected != 'true'
+          && steps.read_result.outputs.plan_id != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
@@ -203,6 +229,7 @@ jobs:
       - name: Update objective roadmap node
         if: >
           steps.plan.outputs.plan_success == 'true'
+          && steps.verify.outputs.rejected != 'true'
           && steps.read_result.outputs.plan_id != ''
           && inputs.objective_issue != ''
           && inputs.node_id != ''
@@ -221,6 +248,7 @@ jobs:
         if: >
           inputs.plan_only
           && steps.plan.outputs.plan_success == 'true'
+          && steps.verify.outputs.rejected != 'true'
           && steps.read_result.outputs.plan_id != ''
         env:
           PLAN_ID: ${{ steps.read_result.outputs.plan_id }}
