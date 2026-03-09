@@ -1,0 +1,256 @@
+<session>
+  <meta source="agent-a4c0665" />
+  <meta branch="plnd/consolidate-learn-docs-03-09-2335" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these files and report their contents concisely:
+
+1. `githooks/pre-push` - Full file
+2. `Makefile` - Focus on pre-push-check and install-hooks targets
+3. `.github/workflows/plan-implement.yml` - Focus on the implement job, specifically the git reset --hard pattern around lines 155-160
+4. `.github/workflows/one-shot.yml` - Focus on rejection detection and routing
+
+Report key patterns for documentation purposes.</user>
+  <assistant>I'll read these files to identify key patterns for documentation. Let me fetch them in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15100" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15100, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ABp9QGVPmTczM85dkeLUok">
+    <param name="file_path">/home/runner/work/erk/erk/githooks/pre-push</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15100" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15100, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011VF46JCGJiLnUigUjhsqn1">
+    <param name="file_path">/home/runner/work/erk/erk/Makefile</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15100" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15100, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011L5rqXwGudkeEaLj3VcZtm">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/plan-implement.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15100" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15100, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TtL87EAKWVFSFH17h1kypE">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15100" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15100, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ABp9QGVPmTczM85dkeLUok">
+     1→#!/usr/bin/env bash
+     2→# Git pre-push hook: runs lint, format, and type checks before push.
+     3→# Bypass with: git push --no-verify  /  gt submit --no-verify
+     4→set -euo pipefail
+     5→
+     6→echo "=== pre-push: running checks ==="
+     7→
+     8→if ! make pre-push-check; then
+     9→    echo ""
+    10→    echo "pre-push: checks failed. Push aborted."
+    11→    echo "Bypass with: git push --no-verify"
+    12→    exit 1
+    13→fi
+    14→
+    15→echo "pre-push: all checks passed."
+    16→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_011VF46JCGJiLnUigUjhsqn1">
+     1→.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-v2-build docs-v2-serve pre-push-check install-hooks
+     2→
+     3→prettier:
+     4→	prettier --write '**/*.md' --ignore-path .gitignore
+     5→
+     6→prettier-check:
+     7→	prettier --check '**/*.md' --ignore-path .gitignore
+     8→
+     9→format-check:
+    10→	uv run ruff format --check
+    11→
+    12→lint:
+    13→	uv run ruff check
+    14→
+    15→fix:
+    16→	uv run ruff check --fix --unsafe-fixes
+    17→	uv run ruff format
+    18→	prettier --write '**/*.md' --ignore-path .gitignore
+    19→
+    20→ty:
+    21→	uv run ty check
+    22→
+    23→upgrade-ty:
+    24→	uv remove ty --group dev &amp;&amp; uv add --dev ty
+    25→
+    26→# === Package-specific test targets ===
+    27→
+    28→test-erk-dev:
+    29→	cd packages/erk-dev &amp;&amp; uv run pytest -n auto
+    30→
+
+... [181 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011L5rqXwGudkeEaLj3VcZtm">
+     1→name: plan-implement
+     2→run-name: "${{ inputs.dispatch_type == 'incremental' &amp;&amp; '[incremental] ' || '' }}${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      plan_id:
+     8→        description: "Plan identifier to implement"
+     9→        required: true
+    10→        type: string
+    11→      submitted_by:
+    12→        description: "GitHub username of the person who submitted the issue"
+    13→        required: true
+    14→        type: string
+    15→      distinct_id:
+    16→        description: "Unique identifier for run discovery (base36)"
+    17→        required: true
+    18→        type: string
+    19→      plan_title:
+    20→        description: "Plan title for workflow run display"
+    21→        required: true
+    22→        type: string
+    23→      branch_name:
+    24→        description: "Branch name for implementation (created by submit command)"
+    25→        required: true
+    26→        type: string
+    27→      pr_number:
+    28→        description: "PR number for implementation (created by submit command)"
+    29→        required: true
+    30→        type: string
+
+... [450 lines omitted] ...
+
+   118→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings → Secrets and variables → Actions"
+   230→          if git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null 2&gt;&amp;1; then
+   300→        continue-on-error: true
+   372→        continue-on-error: true
+   392→      - name: Handle merge conflicts if push failed
+   394→        if: steps.submit.outcome == 'failure'
+   424→          if git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null 2&gt;&amp;1; then
+   434→        continue-on-error: true
+   470→      - name: Fail workflow if implementation failed
+   473→          echo "Implementation failed with exit code: ${{ steps.implement.outputs.exit_code }}"
+  </tool_result>
+  <tool_result tool="toolu_01TtL87EAKWVFSFH17h1kypE">
+     1→name: one-shot
+     2→run-name: "one-shot${{ inputs.plan_only &amp;&amp; '(plan)' || '' }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      prompt:
+     8→        description: "Task description for autonomous execution"
+     9→        required: true
+    10→        type: string
+    11→      branch_name:
+    12→        description: "Branch to work on (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "Draft PR number (created by CLI command)"
+    17→        required: true
+    18→        type: string
+    19→      submitted_by:
+    20→        description: "GitHub username of the person who submitted"
+    21→        required: true
+    22→        type: string
+    23→      distinct_id:
+    24→        description: "Unique identifier for run discovery (base36)"
+    25→        required: true
+    26→        type: string
+    27→      model_name:
+    28→        description: "Claude model to use for execution"
+    29→        required: false
+    30→        type: string
+
+... [282 lines omitted] ...
+
+    82→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings &gt; Secrets and variables &gt; Actions"
+   168→              echo "::warning::Plan rejected: $REASON"
+   174→            echo "::error::Planning succeeded but .erk/impl-context/plan.md not found"
+   178→            echo "::error::Planning succeeded but .erk/impl-context/plan-result.json not found"
+   218→        continue-on-error: true
+   269→          if git ls-files --error-unmatch .erk/impl-context/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   272→          if git ls-files --error-unmatch .worker-impl/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   286→      - name: Fail workflow if planning failed
+   289→          echo "One-shot planning failed with exit code: ${{ steps.plan.outputs.exit_code }}"
+  </tool_result>
+  <assistant>## Key Patterns Report
+
+Here are the critical patterns discovered across these files for documentation:
+
+### 1. **Pre-Push Hook Pattern** (`githooks/pre-push`)
+- **Pattern**: Hook delegates to `make pre-push-check` with exit code propagation
+- **Bypass mechanism**: `git push --no-verify` or `gt submit --no-verify`
+- **Error handling**: Explicit failure message before exit 1
+
+### 2. **Pre-Push Checks Target** (`Makefile:193-200`)
+- **Checks run in sequence**:
+  - Ruff lint check
+  - Ruff format check  
+  - Type check (`ty`)
+- **Exit code aggregation**: Uses `exit_code` variable to capture failures, exits with final code
+- **Hook integration**: Called by `githooks/pre-push`
+
+### 3. **Hook Installation** (`Makefile:203-205`)
+- **Pattern**: `git config core.hooksPath githooks`
+- **One-time setup**: Must be run once per clone
+- **Not automatic**: Developers must explicitly `make install-hooks`
+
+### 4. **Git Reset Pattern** (`plan-implement.yml:155-161`)
+- **Critical timing issue**: `git reset --hard origin/$BRANCH_NAME` after `git fetch`
+- **Purpose**: Reconcile local checkout (from `github.sha`) with remote tip (may have newer commits from plan job)
+- **Location**: Lines 156-161 in "Checkout implementation branch" step
+- **Rationale**: Plan job may push commits after workflow dispatch; reset ensures latest version
+- **Context**: Prevents stale impl-context from being used
+
+### 5. **Rejection Detection &amp; Routing** (`one-shot.yml:160-192`)
+- **Detection mechanism** (lines 164-171):
+  - Checks `.erk/impl-context/plan-result.json` for `rejected` field
+  - If `rejected: true`, extracts `reason` field
+  - Logs warning via GitHub Actions: `::warning::`
+  - Sets output flag: `rejected=true`
+  
+- **Routing on rejection** (lines 184-191):
+  - Closes the plan issue with comment: `"Plan rejected by planning agent: [REASON]"`
+  - Only triggers if `plan_issue_number` is provided
+  - Uses `gh issue close` with custom comment
+  
+- **Output structure**:
+  ```json
+  {
+    "rejected": true|false,
+    "reason": "string explanation",
+    "plan_number": "number",
+    "title": "string"
+  }
+  ```
+
+- **Conditional flow**:
+  - If rejected: closes issue, stops workflow (no implementation)
+  - If not rejected: continues to implementation step
+  - Plan ID validation only occurs if rejection check passes (line 195)
+
+### 6. **Staging Directory Cleanup Pattern** (`plan-implement.yml:222-238`)
+- **Pre-implementation cleanup** (lines 222-238):
+  - Uses `git ls-files --error-unmatch` to check if tracked
+  - Removes with `git rm -r --cached` (preserves on disk)
+  - Commits removal before implementation begins
+  
+- **Post-implementation cleanup** (lines 414-431):
+  - Fetches latest, resets hard
+  - Checks again and removes if re-tracked
+  - Ensures `.erk/impl-context/` never committed to trunk
+
+---
+
+## Summary for Documentation
+
+**Key Takeaways for `docs/learned/`:**
+
+1. **Hook Setup**: Git hooks use `core.hooksPath` configuration; developers must run `make install-hooks` manually
+2. **Pre-Push Checks**: Run three checks in sequence (lint, format, type) with exit code aggregation
+3. **Remote Sync Pattern**: Always `git reset --hard` after fetch to sync with latest remote tip before reading impl-context
+4. **Rejection Pattern**: Workflow checks `plan-result.json` for rejection flag before proceeding; rejected plans close their issue automatically
+5. **Staging Cleanup**: `.erk/impl-context/` is tracked temporarily (for PR reference), then removed both pre- and post-implementation via `git rm --cached`</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="15664" cache_read_input_tokens="15100" cache_creation="{'ephemeral_5m_input_tokens': 15664, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

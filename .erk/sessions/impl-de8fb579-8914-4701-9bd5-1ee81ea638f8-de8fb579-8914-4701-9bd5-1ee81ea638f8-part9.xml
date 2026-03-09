@@ -1,0 +1,265 @@
+<session>
+  <meta source="agent-ac73ee9" />
+  <meta branch="plnd/consolidate-learn-docs-03-09-2335" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these files and report their contents concisely, focusing on the key structures, decorators, and patterns:
+
+1. `packages/erk-shared/src/erk_shared/agentclick/json_command.py` - Focus on decorator parameters, emit_json/emit_json_result helpers, and JSON input validation
+2. `packages/erk-shared/src/erk_shared/agentclick/errors.py` - Full file 
+3. `tests/unit/cli/test_json_command.py` - Focus on output_types validation test patterns
+
+Report the key findings for documentation purposes.</user>
+  <assistant>I'll read these files and report their key findings for documentation purposes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15129" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15129, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011JRoiSaMyiH1y4p17FjTRU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/json_command.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15129" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15129, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NGdMcBXDPG7jjXUZDwuft4">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/errors.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15129" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15129, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011P62r7AT96pbGaHdgMHWTP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/test_json_command.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15129" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15129, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011JRoiSaMyiH1y4p17FjTRU">
+     1→"""JSON command harness for CLI commands (input + output + schema).
+     2→
+     3→Adds --json and --schema flags to Click commands with:
+     4→- JSON error serialization (catches click.ClickException with error_type attribute)
+     5→- JSON input from stdin (when piped, maps keys to Click params)
+     6→- emit_json_result() for structured output via to_json_dict() protocol
+     7→- --schema flag to output JSON Schema for input/output/error shapes
+     8→
+     9→Commands return a result object with to_json_dict() or as a dataclass;
+    10→the decorator auto-serializes it via emit_json_result() when --json is active.
+    11→Commands may also call emit_json()/emit_json_result() inline and return None.
+    12→"""
+    13→
+    14→import dataclasses
+    15→import json
+    16→import sys
+    17→from dataclasses import dataclass
+    18→from typing import Any, overload
+    19→
+    20→import click
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class JsonCommandMeta:
+    25→    """Metadata stored on Command objects decorated with @json_command."""
+    26→
+    27→    exclude_json_input: frozenset[str]
+    28→    required_json_input: frozenset[str]
+    29→    output_types: tuple[type, ...]
+    30→
+
+... [233 lines omitted] ...
+
+    52→    """Add --json/--schema flags, JSON input mapping, and JSON error handling to a Click command.
+    64→    - Any click.ClickException with an error_type attribute is caught and serialized as JSON
+    65→    - SystemExit and other exceptions pass through unchanged
+    68→    - Outputs JSON Schema document for the command's input/output/error shapes
+    96→        json.JSONDecodeError: If stdin contains invalid JSON
+    97→        ValueError: If stdin JSON is not an object
+   106→        raise ValueError("JSON input must be an object")
+   164→        except json.JSONDecodeError as exc:
+   165→            error_data = {
+   167→                "error_type": "invalid_json_input",
+   170→            click.echo(json.dumps(error_data, indent=2))
+   172→        except ValueError as exc:
+   173→            error_data = {
+   175→                "error_type": "invalid_json_input",
+   178→            click.echo(json.dumps(error_data, indent=2))
+   186→                    error_data = {
+   188→                        "error_type": "invalid_json_input",
+   191→                    click.echo(json.dumps(error_data, indent=2))
+   202→                error_data = {
+   204→                    "error_type": "invalid_json_input",
+   207→                click.echo(json.dumps(error_data, indent=2))
+   215→        except click.ClickException as exc:
+   216→            if not hasattr(exc, "error_type"):
+   218→            error_data = {
+   220→                "error_type": exc.error_type,
+   223→            click.echo(json.dumps(error_data, indent=2))
+   248→        TypeError: If result has no to_json_dict() and is not a dataclass
+   256→        raise TypeError(f"Cannot serialize {type_name}: no to_json_dict() and not a dataclass")
+  </tool_result>
+  <tool_result tool="toolu_01NGdMcBXDPG7jjXUZDwuft4">
+     1→"""Base error class for agent-optimized CLI commands."""
+     2→
+     3→import click
+     4→
+     5→
+     6→class AgentCliError(click.ClickException):
+     7→    """Exception with error_type for JSON serialization by @json_command."""
+     8→
+     9→    def __init__(self, message: str, *, error_type: str) -&gt; None:
+    10→        super().__init__(message)
+    11→        self.message = message
+    12→        self.error_type = error_type
+    13→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_011P62r7AT96pbGaHdgMHWTP">
+     1→"""Tests for @json_command that depend on the erk CLI tree."""
+     2→
+     3→import types
+     4→import typing
+     5→
+     6→import click
+     7→
+     8→from erk.cli.cli import cli
+     9→
+    10→# -- output_types validation test --
+    11→
+    12→
+    13→def test_output_types_matches_return_annotation() -&gt; None:
+    14→    """Every @json_command's output_types must match its return annotation."""
+    15→
+    16→    def _collect_json_commands(group: click.BaseCommand) -&gt; list[click.BaseCommand]:
+    17→        """Recursively collect all commands with _json_command_meta."""
+    18→        result = []
+    19→        if hasattr(group, "_json_command_meta"):
+    20→            result.append(group)
+    21→        if isinstance(group, click.Group):
+    22→            for cmd in group.commands.values():
+    23→                result.extend(_collect_json_commands(cmd))
+    24→        return result
+    25→
+    26→    def _unwrap_return_types(annotation: typing.Any) -&gt; set[type]:
+    27→        """Decompose A | B unions into member types."""
+    28→        origin = typing.get_origin(annotation)
+    29→        if origin is typing.Union or isinstance(annotation, types.UnionType):
+    30→            return set(typing.get_args(annotation))
+
+... [38 lines omitted] ...
+
+    36→    failures = []
+    49→                failures.append(f"{cmd.name}: return None but output_types={meta.output_types!r}")
+    57→                failures.append(
+    62→    assert not failures, "output_types mismatch:\n" + "\n".join(failures)
+  </tool_result>
+  <assistant>## Key Findings Report
+
+### 1. json_command.py - Decorator Parameters, Helpers, and Patterns
+
+**Decorator Parameters:**
+
+The `@json_command()` decorator accepts three optional parameters:
+- `exclude_json_input: frozenset[str]` - Parameter names to skip when mapping JSON input
+- `required_json_input: frozenset[str]` - Parameter names that must be present and non-None in JSON input  
+- `output_types: tuple[type, ...]` - Result types for output schema generation (defaults to empty tuple)
+
+**Decorator Forms:**
+
+Two usage patterns supported:
+- Bare: `@json_command` (no configuration)
+- Parameterized: `@json_command(exclude_json_input=..., required_json_input=..., output_types=(Type1, Type2))`
+
+**Key Structural Features:**
+
+- `JsonCommandMeta` dataclass (frozen) stores metadata on the Command object
+- Decorator must be applied ABOVE `@click.command` in the decorator stack
+- Adds two CLI flags: `--json` (output as JSON) and `--schema` (output JSON Schema)
+- Stores original callback as `cmd._json_command_original_callback` for reference
+
+**emit_json() Helper:**
+
+```python
+def emit_json(data: dict[str, Any]) -&gt; None:
+```
+- Takes a dictionary and automatically adds `success: True`
+- Outputs JSON to stdout via `click.echo(json.dumps(...))`
+
+**emit_json_result() Helper:**
+
+```python
+def emit_json_result(result: Any) -&gt; None:
+```
+- Calls `result.to_json_dict()` if available (protocol pattern)
+- Falls back to `dataclasses.asdict()` for plain dataclasses
+- Raises `TypeError` if result has neither method and is not a dataclass
+- Delegates final output to `emit_json()`
+
+**JSON Input Validation:**
+
+The decorator validates JSON input when `--json` flag is active:
+- Reads from stdin via `read_stdin_json()` if piped (not a TTY)
+- Validates all keys exist in command params and are not excluded
+- Validates required fields are present and non-None
+- Rejects JSON that is not an object (must be dict, not array)
+- Returns serialized error objects on validation failure with specific `error_type` values
+
+**Error Handling:**
+
+- Catches `click.ClickException` with `error_type` attribute and serializes as JSON
+- Serialized error format: `{"success": false, "error_type": "...", "message": "..."}`
+- Input validation errors use `error_type: "invalid_json_input"`
+- `SystemExit` and other exceptions pass through unchanged
+
+---
+
+### 2. errors.py - Full File
+
+Simple base exception class for agent-optimized CLI:
+
+```python
+class AgentCliError(click.ClickException):
+    def __init__(self, message: str, *, error_type: str) -&gt; None:
+```
+
+- Extends `click.ClickException`
+- Requires `error_type` as keyword-only argument
+- Stores both `message` and `error_type` attributes
+- The `error_type` attribute signals to `@json_command` to serialize as JSON
+
+---
+
+### 3. test_json_command.py - output_types Validation Test Pattern
+
+**Test Pattern: `test_output_types_matches_return_annotation()`**
+
+Comprehensive validation test that ensures all `@json_command` decorated commands have correct `output_types` configuration:
+
+**Key Validations:**
+
+1. Recursively collects all commands with `_json_command_meta` from the CLI tree
+2. Extracts return type annotation via `typing.get_type_hints()`
+3. Unwraps union types (`A | B`) into member sets using `typing.get_origin()` and `typing.get_args()`
+4. Compares declared `output_types` against return annotation types
+
+**Validation Rules:**
+
+- If return annotation is `None`, `output_types` must be `()` (empty tuple)
+- If return annotation is a type or union, `output_types` must match exactly
+- `type(None)` in the union is allowed and stripped before comparison (represents inline JSON emission or no return)
+- Return types must NOT include `type(None)` unless `None` is explicitly in the return annotation
+
+**Failure Mode:**
+
+Accumulates all mismatches and reports them together with command names and specific type mismatches.
+
+**Test Organization:**
+
+- Uses nested helper functions `_collect_json_commands()` and `_unwrap_return_types()`
+- Single assertion with descriptive failure message listing all problems
+- Validates structural consistency across the entire CLI tree
+
+---
+
+## Documentation Implications
+
+These files establish an important pattern:
+- **Protocol-based serialization** via `to_json_dict()` method
+- **Metadata-driven schema generation** stored on Command objects
+- **Type annotation consistency enforcement** via test validation
+- **Three-layer error handling**: validation errors, command exceptions, and passthrough exceptions
+- **Decorator-stack ordering matters** for proper CLI integration</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8993" cache_read_input_tokens="15129" cache_creation="{'ephemeral_5m_input_tokens': 8993, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
