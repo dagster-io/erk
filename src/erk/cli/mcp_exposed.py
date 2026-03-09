@@ -14,6 +14,9 @@ class McpMeta:
     description: str
 
 
+_MCP_REGISTRY: dict[click.Command, McpMeta] = {}
+
+
 def mcp_exposed(*, name: str, description: str) -> Callable[[click.Command], click.Command]:
     """Mark a @json_command for automatic MCP exposure.
 
@@ -29,14 +32,14 @@ def mcp_exposed(*, name: str, description: str) -> Callable[[click.Command], cli
     """
 
     def decorator(cmd: click.Command) -> click.Command:
-        cmd._mcp_meta = McpMeta(name=name, description=description)  # type: ignore[attr-defined]
+        _MCP_REGISTRY[cmd] = McpMeta(name=name, description=description)
         return cmd
 
     return decorator
 
 
 def discover_mcp_commands(group: click.Command) -> list[tuple[click.Command, McpMeta]]:
-    """Walk the Click command tree and return commands with _mcp_meta.
+    """Walk the Click command tree and return commands with MCP metadata.
 
     Args:
         group: Root Click group to walk
@@ -45,9 +48,8 @@ def discover_mcp_commands(group: click.Command) -> list[tuple[click.Command, Mcp
         List of (command, McpMeta) tuples for all @mcp_exposed commands
     """
     result: list[tuple[click.Command, McpMeta]] = []
-    meta = getattr(group, "_mcp_meta", None)
+    meta = _MCP_REGISTRY.get(group)
     if meta is not None:
-        assert isinstance(group, click.Command)
         result.append((group, meta))
     if isinstance(group, click.Group):
         for cmd in group.commands.values():

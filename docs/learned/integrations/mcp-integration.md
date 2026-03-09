@@ -59,7 +59,7 @@ Returns plan title, state, labels, and full markdown body for a given plan ID.
 
 ### `one_shot` (auto-discovered via `@mcp_exposed`)
 
-Dispatches a task for fully autonomous execution via `erk one-shot --json`. Returns structured JSON with `success` field. On success: `pr_number`, `pr_url`, `run_url`, `branch_name`. With `dry_run`: preview without executing. On error: `error_type` and message.
+Dispatches a task for fully autonomous execution via `erk one-shot --json`. Returns structured JSON indicating success or failure. On success, includes the created PR reference and CI run details. With `dry_run`: preview without executing.
 
 Parameters are auto-derived from Click parameters via `command_input_schema()` — no separate schema class needed.
 
@@ -82,12 +82,12 @@ CLI commands decorated with both `@json_command` and `@mcp_exposed` are automati
 
 ### How it works
 
-- `@mcp_exposed` attaches MCP metadata (name, description) to the Click command
-- `discover_mcp_commands(cli)` walks the Click tree finding decorated commands
-- `command_input_schema(cmd)` derives JSON Schema from Click parameters
-- `JsonCommandTool` wraps each discovered command as a FastMCP `Tool`
+- The `@mcp_exposed` decorator attaches MCP metadata (name, description) to the Click command
+- At startup, the server walks the Click tree to find all decorated commands
+- Each command's Click parameters are automatically converted to a JSON Schema
+- Each discovered command is wrapped as a FastMCP `Tool`
 
-`JsonCommandTool.run()` filters out `None` values, then pipes the remaining params as JSON to the CLI.
+At runtime, each tool filters out unset parameters before piping the remaining values as JSON to the CLI.
 
 ### Parity tests
 
