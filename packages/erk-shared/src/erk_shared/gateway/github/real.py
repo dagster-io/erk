@@ -929,6 +929,41 @@ query {{
 
         return result
 
+    def get_pr_head_branches(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, str]:
+        """Get head branch names for PRs via batch GraphQL query."""
+        if not pr_numbers:
+            return {}
+
+        # Build aliased PR queries
+        pr_queries = []
+        for pr_num in pr_numbers:
+            pr_queries.append(f"    pr_{pr_num}: pullRequest(number: {pr_num}) {{ headRefName }}")
+
+        query = f"""query {{
+  repository(owner: "{location.repo_id.owner}", name: "{location.repo_id.repo}") {{
+{chr(10).join(pr_queries)}
+  }}
+}}"""
+
+        try:
+            response = self._execute_batch_pr_query(query, location.root)
+        except (RuntimeError, FileNotFoundError, json.JSONDecodeError):
+            return {}
+
+        result: dict[int, str] = {}
+        repo_data = response.get("data", {}).get("repository", {})
+        for key, pr_data in repo_data.items():
+            if not key.startswith("pr_") or pr_data is None:
+                continue
+            pr_num = int(key.removeprefix("pr_"))
+            head_ref = pr_data.get("headRefName")
+            if head_ref is not None:
+                result[pr_num] = head_ref
+
+        return result
+
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]
     ) -> dict[str, WorkflowRun | None]:

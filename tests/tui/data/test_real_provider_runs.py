@@ -65,6 +65,7 @@ def _make_provider(
     workflow_runs: list[WorkflowRun] | None = None,
     pr_plan_linkages: dict[int, list[PullRequestInfo]] | None = None,
     prs: dict[str, PullRequestInfo] | None = None,
+    pr_head_branches: dict[int, str] | None = None,
     use_graphite: bool = False,
 ) -> RealPlanDataProvider:
     """Create a RealPlanDataProvider wired to fakes for testing."""
@@ -82,6 +83,7 @@ def _make_provider(
         workflow_runs=workflow_runs or [],
         pr_plan_linkages=pr_plan_linkages or {},
         prs=prs or {},
+        pr_head_branches=pr_head_branches or {},
     )
 
     global_config = GlobalConfig.test(tmp_path / ".erk", use_graphite=use_graphite)

@@ -355,6 +355,7 @@ def make_run_row(
     created_at: datetime | None = None,
     checks_display: str = "-",
     run_id_display: str | None = None,
+    branch: str = "-",
 ) -> RunRowData:
     """Create a RunRowData for testing with sensible defaults.
 
@@ -403,4 +404,5 @@ def make_run_row(
         created_at=effective_created_at,
         checks_display=checks_display,
         run_id_display=effective_run_id_display,
+        branch=branch,
     )

@@ -246,6 +246,26 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
+    def get_pr_head_branches(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, str]:
+        """Get head branch names for a list of PR numbers.
+
+        Batch-fetches the headRefName for each PR in a single GraphQL query.
+        Used to resolve the actual target branch for workflow_dispatch runs,
+        where head_branch from the GitHub API is always the default branch.
+
+        Args:
+            location: GitHub repository location (local path + owner/repo identity)
+            pr_numbers: List of PR numbers to query
+
+        Returns:
+            Mapping of pr_number -> head branch name.
+            PRs that don't exist or can't be fetched are omitted.
+        """
+        ...
+
+    @abstractmethod
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]
     ) -> dict[str, WorkflowRun | None]:

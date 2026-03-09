@@ -178,6 +178,7 @@ class RunRowData:
         checks_display: Formatted checks cell content.
         run_id_display: Formatted run ID for display.
         branch_display: Branch name, truncated to 40 chars.
+        branch: Branch name from the workflow run (e.g., "plnd/fix-widget-9039").
     """
 
     run_id: str
@@ -197,6 +198,7 @@ class RunRowData:
     created_at: datetime | None
     checks_display: str
     run_id_display: str
+    branch: str
 
 
 @dataclass(frozen=True)

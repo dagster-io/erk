@@ -134,6 +134,12 @@ class DryRunLocalGitHub(LocalGitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_prs_linked_to_issues(location, plan_numbers)
 
+    def get_pr_head_branches(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, str]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_head_branches(location, pr_numbers)
+
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]
     ) -> dict[str, WorkflowRun | None]:

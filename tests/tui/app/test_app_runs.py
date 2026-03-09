@@ -226,6 +226,7 @@ class TestOnRunClicked:
             created_at=None,
             checks_display="-",
             run_id_display="1001",
+            branch="-",
         )
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         provider.set_runs([run_no_url])
