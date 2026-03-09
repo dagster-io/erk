@@ -457,7 +457,7 @@ def _run_interactive_mode(
 
 
 @mcp_exposed(
-    name="plan_list",
+    name="pr_list",
     description=(
         "List erk plans with status, labels, and metadata."
         " Returns JSON array of plans."

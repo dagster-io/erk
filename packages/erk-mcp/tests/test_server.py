@@ -209,7 +209,7 @@ class TestJsonCommandTool:
             args=[], returncode=0, stdout='{"success": true}', stderr=""
         )
         tool = JsonCommandTool(
-            name="plan_list",
+            name="pr_list",
             cli_command_path=("pr", "list"),
             description="List plans",
             parameters={"type": "object", "properties": {}},
@@ -235,25 +235,25 @@ class TestJsonCommandTool:
         one_shot_tool = [t for t in tools if t.name == "one_shot"][0]
         assert one_shot_tool.cli_command_path == ("one-shot",)
 
-    def test_discovered_tools_include_plan_list(self) -> None:
+    def test_discovered_tools_include_pr_list(self) -> None:
         tools = _build_json_command_tools()
         tool_names = {t.name for t in tools}
-        assert "plan_list" in tool_names
+        assert "pr_list" in tool_names
 
-    def test_plan_list_tool_has_subcommand_path(self) -> None:
+    def test_pr_list_tool_has_subcommand_path(self) -> None:
         tools = _build_json_command_tools()
-        plan_list_tool = [t for t in tools if t.name == "plan_list"][0]
-        assert plan_list_tool.cli_command_path == ("pr", "list")
+        pr_list_tool = [t for t in tools if t.name == "pr_list"][0]
+        assert pr_list_tool.cli_command_path == ("pr", "list")
 
-    def test_discovered_tools_include_plan_view(self) -> None:
+    def test_discovered_tools_include_pr_view(self) -> None:
         tools = _build_json_command_tools()
         tool_names = {t.name for t in tools}
-        assert "plan_view" in tool_names
+        assert "pr_view" in tool_names
 
-    def test_plan_view_tool_has_subcommand_path(self) -> None:
+    def test_pr_view_tool_has_subcommand_path(self) -> None:
         tools = _build_json_command_tools()
-        plan_view_tool = [t for t in tools if t.name == "plan_view"][0]
-        assert plan_view_tool.cli_command_path == ("pr", "view")
+        pr_view_tool = [t for t in tools if t.name == "pr_view"][0]
+        assert pr_view_tool.cli_command_path == ("pr", "view")
 
 
 class TestCreateMcp:
@@ -278,4 +278,4 @@ class TestCreateMcp:
         tools = asyncio.run(server.list_tools())
         tool_names = {t.name for t in tools}
 
-        assert tool_names == {"plan_list", "plan_view", "one_shot"}
+        assert tool_names == {"pr_list", "pr_view", "one_shot"}

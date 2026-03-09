@@ -274,7 +274,7 @@ def _format_header_section(header_info: dict[str, object], *, plan_url: str | No
 
 
 @mcp_exposed(
-    name="plan_view",
+    name="pr_view",
     description=(
         "View a specific plan's metadata, header info, and body content."
         " Returns plan title, state, labels, timestamps, and header metadata."
