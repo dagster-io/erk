@@ -85,8 +85,8 @@ def test_remote_dispatch_happy_path() -> None:
     assert wf.inputs["prompt"] == "fix the bug in config.py"
     assert wf.inputs["pr_number"] == "42"
     assert wf.inputs["submitted_by"] == "alice"
-    # Dispatch ref should be trunk (default) when ref=None
-    assert wf.ref == "main"
+    # Dispatch ref should be the feature branch so workflow file comes from branch
+    assert wf.ref == result.branch_name
 
 
 def test_remote_dispatch_dry_run() -> None:

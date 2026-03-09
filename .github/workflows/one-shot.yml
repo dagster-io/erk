@@ -1,5 +1,5 @@
 name: one-shot
-run-name: "one-shot:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+run-name: "one-shot${{ inputs.plan_only && '(plan)' || '' }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
 
 on:
   workflow_dispatch:
@@ -246,7 +246,7 @@ jobs:
           fi
 
           # Stage and commit
-          git add .erk/impl-context/
+          git add -f .erk/impl-context/
           if [[ -n $(git status --porcelain) ]]; then
             git commit -m "Add plan for PR #$PLAN_ID"
             git push origin "$(git branch --show-current)"

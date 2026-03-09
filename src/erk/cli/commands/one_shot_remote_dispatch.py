@@ -362,7 +362,7 @@ def dispatch_one_shot_remote(
         # Dispatch workflow
         current_step = "Dispatching one-shot workflow"
         user_output("Dispatching one-shot workflow...")
-        dispatch_ref = ref if ref is not None else trunk
+        dispatch_ref = ref if ref is not None else branch_name
         run_id = remote.dispatch_workflow(
             owner=owner,
             repo=repo,
