@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Harden one-shot-plan to reject invalid prompts"
+}
