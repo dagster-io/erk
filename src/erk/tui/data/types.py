@@ -154,6 +154,52 @@ class PlanRowData:
 
 
 @dataclass(frozen=True)
+class RunRowData:
+    """Row data for displaying a workflow run in the TUI Runs tab.
+
+    Contains pre-formatted display strings and raw data needed for actions.
+    Immutable to ensure table state consistency.
+
+    Attributes:
+        run_id: GitHub Actions workflow run ID string.
+        run_url: URL to the GitHub Actions run page. None if unavailable.
+        status: Raw run status ("queued", "in_progress", "completed").
+        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+        status_display: Pre-formatted status string for table display.
+        workflow_name: Workflow command name (e.g., "plan-implement", "pr-address").
+        pr_number: Linked PR number. None if no PR.
+        pr_url: URL to the linked PR. None if no PR.
+        pr_display: Formatted PR cell content (e.g., "#123" or "-").
+        pr_title: PR title. None if no PR.
+        pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR linked.
+        title_display: Truncated title for table display.
+        submitted_display: Formatted submission time (e.g., "03-09 14:30").
+        created_at: UTC datetime when run was created. None if unavailable.
+        checks_display: Formatted checks cell content.
+        run_id_display: Formatted run ID for display.
+        branch_display: Branch name, truncated to 40 chars.
+    """
+
+    run_id: str
+    run_url: str | None
+    status: str
+    conclusion: str | None
+    status_display: str
+    workflow_name: str
+    pr_number: int | None
+    pr_url: str | None
+    pr_display: str
+    pr_title: str | None
+    pr_state: str | None
+    title_display: str
+    branch_display: str
+    submitted_display: str
+    created_at: datetime | None
+    checks_display: str
+    run_id_display: str
+
+
+@dataclass(frozen=True)
 class FetchTimings:
     """Timing breakdown for a single fetch cycle.
 

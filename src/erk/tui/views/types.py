@@ -12,6 +12,7 @@ class ViewMode(Enum):
     PLANS = auto()
     LEARN = auto()
     OBJECTIVES = auto()
+    RUNS = auto()
 
 
 @dataclass(frozen=True)
@@ -58,7 +59,15 @@ OBJECTIVES_VIEW = ViewConfig(
     exclude_labels=(),
 )
 
-VIEW_CONFIGS: tuple[ViewConfig, ...] = (PLANS_VIEW, LEARN_VIEW, OBJECTIVES_VIEW)
+RUNS_VIEW = ViewConfig(
+    mode=ViewMode.RUNS,
+    display_name="Runs",
+    labels=(),
+    key_hint="4",
+    exclude_labels=(),
+)
+
+VIEW_CONFIGS: tuple[ViewConfig, ...] = (PLANS_VIEW, LEARN_VIEW, OBJECTIVES_VIEW, RUNS_VIEW)
 
 _VIEW_CONFIG_BY_MODE: dict[ViewMode, ViewConfig] = {config.mode: config for config in VIEW_CONFIGS}
 

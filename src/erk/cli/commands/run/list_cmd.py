@@ -107,10 +107,20 @@ def _list_runs(ctx: ErkContext) -> None:
             for run_id in plan_to_run_ids.get(plan_num, []):
                 run_pr_numbers[run_id] = selected_pr.number
 
+    # 5. Fetch PR info for directly-extracted PR numbers
+    #    run_pr_numbers has PR numbers from display_title, but pr_info_map
+    #    only contains entries from plan linkage. Fetch open PRs to fill gaps.
+    direct_pr_numbers = {n for n in run_pr_numbers.values() if n not in pr_info_map}
+    if direct_pr_numbers:
+        all_open_prs = ctx.github.list_prs(repo.root, state="open")
+        for pr_info in all_open_prs.values():
+            if pr_info.number in direct_pr_numbers:
+                pr_info_map[pr_info.number] = pr_info
+
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
-    # 5. Build table
+    # 6. Build table
     table = Table(show_header=True, header_style="bold")
     table.add_column("run-id", style="cyan", no_wrap=True)
     table.add_column("status", no_wrap=True, width=14)

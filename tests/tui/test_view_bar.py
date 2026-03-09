@@ -35,11 +35,12 @@ class TestBuildViewBarContent:
             plans_display_name="PRs",
         )
 
-        # "1:PRs" = 5 chars, "  " gap, "2:Learn" = 7 chars, "  " gap, "3:Objectives" = 12 chars
-        assert len(regions) == 3
+        # "1:PRs"=5, gap=2, "2:Learn"=7, gap=2, "3:Objectives"=12, gap=2, "4:Runs"=6
+        assert len(regions) == 4
         assert regions[0] == (0, 5, ViewMode.PLANS)
         assert regions[1] == (7, 14, ViewMode.LEARN)
         assert regions[2] == (16, 28, ViewMode.OBJECTIVES)
+        assert regions[3] == (30, 36, ViewMode.RUNS)
 
     def test_tab_regions_with_custom_plans_name(self) -> None:
         """Tab regions adjust when plans display name is longer."""
@@ -49,10 +50,11 @@ class TestBuildViewBarContent:
         )
 
         # "1:Planned PRs" = 13 chars
-        assert len(regions) == 3
+        assert len(regions) == 4
         assert regions[0] == (0, 13, ViewMode.PLANS)
         assert regions[1] == (15, 22, ViewMode.LEARN)
         assert regions[2] == (24, 36, ViewMode.OBJECTIVES)
+        assert regions[3] == (38, 44, ViewMode.RUNS)
 
     def test_text_content_matches_labels(self) -> None:
         """Built text contains all tab labels."""
@@ -65,6 +67,7 @@ class TestBuildViewBarContent:
         assert "1:PRs" in plain
         assert "2:Learn" in plain
         assert "3:Objectives" in plain
+        assert "4:Runs" in plain
 
     def test_active_view_does_not_affect_regions(self) -> None:
         """Active view changes styling but not region positions."""
