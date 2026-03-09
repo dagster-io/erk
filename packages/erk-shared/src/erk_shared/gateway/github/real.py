@@ -1589,6 +1589,7 @@ query {{
                 has_conflicts=None,  # Not fetched in batch API
                 checks_counts=None,
                 will_close_target=False,
+                head_branch=branch,
                 base_ref_name=pr_data.get("base", {}).get("ref"),
             )
 
