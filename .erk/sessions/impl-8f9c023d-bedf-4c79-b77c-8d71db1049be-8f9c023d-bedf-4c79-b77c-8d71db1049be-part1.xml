@@ -1,0 +1,811 @@
+<session>
+  <meta branch="plnd/add-api-fast-path-config-03-09-1224" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9068&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9068` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9068.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28595" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28595, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_014XenqDGZH2fiqzvKFJL7Nz">
+    <param name="command">erk exec setup-impl --issue 9068</param>
+    <param name="description">Set up implementation for plan #9068</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28595" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28595, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014XenqDGZH2fiqzvKFJL7Nz">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--add-api-fast-path-config-03-09-1224", "plan_number": 9068, "plan_url": "https://github.com/dagster-io/erk/pull/9068", "branch": "plnd/add-api-fast-path-config-03-09-1224", "plan_title": "[erk-plan] Plan: Add `anthropic_api_fast_path` GlobalConfig Setting", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9068, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/add-api-fast-path-config-03-09-1224', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="28595" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XqAB1z9XX9GYspHoT5c9Xe">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--add-api-fast-path-config-03-09-1224/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="28595" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XqAB1z9XX9GYspHoT5c9Xe">
+     1→# Plan: Add `anthropic_api_fast_path` GlobalConfig Setting
+     2→
+     3→## Context
+     4→
+     5→The `FallbackPromptExecutor` currently always tries the Anthropic API first (direct SDK call) before falling back to the CLI executor. This is used for branch slug generation, commit message generation, and PR address summaries. The user wants a configuration setting to control this behavior, defaulting to **off** (no API fast path).
+     6→
+     7→## Changes
+     8→
+     9→### 1. Add field to `GlobalConfig` (`packages/erk-shared/src/erk_shared/context/types.py`)
+    10→
+    11→Add `anthropic_api_fast_path: bool = False` to the `GlobalConfig` frozen dataclass (after the other defaulted bool fields).
+    12→
+    13→Update `GlobalConfig.test()` factory to include the new parameter with default `False`.
+    14→
+    15→### 2. Update load logic (`packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py`)
+    16→
+    17→In `load_config()` (~line 73), add:
+    18→```python
+    19→anthropic_api_fast_path=bool(data.get("anthropic_api_fast_path", False)),
+    20→```
+    21→
+    22→In `save_config()` (~line 139), add:
+    23→```python
+    24→doc["anthropic_api_fast_path"] = config.anthropic_api_fast_path
+    25→```
+    26→
+    27→### 3. Gate the FallbackPromptExecutor wiring (`src/erk/core/context.py`, ~line 660-671)
+    28→
+    29→When `global_config.anthropic_api_fast_path` is `False`, skip `FallbackPromptExecutor` and use the CLI executor directly:
+    30→
+
+... [41 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. Let me create the todo list and load the relevant context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1321" cache_read_input_tokens="28952" cache_creation="{'ephemeral_5m_input_tokens': 1321, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01CyzuPNXFFwhRWK3VsrNDoX">
+    <param name="todos">[{'content': 'Add `anthropic_api_fast_path` field to GlobalConfig', 'status': 'pending', '...[truncated 685 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1321" cache_read_input_tokens="28952" cache_creation="{'ephemeral_5m_input_tokens': 1321, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CyzuPNXFFwhRWK3VsrNDoX">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal GitHub started and read the files I need to modify in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="30273" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XKFDbtZizhNniFEuCwoWJ3">
+    <param name="command">erk exec impl-signal started --session-id "8f9c023d-bedf-4c79-b77c-8d71db1049be" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="30273" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XeC8HQUXbPjL7U5QvZAsfw">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="30273" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WaW3K61n79C5uFLKWPzsCV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="30273" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KFHqgp2pCNg4AMBbZDcpXx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="30273" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HzXp5vNx5s5iQNG6pQx6PZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_global_config.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="30273" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014j9tcDuL7Z9jgSEdiGeQhE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/globalconfig-field-addition.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="30273" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XKFDbtZizhNniFEuCwoWJ3">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9068
+}
+  </tool_result>
+  <tool_result tool="toolu_01XeC8HQUXbPjL7U5QvZAsfw">
+     1→"""Context types for erk and erk-kits.
+     2→
+     3→This module provides the core data types used by ErkContext:
+     4→- RepoContext: Repository discovery result
+     5→- NoRepoSentinel: Sentinel for when not in a repository
+     6→- GlobalConfig: Global erk configuration
+     7→- LoadedConfig: Repository-level configuration
+     8→- InteractiveAgentConfig: Configuration for interactive agent launches (Claude or Codex)
+     9→- AgentBackend: Type for agent backend selection
+    10→- PermissionMode: Generic permission mode for both Claude and Codex
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal, Self
+    19→
+    20→from erk_shared.gateway.github.types import GitHubRepoId
+    21→
+    22→# Agent backend types
+    23→AgentBackend = Literal["claude", "codex"]
+    24→
+    25→# Claude CLI permission modes:
+    26→# - "default": Default mode with permission prompts
+    27→# - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
+    28→# - "plan": Plan mode for exploration and planning (--permission-mode plan)
+    29→# - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
+    30→ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
+
+... [300 lines omitted] ...
+
+    51→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    75→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+    99→    raise ValueError(f"Unknown permission_mode: {permission_mode}")
+  </tool_result>
+  <tool_result tool="toolu_01WaW3K61n79C5uFLKWPzsCV">
+     1→"""Real ErkInstallation implementation.
+     2→
+     3→RealErkInstallation provides production filesystem access to ~/.erk/ directory
+     4→for config, command history, and version tracking.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import os
+    11→import tomllib
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING
+    14→
+    15→import tomlkit
+    16→
+    17→from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
+    18→from erk_shared.gateway.erk_installation.abc import ErkInstallation
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk.core.worktree_pool import PoolState
+    22→
+    23→
+    24→def _installation_path() -&gt; Path:
+    25→    """Return path to erk installation directory.
+    26→
+    27→    Note: Not cached to allow tests to monkeypatch Path.home().
+    28→    The performance impact is negligible since Path.home() is fast.
+    29→    """
+    30→    return Path.home() / ".erk"
+
+... [295 lines omitted] ...
+
+    49→            FileNotFoundError: If config file doesn't exist
+    50→            ValueError: If config is missing required fields or malformed
+    55→            raise FileNotFoundError(f"Global config not found at {config_path}")
+    60→            raise ValueError(f"Missing 'erk_root' in {config_path}")
+    92→            PermissionError: If directory or file cannot be written
+    99→            raise PermissionError(
+   111→        except PermissionError:
+   112→            raise PermissionError(
+   122→            raise PermissionError(
+   173→        except PermissionError:
+   174→            raise PermissionError(
+  </tool_result>
+  <tool_result tool="toolu_01HzXp5vNx5s5iQNG6pQx6PZ">
+     1→from pathlib import Path
+     2→from unittest import mock
+     3→
+     4→import pytest
+     5→
+     6→from erk.cli.commands.init.main import create_and_save_global_config
+     7→from erk.cli.commands.wt.create_cmd import make_env_content
+     8→from erk.cli.config import load_config
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
+    11→from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+    12→from erk_shared.gateway.erk_installation.real import RealErkInstallation
+    13→from tests.fakes.shell import FakeShell
+    14→
+    15→
+    16→def test_global_config_test_factory_method(tmp_path: Path) -&gt; None:
+    17→    """Test GlobalConfig.test() factory method creates config with defaults."""
+    18→    config = GlobalConfig.test(tmp_path / "erks")
+    19→
+    20→    assert config.erk_root == tmp_path / "erks"
+    21→    assert config.use_graphite is True
+    22→    assert config.shell_setup_complete is True
+    23→    assert config.github_planning is True
+    24→    assert config.show_hidden_commands is False
+    25→
+    26→
+    27→def test_global_config_test_factory_with_overrides(tmp_path: Path) -&gt; None:
+    28→    """Test GlobalConfig.test() factory method respects overrides."""
+    29→    config = GlobalConfig.test(
+    30→        tmp_path / "erks",
+
+... [456 lines omitted] ...
+
+   107→    with pytest.raises(ValueError, match="Missing 'erk_root'"):
+  </tool_result>
+  <tool_result tool="toolu_014j9tcDuL7Z9jgSEdiGeQhE">
+     1→---
+     2→title: GlobalConfig Field Addition Checklist
+     3→read_when:
+     4→  - "adding a new field to GlobalConfig"
+     5→  - "extending erk's global configuration"
+     6→  - "adding a user-configurable setting to ~/.erk/config.toml"
+     7→tripwires:
+     8→  - action: "adding a field to GlobalConfig without updating the test factory"
+     9→    warning: "Update GlobalConfig.test() factory method with the new parameter. Tests using GlobalConfig.test() will silently use Python's default value, which may not match production behavior."
+    10→---
+    11→
+    12→# GlobalConfig Field Addition Checklist
+    13→
+    14→`GlobalConfig` is a frozen dataclass in `packages/erk-shared/src/erk_shared/context/types.py` that holds user-wide erk settings loaded from `~/.erk/config.toml`.
+    15→
+    16→## Checklist
+    17→
+    18→### 1. Add Field to Frozen Dataclass
+    19→
+    20→```python
+    21→# In packages/erk-shared/src/erk_shared/context/types.py
+    22→@dataclass(frozen=True)
+    23→class GlobalConfig:
+    24→    # ... existing fields ...
+    25→    new_field: bool = False  # Provide sensible default
+    26→```
+    27→
+    28→Fields with defaults go after fields without defaults (Python dataclass rule).
+    29→
+    30→### 2. Update `.test()` Factory
+
+... [56 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KFHqgp2pCNg4AMBbZDcpXx">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [729 lines omitted] ...
+
+   511→        tuple[Path | None, str | None]: (path, error_message)
+   513→        - If directory deleted: (None, error_message)
+   522→    except (FileNotFoundError, OSError):
+   540→        debug: If True, enable debug mode for error handling (default False)
+   552→    cwd_result, error_msg = safe_cwd()
+   554→        assert error_msg is not None
+   555→        # Emit clear error and exit
+   556→        user_output(click.style("Error: ", fg="red") + error_msg)
+   607→        except ValueError:
+  </tool_result>
+  <assistant>Now I have all the context I need. Let me start implementing phase by phase.
+
+### Phase 1: Add field to GlobalConfig</assistant>
+  <usage input_tokens="7610" cache_creation_input_tokens="21030" cache_read_input_tokens="30650" cache_creation="{'ephemeral_5m_input_tokens': 21030, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Vw39Vjcc7qQ37zXKhztzks">
+    <param name="todos">[{'content': 'Add `anthropic_api_fast_path` field to GlobalConfig', 'status': 'in_progress...[truncated 689 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="7610" cache_creation_input_tokens="21030" cache_read_input_tokens="30650" cache_creation="{'ephemeral_5m_input_tokens': 21030, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Vw39Vjcc7qQ37zXKhztzks">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TRn4YU252PHFHMEygXtZ2w">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="old_string">    cmux_integration: bool = False
+    interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()</param>
+    <param name="new_string">    cmux_integration: bool = False
+    anthropic_api_fast_path: bool = False
+    interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7997" cache_read_input_tokens="51680" cache_creation="{'ephemeral_5m_input_tokens': 7997, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TRn4YU252PHFHMEygXtZ2w">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `.test()` factory method:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="59677" cache_creation="{'ephemeral_5m_input_tokens': 246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017PgqBZgqbpBqn4zXgBrqnH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="old_string">    @staticmethod
+    def test(
+        erk_root: Path,
+        *,
+        use_graphite: b...[truncated 898 chars]...is not None
+                else InteractiveAgentConfig.default()
+            ),
+        )</param>
+    <param name="new_string">    @staticmethod
+    def test(
+        erk_root: Path,
+        *,
+        use_graphite: b...[truncated 1006 chars]...is not None
+                else InteractiveAgentConfig.default()
+            ),
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="59677" cache_creation="{'ephemeral_5m_input_tokens': 246, 'ephemeral_1h_input_tokens': 0}" output_tokens="748" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017PgqBZgqbpBqn4zXgBrqnH">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_012JaJ5xSGN4sQMs9y8A4vrD">
+    <param name="todos">[{'content': 'Add `anthropic_api_fast_path` field to GlobalConfig', 'status': 'completed',...[truncated 691 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="798" cache_read_input_tokens="59923" cache_creation="{'ephemeral_5m_input_tokens': 798, 'ephemeral_1h_input_tokens': 0}" output_tokens="317" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012JaJ5xSGN4sQMs9y8A4vrD">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 2: Update load/save logic</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="60721" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PSJacjckTEwtvxfEuVrNdM">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+    <param name="old_string">            cmux_integration=bool(data.get("cmux_integration", False)),
+            interactive_agent=interactive_agent,</param>
+    <param name="new_string">            cmux_integration=bool(data.get("cmux_integration", False)),
+            anthro...[truncated 6 chars]...a.get("anthropic_api_fast_path", False)),
+            interactive_agent=interactive_agent,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="60721" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PSJacjckTEwtvxfEuVrNdM">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LHoQVbay9LWq7YbQ27GYg7">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+    <param name="old_string">        doc["cmux_integration"] = config.cmux_integration
+
+        # Add [interactive-agent] section if any non-default values are set</param>
+    <param name="new_string">        doc["cmux_integration"] = config.cmux_integration
+        doc["anthropic_api_fast_...[truncated 6 chars]...api_fast_path
+
+        # Add [interactive-agent] section if any non-default values are set</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="61080" cache_creation="{'ephemeral_5m_input_tokens': 277, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LHoQVbay9LWq7YbQ27GYg7">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_019ELb4jdnKvFPRSpE4zqmtQ">
+    <param name="todos">[{'content': 'Add `anthropic_api_fast_path` field to GlobalConfig', 'status': 'completed',...[truncated 693 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="61357" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019ELb4jdnKvFPRSpE4zqmtQ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 3: Gate FallbackPromptExecutor wiring</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="61627" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014E8BdLJfTF8RuGo9cj3YVU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="old_string">    # 10. Create prompt executor (FallbackPromptExecutor: API-first, CLI-fallback)
+    fro...[truncated 299 chars]...       api_executor=AnthropicApiPromptExecutor(),
+        cli_executor=cli_executor,
+    )</param>
+    <param name="new_string">    # 10. Create prompt executor (optionally API-first via FallbackPromptExecutor)
+    cli...[truncated 468 chars]...     cli_executor=cli_executor,
+        )
+    else:
+        prompt_executor = cli_executor</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="61627" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014E8BdLJfTF8RuGo9cj3YVU">
+The file /home/runner/work/erk/erk/src/erk/core/context.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01HTsQFNUri1gnBH9yV8m4Ga">
+    <param name="todos">[{'content': 'Add `anthropic_api_fast_path` field to GlobalConfig', 'status': 'completed',...[truncated 695 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="61986" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="317" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HTsQFNUri1gnBH9yV8m4Ga">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 4: Update tests</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="62496" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PFLZWih75mzj2JEtvBSTHm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_global_config.py</param>
+    <param name="old_string">    assert config.erk_root == tmp_path / "erks"
+    assert config.use_graphite is True
+   ...[truncated 23 chars]...
+    assert config.github_planning is True
+    assert config.show_hidden_commands is False</param>
+    <param name="new_string">    assert config.erk_root == tmp_path / "erks"
+    assert config.use_graphite is True
+   ...[truncated 74 chars]...rt config.show_hidden_commands is False
+    assert config.anthropic_api_fast_path is False</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="62496" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PFLZWih75mzj2JEtvBSTHm">
+The file /home/runner/work/erk/erk/tests/integration/test_real_global_config.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the roundtrip test for `anthropic_api_fast_path`. I'll add it after the existing `show_hidden_commands` roundtrip tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="62855" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01X8De4QfhUiobfg1JiL7jT1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/integration/test_real_global_config.py</param>
+    <param name="old_string">def test_create_global_config_creates_parent_directory(tmp_path: Path) -&gt; None:</param>
+    <param name="new_string">def test_real_config_store_roundtrip_anthropic_api_fast_path(
+    tmp_path: Path, monkeypa...[truncated 1363 chars]...is False
+
+
+def test_create_global_config_creates_parent_directory(tmp_path: Path) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="62855" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X8De4QfhUiobfg1JiL7jT1">
+The file /home/runner/work/erk/erk/tests/integration/test_real_global_config.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_013pSCFMNqxrX7twvDFAzmSv">
+    <param name="todos">[{'content': 'Add `anthropic_api_fast_path` field to GlobalConfig', 'status': 'completed',...[truncated 697 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="744" cache_read_input_tokens="63160" cache_creation="{'ephemeral_5m_input_tokens': 744, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013pSCFMNqxrX7twvDFAzmSv">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 5: Update documentation</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="63904" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QrmLxWPsSuMfzFhbg3bpyy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/globalconfig-field-addition.md</param>
+    <param name="old_string">- `cmux_integration: bool` — enable cmux workspace creation on PR checkout
+- `interactive_agent: InteractiveAgentConfig` — interactive agent settings</param>
+    <param name="new_string">- `cmux_integration: bool` — enable cmux workspace creation on PR checkout
+- `anthropic_ap...[truncated 39 chars]...ing back to CLI
+- `interactive_agent: InteractiveAgentConfig` — interactive agent settings</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="63904" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QrmLxWPsSuMfzFhbg3bpyy">
+The file /home/runner/work/erk/erk/docs/learned/architecture/globalconfig-field-addition.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01UMRuQAXcq69raDdX6dHDqx">
+    <param name="todos">[{'content': 'Add `anthropic_api_fast_path` field to GlobalConfig', 'status': 'completed',...[truncated 699 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="64263" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="317" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UMRuQAXcq69raDdX6dHDqx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 6: Run CI checks
+
+Let me check if there's a post-plan-implement CI hook first, then run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="64529" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_014sBXciUVuBg3YqE9C94Wo5">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="64529" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014sBXciUVuBg3YqE9C94Wo5">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01L3ToEYcL1hyAirq6S6ukq4">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="64888" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="81" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L3ToEYcL1hyAirq6S6ukq4">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Task" id="toolu_01QEKCcw1bpz33iHrYK6gJ1n">
+    <param name="description">Run fast-ci checks</param>
+    <param name="prompt">Run `make fast-ci` in the project at /home/runner/work/erk/erk and report all output. Do NOT attempt to fix anything - just report the results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="65026" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QEKCcw1bpz33iHrYK6gJ1n">
+The `make fast-ci` command completed with exit code 2 (failure). Here's a summary of the results:
+
+**Prettier Check - FAILED:**
+- Code style issues found in 2 files:
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+
+**All Other Checks - PASSED:**
+- Lint: All checks passed
+- Format Check: 1673 files already formatted
+- Markdown Check: OK
+- Exec Reference Check: OK
+- Type checking (ty): All checks passed
+- Unit Tests (erk): 5953 passed in 23.43s
+- Tests (erk-dev): 136 passed in 4.47s
+- Tests (erk-statusline): 115 passed in 0.83s
+- Tests (erk-mcp): All 24 passed (partially visible in output)
+
+**Root Cause:**
+The make target failed due to Prettier formatting issues in 2 markdown files. These files need to be reformatted with the `--write` flag to pass the prettier check.
+agentId: a29107b (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The prettier issues are in pre-existing files, not in files I modified. All tests pass (5953 passed). Let me verify the prettier issues aren't related to my changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="65255" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FHzYTFi9vhffF2LUsLq3MG">
+    <param name="command">git diff --name-only</param>
+    <param name="description">Check modified files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="65255" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FHzYTFi9vhffF2LUsLq3MG">
+docs/learned/architecture/globalconfig-field-addition.md
+packages/erk-shared/src/erk_shared/context/types.py
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py
+src/erk/core/context.py
+tests/integration/test_real_global_config.py
+  </tool_result>
+  <assistant>The prettier failures are in `docs/learned/integrations/github-review-decision.md` and `docs/learned/tui/status-indicators.md` — neither of which I modified. All tests pass. CI is good for my changes.
+
+Let me signal completion and proceed with PR submission.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="65681" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0156o4eyfwYJwUwUTggZVYq7">
+    <param name="todos">[{'content': 'Add `anthropic_api_fast_path` field to GlobalConfig', 'status': 'completed',...[truncated 701 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="65681" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0156o4eyfwYJwUwUTggZVYq7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SUF2Je5P49AMszDZJMUyYb">
+    <param name="command">erk exec impl-signal ended --session-id "8f9c023d-bedf-4c79-b77c-8d71db1049be" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="66117" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XVypmxAjzEptYsQZk1Q6Mp">
+    <param name="command">erk exec upload-impl-session --session-id "8f9c023d-bedf-4c79-b77c-8d71db1049be" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="66117" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SUF2Je5P49AMszDZJMUyYb">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9068
+}
+  </tool_result>
+</session>
