@@ -74,7 +74,7 @@ def _build_json_command_tools() -> tuple[JsonCommandTool, ...]:
     from erk.cli.cli import cli
 
     tools: list[JsonCommandTool] = []
-    for cmd, meta, command_path in discover_mcp_commands(cli):
+    for cmd, meta, command_path in discover_mcp_commands(cli, _parent_path=()):
         assert cmd.name is not None
         tools.append(
             JsonCommandTool(

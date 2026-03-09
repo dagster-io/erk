@@ -41,7 +41,7 @@ def mcp_exposed(*, name: str, description: str) -> Callable[[click.Command], cli
 def discover_mcp_commands(
     group: click.Command,
     *,
-    _parent_path: tuple[str, ...] = (),
+    _parent_path: tuple[str, ...],
 ) -> list[tuple[click.Command, McpMeta, tuple[str, ...]]]:
     """Walk the Click command tree and return commands with MCP metadata.
 

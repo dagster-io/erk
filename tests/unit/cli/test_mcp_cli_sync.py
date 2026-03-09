@@ -12,7 +12,7 @@ from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
 
 def test_every_mcp_exposed_command_is_registered_as_mcp_tool() -> None:
     """Every command with _mcp_meta in the Click tree appears as an MCP tool."""
-    discovered = discover_mcp_commands(cli)
+    discovered = discover_mcp_commands(cli, _parent_path=())
     assert len(discovered) > 0, "No @mcp_exposed commands found — check CLI imports"
 
     server = create_mcp()
@@ -25,7 +25,7 @@ def test_every_mcp_exposed_command_is_registered_as_mcp_tool() -> None:
 
 def test_mcp_tool_schema_matches_click_derived_schema() -> None:
     """Each MCP tool's schema matches command_input_schema(cmd)."""
-    discovered = discover_mcp_commands(cli)
+    discovered = discover_mcp_commands(cli, _parent_path=())
 
     built_tools = _build_json_command_tools()
     tool_by_name = {t.name: t for t in built_tools}
@@ -43,7 +43,7 @@ def test_mcp_tool_schema_matches_click_derived_schema() -> None:
 
 def test_every_mcp_json_command_tool_has_corresponding_mcp_exposed_command() -> None:
     """Every JsonCommandTool corresponds to a real @mcp_exposed command (no orphans)."""
-    discovered = discover_mcp_commands(cli)
+    discovered = discover_mcp_commands(cli, _parent_path=())
     discovered_names = {meta.name for _cmd, meta, _path in discovered}
 
     built_tools = _build_json_command_tools()
@@ -55,7 +55,7 @@ def test_every_mcp_json_command_tool_has_corresponding_mcp_exposed_command() -> 
 
 def test_mcp_exposed_commands_have_json_command_meta() -> None:
     """Every @mcp_exposed command must also have @json_command."""
-    discovered = discover_mcp_commands(cli)
+    discovered = discover_mcp_commands(cli, _parent_path=())
     for cmd, meta, _path in discovered:
         assert hasattr(cmd, "_json_command_meta"), (
             f"@mcp_exposed '{meta.name}' on '{cmd.name}' is missing @json_command"
