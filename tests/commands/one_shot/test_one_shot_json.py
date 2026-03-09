@@ -1,7 +1,6 @@
 """Tests for erk one-shot --json output and input."""
 
 import json
-from typing import Any
 
 from click.testing import CliRunner
 
@@ -25,25 +24,6 @@ def _make_remote() -> FakeRemoteGitHub:
         issue_comments=None,
         pr_references=None,
     )
-
-
-def _extract_json(output: str) -> dict[str, Any]:
-    """Extract the JSON object from mixed CLI output.
-
-    CliRunner mixes stdout and stderr. The JSON line from emit_json
-    is a single line containing a valid JSON object with "success" key.
-    """
-    for line in output.strip().split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            data = json.loads(line)
-            if isinstance(data, dict) and "success" in data:
-                return data
-        except json.JSONDecodeError:
-            continue
-    raise AssertionError(f"No JSON line found in output:\n{output}")
 
 
 def test_json_success() -> None:
@@ -72,7 +52,7 @@ def test_json_success() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        data = _extract_json(result.output)
+        data = json.loads(result.stdout)
         assert data["success"] is True
         assert data["dry_run"] is False
         assert data["pr_number"] == 1
@@ -108,7 +88,7 @@ def test_json_dry_run() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        data = _extract_json(result.output)
+        data = json.loads(result.stdout)
         assert data["success"] is True
         assert data["dry_run"] is True
         assert "branch_name" in data
@@ -147,7 +127,7 @@ def test_json_error_empty_prompt() -> None:
         )
 
         assert result.exit_code == 1
-        data = _extract_json(result.output)
+        data = json.loads(result.stdout)
         assert data["success"] is False
         assert data["error_type"] == "invalid_input"
         assert "empty" in data["message"].lower()
@@ -175,7 +155,7 @@ def test_json_error_invalid_repo() -> None:
         )
 
         assert result.exit_code == 1
-        data = _extract_json(result.output)
+        data = json.loads(result.stdout)
         assert data["success"] is False
         assert data["error_type"] == "invalid_repo"
         assert "invalid --repo format" in data["message"].lower()
@@ -206,7 +186,7 @@ def test_json_no_human_on_stdout() -> None:
         )
 
         assert result.exit_code == 0
-        data = _extract_json(result.output)
+        data = json.loads(result.stdout)
         assert isinstance(data, dict)
         assert data["success"] is True
 
@@ -242,5 +222,5 @@ def test_json_stdin_input() -> None:
             )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        data = _extract_json(result.output)
+        data = json.loads(result.stdout)
         assert data["success"] is True
