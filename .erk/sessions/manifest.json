@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "plan_id": 9059,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T13:36:18.769943+00:00",
+      "files": [
+        "impl--3a51255e-d5cc-4450-9b87-ce8a9eb65d5c-part1.xml",
+        "impl--3a51255e-d5cc-4450-9b87-ce8a9eb65d5c-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 6,
+      "raw_size_kb": 509,
+      "xml_size_kb": 90,
+      "git_branch": "plnd/consolidate-learn-docs-03-09-1327"
+    }
+  ]
+}
