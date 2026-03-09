@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "plan_id": 9102,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T20:33:14.227027+00:00",
+      "files": [
+        "impl--d4d04fe1-5c1f-4f80-ab39-2cfcd7d2c9f4-part1.xml",
+        "impl--d4d04fe1-5c1f-4f80-ab39-2cfcd7d2c9f4-part2.xml",
+        "impl--d4d04fe1-5c1f-4f80-ab39-2cfcd7d2c9f4-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 4,
+      "raw_size_kb": 136,
+      "xml_size_kb": 44,
+      "git_branch": "plnd/fix-stale-branch-checkout-03-09-1627"
+    }
+  ]
+}
