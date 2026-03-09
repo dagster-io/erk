@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.cli.commands.pr.shared import assemble_pr_body, recover_plan_header
+from erk.core.plan_context_provider import PlanContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
@@ -217,3 +218,88 @@ def test_no_header_no_recovery_produces_no_plan_header() -> None:
 
     block = find_metadata_block(result, "plan-header")
     assert block is None
+
+
+# ---------------------------------------------------------------------------
+# Objective link insertion tests
+# ---------------------------------------------------------------------------
+
+
+def _plan_context(*, objective_summary: str | None = None) -> PlanContext:
+    """Create a minimal PlanContext for objective link tests."""
+    return PlanContext(
+        plan_id="100",
+        plan_content="# Plan\n\nDo the thing.",
+        objective_summary=objective_summary,
+    )
+
+
+def test_objective_link_inserted_before_key_changes() -> None:
+    """Objective link appears between summary and Key Changes heading."""
+    body = "Summary paragraph.\n\n## Key Changes\n- Item 1"
+    plan_context = _plan_context(objective_summary="Objective #9009: Agent-Friendly CLI")
+
+    result = assemble_pr_body(
+        body=body,
+        plan_context=plan_context,
+        pr_number=42,
+        header="",
+        existing_pr_body="",
+        recovered_plan_header=None,
+    )
+
+    objective_pos = result.find("**Objective #9009:** Agent-Friendly CLI")
+    key_changes_pos = result.find("## Key Changes")
+    assert objective_pos != -1, "Objective link not found in output"
+    assert key_changes_pos != -1, "Key Changes heading not found in output"
+    assert objective_pos < key_changes_pos
+
+
+def test_objective_link_appended_when_no_key_changes() -> None:
+    """Objective link appended after body when Key Changes heading absent."""
+    body = "Summary paragraph only."
+    plan_context = _plan_context(objective_summary="Objective #9009: Agent-Friendly CLI")
+
+    result = assemble_pr_body(
+        body=body,
+        plan_context=plan_context,
+        pr_number=42,
+        header="",
+        existing_pr_body="",
+        recovered_plan_header=None,
+    )
+
+    assert "**Objective #9009:** Agent-Friendly CLI" in result
+
+
+def test_no_objective_link_when_summary_is_none() -> None:
+    """No objective link when objective_summary is None."""
+    body = "Summary paragraph.\n\n## Key Changes\n- Item 1"
+    plan_context = _plan_context(objective_summary=None)
+
+    result = assemble_pr_body(
+        body=body,
+        plan_context=plan_context,
+        pr_number=42,
+        header="",
+        existing_pr_body="",
+        recovered_plan_header=None,
+    )
+
+    assert "**Objective" not in result
+
+
+def test_no_objective_link_without_plan_context() -> None:
+    """No objective link when plan_context is None."""
+    body = "Summary paragraph.\n\n## Key Changes\n- Item 1"
+
+    result = assemble_pr_body(
+        body=body,
+        plan_context=None,
+        pr_number=42,
+        header="",
+        existing_pr_body="",
+        recovered_plan_header=None,
+    )
+
+    assert "**Objective" not in result
