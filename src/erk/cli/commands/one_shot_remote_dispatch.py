@@ -65,6 +65,31 @@ class OneShotDispatchResult:
             "run_url": self.run_url,
         }
 
+    @classmethod
+    def json_schema(cls) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean", "const": True},
+                "dry_run": {"type": "boolean", "const": False},
+                "pr_number": {"type": "integer"},
+                "run_id": {"type": "string"},
+                "branch_name": {"type": "string"},
+                "pr_url": {"type": "string"},
+                "run_url": {"type": "string"},
+            },
+            "required": [
+                "branch_name",
+                "dry_run",
+                "pr_number",
+                "pr_url",
+                "run_id",
+                "run_url",
+                "success",
+            ],
+        }
+
+
 
 @dataclass(frozen=True)
 class OneShotDryRunResult:
@@ -90,6 +115,36 @@ class OneShotDryRunResult:
             "submitted_by": self.submitted_by,
             "model": self.model,
             "workflow": self.workflow,
+        }
+
+    @classmethod
+    def json_schema(cls) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean", "const": True},
+                "dry_run": {"type": "boolean", "const": True},
+                "branch_name": {"type": "string"},
+                "prompt": {"type": "string"},
+                "target": {"type": "string"},
+                "pr_title": {"type": "string"},
+                "base_branch": {"type": "string"},
+                "submitted_by": {"type": "string"},
+                "model": {"type": ["string", "null"]},
+                "workflow": {"type": "string"},
+            },
+            "required": [
+                "base_branch",
+                "branch_name",
+                "dry_run",
+                "model",
+                "pr_title",
+                "prompt",
+                "submitted_by",
+                "success",
+                "target",
+                "workflow",
+            ],
         }
 
 

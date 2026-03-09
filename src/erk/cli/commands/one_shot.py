@@ -60,7 +60,9 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
 
 
 @json_command(
-    exclude_json_input=frozenset({"file_path"}), required_json_input=frozenset({"prompt"})
+    exclude_json_input=frozenset({"file_path"}),
+    required_json_input=frozenset({"prompt"}),
+    output_types=(OneShotDispatchResult, OneShotDryRunResult),
 )
 @click.command("one-shot")
 @click.argument("prompt", required=False, default=None)
