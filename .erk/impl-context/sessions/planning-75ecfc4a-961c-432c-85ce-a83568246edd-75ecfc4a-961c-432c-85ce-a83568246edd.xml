@@ -1,0 +1,1095 @@
+<session>
+  <meta branch="plnd/unify-launch-remotegithub-03-08-1420" />
+  <meta model="claude-opus-4-6" />
+  <user>Please navigate to a branch that branches directly from master.
+➜  erk-slot-16 git:(plnd/unify-launch-remotegithub-03-08-1420) erk land --dry-run --stack
+
+Landing 2 PR(s) bottom-up:
+
+  1. PR #9019 [plnd/O8832-launch-no-repo-remot-03-08-1454]
+  2. PR #9021 [plnd/unify-launch-remotegithub-03-08-1420]
+
+Local cleanup: enabled after full success
+
+[DRY RUN] No changes made
+➜  erk-slot-16 git:(plnd/unify-launch-remotegithub-03-08-1420)
+
+does the dry run of land --stack determine if there are going to be merge conflicts</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14625" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14625}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what the dry-run mode actually does in the land command.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14625" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14625}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01AUMJLAMxe6isKXfaLpB2cn">
+    <param name="description">Explore land command dry-run</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 426 chars]...any actual merge testing or just reports what would happen without checking for conflicts.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14625" cache_read_input_tokens="9738" output_tokens="309" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14625, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AUMJLAMxe6isKXfaLpB2cn">
+Perfect! Now I have a complete picture. Let me create a comprehensive summary document.
+
+## Summary
+
+Based on my analysis of the erk codebase, here's what `erk land --dry-run --stack` actually does:
+
+### Validation Phase (Always Runs, Even in Dry-Run)
+
+**`erk land --dry-run --stack` performs extensive validation before the dry-run exit:**
+
+1. **Branch and PR Validation**:
+   - Gets PR details for each branch in the stack
+   - Validates each PR is in `OPEN` state
+   - Validates PR base refs match the local Graphite stack structure (each PR bases on the previous branch or trunk)
+   - Checks for unresolved comments on each PR
+
+2. **Working Tree Cleanliness**:
+   - Checks for uncommitted changes in each branch's worktree
+   - Validates root worktree is clean if any branch doesn't have a dedicated worktree
+
+3. **Stack Structure**:
+   - Validates current branch is part of a Graphite stack with at least 2 branches (trunk + at least 1 other)
+   - Verifies current branch is not trunk itself
+
+**No Merge Conflict Testing:**
+- The validation phase does **NOT** perform any merge conflict checking
+- There is no test merge, no `git merge --no-commit`, no `mergeable` field querying
+- The command only validates that PR bases match local Graphite state
+
+### Dry-Run Phase
+
+... [44 lines omitted] ...
+
+   - The error is caught and returned as a `MergeError`
+  </tool_result>
+  <assistant>No, `erk land --dry-run --stack` does **not** check for merge conflicts. 
+
+The dry-run validates:
+- PR state (open, bases match stack structure)
+- Unresolved comments
+- Working tree cleanliness
+
+But it exits **before** any actual merge/rebase operations. Merge conflicts are only discovered during execution — when each branch gets rebased onto trunk and merged. So a successful dry-run doesn't guarantee the actual land will succeed.
+
+Want me to plan adding conflict detection to the dry-run? That could involve doing a trial rebase/merge without committing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1374" cache_read_input_tokens="24363" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1374, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>as the dry run occurs (as well as during normal operations) we should be printing out all the validations it makes to teach the user what is happenign to build trust. make a plan to improve logging and progress output</user>
+  <tool_use name="Agent" id="toolu_011y1YJJMen1Rnk3BHgqTx6m">
+    <param name="description">Explore land stack validation</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1010 chars]...used elsewhere in erk CLI
+- The exact file paths and line numbers for each validation step</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="336" cache_read_input_tokens="25737" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 336}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01EQ5y7LjKDhsxh8uDcN4i9D">
+    <param name="description">Explore CLI output patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 860 chars]...rary (click vs rich vs plain print)?
+- Any existing helper functions for formatted output?</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="336" cache_read_input_tokens="25737" output_tokens="732" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EQ5y7LjKDhsxh8uDcN4i9D">
+Perfect! Now I have comprehensive information. Let me compile the findings into a clear report.
+
+## Summary: Erk CLI Output and Progress Patterns
+
+Based on my analysis of the erk codebase, here's the comprehensive guide to output and progress patterns:
+
+### 1. Output Foundation: Two-Tier Abstraction
+
+**Standard imports:**
+```python
+from erk_shared.output.output import user_output, machine_output
+import click
+```
+
+**Usage rules:**
+- `user_output()` → Routes to **stderr** (user-facing messages, progress)
+- `machine_output()` → Routes to **stdout** (JSON, script data, activation scripts)
+- `click.echo()` / `click.secho()` → Direct terminal output with styling
+
+**Key doc:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/docs/learned/cli/output-styling.md`
+
+---
+
+### 2. Colors and Styling Conventions
+
+Uses **click.style()** for consistent coloring:
+
+| Element | Color | Bold | Example |
+|---------|-------|------|---------|
+| Success/checkmarks | `green` | No | `click.style("✓ Done", fg="green")` |
+
+... [275 lines omitted] ...
+
+| Error states | `red` | No | `click.style("Error", fg="red")` |
+- `❌` - Errors/failures
+        case ErrorEvent(message=msg):
+- Errors prefixed with `  !`
+### 8. Validation Error Pattern
+**Use the `Ensure` class for CLI validation errors:**
+Ensure.invariant(condition, "Error message - suggested action")
+Ensure.truthy(value, "Error message")
+Ensure.not_none(value, "Error message")
+Ensure.path_exists(ctx, path, "Error message")
+**Error message format:**
+- No "Error: " prefix (Ensure adds it automatically in red)
+- `docs/learned/cli/output-styling.md` - Comprehensive styling, spacing, error patterns
+   user_output("Warning: This is destructive!")
+   user_output("Warning: This is destructive!")
+- **Styled success/error states** using click.style() + emoji
+  </tool_result>
+  <tool_result tool="toolu_011y1YJJMen1Rnk3BHgqTx6m">
+Perfect! Now I have enough information. Let me compile the comprehensive report for the user.
+
+## Comprehensive Report: `erk land --stack` and `erk land` Validation &amp; Execution Flow
+
+Based on my thorough analysis of the codebase, here's the complete validation and execution flow:
+
+### Summary Structure
+
+Both `erk land` (single-branch) and `erk land --stack` use distinct architectures:
+- **Single-branch `erk land`**: Uses a two-pipeline architecture (validation + execution) with shell script serialization boundary
+- **Stack landing `erk land --stack`**: Uses direct execution with per-entry validation
+
+---
+
+## SINGLE-BRANCH LAND FLOW (`erk land`)
+
+### Entry Point
+**File**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/land_cmd.py`
+**Lines**: 1481-1627
+
+Main command handler that dispatches to either `execute_land_stack()` or validation pipeline.
+
+### Validation Pipeline
+**File**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/land_pipeline.py`
+**Lines**: 467-474
+
+Steps run in this exact order:
+
+1. **`resolve_target()`** (lines 92-137)
+   - Parses argument: branch name, PR number, or URL
+
+... [296 lines omitted] ...
+
+   - Calls `check_unresolved_comments()` which may output warnings
+- Only unresolved comment warnings from `check_unresolved_comments()` (lines 625-635 in land_cmd.py)
+   - **Output**: Checkmarks, warnings, status messages for each cleanup action
+   - Error if not Graphite-managed
+   - Error if detached HEAD
+   - Error if on trunk branch
+   - Error if not in stack
+   - Error if stack has only trunk
+       - Error if PRNotFound
+       - Error if not OPEN
+       - Error if mismatch
+       - Error if any changes found
+   - **Output**: Error messages on failure (lines 319-394)
+   - **Output**: Error messages on failure (lines 420-450)
+   - Warning if remote deletion failed
+   - **Output**: Warning messages only on failure (lines 520-536)
+   - Collects warnings
+     Warning: Stack merged, but cleanup had issues:
+       - branch-name: error message
+   - **Output**: Warning messages on failure (lines 587-625)
+  - `click.style("Warning:", fg="yellow")` for warnings
+5. Objective update failures (warnings only)
+| 2 | validate_pr | land_pipeline.py | 287-329 | Warnings only (unresolved comments) |
+| 2 | Graphite check | land_stack.py | 164-168 | Error only |
+| 3 | Current branch check | land_stack.py | 170-182 | Error only |
+| 4 | Stack retrieval | land_stack.py | 183-194 | Error only |
+| 5 | _validate_stack_entries | land_stack.py | 196-287 | Warnings (unresolved comments) |
+| 9 | Post-merge hooks | land_stack.py | 117-122 | Warnings only |
+| 10 | Cleanup | land_stack.py | 125-129 | Warnings only |
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="8261" cache_read_input_tokens="26073" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8261}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to verify the details before designing the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="8261" cache_read_input_tokens="26073" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8261}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LTk6BqCcq1FWL4BAHhCAM1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/land_stack.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8261" cache_read_input_tokens="26073" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8261}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LTk6BqCcq1FWL4BAHhCAM1">
+     1→"""Stack landing for `erk land --stack`.
+     2→
+     3→Lands an entire Graphite stack bottom-up while preserving the existing land
+     4→command's validation and cleanup guarantees:
+     5→- all confirmations happen before mutations
+     6→- child PR base updates are verified before landing a parent branch
+     7→- local cleanup reuses the same branch/worktree cleanup paths as `erk land`
+     8→"""
+     9→
+    10→from dataclasses import dataclass
+    11→from pathlib import Path
+    12→
+    13→import click
+    14→
+    15→from erk.cli.activation import render_activation_script
+    16→from erk.cli.commands.land_cmd import (
+    17→    CleanupContext,
+    18→    _cleanup_landed_branch,
+    19→    check_unresolved_comments,
+    20→)
+    21→from erk.cli.commands.land_learn import _create_learn_pr_for_merged_branch
+    22→from erk.cli.commands.navigation_helpers import check_clean_working_tree
+    23→from erk.cli.commands.objective_helpers import (
+    24→    get_objective_for_branch,
+    25→    run_objective_update_after_land,
+    26→)
+    27→from erk.cli.ensure import Ensure
+    28→from erk.core.context import ErkContext
+    29→from erk.core.repo_discovery import RepoContext
+    30→from erk_shared.gateway.git.remote_ops.types import PushError
+
+... [640 lines omitted] ...
+
+    31→from erk_shared.gateway.github.types import MergeError, PRDetails, PRNotFound
+   318→    except RuntimeError as exc:
+   321→            _format_partial_failure(
+   324→                    f"Failed to fetch origin/{trunk_branch} before rebasing '{branch}'.\n\n"
+   336→        except RuntimeError as exc:
+   338→                click.style("Warning: ", fg="yellow")
+   339→                + f"Automatic rebase abort failed in {rebase_cwd}: {exc}"
+   349→            _format_partial_failure(
+   363→    except Exception as exc:
+   366→            _format_partial_failure(
+   369→                    f"Failed to re-track rebased branch '{branch}' in Graphite.\n\n"
+   383→    if isinstance(push_result, PushError):
+   386→            _format_partial_failure(
+   389→                    f"Failed to push rebased branch '{branch}' to origin.\n\n"
+   420→    error_message = reparent_child_pr_bases_for_land(
+   426→    if error_message is not None:
+   429→            _format_partial_failure(merged_entries=merged_entries, message=error_message),
+   438→        except Exception as exc:
+   441→                _format_partial_failure(
+   444→                        f"Failed to update local Graphite tracking for child branch "
+   476→    if isinstance(merge_result, MergeError):
+   479→            _format_partial_failure(
+   482→                    f"Failed to merge PR #{entry.pr_number} [{entry.branch}].\n\n"
+   492→            click.style("Warning: ", fg="yellow")
+   518→        except Exception as exc:
+   520→                click.style("Warning: ", fg="yellow") + f"Learn PR failed for {entry.branch}: {exc}"
+   532→        except Exception as exc:
+   534→                click.style("Warning: ", fg="yellow")
+   535→                + f"Objective update failed for {entry.branch}: {exc}"
+   548→    cleanup_warnings: list[str] = []
+   570→        except Exception as exc:
+   571→            cleanup_warnings.append(f"{entry.branch}: {exc}")
+   573→    if cleanup_warnings:
+   574→        user_output(click.style("Warning: ", fg="yellow") + "Stack merged, but cleanup had issues:")
+   575→        for warning in cleanup_warnings:
+   576→            user_output(f"  - {warning}")
+   588→            click.style("Warning: ", fg="yellow")
+   596→    except RuntimeError:
+   598→            click.style("Warning: ", fg="yellow")
+   610→            click.style("Warning: ", fg="yellow")
+   622→    except RuntimeError:
+   624→            click.style("Warning: ", fg="yellow") + "git pull failed (try running manually)"
+   660→def _format_partial_failure(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Bbdk4qgzbqN7EnXgkUPHpz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/land_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8261" cache_read_input_tokens="26073" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8261}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bbdk4qgzbqN7EnXgkUPHpz">
+     1→"""Linear pipelines for the land command.
+     2→
+     3→Two pipelines bridge the shell script serialization boundary:
+     4→- Validation pipeline: runs in `erk land` CLI, gathers all state and confirmations
+     5→- Execution pipeline: runs in `erk exec land-execute`, performs mutations
+     6→
+     7→Each step: (ErkContext, LandState) -&gt; LandState | LandError
+     8→"""
+     9→
+    10→import dataclasses
+    11→from collections.abc import Callable
+    12→from dataclasses import dataclass
+    13→from functools import cache
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.land_learn import _create_learn_pr_with_sessions
+    19→from erk.cli.commands.navigation_helpers import check_clean_working_tree
+    20→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    21→from erk.cli.core import discover_repo_context
+    22→from erk.cli.ensure import Ensure
+    23→from erk.cli.ensure_ideal import EnsureIdeal
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.gateway.github.types import MergeError, PRDetails
+    26→from erk_shared.gateway.gt.cli import render_events
+    27→from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
+    28→from erk_shared.gateway.gt.types import LandPrError
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.stack.validation import validate_parent_is_trunk
+
+... [581 lines omitted] ...
+
+    71→class LandError:
+    72→    """Error result from a pipeline step."""
+    75→    error_type: str
+    84→LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+    92→def resolve_target(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   128→        return LandError(
+   130→            error_type="invalid_target",
+   145→) -&gt; LandState | LandError:
+   187→        validation_error = validate_parent_is_trunk(
+   193→            validation_error is None,
+   194→            validation_error.message if validation_error else "",
+   222→) -&gt; LandState | LandError:
+   227→        return LandError(
+   229→            error_type="up_with_pr",
+   264→) -&gt; LandState | LandError:
+   287→def validate_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   300→        return LandError(
+   302→            error_type="no_pr_details",
+   332→def resolve_plan_id(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   341→def gather_confirmations(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   370→def resolve_objective(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   384→def merge_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   391→        if isinstance(result, LandPrError):
+   392→            return LandError(
+   394→                error_type="graphite_merge_failed",
+   415→        if isinstance(merge_result, MergeError):
+   416→            return LandError(
+   418→                error_type="github_merge_failed",
+   419→                message=f"Failed to merge PR #{state.pr_number}\n\n{merge_result.message}",
+   428→def create_learn_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   439→def cleanup_and_navigate(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   491→def run_validation_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   492→    """Run the validation pipeline, returning final state or first error."""
+   495→        if isinstance(result, LandError):
+   501→def run_execution_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   502→    """Run the execution pipeline, returning final state or first error."""
+   505→        if isinstance(result, LandError):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DBHuXfuMpQugEU5zbWtk79">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/output/output.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8261" cache_read_input_tokens="26073" output_tokens="318" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8261, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DBHuXfuMpQugEU5zbWtk79">
+     1→"""Output utilities for CLI commands with clear intent."""
+     2→
+     3→import sys
+     4→from typing import Any
+     5→
+     6→import click
+     7→
+     8→
+     9→def user_output(
+    10→    message: Any | None = None,
+    11→    nl: bool = True,
+    12→    color: bool | None = None,
+    13→) -&gt; None:
+    14→    """Output informational message for human users.
+    15→
+    16→    Routes to stderr so shell integration can capture structured data
+    17→    on stdout while users still see progress/status messages.
+    18→
+    19→    Args:
+    20→        message: The string or bytes to output. Other objects are converted to strings.
+    21→        nl: Print a newline after the message. Enabled by default.
+    22→        color: Force showing or hiding colors and other styles. By default, Click
+    23→            will remove color if the output does not look like an interactive terminal.
+    24→    """
+    25→    click.echo(message, nl=nl, err=True, color=color)
+    26→
+    27→
+    28→def machine_output(
+    29→    message: Any | None = None,
+    30→    nl: bool = True,
+
+... [56 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="17517" cache_read_input_tokens="34334" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17517}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how the single-branch dry run currently displays output, and look at a good example of progress output from another command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17517" cache_read_input_tokens="34334" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17517}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GPyRivXJ6LdFuC2zxXCi8D">
+    <param name="pattern">dry_run</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17517" cache_read_input_tokens="34334" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17517}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GPyRivXJ6LdFuC2zxXCi8D">
+208-    threading through to cleanup functions.
+209-
+210-    This consolidates all cleanup-related confirmation prompts into
+211-    the validation phase, before any mutations occur.
+212-    """
+213:    if force or ctx.dry_run:
+214-        return CleanupConfirmation(proceed=True)
+215-
+216-    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+217-    resolved = determine_cleanup_type(
+218-        no_delete=False,  # no_delete handled separately in _handle_no_delete
+--
+458-
+459-    In dry-run mode, shows summary and exits.
+460-    Otherwise, navigates to appropriate location or outputs no-op script.
+461-    """
+462-    # In dry-run mode, skip navigation and show summary
+463:    if cleanup.ctx.dry_run:
+464-        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+465-        raise SystemExit(0)
+466-
+467-    # Navigate (only if we were in the deleted worktree)
+468-    if cleanup.is_current_branch:
+--
+921-    """
+922-    branch = target.branch
+923-    pr_number = target.pr_details.number
+924-
+925-    # Handle dry-run mode
+926:    if ctx.dry_run:
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DdCF9AWYMe2G8kqabsvzHB">
+    <param name="pattern">user_output.*✓|Validating|Checking|Resolving|Looking up</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-i">True</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17517" cache_read_input_tokens="34334" output_tokens="387" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17517, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DdCF9AWYMe2G8kqabsvzHB">
+src/erk/cli/commands/wt/create_cmd.py:230:    user_output(click.style(f"✓ Created worktree: {name}", fg="green"))
+src/erk/cli/commands/wt/create_cmd.py:504:    help="Skip checking if branch exists on remote (for offline work)",
+src/erk/cli/commands/wt/create_cmd.py:575:    # Initialize variables used in conditional blocks (for type checking)
+src/erk/cli/commands/wt/create_from_cmd.py:101:        user_output(click.style("✓ ", fg="green") + f"Assigned {styled_branch} to {styled_slot}")
+src/erk/cli/commands/land_cmd.py:131:    SLOT_ASSIGNED variant (avoids re-resolving pool state after classification).
+src/erk/cli/commands/land_cmd.py:328:        user_output(click.style("✓", fg="green") + f" Deleted branch '{cleanup.branch}'")
+src/erk/cli/commands/land_cmd.py:349:    user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
+src/erk/cli/commands/land_cmd.py:381:    user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
+src/erk/cli/commands/land_cmd.py:399:    user_output(click.style("✓", fg="green") + " Deleted branch (root worktree preserved)")
+src/erk/cli/commands/doctor.py:166:    click.echo(click.style("🔍 Checking erk setup...", bold=True))
+src/erk/cli/commands/land_pipeline.py:424:    user_output(click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{state.branch}]")
+src/erk/cli/commands/ref_resolution.py:1:"""Shared helper for resolving dispatch ref across multiple commands.
+src/erk/cli/commands/completions.py:11:from typing import TYPE_CHECKING
+src/erk/cli/commands/completions.py:20:if TYPE_CHECKING:
+src/erk/cli/commands/docs/check.py:3:This command runs both frontmatter validation and sync checking in a single pass.
+src/erk/cli/commands/docs/check.py:41:    click.echo(click.style("Validating frontmatter...", fg="cyan"), err=True)
+src/erk/cli/commands/docs/check.py:88:    click.echo(click.style("Checking generated files...", fg="cyan"), err=True)
+src/erk/cli/commands/slot/assign_cmd.py:109:    user_output(click.style(f"✓ Assigned {branch_name} to {result.slot_name}", fg="green"))
+src/erk/cli/commands/objective/check_cmd.py:349:    user_output(f"Validating objective #{issue_number}...")
+src/erk/cli/commands/slot/common.py:295:    """Result of validating an existing branch assignment."""
+src/erk/cli/commands/slot/common.py:374:    # Fix the worktree by checking out the correct branch
+src/erk/cli/commands/slot/common.py:377:        + f"Fixing stale state: checking out '{branch_name}' in {existing.slot_name} "
+src/erk/cli/commands/objective/plan_cmd.py:90:    """Result of resolving the next unblocked pending node for an objective.
+src/erk/cli/commands/objective/plan_cmd.py:175:    """Result of resolving all unblocked pending nodes for an objective.
+src/erk/cli/commands/objective/close_cmd.py:69:    user_output(click.style("✓ ", fg="green") + f"Closed objective #{issue_number}: {issue.url}")
+src/erk/cli/commands/pr/submit_pipeline.py:143:        click.echo(click.style("   Resolving branch and plan context...", dim=True))
+src/erk/cli/commands/pr/submit_pipeline.py:244:        click.echo(click.style("   Checking for existing PR...", dim=True))
+src/erk/cli/commands/pr/submit_pipeline.py:258:    # Use cached Graphite check from prepare_state instead of re-checking
+src/erk/cli/commands/pr/submit_pipeline.py:341:                    "  erk pr submit     # Re-submit after resolving"
+src/erk/cli/commands/pr/metadata_helpers.py:10:from typing import TYPE_CHECKING
+
+... [2 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="51851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3020}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the submit pipeline for the best existing progress output pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="51851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3020}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0147aWorLi8BJkDVkt5RYgog">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="51851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3020}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0147aWorLi8BJkDVkt5RYgog">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.cli.repo_resolution import get_remote_github
+    30→from erk.core.commit_message_generator import CommitMessageGenerator
+
+... [70 lines omitted] ...
+
+    34→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R1WiZaWoSYY7eiTTNDhdY9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">900</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="51851" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3020, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R1WiZaWoSYY7eiTTNDhdY9">
+   900→    target: LandTarget,
+   901→    script: bool,
+   902→    pull_flag: bool,
+   903→    no_delete: bool,
+   904→    skip_learn: bool,
+   905→    cleanup_confirmed: bool,
+   906→) -&gt; None:
+   907→    """Execute land directly without generating a deferred script.
+   908→
+   909→    This is the default path when neither --up nor --down is passed.
+   910→    Merges the PR and cleans up the branch inline without navigation.
+   911→
+   912→    Args:
+   913→        ctx: ErkContext
+   914→        repo: Repository context
+   915→        target: Resolved landing target
+   916→        script: Whether running in script mode
+   917→        pull_flag: Whether to pull after landing
+   918→        no_delete: Preserve branch after landing
+   919→        skip_learn: Skip creating a learn plan after landing
+   920→        cleanup_confirmed: Whether user confirmed cleanup during validation
+   921→    """
+   922→    branch = target.branch
+   923→    pr_number = target.pr_details.number
+   924→
+   925→    # Handle dry-run mode
+   926→    if ctx.dry_run:
+   927→        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
+   928→        user_output(f"Would delete branch '{branch}'")
+   929→        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+
+... [100 lines omitted] ...
+
+   962→        if isinstance(result, LandError):
+   963→            user_output(click.style("Error: ", fg="red") + result.message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VzjCGZhEZDaAkwX89h4MwG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">130</param>
+    <param name="limit">140</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3269" cache_read_input_tokens="54871" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3269, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VzjCGZhEZDaAkwX89h4MwG">
+   130→# Pipeline Steps
+   131→# ---------------------------------------------------------------------------
+   132→
+   133→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   134→
+   135→
+   136→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   137→    """Resolve repo_root, branch_name, parent_branch, trunk_branch, plan_id.
+   138→
+   139→    Single location for all discovery. Consolidates duplicate parent-branch
+   140→    and plan-id discovery sites.
+   141→    """
+   142→    if not state.quiet:
+   143→        click.echo(click.style("   Resolving branch and plan context...", dim=True))
+   144→    cwd = state.cwd
+   145→    repo_root = ctx.git.repo.get_repository_root(cwd)
+   146→
+   147→    branch_name = ctx.git.branch.get_current_branch(cwd)
+   148→    if branch_name is None:
+   149→        return SubmitError(
+   150→            phase="prepare",
+   151→            error_type="no_branch",
+   152→            message="Not on a branch (detached HEAD state)",
+   153→            details={},
+   154→        )
+   155→
+   156→    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
+   157→    parent_branch = ctx.branch_manager.get_parent_branch(repo_root, branch_name) or trunk_branch
+   158→
+   159→    # Plan ID discovery via plan-ref.json in resolved .erk/impl-context/ dir
+
+... [110 lines omitted] ...
+
+   165→        except ValueError as e:
+   166→            return SubmitError(
+   168→                error_type="issue_linkage_mismatch",
+   211→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   231→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   241→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   253→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2194" cache_read_input_tokens="58140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2194}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding of both the code and the output patterns. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2194" cache_read_input_tokens="58140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2194}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_016ndfwhyMyDPpeHvuRqBccz">
+    <param name="file_path">/Users/schrockn/.claude/plans/cozy-cooking-hamming.md</param>
+    <param name="content"># Plan: Add progress output to `erk land` validation and execution
+
+## Context
+
+`erk land`...[truncated 5447 chars]...nd tests to ensure no regressions
+4. Visually verify output is readable and not too noisy
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2194" cache_read_input_tokens="58140" output_tokens="2222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2194, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016ndfwhyMyDPpeHvuRqBccz">
+File created successfully at: /Users/schrockn/.claude/plans/cozy-cooking-hamming.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01C1BPvCe5hMfNJ9VxUhbaHa">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2593" cache_read_input_tokens="60334" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2593}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C1BPvCe5hMfNJ9VxUhbaHa">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012QuZUAdGddpZJPcUmJ7m26">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Plan: Add progress output to `erk land` validation and execution
+
+## Context
+
+`erk land`...[truncated 5447 chars]...nd tests to ensure no regressions
+4. Visually verify output is readable and not too noisy
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="62927" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012QuZUAdGddpZJPcUmJ7m26">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/cozy-cooking-hamming.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Add progress output to `erk land` validation and execution
+Current context: (wt:erk-slot-16) (br:plnd/unify-launch-remotegithub-03-08-1420) (pr:#9021)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/unif"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 75ecfc4a-961c-432c-85ce-a83568246edd \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/cozy-cooking-hamming.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Add progress output to `erk land` validation and execution
+
+## Context
+
+`erk land` (both single-branch and `--stack`) silently runs multiple validation steps before any mutations. Users see no feedback about what checks are passing, making the command feel opaque — especially in `--dry-run` mode where the whole point is to preview what would happen. Adding step-by-step progress output builds trust by teaching users what the command validates.
+
+## Approach
+
+Add `user_output()` calls with dim-styled status messages at each validation and execution step, matching the existing pattern from `submit_pipeline.py` (e.g., `click.style("   Resolving branch and plan context...", dim=True)`).
+
+### Output style
+
+Use the established erk pattern:
+- **Dim text** for in-progress step announcements: `click.style("  Checking ...", dim=True)`
+- **Green checkmark** for completed actions: `click.style("✓", fg="green") + " ..."`
+- **Indentation**: 2-space indent for validation steps to visually group them under the command
+
+### Files to modify
+
+#### 1. `src/erk/cli/commands/land_stack.py` — Stack land
+
+**In `_prepare_stack_land()` (lines 154-220)** — add progress output after each validation:
+
+| After line | Message |
+|---|---|
+| 162 | `"  Working tree is clean"` (green check) |
+| 168 | `"  Graphite stack management confirmed"` (green check) |
+| 177 | `"  Current branch: {current_branch}"` (green check) |
+| 194 | `"  Stack has {len(stack)-1} branch(es) to land"` (green check) |
+
+**In `_validate_stack_entries()` (lines 223-287)** — add per-entry progress:
+
+| Location | Message |
+|---|---|
+| Before the loop (after line 232) | `"  Validating stack entries..."` (dim) |
+| After successful entry append (line 278) | `"  ✓ PR #{pr_details.number} [{branch}]: open, base correct, clean"` (green check) |
+
+**In execution loop (lines 87-151)** — add progress for currently silent steps:
+
+| Location | Message |
+|---|---|
+| Before rebase (line 89) | `"  Rebasing {entry.branch} onto {trunk_branch}..."` (dim) |
+| After successful rebase+push (end of `_rebase_entry_onto_trunk`) | `"  ✓ Rebased {branch} onto {trunk_branch}"` (green check) |
+| Before reparent (line 100) | `"  Reparenting {len(child_branches)} child branch(es)..."` (dim) |
+| After successful reparent | `"  ✓ Reparented children to {trunk_branch}"` (green check) |
+
+**In `_cleanup_stack_after_success()`** — add progress:
+
+| Location | Message |
+|---|---|
+| Before cleanup loop | `"  Cleaning up {len(plan.entries)} branch(es)..."` (dim) |
+
+#### 2. `src/erk/cli/commands/land_pipeline.py` — Single-branch land
+
+**In validation pipeline steps** — add progress output in each step function:
+
+| Step function | Message |
+|---|---|
+| `resolve_target()` end | `"  ✓ Target: PR #{pr_details.number} [{branch}]"` |
+| `validate_pr()` after checks pass | `"  ✓ PR #{state.pr_number} is open, base targets trunk"` |
+| `resolve_plan_id()` end | `"  ✓ Plan context resolved"` or `"  No linked plan"` (dim) |
+| `resolve_objective()` end | `"  ✓ Linked to objective #{n}"` or omit if None |
+
+## Example output (stack dry-run)
+
+```
+  ✓ Working tree is clean
+  ✓ Graphite stack management confirmed
+  ✓ Current branch: plnd/unify-launch-remotegithub-03-08-1420
+  ✓ Stack has 2 branch(es) to land
+  Validating stack entries...
+  ✓ PR #9019 [plnd/O8832-launch-no-repo-remot-03-08-1454]: open, base correct, clean
+  ✓ PR #9021 [plnd/unify-launch-remotegithub-03-08-1420]: open, base correct, clean
+
+Landing 2 PR(s) bottom-up:
+  1. PR #9019 [plnd/O8832-launch-no-repo-remot-03-08-1454]
+  2. PR #9021 [plnd/unify-launch-remotegithub-03-08-1420]
+
+Local cleanup: enabled after full success
+
+[DRY RUN] No changes made
+```
+
+## Verification
+
+1. Run `erk land --dry-run --stack` and verify all validation steps print with checkmarks
+2. Run `erk land --dry-run` (single-branch) and verify validation steps print
+3. Run the existing land tests to ensure no regressions
+4. Visually verify output is readable and not too noisy
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="63665" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 708}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_017CcDoPd7J3h65UrVvdEXXA">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="63665" output_tokens="1386" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 708, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017CcDoPd7J3h65UrVvdEXXA">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01MERzpYtcvtxRmPmYwURnWQ">
+    <param name="questions">[{'question': '📋 Plan: Add progress output to `erk land` validation and execution\nCurrent...[truncated 447 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2751" cache_read_input_tokens="64373" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MERzpYtcvtxRmPmYwURnWQ">
+User has answered your questions: "📋 Plan: Add progress output to `erk land` validation and execution
+Current context: (wt:erk-slot-16) (br:plnd/unify-launch-remotegithub-03-08-1420) (pr:#9021)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01L8CH2hhBWHi8aq4ANB8pzt">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="460" cache_read_input_tokens="67124" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 460, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L8CH2hhBWHi8aq4ANB8pzt">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="75ecfc4a-961c-432c-85ce-a83568246edd" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="75ecfc4a-961c-432c-85ce-a83568246edd" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "75ecfc4a-961c-432c-85ce-a83568246edd" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "75ecfc4a-961c-432c-85ce-a83568246edd" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "75ecfc4a-961c-432c-85ce-a83568246edd" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "75ecfc4a-961c-432c-85ce-a83568246edd" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan-save steps.
+
+**Step 1: Parse arguments** — No flags passed, so all defaults.
+
+**Step 2: Branch slug** — From the plan title "Add progress output to `erk land` validation and execution":
+
+`BRANCH_SLUG`: `add-land-progress-output`
+
+**Step 3: Plan summary**:
+
+&gt; Adds step-by-step progress output to erk land validation and execution phases, showing checkmarks for each passing validation step. Applies to both single-branch and --stack flows, making dry-run mode informative and building user trust during normal operations.
+
+**Step 4: Save command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2265" cache_read_input_tokens="67584" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2265}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ATVxyMBYk7Bwcdav1JLMKL">
+    <param name="command">erk exec plan-save --format json --session-id="75ecfc4a-961c-432c-85ce-a83568246edd" --bra...[truncated 200 chars]... flows, making dry-run mode informative and building user trust during normal operations."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2265" cache_read_input_tokens="67584" output_tokens="378" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2265, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ATVxyMBYk7Bwcdav1JLMKL">
+{"success": true, "plan_number": 9031, "plan_url": "https://github.com/dagster-io/erk/pull/9031", "title": "[erk-plan] Plan: Add progress output to `erk land` validation and execution", "branch_name": "plnd/add-land-progress-output-03-08-1913", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/.erk/scratch/sessions/75ecfc4a-961c-432c-85ce-a83568246edd/plan_snapshots/000001-202d6ba4"}
+  </tool_result>
+  <assistant>No objective linked, so skipping Steps 5-6.
+
+**Step 7: Push planning session**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="69849" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 542}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PjDGeNfvm7Gz6gWDcyRZgA">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="69849" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 542, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PjDGeNfvm7Gz6gWDcyRZgA">
+SESSION_ID=75ecfc4a-961c-432c-85ce-a83568246edd
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-16/75ecfc4a-961c-432c-85ce-a83568246edd.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SJe5sYKoRTw5bb3KWU7DKp">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 122 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 9031 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1412" cache_read_input_tokens="70391" output_tokens="214" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1412, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
