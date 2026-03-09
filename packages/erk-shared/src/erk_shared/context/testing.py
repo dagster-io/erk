@@ -115,6 +115,7 @@ def context_for_test(
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.http.fake import FakeHttpClient
     from erk_shared.gateway.shell.fake import FakeShell
+    from erk_shared.gateway.skills_cli.fake import FakeSkillsCli
     from erk_shared.gateway.time.fake import FakeTime
 
     # Resolve defaults - create issues first since it's composed into github
@@ -204,6 +205,7 @@ def context_for_test(
         agent_docs=resolved_agent_docs,
         plan_store=resolved_plan_store,
         shell=FakeShell(),
+        skills_cli=FakeSkillsCli(available=True),
         completion=FakeCompletion(),
         codespace=resolved_codespace,
         cmux=resolved_cmux,

@@ -83,6 +83,7 @@ from erk_shared.gateway.http.auth import fetch_github_token_or_none
 from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
+from erk_shared.gateway.skills_cli.real import RealSkillsCli
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
@@ -150,6 +151,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
+    from erk_shared.gateway.skills_cli.fake import FakeSkillsCli
     from erk_shared.gateway.time.fake import FakeTime
 
     fake_issues = FakeGitHubIssues()
@@ -180,6 +182,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         graphite_branch_ops=fake_graphite_branch_ops,
         console=fake_console,
         shell=FakeShell(),
+        skills_cli=FakeSkillsCli(available=True),
         codespace=fake_codespace,
         cmux=FakeCmux(workspace_ref="fake-ws"),
         agent_launcher=FakeAgentLauncher(),
@@ -293,6 +296,7 @@ def context_for_test(
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.http.fake import FakeHttpClient
     from erk_shared.gateway.shell.fake import FakeShell
+    from erk_shared.gateway.skills_cli.fake import FakeSkillsCli
     from erk_shared.gateway.time.fake import FakeTime
 
     if git is None:
@@ -431,6 +435,7 @@ def context_for_test(
         graphite_branch_ops=graphite_branch_ops,
         console=console,
         shell=shell,
+        skills_cli=FakeSkillsCli(available=True),
         codespace=codespace,
         cmux=cmux,
         agent_launcher=agent_launcher,
@@ -702,6 +707,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         graphite_branch_ops=graphite_branch_ops,
         console=console,
         shell=RealShell(),
+        skills_cli=RealSkillsCli(),
         codespace=RealCodespace(),
         cmux=RealCmux(),
         agent_launcher=real_agent_launcher,

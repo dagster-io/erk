@@ -53,6 +53,7 @@ from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
+from erk_shared.gateway.skills_cli.abc import SkillsCli
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.backend import PlanBackend
 
@@ -92,6 +93,7 @@ class ErkContext:
 
     # Shell/CLI integrations (moved to erk_shared)
     shell: Shell
+    skills_cli: SkillsCli
     completion: Completion
     codespace: Codespace
     cmux: Cmux

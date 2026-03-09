@@ -88,6 +88,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     # Note: For minimal contexts, use FakePromptExecutor since the real
     # ClaudeCliPromptExecutor lives in erk (not erk-shared)
     from erk_shared.gateway.shell.fake import FakeShell
+    from erk_shared.gateway.skills_cli.fake import FakeSkillsCli
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
     from erk_shared.plan_store.planned_pr import PlannedPRBackend
@@ -148,6 +149,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         agent_docs=RealAgentDocs(),
         plan_store=PlannedPRBackend(real_github, github_issues, time=fake_time),
         shell=FakeShell(),
+        skills_cli=FakeSkillsCli(available=True),
         completion=FakeCompletion(),
         codespace=FakeCodespace(
             run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name"
