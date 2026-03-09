@@ -82,7 +82,7 @@ jobs:
             echo "Prompt already committed to .erk/impl-context/prompt.md"
           else
             mkdir -p .erk/impl-context
-            printf 'Consolidate all open erk-learn plans into a single documentation update.\nRun /erk:consolidate-learn-plans-plan to query, consolidate, and implement.\n' > .erk/impl-context/prompt.md
+            printf 'Consolidate all open erk-learn plans into a single documentation update.\nRun /erk:system:consolidate-learn-plans-plan to query, consolidate, and implement.\n' > .erk/impl-context/prompt.md
             echo "Prompt written to .erk/impl-context/prompt.md"
           fi
 
@@ -101,7 +101,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/erk:consolidate-learn-plans-plan"
+            "/erk:system:consolidate-learn-plans-plan"
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           if [ $EXIT_CODE -eq 0 ]; then
