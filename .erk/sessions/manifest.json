@@ -32,6 +32,23 @@
       "raw_size_kb": 1871,
       "xml_size_kb": 839,
       "git_branch": "plnd/move-fakes-to-tests-03-09-1534"
+    },
+    {
+      "session_id": "89ed3f86-0b1a-4a68-9896-fc049230cdfd",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T23:22:53.532244+00:00",
+      "files": [
+        "address-89ed3f86-0b1a-4a68-9896-fc049230cdfd-89ed3f86-0b1a-4a68-9896-fc049230cdfd-part1.xml",
+        "address-89ed3f86-0b1a-4a68-9896-fc049230cdfd-89ed3f86-0b1a-4a68-9896-fc049230cdfd-part2.xml",
+        "address-89ed3f86-0b1a-4a68-9896-fc049230cdfd-89ed3f86-0b1a-4a68-9896-fc049230cdfd-part3.xml",
+        "address-89ed3f86-0b1a-4a68-9896-fc049230cdfd-89ed3f86-0b1a-4a68-9896-fc049230cdfd-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 207,
+      "xml_size_kb": 89,
+      "git_branch": "plnd/move-fakes-to-tests-03-09-1534"
     }
   ]
 }
