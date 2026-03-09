@@ -45,6 +45,7 @@ Also check commits ahead: `git rev-list --count master.."<branch>"`
 Branches with closed/merged PRs (especially those with only 1 commit ahead — just the plan commit) are safe to delete. Add them to the cleanup list.
 
 For each, untrack from Graphite before deleting:
+
 ```bash
 gt branch untrack "<branch>" --no-interactive --force
 git branch -D "<branch>"
@@ -82,6 +83,7 @@ Total: {total_local_branches} local branches, {total_worktrees} worktrees, {tota
 | {branch} | {reason} | {has_remote} |
 
 For `planned-pr-context/*` branches in auto-cleanup: extract the PR number from the branch name (e.g., `planned-pr-context/8939` → PR #8939), check each PR's state via `gh pr view <number> --json state -q .state`, and separate into:
+
 - **Closed/Merged PR**: safe to delete (include in cleanup)
 - **Open PR**: keep (exclude from cleanup)
 
