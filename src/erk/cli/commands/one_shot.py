@@ -12,6 +12,7 @@ Usage:
     erk one-shot "fix config bug" --repo owner/repo
 """
 
+import json
 from pathlib import Path
 
 import click
@@ -26,7 +27,7 @@ from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.real import RealRemoteGitHub
-from erk_shared.output.output import user_output
+from erk_shared.output.output import machine_output, user_output
 
 
 def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
@@ -108,6 +109,13 @@ def _get_remote_github(ctx: ErkContext) -> RemoteGitHub:
     default=None,
     help="Target repo (owner/repo) for remote dispatch without local git clone",
 )
+@click.option(
+    "--json",
+    "as_json",
+    is_flag=True,
+    default=False,
+    help="Output structured JSON to stdout",
+)
 @click.pass_obj
 def one_shot(
     ctx: ErkContext,
@@ -121,6 +129,7 @@ def one_shot(
     dispatch_ref: str | None,
     ref_current: bool,
     target_repo: str | None,
+    as_json: bool,
 ) -> None:
     """Submit a task for fully autonomous remote execution.
 
@@ -198,7 +207,7 @@ def one_shot(
 
     remote = _get_remote_github(ctx)
 
-    dispatch_one_shot_remote(
+    result = dispatch_one_shot_remote(
         remote=remote,
         owner=owner,
         repo=repo_name,
@@ -208,3 +217,20 @@ def one_shot(
         time_gateway=ctx.time,
         prompt_executor=ctx.prompt_executor,
     )
+
+    if as_json:
+        if result is None:
+            # dry-run mode
+            output = {"success": True, "dry_run": True}
+        else:
+            pr_url = f"https://github.com/{owner}/{repo_name}/pull/{result.pr_number}"
+            run_url = f"https://github.com/{owner}/{repo_name}/actions/runs/{result.run_id}"
+            output = {
+                "success": True,
+                "pr_number": result.pr_number,
+                "pr_url": pr_url,
+                "run_url": run_url,
+                "run_id": result.run_id,
+                "branch_name": result.branch_name,
+            }
+        machine_output(json.dumps(output, indent=2))

@@ -1,5 +1,7 @@
 """Tests for erk one-shot command."""
 
+import json
+
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -344,3 +346,78 @@ def test_one_shot_no_prompt_rejected() -> None:
 
         assert result.exit_code == 1
         assert "prompt argument or --file" in result.output
+
+
+def test_one_shot_json_output() -> None:
+    """Test --json flag emits structured JSON to stdout."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        github = FakeLocalGitHub(authenticated=True)
+        remote = _make_remote()
+
+        ctx = build_workspace_test_context(env, git=git, github=github, remote_github=remote)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "--json", "fix the import in config.py"],
+            obj=ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        # CliRunner mixes stderr (user_output) and stdout (machine_output).
+        # Extract the JSON object from the mixed output.
+        json_start = result.output.index("{")
+        json_str = result.output[json_start:]
+        parsed = json.loads(json_str)
+        assert parsed["success"] is True
+        assert isinstance(parsed["pr_number"], int)
+        assert "/pull/" in parsed["pr_url"]
+        assert "/actions/runs/" in parsed["run_url"]
+        assert isinstance(parsed["run_id"], str)
+        assert isinstance(parsed["branch_name"], str)
+        assert parsed["branch_name"].startswith("plnd/")
+
+
+def test_one_shot_json_dry_run() -> None:
+    """Test --json with --dry-run emits dry_run JSON."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        github = FakeLocalGitHub(authenticated=True)
+        remote = _make_remote()
+
+        ctx = build_workspace_test_context(env, git=git, github=github, remote_github=remote)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "--json", "--dry-run", "fix something"],
+            obj=ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        # CliRunner mixes stderr (user_output) and stdout (machine_output).
+        # Extract the JSON object from the mixed output.
+        json_start = result.output.index("{")
+        json_str = result.output[json_start:]
+        parsed = json.loads(json_str)
+        assert parsed["success"] is True
+        assert parsed["dry_run"] is True

@@ -132,18 +132,24 @@ class TestOneShot:
 
     @patch("erk_mcp.server._run_erk")
     def test_passes_prompt_to_erk(self, mock_run_erk: patch) -> None:
+        json_output = (
+            '{"success": true, "pr_number": 42,'
+            ' "pr_url": "https://github.com/test/repo/pull/42",'
+            ' "run_url": "https://github.com/test/repo/actions/runs/123",'
+            ' "run_id": "123", "branch_name": "plnd/fix-bug-03-09-1234"}'
+        )
         mock_run_erk.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="PR: https://github.com/...", stderr=""
+            args=[], returncode=0, stdout=json_output, stderr=""
         )
 
         result = one_shot(prompt="Fix the bug in auth")
 
-        assert result == "PR: https://github.com/..."
-        mock_run_erk.assert_called_once_with(["one-shot", "Fix the bug in auth"])
+        assert result == json_output
+        mock_run_erk.assert_called_once_with(["one-shot", "--json", "Fix the bug in auth"])
 
     @patch("erk_mcp.server._run_erk")
     def test_propagates_runtime_error(self, mock_run_erk: patch) -> None:
-        mock_run_erk.side_effect = RuntimeError("erk one-shot failed (exit 1): timeout")
+        mock_run_erk.side_effect = RuntimeError("erk one-shot --json failed (exit 1): timeout")
 
         with pytest.raises(RuntimeError, match="timeout"):
             one_shot(prompt="Do something")

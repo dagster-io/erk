@@ -53,9 +53,9 @@ def one_shot(prompt: str) -> str:
     Creates a branch, draft PR, and dispatches a GitHub Actions workflow
     where Claude autonomously explores, plans, implements, and submits.
 
-    Returns after dispatch (~10-30s) with PR and workflow run URLs.
+    Returns JSON with PR URL and workflow run URL after dispatch.
     """
-    result = _run_erk(["one-shot", prompt])
+    result = _run_erk(["one-shot", "--json", prompt])
     return result.stdout
 
 
