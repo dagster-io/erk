@@ -127,6 +127,12 @@ def pr_filter_options(f: Callable[P, T]) -> Callable[P, T]:
         default="plan",
         help="Sort order: by plan number (default) or recent branch activity",
     )(f)
+    f = click.option(
+        "--include-learn",
+        is_flag=True,
+        default=False,
+        help="Include learn plans in results (excluded by default)",
+    )(f)
     return f
 
 
@@ -264,6 +270,7 @@ def _pr_list_impl(
     sort: str,
     repo_id: GitHubRepoId,
     json_mode: bool,
+    include_learn: bool,
 ) -> PrListResult | None:
     http_client = ctx.http_client
     if http_client is None:
@@ -299,6 +306,8 @@ def _pr_list_impl(
 
     effective_state: IssueFilterState = "closed" if state == "closed" else "open"
 
+    exclude_labels = () if include_learn else ("erk-learn",)
+
     filters = PlanFilters(
         labels=labels,
         state=effective_state,
@@ -306,7 +315,7 @@ def _pr_list_impl(
         limit=limit,
         show_prs=True,
         show_runs=True,
-        exclude_labels=(),
+        exclude_labels=exclude_labels,
         creator=creator,
         show_pr_column=False,
         lifecycle_stage=stage,
@@ -362,6 +371,7 @@ def _run_interactive_mode(
     interval: float,
     all_users: bool,
     sort: str,
+    include_learn: bool,
 ) -> None:
     """Run interactive TUI mode.
 
@@ -377,6 +387,7 @@ def _run_interactive_mode(
         interval: Refresh interval in seconds
         all_users: If True, show plans from all users; if False, filter to authenticated user
         sort: Sort order ("plan" or "activity")
+        include_learn: If True, include learn plans; if False, exclude them
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -422,6 +433,7 @@ def _run_interactive_mode(
         http_client=http_client,
     )
     effective_state: IssueFilterState = "closed" if state == "closed" else "open"
+    exclude_labels = () if include_learn else ("erk-learn",)
 
     filters = PlanFilters(
         labels=labels,
@@ -430,7 +442,7 @@ def _run_interactive_mode(
         limit=limit,
         show_prs=prs,
         show_runs=runs,
-        exclude_labels=(),
+        exclude_labels=exclude_labels,
         creator=creator,
         show_pr_column=False,
         lifecycle_stage=stage,
@@ -479,6 +491,7 @@ def pr_list(
     limit: int | None,
     all_users: bool,
     sort: str,
+    include_learn: bool,
     repo_id: GitHubRepoId,
     json_mode: bool,
 ) -> PrListResult | None:
@@ -497,6 +510,7 @@ def pr_list(
         erk pr list --run-state in_progress
         erk pr list --stage impl         # Filter by lifecycle stage
         erk pr list --sort activity      # Sort by recent branch activity
+        erk pr list --include-learn      # Include learn plans
         erk pr list --repo owner/repo    # Remote mode (no local git required)
     """
     return _pr_list_impl(
@@ -508,6 +522,7 @@ def pr_list(
         limit=limit,
         all_users=all_users,
         sort=sort,
+        include_learn=include_learn,
         repo_id=repo_id,
         json_mode=json_mode,
     )
@@ -527,6 +542,7 @@ def dash(
     limit: int | None,
     all_users: bool,
     sort: str,
+    include_learn: bool,
     interval: float,
 ) -> None:
     """Interactive plan dashboard (TUI).
@@ -565,4 +581,5 @@ def dash(
         interval=interval,
         all_users=all_users,
         sort=sort,
+        include_learn=include_learn,
     )
