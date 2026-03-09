@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: `erk pr list` and `erk dash` should show same PR list"
+}
