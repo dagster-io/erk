@@ -62,6 +62,27 @@
       "raw_size_kb": 1044,
       "xml_size_kb": 230,
       "git_branch": "plnd/spike-skills-cli-backend-03-09-0604"
+    },
+    {
+      "session_id": "impl-session",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T11:52:35.946490+00:00",
+      "files": [
+        "impl-impl-session-2d781d93-d2f7-454e-be54-d2bd7633ecb4-part1.xml",
+        "impl-impl-session-2d781d93-d2f7-454e-be54-d2bd7633ecb4-part2.xml",
+        "impl-impl-session-2d781d93-d2f7-454e-be54-d2bd7633ecb4-part3.xml",
+        "impl-impl-session-2d781d93-d2f7-454e-be54-d2bd7633ecb4-part4.xml",
+        "impl-impl-session-2d781d93-d2f7-454e-be54-d2bd7633ecb4-part5.xml",
+        "impl-impl-session-2d781d93-d2f7-454e-be54-d2bd7633ecb4-part6.xml",
+        "impl-impl-session-2d781d93-d2f7-454e-be54-d2bd7633ecb4-part7.xml",
+        "impl-impl-session-2d781d93-d2f7-454e-be54-d2bd7633ecb4-part8.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 18,
+      "raw_size_kb": 1497,
+      "xml_size_kb": 221,
+      "git_branch": "plnd/spike-skills-cli-backend-03-09-0604"
     }
   ]
 }

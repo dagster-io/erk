@@ -1,0 +1,295 @@
+<session>
+  <meta source="agent-a6cb18d" />
+  <meta branch="plnd/spike-skills-cli-backend-03-09-0604" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for all occurrences of `ArtifactSyncConfig(` in the codebase, showing the file paths and context lines around each match. Also search for `bundled_skills` to understand where bundled skills are defined.</user>
+  <assistant>I'll search for these patterns in the codebase. Let me run both searches in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18822" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CVZAhButh8dmEwkmWZZ5uA">
+    <param name="pattern">ArtifactSyncConfig\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18822" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SP67GZXQ6wTenTNy4p78sV">
+    <param name="pattern">bundled_skills</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18822" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CVZAhButh8dmEwkmWZZ5uA">
+&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
+An unexpected parameter `context` was provided&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01SP67GZXQ6wTenTNy4p78sV">
+&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
+An unexpected parameter `context` was provided&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me correct that - I should use `-C` instead of `context`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="392" cache_read_input_tokens="18822" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Y1wJYLC4zkXjz7TLU441AG">
+    <param name="pattern">ArtifactSyncConfig\(</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="392" cache_read_input_tokens="18822" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01L6hrHWBNXEbnWZ5LzwecCG">
+    <param name="pattern">bundled_skills</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="392" cache_read_input_tokens="18822" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y1wJYLC4zkXjz7TLU441AG">
+src/erk/artifacts/sync.py-59-    backend: AgentBackend,
+src/erk/artifacts/sync.py-60-) -&gt; ArtifactSyncConfig:
+/home/runner/work/erk/erk/src/erk/artifacts/sync.py-61-    """Create config with real values for production use."""
+src/erk/artifacts/sync.py:62:    return ArtifactSyncConfig(
+/home/runner/work/erk/erk/src/erk/artifacts/sync.py-63-        package=ErkPackageInfo.from_project_dir(project_dir),
+/home/runner/work/erk/erk/src/erk/artifacts/sync.py-64-        installed_capabilities=load_installed_capabilities(project_dir),
+/home/runner/work/erk/erk/src/erk/artifacts/sync.py-65-        sync_capabilities=True,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/artifact/sync_cmd.py-44-    """
+/home/runner/work/erk/erk/src/erk/cli/commands/artifact/sync_cmd.py-45-    project_dir = Path.cwd()
+/home/runner/work/erk/erk/src/erk/cli/commands/artifact/sync_cmd.py-46-    package = ctx.obj.package_info
+src/erk/cli/commands/artifact/sync_cmd.py:47:    config = ArtifactSyncConfig(
+/home/runner/work/erk/erk/src/erk/cli/commands/artifact/sync_cmd.py-48-        package=package,
+/home/runner/work/erk/erk/src/erk/cli/commands/artifact/sync_cmd.py-49-        installed_capabilities=load_installed_capabilities(project_dir),
+/home/runner/work/erk/erk/src/erk/cli/commands/artifact/sync_cmd.py-50-        sync_capabilities=not dry_run,
+--
+tests/artifacts/test_sync.py-36-def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -&gt; None:
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-37-    """Skips file copying in erk repo but still updates state."""
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-38-    # Config with in_erk_repo=True triggers the erk repo early-return
+tests/artifacts/test_sync.py:39:    config = ArtifactSyncConfig(
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-40-        package=ErkPackageInfo(
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-41-            in_erk_repo=True,
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-42-            bundled_claude_dir=tmp_path,
+--
+tests/artifacts/test_sync.py-58-def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -&gt; None:
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-59-    """Fails when bundled .claude/ directory doesn't exist."""
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-60-    nonexistent = tmp_path / "nonexistent"
+tests/artifacts/test_sync.py:61:    config = ArtifactSyncConfig(
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-62-        package=ErkPackageInfo(
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py-63-            in_erk_repo=False,
+
+... [73 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01L6hrHWBNXEbnWZ5LzwecCG">
+/home/runner/work/erk/erk/tests/core/test_health_checks.py-631-    bundled_commands = bundled_dir / "commands" / "erk"
+/home/runner/work/erk/erk/tests/core/test_health_checks.py-632-    bundled_commands.mkdir(parents=True)
+/home/runner/work/erk/erk/tests/core/test_health_checks.py-633-    (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+tests/core/test_health_checks.py:634:    bundled_skills = bundled_dir / "skills" / "dignified-python"
+tests/core/test_health_checks.py:635:    bundled_skills.mkdir(parents=True)
+tests/core/test_health_checks.py:636:    (bundled_skills / "core.md").write_text("# Core", encoding="utf-8")
+/home/runner/work/erk/erk/tests/core/test_health_checks.py-637-
+/home/runner/work/erk/erk/tests/core/test_health_checks.py-638-    # Create project dir with both artifacts
+/home/runner/work/erk/erk/tests/core/test_health_checks.py-639-    project_dir = tmp_path / "project"
+--
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-43-
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-44-
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-45-@cache
+src/erk/capabilities/skills/bundled.py:46:def bundled_skills() -&gt; dict[str, str]:
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-47-    """Return the bundled skills dict. Cached to avoid re-creation."""
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-48-    return {
+src/erk/capabilities/skills/bundled.py-49-        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
+--
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-60-    }
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-61-
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-62-
+src/erk/capabilities/skills/bundled.py:63:def unbundled_skills() -&gt; frozenset[str]:
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-64-    """Skills in .claude/skills/ that are intentionally not bundled with erk."""
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-65-    return _UNBUNDLED_SKILLS
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-66-
+--
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-71-
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py-72-
+src/erk/capabilities/skills/bundled.py-73-class BundledSkillCapability(SkillCapability):
+src/erk/capabilities/skills/bundled.py:74:    """Concrete SkillCapability for skills registered via bundled_skills() dict."""
+
+... [115 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me get the full definition of the `ArtifactSyncConfig` class to understand its structure:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8548" cache_read_input_tokens="19214" cache_creation="{'ephemeral_5m_input_tokens': 8548, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FynGYe2W8fmozfpb6hw3N4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/sync.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8548" cache_read_input_tokens="19214" cache_creation="{'ephemeral_5m_input_tokens': 8548, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A7M9mTTFubghnQovSER3ur">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8548" cache_read_input_tokens="19214" cache_creation="{'ephemeral_5m_input_tokens': 8548, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FynGYe2W8fmozfpb6hw3N4">
+     1→"""Sync artifacts from erk package to project's .claude/ directory."""
+     2→
+     3→import json
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash, _compute_hook_hash
+     9→from erk.artifacts.models import ArtifactFileState, ArtifactState
+    10→from erk.artifacts.paths import ErkPackageInfo
+    11→from erk.artifacts.state import (
+    12→    load_artifact_state,
+    13→    load_installed_capabilities,
+    14→    save_artifact_state,
+    15→)
+    16→from erk.core.claude_settings import (
+    17→    ERK_EXIT_PLAN_HOOK_COMMAND,
+    18→    ERK_USER_PROMPT_HOOK_COMMAND,
+    19→    add_erk_hooks,
+    20→    get_repo_claude_settings_path,
+    21→    has_exit_plan_hook,
+    22→    has_user_prompt_hook,
+    23→)
+    24→from erk.core.init_utils import REQUIRED_GITIGNORE_ENTRIES, add_gitignore_entry
+    25→from erk_shared.context.types import AgentBackend
+    26→
+    27→
+    28→@dataclass(frozen=True)
+    29→class OrphanedPath:
+    30→    """Filesystem path for an orphaned state.toml key."""
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01A7M9mTTFubghnQovSER3ur">
+     1→"""Bundled skill capabilities — cached factory.
+     2→
+     3→All simple skill capabilities (those that only need a name and description)
+     4→are registered here. The dict is created lazily via a cached function to
+     5→avoid module-import-time allocation.
+     6→
+     7→Skills with custom install/uninstall logic (like learned-docs) are NOT here;
+     8→they have their own capability classes.
+     9→"""
+    10→
+    11→from functools import cache
+    12→
+    13→from erk.core.capabilities.codex_portable import codex_portable_skills
+    14→from erk.core.capabilities.skill_capability import SkillCapability
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→_UNBUNDLED_SKILLS: frozenset[str] = frozenset(
+    18→    {
+    19→        "ci-iteration",
+    20→        "cli-skill-creator",
+    21→        "cmux",
+    22→        "command-creator",
+    23→        "learned-docs",  # has its own capability class (LearnedDocsCapability)
+    24→        "refac-cli-push-down",
+    25→        "refac-mock-to-fake",
+    26→        "refac-module-to-subpackage",
+    27→        "rename-swarm",
+    28→        "session-inspector",
+    29→        "erk-skill-onboarding",
+    30→        "skill-creator",
+
+... [80 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary of my findings:
+
+## Summary of Findings
+
+### ArtifactSyncConfig Occurrences
+
+I found **14 direct instantiations** of `ArtifactSyncConfig(` across the codebase:
+
+#### 1. Production Code (2 occurrences)
+
+**File: `/home/runner/work/erk/erk/src/erk/artifacts/sync.py` (lines 62-67)**
+- Function: `create_artifact_sync_config()`
+- Purpose: Factory function for production use
+- Parameters used:
+  - `package`: `ErkPackageInfo.from_project_dir(project_dir)`
+  - `installed_capabilities`: `load_installed_capabilities(project_dir)`
+  - `sync_capabilities`: `True`
+  - `backend`: passed as parameter
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/commands/artifact/sync_cmd.py` (lines 47-50)**
+- Context: CLI command implementation
+- Parameters used:
+  - `package`: `ctx.obj.package_info`
+  - `installed_capabilities`: `load_installed_capabilities(project_dir)`
+  - `sync_capabilities`: `not dry_run`
+
+#### 2. Test Code (12 occurrences)
+
+All remaining instances are in test files:
+
+- **`/home/runner/work/erk/erk/tests/artifacts/test_sync.py`** (10 occurrences at lines: 39, 61, 95, 128, 272, 461, 509, 600, 637, 674)
+- **`/home/runner/work/erk/erk/tests/artifacts/test_orphan_cleanup.py`** (1 occurrence at line 23)
+
+All test instances follow a consistent pattern with `ErkPackageInfo` and `sync_capabilities=False` to avoid capability install issues during testing.
+
+---
+
+### ArtifactSyncConfig Class Definition
+
+**Location: `/home/runner/work/erk/erk/src/erk/artifacts/sync.py` (lines 46-54)**
+
+```python
+@dataclass(frozen=True)
+class ArtifactSyncConfig:
+    """Configuration for artifact sync - enables testing without mocks."""
+
+    package: ErkPackageInfo
+    installed_capabilities: frozenset[str]
+    sync_capabilities: bool  # False in tests to avoid capability install overwriting test fixtures
+    backend: AgentBackend
+```
+
+**Required Parameters:**
+- `package`: ErkPackageInfo object (required, always provided)
+- `installed_capabilities`: frozenset[str] (required, always provided)
+- `sync_capabilities`: bool (required, always provided - True in production, False in tests)
+- `backend`: AgentBackend (required, only in production code)
+
+---
+
+### Bundled Skills Definition
+
+**Location: `/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py` (lines 45-60)**
+
+The `bundled_skills()` function returns a cached dictionary with 11 bundled skills:
+
+```python
+@cache
+def bundled_skills() -&gt; dict[str, str]:
+    """Return the bundled skills dict. Cached to avoid re-creation."""
+    return {
+        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
+        "fake-driven-testing": "5-layer test architecture with fakes",
+        "erk-diff-analysis": "Code diff analysis for commit messages",
+        "erk-exec": "Erk exec subcommand reference",
+        "erk-planning": "Plan management",
+        "objective": "Objective tracking and management",
+        "gh": "GitHub CLI integration",
+        "gt": "Graphite stacked PR management",
+        "dignified-code-simplifier": "Code simplification review",
+        "pr-operations": "Pull request operations",
+        "pr-feedback-classifier": "PR feedback classification",
+    }
+```
+
+#### Supporting Functions
+
+**`unbundled_skills()`** (line 63-65): Returns a frozenset of 12 skills intentionally NOT bundled with erk (erk-repo-only):
+- ci-iteration, cli-skill-creator, cmux, command-creator, learned-docs, refac-cli-push-down, refac-mock-to-fake, refac-module-to-subpackage, rename-swarm, session-inspector, erk-skill-onboarding, skill-creator
+
+**`is_required_bundled_skill()`** (line 68-70): Returns True if a skill is in the required set:
+- erk-diff-analysis, erk-exec, objective, pr-operations, pr-feedback-classifier
+
+#### Usage Locations
+
+`bundled_skills()` is called in:
+- **`/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py`** (line 103): In `create_bundled_skill_capabilities()` factory
+- **`/home/runner/work/erk/erk/tests/unit/core/capabilities/test_base.py`** (line 65): Capability registry test
+- **`/home/runner/work/erk/erk/tests/unit/core/capabilities/test_skills.py`** (line 62): Skill registration test
+- **`/home/runner/work/erk/erk/tests/unit/core/capabilities/test_registry.py`** (line 94): Registry scope test
+- **`/home/runner/work/erk/erk/tests/unit/artifacts/test_codex_compatibility.py`** (lines 180, 273): Codex compatibility validation</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3051" cache_read_input_tokens="27762" cache_creation="{'ephemeral_5m_input_tokens': 3051, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
