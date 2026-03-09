@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "plan_id": 9099,
+  "sessions": [
+    {
+      "session_id": "8a5d66b9-3ada-41d6-9600-bc7109668346",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T19:48:54.869680+00:00",
+      "files": [
+        "impl-8a5d66b9-3ada-41d6-9600-bc7109668346-8a5d66b9-3ada-41d6-9600-bc7109668346-part1.xml",
+        "impl-8a5d66b9-3ada-41d6-9600-bc7109668346-8a5d66b9-3ada-41d6-9600-bc7109668346-part2.xml",
+        "impl-8a5d66b9-3ada-41d6-9600-bc7109668346-8a5d66b9-3ada-41d6-9600-bc7109668346-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 3,
+      "raw_size_kb": 102,
+      "xml_size_kb": 45,
+      "git_branch": "plnd/fix-setup-erk-action-03-09-1544"
+    }
+  ]
+}
