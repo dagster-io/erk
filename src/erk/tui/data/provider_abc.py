@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
 from erk.tui.sorting.types import BranchActivity
 
 
@@ -47,6 +47,15 @@ class PlanDataProvider(ABC):
 
         Returns:
             List of PlanRowData objects for plans linked to this objective
+        """
+        ...
+
+    @abstractmethod
+    def fetch_runs(self) -> list[RunRowData]:
+        """Fetch workflow runs for the Runs tab.
+
+        Returns:
+            List of RunRowData for display, sorted by created_at descending
         """
         ...
 

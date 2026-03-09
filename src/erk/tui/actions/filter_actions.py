@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from erk.tui.filtering.types import FilterState
 from erk.tui.sorting.types import BranchActivity, SortKey
+from erk.tui.views.types import ViewMode
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp
@@ -21,6 +22,8 @@ class FilterActionsMixin:
 
     def action_start_filter(self: ErkDashApp) -> None:
         """Activate filter mode and focus the input."""
+        if self._view_mode == ViewMode.RUNS:
+            return
         if self._filter_input is None:
             return
         self._filter_state = self._filter_state.activate()
@@ -111,6 +114,8 @@ class FilterActionsMixin:
         Since the creator filter is server-side (GitHub API), toggling
         requires clearing the data cache and re-fetching.
         """
+        if self._view_mode == ViewMode.RUNS:
+            return
         self._show_all_users = not self._show_all_users
         self._data_cache.clear()
 
@@ -126,6 +131,8 @@ class FilterActionsMixin:
 
     def action_toggle_sort(self: ErkDashApp) -> None:
         """Toggle between sort modes."""
+        if self._view_mode == ViewMode.RUNS:
+            return
         self._sort_state = self._sort_state.toggle()
 
         # If switching to activity sort, load activity data in background

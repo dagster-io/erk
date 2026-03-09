@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from erk.tui.data.provider_abc import PlanDataProvider
-from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
 from erk.tui.sorting.types import BranchActivity
 
 
@@ -35,6 +35,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._plans_by_labels = plans_by_labels
         self._fetch_count = 0
         self._fetch_error = fetch_error
+        self._runs: list[RunRowData] = []
 
     def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
         """Return canned plan data.
@@ -68,6 +69,22 @@ class FakePlanDataProvider(PlanDataProvider):
             plans: New list of PlanRowData to return
         """
         self._plans = plans
+
+    def fetch_runs(self) -> list[RunRowData]:
+        """Return canned run data.
+
+        Returns:
+            List of canned RunRowData
+        """
+        return list(self._runs)
+
+    def set_runs(self, runs: list[RunRowData]) -> None:
+        """Update the canned run data.
+
+        Args:
+            runs: New list of RunRowData to return
+        """
+        self._runs = runs
 
     def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
         """Fake branch activity implementation.
@@ -316,4 +333,74 @@ def make_plan_row(
         is_learn_plan=is_learn_plan,
         lifecycle_display=lifecycle_display,
         status_display=status_display,
+    )
+
+
+def make_run_row(
+    run_id: str,
+    *,
+    run_url: str | None = None,
+    status: str = "completed",
+    conclusion: str | None = "success",
+    status_display: str = "✅ Success",
+    workflow_name: str = "plan-implement",
+    pr_number: int | None = None,
+    pr_url: str | None = None,
+    pr_display: str = "-",
+    pr_title: str | None = None,
+    pr_state: str | None = None,
+    title_display: str = "-",
+    branch_display: str = "-",
+    submitted_display: str = "03-09 14:30",
+    created_at: datetime | None = None,
+    checks_display: str = "-",
+    run_id_display: str | None = None,
+) -> RunRowData:
+    """Create a RunRowData for testing with sensible defaults.
+
+    Args:
+        run_id: GitHub Actions workflow run ID
+        run_url: URL to the GitHub Actions run page
+        status: Raw run status
+        conclusion: Raw run conclusion
+        status_display: Pre-formatted status string
+        workflow_name: Workflow command name
+        pr_number: Linked PR number
+        pr_url: URL to the linked PR
+        pr_display: Formatted PR cell content
+        pr_title: PR title
+        pr_state: PR state ("OPEN", "MERGED", "CLOSED", or None)
+        title_display: Truncated title for display
+        branch_display: Branch name for display
+        submitted_display: Formatted submission time
+        created_at: UTC datetime when run was created
+        checks_display: Formatted checks cell content
+        run_id_display: Formatted run ID for display
+
+    Returns:
+        RunRowData populated with test data
+    """
+    if run_url is None:
+        run_url = f"https://github.com/test/repo/actions/runs/{run_id}"
+    effective_created_at = created_at or datetime(2025, 1, 1, tzinfo=UTC)
+    effective_run_id_display = run_id_display if run_id_display is not None else run_id
+
+    return RunRowData(
+        run_id=run_id,
+        run_url=run_url,
+        status=status,
+        conclusion=conclusion,
+        status_display=status_display,
+        workflow_name=workflow_name,
+        pr_number=pr_number,
+        pr_url=pr_url,
+        pr_display=pr_display,
+        pr_title=pr_title,
+        pr_state=pr_state,
+        title_display=title_display,
+        branch_display=branch_display,
+        submitted_display=submitted_display,
+        created_at=effective_created_at,
+        checks_display=checks_display,
+        run_id_display=effective_run_id_display,
     )

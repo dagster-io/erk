@@ -198,7 +198,7 @@ class TestViewSwitching:
 
     @pytest.mark.asyncio
     async def test_right_arrow_wraps_from_last_to_first(self) -> None:
-        """Right arrow wraps from Objectives back to Plans."""
+        """Right arrow wraps from Runs back to Plans."""
         objective_plans = [make_plan_row(10, "Objective A")]
         provider = FakePlanDataProvider(
             plans=[make_plan_row(1, "Plan A")],
@@ -215,16 +215,18 @@ class TestViewSwitching:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
 
-            # Plans -> Learn -> Objectives
+            # Plans -> Learn -> Objectives -> Runs
             await pilot.press("right")
             await pilot.pause()
             await pilot.press("right")
             await pilot.pause()
             await pilot.pause()
+            await pilot.press("right")
+            await pilot.pause()
 
-            assert app._view_mode == ViewMode.OBJECTIVES
+            assert app._view_mode == ViewMode.RUNS
 
-            # Objectives -> Plans (wrap)
+            # Runs -> Plans (wrap)
             await pilot.press("right")
             await pilot.pause()
 
@@ -352,7 +354,7 @@ class TestViewSwitching:
 
     @pytest.mark.asyncio
     async def test_right_arrow_cycles_to_next_view(self) -> None:
-        """Right arrow cycles through views: PLANS → LEARN → OBJECTIVES → PLANS."""
+        """Right arrow cycles through views: PLANS → LEARN → OBJECTIVES → RUNS → PLANS."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(1, "Regular Plan")],
             plans_by_labels={
@@ -380,14 +382,19 @@ class TestViewSwitching:
             await pilot.pause()
             assert app._view_mode == ViewMode.OBJECTIVES
 
-            # Right arrow: OBJECTIVES → PLANS (wrap-around)
+            # Right arrow: OBJECTIVES → RUNS
+            await pilot.press("right")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.RUNS
+
+            # Right arrow: RUNS → PLANS (wrap-around)
             await pilot.press("right")
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
 
     @pytest.mark.asyncio
     async def test_left_arrow_cycles_to_previous_view(self) -> None:
-        """Left arrow cycles through views: PLANS → OBJECTIVES → LEARN → PLANS."""
+        """Left arrow cycles through views: PLANS → RUNS → OBJECTIVES → LEARN → PLANS."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(1, "Regular Plan")],
             plans_by_labels={
@@ -404,7 +411,12 @@ class TestViewSwitching:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
 
-            # Left arrow: PLANS → OBJECTIVES (wrap-around)
+            # Left arrow: PLANS → RUNS (wrap-around)
+            await pilot.press("left")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.RUNS
+
+            # Left arrow: RUNS → OBJECTIVES
             await pilot.press("left")
             await pilot.pause()
             await pilot.pause()

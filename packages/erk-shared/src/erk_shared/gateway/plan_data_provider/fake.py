@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.tui.data.provider_abc import PlanDataProvider
-from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
@@ -54,6 +54,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._check_runs_by_pr: dict[int, list[PRCheckRun]] = {}
         self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
         self._stacks_by_branch: dict[str, list[str]] = {}
+        self._runs: list[RunRowData] = []
 
     @property
     def repo_root(self) -> Path:
@@ -129,6 +130,22 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         # Just track the call - actual dispatch is complex and not needed for UI tests
         pass
+
+    def fetch_runs(self) -> list[RunRowData]:
+        """Return canned run data.
+
+        Returns:
+            List of canned RunRowData
+        """
+        return list(self._runs)
+
+    def set_runs(self, runs: list[RunRowData]) -> None:
+        """Update the canned run data.
+
+        Args:
+            runs: New list of RunRowData to return
+        """
+        self._runs = runs
 
     def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
         """Fake branch activity implementation.

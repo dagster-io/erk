@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from erk.tui.commands.types import CommandContext
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PlanRowData, RunRowData
 from erk.tui.screens.check_runs_screen import CheckRunsScreen
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.screens.launch_screen import LaunchScreen
@@ -37,6 +37,17 @@ class NavigationActionsMixin:
         """
         from erk.tui.filtering.types import FilterMode
 
+        if self._run_pr_filter_active:
+            self._run_pr_filter_active = False
+            cached_runs = self._run_data_cache
+            if cached_runs is not None:
+                self._run_rows = self._get_filtered_run_rows(cached_runs)
+                if self._run_table is not None:
+                    self._run_table.populate(self._run_rows)
+                if self._status_bar is not None:
+                    self._status_bar.set_plan_count(len(self._run_rows), noun="runs")
+            self.notify("Showing all runs", timeout=2)
+            return
         if self._show_all_users:
             self._show_all_users = False
             self._data_cache.clear()
@@ -218,16 +229,34 @@ class NavigationActionsMixin:
 
     def action_cursor_down(self: ErkDashApp) -> None:
         """Move cursor down (vim j key)."""
-        if self._table is not None:
+        if self._view_mode == ViewMode.RUNS:
+            if self._run_table is not None:
+                self._run_table.action_cursor_down()
+        elif self._table is not None:
             self._table.action_cursor_down()
 
     def action_cursor_up(self: ErkDashApp) -> None:
         """Move cursor up (vim k key)."""
-        if self._table is not None:
+        if self._view_mode == ViewMode.RUNS:
+            if self._run_table is not None:
+                self._run_table.action_cursor_up()
+        elif self._table is not None:
             self._table.action_cursor_up()
 
     def action_open_pr(self: ErkDashApp) -> None:
         """Open selected PR in browser, or objective issue in Objectives view."""
+        # Runs tab: open the linked PR
+        run_row = self._get_selected_run_row()
+        if run_row is not None:
+            if run_row.pr_url:
+                self._service.browser.launch(run_row.pr_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened PR #{run_row.pr_number}")
+            else:
+                if self._status_bar is not None:
+                    self._status_bar.set_message("No PR linked to this run")
+            return
+
         row = self._get_selected_row()
         if row is None:
             return
@@ -251,6 +280,15 @@ class NavigationActionsMixin:
 
     def action_open_run(self: ErkDashApp) -> None:
         """Open selected workflow run in browser."""
+        # Runs tab: open the run URL directly
+        run_row = self._get_selected_run_row()
+        if run_row is not None:
+            if run_row.run_url is not None:
+                self._service.browser.launch(run_row.run_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened run {run_row.run_id}")
+            return
+
         row = self._get_selected_row()
         if row is None:
             return
@@ -330,7 +368,23 @@ class NavigationActionsMixin:
                 self._status_bar.set_message(f"Clipboard unavailable. Copy manually: {cmd}")
 
     def _get_selected_row(self: ErkDashApp) -> PlanRowData | None:
-        """Get currently selected row data."""
+        """Get currently selected row data.
+
+        Returns None on the Runs tab since Runs uses RunRowData, not PlanRowData.
+        """
+        if self._view_mode == ViewMode.RUNS:
+            return None
         if self._table is None:
             return None
         return self._table.get_selected_row_data()
+
+    def _get_selected_run_row(self: ErkDashApp) -> RunRowData | None:
+        """Get currently selected run row data.
+
+        Only returns data when on the Runs tab.
+        """
+        if self._view_mode != ViewMode.RUNS:
+            return None
+        if self._run_table is None:
+            return None
+        return self._run_table.get_selected_row_data()

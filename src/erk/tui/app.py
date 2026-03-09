@@ -20,7 +20,7 @@ from erk.tui.actions.navigation import NavigationActionsMixin
 from erk.tui.actions.palette import PaletteActionsMixin
 from erk.tui.commands.provider import MainListCommandProvider
 from erk.tui.data.provider_abc import PlanDataProvider
-from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
 from erk.tui.operations.logic import build_github_url
@@ -36,6 +36,7 @@ from erk.tui.views.types import (
     get_view_config,
 )
 from erk.tui.widgets.plan_table import PlanDataTable
+from erk.tui.widgets.run_table import RunDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
 from erk_shared.gateway.plan_service.abc import PlanService
@@ -80,6 +81,8 @@ class ErkDashApp(
         Binding("1", "switch_view_plans", "Plans", show=False),
         Binding("2", "switch_view_learn", "Learn", show=False),
         Binding("3", "switch_view_objectives", "Objectives", show=False),
+        Binding("4", "switch_view_runs", "Runs", show=False),
+        Binding("f", "toggle_run_pr_filter", "PR Filter", show=False),
         Binding("t", "toggle_stack_filter", "Stack", show=False),
         Binding("a", "toggle_all_users", "All Users", show=False),
         Binding("b", "view_nodes", "Nodes", show=False),
@@ -129,6 +132,7 @@ class ErkDashApp(
         self._refresh_interval = refresh_interval
         self._cmux_integration = cmux_integration
         self._table: PlanDataTable | None = None
+        self._run_table: RunDataTable | None = None
         self._status_bar: StatusBar | None = None
         self._filter_input: Input | None = None
         self._all_rows: list[PlanRowData] = []  # Unfiltered data
@@ -146,8 +150,11 @@ class ErkDashApp(
         self._view_mode: ViewMode = ViewMode.PLANS
         self._view_bar: ViewBar | None = None
         self._data_cache: dict[tuple[str, ...], list[PlanRowData]] = {}
+        self._run_rows: list[RunRowData] = []
+        self._run_data_cache: list[RunRowData] | None = None
         self._show_all_users = False
         self._original_creator: str | None = filters.creator
+        self._run_pr_filter_active = False
 
     def _display_name_for_view(self, mode: ViewMode) -> str:
         """Get the display name for a view mode.
@@ -173,19 +180,22 @@ class ErkDashApp(
                 id="loading-message",
             )
             yield PlanDataTable(self._plan_filters)
+            yield RunDataTable()
         yield Input(id="filter-input", placeholder="Filter...", disabled=True)
         yield StatusBar()
 
     def on_mount(self) -> None:
         """Initialize app after mounting."""
         self._table = self.query_one(PlanDataTable)
+        self._run_table = self.query_one(RunDataTable)
         self._status_bar = self.query_one(StatusBar)
         self._filter_input = self.query_one("#filter-input", Input)
         self._loading_label = self.query_one("#loading-message", Label)
         self._view_bar = self.query_one(ViewBar)
 
-        # Hide table until loaded
+        # Hide tables until loaded
         self._table.display = False
+        self._run_table.display = False
 
         # Start data loading
         self.run_worker(self._load_data(), exclusive=True)
@@ -195,7 +205,7 @@ class ErkDashApp(
             self._start_refresh_timer()
 
     async def _load_data(self) -> None:
-        """Load plan data in background thread."""
+        """Load plan or run data in background thread."""
         # Track fetch timing
         start_time = time.monotonic()
 
@@ -204,6 +214,11 @@ class ErkDashApp(
         # but fetched_mode retains the original value so results are cached
         # under the correct key and stale results don't overwrite the display.
         fetched_mode = self._view_mode
+
+        if fetched_mode == ViewMode.RUNS:
+            await self._load_run_data(start_time, fetched_mode)
+            return
+
         view_config = get_view_config(fetched_mode)
         active_creator = None if self._show_all_users else self._original_creator
         active_filters = PlanFilters(
@@ -246,6 +261,43 @@ class ErkDashApp(
             rows, update_time, duration, fetched_mode=fetched_mode, fetch_timings=fetch_timings
         )
 
+    async def _load_run_data(self, start_time: float, fetched_mode: ViewMode) -> None:
+        """Load workflow run data for the Runs tab.
+
+        Args:
+            start_time: Monotonic timestamp when loading started
+            fetched_mode: The view mode that was active when the fetch started
+        """
+        try:
+            loop = asyncio.get_running_loop()
+            run_rows = await loop.run_in_executor(None, self._provider.fetch_runs)
+        except Exception as e:
+            self.notify(f"Failed to load runs: {e}", severity="error", timeout=5)
+            run_rows = []
+
+        duration = time.monotonic() - start_time
+        update_time = datetime.now().strftime("%H:%M:%S")
+
+        # Cache run data
+        self._run_data_cache = run_rows
+
+        # If user switched tabs during fetch, don't touch the display
+        if fetched_mode != self._view_mode:
+            return
+
+        self._run_rows = self._get_filtered_run_rows(run_rows)
+        self._loading = False
+
+        if self._run_table is not None:
+            self._loading_label.display = False
+            self._run_table.display = True
+            self._run_table.populate(self._run_rows)
+
+        if self._status_bar is not None:
+            self._status_bar.set_plan_count(len(self._run_rows), noun="runs")
+            if update_time is not None:
+                self._status_bar.set_last_update(update_time, duration, fetch_timings=None)
+
     def _update_table(
         self,
         rows: list[PlanRowData],
@@ -284,7 +336,9 @@ class ErkDashApp(
 
         if self._table is not None:
             self._loading_label.display = False
-            self._table.display = True
+            # Only show plan table if not in runs view
+            if self._view_mode != ViewMode.RUNS:
+                self._table.display = True
             self._table.populate(self._rows)
 
         if self._status_bar is not None:
@@ -398,6 +452,7 @@ class ErkDashApp(
         self._stack_filter_label = None
         self._objective_filter_issue = None
         self._objective_filter_label = None
+        self._run_pr_filter_active = False
 
         self._view_mode = mode
         view_config = get_view_config(mode)
@@ -406,7 +461,29 @@ class ErkDashApp(
         if self._view_bar is not None:
             self._view_bar.set_active_view(mode)
 
-        # Reconfigure table columns for the new view
+        # Toggle table visibility based on view mode
+        is_runs = mode == ViewMode.RUNS
+        if self._table is not None:
+            self._table.display = not is_runs and not self._loading
+        if self._run_table is not None:
+            self._run_table.display = is_runs and not self._loading
+
+        if is_runs:
+            # Handle runs view separately
+            cached_runs = self._run_data_cache
+            if cached_runs is not None:
+                self._run_rows = self._get_filtered_run_rows(cached_runs)
+                if self._run_table is not None:
+                    self._loading_label.display = False
+                    self._run_table.display = True
+                    self._run_table.populate(self._run_rows)
+                if self._status_bar is not None:
+                    self._status_bar.set_plan_count(len(self._run_rows), noun="runs")
+            else:
+                self.run_worker(self._load_data(), exclusive=True)
+            return
+
+        # Non-runs view: reconfigure plan table columns
         if self._table is not None:
             self._table.reconfigure(
                 plan_filters=self._plan_filters,
@@ -428,6 +505,37 @@ class ErkDashApp(
             # No cached data - fetch fresh
             self.run_worker(self._load_data(), exclusive=True)
 
+    def _get_filtered_run_rows(self, rows: list[RunRowData]) -> list[RunRowData]:
+        """Apply PR state filter to run rows.
+
+        When filter is active, keeps only rows with open/draft PRs or no PR linked.
+        Hides runs linked to merged or closed PRs.
+
+        Args:
+            rows: Unfiltered run rows
+
+        Returns:
+            Filtered run rows
+        """
+        if not self._run_pr_filter_active:
+            return rows
+        return [r for r in rows if r.pr_state in ("OPEN", None)]
+
+    def action_toggle_run_pr_filter(self) -> None:
+        """Toggle PR state filter on the Runs tab."""
+        if self._view_mode != ViewMode.RUNS:
+            return
+        self._run_pr_filter_active = not self._run_pr_filter_active
+        cached_runs = self._run_data_cache
+        if cached_runs is not None:
+            self._run_rows = self._get_filtered_run_rows(cached_runs)
+            if self._run_table is not None:
+                self._run_table.populate(self._run_rows)
+            if self._status_bar is not None:
+                self._status_bar.set_plan_count(len(self._run_rows), noun="runs")
+        label = "open PRs only" if self._run_pr_filter_active else "all runs"
+        self.notify(f"Showing {label}", timeout=2)
+
     def action_switch_view_plans(self) -> None:
         """Switch to Plans view."""
         self._switch_view(ViewMode.PLANS)
@@ -439,6 +547,10 @@ class ErkDashApp(
     def action_switch_view_objectives(self) -> None:
         """Switch to Objectives view."""
         self._switch_view(ViewMode.OBJECTIVES)
+
+    def action_switch_view_runs(self) -> None:
+        """Switch to Runs view."""
+        self._switch_view(ViewMode.RUNS)
 
     def action_next_view(self) -> None:
         """Cycle to the next view (right arrow)."""
@@ -463,8 +575,10 @@ class ErkDashApp(
 
     @on(Input.Submitted, "#filter-input")
     def on_filter_submitted(self, event: Input.Submitted) -> None:
-        """Handle Enter in filter input - return focus to table."""
-        if self._table is not None:
+        """Handle Enter in filter input - return focus to active table."""
+        if self._view_mode == ViewMode.RUNS and self._run_table is not None:
+            self._run_table.focus()
+        elif self._table is not None:
             self._table.focus()
 
     @on(ViewBar.ViewTabClicked)
@@ -525,6 +639,26 @@ class ErkDashApp(
                 self._service.browser.launch(url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened plan {display}")
+
+    @on(RunDataTable.RunClicked)
+    def on_run_clicked(self, event: RunDataTable.RunClicked) -> None:
+        """Handle click on run-id cell in runs table - open run in browser."""
+        if event.row_index < len(self._run_rows):
+            row = self._run_rows[event.row_index]
+            if row.run_url:
+                self._service.browser.launch(row.run_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened run {row.run_id}")
+
+    @on(RunDataTable.PrClicked)
+    def on_run_pr_clicked(self, event: RunDataTable.PrClicked) -> None:
+        """Handle click on pr cell in runs table - open PR in browser."""
+        if event.row_index < len(self._run_rows):
+            row = self._run_rows[event.row_index]
+            if row.pr_url:
+                self._service.browser.launch(row.pr_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened PR #{row.pr_number}")
 
     @on(PlanDataTable.ObjectiveClicked)
     def on_objective_clicked(self, event: PlanDataTable.ObjectiveClicked) -> None:
