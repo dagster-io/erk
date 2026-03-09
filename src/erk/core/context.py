@@ -18,8 +18,10 @@ import tomlkit
 # Re-export types from erk_shared.context and erk.artifacts.paths
 from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+from erk.core.anthropic_prompt_executor import AnthropicApiPromptExecutor
 from erk.core.codex_prompt_executor import CodexCliPromptExecutor
 from erk.core.completion import RealCompletion
+from erk.core.fallback_prompt_executor import FallbackPromptExecutor
 from erk.core.prompt_executor import ClaudeCliPromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
@@ -113,6 +115,20 @@ def create_prompt_executor(
     if global_config is not None and global_config.interactive_agent.backend == "codex":
         return CodexCliPromptExecutor(console=console)
     return ClaudeCliPromptExecutor(console=console)
+
+
+def select_prompt_executor(
+    *,
+    cli_executor: PromptExecutor,
+    global_config: GlobalConfig | None,
+) -> PromptExecutor:
+    """Wrap cli_executor with FallbackPromptExecutor when API fast path is enabled."""
+    if global_config is not None and global_config.anthropic_api_fast_path:
+        return FallbackPromptExecutor(
+            api_executor=AnthropicApiPromptExecutor(),
+            cli_executor=cli_executor,
+        )
+    return cli_executor
 
 
 def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
@@ -662,17 +678,10 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         global_config=global_config,
         console=console,
     )
-    prompt_executor: PromptExecutor
-    if global_config is not None and global_config.anthropic_api_fast_path:
-        from erk.core.anthropic_prompt_executor import AnthropicApiPromptExecutor
-        from erk.core.fallback_prompt_executor import FallbackPromptExecutor
-
-        prompt_executor = FallbackPromptExecutor(
-            api_executor=AnthropicApiPromptExecutor(),
-            cli_executor=cli_executor,
-        )
-    else:
-        prompt_executor = cli_executor
+    prompt_executor = select_prompt_executor(
+        cli_executor=cli_executor,
+        global_config=global_config,
+    )
 
     # 11. Create claude installation and agent launcher
     from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
