@@ -1,0 +1,892 @@
+<session>
+  <meta branch="agent-dx-cli-scale-install" />
+  <meta model="claude-opus-4-6" />
+  <user>Last login: Mon Mar  9 05:40:55 on ttys035
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-12/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-12/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/.venv (3.13.1)
+-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12
+OK workspace:102
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+➜  erk-slot-12 git:(plnd/O9009-mcp-one-shot-input-s-03-08-1904) npx skills
+
+███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+███████╗█████╔╝ ██║██║     ██║     ███████╗
+╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+███████║██║  ██╗██║███████╗███████╗███████║
+╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
+
+The open agent skills ecosystem
+
+  $ npx skills add &lt;package&gt;        Add a new skill
+  $ npx skills remove               Remove installed skills
+  $ npx skills list                 List installed skills
+  $ npx skills find [query]         Search for skills
+
+  $ npx skills check                Check for updates
+  $ npx skills update               Update all skills
+
+  $ npx skills experimental_install Restore from skills-lock.json
+  $ npx skills init [name]          Create a new skill
+  $ npx skills experimental_sync    Sync skills from node_modules
+
+try: npx skills add vercel-labs/agent-skills
+
+Discover more skills at https://skills.sh/
+
+➜  erk-slot-12 git:(plnd/O9009-mcp-one-shot-input-s-03-08-1904)
+
+interesed in potentially leverageing this (code at /Users/schrockn/code/githubs/vercel-labs/skills) to manage skills that get installed on the user's machines for erk. what woudl that look like?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="13892" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13892}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore both codebases to understand the landscape.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13892" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13892}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01TBaxB8KEnfSnquzKmYR7Ny">
+    <param name="description">Explore vercel-labs skills package</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">Explore the codebase at /Users/schrockn/code/githubs/vercel-labs/skills thoroughly. I need...[truncated 519 chars]...skills to get a complete picture. Be very thorough - read the actual implementation files.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13892" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13892}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01HHUb5Q2c3HcpPr23vC2Spa">
+    <param name="description">Explore erk skill system</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 520 chars]...ource code in src/erk/ related to skills. Check docs/learned/ for any skill documentation.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13892" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13892}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HHUb5Q2c3HcpPr23vC2Spa">
+Now I have enough information to provide a comprehensive report. Let me compile my findings:
+
+## Erk Skill System Report
+
+Based on my exploration of the codebase, here's a comprehensive understanding of how the erk skill system works:
+
+### 1. **Skill Structure**
+
+Skills are located in `.claude/skills/` with the following structure:
+- **Root file**: `SKILL.md` with YAML frontmatter containing:
+  - `name`: skill identifier
+  - `description`: brief description for CLI display
+- **Supporting files**: Markdown files in `references/`, `versions/`, or custom subdirectories
+
+Example structures:
+- **Simple skill** (dignified-python): `SKILL.md` + `cli-patterns.md` + `subprocess.md` + `references/` subdirectory + `versions/` subdirectory
+- **Complex skill** (learned-docs): Just `SKILL.md` + `learned-docs-core.md` (but has custom install logic)
+
+### 2. **Skill Registration &amp; Discovery**
+
+Skills are registered in **two tiers**:
+
+**Tier 1: Bundled Skills** (in `/src/erk/capabilities/skills/bundled.py`):
+- `bundled_skills()` function returns a `dict[str, str]` mapping skill name to description
+- Currently includes 11 bundled skills: dignified-python, fake-driven-testing, erk-diff-analysis, erk-exec, erk-planning, objective, gh, gt, dignified-code-simplifier, pr-operations, pr-feedback-classifier
+- Uses `@cache` decorator to defer dict creation to first use
+- Auto-registered via `BundledSkillCapability` factory class that creates instances for each entry
+- Registered in capabilities registry via `*create_bundled_skill_capabilities()` unpacking
+
+**Tier 2: Unbundled Skills** (also in `bundled.py`):
+
+... [113 lines omitted] ...
+
+- **Installation** is the same for all `SkillCapability` subclasses; `LearnedDocsCapability` is the exception with custom logic
+  </tool_result>
+  <tool_result tool="toolu_01TBaxB8KEnfSnquzKmYR7Ny">
+Perfect! Now I have a comprehensive understanding. Let me create a detailed report:
+
+## Comprehensive Report: Vercel Labs Skills CLI
+
+I've thoroughly explored the `/Users/schrockn/code/githubs/vercel-labs/skills` codebase. Here's everything you need to know:
+
+### 1. What is this project?
+
+**Skills** is an open-source package manager CLI for agent skills - reusable instruction sets that extend coding agent capabilities (Claude Code, Cursor, OpenCode, Cline, Codex, etc.). It allows users to discover, install, manage, and update skills from git repositories and remote endpoints.
+
+**Current version:** 1.4.4  
+**License:** MIT  
+**Main entry point:** `/bin/cli.mjs` (shebang Node.js script)
+
+### 2. How does the skill format work? What does a skill package look like?
+
+**Core skill format:** A skill is a directory containing a `SKILL.md` file with YAML frontmatter:
+
+```markdown
+---
+name: skill-name
+description: What this skill does
+metadata:
+  internal: true  # optional, hides from discovery unless INSTALL_INTERNAL_SKILLS=1
+---
+
+# Skill Title
+
+Instructions for the agent to follow when activated.
+
+
+... [231 lines omitted] ...
+
+**Error handling:**
+- Fallback from symlink to copy mode on Windows or symlink failures
+  </tool_result>
+  <usage input_tokens="2233" cache_creation_input_tokens="27092" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also look at the skill the user currently has open.</assistant>
+  <usage input_tokens="2233" cache_creation_input_tokens="27092" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PmDhdaQMNSChn6MBuVGiXp">
+    <param name="file_path">/Users/schrockn/code/erk/.agents/skills/agent-dx-cli-scale/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="2233" cache_creation_input_tokens="27092" cache_read_input_tokens="0" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 27092, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PmDhdaQMNSChn6MBuVGiXp">
+     1→---
+     2→name: agent-dx-cli-scale
+     3→description: A scoring scale for evaluating how well a CLI is designed for AI agents, based on the "Rewrite Your CLI for AI Agents" principles.
+     4→---
+     5→
+     6→# Agent DX CLI Scale
+     7→
+     8→Use this skill to **evaluate any CLI** against the principles of agent-first design. Score each axis from 0–3, then sum for a total between 0–21.
+     9→
+    10→&gt; Human DX optimizes for discoverability and forgiveness.
+    11→&gt; Agent DX optimizes for predictability and defense-in-depth.
+    12→&gt; — [You Need to Rewrite Your CLI for AI Agents](/posts/rewrite-your-cli-for-ai-agents)
+    13→
+    14→---
+    15→
+    16→## Scoring Axes
+    17→
+    18→### 1. Machine-Readable Output
+    19→
+    20→Can an agent parse the CLI's output without heuristics?
+    21→
+    22→| Score | Criteria                                                                                              |
+    23→| ----- | ----------------------------------------------------------------------------------------------------- |
+    24→| 0     | Human-only output (tables, color codes, prose). No structured format available.                       |
+    25→| 1     | `--output json` or equivalent exists but is incomplete or inconsistent across commands.               |
+    26→| 2     | Consistent JSON output across all commands. Errors also return structured JSON.                       |
+    27→| 3     | NDJSON streaming for paginated results. Structured output is the default in non-TTY (piped) contexts. |
+    28→
+    29→### 2. Raw Payload Input
+    30→
+
+... [90 lines omitted] ...
+
+   102→| 6–10  | **Agent-tolerant** | Agents can use it, but they'll waste tokens, make avoidable errors, and require heavy prompt engineering to compensate.         |
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4630" cache_read_input_tokens="27092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4630}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great question. Here's a clear picture of the landscape and what integration could look like.
+
+## Current State
+
+**Erk today:** Skills are bundled into the erk Python wheel via `pyproject.toml` force-include. Users install them with `erk init capability add &lt;name&gt;`, which copies from the wheel into `.claude/skills/`. State tracked in `.erk/state.toml`. Tight coupling — skills are versioned with erk itself.
+
+**vercel-labs/skills:** An npm-based skill package manager. `npx skills add owner/repo` clones a git repo, discovers `SKILL.md` files, copies them to `.agents/skills/` (canonical), and symlinks into agent-specific dirs (`.claude/skills/`, `.cursor/skills/`, etc.). Tracked via `skills-lock.json`. Registry at skills.sh for discovery.
+
+## Three Integration Models
+
+### Model 1: Publish erk skills as a skills-compatible repo
+
+Lightest touch. You'd structure erk's publishable skills as a standalone repo (or a subtree of the erk repo) that follows the `.agents/skills/{name}/SKILL.md` convention. Users would run:
+
+```bash
+npx skills add erk-team/erk-skills
+```
+
+This gets you:
+- Cross-agent distribution (Cursor, Codex, etc. get them too)
+- Registry listing on skills.sh
+- Lock file for version pinning
+- No custom install infrastructure to maintain
+
+Trade-offs:
+- Decouples skill versions from erk CLI versions (could be good or bad)
+- Loses `erk init` as the install surface — users need npm/npx
+- No custom install logic (e.g., LearnedDocsCapability's content generation)
+
+### Model 2: Use skills CLI as erk's install backend
+
+Replace `erk init capability add` internals with a call to the skills CLI or its library. Erk would still be the user-facing command, but delegation would go to the skills infrastructure.
+
+```bash
+erk init capability add dignified-python
+# internally: npx skills add erk-team/erk-skills --skill dignified-python --agent claude-code -y
+```
+
+This gets you:
+- Erk stays the UX surface
+- Benefits of the skills ecosystem (lock files, updates, cross-agent)
+- Could still bundle "required" skills in the wheel, use skills CLI for optional ones
+
+Trade-offs:
+- Adds Node.js as a runtime dependency
+- Two package managers (uv + npm) in the user's workflow
+- Complexity of wrapping another CLI
+
+### Model 3: Adopt the `.agents/skills/` convention only
+
+Don't depend on the skills CLI at all, but adopt its directory conventions so erk skills are compatible with the ecosystem. Keep erk's Python-native install pipeline but output to `.agents/skills/` with symlinks to `.claude/skills/`.
+
+```
+project/
+├── .agents/skills/dignified-python/SKILL.md    # canonical
+├── .claude/skills/dignified-python -&gt; ../../.agents/skills/dignified-python
+├── skills-lock.json                            # erk writes this too
+```
+
+This gets you:
+- Forward compatibility: `npx skills list` would see erk-installed skills
+- No Node.js dependency
+- Users could mix erk skills + community skills from skills.sh
+- Erk keeps full control of install/update logic
+
+Trade-offs:
+- You maintain install infrastructure
+- No registry presence unless you also publish
+
+## My Take
+
+**Model 3 (convention adoption) + Model 1 (publish) is probably the sweet spot.** Concretely:
+
+1. **Move erk's canonical skill location** from `.claude/skills/` to `.agents/skills/`, symlink back to `.claude/skills/`
+2. **Write a `skills-lock.json`** during `erk init` so the skills CLI can see what's installed
+3. **Publish a `erk-team/erk-skills` repo** (or subtree) so community users can `npx skills add` without needing erk installed
+4. **Keep `erk init capability add`** for erk users — it's a better UX for the erk workflow
+
+This makes erk a good citizen in the skills ecosystem without taking a hard dependency on Node.js. The unbundled/internal skills stay repo-only as they are today.
+
+Want me to dig deeper into any of these models, or start exploring what the concrete migration would look like?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4630" cache_read_input_tokens="27092" output_tokens="1426" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4630, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/model&lt;/command-name&gt;
+            &lt;command-message&gt;model&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Set model to [1mDefault (Opus 4.6 · Most capable for complex work)[22m&lt;/local-command-stdout&gt;</user>
+  <user>  Model 2: Use skills CLI as erk's install backend
+
+  Replace erk init capability add internals with a call to the skills CLI or its library. Erk would still be the user-facing command, but delegation would go to the
+  skills infrastructure.
+
+  erk init capability add dignified-python
+  # internally: npx skills add erk-team/erk-skills --skill dignified-python --agent claude-code -y
+
+  This gets you:
+  - Erk stays the UX surface
+  - Benefits of the skills ecosystem (lock files, updates, cross-agent)
+  - Could still bundle "required" skills in the wheel, use skills CLI for optional ones
+
+  Trade-offs:
+  - Adds Node.js as a runtime dependency
+  - Two package managers (uv + npm) in the user's workflow
+  - Complexity of wrapping another CLI
+
+i am interested in exploring this, as it will result in us not having to maintain the ability to target many tui backends and mtaintain that code. skills.sh could do that</user>
+  <usage input_tokens="3" cache_creation_input_tokens="25119" cache_read_input_tokens="9659" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25119}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good direction. Let me explore the current capability install code deeply before designing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="25119" cache_read_input_tokens="9659" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25119}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014oJr2R2CviygfRxFY4Fta1">
+    <param name="description">Explore erk capability install code</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1096 chars]...e path and key functions/classes. I need precise file paths and line numbers for the plan.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="25119" cache_read_input_tokens="9659" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25119}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01MNG8spa21e1AuajPXpbeBi">
+    <param name="description">Explore erk Node.js/npm usage patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1076 chars]...actual file contents, not just directory listings. Note exact file paths and line numbers.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="25119" cache_read_input_tokens="9659" output_tokens="1145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 25119, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MNG8spa21e1AuajPXpbeBi">
+Perfect! I have gathered comprehensive information to answer all the user's questions. Let me compile the findings:
+
+## Exploration Complete - Key Findings
+
+Based on my thorough investigation of the erk codebase, here are the answers to your seven questions:
+
+### 1. Node.js/npm Dependencies in Erk
+
+**YES - Node.js/npm is used but LIMITED to two specific projects:**
+
+- **erkweb** (`/Users/schrockn/code/erk/erkweb/package.json`) - React/Express web application with Node toolchain
+- **docs-v2** (`/Users/schrockn/code/erk/docs-v2/package.json`) - Astro documentation site with Node toolchain
+
+**CI/CD Integration:**
+- `.github/workflows/docs-v2.yml` sets up Node.js 20 and runs `npm ci` + `npm run build`
+- No npm/npx calls found in Python code (`src/erk/` or `packages/`)
+- No subprocess calls to node/npm/npx anywhere in the Python codebase
+
+**Critical Detail:** Erk itself (the Python CLI tool) has ZERO Node.js dependencies. Node.js is only used for separate web projects (erkweb and docs-v2), which are built independently.
+
+### 2. Subprocess Call Pattern in Erk
+
+**Erk has a standardized 2-layer wrapper pattern:**
+
+**Gateway Layer** (`run_subprocess_with_context`):
+- Location: `packages/erk-shared/src/erk_shared/subprocess_utils.py` (lines 73-169)
+- Used in business logic and gateway implementations
+- Raises `RuntimeError` with rich context (operation description, command, exit code, stderr)
+- Enables testability via dependency injection and dry-run support
+
+
+... [137 lines omitted] ...
+
+**CLI Layer** (`run_with_error_reporting`):
+- Prints user-friendly error messages and raises `SystemExit`
+- Immediate exit on failure
+- `execute_gh_command_with_retry()` (line 203-249) - GitHub API calls with automatic retry on transient errors
+- Intentional LBYL patterns with `check=False` for graceful degradation (documented as acceptable exception to wrapper rule)
+**Error Handling:**
+- Use **discriminated unions** (Success | Error types) when callers branch on failure
+- Use **exceptions** when all callers terminate on failure
+- Gateway-specific error types live in `gateway/{name}/types.py`
+  </tool_result>
+  <tool_result tool="toolu_014oJr2R2CviygfRxFY4Fta1">
+Perfect! I now have a complete deep understanding of the capability/skill installation system. Let me provide a comprehensive report of my findings.
+
+## Deep Exploration Report: Erk Capability/Skill Installation System
+
+Based on my complete read-through of all relevant source files and documentation, here's the comprehensive architecture and flow of how skills and capabilities are installed:
+
+### 1. **Core Architecture Overview**
+
+The system has two parallel structures:
+- **Infrastructure** (`src/erk/core/capabilities/`) - rarely changes, stable base classes
+- **Implementations** (`src/erk/capabilities/`) - frequently changes, specific capability implementations
+
+### 2. **Bundled Skills Registration System**
+
+**File: `/Users/schrockn/code/erk/src/erk/capabilities/skills/bundled.py`**
+
+```
+Lines 45-60: bundled_skills() -&gt; dict[str, str]
+  - Cached function returning dict of skill names to descriptions
+  - Currently defined skills: dignified-python, fake-driven-testing, erk-diff-analysis, 
+    erk-exec, erk-planning, objective, gh, gt, dignified-code-simplifier, pr-operations, 
+    pr-feedback-classifier
+
+Lines 17-42: Two frozensets controlling visibility:
+  - _UNBUNDLED_SKILLS: Skills NOT bundled (e.g., learned-docs has custom class)
+  - _REQUIRED_BUNDLED_SKILLS: Skills requiring special priority
+
+Lines 73-104: BundledSkillCapability class
+  - Generic SkillCapability implementation taking _skill_name and _description params
+  - Delegates to parent SkillCapability.install() for actual copying
+
+... [337 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="2388" cache_creation_input_tokens="16843" cache_read_input_tokens="23630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16843}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding. Let me launch a design agent.</assistant>
+  <usage input_tokens="2388" cache_creation_input_tokens="16843" cache_read_input_tokens="23630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16843}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JnWdg3awkcSvnLLUhfMx26">
+    <param name="description">Design skills CLI integration plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 4937 chars]...backend targeting code while being realistic about trade-offs. Consider phased approaches.</param>
+  </tool_use>
+  <usage input_tokens="2388" cache_creation_input_tokens="16843" cache_read_input_tokens="23630" output_tokens="2504" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16843, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JnWdg3awkcSvnLLUhfMx26">
+Good. I have a thorough understanding of everything now. Let me produce the plan.
+
+---
+
+## Design Plan: Integrating vercel-labs/skills CLI as Erk's Skill Installation Backend
+
+### 1. Situational Analysis
+
+**What erk does today for skills:**
+- Skills are source files in `.claude/skills/` in the erk repo
+- The wheel bundles them via `pyproject.toml` force-include entries (11 skills -&gt; `erk/data/claude/skills/`)
+- `SkillCapability.install()` copies from the wheel's bundled directory to the target project's `.claude/skills/` or `.codex/skills/`
+- `codex_portable.py` maintains a manual mapping of which skills work with which backends
+- `backend_agent_dir()` maps "claude" -&gt; ".claude", "codex" -&gt; ".codex" (only two backends)
+- State tracked in `.erk/state.toml` under `[capabilities]` and `[artifacts]`
+- `sync_artifacts()` does the heavy lifting: copies skills, commands, agents, workflows, actions, hooks, reviews
+
+**What the skills CLI does:**
+- `npx skills add owner/repo --skill name -a claude-code -y` installs from any git repo
+- Creates canonical copy in `.agents/skills/&lt;name&gt;/` with symlinks to each agent's directory (e.g., `.claude/skills/&lt;name&gt;/`)
+- Tracks state in two places: `skills-lock.json` (project-local, committed) and `~/.agents/.skill-lock.json` (global)
+- Supports 40+ agent backends automatically
+- Uses `--copy` or `--symlink` mode (symlink is default)
+- Has `add`, `remove`, `list`, `check`, `update` commands
+- No JSON output mode -- purely TUI/terminal output, exit codes for success/failure
+
+**Format compatibility:** Erk skills already use the exact `SKILL.md` format (YAML frontmatter with `name` and `description`). This is the same format the skills CLI expects. No conversion needed.
+
+### 2. Key Design Decision: Gateway vs. Direct Subprocess
+
+
+... [172 lines omitted] ...
+
+- **Exit code**: 0 = success, non-zero = failure
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01W7pYKXqeL7i9aBKyRWDKf6">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8955" cache_read_input_tokens="40473" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8955, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W7pYKXqeL7i9aBKyRWDKf6">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1336" cache_read_input_tokens="49428" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1336}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good research from the agents. Before writing the plan, a few key decisions:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1336" cache_read_input_tokens="49428" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1336}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01SW4z1nm5rZHimAqSmVwCPS">
+    <param name="questions">[{'question': 'Where should erk skills be published for the skills CLI to install from? Th...[truncated 1700 chars]...add works for erk skills before committing to the architecture."}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1336" cache_read_input_tokens="49428" output_tokens="951" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SW4z1nm5rZHimAqSmVwCPS">
+User has answered your questions: "Where should erk skills be published for the skills CLI to install from? The skills CLI installs from git repos."="The erk repo itself (Recommended)", "When npx/Node.js is not available on the user's machine, should erk fall back to the current wheel-copy install?"="No, require Node.js", "What scope do you want for this initial plan?"="Spike / proof-of-concept only". You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="50764" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear direction. Let me verify one thing about the skills CLI before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="50764" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016EEy2sqY3EFWA2AhteUXDX">
+    <param name="description">Check skills CLI local install behavior</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">In the codebase at /Users/schrockn/code/githubs/vercel-labs/skills, I need to understand:
+...[truncated 660 chars]...n files - particularly the add command, the source parsing, and the skill discovery logic.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="50764" output_tokens="757" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 964, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016EEy2sqY3EFWA2AhteUXDX">
+Perfect! Now I have all the information I need. Let me provide a comprehensive answer to the user's questions.
+
+## Summary of Findings
+
+Based on my analysis of the skills CLI source code, here are the answers to your questions:
+
+### 1. How does installing from a local path work? (Clone vs Direct Read)
+
+**Direct read, no cloning.** When you run `npx skills add /path/to/local/repo`, the CLI:
+
+- Parses the path using `parseSource()` in `source-parser.ts` (lines 151-159) which detects absolute paths, relative paths (`./`, `../`), and current directory references (`.` or `..`)
+- Returns a `ParsedSource` object with `type: 'local'` and the resolved path stored in `localPath`
+- In `add.ts` (lines 939-948), when `parsed.type === 'local'`:
+  - Validates that the path exists with `existsSync(parsed.localPath!)`
+  - Uses the directory **directly** as `skillsDir` without any cloning
+  - No temporary directory or git operations are involved
+
+**Key code excerpt from add.ts:**
+```typescript
+if (parsed.type === 'local') {
+  // Use local path directly, no cloning needed
+  spinner.start('Validating local path...');
+  if (!existsSync(parsed.localPath!)) {
+    spinner.stop(pc.red('Path not found'));
+    p.outro(pc.red(`Local path does not exist: ${parsed.localPath}`));
+    process.exit(1);
+  }
+  skillsDir = parsed.localPath!;
+  spinner.stop('Local path validated');
+}
+
+... [108 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="2612" cache_read_input_tokens="51728" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2612}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have all the information I need. Let me write the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2612" cache_read_input_tokens="51728" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2612}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01SDfuNgkKb67MXVffedTYK7">
+    <param name="file_path">/Users/schrockn/.claude/plans/nifty-coalescing-hummingbird.md</param>
+    <param name="content"># Spike: Validate vercel-labs/skills CLI as erk skill install backend
+
+## Context
+
+Erk cur...[truncated 5085 chars]...ate.toml` to `skills-lock.json`
+- Removing `backend` parameter from capability interfaces
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2612" cache_read_input_tokens="51728" output_tokens="2429" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2612, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SDfuNgkKb67MXVffedTYK7">
+File created successfully at: /Users/schrockn/.claude/plans/nifty-coalescing-hummingbird.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01M8YAe3rzgjWn9JV3EAXNem">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2455" cache_read_input_tokens="54340" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2455, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M8YAe3rzgjWn9JV3EAXNem">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012YLPoBbFJVDNkozt1sHzWW">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run npx skills commands for manual validation'}, {'tool': 'Bash', 'prompt': 'create temporary test directories'}]</param>
+    <param name="plan"># Spike: Validate vercel-labs/skills CLI as erk skill install backend
+
+## Context
+
+Erk cur...[truncated 5085 chars]...ate.toml` to `skills-lock.json`
+- Removing `backend` parameter from capability interfaces
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="56795" output_tokens="96" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012YLPoBbFJVDNkozt1sHzWW">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/nifty-coalescing-hummingbird.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Spike: Validate vercel-labs/skills CLI as erk skill install backend
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LbgX3AWGG4ey9mNvS46pW8">
+    <param name="file_path">/Users/schrockn/.claude/plans/nifty-coalescing-hummingbird.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="762" cache_read_input_tokens="57533" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 762, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LbgX3AWGG4ey9mNvS46pW8">
+     1→# Spike: Validate vercel-labs/skills CLI as erk skill install backend
+     2→
+     3→## Context
+     4→
+     5→Erk currently maintains its own multi-backend skill installation code (`codex_portable.py`, `backend_agent_dir()`, wheel bundling via pyproject.toml). The vercel-labs/skills CLI (`npx skills`) already handles 40+ agent backends, uses the same SKILL.md format erk uses, and discovers skills in `.claude/skills/*/SKILL.md` — erk's exact layout.
+     6→
+     7→This spike validates that the skills CLI can discover and install erk skills from the erk repo before committing to a full architectural integration. No changes to `erk init` or the capability system.
+     8→
+     9→**Decision context:**
+    10→- Source: erk repo itself (not a separate repo)
+    11→- Fallback: None — Node.js will be a hard requirement (no wheel-copy fallback)
+    12→- Scope: POC only — gateway + manual validation
+    13→
+    14→## Step 1: Manual validation
+    15→
+    16→Run these commands from a scratch directory to validate the skills CLI works with erk's layout:
+    17→
+    18→```bash
+    19→# 1. List available skills from local erk repo
+    20→npx skills add /Users/schrockn/code/erk --list
+    21→
+    22→# 2. Install a single skill to a test project
+    23→mkdir /tmp/erk-skills-spike &amp;&amp; cd /tmp/erk-skills-spike
+    24→git init
+    25→npx skills add /Users/schrockn/code/erk --skill dignified-python -a claude-code -y
+    26→
+    27→# 3. Verify the installed skill matches source
+    28→diff -r .claude/skills/dignified-python /Users/schrockn/code/erk/.claude/skills/dignified-python
+    29→
+    30→# 4. Test GitHub remote path (validates distribution story)
+
+... [99 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Spike: Validate vercel-labs/skills CLI as erk skill install backend
+
+**Context:** Erk maintains its own multi-backend skill installation code. The vercel-labs/skills CLI already handles 40+ agent backends and uses the same SKILL.md format. This spike validates the integration before committing to the architecture.
+
+**Decisions:** Source from erk repo itself, require Node.js (no fallback), POC scope only.
+
+**4 steps:**
+1. **Manual validation** — run `npx skills add` commands against local erk repo to verify discovery, install, and lock file behavior
+2. **Create SkillsCli gateway** — 3-file pattern (abc/real/fake) in `packages/erk-shared/src/erk_shared/gateway/skills_cli/`
+3. **Wire into ErkContext** — add `skills_cli` field, production + test wiring
+4. **Write basic tests** — fake records calls, real checks npx availability, integration test installs a skill
+
+**Out of scope:** `erk init` integration, removing `codex_portable.py`/backend abstraction, state migration.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2617" cache_read_input_tokens="58295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2617}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01AU4roN1TpYkBH1gPuvRQDE">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 283 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2617" cache_read_input_tokens="58295" output_tokens="449" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2617, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AU4roN1TpYkBH1gPuvRQDE">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_015WKSdPL8WHtKvFXq43H36w">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="60912" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015WKSdPL8WHtKvFXq43H36w">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `spike-skills-cli-backend`
+
+**Plan summary:** Validates that the vercel-labs/skills CLI can discover and install erk skills from the erk repo, as a precursor to replacing erk's multi-backend skill installation code. Creates a minimal SkillsCli gateway following erk's 3-file pattern and wires it into ErkContext.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2295" cache_read_input_tokens="61409" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2295}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019cERvu2jNHhnVQXDt7YAkk">
+    <param name="command">erk exec plan-save --format json --session-id="aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84" --bra...[truncated 204 chars]... a minimal SkillsCli gateway following erk's 3-file pattern and wires it into ErkContext."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2295" cache_read_input_tokens="61409" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019cERvu2jNHhnVQXDt7YAkk">
+{"success": true, "plan_number": 9036, "plan_url": "https://github.com/dagster-io/erk/pull/9036", "title": "[erk-plan] Spike: Validate vercel-labs/skills CLI as erk skill install backend", "branch_name": "plnd/spike-skills-cli-backend-03-09-0604", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84/plan_snapshots/000001-1583c699"}
+  </tool_result>
+  <assistant>Plan saved successfully. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="63704" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 593}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0167GpZ4MCM8Kd75cynHFxeb">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="63704" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 593, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0167GpZ4MCM8Kd75cynHFxeb">
+SESSION_ID=aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/aa4bbe5a-207e-42dd-9f97-5fa06f5b0a84.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Csq8g36PwZDw7Ughk4Heck">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 94 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 9036 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine access</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="64297" output_tokens="210" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 197, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
