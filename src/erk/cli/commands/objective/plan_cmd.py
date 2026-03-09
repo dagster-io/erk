@@ -14,15 +14,15 @@ from erk.cli.commands.objective.check_cmd import (
     validate_objective,
 )
 from erk.cli.commands.objective_helpers import get_objective_for_branch
-from erk.cli.commands.one_shot import _get_remote_github
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.github_parsing import parse_issue_identifier
+from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.core.branch_slug_generator import generate_branch_slug
-from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+from erk.core.context import ErkContext, NoRepoSentinel
 from erk_shared.context.types import InteractiveAgentConfig
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -104,6 +104,7 @@ def _resolve_next(
     ctx: ErkContext,
     *,
     issue_ref: str | None,
+    target_repo: str | None,
 ) -> ResolvedNext:
     """Resolve the next unblocked pending node for an objective.
 
@@ -113,35 +114,37 @@ def _resolve_next(
     Args:
         ctx: ErkContext with git, issues, and plan_store
         issue_ref: Optional issue reference (number or URL)
+        target_repo: Optional "owner/repo" for remote operation
 
     Raises:
         click.ClickException: If objective cannot be resolved or has no pending nodes
     """
-    if isinstance(ctx.repo, NoRepoSentinel):
-        raise click.ClickException("Not in a git repository")
-    assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
-    repo: RepoContext = ctx.repo
+    has_local_repo = not isinstance(ctx.repo, NoRepoSentinel)
 
     if issue_ref is not None:
         issue_number = parse_issue_identifier(issue_ref)
-    else:
-        branch = ctx.git.branch.get_current_branch(repo.root)
+    elif has_local_repo:
+        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        branch = ctx.git.branch.get_current_branch(ctx.repo.root)
         if branch is None:
             raise click.ClickException("Not on a branch")
-        objective_id = get_objective_for_branch(ctx, repo.root, branch)
+        objective_id = get_objective_for_branch(ctx, ctx.repo.root, branch)
         if objective_id is None:
             raise click.ClickException(
                 f"Branch '{branch}' is not linked to an objective. Provide ISSUE_REF explicitly."
             )
         issue_number = objective_id
+    else:
+        raise click.ClickException(
+            "ISSUE_REF is required when using --repo without a local git repository"
+        )
 
-    if repo.github is None:
-        raise click.ClickException("Repository has no GitHub remote configured")
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
 
     result = validate_objective(
-        _get_remote_github(ctx),
-        owner=repo.github.owner,
-        repo=repo.github.repo,
+        get_remote_github(ctx),
+        owner=owner,
+        repo=repo_name,
         issue_number=issue_number,
     )
     if isinstance(result, ObjectiveValidationError):
@@ -187,6 +190,7 @@ def _resolve_all_unblocked(
     ctx: ErkContext,
     *,
     issue_ref: str | None,
+    target_repo: str | None,
 ) -> ResolvedAllUnblocked:
     """Resolve all unblocked pending nodes for an objective.
 
@@ -196,35 +200,37 @@ def _resolve_all_unblocked(
     Args:
         ctx: ErkContext with git, issues, and plan_store
         issue_ref: Optional issue reference (number or URL)
+        target_repo: Optional "owner/repo" for remote operation
 
     Raises:
         click.ClickException: If objective cannot be resolved or has no pending unblocked nodes
     """
-    if isinstance(ctx.repo, NoRepoSentinel):
-        raise click.ClickException("Not in a git repository")
-    assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
-    repo: RepoContext = ctx.repo
+    has_local_repo = not isinstance(ctx.repo, NoRepoSentinel)
 
     if issue_ref is not None:
         issue_number = parse_issue_identifier(issue_ref)
-    else:
-        branch = ctx.git.branch.get_current_branch(repo.root)
+    elif has_local_repo:
+        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+        branch = ctx.git.branch.get_current_branch(ctx.repo.root)
         if branch is None:
             raise click.ClickException("Not on a branch")
-        objective_id = get_objective_for_branch(ctx, repo.root, branch)
+        objective_id = get_objective_for_branch(ctx, ctx.repo.root, branch)
         if objective_id is None:
             raise click.ClickException(
                 f"Branch '{branch}' is not linked to an objective. Provide ISSUE_REF explicitly."
             )
         issue_number = objective_id
+    else:
+        raise click.ClickException(
+            "ISSUE_REF is required when using --repo without a local git repository"
+        )
 
-    if repo.github is None:
-        raise click.ClickException("Repository has no GitHub remote configured")
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
 
     result = validate_objective(
-        _get_remote_github(ctx),
-        owner=repo.github.owner,
-        repo=repo.github.repo,
+        get_remote_github(ctx),
+        owner=owner,
+        repo=repo_name,
         issue_number=issue_number,
     )
     if isinstance(result, ObjectiveValidationError):
@@ -262,17 +268,13 @@ def _handle_all_unblocked(
     dry_run: bool,
     dispatch_ref: str | None,
     ref_current: bool,
+    target_repo: str | None,
 ) -> None:
     """Dispatch one-shot workflows for all unblocked pending nodes."""
-    resolved = _resolve_all_unblocked(ctx, issue_ref=issue_ref)
+    has_local_repo = not isinstance(ctx.repo, NoRepoSentinel)
+    resolved = _resolve_all_unblocked(ctx, issue_ref=issue_ref, target_repo=target_repo)
 
-    # Validate repo context for owner/repo
-    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
-        raise click.ClickException(
-            "Cannot determine target repository.\n"
-            "Run from inside a git repository with a GitHub remote."
-        )
-    owner, repo_name = ctx.repo.github.owner, ctx.repo.github.repo
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
 
     # Normalize model name
     model = normalize_model_name(model)
@@ -288,8 +290,20 @@ def _handle_all_unblocked(
     dispatched_count = 0
     successful_dispatches: list[tuple[str, int]] = []
 
-    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
-    remote = _get_remote_github(ctx)
+    # Resolve dispatch ref — local enrichments when available, fallback to default branch
+    if ref_current and not has_local_repo:
+        raise click.UsageError("--ref-current requires a local git repository")
+
+    ref: str | None
+    if has_local_repo:
+        ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+    else:
+        ref = dispatch_ref
+
+    remote = get_remote_github(ctx)
+
+    if ref is None:
+        ref = remote.get_default_branch_name(owner=owner, repo=repo_name)
 
     for node, phase_name in resolved.nodes:
         prompt = (
@@ -331,7 +345,7 @@ def _handle_all_unblocked(
     if successful_dispatches:
         user_output("Updating objective roadmap...")
         _batch_update_objective_nodes(
-            _get_remote_github(ctx),
+            get_remote_github(ctx),
             owner=owner,
             repo=repo_name,
             issue_number=resolved.issue_number,
@@ -567,6 +581,7 @@ def _mark_node_planning(
     default=False,
     help="Dispatch workflow from the current branch",
 )
+@repo_option
 @click.pass_obj
 def plan_objective(
     ctx: ErkContext,
@@ -581,6 +596,7 @@ def plan_objective(
     all_unblocked: bool,
     dispatch_ref: str | None,
     ref_current: bool,
+    target_repo: str | None,
 ) -> None:
     """Create a plan from an objective node.
 
@@ -619,6 +635,10 @@ def plan_objective(
     if use_next and node_id is not None:
         raise click.ClickException("--next and --node are mutually exclusive")
 
+    # --repo requires --one-shot or --all-unblocked
+    if target_repo is not None and not one_shot_mode and not all_unblocked:
+        raise click.ClickException("--repo requires --one-shot or --all-unblocked")
+
     if issue_ref is None and not use_next and not all_unblocked:
         raise click.ClickException("ISSUE_REF is required unless --next or --all-unblocked is used")
 
@@ -641,6 +661,7 @@ def plan_objective(
             dry_run=dry_run,
             dispatch_ref=dispatch_ref,
             ref_current=ref_current,
+            target_repo=target_repo,
         )
     elif one_shot_mode:
         _handle_one_shot(
@@ -652,6 +673,7 @@ def plan_objective(
             use_next=use_next,
             dispatch_ref=dispatch_ref,
             ref_current=ref_current,
+            target_repo=target_repo,
         )
     else:
         _handle_interactive(
@@ -673,7 +695,7 @@ def _handle_interactive(
     known_node_id: str | None = None
 
     if use_next:
-        resolved = _resolve_next(ctx, issue_ref=issue_ref)
+        resolved = _resolve_next(ctx, issue_ref=issue_ref, target_repo=None)
         user_output(f"Next node: {resolved.node.id}: {resolved.node.description}")
         known_issue_number = resolved.issue_number
         known_node_id = resolved.node.id
@@ -687,7 +709,7 @@ def _handle_interactive(
         assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
         assert ctx.repo.github is not None
         _mark_node_planning(
-            _get_remote_github(ctx),
+            get_remote_github(ctx),
             owner=ctx.repo.github.owner,
             repo=ctx.repo.github.repo,
             issue_number=known_issue_number,
@@ -733,31 +755,27 @@ def _handle_one_shot(
     use_next: bool,
     dispatch_ref: str | None,
     ref_current: bool,
+    target_repo: str | None,
 ) -> None:
     """Dispatch objective node via one-shot workflow."""
+    has_local_repo = not isinstance(ctx.repo, NoRepoSentinel)
+
     if use_next:
-        resolved = _resolve_next(ctx, issue_ref=issue_ref)
+        resolved = _resolve_next(ctx, issue_ref=issue_ref, target_repo=target_repo)
         issue_number = resolved.issue_number
         target_node = resolved.node
         phase_name = resolved.phase_name
     else:
         assert issue_ref is not None  # type narrowing: validated in plan_objective
-        # Parse issue identifier
         issue_number = parse_issue_identifier(issue_ref)
 
-        # Validate repo context
-        if isinstance(ctx.repo, NoRepoSentinel):
-            raise click.ClickException("Not in a git repository")
-        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
-        repo: RepoContext = ctx.repo
-        if repo.github is None:
-            raise click.ClickException("Repository has no GitHub remote configured")
+        owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
 
         # Validate objective
         result = validate_objective(
-            _get_remote_github(ctx),
-            owner=repo.github.owner,
-            repo=repo.github.repo,
+            get_remote_github(ctx),
+            owner=owner,
+            repo=repo_name,
             issue_number=issue_number,
         )
 
@@ -794,19 +812,25 @@ def _handle_one_shot(
                 )
             target_node, phase_name = found
 
-    # Validate repo context for owner/repo
-    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
-        raise click.ClickException(
-            "Cannot determine target repository.\n"
-            "Run from inside a git repository with a GitHub remote."
-        )
-    owner, repo_name = ctx.repo.github.owner, ctx.repo.github.repo
+    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
 
     # Normalize model name
     model = normalize_model_name(model)
 
-    # Resolve dispatch ref
-    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+    # Resolve dispatch ref — local enrichments when available, fallback to default branch
+    if ref_current and not has_local_repo:
+        raise click.UsageError("--ref-current requires a local git repository")
+
+    ref: str | None
+    if has_local_repo:
+        ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+    else:
+        ref = dispatch_ref
+
+    remote = get_remote_github(ctx)
+
+    if ref is None:
+        ref = remote.get_default_branch_name(owner=owner, repo=repo_name)
 
     # Build prompt
     prompt = (
@@ -833,8 +857,6 @@ def _handle_one_shot(
         slug=slug,
     )
 
-    remote = _get_remote_github(ctx)
-
     dispatch_result = dispatch_one_shot_remote(
         remote=remote,
         owner=owner,
@@ -848,7 +870,6 @@ def _handle_one_shot(
 
     # After successful dispatch, immediately mark node as "planning" with draft PR
     if dispatch_result is not None:
-        # repo is guaranteed to be RepoContext here (validated above)
         user_output("Updating objective roadmap...")
         _update_objective_node(
             remote,
