@@ -1,0 +1,711 @@
+<session>
+  <meta branch="plnd/harden-oneshot-invalid-pro-03-09-1547" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9100&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9100` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9100.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11295" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11295, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01GWdU3y7cV5aWJrjHzVScSV">
+    <param name="command">erk exec setup-impl --issue 9100</param>
+    <param name="description">Set up implementation for plan #9100</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11295" cache_read_input_tokens="17332" cache_creation="{'ephemeral_5m_input_tokens': 11295, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GWdU3y7cV5aWJrjHzVScSV">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--harden-oneshot-invalid-pro-03-09-1547", "plan_number": 9100, "plan_url": "https://github.com/dagster-io/erk/pull/9100", "branch": "plnd/harden-oneshot-invalid-pro-03-09-1547", "plan_title": "[erk-plan] Harden one-shot-plan to reject invalid prompts", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9100, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/harden-oneshot-invalid-pro-03-09-1547', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="28627" cache_creation="{'ephemeral_5m_input_tokens': 354, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QKyjWhJGGXAZSpthSZE7Sb">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--harden-oneshot-invalid-pro-03-09-1547/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="28627" cache_creation="{'ephemeral_5m_input_tokens': 354, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QKyjWhJGGXAZSpthSZE7Sb">
+     1→# Harden one-shot-plan to reject invalid prompts
+     2→
+     3→## Context
+     4→
+     5→When a garbled/invalid prompt is committed to `.erk/impl-context/prompt.md`, Claude correctly identifies it as nonsensical but exits 0 without writing any output files. The workflow then fails at "Verify plan outputs exist" with a confusing error. Claude should explicitly reject invalid prompts by writing a rejection result.
+     6→
+     7→## Changes
+     8→
+     9→### 1. `.claude/commands/erk/system/one-shot-plan.md`
+    10→
+    11→Add a **Step 1.5: Validate the Prompt** between reading the prompt and loading context:
+    12→
+    13→- After reading `prompt.md`, assess whether it contains a valid, actionable task description
+    14→- If the prompt is clearly invalid (garbled terminal output, empty, nonsensical, not a task description), skip to a rejection flow:
+    15→  1. Write `.erk/impl-context/plan-result.json` with `{"rejected": true, "reason": "&lt;brief explanation&gt;"}`
+    16→  2. Stop — do not proceed to exploration, planning, or saving
+    17→
+    18→### 2. `.github/workflows/one-shot.yml`
+    19→
+    20→Modify the **"Verify plan outputs exist"** step (lines 160-171) to check for rejection before checking for plan.md:
+    21→
+    22→```yaml
+    23→- name: Verify plan outputs exist
+    24→  if: steps.plan.outputs.plan_success == 'true'
+    25→  id: verify
+    26→  run: |
+    27→    if [ -f .erk/impl-context/plan-result.json ]; then
+    28→      REJECTED=$(jq -r '.rejected // false' .erk/impl-context/plan-result.json)
+    29→      if [ "$REJECTED" = "true" ]; then
+    30→        REASON=$(jq -r '.reason // "No reason provided"' .erk/impl-context/plan-result.json)
+
+... [53 lines omitted] ...
+
+    31→        echo "::warning::Plan rejected: $REASON"
+    37→      echo "::error::Planning succeeded but .erk/impl-context/plan.md not found"
+    41→      echo "::error::Planning succeeded but .erk/impl-context/plan-result.json not found"
+  </tool_result>
+  <assistant>Good, I understand the plan. Let me now read the files that need to be modified.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1394" cache_read_input_tokens="28981" cache_creation="{'ephemeral_5m_input_tokens': 1394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Vpbc5HJr3dkMcj6VhRMHJy">
+    <param name="todos">[{'content': 'Add prompt validation step to one-shot-plan.md command', 'status': 'pending'...[truncated 531 chars]...ttier, manual review)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1394" cache_read_input_tokens="28981" cache_creation="{'ephemeral_5m_input_tokens': 1394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Vpbc5HJr3dkMcj6VhRMHJy">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ULh5kM2faQKnqzqAm6j6No">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="30375" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01THq2EBubXqzUqwndRt9UkV">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="30375" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ULh5kM2faQKnqzqAm6j6No">
+     1→---
+     2→description: Create a plan from a one-shot prompt, save it as a draft PR, and write results to .erk/impl-context/ (used by CI workflow)
+     3→---
+     4→
+     5→# One-Shot Plan
+     6→
+     7→You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a draft PR.
+     8→
+     9→**Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
+    10→
+    11→## Step 1: Read the Prompt
+    12→
+    13→Read `.erk/impl-context/prompt.md` to understand what you need to do.
+    14→
+    15→## Step 2: Read Objective Context (if present)
+    16→
+    17→If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
+    18→
+    19→## Step 3: Load Context
+    20→
+    21→Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
+    22→
+    23→## Step 4: Explore the Codebase
+    24→
+    25→Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
+    26→
+    27→- Search for files, patterns, and existing implementations related to the prompt
+    28→- Identify which files need to be created or modified
+    29→- Understand existing architecture and patterns
+    30→- Find relevant tests and test patterns
+
+... [72 lines omitted] ...
+
+    60→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+    78→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+  </tool_result>
+  <tool_result tool="toolu_01THq2EBubXqzUqwndRt9UkV">
+     1→name: one-shot
+     2→run-name: "one-shot${{ inputs.plan_only &amp;&amp; '(plan)' || '' }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      prompt:
+     8→        description: "Task description for autonomous execution"
+     9→        required: true
+    10→        type: string
+    11→      branch_name:
+    12→        description: "Branch to work on (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "Draft PR number (created by CLI command)"
+    17→        required: true
+    18→        type: string
+    19→      submitted_by:
+    20→        description: "GitHub username of the person who submitted"
+    21→        required: true
+    22→        type: string
+    23→      distinct_id:
+    24→        description: "Unique identifier for run discovery (base36)"
+    25→        required: true
+    26→        type: string
+    27→      model_name:
+    28→        description: "Claude model to use for execution"
+    29→        required: false
+    30→        type: string
+
+... [254 lines omitted] ...
+
+    82→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings &gt; Secrets and variables &gt; Actions"
+   164→            echo "::error::Planning succeeded but .erk/impl-context/plan.md not found"
+   168→            echo "::error::Planning succeeded but .erk/impl-context/plan-result.json not found"
+   192→        continue-on-error: true
+   241→          if git ls-files --error-unmatch .erk/impl-context/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   244→          if git ls-files --error-unmatch .worker-impl/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   258→      - name: Fail workflow if planning failed
+   261→          echo "One-shot planning failed with exit code: ${{ steps.plan.outputs.exit_code }}"
+  </tool_result>
+  <assistant>Good, I have both files. Let me signal started and begin implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5895" cache_read_input_tokens="30669" cache_creation="{'ephemeral_5m_input_tokens': 5895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01JKmoSRFPJJDgzQJrqQYoYe">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5895" cache_read_input_tokens="30669" cache_creation="{'ephemeral_5m_input_tokens': 5895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JKmoSRFPJJDgzQJrqQYoYe">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01PNiFcWoCv5nZiZBi7gmugj">
+    <param name="todos">[{'content': 'Add prompt validation step to one-shot-plan.md command', 'status': 'in_progr...[truncated 535 chars]...ttier, manual review)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="36564" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PNiFcWoCv5nZiZBi7gmugj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me implement the changes. Starting with Phase 1: adding the prompt validation step to the one-shot-plan command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="36751" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016TzVM8DFqKuei2rJHQRNRn">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md</param>
+    <param name="old_string">## Step 1: Read the Prompt
+
+Read `.erk/impl-context/prompt.md` to understand what you need to do.
+
+## Step 2: Read Objective Context (if present)</param>
+    <param name="new_string">## Step 1: Read the Prompt
+
+Read `.erk/impl-context/prompt.md` to understand what you need...[truncated 658 chars]...f the prompt is valid, continue to Step 2.
+
+## Step 2: Read Objective Context (if present)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="36751" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="411" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016TzVM8DFqKuei2rJHQRNRn">
+The file /home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01SpK1YwWG3FL4LhijFo2Bxt">
+    <param name="todos">[{'content': 'Add prompt validation step to one-shot-plan.md command', 'status': 'complete...[truncated 537 chars]...ttier, manual review)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="458" cache_read_input_tokens="37027" cache_creation="{'ephemeral_5m_input_tokens': 458, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SpK1YwWG3FL4LhijFo2Bxt">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Phase 2: Modify the "Verify plan outputs exist" step in the workflow to check for rejection first.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="37485" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01BoNe3oUvKUNKC11YvHqwrT">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Verify plan outputs exist
+        if: steps.plan.outputs.plan_success == 'tr...[truncated 374 chars]...cho "Plan outputs found: .erk/impl-context/plan.md and .erk/impl-context/plan-result.json"</param>
+    <param name="new_string">      - name: Verify plan outputs exist
+        if: steps.plan.outputs.plan_success == 'tr...[truncated 826 chars]...  fi
+          echo "Plan outputs found"
+          echo "rejected=false" &gt;&gt; $GITHUB_OUTPUT</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="37485" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BoNe3oUvKUNKC11YvHqwrT">
+The file /home/runner/work/erk/erk/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_018Z2psy6hWufboiKt2pyrhi">
+    <param name="todos">[{'content': 'Add prompt validation step to one-shot-plan.md command', 'status': 'complete...[truncated 539 chars]...ttier, manual review)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="657" cache_read_input_tokens="37761" cache_creation="{'ephemeral_5m_input_tokens': 657, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Z2psy6hWufboiKt2pyrhi">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Phase 3: Gate all downstream steps on `steps.verify.outputs.rejected != 'true'`. I need to update the conditions on the "Read plan result", "Validate plan format", "Register one-shot plan", "Update objective roadmap node", and "Commit plan to branch" steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="38418" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0186WQsshJFW85fpCW9ms25h">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Read plan result
+        id: read_result
+        if: steps.plan.outputs.plan_success == 'true'</param>
+    <param name="new_string">      - name: Read plan result
+        id: read_result
+        if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.verify.outputs.rejected != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="38418" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0186WQsshJFW85fpCW9ms25h">
+The file /home/runner/work/erk/erk/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01489353Rm3t4CApaKsjvNyR">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Validate plan format
+        if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.read_result.outputs.plan_id != ''</param>
+    <param name="new_string">      - name: Validate plan format
+        if: &gt;
+          steps.plan.outputs.plan_success...[truncated 6 chars]...eps.verify.outputs.rejected != 'true'
+          &amp;&amp; steps.read_result.outputs.plan_id != ''</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="38694" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01489353Rm3t4CApaKsjvNyR">
+The file /home/runner/work/erk/erk/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016V41WBekHEEeoFGC1KsLQH">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Register one-shot plan with issue and PR
+        if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.read_result.outputs.plan_id != ''</param>
+    <param name="new_string">      - name: Register one-shot plan with issue and PR
+        if: &gt;
+          steps.plan....[truncated 26 chars]...eps.verify.outputs.rejected != 'true'
+          &amp;&amp; steps.read_result.outputs.plan_id != ''</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="38988" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016V41WBekHEEeoFGC1KsLQH">
+The file /home/runner/work/erk/erk/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KejzZmNM7Asy1mE161ge8J">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Update objective roadmap node
+        if: &gt;
+          steps.plan.outputs.pla...[truncated 38 chars]....plan_id != ''
+          &amp;&amp; inputs.objective_issue != ''
+          &amp;&amp; inputs.node_id != ''</param>
+    <param name="new_string">      - name: Update objective roadmap node
+        if: &gt;
+          steps.plan.outputs.pla...[truncated 91 chars]....plan_id != ''
+          &amp;&amp; inputs.objective_issue != ''
+          &amp;&amp; inputs.node_id != ''</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="39238" cache_creation="{'ephemeral_5m_input_tokens': 260, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KejzZmNM7Asy1mE161ge8J">
+The file /home/runner/work/erk/erk/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Q9CBiYznaP2X5YxPLu6bYj">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Commit plan to branch (plan-only mode)
+        if: &gt;
+          inputs.plan_o...[truncated 1 chars]...s.plan.outputs.plan_success == 'true'
+          &amp;&amp; steps.read_result.outputs.plan_id != ''</param>
+    <param name="new_string">      - name: Commit plan to branch (plan-only mode)
+        if: &gt;
+          inputs.plan_o...[truncated 54 chars]...eps.verify.outputs.rejected != 'true'
+          &amp;&amp; steps.read_result.outputs.plan_id != ''</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="39498" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q9CBiYznaP2X5YxPLu6bYj">
+The file /home/runner/work/erk/erk/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_012fbYEVxR5a9r2imMA4mhrD">
+    <param name="todos">[{'content': 'Add prompt validation step to one-shot-plan.md command', 'status': 'complete...[truncated 541 chars]...ttier, manual review)', 'status': 'pending', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="39795" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012fbYEVxR5a9r2imMA4mhrD">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Phase 4: Add the step to close the plan issue on rejection. I need to add it after the verify step and before the "Read plan result" step.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="40277" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XpufAxUSEU3azKeaQ8Ax4s">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Read plan result
+        id: read_result
+        if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.verify.outputs.rejected != 'true'</param>
+    <param name="new_string">      - name: Update plan on rejection
+        if: steps.verify.outputs.rejected == 'true'...[truncated 408 chars]...  if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.verify.outputs.rejected != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="40277" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XpufAxUSEU3azKeaQ8Ax4s">
+The file /home/runner/work/erk/erk/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01DsZkDn6ZKhUvEnmyXKyRsw">
+    <param name="todos">[{'content': 'Add prompt validation step to one-shot-plan.md command', 'status': 'complete...[truncated 543 chars]...r, manual review)', 'status': 'in_progress', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="40553" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DsZkDn6ZKhUvEnmyXKyRsw">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me verify the final state of both files and run prettier.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="40973" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014nwuoftKKR8brZh9PSMfQG">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="40973" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Nfwh1ZmLoK6Ta7LubDuaPi">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/one-shot.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="40973" cache_creation="{'ephemeral_5m_input_tokens': 276, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014nwuoftKKR8brZh9PSMfQG">
+     1→---
+     2→description: Create a plan from a one-shot prompt, save it as a draft PR, and write results to .erk/impl-context/ (used by CI workflow)
+     3→---
+     4→
+     5→# One-Shot Plan
+     6→
+     7→You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a draft PR.
+     8→
+     9→**Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
+    10→
+    11→## Step 1: Read the Prompt
+    12→
+    13→Read `.erk/impl-context/prompt.md` to understand what you need to do.
+    14→
+    15→## Step 1.5: Validate the Prompt
+    16→
+    17→Assess whether the prompt contains a valid, actionable task description. A valid prompt describes a specific software engineering task (feature, bug fix, refactor, etc.) that can be planned and implemented.
+    18→
+    19→If the prompt is clearly invalid — garbled terminal output, empty/whitespace-only, nonsensical text, not a task description, or otherwise not actionable — skip directly to the rejection flow:
+    20→
+    21→1. Write `.erk/impl-context/plan-result.json` with:
+    22→   ```json
+    23→   {"rejected": true, "reason": "&lt;brief explanation of why the prompt is invalid&gt;"}
+    24→   ```
+    25→2. **Stop immediately** — do not proceed to exploration, planning, or saving.
+    26→
+    27→If the prompt is valid, continue to Step 2.
+    28→
+    29→## Step 2: Read Objective Context (if present)
+    30→
+
+... [86 lines omitted] ...
+
+    74→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+    92→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+  </tool_result>
+  <tool_result tool="toolu_01Nfwh1ZmLoK6Ta7LubDuaPi">
+     1→name: one-shot
+     2→run-name: "one-shot${{ inputs.plan_only &amp;&amp; '(plan)' || '' }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      prompt:
+     8→        description: "Task description for autonomous execution"
+     9→        required: true
+    10→        type: string
+    11→      branch_name:
+    12→        description: "Branch to work on (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "Draft PR number (created by CLI command)"
+    17→        required: true
+    18→        type: string
+    19→      submitted_by:
+    20→        description: "GitHub username of the person who submitted"
+    21→        required: true
+    22→        type: string
+    23→      distinct_id:
+    24→        description: "Unique identifier for run discovery (base36)"
+    25→        required: true
+    26→        type: string
+    27→      model_name:
+    28→        description: "Claude model to use for execution"
+    29→        required: false
+    30→        type: string
+
+... [282 lines omitted] ...
+
+    82→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings &gt; Secrets and variables &gt; Actions"
+   168→              echo "::warning::Plan rejected: $REASON"
+   174→            echo "::error::Planning succeeded but .erk/impl-context/plan.md not found"
+   178→            echo "::error::Planning succeeded but .erk/impl-context/plan-result.json not found"
+   218→        continue-on-error: true
+   269→          if git ls-files --error-unmatch .erk/impl-context/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   272→          if git ls-files --error-unmatch .worker-impl/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   286→      - name: Fail workflow if planning failed
+   289→          echo "One-shot planning failed with exit code: ${{ steps.plan.outputs.exit_code }}"
+  </tool_result>
+  <assistant>Both files look correct. Now let me run prettier on the workflow YAML.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6577" cache_read_input_tokens="41249" cache_creation="{'ephemeral_5m_input_tokens': 6577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017TY3HnLMvRQtgZrSpCbvi3">
+    <param name="description">Run prettier check on YAML</param>
+    <param name="prompt">Run `prettier --check .github/workflows/one-shot.yml` and report results. If there are formatting issues, report what they are.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6577" cache_read_input_tokens="41249" cache_creation="{'ephemeral_5m_input_tokens': 6577, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017TY3HnLMvRQtgZrSpCbvi3">
+prettier passed: All matched files use Prettier code style!
+
+The `.github/workflows/one-shot.yml` file is properly formatted and requires no changes.
+agentId: a3740ad (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Prettier check passed. Let me also verify the logic manually by tracing through the rejection flow:
+
+1. **Claude reads prompt** → finds it garbled/invalid
+2. **Claude writes** `plan-result.json` with `{"rejected": true, "reason": "..."}`
+3. **Claude stops** — no `plan.md` written
+4. **Verify step** → finds `plan-result.json`, reads `rejected=true`, outputs warning, sets `rejected=true`, exits 0
+5. **Update plan on rejection** → if `plan_issue_number` is set, closes the plan issue with the reason
+6. **All downstream steps** (Read plan result, Validate plan format, Register, Update objective, Commit plan) → all gated on `rejected != 'true'`, so they skip
+7. **Fail workflow step** → `plan_success == 'true'` so this doesn't fire
+8. **Implement job** → `plan_id` output is empty (read_result was skipped), so implement job doesn't run
+
+The logic is sound. The workflow exits cleanly without failing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="47826" cache_creation="{'ephemeral_5m_input_tokens': 207, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Gr87Vz7bTswVsBnpGmA7z8">
+    <param name="todos">[{'content': 'Add prompt validation step to one-shot-plan.md command', 'status': 'complete...[truncated 541 chars]...ier, manual review)', 'status': 'completed', 'activeForm': 'Running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="47826" cache_creation="{'ephemeral_5m_input_tokens': 207, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gr87Vz7bTswVsBnpGmA7z8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me clean up the impl context and submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="528" cache_read_input_tokens="48033" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018CBRrBZ8rwo9zwiW5TUybD">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="528" cache_read_input_tokens="48033" cache_creation="{'ephemeral_5m_input_tokens': 528, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018CBRrBZ8rwo9zwiW5TUybD">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9100
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0189x4n5oAYGX7EKUKtouHiH">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="48561" cache_creation="{'ephemeral_5m_input_tokens': 147, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+</session>
