@@ -128,12 +128,12 @@ def test_up_at_top_of_stack() -> None:
 
 
 def test_up_child_has_no_worktree() -> None:
-    """Test up command when child branch exists but has no worktree - should auto-create."""
+    """Test up command when child branch exists but has no worktree - should allocate a slot."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
 
-        # Only feature-1 has a worktree, feature-2 does not (will be auto-created)
+        # Only feature-1 has a worktree, feature-2 does not (will get a slot)
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
             current_branches={env.cwd: "feature-1"},  # Simulate being in feature-1 worktree
@@ -168,12 +168,16 @@ def test_up_child_has_no_worktree() -> None:
 
         result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
 
-        # Should succeed and create worktree
+        # Should succeed and allocate a slot
         assert result.exit_code == 0
 
-        # Verify worktree was created for feature-2
-        # added_worktrees is a list of (path, branch) tuples
+        # Verify worktree was created via slot allocation for feature-2
         assert any(branch == "feature-2" for _path, branch in git_ops.added_worktrees)
+
+        # Verify pool state was updated with slot assignment
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert any(a.branch_name == "feature-2" for a in state.assignments)
 
 
 def test_up_graphite_not_enabled() -> None:
