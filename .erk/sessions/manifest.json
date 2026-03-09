@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "plan_id": 9065,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T15:34:01.810670+00:00",
+      "files": [
+        "impl--019a49ba-ee69-425a-8b0a-0a562c351ce9-part1.xml",
+        "impl--019a49ba-ee69-425a-8b0a-0a562c351ce9-part2.xml",
+        "impl--019a49ba-ee69-425a-8b0a-0a562c351ce9-part3.xml",
+        "impl--019a49ba-ee69-425a-8b0a-0a562c351ce9-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 3,
+      "raw_size_kb": 61,
+      "xml_size_kb": 33,
+      "git_branch": "plnd/example-pr-of-minor-update-03-09-1527"
+    }
+  ]
+}
