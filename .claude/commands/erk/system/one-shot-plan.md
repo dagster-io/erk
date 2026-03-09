@@ -94,3 +94,4 @@ Use the `plan_number` and `title` extracted from the Step 7 output.
 - The plan must be detailed enough for another agent to implement without additional context
 - Keep the plan focused on the prompt
 - Never modify CHANGELOG.md
+- If after exploring the codebase you determine you cannot produce an actionable plan from the prompt, write `.erk/impl-context/plan-result.json` with `{"rejected": true, "reason": "<explanation>"}` and stop — do not proceed to saving
