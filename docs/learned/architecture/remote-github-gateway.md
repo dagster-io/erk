@@ -43,11 +43,34 @@ REST API-based GitHub operations without a local git or `gh` CLI dependency. Ena
 
 ### Pull Requests
 
-| Method                                                             | Returns | Description    |
-| ------------------------------------------------------------------ | ------- | -------------- |
-| `create_pull_request(owner, repo, head, base, title, body, draft)` | `int`   | PR number      |
-| `update_pull_request_body(owner, repo, pr_number, body)`           | `None`  | Update PR body |
-| `close_pr(owner, repo, number)`                                    | `None`  | Close a PR     |
+| Method                                                             | Returns                            | Description    |
+| ------------------------------------------------------------------ | ---------------------------------- | -------------- |
+| `get_pr(owner, repo, number)`                                      | `RemotePRInfo \| RemotePRNotFound` | Fetch PR       |
+| `create_pull_request(owner, repo, head, base, title, body, draft)` | `int`                              | PR number      |
+| `update_pull_request_body(owner, repo, pr_number, body)`           | `None`                             | Update PR body |
+| `close_pr(owner, repo, number)`                                    | `None`                             | Close a PR     |
+
+#### `get_pr()` Return Types
+
+Defined in `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`:
+
+**`RemotePRInfo`** — PR fields from the GitHub REST API pulls endpoint:
+
+| Field           | Type        | Description                         |
+| --------------- | ----------- | ----------------------------------- |
+| `number`        | `int`       | PR number                           |
+| `title`         | `str`       | PR title                            |
+| `state`         | `str`       | `"OPEN"`, `"CLOSED"`, or `"MERGED"` |
+| `url`           | `str`       | Full PR URL                         |
+| `head_ref_name` | `str`       | Head branch name                    |
+| `base_ref_name` | `str`       | Base branch name                    |
+| `owner`         | `str`       | Repository owner                    |
+| `repo`          | `str`       | Repository name                     |
+| `labels`        | `list[str]` | Label names                         |
+
+**`RemotePRNotFound`** — sentinel with `pr_number: int` field.
+
+State mapping: GitHub API `open` / `closed` / `merged` maps to `OPEN` / `CLOSED` / `MERGED`.
 
 ### Issues
 
@@ -75,11 +98,14 @@ See `RealRemoteGitHub` and `FakeRemoteGitHub` in `packages/erk-shared/src/erk_sh
 
 `src/erk/cli/repo_resolution.py` provides:
 
-| Function                               | Purpose                                      |
-| -------------------------------------- | -------------------------------------------- |
-| `resolve_owner_repo(ctx, target_repo)` | Parse "owner/repo" or extract from local git |
-| `get_remote_github(ctx)`               | Get or construct RemoteGitHub instance       |
-| `repo_option`                          | Click `--repo` option decorator              |
+| Function                               | Purpose                                        |
+| -------------------------------------- | ---------------------------------------------- |
+| `resolve_owner_repo(ctx, target_repo)` | Parse "owner/repo" or extract from local git   |
+| `get_remote_github(ctx)`               | Get or construct RemoteGitHub instance         |
+| `repo_option`                          | Click `--repo` option decorator                |
+| `resolved_repo_option`                 | Decorator resolving --repo into `GitHubRepoId` |
+
+See [Repo Resolution Pattern](../cli/repo-resolution-pattern.md) for detailed documentation.
 
 ## Remote vs Local Mode
 

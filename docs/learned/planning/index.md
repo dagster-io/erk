@@ -11,6 +11,7 @@
 - **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plans, implementing PR lookup from plans, modifying branch creation or naming conventions
 - **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
 - **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan as complete, creating a consolidation plan from multiple PRs
+- **[consolidate-learn-plans-workflow.md](consolidate-learn-plans-workflow.md)** — working with consolidate-learn-plans workflow, modifying the learn plan consolidation pipeline, adding new dispatch-based workflows via RemoteGitHub
 - **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
 - **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
 - **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context

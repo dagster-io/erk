@@ -29,7 +29,7 @@ When Graphite is not enabled and no rebase is in progress, requires `--target` f
 
 ### 3. In-Progress Rebase Path
 
-Detects an existing rebase in progress via `is_rebase_in_progress()`. Displays "Rebase in progress" message and falls through to confirmation.
+Detects an existing rebase in progress via `is_rebase_in_progress()`. When a rebase is in progress, the Graphite tracking validation is **bypassed** — the branch may be in a detached HEAD state during rebase, making tracking checks invalid. The code at `rebase_cmd.py:97` checks `is_rebase_in_progress()` first and skips the `is_branch_tracked()` assertion. Displays "Rebase in progress" message and falls through to confirmation.
 
 ## Confirmation Pattern
 

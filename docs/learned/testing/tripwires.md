@@ -96,6 +96,10 @@ Rules triggered by matching actions in code.
 
 **running pytest, ty, ruff, prettier, make, or gt directly via Bash** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Use Task(subagent_type='devrun') instead. A UserPromptSubmit hook enforces this on every turn.
 
+**setting up a full git repo fixture to test --repo flag** → Read [Remote Paths Testing](remote-paths-testing.md) first. Remote-mode tests should use NoRepoSentinel() — no local repo needed. See remote-paths-testing.md.
+
+**testing a --repo command by mocking subprocess calls to gh CLI** → Read [Remote Paths Testing](remote-paths-testing.md) first. Remote mode uses RemoteGitHub (REST API), not gh CLI. Use FakeRemoteGitHub in tests. See remote-paths-testing.md.
+
 **testing a pipeline step by running the full pipeline** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Test steps in isolation by calling the step function directly. Only test_run_pipeline.py exercises the runner. Step tests pre-populate state as if prior steps succeeded.
 
 **testing admin commands that read GitHub settings** → Read [Admin Command Testing Patterns](admin-command-testing.md) first. Use FakeGitHubAdmin with workflow_permissions dict to configure read state. Do not mock subprocess calls.

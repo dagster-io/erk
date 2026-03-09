@@ -90,7 +90,11 @@ Incremental dispatch uses the same plumbing pattern with an additional Graphite 
 
 ### Checked-Out Branch Handling
 
-When the target branch is currently checked out in a worktree, `update_local_ref` is used instead of `create_branch(force=True)` because git refuses to force-update a checked-out branch. The incremental dispatch script uses an LBYL check:
+When the target branch is currently checked out in a worktree, `update_local_ref` alone is insufficient — it updates the ref but leaves the index and working tree stale.
+
+**For general-purpose branch sync**, use `sync_branch_to_sha()` from `dispatch_helpers.py`. It handles the checked-out case by using `git reset --hard` for atomic ref + index + working tree sync, and refuses if the worktree has uncommitted changes. See [sync_branch_to_sha Pattern](sync-branch-to-sha-pattern.md).
+
+**For incremental dispatch** (plumbing commits to checked-out branches), the script uses a different approach — `update_local_ref()` followed by `git checkout HEAD --` on committed files to sync the index:
 
 <!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, incremental_dispatch (branch sync section) -->
 
@@ -101,6 +105,8 @@ After a plumbing commit to a checked-out branch, the index may contain stale sta
 <!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, incremental_dispatch (index sync section) -->
 
 See the index sync section of `incremental_dispatch()` in `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`. After committing, if the branch is checked out it runs `git checkout HEAD --` on the committed `impl_context_paths` via `run_subprocess_with_context()` to bring the index back in sync.
+
+**Note:** `update_local_ref` is still appropriate for non-checked-out branches (e.g., trunk sync in `ensure_trunk_synced`).
 
 ### Implementation
 
@@ -138,3 +144,4 @@ Tests in `tests/unit/cli/commands/exec/scripts/test_plan_save.py` verify that pl
 ## Related Topics
 
 - [Planned PR Backend](../planning/planned-pr-backend.md) - Backend that uses these patterns
+- [sync_branch_to_sha Pattern](sync-branch-to-sha-pattern.md) - Safe branch sync for checked-out branches
