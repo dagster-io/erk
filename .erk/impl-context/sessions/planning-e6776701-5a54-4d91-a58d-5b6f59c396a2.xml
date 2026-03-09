@@ -1,0 +1,614 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>(erk) ➜  erk git:(master) erk config list
+Global configuration:
+  erk_root=/Users/schrockn/.erk
+  use_graphite=true
+  github_planning=true
+  live_dangerously=true
+  show_hidden_commands=true
+  prompt_learn_on_land=true
+  cmux_integration=true
+
+Interactive Claude configuration:
+  interactive_claude.backend=claude
+  interactive_claude.verbose=true
+  interactive_claude.permission_mode=edits
+  interactive_claude.dangerous=true
+  interactive_claude.allow_dangerous=true
+
+
+Repository configuration:
+  trunk-branch=master
+  pool.max_slots=64 (local)
+
+why isn't the anthropic fast path config setting in here</user>
+  <usage input_tokens="3" cache_creation_input_tokens="14487" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14487}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore how the config system works and how the `anthropic_api_fast_path` setting was added.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14487" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14487}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01XG9qEut8vhFMptG9WPfiCV">
+    <param name="description">Explore config system and fast path</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 522 chars]...horough - trace the full path from GlobalConfig fields to what `erk config list` displays.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14487" cache_read_input_tokens="9738" output_tokens="372" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14487, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XG9qEut8vhFMptG9WPfiCV">
+Excellent! Now I have a complete understanding. Let me provide a comprehensive analysis.
+
+## Analysis: How `erk config list` Works and Why `anthropic_api_fast_path` Doesn't Appear
+
+### 1. How `erk config list` Works
+
+The `config list` command follows a **schema-driven design**:
+
+**Flow:**
+1. **Entry point**: `src/erk/cli/commands/config.py`, line 195-242, `config_list()` function
+2. **Schema discovery**: Calls `get_global_config_sections()` from `packages/erk-shared/src/erk_shared/config/schema.py`
+3. **Field enumeration**: `get_global_config_sections()` returns tuples of `(heading, fields)` by iterating through `_GLOBAL_CONFIG_SECTIONS` registry
+4. **Display logic**: For each field, the command reads values from `ctx.global_config` and formats them for display
+
+**Key principle** (from schema-driven-config.md): The schema is the **single source of truth**. CLI commands don't maintain separate field lists—they introspect the Pydantic schema at runtime.
+
+### 2. How Fields Get Registered and Displayed
+
+**Section Registry** (`schema.py`, line 286-290):
+```python
+_GLOBAL_CONFIG_SECTIONS: list[tuple[type[BaseModel], str | None, str]] = [
+    (GlobalConfigSchema, None, "Global configuration"),
+    (InteractiveClaudeConfigSchema, "interactive_agent", "Interactive Claude configuration"),
+]
+```
+
+**Display pipeline**:
+- `get_global_config_sections()` iterates through `_GLOBAL_CONFIG_SECTIONS`
+- For each schema class, it calls `iter_displayable_fields(schema)`
+- `iter_displayable_fields()` filters out fields with `internal=True` in their `json_schema_extra`
+
+... [111 lines omitted] ...
+
+Commit 83cd5b3dc added `anthropic_api_fast_path` to `GlobalConfig` (the runtime dataclass) and updated the load/save logic in `RealErkInstallation`, but **failed to add it to `GlobalConfigSchema`** (the Pydantic schema). The schema is the source of truth for the CLI display and discovery system, so the field remains invisible to `erk config list/keys/get/set`.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2512" cache_read_input_tokens="24225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2512}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The field was added to `GlobalConfig` (the runtime dataclass) and the load/save logic, but **not to `GlobalConfigSchema`** (the Pydantic schema that drives `erk config list`). The schema is the single source of truth for CLI discovery.
+
+Let me read the specific files to write a precise fix plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2512" cache_read_input_tokens="24225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2512}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KaxqYt8Pm8YXE2BxBqoqQ2">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/config/schema.py</param>
+    <param name="offset">79</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2512" cache_read_input_tokens="24225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2512}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KaxqYt8Pm8YXE2BxBqoqQ2">
+    79→class GlobalConfigSchema(BaseModel):
+    80→    """Schema for global configuration keys.
+    81→
+    82→    Fields are defined in display order for `erk config list/keys`.
+    83→    Each field's json_schema_extra contains metadata for display and parsing.
+    84→    """
+    85→
+    86→    erk_root: str = Field(
+    87→        description="Root directory for erk data (~/.erk by default)",
+    88→        json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "erk_root"},
+    89→    )
+    90→    use_graphite: bool = Field(
+    91→        description="Enable Graphite integration for stack management",
+    92→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "use_graphite"},
+    93→    )
+    94→    github_planning: bool = Field(
+    95→        description="Enable GitHub issues integration for planning",
+    96→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "github_planning"},
+    97→    )
+    98→    live_dangerously: bool = Field(
+    99→        description="Default to dangerous mode (skip permission prompts). Use --safe to override.",
+   100→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "live_dangerously"},
+   101→    )
+   102→    show_hidden_commands: bool = Field(
+   103→        description="Show deprecated/hidden commands in help output",
+   104→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "show_hidden_commands"},
+   105→    )
+   106→    prompt_learn_on_land: bool = Field(
+   107→        description="Prompt about running learn before landing plan PRs",
+   108→        json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "prompt_learn_on_land"},
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JFrDSNMd1ziNnkatiMCCT6">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/architecture/globalconfig-field-addition.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2512" cache_read_input_tokens="24225" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2512, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JFrDSNMd1ziNnkatiMCCT6">
+     1→---
+     2→title: GlobalConfig Field Addition Checklist
+     3→read_when:
+     4→  - "adding a new field to GlobalConfig"
+     5→  - "extending erk's global configuration"
+     6→  - "adding a user-configurable setting to ~/.erk/config.toml"
+     7→tripwires:
+     8→  - action: "adding a field to GlobalConfig without updating the test factory"
+     9→    warning: "Update GlobalConfig.test() factory method with the new parameter. Tests using GlobalConfig.test() will silently use Python's default value, which may not match production behavior."
+    10→---
+    11→
+    12→# GlobalConfig Field Addition Checklist
+    13→
+    14→`GlobalConfig` is a frozen dataclass in `packages/erk-shared/src/erk_shared/context/types.py` that holds user-wide erk settings loaded from `~/.erk/config.toml`.
+    15→
+    16→## Checklist
+    17→
+    18→### 1. Add Field to Frozen Dataclass
+    19→
+    20→```python
+    21→# In packages/erk-shared/src/erk_shared/context/types.py
+    22→@dataclass(frozen=True)
+    23→class GlobalConfig:
+    24→    # ... existing fields ...
+    25→    new_field: bool = False  # Provide sensible default
+    26→```
+    27→
+    28→Fields with defaults go after fields without defaults (Python dataclass rule).
+    29→
+    30→### 2. Update `.test()` Factory
+
+... [41 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1986" cache_read_input_tokens="26737" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1986}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear picture. The field is missing from `GlobalConfigSchema`, and notably the checklist doc itself doesn't mention adding to the schema — which is how this was missed. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1986" cache_read_input_tokens="26737" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1986}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01TpXZAsytitNRtYaFu4Quij">
+    <param name="file_path">/Users/schrockn/.claude/plans/wild-discovering-mitten.md</param>
+    <param name="content"># Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema
+
+## Context
+
+Commit 83cd5b3dc a...[truncated 1306 chars]...ld be listed
+- Run `erk config get anthropic_api_fast_path` — should return current value
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1986" cache_read_input_tokens="26737" output_tokens="632" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1986, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TpXZAsytitNRtYaFu4Quij">
+File created successfully at: /Users/schrockn/.claude/plans/wild-discovering-mitten.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01TrQpmm8VBEceq1hMZ63xab">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="28723" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 669, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TrQpmm8VBEceq1hMZ63xab">
+
+  </tool_result>
+  <assistant>
+
+Two changes needed:
+
+1. **Schema gap**: `anthropic_api_fast_path` exists in the runtime `GlobalConfig` dataclass and load/save logic, but is missing from `GlobalConfigSchema` — the Pydantic schema that drives `erk config list/keys/get/set`.
+
+2. **Doc gap**: The field addition checklist (`docs/learned/architecture/globalconfig-field-addition.md`) doesn't mention updating the schema, which is how this was missed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="29392" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01A28nmcZhTg4Pa1vWsb74tY">
+    <param name="plan"># Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema
+
+## Context
+
+Commit 83cd5b3dc a...[truncated 1306 chars]...ld be listed
+- Run `erk config get anthropic_api_fast_path` — should return current value
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="29392" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A28nmcZhTg4Pa1vWsb74tY">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/wild-discovering-mitten.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e6776701-5a54-4d91-a58d-5b6f59c396a2 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q4bYn4aFrHXeurKby3b516">
+    <param name="file_path">/Users/schrockn/.claude/plans/wild-discovering-mitten.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1001" cache_read_input_tokens="30130" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1001, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q4bYn4aFrHXeurKby3b516">
+     1→# Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema
+     2→
+     3→## Context
+     4→
+     5→Commit 83cd5b3dc added `anthropic_api_fast_path` to `GlobalConfig` (runtime dataclass) and the load/save logic in `RealErkInstallation`, but missed adding it to `GlobalConfigSchema` (the Pydantic schema). The schema is the single source of truth for `erk config list/keys/get/set`, so the field is invisible to all CLI config commands.
+     6→
+     7→The root cause extends to the docs: `docs/learned/architecture/globalconfig-field-addition.md` doesn't include a step for adding fields to `GlobalConfigSchema`.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Add field to `GlobalConfigSchema`
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/config/schema.py` (after `cmux_integration`, line ~113)
+    14→
+    15→```python
+    16→anthropic_api_fast_path: bool = Field(
+    17→    description="Use Anthropic API fast path for reduced latency",
+    18→    json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "anthropic_api_fast_path"},
+    19→)
+    20→```
+    21→
+    22→### 2. Update field addition checklist doc
+    23→
+    24→**File:** `docs/learned/architecture/globalconfig-field-addition.md`
+    25→
+    26→Add a new step between steps 2 and 3: "Add Field to GlobalConfigSchema" explaining that the Pydantic schema in `schema.py` must also be updated for the field to appear in `erk config list/keys/get/set`.
+    27→
+    28→## Verification
+    29→
+    30→- Run `erk config list` — `anthropic_api_fast_path` should appear in global configuration section
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01PyfpCWMw8VN1ZLKUSGU1En">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="633" cache_read_input_tokens="31131" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 633, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PyfpCWMw8VN1ZLKUSGU1En">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01V4331KGRC17qsva4sN7kog">
+    <param name="questions">[{'question': '📋 Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema\nCurrent context...[truncated 391 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="31764" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V4331KGRC17qsva4sN7kog">
+User has answered your questions: "📋 Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01PN57zZfRouzvcUgnsuHdPC">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="33097" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 308, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PN57zZfRouzvcUgnsuHdPC">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="e6776701-5a54-4d91-a58d-5b6f59c396a2" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="e6776701-5a54-4d91-a58d-5b6f59c396a2" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "e6776701-5a54-4d91-a58d-5b6f59c396a2" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "e6776701-5a54-4d91-a58d-5b6f59c396a2" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "e6776701-5a54-4d91-a58d-5b6f59c396a2" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "e6776701-5a54-4d91-a58d-5b6f59c396a2" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `fix-config-schema-fast-path`
+
+**Summary:** Adds the missing anthropic_api_fast_path field to GlobalConfigSchema so it appears in erk config list/keys/get/set. Also updates the GlobalConfig field addition checklist to include the schema step that was missed.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2295" cache_read_input_tokens="33405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2295}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014q79QsPi39AHAjGe5M7mCG">
+    <param name="command">erk exec plan-save --format json --session-id="e6776701-5a54-4d91-a58d-5b6f59c396a2" --bra...[truncated 155 chars]...tes the GlobalConfig field addition checklist to include the schema step that was missed."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2295" cache_read_input_tokens="33405" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014q79QsPi39AHAjGe5M7mCG">
+{"success": true, "plan_number": 9092, "plan_url": "https://github.com/dagster-io/erk/pull/9092", "title": "[erk-plan] Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema", "branch_name": "plnd/fix-config-schema-fast-pat-03-09-1444", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/e6776701-5a54-4d91-a58d-5b6f59c396a2/plan_snapshots/000001-ac51655f"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #9092.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="35700" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 535}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MYiKSgMYLkwbGwBqWuPNxF">
+    <param name="command">erk exec upload-impl-session --session-id "e6776701-5a54-4d91-a58d-5b6f59c396a2" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="35700" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 535, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MYiKSgMYLkwbGwBqWuPNxF">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan "Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema" saved as draft PR #9092
+URL: https://github.com/dagster-io/erk/pull/9092</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="36235" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_011z3iMDRd8V3ZMnox1zVnRw">
+    <param name="plan"># Fix: Add `anthropic_api_fast_path` to GlobalConfigSchema
+
+## Context
+
+Commit 83cd5b3dc a...[truncated 1306 chars]...ld be listed
+- Run `erk config get anthropic_api_fast_path` — should return current value
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="36235" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011z3iMDRd8V3ZMnox1zVnRw">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #9092 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #9092:
+  In current wt:    erk br co --for-plan 9092 &amp;&amp; erk implement
+    (dangerously):  erk br co --for-plan 9092 &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 9092 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 9092 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #9092:
+  In current wt:  erk br co --for-plan 9092
+  In new wt:      erk br co --new-slot --for-plan 9092
+
+Dispatch plan #9092:
+  CLI command:    erk pr dispatch 9092
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #9092 saved. Here are your next steps:
+
+**Implement plan #9092:**
+```
+In current wt:    erk br co --for-plan 9092 &amp;&amp; erk implement
+  (dangerously):  erk br co --for-plan 9092 &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 9092 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 9092 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #9092:**
+```
+In current wt:  erk br co --for-plan 9092
+In new wt:      erk br co --new-slot --for-plan 9092
+```
+
+**Dispatch plan #9092:**
+```
+CLI command:    erk pr dispatch 9092
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="36395" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 566, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
