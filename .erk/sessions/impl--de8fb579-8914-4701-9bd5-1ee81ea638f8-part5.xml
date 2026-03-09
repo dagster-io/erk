@@ -1,0 +1,589 @@
+<session>
+  <meta source="agent-a560c0c" />
+  <meta branch="plnd/consolidate-learn-docs-03-09-2335" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Read these existing documentation files that need to be extended and report their full contents:
+
+1. `docs/learned/planning/one-shot-workflow.md`
+2. `docs/learned/erk/slot-pool-architecture.md`
+3. `docs/learned/objectives/objective-lifecycle.md`
+4. `docs/learned/ci/plan-implement-workflow-patterns.md`
+
+Also read:
+5. `.claude/commands/erk/system/one-shot-plan.md` - Focus on Step 1.5 validation
+6. `src/erk/cli/commands/navigation_helpers.py` - Focus on ensure_branch_has_worktree usage around lines 546-548 and 604-606
+7. `src/erk/cli/commands/land_cmd.py` - Focus on _navigate_after_land around line 1233
+
+Report the full content of the existing docs and key patterns from the source files.</user>
+  <assistant>I'll read these documentation files and source files to understand the existing patterns and provide a comprehensive report.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15244, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014WtWHdX3UMJQeNC6gzRvS7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15244, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011dKRMTqoMSQ3qLAH7LEEm5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/slot-pool-architecture.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15244, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EHz4Xj6TRwkrzs43BFNeR7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/objective-lifecycle.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15244, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013LojCTK4inZUudydk1cZjB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/plan-implement-workflow-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15244, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DP1b8JL4CrxXW7xsZdDHV9">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15244, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Wb8NzCq5YhZo6AdzTyXZ1d">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py</param>
+    <param name="limit">700</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15244, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UfhbWSsgEZZs11NdychnRv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="limit">1300</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15244, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014WtWHdX3UMJQeNC6gzRvS7">
+     1→---
+     2→title: One-Shot Workflow
+     3→last_audited: "2026-02-24 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "working with erk one-shot dispatch"
+     7→  - "understanding how plans are autonomously created and implemented"
+     8→  - "debugging one-shot workflow failures"
+     9→  - "integrating objectives with one-shot dispatch"
+    10→tripwires:
+    11→  - action: "adding dry-run support to one-shot commands"
+    12→    warning: "One-shot dry-run mode must NOT create skeleton issues"
+    13→  - action: "modifying register-one-shot-plan exit behavior"
+    14→    warning: "register-one-shot-plan uses best-effort: exit 0 if any operation succeeds"
+    15→  - action: "adding post-dispatch operations without matching dispatch_cmd.py pattern"
+    16→    warning: "dispatch_one_shot() and _dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other."
+    17→  - action: "writing post-dispatch operations without try/except guards"
+    18→    warning: "Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py."
+    19→  - action: "editing plan body content in plan creation, replan, or one-shot dispatch"
+    20→    warning: "One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers."
+    21→    score: 9
+    22→---
+    23→
+    24→# One-Shot Workflow
+    25→
+    26→The one-shot workflow enables fully autonomous planning and implementation from a single CLI command. It dispatches a GitHub Actions workflow that creates a plan and implements it without human intervention.
+    27→
+    28→## End-to-End Pipeline
+    29→
+    30→```
+
+... [163 lines omitted] ...
+
+   104→`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+   111→The command outputs JSON results for each operation with success/error details.
+   124→The CLI write is the primary source; CI registration fills gaps when the CLI couldn't complete (e.g., network failure during dispatch).
+  </tool_result>
+  <tool_result tool="toolu_011dKRMTqoMSQ3qLAH7LEEm5">
+     1→---
+     2→title: Slot Pool Architecture
+     3→read_when:
+     4→  - "understanding slot pool design"
+     5→  - "implementing slot-related features"
+     6→  - "debugging slot assignment issues"
+     7→tripwires:
+     8→  - action: "using has_uncommitted_changes() to check slot reuse eligibility"
+     9→    warning: "Untracked files are safe for branch switching — use get_file_status() and check only staged/modified files. has_uncommitted_changes() includes untracked files which would incorrectly block slot reuse."
+    10→last_audited: "2026-02-16 14:20 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Slot Pool Architecture
+    15→
+    16→The worktree slot pool is a reusable pool of pre-allocated git worktrees for fast branch switching. Instead of creating and destroying worktrees on demand, erk maintains a fixed-size pool of worktree directories that can be reassigned to different branches.
+    17→
+    18→## Core Concepts
+    19→
+    20→### Pool Basics
+    21→
+    22→- **Pool size**: Default 4 slots, configurable via `[pool] max_slots` in `.erk/config.toml`
+    23→- **Slot names**: `erk-slot-NN` format (e.g., `erk-slot-01`, `erk-slot-02`)
+    24→- **Placeholder branches**: `__erk-slot-NN-br-stub__` for unassigned slots
+    25→- **Pool persistence**: `~/.erk/repos/{repo_name}/pool.json`
+    26→
+    27→### Why a Pool?
+    28→
+    29→Creating git worktrees is relatively slow (file system operations, git setup). The pool enables:
+    30→
+
+... [163 lines omitted] ...
+
+    82→- **Non-interactive**: Error with instructions
+   104→The pool treats manual `git checkout` and `gt create` operations in pool slots as valid. When a user changes branches directly inside a worktree slot, the pool silently corrects its state on the next allocation call rather than raising an error.
+  </tool_result>
+  <tool_result tool="toolu_01EHz4Xj6TRwkrzs43BFNeR7">
+     1→---
+     2→title: Objective Lifecycle
+     3→category: objectives
+     4→read_when:
+     5→  - "creating or modifying objective lifecycle code"
+     6→  - "understanding how objectives are created, mutated, and closed"
+     7→  - "adding new mutation paths to objective roadmaps"
+     8→  - "working with objective-fetch-context or auto-discovery"
+     9→  - "using --next flag on objective implement"
+    10→tripwires:
+    11→  - action: "adding a new roadmap mutation site without updating this document"
+    12→    warning: "All roadmap mutation sites must be documented in objective-lifecycle.md"
+    13→  - action: "updating roadmap step in only one location (frontmatter or table)"
+    14→    warning: "Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically."
+    15→  - action: "using erk objective inspect"
+    16→    warning: "inspect command was removed in PR #7385. Use `erk objective view` or `/local:objective-view` instead."
+    17→  - action: "running objective-fetch-context on master without --branch"
+    18→    warning: "Auto-discovery fails on non-plan branches. Pass `--branch` explicitly when on master."
+    19→  - action: "calling update-objective-node or plan-save inside objective-plan workflow without creating roadmap-step marker first"
+    20→    warning: "The roadmap-step marker must be created before entering plan mode. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update. Create the marker immediately after the user selects a node (step 5 of objective-plan), before gathering code context."
+    21→    score: 5
+    22→  - action: "updating objective from multiple concurrent plan completions"
+    23→    warning: "When multiple nodes in an objective complete simultaneously, concurrent updates can race. Check objective state before updating to avoid overwriting recent changes."
+    24→last_audited: "2026-02-17 00:00 PT"
+    25→audit_result: edited
+    26→---
+    27→
+    28→# Objective Lifecycle
+    29→
+    30→This document describes the complete lifecycle of objective issues from creation to closure, including all mutation paths and data flows.
+
+... [510 lines omitted] ...
+
+    39→All objectives use v2 YAML format. `parse_roadmap()` returns a legacy-format error for non-v2 content. Mutations update both the YAML frontmatter and the rendered table atomically via `update-objective-node`.
+   156→  │  → Return ([], [legacy_format_error])
+   164→1. **No `objective-roadmap` block** → valid roadmap-free objective. Returns `([], [])` with no errors.
+   166→3. **Block exists but fails to parse** → legacy/broken format. Returns `([], [legacy_format_error])`.
+   174→There is no table-parsing fallback. Non-v2 content returns an empty phases list with a legacy format error message directing users to recreate the objective.
+  </tool_result>
+  <tool_result tool="toolu_013LojCTK4inZUudydk1cZjB">
+     1→---
+     2→title: erk-impl Workflow Patterns
+     3→read_when:
+     4→  - "modifying erk-impl workflow"
+     5→  - "adding cleanup steps to GitHub Actions"
+     6→  - "working with git reset in workflows"
+     7→tripwires:
+     8→  - action: "running `git reset --hard` in workflows after staging cleanup"
+     9→    warning: "Verify all cleanup changes are committed BEFORE reset; staged changes without commit will be silently discarded."
+    10→  - action: "resolving git rebase modify/delete conflicts using merge-style terminology"
+    11→    warning: "In rebase, 'them' = upstream (opposite to merge). For modify/delete conflicts where the file was deleted upstream, use `git rm &lt;file&gt;` on the conflicted staged files, then `git rebase --continue`. Do not use `git checkout --theirs` which has inverted semantics during rebase."
+    12→    score: 5
+    13→last_audited: "2026-02-17 16:00 PT"
+    14→audit_result: clean
+    15→---
+    16→
+    17→# erk-impl Workflow Patterns
+    18→
+    19→This document covers critical patterns for the erk-impl GitHub Actions workflow, with particular focus on cleanup operations and step ordering.
+    20→
+    21→## Critical: Cleanup Before Reset
+    22→
+    23→**The Most Important Rule:** Commit cleanup changes BEFORE any `git reset --hard` operation.
+    24→
+    25→### Why This Matters
+    26→
+    27→`git reset --hard` discards all staged but uncommitted changes. In the erk-impl workflow, this manifests as:
+    28→
+    29→1. Workflow stages `.erk/impl-context/` deletion with `git add`
+    30→2. Later step runs `git reset --hard` (e.g., for conflict resolution)
+
+... [104 lines omitted] ...
+
+    53→### Incorrect Pattern (Silent Failure)
+    80→### Common Validation Errors
+    93→- [ ] Condition logic handles all states (success/failure/skipped)
+   124→**Key insight:** Steps 4-6 must maintain this exact order. Interleaving cleanup with implementation commits causes silent failures.
+  </tool_result>
+  <tool_result tool="toolu_01DP1b8JL4CrxXW7xsZdDHV9">
+     1→---
+     2→description: Create a plan from a one-shot prompt, save it as a draft PR, and write results to .erk/impl-context/ (used by CI workflow)
+     3→---
+     4→
+     5→# One-Shot Plan
+     6→
+     7→You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a draft PR.
+     8→
+     9→**Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
+    10→
+    11→## Step 1: Read the Prompt
+    12→
+    13→Read `.erk/impl-context/prompt.md` to understand what you need to do.
+    14→
+    15→## Step 2: Read Objective Context (if present)
+    16→
+    17→If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), this plan is for a specific node of an objective. Use `erk exec check-objective $OBJECTIVE_ISSUE` to fetch the full objective context (title, roadmap, progress). The `$NODE_ID` environment variable contains the specific roadmap node ID being planned. Incorporate the objective context into your planning — understand the broader goal and how this node fits into it.
+    18→
+    19→## Step 3: Load Context
+    20→
+    21→Read `AGENTS.md` to understand the project conventions. Follow its documentation-first discovery process: scan `docs/learned/index.md`, grep `docs/learned/` for relevant docs, and load skills as directed by AGENTS.md routing rules.
+    22→
+    23→## Step 4: Explore the Codebase
+    24→
+    25→Use Explore agents and Grep/Glob to understand the relevant areas of the codebase:
+    26→
+    27→- Search for files, patterns, and existing implementations related to the prompt
+    28→- Identify which files need to be created or modified
+    29→- Understand existing architecture and patterns
+    30→- Find relevant tests and test patterns
+
+... [73 lines omitted] ...
+
+    60→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
+    78→Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.
+  </tool_result>
+  <tool_result tool="toolu_01UfhbWSsgEZZs11NdychnRv">
+     1→"""Unified land command for PRs.
+     2→
+     3→This command merges a PR and cleans up the worktree/branch.
+     4→It accepts a branch name, PR number, or PR URL as argument.
+     5→
+     6→Usage:
+     7→    erk land              # Land current branch's PR
+     8→    erk land --stack      # Land the current Graphite stack
+     9→    erk land 123          # Land PR by number
+    10→    erk land &lt;url&gt;        # Land PR by URL
+    11→    erk land &lt;branch&gt;     # Land PR for branch
+    12→"""
+    13→
+    14→import re
+    15→from dataclasses import dataclass, replace
+    16→from enum import Enum, auto
+    17→from pathlib import Path
+    18→from typing import Literal, NamedTuple, assert_never
+    19→
+    20→import click
+    21→
+    22→from erk.cli.activation import print_temp_script_instructions, render_activation_script
+    23→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    24→from erk.cli.commands.land_pipeline import (
+    25→    LandError,
+    26→    make_execution_state,
+    27→    make_initial_state,
+    28→    run_execution_pipeline,
+    29→    run_validation_pipeline,
+    30→)
+
+... [1275 lines omitted] ...
+
+   239→                click.style("Warning:", fg="yellow")
+   609→    # Handle rate limit errors gracefully - this is an advisory check.
+   614→    except RuntimeError as e:
+   615→        error_str = str(e)
+   616→        if "RATE_LIMIT" in error_str or "rate limit" in error_str.lower():
+   622→        raise  # Re-raise other errors
+   667→        SystemExit(1) on validation failure
+   721→        SystemExit(1) on validation failure
+   766→        validation_error = validate_parent_is_trunk(
+   772→            validation_error is None,
+   773→            validation_error.message if validation_error else "",
+   814→        SystemExit(1) on validation failure
+   869→        SystemExit(1) on validation failure
+   962→        if isinstance(result, LandError):
+   963→            user_output(click.style("Error: ", fg="red") + result.message)
+  1047→        SystemExit(1) on validation failure
+  1237→        # Use --downstack to only restack the current branch, avoiding errors if
+  1271→                    click.style("Warning: ", fg="yellow")
+  1281→                except RuntimeError:
+  1284→                        click.style("Warning: ", fg="yellow")
+  1285→                        + "git pull failed (try running manually)"
+  </tool_result>
+  <tool_result tool="toolu_01Wb8NzCq5YhZo6AdzTyXZ1d">
+     1→import os
+     2→import shlex
+     3→from collections.abc import Sequence
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→from typing import Literal, NoReturn
+     7→
+     8→import click
+     9→
+    10→from erk.cli.activation import (
+    11→    activation_config_activate_only,
+    12→    ensure_worktree_activate_script,
+    13→    print_activation_instructions,
+    14→    render_activation_script,
+    15→)
+    16→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    17→from erk.cli.commands.slot.unassign_cmd import execute_unassign
+    18→from erk.cli.core import worktree_path_for
+    19→from erk.cli.ensure import Ensure
+    20→from erk.core.context import ErkContext
+    21→from erk.core.display_utils import copy_to_clipboard_osc52
+    22→from erk.core.repo_discovery import RepoContext
+    23→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+    24→from erk.core.worktree_utils import compute_relative_path_in_worktree
+    25→from erk_shared.debug import debug_log
+    26→from erk_shared.gateway.git.abc import WorktreeInfo
+    27→from erk_shared.gateway.github.types import PRNotFound
+    28→from erk_shared.naming import sanitize_worktree_name
+    29→from erk_shared.output.output import machine_output, user_output
+    30→from erk_shared.scratch.markers import PENDING_LEARN_MARKER, marker_exists
+
+... [675 lines omitted] ...
+
+    52→            click.style("Warning: ", fg="yellow") + "Skipping pending learn (--force used).\n"
+    57→        click.style("Error: ", fg="red") + "Worktree has pending learn.\n"
+    93→            click.style("Warning: ", fg="yellow")
+   103→                click.style("Warning: ", fg="yellow")
+   113→            click.style("Error: ", fg="red")
+   170→    # Escape the worktree if we're inside it (prevents FileNotFoundError after removal)
+   181→    except RuntimeError as e:
+   182→        raise click.ClickException(str(e)) from None
+   315→        except RuntimeError as e:
+   316→            raise click.ClickException(str(e)) from None
+   354→        SystemExit: Always raises (either success or error)
+   442→        SystemExit: Always raises (either success or error)
+   483→        SystemExit: Always raises (either success or error)
+   587→        # Not on trunk but no parent - keep as direct error (no clear condition to express)
+   589→            click.style("Error: ", fg="red")
+   698→        force: If True, prompts instead of blocking on validation failures
+  </tool_result>
+  <assistant>Now let me read the rest of land_cmd.py to see the navigation pattern around line 1233:</assistant>
+  <usage input_tokens="17780" cache_creation_input_tokens="28140" cache_read_input_tokens="15244" cache_creation="{'ephemeral_5m_input_tokens': 28140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DxK7mKHPpATyQ2CqeLjTw2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1300</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="17780" cache_creation_input_tokens="28140" cache_read_input_tokens="15244" cache_creation="{'ephemeral_5m_input_tokens': 28140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DxK7mKHPpATyQ2CqeLjTw2">
+  1300→            source_branch=None,
+  1301→            force=False,
+  1302→        )
+  1303→        # activate_root_repo raises SystemExit(0)
+  1304→
+  1305→
+  1306→def render_land_execution_script(
+  1307→    *,
+  1308→    pr_number: int,
+  1309→    branch: str,
+  1310→    worktree_path: Path | None,
+  1311→    is_current_branch: bool,
+  1312→    objective_number: int | None,
+  1313→    plan_number: int | None,
+  1314→    use_graphite: bool,
+  1315→    skip_learn: bool,
+  1316→    cleanup_confirmed: bool,
+  1317→    target_path: Path,
+  1318→) -&gt; str:
+  1319→    """Generate shell script that executes land and navigates.
+  1320→
+  1321→    This script is generated after validation passes. When sourced, it:
+  1322→    1. Validates required arguments (PR number and branch)
+  1323→    2. Calls `erk exec land-execute` with pre-validated state plus user flags
+  1324→    3. If land-execute fails (e.g., merge conflict), stops immediately via ``return 1``
+  1325→    4. On success, navigates to the target location (trunk or child branch)
+  1326→
+  1327→    Note: The execute phase always skips confirmation prompts because the user
+  1328→    already approved by sourcing the script. --force is not passed because
+  1329→    _execute_land handles this internally.
+
+... [175 lines omitted] ...
+
+  1367→    # Silence unused parameter warnings - these are still needed for the function
+  1398→PR_NUMBER="${{1:?Error: PR number required}}"
+  1399→BRANCH="${{2:?Error: Branch name required}}"
+  1476→    if isinstance(result, LandError):
+  1477→        user_output(click.style("Error: ", fg="red") + result.message)
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive report based on all the documentation and source files I've read.
+
+## Report: Existing Documentation and Key Patterns
+
+I have successfully read and analyzed all requested documentation files and source code. Here is a comprehensive report of the full contents and key patterns:
+
+---
+
+### 1. **docs/learned/planning/one-shot-workflow.md** (Full Content)
+
+This document describes the complete one-shot workflow - autonomous planning and implementation from a single CLI command. Key sections:
+
+- **Entry Points**: Two CLI commands trigger the pipeline: `erk one-shot &lt;prompt&gt;` and `erk objective plan &lt;issue&gt; --one-shot`
+- **Backend-Conditional Dispatch**: PlannedPRBackend creates a `plnd/` branch and skeleton draft PR (no skeleton issue)
+- **Branch Naming**: `plnd/{slug}-{MM-DD-HHMM}` format, slug truncated to stay under 31-character worktree limit
+- **GitHub Actions Workflow**: Two-job pipeline (plan + implement), with plan job validating Claude output and running `register-one-shot-plan`
+- **Registration Step (Best-Effort)**: Four independent operations: dispatch metadata, queued comment, PR closing reference, lifecycle stage
+- **Key Constraint**: Planning and implementation run in separate Claude sessions with no context carryover
+- **Branch Safety**: Dispatch commits directly to branch using git plumbing without checking out
+- **Slug Generation**: Uses `ctx.llm_caller.call()` with `BRANCH_SLUG_SYSTEM_PROMPT`, fallback to `sanitize_worktree_name()`
+- **Metadata Block Preservation**: The metadata block in plan body must survive all edits
+- **One-Shot vs PR Dispatch Divergence**: After one-shot dispatch, local branch may diverge from remote (uses force-push/squash)
+
+**Step 1.5 Validation Note (from one-shot-plan.md)**:
+Steps validate that a skeleton plan was pre-created at dispatch time via `$PLAN_ISSUE_NUMBER` environment variable. This is checked in Step 7 of the one-shot-plan command to either update an existing pre-created plan or create a new one as fallback.
+
+---
+
+### 2. **docs/learned/erk/slot-pool-architecture.md** (Full Content)
+
+Comprehensive documentation of the worktree slot pool design:
+
+- **Pool Basics**: Default 4 slots, configurable via `[pool] max_slots` in `.erk/config.toml`
+- **Slot Naming**: `erk-slot-NN` format (e.g., `erk-slot-01`)
+- **Data Structures**: `PoolState`, `SlotInfo`, `SlotAssignment` in `src/erk/core/worktree_pool.py`
+- **Allocation Algorithm**: Step 1 (check existing), Step 2 (reuse inactive), Step 3 (create new), Step 4 (eviction on full)
+- **Fast Path (Reuse)**: `find_inactive_slot()` checks for worktrees with no staged/modified tracked files. **Critical tripwire**: Untracked files do NOT block reuse - only staged/modified files prevent reuse
+- **Slow Path (Create)**: `find_next_available_slot()` finds uninitialized slots
+- **Pool Full Eviction**: Auto-evict oldest assignment (by `assigned_at` timestamp) with `--force`, or prompt user
+- **Artifact Cleanup**: Removes `.erk/impl-context/` and `.erk/scratch/` when reusing slots
+- **Transparent State Correction**: `sync_pool_assignments()` silently corrects pool state when manual branch changes detected
+- **Diagnostics**: Detects orphan-state, orphan-dir, missing-branch, branch-mismatch, git-registry-missing, untracked-worktree, closed-pr issues
+- **Entry Points**: `erk branch create`, `erk branch checkout`, `erk slot assign`, `erk pr checkout`
+- **--new-slot Flag**: Forces allocation of new slot instead of stacking
+
+---
+
+### 3. **docs/learned/objectives/objective-lifecycle.md** (Full Content)
+
+Detailed lifecycle documentation for objective issues:
+
+- **Overview**: Objectives are GitHub issues with `erk-objective` label tracking multi-plan work through roadmap structure
+- **Roadmap Formats**: Source of truth in YAML frontmatter (`&lt;!-- erk:metadata-block:objective-roadmap --&gt;`), rendered in markdown table
+- **Objective States**: Created → Active → Complete → Closed
+- **Step-Level States**: pending → planning → in_progress → done (or → skipped/blocked)
+- **Reading**: All roadmap reads via `parse_roadmap(body: str)` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+- **Three-Case Distinction**: (1) No block = valid roadmap-free objective, (2) Block parses = normal objective, (3) Block fails = legacy format error
+- **Mutations**: Updates happen via two sites:
+  - **Surgical**: `update-objective-node.py` updates single step PR and recomputes status
+  - **Full-body**: `system:objective-update-with-landed-pr` updates after PR lands, `objective-update-with-closed-plan` resets on closure
+- **Frontmatter Schema**: v2 YAML with fields: schema_version, steps (flat list with id, description, status, pr)
+- **Body Reconciliation**: Three tiers: Mechanical (roadmap cells), Reconcilable (prose sections), Immutable (exploration notes)
+- **Context Fetching**: `objective-fetch-context` with auto-discovery mode and explicit node selection via `--node` flags
+- **--next Flag**: Auto-selects next unblocked pending node using dependency graph traversal
+- **Action Comments**: `objective-post-action-comment` posts formatted comments after PR landing with roadmap updates and body reconciliation sections
+
+**Critical Tripwire**: Must create roadmap-step marker before entering plan mode; if missing, plan-save cannot call update-objective-node and roadmap table update silently fails.
+
+---
+
+### 4. **docs/learned/ci/plan-implement-workflow-patterns.md** (Full Content)
+
+Critical patterns for the erk-impl GitHub Actions workflow:
+
+- **Most Important Rule**: Commit cleanup changes BEFORE any `git reset --hard` operation
+- **Why It Matters**: `git reset --hard` discards staged but uncommitted changes; staged `.erk/impl-context/` deletion can be silently lost
+- **Correct Pattern**: Commit cleanup before any operations that might reset
+- **Incorrect Pattern**: Staging cleanup without commit before reset (silent failure)
+- **Multi-Layer Cleanup Resilience**: Agent cleanup (non-deterministic), workflow staging (fragile), workflow commit (deterministic)
+- **Step Output Validation**: Validate step IDs exist, spellings match (case-sensitive), output keys exist
+- **Workflow Step Ordering**: Checkout &amp; setup → Find/create PR → Implementation → Commit implementation → Clean up .erk/impl-context/ → Push → Mark PR ready
+- **Key Insight**: Steps 4-6 must maintain exact order; interleaving causes silent failures
+
+---
+
+### 5. **.claude/commands/erk/system/one-shot-plan.md** (Full Content)
+
+Claude planning command for one-shot dispatch with 8 steps:
+
+- **Step 1**: Read prompt from `.erk/impl-context/prompt.md`
+- **Step 2**: Read objective context if `$OBJECTIVE_ISSUE` is set; use `erk exec check-objective`
+- **Step 3**: Load context from AGENTS.md, follow documentation-first discovery
+- **Step 4**: Explore codebase using Explore agents and Grep/Glob
+- **Step 5**: Write comprehensive implementation plan to `.erk/impl-context/plan.md`
+- **Step 6**: Generate 2-3 sentence plan summary (plain text, no markdown) → `PLAN_SUMMARY`
+- **Step 7**: Save plan to GitHub:
+  - If `$PLAN_ISSUE_NUMBER` set: Update skeleton plan via `erk exec plan-update`
+  - Otherwise: Create new draft PR via `erk exec plan-save` (backwards compatible)
+  - If `$OBJECTIVE_ISSUE` set: Create objective-context marker first
+- **Step 8**: Write plan result to `.erk/impl-context/plan-result.json` with format: `{"plan_number": &lt;num&gt;, "title": "&lt;title&gt;"}`
+
+**Step 1.5 Validation**: If after exploring codebase, cannot produce actionable plan, write `{"rejected": true, "reason": "&lt;explanation&gt;"}` and stop.
+
+---
+
+### 6. **src/erk/cli/commands/navigation_helpers.py** (Key Patterns - Lines 546-548, 604-606)
+
+Two critical uses of `ensure_branch_has_worktree`:
+
+**First Usage (line 547-549 in resolve_up_navigation)**:
+```python
+_worktree_path, already_existed = ensure_branch_has_worktree(
+    ctx, repo, branch_name=target_branch, no_slot=False, force=False
+)
+```
+Context: After finding a child branch has no worktree, allocate a slot for it. Returns tuple of (worktree_path, already_existed).
+
+**Second Usage (line 607-609 in resolve_down_navigation)**:
+```python
+_worktree_path, already_existed = ensure_branch_has_worktree(
+    ctx, repo, branch_name=parent_branch, no_slot=False, force=False
+)
+```
+Context: After finding parent branch has no worktree, allocate a slot for it. Same pattern as above.
+
+Both calls:
+- Use `no_slot=False` (allow slot allocation)
+- Use `force=False` (normal eviction if pool is full, no auto-evict)
+- Capture `already_existed` flag to determine if worktree was newly created
+
+---
+
+### 7. **src/erk/cli/commands/land_cmd.py** (Key Patterns - Line 1233)
+
+**_navigate_after_land function (line 1202-1303)**:
+
+The critical navigation pattern at lines 1226-1253:
+```python
+if target_child_branch is not None:
+    # Skip activation output in execute mode (script's cd command handles navigation)
+    if skip_activation_output:
+        raise SystemExit(0)
+    target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target_child_branch)
+    if target_path is None:
+        # Auto-create worktree for child via slot allocation
+        target_path, _ = ensure_branch_has_worktree(
+            ctx, post_deletion_repo, branch_name=target_child_branch, no_slot=False, force=False
+        )
+    # Suggest running gt restack --downstack...
+    user_output(...)
+    activate_worktree(
+        ctx=ctx,
+        repo=post_deletion_repo,
+        target_path=target_path,
+        ...
+    )
+```
+
+**Key Pattern**: 
+1. Look up target child branch's worktree
+2. If not found, auto-create via `ensure_branch_has_worktree` with `no_slot=False` (allow slot allocation)
+3. Then activate the worktree using `activate_worktree()`
+4. The function raises `SystemExit(0)` from `activate_worktree()`
+
+This is the unified pattern for auto-creating worktrees during navigation - used in `erk land --up`, and mirrors the same pattern in `resolve_up_navigation` and `resolve_down_navigation`.
+
+---
+
+### **Summary of Key Interconnected Patterns**
+
+1. **Worktree Allocation Pattern**: Three navigation helpers (`resolve_up_navigation`, `resolve_down_navigation`, `_navigate_after_land`) all use the same pattern:
+   - Try to find existing worktree via `find_worktree_for_branch_or_path()`
+   - If not found, allocate via `ensure_branch_has_worktree(ctx, repo, branch_name=X, no_slot=False, force=False)`
+   - Then activate with `activate_worktree()` or `activate_root_repo()`
+
+2. **One-Shot Validation**: Step 1.5 of one-shot-plan.md validates Claude can produce a plan from the prompt. If rejected, returns `{"rejected": true, "reason": "..."}` in plan-result.json.
+
+3. **Slot Pool Tripwire**: Only staged/modified tracked files block slot reuse - untracked files are safe (git leaves them during branch switches).
+
+4. **Objective Mutations**: All roadmap updates go through surgical `update-objective-node` or full-body commands that update both YAML frontmatter (source of truth) and markdown table (rendered view) atomically.
+
+5. **Cleanup Before Reset**: CI workflow must commit all cleanup changes before any `git reset --hard` operations to prevent silent loss of staged deletions.
+
+6. **Three-Phase Land Execution**: 
+   - Validation phase (all confirmations gathered upfront)
+   - Execution phase (deferred script runs merge + cleanup inline or generates activation script)
+   - Navigation phase (navigate to appropriate location after cleanup)
+
+All file paths are absolute and patterns are consistent across the codebase.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="20936" cache_read_input_tokens="43384" cache_creation="{'ephemeral_5m_input_tokens': 20936, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

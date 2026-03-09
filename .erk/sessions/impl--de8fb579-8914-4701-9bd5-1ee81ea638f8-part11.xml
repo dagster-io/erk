@@ -1,0 +1,300 @@
+<session>
+  <meta source="agent-adce90f" />
+  <meta branch="plnd/consolidate-learn-docs-03-09-2335" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these files and report their contents concisely:
+
+1. `src/erk/cli/commands/pr/list_cmd.py` - Focus on PrListResult dataclass, decorator stacking order (@mcp_exposed, @json_command, @click.command)
+2. `src/erk/cli/commands/pr/view_cmd.py` - Focus on PrViewResult dataclass, decorator stacking order
+3. `packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py` - Focus on the mcp_exposed decorator
+
+Report the key findings for documentation purposes.</user>
+  <assistant>I'll read these three files to analyze the decorator stacking order and dataclass patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15135" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LRyV5osXaQMR3xcpUGL96W">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15135" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AQiTe2DgovNvbEHUXqfPj3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15135" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C7Mxbmny1MAGY5WAkha4Zk">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15135" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LRyV5osXaQMR3xcpUGL96W">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→import tempfile
+     4→from collections.abc import Callable
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→from typing import Any, ParamSpec, TypeVar
+     8→
+     9→import click
+    10→from rich.console import Console
+    11→from rich.table import Table
+    12→from rich.text import Text
+    13→
+    14→from erk.cli.core import discover_repo_context
+    15→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    16→from erk.core.context import ErkContext
+    17→from erk.core.display_utils import strip_rich_markup
+    18→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    19→from erk.tui.app import ErkDashApp
+    20→from erk.tui.data.real_provider import RealPlanDataProvider
+    21→from erk.tui.data.types import PlanFilters, PlanRowData, serialize_plan_row
+    22→from erk.tui.sorting.logic import sort_plans
+    23→from erk.tui.sorting.types import SortKey, SortState
+    24→from erk_shared.agentclick.json_command import json_command
+    25→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    26→from erk_shared.context.types import NoRepoSentinel
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    30→from erk_shared.gateway.github.types import (
+
+... [544 lines omitted] ...
+
+   100→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   270→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   317→    if timings is not None and timings.warnings:
+   318→        for warning in timings.warnings:
+   319→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   387→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   409→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_result tool="toolu_01AQiTe2DgovNvbEHUXqfPj3">
+     1→"""Command to fetch and display a single plan."""
+     2→
+     3→from dataclasses import dataclass
+     4→from datetime import datetime
+     5→from typing import Any
+     6→
+     7→import click
+     8→
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.agentclick.json_command import json_command
+    13→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    14→from erk_shared.context.types import NoRepoSentinel
+    15→from erk_shared.core.typing_utils import narrow_to_literal
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import (
+    18→    BRANCH_NAME,
+    19→    CREATED_BY,
+    20→    CREATED_FROM_SESSION,
+    21→    LAST_DISPATCHED_AT,
+    22→    LAST_DISPATCHED_RUN_ID,
+    23→    LAST_LEARN_SESSION,
+    24→    LAST_LOCAL_IMPL_AT,
+    25→    LAST_LOCAL_IMPL_EVENT,
+    26→    LAST_LOCAL_IMPL_SESSION,
+    27→    LAST_LOCAL_IMPL_USER,
+    28→    LAST_REMOTE_IMPL_AT,
+    29→    LEARN_PLAN_ISSUE,
+    30→    LEARN_PLAN_PR,
+
+... [427 lines omitted] ...
+
+   320→                click.style("Error: ", fg="red")
+   329→                click.style("Error: ", fg="red")
+   339→                click.style("Error: ", fg="red")
+   356→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
+  </tool_result>
+  <tool_result tool="toolu_01C7Mxbmny1MAGY5WAkha4Zk">
+     1→"""Decorator and discovery for auto-exposing @json_command CLIs as MCP tools."""
+     2→
+     3→from collections.abc import Callable
+     4→from dataclasses import dataclass
+     5→
+     6→import click
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class McpMeta:
+    11→    """MCP metadata attached to a Click command by @mcp_exposed."""
+    12→
+    13→    name: str
+    14→    description: str
+    15→
+    16→
+    17→_MCP_REGISTRY: dict[click.Command, McpMeta] = {}
+    18→
+    19→
+    20→def mcp_exposed(*, name: str, description: str) -&gt; Callable[[click.Command], click.Command]:
+    21→    """Mark a @json_command for automatic MCP exposure.
+    22→
+    23→    Apply above @json_command in the decorator stack:
+    24→
+    25→        @mcp_exposed(name="one_shot", description="...")
+    26→        @json_command(...)
+    27→        @click.command("one-shot")
+    28→
+    29→    Args:
+    30→        name: MCP tool name
+
+... [41 lines omitted] ...
+  </tool_result>
+  <assistant>## Key Findings Report
+
+### 1. **PrListResult Dataclass** (`list_cmd.py`, lines 43-51)
+
+```python
+@dataclass(frozen=True)
+class PrListResult:
+    """JSON result for erk pr list."""
+    plans: list[dict[str, Any]]
+    count: int
+
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        return {"plans": self.plans, "count": self.count}
+```
+
+**Observations:**
+- Frozen dataclass (immutable)
+- Contains `to_json_dict()` method for serialization
+- Returns dict matching field structure
+
+---
+
+### 2. **PrViewResult Dataclass** (`view_cmd.py`, lines 49-82)
+
+```python
+@dataclass(frozen=True)
+class PrViewResult:
+    """JSON result for erk pr view."""
+    plan_id: str
+    title: str
+    state: str
+    url: str | None
+    labels: list[str]
+    assignees: list[str]
+    created_at: str
+    updated_at: str
+    objective_id: int | None
+    branch: str | None
+    header_fields: dict[str, object]
+    body: str | None
+
+    def to_json_dict(self) -&gt; dict[str, Any]:
+        result: dict[str, Any] = {
+            "plan_id": self.plan_id,
+            "title": self.title,
+            "state": self.state,
+            "url": self.url,
+            "labels": self.labels,
+            "assignees": self.assignees,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "objective_id": self.objective_id,
+            "branch": self.branch,
+            "header_fields": _serialize_header_fields(self.header_fields),
+        }
+        if self.body is not None:
+            result["body"] = self.body
+        return result
+```
+
+**Observations:**
+- Frozen dataclass
+- `to_json_dict()` applies post-processing via `_serialize_header_fields()` for nested datetime handling
+- Conditionally includes body only if not None
+- More complex serialization logic than PrListResult
+
+---
+
+### 3. **Decorator Stacking Order** 
+
+#### `pr_list` command (`list_cmd.py`, lines 459-468):
+
+```python
+@mcp_exposed(
+    name="pr_list",
+    description="..."
+)
+@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrListResult,))
+@click.command("list")
+@pr_filter_options
+@resolved_repo_option
+@click.pass_obj
+```
+
+**Stack from outside to inside:**
+1. `@mcp_exposed` (outermost)
+2. `@json_command`
+3. `@click.command("list")`
+4. `@pr_filter_options` (custom decorator wrapper)
+5. `@resolved_repo_option` (Click option)
+6. `@click.pass_obj` (innermost)
+
+#### `pr_view` command (`view_cmd.py`, lines 276-288):
+
+```python
+@mcp_exposed(
+    name="pr_view",
+    description="..."
+)
+@json_command(exclude_json_input=frozenset({"repo_id"}), output_types=(PrViewResult,))
+@click.command("view")
+@click.argument("identifier", type=str, required=False, default=None)
+@click.option("--full", "-f", is_flag=True, help="Show full plan body")
+@resolved_repo_option
+@click.pass_obj
+```
+
+**Stack from outside to inside:**
+1. `@mcp_exposed` (outermost)
+2. `@json_command`
+3. `@click.command("view")`
+4. `@click.argument`
+5. `@click.option`
+6. `@resolved_repo_option` (Click option)
+7. `@click.pass_obj` (innermost)
+
+---
+
+### 4. **mcp_exposed Decorator** (`mcp_exposed.py`, lines 20-38)
+
+```python
+def mcp_exposed(*, name: str, description: str) -&gt; Callable[[click.Command], click.Command]:
+    """Mark a @json_command for automatic MCP exposure.
+
+    Apply above @json_command in the decorator stack:
+
+        @mcp_exposed(name="one_shot", description="...")
+        @json_command(...)
+        @click.command("one-shot")
+
+    Args:
+        name: MCP tool name
+        description: MCP tool description
+    """
+
+    def decorator(cmd: click.Command) -&gt; click.Command:
+        _MCP_REGISTRY[cmd] = McpMeta(name=name, description=description)
+        return cmd
+
+    return decorator
+```
+
+**Key Implementation Details:**
+- Registers command in `_MCP_REGISTRY` global dict
+- Uses `McpMeta` dataclass (lines 9-14) to store name and description
+- Does not modify the command itself—purely metadata annotation
+- Returns command unchanged (transparent to Click)
+
+**Discovery Function** (`discover_mcp_commands`, lines 41-65):
+- Walks Click command tree recursively
+- Returns list of `(command, McpMeta, command_path)` tuples
+- Builds command path tuple for nested groups (e.g., `("pr", "list")`)
+
+---
+
+## Summary
+
+**Critical Pattern:** `@mcp_exposed` must be **applied ABOVE** `@json_command` in the decorator stack. Both decorators are transparent wrappers that register metadata without modifying command behavior. The result dataclasses use frozen dataclasses with `to_json_dict()` methods, allowing post-processing for complex serialization (as seen in PrViewResult's datetime handling).</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="14885" cache_read_input_tokens="15135" cache_creation="{'ephemeral_5m_input_tokens': 14885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

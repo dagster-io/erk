@@ -1,0 +1,355 @@
+<session>
+  <meta source="agent-a88010e" />
+  <meta branch="plnd/consolidate-learn-docs-03-09-2335" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these files and report their contents concisely:
+
+1. `src/erk/tui/data/types.py` - Focus on RunRowData frozen dataclass
+2. `src/erk/tui/widgets/run_table.py` - Focus on RunDataTable widget and column configuration
+3. `src/erk/tui/data/real_provider.py` - Focus on fetch_runs implementation and branch resolution logic
+4. `src/erk/tui/actions/navigation.py` - Focus on j/k navigation view-mode dispatch
+5. `packages/erk-shared/src/erk_shared/gateway/github/abc.py` - Focus on get_pr_head_branches method
+
+Report key structures, column names, branch resolution logic for documentation purposes.</user>
+  <assistant>I'll read these files efficiently to extract the key structures and logic you need for documentation.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VYWUMuA2MtuqtdtpJKxzwa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01As8MXYKdC6wspmAVidLthM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JbpkJYR8vokf1oPzzM9rUh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013aCd3AWnch4f6tQaiEWktt">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MrUe4329yqjJ3JKtLxLyss">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15171" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VYWUMuA2MtuqtdtpJKxzwa">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PlanRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        plan_id: GitHub issue number (e.g., 123). Never None.
+    29→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    30→        full_title: Complete untruncated plan title. Empty string possible.
+
+... [269 lines omitted] ...
+
+    58→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   167→        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+   219→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_result tool="toolu_01As8MXYKdC6wspmAVidLthM">
+     1→"""Run table widget for TUI dashboard Runs tab."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from textual.events import Click
+     8→from textual.message import Message
+     9→from textual.widgets import DataTable
+    10→
+    11→from erk.tui.data.types import RunRowData
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk.tui.app import ErkDashApp
+    15→
+    16→
+    17→class RunDataTable(DataTable):
+    18→    """DataTable subclass for displaying workflow runs.
+    19→
+    20→    Manages column configuration and row population from RunRowData.
+    21→    Uses row selection mode (not cell selection) for simpler navigation.
+    22→    """
+    23→
+    24→    class RunClicked(Message):
+    25→        """Posted when user clicks run-id column on a row."""
+    26→
+    27→        def __init__(self, row_index: int) -&gt; None:
+    28→            super().__init__()
+    29→            self.row_index = row_index
+    30→
+
+... [148 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013aCd3AWnch4f6tQaiEWktt">
+     1→"""Navigation action handlers for TUI application."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+     6→
+     7→from erk.tui.commands.types import CommandContext
+     8→from erk.tui.data.types import PlanRowData, RunRowData
+     9→from erk.tui.screens.check_runs_screen import CheckRunsScreen
+    10→from erk.tui.screens.help_screen import HelpScreen
+    11→from erk.tui.screens.launch_screen import LaunchScreen
+    12→from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
+    13→from erk.tui.screens.plan_body_screen import PlanBodyScreen
+    14→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    15→from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+    16→from erk.tui.views.types import ViewMode
+    17→from erk_shared.gateway.command_executor.real import RealCommandExecutor
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk.tui.app import ErkDashApp
+    21→
+    22→
+    23→class NavigationActionsMixin:
+    24→    """Mixin providing navigation and detail-view action handlers.
+    25→
+    26→    Includes action_exit_app, action_refresh, action_help, action_launch,
+    27→    action_show_detail, action_view_plan_body, action_view_comments,
+    28→    action_view_checks, action_cursor_down, action_cursor_up,
+    29→    action_open_pr, action_open_run, action_show_implement,
+    30→    action_copy_checkout, action_close_plan, and helpers.
+
+... [366 lines omitted] ...
+
+   329→            self.notify("Cannot close plan: no issue URL", severity="warning")
+  </tool_result>
+  <tool_result tool="toolu_01MrUe4329yqjJ3JKtLxLyss">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class LocalGitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [843 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+   277→        2. Failed completed runs (failures are more actionable than successes)
+   462→            Empty dict if no PRs match or on API failure.
+   514→            RuntimeError: If gh command fails
+   527→            RuntimeError: If gh command fails
+   543→            RuntimeError: If gh command fails
+   562→            RuntimeError: If gh command fails
+   576→            RuntimeError: If gh command fails
+   732→            RuntimeError: If update fails
+   772→            False if deletion failed (e.g., protected branch)
+   791→            Empty list if no PRs match or on API failure.
+   860→            state: Status state - one of "success", "failure", "pending", "error"
+   865→            True on success, False on failure
+  </tool_result>
+  <tool_result tool="toolu_01JbpkJYR8vokf1oPzzM9rUh">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+     7→from erk.core.context import ErkContext
+     8→from erk.core.display_utils import (
+     9→    format_relative_time,
+    10→    format_submission_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→    strip_rich_markup,
+    15→)
+    16→from erk.core.pr_utils import select_display_pr
+    17→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    18→from erk.tui.data.provider_abc import PlanDataProvider
+    19→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+    20→from erk.tui.sorting.types import BranchActivity
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.metadata.core import (
+    23→    extract_objective_slug,
+    24→)
+    25→from erk_shared.gateway.github.metadata.dependency_graph import (
+    26→    _TERMINAL_STATUSES,
+    27→    build_graph,
+    28→    build_state_sparkline,
+    29→    compute_graph_summary,
+    30→    find_graph_next_node,
+
+... [845 lines omitted] ...
+
+   171→            warnings=plan_data.warnings,
+   469→        except Exception:
+   470→            logger.debug("Failed to write timing log", exc_info=True)
+   685→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <assistant>## Summary Report
+
+I've successfully read all five files. Here's a concise documentation report:
+
+---
+
+### 1. **RunRowData Frozen Dataclass** (`src/erk/tui/data/types.py:157-202`)
+
+**Purpose**: Immutable row data for displaying workflow runs in TUI Runs tab.
+
+**Key Fields**:
+- `run_id`: GitHub Actions workflow run ID (string)
+- `run_url`: URL to the GitHub Actions run page (nullable)
+- `status`: Raw status ("queued", "in_progress", "completed")
+- `conclusion`: Raw conclusion ("success", "failure", "cancelled", None if in progress)
+- `workflow_name`: Workflow command name (e.g., "plan-implement")
+- `pr_number`, `pr_url`, `pr_display`, `pr_title`, `pr_state`: PR-related fields
+- `branch`: Branch name from workflow run (source branch)
+- `branch_display`: Truncated branch (max 40 chars)
+- `submitted_display`: Formatted submission time (e.g., "03-09 14:30")
+- Display fields: `status_display`, `title_display`, `checks_display`, `run_id_display`
+- `created_at`: UTC datetime when run was created (nullable)
+
+---
+
+### 2. **RunDataTable Widget** (`src/erk/tui/widgets/run_table.py:17-173`)
+
+**Column Configuration** (in `_setup_columns`, lines 56-77):
+| Column | Key | Width |
+|--------|-----|-------|
+| run-id | run_id | 12 |
+| status | status | 14 |
+| submitted | submitted | 12 |
+| workflow | workflow | 16 |
+| pr | pr | 8 |
+| branch | branch | 40 |
+| chks | chks | 8 |
+
+**Key Features**:
+- Row-selection mode (cursor_type="row")
+- Messages: `RunClicked` (on run-id click), `PrClicked` (on pr click)
+- Cursor position preservation on refresh via `selected_key`
+- Left/right arrow actions delegate to app's `action_previous_view()` and `action_next_view()`
+- Cell values rendered with Textual markup links (e.g., `[link={url}]text[/link]`)
+
+---
+
+### 3. **fetch_runs Implementation** (`src/erk/tui/data/real_provider.py:179-353`)
+
+**Branch Resolution Logic** (lines 317-329):
+```
+Priority order for branch_display:
+1. PR's head_branch (pr_info_for_branch.head_branch) - original feature branch
+   - Fallback used because run.branch becomes "master"/"main" after merge+deletion
+2. run.branch (if not "master" or "main")
+3. "-" (dash) when no branch available
+
+Key insight: Prefer PR head_branch over run.branch to preserve original feature branch name.
+```
+
+**Data Flow**:
+1. Fetch workflow runs from all registered workflows (WORKFLOW_COMMAND_MAP)
+2. Extract PR numbers from `display_title` and plan numbers
+3. Build plan→run_ids lookup for batch PR linkage
+4. Batch fetch PR linkages for plan-number runs
+5. Fetch PR info for directly-extracted PR numbers
+6. Build `RunRowData` for each run (lines 268-353)
+
+**Key Extractors**:
+- `extract_plan_number()` and `extract_pr_number()` from `erk.cli.commands.run.shared`
+- Graphite URL resolution for PRs (if configured)
+
+---
+
+### 4. **j/k Navigation** (`src/erk/tui/actions/navigation.py:230-244`)
+
+**View-Mode Dispatch**:
+```python
+def action_cursor_down(self):  # j key
+    if self._view_mode == ViewMode.RUNS:
+        if self._run_table is not None:
+            self._run_table.action_cursor_down()
+    elif self._table is not None:
+        self._table.action_cursor_down()
+
+def action_cursor_up(self):  # k key
+    if self._view_mode == ViewMode.RUNS:
+        if self._run_table is not None:
+            self._run_table.action_cursor_up()
+    elif self._table is not None:
+        self._table.action_cursor_up()
+```
+
+**Logic**: Routes j/k to appropriate table widget (`_run_table` for Runs view, `_table` for Plans/Objectives views).
+
+---
+
+### 5. **get_pr_head_branches Method** (`packages/erk-shared/src/erk_shared/gateway/github/abc.py:249-266`)
+
+**Signature**:
+```python
+@abstractmethod
+def get_pr_head_branches(
+    self, location: GitHubRepoLocation, pr_numbers: list[int]
+) -&gt; dict[int, str]:
+```
+
+**Purpose**: Batch-fetch head branch names for PR numbers in a single GraphQL query.
+
+**Use Case**: Resolves actual target branch for workflow_dispatch runs, where GitHub API head_branch is always the default branch (not the original feature branch).
+
+**Returns**: Mapping of `pr_number -&gt; head_branch_name`. Missing PRs are omitted from the dict.
+
+---
+
+## Key Integration Points
+
+- **Branch resolution**: TUI prefers PR's `head_branch` over run's `branch` to preserve feature branch names post-merge
+- **Column sync**: RunDataTable columns match RunRowData fields directly
+- **Navigation dispatch**: j/k keys dispatch to appropriate table based on `_view_mode`
+- **PR head branch**: `get_pr_head_branches()` provides the authoritative source for original feature branch names in runs</assistant>
+  <usage input_tokens="15320" cache_creation_input_tokens="21896" cache_read_input_tokens="15171" cache_creation="{'ephemeral_5m_input_tokens': 21896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

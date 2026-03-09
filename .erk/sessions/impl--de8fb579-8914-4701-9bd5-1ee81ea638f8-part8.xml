@@ -1,0 +1,432 @@
+<session>
+  <meta source="agent-ab4e19f" />
+  <meta branch="plnd/consolidate-learn-docs-03-09-2335" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these files and report their contents concisely:
+
+1. `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py` - Focus on objective_issue field
+2. `src/erk/cli/commands/exec/scripts/update_objective_node.py` - Focus on _set_plan_backlink function (around lines 311-352)
+3. `src/erk/cli/commands/objective/check_cmd.py` - Focus on Check 9 (_check_pr_backlinks) around line 108+
+4. `.claude/commands/erk/system/objective-update-with-landed-pr.md` - Focus on reconciliation guidance and "naming divergence" pattern
+
+Report key patterns for documentation purposes.</user>
+  <assistant>I'll read these files efficiently in parallel to identify key patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15170" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15170, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KMiYvjBXchfqbB4LuVLLvT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15170" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15170, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NZBS3XoMx87JwKbx4eCZgY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15170" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15170, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015WRHsfkbiPxzsy5un8HCA4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15170" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15170, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012iVhkPHynLUT9xvywvh9f7">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15170" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15170, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NZBS3XoMx87JwKbx4eCZgY">
+     1→"""Update node PR cells in an objective's roadmap table.
+     2→
+     3→Why this command exists (instead of using update-issue-body directly):
+     4→
+     5→    The alternative is "fetch body -&gt; parse markdown table -&gt; find node row -&gt;
+     6→    surgically edit the PR cell -&gt; write entire body back". That's ~15
+     7→    lines of fragile ad-hoc Python that every caller (skills, hooks, scripts)
+     8→    must duplicate. The roadmap table has a specific structure
+     9→    (| node_id | description | status | pr |) and the update has
+    10→    specific semantics:
+    11→
+    12→    1. Find the row by node ID across all phases
+    13→    2. Compute display status from the PR value
+    14→    3. Write status and PR cells atomically so the table is
+    15→       always human-readable without requiring a parse pass
+    16→
+    17→    Encoding this once in a tested CLI command means:
+    18→    - No duplicated table-parsing logic across callers
+    19→    - Testable edge cases (node not found, no roadmap, clearing PR)
+    20→    - Atomic mental model: "update node 1.3's PR to X"
+    21→    - Resilient to roadmap format changes (one command updates, not N sites)
+    22→
+    23→Usage:
+    24→    # Single node -- landed PR
+    25→    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
+    26→
+    27→    # Clear PR
+    28→    erk exec update-objective-node 6423 --node 1.3 --pr ""
+    29→
+    30→    # Status-only update (preserve existing PR)
+
+... [529 lines omitted] ...
+
+    41→        Each node result: {node_id, success, previous_pr, error}
+    80→def _node_error_message(node_id: str, issue_number: int, error: object) -&gt; str:
+    81→    if error == "node_not_found":
+    83→    return f"Failed to replace cells for node '{node_id}'"
+    94→    backlink_warning: str | None
+    99→        return cls(backlink_set=True, backlink_warning=None, backlink_skip=None)
+   102→    def warning(cls, *, message: str) -&gt; BacklinkResult:
+   103→        return cls(backlink_set=False, backlink_warning=message, backlink_skip=None)
+   107→        return cls(backlink_set=False, backlink_warning=None, backlink_skip=reason)
+   115→    error: str | None
+   119→        return cls(node_id=node_id, success=True, previous_pr=previous_pr, error=None)
+   122→    def fail(cls, *, node_id: str, error: str) -&gt; UpdateObjectiveNodeResult:
+   123→        return cls(node_id=node_id, success=False, previous_pr=None, error=error)
+   127→class UpdateObjectiveNodeError:
+   128→    error: str
+   132→        return {"success": False, "error": self.error, "message": self.message}
+   187→    UpdateObjectiveNodeMultiOutput | UpdateObjectiveNodeError | UpdateObjectiveNodeSuccess
+   219→        return UpdateObjectiveNodeError(
+   220→            error=single.error or "unknown",
+   221→            message=_node_error_message(node[0], issue_number, single.error),
+   305→    except ValueError:
+   322→    Never raises — backlink failure doesn't block the node update.
+   331→        return BacklinkResult.warning(message=f"PR {pr_ref} not found")
+   339→        return BacklinkResult.warning(
+   422→        err = UpdateObjectiveNodeError(
+   423→            error="no_update",
+   436→        err = UpdateObjectiveNodeError(
+   437→            error="issue_not_found",
+   446→        err = UpdateObjectiveNodeError(
+   447→            error="no_roadmap",
+   458→            UpdateObjectiveNodeResult.fail(node_id=n, error="node_not_found") for n in missing_nodes
+   476→    any_failure = False
+   481→            results.append(UpdateObjectiveNodeResult.fail(node_id=node_id, error="node_not_found"))
+   482→            any_failure = True
+   496→                UpdateObjectiveNodeResult.fail(node_id=node_id, error="replacement_failed")
+   498→            any_failure = True
+   504→    # Exit early if all nodes failed
+   505→    if any_failure and not any(r.success for r in results):
+   534→    # failure doesn't prevent the node update from succeeding.
+  </tool_result>
+  <tool_result tool="toolu_015WRHsfkbiPxzsy5un8HCA4">
+     1→"""Validate an objective's format and roadmap consistency."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→
+     6→import click
+     7→
+     8→from erk.cli.alias import alias
+     9→from erk.cli.github_parsing import parse_issue_identifier
+    10→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    11→from erk.core.context import ErkContext
+    12→from erk_shared.gateway.github.issues.types import IssueNotFound
+    13→from erk_shared.gateway.github.metadata.core import (
+    14→    find_metadata_block,
+    15→    has_metadata_block,
+    16→)
+    17→from erk_shared.gateway.github.metadata.dependency_graph import (
+    18→    DependencyGraph,
+    19→    build_graph,
+    20→    compute_graph_summary,
+    21→    find_graph_next_node,
+    22→    phases_from_graph,
+    23→)
+    24→from erk_shared.gateway.github.metadata.plan_header import (
+    25→    extract_plan_header_objective_issue,
+    26→)
+    27→from erk_shared.gateway.github.metadata.roadmap import (
+    28→    parse_roadmap,
+    29→    rerender_comment_roadmap,
+    30→    serialize_phases,
+
+... [407 lines omitted] ...
+
+    42→    """Validation completed (may have passed or failed checks).
+    47→        failed_count: Number of failed checks
+    48→        graph: Dependency graph of roadmap nodes (empty if parsing failed)
+    51→        validation_errors: Parser-level warnings from roadmap parsing
+    57→    failed_count: int
+    61→    validation_errors: list[str]
+    66→class ObjectiveValidationError:
+    69→    error: str
+    72→ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+   177→        ObjectiveValidationError if unable to complete validation
+   184→        return ObjectiveValidationError(error=f"Issue #{issue_number} not found")
+   194→    phases, validation_errors = parse_roadmap(issue.body)
+   201→        failed_count = sum(1 for passed, _ in checks if not passed)
+   203→            passed=failed_count == 0,
+   205→            failed_count=failed_count,
+   209→            validation_errors=[],
+   216→        # Block exists but failed to parse
+   217→        checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
+   218→        failed_count = sum(1 for passed, _ in checks if not passed)
+   222→            failed_count=failed_count,
+   226→            validation_errors=validation_errors,
+   307→    failed_count = sum(1 for passed, _ in checks if not passed)
+   310→        passed=failed_count == 0,
+   312→        failed_count=failed_count,
+   316→        validation_errors=validation_errors,
+   364→    if isinstance(result, ObjectiveValidationError):
+   369→                    "error": result.error,
+   388→                "validation_errors": result.validation_errors,
+   399→    if isinstance(result, ObjectiveValidationError):
+   401→            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.error}"
+   425→        check_word = "checks" if result.failed_count &gt; 1 else "check"
+   428→                f"Objective validation failed ({result.failed_count} {check_word} failed)", fg="red"
+  </tool_result>
+  <tool_result tool="toolu_012iVhkPHynLUT9xvywvh9f7">
+     1→---
+     2→description: Update objective issue after landing a PR
+     3→---
+     4→
+     5→# /erk:system:objective-update-with-landed-pr
+     6→
+     7→Update an objective issue after landing a PR from a plan branch.
+     8→
+     9→## Usage
+    10→
+    11→Run after landing a PR:
+    12→
+    13→```bash
+    14→/erk:system:objective-update-with-landed-pr
+    15→```
+    16→
+    17→---
+    18→
+    19→## Agent Instructions
+    20→
+    21→&gt; **Design note:** All steps run inline in the caller's context (no subagent delegation).
+    22→&gt; Step 2 (prose reconciliation) requires LLM judgment, and Step 3 (closing prompt)
+    23→&gt; requires direct user interaction.
+    24→
+    25→### Step 1: Apply Mechanical Updates
+    26→
+    27→Check `$ARGUMENTS` for optional overrides:
+    28→
+    29→- `--pr &lt;number&gt;`: PR number that was just landed (also used as the plan number)
+    30→- `--objective &lt;number&gt;`: Objective number to update
+
+... [122 lines omitted] ...
+
+    59→If this returns `success: false`, display the error and stop.
+   140→## Error Cases
+   144→| `objective-apply-landed-update` fails | Display error from JSON and stop             |
+   145→| Issue not found                       | Report error and exit                        |
+  </tool_result>
+  <tool_result tool="toolu_01KMiYvjBXchfqbB4LuVLLvT">
+     1→"""Schema v2 plan header operations for erk-plan issues.
+     2→
+     3→These support the new plan issue structure where:
+     4→- Issue body contains only compact metadata (for fast querying)
+     5→- First comment contains the plan content
+     6→- last_dispatched_run_id is stored in issue body
+     7→
+     8→Optional fields (added over time, backward compatible):
+     9→- source_repo: For cross-repo plans, the repo where this plan will be
+    10→  implemented (e.g., "owner/impl-repo"). When set, the plan issue lives in
+    11→  a different repo (the plans repo) than where code changes will be made.
+    12→"""
+    13→
+    14→import re
+    15→from typing import Any
+    16→
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_metadata_block,
+    19→    create_plan_body_block,
+    20→    find_metadata_block,
+    21→    render_metadata_block,
+    22→    render_plan_body_block,
+    23→    replace_metadata_block_in_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    BRANCH_NAME,
+    27→    CI_SUMMARY_COMMENT_ID,
+    28→    CREATED_AT,
+    29→    CREATED_BY,
+    30→    CREATED_FROM_SESSION,
+
+... [1430 lines omitted] ...
+
+   378→        ValueError: If plan-header block not found or invalid
+   383→        raise ValueError("plan-header block not found in issue body")
+   490→        ValueError: If plan-header block not found or invalid
+   494→        raise ValueError("plan-header block not found in issue body")
+   526→        ValueError: If plan-header block not found or invalid
+   531→        raise ValueError("plan-header block not found in issue body")
+   567→        ValueError: If plan-header block not found or invalid
+   572→        raise ValueError("plan-header block not found in issue body")
+   608→        ValueError: If plan-header block not found or invalid
+   613→        raise ValueError("plan-header block not found in issue body")
+   651→        ValueError: If plan-header block not found or invalid
+   656→        raise ValueError("plan-header block not found in issue body")
+   713→        ValueError: If plan-header block not found or invalid
+   718→        raise ValueError("plan-header block not found in issue body")
+   773→        ValueError: If plan-header block not found or invalid
+   778→        raise ValueError("plan-header block not found in issue body")
+   897→        ValueError: If plan-header block not found or invalid
+   902→        raise ValueError("plan-header block not found in issue body")
+  1009→        ValueError: If plan-header block not found or invalid
+  1014→        raise ValueError("plan-header block not found in issue body")
+  1087→        ValueError: If plan-header block not found or invalid
+  1092→        raise ValueError("plan-header block not found in issue body")
+  1139→        ValueError: If plan-header block not found or invalid
+  1144→        raise ValueError("plan-header block not found in issue body")
+  1292→        ValueError: If plan-header block not found or invalid
+  1297→        raise ValueError("plan-header block not found in issue body")
+  1337→        ValueError: If plan-header block not found or invalid
+  1342→        raise ValueError("plan-header block not found in issue body")
+  1391→        ValueError: If plan-header block not found or invalid
+  1395→        raise ValueError("plan-header block not found in issue body")
+  1433→        comment_id: GitHub comment ID containing CI failure summaries
+  1439→        ValueError: If plan-header block not found or invalid
+  1443→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <assistant>## Report: Key Patterns for Objective-Plan Linkage
+
+I've reviewed all four files and identified the critical patterns used in erk's bidirectional objective-plan linkage system.
+
+---
+
+### 1. **objective_issue Field in Plan Header** 
+(`plan_header.py`, lines 85, 159-161, 474-505)
+
+The `objective_issue` field is a fundamental forward reference:
+- **Type:** Optional integer (issue number)
+- **Purpose:** Stores the parent objective number in a plan PR's metadata block
+- **Location:** Plan-header metadata block in the PR issue body
+- **Usage Pattern:**
+  - Set via `update_plan_header_objective_issue(issue_body, objective_issue_number)` (lines 474-505)
+  - Extracted via `extract_plan_header_objective_issue(issue_body)` (lines 828-841)
+  - Always treated as an immutable fact once set; overwriting only happens with explicit warning
+
+---
+
+### 2. **Backlink Setting Logic** 
+(`update_objective_node.py`, lines 311-352: `_set_plan_backlink`)
+
+This is the core function that establishes forward linkage when a node is updated:
+
+```python
+def _set_plan_backlink(*, github, repo_root, pr_ref, objective_issue_number):
+    # Fail-open: returns status, never raises
+    # Only acts if --pr provided with a value
+    
+    if not pr_ref or not pr_ref.startswith("#"):
+        return None
+    
+    pr_number = int(pr_ref.lstrip("#"))
+    plan_issue = github.get_issue(repo_root, pr_number)
+    
+    existing_objective = extract_plan_header_objective_issue(plan_issue.body)
+    
+    # Three outcomes:
+    if existing_objective == objective_issue_number:
+        return BacklinkResult.success()  # Already correct
+    
+    if existing_objective is not None:
+        return BacklinkResult.warning(...)  # Conflict: don't overwrite
+    
+    if find_metadata_block(plan_issue.body, BlockKeys.PLAN_HEADER) is None:
+        return BacklinkResult.skipped(reason="no plan-header block")  # Not an erk plan
+    
+    # Only case that actually updates: no existing backlink
+    updated_body = update_plan_header_objective_issue(plan_issue.body, objective_issue_number)
+    github.update_issue_body(repo_root, pr_number, BodyText(content=updated_body))
+    return BacklinkResult.success()
+```
+
+**Key Pattern: Conflict Detection**
+- Lines 338-344: If a plan PR already has a *different* objective backlink, warn and skip (never overwrite)
+- This prevents accidental plan reuse across objectives
+- Fail-open design: backlink failure doesn't block node update
+
+---
+
+### 3. **Validation via Check 9** 
+(`check_cmd.py`, lines 108-150: `_check_pr_backlinks`)
+
+Validation confirms backlink consistency:
+
+```python
+def _check_pr_backlinks(remote, *, owner, repo, issue_number, graph):
+    """Verify each referenced PR has objective_issue == this objective."""
+    
+    pr_nodes = [node for node in graph.nodes if node.pr and node.pr.startswith("#")]
+    backlink_issues = []
+    
+    for node in pr_nodes:
+        pr_number = int(node.pr.lstrip("#"))
+        pr_issue = remote.get_issue(owner, repo, pr_number)
+        
+        objective_ref = extract_plan_header_objective_issue(pr_issue.body)
+        
+        if objective_ref is None:
+            if has_metadata_block(pr_issue.body, BlockKeys.PLAN_HEADER):
+                # Erk plan without backlink — report missing
+                backlink_issues.append(f"Step {node.id} PR {node.pr} missing objective_issue backlink")
+        elif objective_ref != issue_number:
+            # Mismatched backlink — report mismatch
+            backlink_issues.append(f"Step {node.id} PR {node.pr} has mismatched objective_issue: {objective_ref}")
+    
+    if not backlink_issues:
+        return (True, "PR backlinks: all PR references have matching objective_issue backlinks")
+    return (False, f"PR backlinks: {backlink_issues[0]}")
+```
+
+**Key Pattern: Selective Validation**
+- Lines 137-142: Only erk plans (those with plan-header blocks) are required to have backlinks
+- Non-erk PRs are silently accepted (no validation failure)
+- Mismatch is treated as a hard error (not just a warning)
+
+---
+
+### 4. **Naming Divergence Pattern** 
+(`.claude/commands/.../objective-update-with-landed-pr.md`, lines 80-87)
+
+The command guidance documents the specific "naming divergence" scenario:
+
+| Contradiction Type | Example | Section to Update |
+|---|---|---|
+| **Naming divergence** | Node says `@json_output`, PR implemented `@json_command` | Node description (via `update-objective-node --description`) |
+
+**Key Pattern:** When a node description becomes inaccurate due to implementation choices:
+
+```bash
+erk exec update-objective-node &lt;objective_number&gt; --node &lt;node_id&gt; --description "&lt;corrected description&gt;"
+```
+
+This is treated as **documentation correction after the fact**, not a failure:
+- Prose reconciliation step (Step 2) explicitly checks for naming divergence
+- If found, update the description to match what was actually built
+- This keeps the roadmap a source of truth for *what exists*, not just *what was intended*
+
+---
+
+### 5. **Integration Points** 
+
+**When backlinks are set:**
+- `update_objective_node` (lines 535-540): Backlink attempt runs after node update succeeds
+- Always fails open (returns warning status, doesn't block)
+- Only affects plan PRs with existing plan-header blocks
+
+**When backlinks are validated:**
+- `check_objective` (lines 299-303): Check 9 validates all referenced PRs
+- Returns single first failure for brevity
+- Validates both missing and mismatched backlinks
+
+**When divergence is reconciled:**
+- After landing a PR, prose reconciliation phase (Step 2 in command)
+- Checks node descriptions for naming/scope mismatches
+- Updates node descriptions via `update-objective-node --description`
+- Re-renders the roadmap table after description changes
+
+---
+
+### Summary
+
+The pattern is a **fail-open bidirectional reference system**:
+
+1. Forward link (objective → plan): `objective_issue` field in plan header, set when node updated
+2. Validation: Check 9 ensures consistency, but doesn't block mismatches
+3. Conflict handling: Existing backlinks block overwriting (prevents plan reuse)
+4. Reconciliation: After implementation, descriptions updated if naming diverged
+5. Source of truth: The roadmap YAML describes what was actually built, updated post-facto if needed
+
+This allows plans to be linked to objectives without preventing plan reuse, while validation catches accidental divergences.</assistant>
+  <usage input_tokens="15246" cache_creation_input_tokens="20473" cache_read_input_tokens="15170" cache_creation="{'ephemeral_5m_input_tokens': 20473, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
