@@ -96,3 +96,7 @@ def create_mcp() -> FastMCP:
     for tool in _build_json_command_tools():
         server.add_tool(tool)
     return server
+
+
+# Module-level instance for `fastmcp dev` CLI discovery (used by `make mcp-dev`)
+mcp = create_mcp()
