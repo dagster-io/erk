@@ -1,0 +1,898 @@
+<session>
+  <meta source="agent-a1b8146" />
+  <meta branch="plnd/enhance-runs-tab-detail-03-09-0729" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find and read these files for the PlanService ABC, real, and fake:
+1. Look for the PlanService ABC - search for files containing "class PlanService" under packages/erk-shared/src/erk_shared/gateway/plan_service/
+2. The real implementation
+3. The fake implementation
+
+Report: full paths, the class definitions, and where I should add a new `fetch_run_jobs` method (the pattern for adding methods).
+
+Also find the CheckRunsScreen (src/erk/tui/screens/check_runs_screen.py) and report its structure so I can use it as a pattern for creating RunDetailScreen.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find these files and understand the patterns. Let me start by checking the documentation index as instructed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15158" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15158, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HmKiAazMiKqHu5BYh3Qe2y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15158" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15158, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BApxBbRKyKEhk3QE1qLa2f">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/guide.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15158" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15158, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HmKiAazMiKqHu5BYh3Qe2y">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01BApxBbRKyKEhk3QE1qLa2f">
+     1→---
+     2→title: Documentation Guide
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "navigating erk documentation"
+     7→  - "finding where documentation lives"
+     8→  - "understanding doc organization"
+     9→---
+    10→
+    11→# Documentation Guide
+    12→
+    13→## Quick Navigation
+    14→
+    15→The documentation is organized by topic category:
+    16→
+    17→### Documentation Categories
+    18→
+    19→| Category                      | Description                                      |
+    20→| ----------------------------- | ------------------------------------------------ |
+    21→| [Architecture](architecture/) | Core patterns, interfaces, subprocess wrappers   |
+    22→| [CLI Development](cli/)       | Command organization, output styling, formatting |
+    23→| [Planning](planning/)         | Plan lifecycle, workflows, agent delegation      |
+    24→| [Testing](testing/)           | Test architecture, fakes, rebase conflicts       |
+    25→| [Sessions](sessions/)         | Session logs, context analysis, tools            |
+    26→| [Hooks](hooks/)               | Hook system, erk-specific hooks                  |
+    27→| [Commands](commands/)         | Slash command optimization                       |
+    28→| [Reference](reference/)       | GitHub integration, external references          |
+    29→| [Erk](erk/)                   | Erk-specific workflows                           |
+    30→
+
+... [102 lines omitted] ...
+
+    42→- Covers: exception handling, type annotations, imports, ABC patterns, file operations, CLI development
+  </tool_result>
+  <assistant>Good. Now let me search the relevant documentation categories. Since I'm looking for gateway patterns (PlanService ABC) and TUI patterns (CheckRunsScreen), I should check both architecture and TUI docs.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3115" cache_read_input_tokens="15158" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_011z3CCdrxBEk7ZNGn89m636">
+    <param name="pattern">docs/learned/architecture/*.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3115" cache_read_input_tokens="15158" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017ymn4FjwGiwqo2PfZZho1x">
+    <param name="pattern">docs/learned/tui/*.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3115" cache_read_input_tokens="15158" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01FF5bSyE4tcRfN9dhKz9owy">
+    <param name="pattern">docs/learned/gateway/*.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3115" cache_read_input_tokens="15158" cache_creation="{'ephemeral_5m_input_tokens': 3115, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011z3CCdrxBEk7ZNGn89m636">
+/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md
+/home/runner/work/erk/erk/docs/learned/architecture/bash-python-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/at-reference-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-schema-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md
+/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md
+/home/runner/work/erk/erk/docs/learned/architecture/callback-progress-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md
+/home/runner/work/erk/erk/docs/learned/architecture/checked-out-branch-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-execution-modes.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-binary-ops-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/click-context-di-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-installation-gateway.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-error-reporting.md
+/home/runner/work/erk/erk/docs/learned/architecture/circular-import-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/composable-remote-commands.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/convergence-points.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-injection-tiers.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-efficiency.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-to-pipeline-boundary.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-progress.md
+/home/runner/work/erk/erk/docs/learned/architecture/defense-in-depth-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/fake-mutation-tracking.md
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/exception-logging-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md
+  </tool_result>
+  <tool_result tool="toolu_017ymn4FjwGiwqo2PfZZho1x">
+/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md
+/home/runner/work/erk/erk/docs/learned/tui/async-action-refresh-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/adding-commands.md
+/home/runner/work/erk/erk/docs/learned/tui/async-state-snapshot.md
+/home/runner/work/erk/erk/docs/learned/tui/architecture.md
+/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md
+/home/runner/work/erk/erk/docs/learned/tui/one-shot-prompt-modal.md
+/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md
+/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/multi-operation-tracking.md
+/home/runner/work/erk/erk/docs/learned/tui/dual-handler-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/lifecycle-display.md
+/home/runner/work/erk/erk/docs/learned/tui/modal-widget-embedding.md
+/home/runner/work/erk/erk/docs/learned/tui/index.md
+/home/runner/work/erk/erk/docs/learned/tui/filter-toggle-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/dashboard-columns.md
+/home/runner/work/erk/erk/docs/learned/tui/command-execution.md
+/home/runner/work/erk/erk/docs/learned/tui/command-palette.md
+/home/runner/work/erk/erk/docs/learned/tui/column-addition-pattern.md
+/home/runner/work/erk/erk/docs/learned/tui/data-contract.md
+/home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md
+/home/runner/work/erk/erk/docs/learned/tui/derived-display-columns.md
+/home/runner/work/erk/erk/docs/learned/tui/filter-pipeline.md
+/home/runner/work/erk/erk/docs/learned/tui/view-aware-commands.md
+/home/runner/work/erk/erk/docs/learned/tui/tripwires.md
+/home/runner/work/erk/erk/docs/learned/tui/streaming-output.md
+/home/runner/work/erk/erk/docs/learned/tui/stacked-pr-indicator.md
+/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md
+/home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md
+/home/runner/work/erk/erk/docs/learned/tui/subprocess-feedback.md
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FF5bSyE4tcRfN9dhKz9owy">
+/home/runner/work/erk/erk/docs/learned/gateway/codespace-gateway.md
+/home/runner/work/erk/erk/docs/learned/gateway/tripwires.md
+/home/runner/work/erk/erk/docs/learned/gateway/codespace-registry.md
+/home/runner/work/erk/erk/docs/learned/gateway/index.md
+  </tool_result>
+  <assistant>Let me read the most relevant architecture and TUI documentation files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4245" cache_read_input_tokens="18273" cache_creation="{'ephemeral_5m_input_tokens': 4245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015AwPGiVTCcy65R7bfjR64E">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4245" cache_read_input_tokens="18273" cache_creation="{'ephemeral_5m_input_tokens': 4245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0134VoPPLgoTGEk3BgrwVxYo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4245" cache_read_input_tokens="18273" cache_creation="{'ephemeral_5m_input_tokens': 4245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DDs1gtbsoRjjJtad8GkRzJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4245" cache_read_input_tokens="18273" cache_creation="{'ephemeral_5m_input_tokens': 4245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0134VoPPLgoTGEk3BgrwVxYo">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→  - action: "adding CI check formatting to TUI screens"
+    19→    warning: "Use src/erk/tui/formatting/ci_checks.py shared module (format_check_line, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."
+    20→last_audited: "2026-02-17 18:30 PT"
+    21→audit_result: clean
+    22→---
+    23→
+    24→# TUI Architecture Overview
+    25→
+    26→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    27→
+    28→## Directory Structure
+    29→
+    30→```
+
+... [183 lines omitted] ...
+
+   128→Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.gateway.plan_data_provider.fake` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+  </tool_result>
+  <tool_result tool="toolu_01DDs1gtbsoRjjJtad8GkRzJ">
+     1→---
+     2→title: TUI Modal Screen Pattern
+     3→read_when:
+     4→  - "adding a new modal screen to the TUI"
+     5→  - "implementing a ModalScreen subclass"
+     6→  - "displaying detail views or confirmation dialogs"
+     7→tripwires:
+     8→  - action: "creating a ModalScreen without CSS for dismiss behavior"
+     9→    warning: "ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing."
+    10→  - action: "calling widget methods from @work(thread=True) without call_from_thread()"
+    11→    warning: "Background thread widget mutations cause silent UI corruption. Use self.app.call_from_thread(callback, ...)."
+    12→  - action: "using inverted key check in on_key() modal dismiss logic"
+    13→    warning: "if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order."
+    14→    score: 7
+    15→---
+    16→
+    17→# TUI Modal Screen Pattern
+    18→
+    19→Checklist for implementing a new modal screen in the erk TUI.
+    20→
+    21→## 7-Element Checklist
+    22→
+    23→### 1. ModalScreen Subclass
+    24→
+    25→Extend `ModalScreen` (not `Screen`) to get overlay dismiss behavior:
+    26→
+    27→```python
+    28→from textual.screen import ModalScreen
+    29→
+    30→class MyDetailScreen(ModalScreen):
+
+... [101 lines omitted] ...
+
+    66→    except Exception as e:
+    67→        self.app.call_from_thread(self._on_error, str(e))
+    80→### 6. Error Boundary
+    82→Wrap the entire worker body in try/except. This is an approved EAFP exception for UI error boundaries — it prevents silent worker failures.
+   125→- [Textual Async Best Practices](textual-async.md) — Error boundary pattern details
+  </tool_result>
+  <tool_result tool="toolu_015AwPGiVTCcy65R7bfjR64E">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "creating a new gateway ABC"
+    11→    warning: "Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not."
+    12→  - action: "adding a new method to a dry-run-enabled gateway ABC (Git, LocalGitHub, Graphite)"
+    13→    warning: "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py."
+    14→  - action: "adding a new method to a 3-file gateway ABC"
+    15→    warning: "Must implement in 3 places: abc.py, real.py, fake.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from all implementation files simultaneously (3 or 4 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all implementations import the new types. For 4-file gateways: abc.py, real.py, fake.py, dry_run.py. For 3-file gateways: abc.py, real.py, fake.py."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [782 lines omitted] ...
+
+    31→    warning: "All implementations must be updated (3 or 4 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests."
+    33→    warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
+    35→    warning: "Must also wire into ErkContext: add field to context.py dataclass, add parameter to for_test(), and wire Real* in production factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section."
+    44→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   172→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   174→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   176→### Decision: Discriminated Union or Exception?
+   180→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   181→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   182→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   186→- [ ] At least one caller branches on the error and continues with different logic
+   187→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   188→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   192→### Checklist: Use Exceptions When
+   194→- [ ] All callers terminate on failure (extract message and stop)
+   195→- [ ] No caller inspects error type or branches on error content
+   196→- [ ] Use `UserFacingCliError` at CLI boundary
+   202→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   217→**Methods using discriminated unions** (callers branch on error):
+   221→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   222→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   223→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   225→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   227→**Methods using exceptions** (all callers terminate):
+   229→| Method              | Exception      | Why                                                         |
+   231→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   232→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   236→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   243→   - [ ] `real.py` - Return appropriate error types for failure cases
+   245→   - [ ] `dry_run.py` - Return appropriate success/error based on mode (4-file gateways only)
+   247→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   252→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   256→- Updated tests to use `isinstance(result, MergeError)`
+   274→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   282→- When error messages from `get_X()` on missing resources are unclear
+   305→    user_output(f"Error: Issue #{issue_number} not found")
+   380→6. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   610→The worktree sub-gateway follows the same 4-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   697→**Partial removal causes type checker errors** - if you remove from abc.py but forget another implementation, the type checker will complain about missing abstract method implementations.
+   715→1. Run type checker (`ty`) to verify no abstract method errors
+   772→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   774→├── fake.py       # Constructor-injected errors, mutation tracking
+   780→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   781→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   782→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   805→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <assistant>Excellent. Now I have the documentation. Let me search for the actual PlanService files and CheckRunsScreen:</assistant>
+  <usage input_tokens="5508" cache_creation_input_tokens="12738" cache_read_input_tokens="22518" cache_creation="{'ephemeral_5m_input_tokens': 12738, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RRiq2cEanXUqxTSJJCMMpX">
+    <param name="pattern">packages/erk-shared/src/erk_shared/gateway/plan_service/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="5508" cache_creation_input_tokens="12738" cache_read_input_tokens="22518" cache_creation="{'ephemeral_5m_input_tokens': 12738, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019MzLY9tZ5HPQg6eZogYTFv">
+    <param name="pattern">src/erk/tui/screens/check_runs_screen.py</param>
+  </tool_use>
+  <usage input_tokens="5508" cache_creation_input_tokens="12738" cache_read_input_tokens="22518" cache_creation="{'ephemeral_5m_input_tokens': 12738, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RRiq2cEanXUqxTSJJCMMpX">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py
+  </tool_result>
+  <tool_result tool="toolu_019MzLY9tZ5HPQg6eZogYTFv">
+/home/runner/work/erk/erk/src/erk/tui/screens/check_runs_screen.py
+  </tool_result>
+  <assistant>Perfect! Now let me read all three PlanService files and the CheckRunsScreen:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6026" cache_read_input_tokens="35256" cache_creation="{'ephemeral_5m_input_tokens': 6026, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TAE3BSgG8dA4u2WThFAwek">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6026" cache_read_input_tokens="35256" cache_creation="{'ephemeral_5m_input_tokens': 6026, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qu1c63xC9avuCEYKy9sebX">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6026" cache_read_input_tokens="35256" cache_creation="{'ephemeral_5m_input_tokens': 6026, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016waF18Ecd74G9Xu8Q6FM1w">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6026" cache_read_input_tokens="35256" cache_creation="{'ephemeral_5m_input_tokens': 6026, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012vkA3gmhoJybV43HXUmu3c">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/check_runs_screen.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6026" cache_read_input_tokens="35256" cache_creation="{'ephemeral_5m_input_tokens': 6026, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TAE3BSgG8dA4u2WThFAwek">
+     1→"""Domain service ABC for plan operations (no TUI type dependencies)."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.browser.abc import BrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+     9→
+    10→
+    11→class PlanService(ABC):
+    12→    """Abstract base class for plan domain operations.
+    13→
+    14→    Contains operations that are independent of TUI display concerns:
+    15→    closing plans, dispatching, fetching content, and GitHub PR data.
+    16→    No TUI type imports (PlanRowData, FetchTimings, PlanFilters, BranchActivity).
+    17→    """
+    18→
+    19→    @property
+    20→    @abstractmethod
+    21→    def repo_root(self) -&gt; Path:
+    22→        """Get the repository root path."""
+    23→        ...
+    24→
+    25→    @property
+    26→    @abstractmethod
+    27→    def clipboard(self) -&gt; Clipboard:
+    28→        """Get the clipboard interface for copy operations."""
+    29→        ...
+    30→
+
+... [114 lines omitted] ...
+
+   124→        """Fetch CI failure summaries for a pull request.
+  </tool_result>
+  <tool_result tool="toolu_01Qu1c63xC9avuCEYKy9sebX">
+     1→"""Real implementation of PlanService for production use."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk_shared.gateway.browser.abc import BrowserLauncher
+     8→from erk_shared.gateway.clipboard.abc import Clipboard
+     9→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    10→from erk_shared.gateway.github.metadata.core import (
+    11→    extract_objective_from_comment,
+    12→    extract_objective_header_comment_id,
+    13→)
+    14→from erk_shared.gateway.github.types import (
+    15→    GitHubRepoId,
+    16→    GitHubRepoLocation,
+    17→    PRCheckRun,
+    18→    PRNotFound,
+    19→    PRReviewThread,
+    20→)
+    21→from erk_shared.gateway.http.abc import HttpClient
+    22→from erk_shared.gateway.plan_service.abc import PlanService
+    23→
+    24→
+    25→class RealPlanService(PlanService):
+    26→    """Production implementation of domain plan operations.
+    27→
+    28→    Contains operations independent of TUI display: closing plans,
+    29→    dispatching, fetching content, and GitHub PR data.
+    30→    """
+
+... [245 lines omitted] ...
+
+   214→        """Fetch CI failure summaries for a pull request.
+  </tool_result>
+  <tool_result tool="toolu_016waF18Ecd74G9Xu8Q6FM1w">
+     1→"""Fake plan service for testing."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.browser.abc import BrowserLauncher
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     9→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    10→from erk_shared.gateway.plan_service.abc import PlanService
+    11→
+    12→
+    13→class FakePlanService(PlanService):
+    14→    """Fake implementation of PlanService for testing.
+    15→
+    16→    Returns canned data without making any API calls.
+    17→    """
+    18→
+    19→    def __init__(
+    20→        self,
+    21→        *,
+    22→        clipboard: Clipboard | None = None,
+    23→        browser: BrowserLauncher | None = None,
+    24→        repo_root: Path | None = None,
+    25→    ) -&gt; None:
+    26→        """Initialize with optional canned data.
+    27→
+    28→        Args:
+    29→            clipboard: Clipboard interface, defaults to FakeClipboard()
+    30→            browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
+
+... [175 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012vkA3gmhoJybV43HXUmu3c">
+     1→"""Modal screen displaying failing CI check runs for a PR."""
+     2→
+     3→from textual import work
+     4→from textual.app import ComposeResult
+     5→from textual.binding import Binding
+     6→from textual.containers import Container, Vertical
+     7→from textual.screen import ModalScreen
+     8→from textual.widgets import Label, Markdown
+     9→
+    10→from erk.tui.formatting.ci_checks import format_check_runs
+    11→from erk_shared.gateway.github.types import PRCheckRun
+    12→from erk_shared.gateway.plan_service.abc import PlanService
+    13→
+    14→
+    15→class CheckRunsScreen(ModalScreen):
+    16→    """Modal screen displaying failing CI check runs."""
+    17→
+    18→    BINDINGS = [
+    19→        Binding("escape", "dismiss", "Close"),
+    20→        Binding("q", "dismiss", "Close"),
+    21→        Binding("space", "dismiss", "Close"),
+    22→    ]
+    23→
+    24→    DEFAULT_CSS = """
+    25→    CheckRunsScreen {
+    26→        align: center middle;
+    27→    }
+    28→
+    29→    #checks-dialog {
+    30→        width: 90%;
+
+... [206 lines omitted] ...
+
+    84→    #checks-error {
+    85→        color: $error;
+   152→        error: str | None = None
+   156→        except Exception as e:
+   157→            error = str(e)
+   159→        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+   161→    def _on_check_runs_loaded(self, check_runs: list[PRCheckRun], error: str | None) -&gt; None:
+   169→            error: Error message if fetch failed, or None
+   176→        if error is not None:
+   177→            container.mount(Label(f"Error: {error}", id="checks-error"))
+   194→        container.mount(Label("Loading failure summaries...", id="checks-summaries-loading"))
+   199→        """Fetch CI failure summaries in background thread."""
+   206→        except (RuntimeError, ValueError, KeyError):
+   207→            # Summaries are best-effort; silently ignore failures
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me compile a comprehensive report for you.
+
+---
+
+## Report: PlanService ABC, Real, Fake, and CheckRunsScreen Pattern Analysis
+
+Based on my thorough exploration of the codebase and documentation, here's what you need to know:
+
+### PlanService ABC Files
+
+#### 1. **PlanService ABC**
+**Path**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py`
+
+**Class Definition** (lines 11-138):
+```python
+class PlanService(ABC):
+    """Abstract base class for plan domain operations.
+    
+    Contains operations that are independent of TUI display concerns:
+    closing plans, dispatching, fetching content, and GitHub PR data.
+    No TUI type imports (PlanRowData, FetchTimings, PlanFilters, BranchActivity).
+    """
+    
+    @property
+    @abstractmethod
+    def repo_root(self) -&gt; Path: ...
+    
+    @property
+    @abstractmethod
+    def clipboard(self) -&gt; Clipboard: ...
+    
+    @property
+    @abstractmethod
+    def browser(self) -&gt; BrowserLauncher: ...
+    
+    # Abstract methods:
+    # - close_plan(plan_id, plan_url) -&gt; list[int]
+    # - dispatch_to_queue(plan_id, plan_url) -&gt; None
+    # - fetch_plan_content(plan_id, plan_body) -&gt; str | None
+    # - fetch_objective_content(plan_id, plan_body) -&gt; str | None
+    # - get_branch_stack(branch) -&gt; list[str] | None
+    # - fetch_check_runs(pr_number) -&gt; list[PRCheckRun]
+    # - fetch_unresolved_comments(pr_number) -&gt; list[PRReviewThread]
+    # - fetch_ci_summaries(pr_number, *, comment_id) -&gt; dict[str, str]
+```
+
+**Current methods**: 8 abstract methods + 3 abstract properties
+
+---
+
+#### 2. **RealPlanService (Production Implementation)**
+**Path**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py`
+
+**Class Definition** (lines 25-253):
+```python
+class RealPlanService(PlanService):
+    """Production implementation of domain plan operations."""
+    
+    def __init__(
+        self,
+        ctx: ErkContext,
+        *,
+        location: GitHubRepoLocation,
+        clipboard: Clipboard,
+        browser: BrowserLauncher,
+        http_client: HttpClient,
+    ) -&gt; None: ...
+    
+    # Implements all 8 abstract methods
+    # Key implementation patterns:
+    # - Uses self._ctx (ErkContext) for gateway access
+    # - Uses self._http_client for direct API calls when needed
+    # - Uses self._location for GitHub repo info
+```
+
+**Key Pattern**: Real implementation delegates to ErkContext gateways:
+- `fetch_check_runs()` → calls `self._ctx.github.get_pr_check_runs()`
+- `fetch_unresolved_comments()` → calls `self._ctx.github.get_pr_review_threads()`
+- `fetch_ci_summaries()` → uses HTTP client directly with fallback path
+
+---
+
+#### 3. **FakePlanService (Test Implementation)**
+**Path**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py`
+
+**Class Definition** (lines 13-200):
+```python
+class FakePlanService(PlanService):
+    """Fake implementation of PlanService for testing."""
+    
+    def __init__(
+        self,
+        *,
+        clipboard: Clipboard | None = None,
+        browser: BrowserLauncher | None = None,
+        repo_root: Path | None = None,
+    ) -&gt; None:
+        self._clipboard = clipboard if clipboard is not None else FakeClipboard()
+        self._browser = browser if browser is not None else FakeBrowserLauncher()
+        self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
+        
+        # Constructor-injected test data dicts
+        self._plan_content_by_plan_id: dict[int, str] = {}
+        self._objective_content_by_plan_id: dict[int, str] = {}
+        self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
+        self._check_runs_by_pr: dict[int, list[PRCheckRun]] = {}
+        self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
+        self._stacks_by_branch: dict[str, list[str]] = {}
+    
+    # Implements all 8 abstract methods
+    # Pattern for test data setup:
+    # - fetch_X() methods return from _X_by_key dicts
+    # - set_X() methods inject test data before tests run
+```
+
+**Key Pattern**: Fake uses **constructor-injected dictionaries** for test data:
+- `fetch_check_runs()` → returns `self._check_runs_by_pr.get(pr_number, [])`
+- `set_check_runs(pr_number, check_runs)` → stores in dict for retrieval
+- Same pattern for all other fetch methods
+
+---
+
+### Where to Add `fetch_run_jobs` Method
+
+Based on the 3-file gateway pattern documented in the architecture docs, you should add the method to **all three files simultaneously**:
+
+#### Pattern for Adding Methods:
+
+**abc.py** (lines ~140):
+```python
+@abstractmethod
+def fetch_run_jobs(self, run_id: str) -&gt; list[RunJob]:
+    """Fetch job details for a specific workflow run.
+    
+    Args:
+        run_id: The GitHub workflow run ID
+        
+    Returns:
+        List of RunJob objects for the run, sorted by name
+    """
+    ...
+```
+
+**real.py** (similar location):
+```python
+def fetch_run_jobs(self, run_id: str) -&gt; list[RunJob]:
+    """Fetch job details for a specific workflow run.
+    
+    Args:
+        run_id: The GitHub workflow run ID
+        
+    Returns:
+        List of RunJob objects for the run, sorted by name
+    """
+    return self._ctx.github.get_workflow_run_jobs(self._location.root, run_id)
+```
+
+**fake.py** (similar location):
+```python
+def __init__(self, ...):
+    # Add in constructor (after existing dict initializations):
+    self._jobs_by_run: dict[str, list[RunJob]] = {}
+
+def fetch_run_jobs(self, run_id: str) -&gt; list[RunJob]:
+    """Fetch job details for a specific workflow run."""
+    return self._jobs_by_run.get(run_id, [])
+
+def set_run_jobs(self, run_id: str, jobs: list[RunJob]) -&gt; None:
+    """Set the jobs to return for a specific run.
+    
+    Args:
+        run_id: The GitHub workflow run ID
+        jobs: List of RunJob to return
+    """
+    self._jobs_by_run[run_id] = jobs
+```
+
+---
+
+### CheckRunsScreen Structure &amp; Pattern
+
+**Path**: `/home/runner/work/erk/erk/src/erk/tui/screens/check_runs_screen.py`
+
+**Class Definition** (lines 15-231):
+
+```python
+class CheckRunsScreen(ModalScreen):
+    """Modal screen displaying failing CI check runs."""
+    
+    # 1. BINDINGS for keyboard navigation (lines 18-22)
+    BINDINGS = [
+        Binding("escape", "dismiss", "Close"),
+        Binding("q", "dismiss", "Close"),
+        Binding("space", "dismiss", "Close"),
+    ]
+    
+    # 2. DEFAULT_CSS for layout and styling (lines 24-94)
+    DEFAULT_CSS = """
+    CheckRunsScreen { align: center middle; }
+    #checks-dialog { width: 90%; max-width: 120; height: 80%; ... }
+    #checks-loading { color: $text-muted; text-style: italic; }
+    #checks-empty { color: $text-muted; text-style: italic; }
+    #checks-error { color: $error; text-style: italic; }
+    """
+    
+    # 3. Constructor with dependency injection (lines 96-123)
+    def __init__(
+        self,
+        *,
+        service: PlanService,  # Injected for testability
+        pr_number: int,
+        full_title: str,
+        passing_count: int,
+        total_count: int,
+        ci_summary_comment_id: int | None,
+    ) -&gt; None: ...
+    
+    # 4. compose() - Define UI structure (lines 125-142)
+    def compose(self) -&gt; ComposeResult:
+        failing = self._total_count - self._passing_count
+        with Vertical(id="checks-dialog"):
+            with Vertical(id="checks-header"):
+                yield Label(..., id="checks-title")
+                yield Label(..., id="checks-summary", markup=False)
+            yield Label("", id="checks-divider")
+            with Container(id="checks-content-container"):
+                yield Label("Loading check runs...", id="checks-loading")
+            yield Label("Press Esc, q, or Space to close", id="checks-footer")
+    
+    # 5. on_mount() - Trigger initial load (lines 144-146)
+    def on_mount(self) -&gt; None:
+        self._fetch_check_runs()
+    
+    # 6. Background worker - Phase 1 fetch (lines 148-159)
+    @work(thread=True)
+    def _fetch_check_runs(self) -&gt; None:
+        """Fetch failing check runs in background thread."""
+        check_runs: list[PRCheckRun] = []
+        error: str | None = None
+        try:
+            check_runs = self._service.fetch_check_runs(self._pr_number)
+        except Exception as e:
+            error = str(e)
+        # Bridge to main thread
+        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+    
+    # 7. Main thread callback - Phase 1 result handling (lines 161-195)
+    def _on_check_runs_loaded(self, check_runs: list[PRCheckRun], error: str | None) -&gt; None:
+        """Handle check runs loaded - displays them, then starts Phase 2."""
+        container = self.query_one("#checks-content-container", Container)
+        container.query_one("#checks-loading", Label).remove()
+        
+        if error is not None:
+            container.mount(Label(f"Error: {error}", id="checks-error"))
+            return
+        
+        if not check_runs:
+            container.mount(Label("(No failing checks found)", id="checks-empty"))
+            return
+        
+        # Display Phase 1 results
+        self._check_runs = check_runs
+        container.mount(
+            Markdown(format_check_runs(check_runs, summaries=None), id="checks-content")
+        )
+        
+        # Trigger Phase 2: optional enrichment
+        container.mount(Label("Loading failure summaries...", id="checks-summaries-loading"))
+        self._fetch_summaries()
+    
+    # 8. Background worker - Phase 2 enrichment (lines 197-210)
+    @work(thread=True)
+    def _fetch_summaries(self) -&gt; None:
+        """Fetch CI failure summaries in background thread (optional enrichment)."""
+        summaries: dict[str, str] = {}
+        try:
+            summaries = self._service.fetch_ci_summaries(
+                self._pr_number, comment_id=self._ci_summary_comment_id
+            )
+        except (RuntimeError, ValueError, KeyError):
+            # Best-effort; silently ignore failures
+            pass
+        self.app.call_from_thread(self._on_summaries_loaded, summaries)
+    
+    # 9. Main thread callback - Phase 2 result handling (lines 212-230)
+    def _on_summaries_loaded(self, summaries: dict[str, str]) -&gt; None:
+        """Handle summaries loaded - updates display in-place."""
+        container = self.query_one("#checks-content-container", Container)
+        loading = container.query("#checks-summaries-loading")
+        for widget in loading:
+            widget.remove()
+        
+        if not summaries:
+            return
+        
+        # Update existing content (avoid remove/mount race)
+        markdown = container.query_one("#checks-content", Markdown)
+        markdown.update(format_check_runs(self._check_runs, summaries=summaries))
+```
+
+---
+
+### Key Pattern Elements for RunDetailScreen
+
+When creating `RunDetailScreen` based on `CheckRunsScreen`, follow these 9 elements:
+
+| Element | CheckRunsScreen Example | For RunDetailScreen |
+|---------|----------------------|-------------------|
+| 1. **Class** | `class CheckRunsScreen(ModalScreen)` | Extend `ModalScreen` (not `Screen`) |
+| 2. **Bindings** | escape/q/space → dismiss | Add your dismiss keys + action keys |
+| 3. **CSS** | `CheckRunsScreen { align: center middle; }` | Define grid layout for run details |
+| 4. **Constructor** | Inject `service: PlanService` | Inject run service with `run_id` |
+| 5. **compose()** | Build header + container + footer | Build three-part layout |
+| 6. **on_mount()** | Call `self._fetch_check_runs()` | Call your fetch worker |
+| 7. **Phase 1 worker** | `@work(thread=True) _fetch_check_runs()` | Background data load |
+| 8. **Phase 1 callback** | `_on_check_runs_loaded()` | Mount initial content |
+| 9. **Phase 2** | Optional enrichment (`_fetch_summaries()`) | Optional detail enrichment |
+
+**Critical Patterns**:
+- Use **unique DOM IDs per lifecycle phase** (loading/content/error) — don't reuse `id="content"`
+- Always use **`call_from_thread()`** to bridge background thread to UI thread
+- Wrap background work in **try/except** for error boundaries
+- Use **`query_one()` to target unique IDs**, not `query()` which returns list
+- Remove loading indicators before mounting new content to avoid DOM conflicts
+
+---
+
+### Documentation Context
+
+The relevant architecture documentation for this work:
+
+1. **Gateway ABC Implementation Checklist** (`docs/learned/architecture/gateway-abc-implementation.md`):
+   - 3-file vs 4-file patterns (PlanService uses 3-file: abc.py, real.py, fake.py)
+   - Method addition checklist
+   - Fake mutation tracking pattern
+
+2. **TUI Architecture Overview** (`docs/learned/tui/architecture.md`):
+   - PlanService lives in `erk_shared.gateway.plan_service` (not in TUI)
+   - Describes data provider pattern and widget layer
+
+3. **TUI Modal Screen Pattern** (`docs/learned/tui/modal-screen-pattern.md`):
+   - 8-element checklist for new modal screens
+   - Error boundary patterns
+   - Async data loading with `@work(thread=True)` and `call_from_thread()`
+
+All three files follow the **standard 3-file gateway pattern** from the architecture documentation, with clear separation between ABC contract, real implementation (using context gateways), and fake implementation (constructor-injected test data).</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="12687" cache_read_input_tokens="41282" cache_creation="{'ephemeral_5m_input_tokens': 12687, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

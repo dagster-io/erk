@@ -1,0 +1,797 @@
+<session>
+  <meta branch="plnd/add-runs-tab-tui-dash-03-09-0622" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01XJf77jZfraSVysjHnVqBSB">
+     1→"""TUI data provider ABC for plan table display assembly."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→
+     5→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+     6→from erk.tui.sorting.types import BranchActivity
+     7→
+     8→
+     9→class PlanDataProvider(ABC):
+    10→    """Abstract base class for TUI plan data assembly.
+    11→
+    12→    Contains only the methods that produce TUI-specific types
+    13→    (PlanRowData, FetchTimings, BranchActivity). Domain operations
+    14→    (close_plan, dispatch, fetch_content, etc.) live in PlanService.
+    15→    """
+    16→
+    17→    @abstractmethod
+    18→    def fetch_plans(self, filters: PlanFilters) -&gt; tuple[list[PlanRowData], FetchTimings | None]:
+    19→        """Fetch plans matching the given filters.
+    20→
+    21→        Args:
+    22→            filters: Filter options for the query
+    23→
+    24→        Returns:
+    25→            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
+    26→        """
+    27→        ...
+    28→
+    29→    @abstractmethod
+    30→    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+
+... [43 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1604" cache_read_input_tokens="67544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1604}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01TAhbRq3525kpWXP8Fxgwj2">
+    <param name="pattern">src/erk/tui/screens/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1604" cache_read_input_tokens="67544" output_tokens="531" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1604, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TAhbRq3525kpWXP8Fxgwj2">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/check_runs_screen.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/launch_screen.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/one_shot_prompt_screen.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/plan_body_screen.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/plan_input_screen.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/unresolved_comments_screen.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/plan_detail_screen.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/objective_nodes_screen.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/help_screen.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NJPvyqGq5YUyK5sn2URsTG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/check_runs_screen.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="69148" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 981, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NJPvyqGq5YUyK5sn2URsTG">
+     1→"""Modal screen displaying failing CI check runs for a PR."""
+     2→
+     3→from textual import work
+     4→from textual.app import ComposeResult
+     5→from textual.binding import Binding
+     6→from textual.containers import Container, Vertical
+     7→from textual.screen import ModalScreen
+     8→from textual.widgets import Label, Markdown
+     9→
+    10→from erk.tui.formatting.ci_checks import format_check_runs
+    11→from erk_shared.gateway.github.types import PRCheckRun
+    12→from erk_shared.gateway.plan_service.abc import PlanService
+    13→
+    14→
+    15→class CheckRunsScreen(ModalScreen):
+    16→    """Modal screen displaying failing CI check runs."""
+    17→
+    18→    BINDINGS = [
+    19→        Binding("escape", "dismiss", "Close"),
+    20→        Binding("q", "dismiss", "Close"),
+    21→        Binding("space", "dismiss", "Close"),
+    22→    ]
+    23→
+    24→    DEFAULT_CSS = """
+    25→    CheckRunsScreen {
+    26→        align: center middle;
+    27→    }
+    28→
+    29→    #checks-dialog {
+    30→        width: 90%;
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ku1e3bc1hxKUXDBWh5kDu3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/check_runs_screen.py</param>
+    <param name="offset">80</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="912" cache_read_input_tokens="70129" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 912, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ku1e3bc1hxKUXDBWh5kDu3">
+    80→        color: $text-muted;
+    81→        text-style: italic;
+    82→    }
+    83→
+    84→    #checks-error {
+    85→        color: $error;
+    86→        text-style: italic;
+    87→    }
+    88→
+    89→    #checks-summaries-loading {
+    90→        color: $text-muted;
+    91→        text-style: italic;
+    92→        margin-top: 1;
+    93→    }
+    94→    """
+    95→
+    96→    def __init__(
+    97→        self,
+    98→        *,
+    99→        service: PlanService,
+   100→        pr_number: int,
+   101→        full_title: str,
+   102→        passing_count: int,
+   103→        total_count: int,
+   104→        ci_summary_comment_id: int | None,
+   105→    ) -&gt; None:
+   106→        """Initialize with PR metadata and provider for async loading.
+   107→
+   108→        Args:
+   109→            service: Plan service for fetching check runs
+
+... [70 lines omitted] ...
+
+   152→        error: str | None = None
+   156→        except Exception as e:
+   157→            error = str(e)
+   159→        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+   161→    def _on_check_runs_loaded(self, check_runs: list[PRCheckRun], error: str | None) -&gt; None:
+   169→            error: Error message if fetch failed, or None
+   176→        if error is not None:
+   177→            container.mount(Label(f"Error: {error}", id="checks-error"))
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1448" cache_read_input_tokens="71041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1448}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KpEpTuBiHJfmp1V26TX7vt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1448" cache_read_input_tokens="71041" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1448, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KpEpTuBiHJfmp1V26TX7vt">
+     1→"""Domain service ABC for plan operations (no TUI type dependencies)."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.browser.abc import BrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+     9→
+    10→
+    11→class PlanService(ABC):
+    12→    """Abstract base class for plan domain operations.
+    13→
+    14→    Contains operations that are independent of TUI display concerns:
+    15→    closing plans, dispatching, fetching content, and GitHub PR data.
+    16→    No TUI type imports (PlanRowData, FetchTimings, PlanFilters, BranchActivity).
+    17→    """
+    18→
+    19→    @property
+    20→    @abstractmethod
+    21→    def repo_root(self) -&gt; Path:
+    22→        """Get the repository root path."""
+    23→        ...
+    24→
+    25→    @property
+    26→    @abstractmethod
+    27→    def clipboard(self) -&gt; Clipboard:
+    28→        """Get the clipboard interface for copy operations."""
+    29→        ...
+    30→
+
+... [109 lines omitted] ...
+
+   124→        """Fetch CI failure summaries for a pull request.
+  </tool_result>
+  <assistant>Now let me check the real and fake PlanService implementations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1728" cache_read_input_tokens="72489" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1728}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012EnFbiwb1huDVWQGvvBsqj">
+    <param name="pattern">**/plan_service/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1728" cache_read_input_tokens="72489" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1728, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012EnFbiwb1huDVWQGvvBsqj">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/plan_service/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BG7tYYwKVnsH6sA2J2XDqo">
+    <param name="pattern">def fetch_check_runs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="74217" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BG7tYYwKVnsH6sA2J2XDqo">
+189:    def fetch_check_runs(self, pr_number: int) -&gt; list[PRCheckRun]:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NcFprsvczTbpAGcWYJpErA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+    <param name="offset">185</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="74503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NcFprsvczTbpAGcWYJpErA">
+   185→            Ordered list of branch names in the stack, or None
+   186→        """
+   187→        return self._ctx.branch_manager.get_branch_stack(self._location.root, branch)
+   188→
+   189→    def fetch_check_runs(self, pr_number: int) -&gt; list[PRCheckRun]:
+   190→        """Fetch failing check runs for a pull request.
+   191→
+   192→        Args:
+   193→            pr_number: The PR number to fetch check runs for
+   194→
+   195→        Returns:
+   196→            List of PRCheckRun for failing checks, sorted by name
+   197→        """
+   198→        return self._ctx.github.get_pr_check_runs(self._location.root, pr_number)
+   199→
+   200→    def fetch_unresolved_comments(self, pr_number: int) -&gt; list[PRReviewThread]:
+   201→        """Fetch unresolved review threads for a pull request.
+   202→
+   203→        Args:
+   204→            pr_number: The PR number to fetch threads for
+  </tool_result>
+  <tool_use name="Read" id="toolu_019DhDfeB54CHgNb1G9nQB4Z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="74503" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019DhDfeB54CHgNb1G9nQB4Z">
+     1→"""Fake plan service for testing."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.browser.abc import BrowserLauncher
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     9→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    10→from erk_shared.gateway.plan_service.abc import PlanService
+    11→
+    12→
+    13→class FakePlanService(PlanService):
+    14→    """Fake implementation of PlanService for testing.
+    15→
+    16→    Returns canned data without making any API calls.
+    17→    """
+    18→
+    19→    def __init__(
+    20→        self,
+    21→        *,
+    22→        clipboard: Clipboard | None = None,
+    23→        browser: BrowserLauncher | None = None,
+    24→        repo_root: Path | None = None,
+    25→    ) -&gt; None:
+    26→        """Initialize with optional canned data.
+    27→
+    28→        Args:
+    29→            clipboard: Clipboard interface, defaults to FakeClipboard()
+    30→            browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
+
+... [170 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have everything needed. Let me also quickly check the fake data provider for test helpers.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3295" cache_read_input_tokens="74701" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3295}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018eceGiESyGo6KpWG5xjGMd">
+    <param name="pattern">def make_run_row</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3295" cache_read_input_tokens="74701" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018eceGiESyGo6KpWG5xjGMd">
+src/erk/tui/data/fake_provider.py:339:def make_run_row(
+  </tool_result>
+  <tool_use name="Read" id="toolu_011XXcbMhhqBtrFjKMmLZdKD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/fake_provider.py</param>
+    <param name="offset">339</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="77996" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 193, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011XXcbMhhqBtrFjKMmLZdKD">
+   339→def make_run_row(
+   340→    run_id: str,
+   341→    *,
+   342→    run_url: str | None = None,
+   343→    status: str = "completed",
+   344→    conclusion: str | None = "success",
+   345→    status_display: str = "✅ Success",
+   346→    workflow_name: str = "plan-implement",
+   347→    pr_number: int | None = None,
+   348→    pr_url: str | None = None,
+   349→    pr_display: str = "-",
+   350→    pr_title: str | None = None,
+   351→    title_display: str = "-",
+   352→    submitted_display: str = "03-09 14:30",
+   353→    created_at: datetime | None = None,
+   354→    checks_display: str = "-",
+   355→    run_id_display: str | None = None,
+   356→) -&gt; RunRowData:
+   357→    """Create a RunRowData for testing with sensible defaults.
+   358→
+   359→    Args:
+   360→        run_id: GitHub Actions workflow run ID
+   361→        run_url: URL to the GitHub Actions run page
+   362→        status: Raw run status
+   363→        conclusion: Raw run conclusion
+   364→        status_display: Pre-formatted status string
+   365→        workflow_name: Workflow command name
+   366→        pr_number: Linked PR number
+   367→        pr_url: URL to the linked PR
+   368→        pr_display: Formatted PR cell content
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JU6J57neZha7JgYNAV8WUL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/fake_provider.py</param>
+    <param name="offset">398</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="942" cache_read_input_tokens="78189" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 942, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JU6J57neZha7JgYNAV8WUL">
+   398→        checks_display=checks_display,
+   399→        run_id_display=effective_run_id_display,
+   400→    )
+   401→
+  </tool_result>
+  <assistant>Now I have the full picture. Let me finalize the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="79131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 181}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SkQkB5vQKCiugSewtKdiPv">
+    <param name="file_path">/Users/schrockn/.claude/plans/modular-prancing-wombat.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="79131" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 181, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SkQkB5vQKCiugSewtKdiPv">
+     1→# Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+     2→
+     3→## Context
+     4→
+     5→The Runs tab (4th tab) in `erk dash -i` is a new addition showing GitHub Actions workflow runs. Currently it shows run-id, status, submitted, workflow, pr, title, and chks columns. Three enhancements needed:
+     6→
+     7→1. **Add branch name column** - `WorkflowRun` already has a `branch` field from the REST API, just not surfaced in the table
+     8→2. **Fix j/k navigation** - `action_cursor_down`/`action_cursor_up` in `NavigationActionsMixin` only delegate to `self._table` (PlanDataTable), not `self._run_table` (RunDataTable)
+     9→3. **Run detail view** - When selecting a run (Enter), show useful run details (scope TBD per discussion)
+    10→
+    11→## Changes
+    12→
+    13→### 1. Add `branch` to RunRowData and table
+    14→
+    15→**`src/erk/tui/data/types.py`** (~line 155):
+    16→- Add `branch: str` field to `RunRowData`
+    17→
+    18→**`src/erk/tui/data/real_provider.py`** (~line 303):
+    19→- Pass `run.branch` through when building `RunRowData`
+    20→
+    21→**`src/erk/tui/widgets/run_table.py`**:
+    22→- Add "branch" column in `_setup_columns()` (after "pr" column, width ~30)
+    23→- Add branch value in `_row_to_values()`
+    24→
+    25→### 2. Fix j/k navigation for Runs tab
+    26→
+    27→**`src/erk/tui/actions/navigation.py`** (~lines 219-227):
+    28→- `action_cursor_down`: Check if in RUNS view and delegate to `self._run_table` instead of `self._table`
+    29→- `action_cursor_up`: Same fix
+    30→
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Na722zys42deS9mVppu9vt">
+    <param name="file_path">/Users/schrockn/.claude/plans/modular-prancing-wombat.md</param>
+    <param name="content"># Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+
+## Context
+
+The Runs tab (4...[truncated 5438 chars]...owser; p → opens PR; c → copies branch; Esc → closes
+5. Run tests: `pytest tests/tui/ -x`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1972" cache_read_input_tokens="79312" output_tokens="2018" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1972, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Na722zys42deS9mVppu9vt">
+The file /Users/schrockn/.claude/plans/modular-prancing-wombat.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_017f3MUvnKishL334jp5m7hu">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2059" cache_read_input_tokens="81284" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2059, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017f3MUvnKishL334jp5m7hu">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Vre3me91qACVahfnkxy4X9">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests with pytest'}, {'tool': 'Bash', 'prompt': 'run type checker'}, {'tool': 'Bash', 'prompt': 'run linter and formatter'}]</param>
+    <param name="plan"># Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+
+## Context
+
+The Runs tab (4...[truncated 5438 chars]...owser; p → opens PR; c → copies branch; Esc → closes
+5. Run tests: `pytest tests/tui/ -x`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="83343" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vre3me91qACVahfnkxy4X9">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/modular-prancing-wombat.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+Current context: (wt:erk-slot-11) (br:plnd/add-runs-tab-tui-dash-03-09-0622) (pr:#9041)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/add-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id b45ecf4c-cd89-4290-81c4-a1cd91b3590e \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/modular-prancing-wombat.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0125U7Hxf5GqPMHN2PS2p1tW">
+    <param name="file_path">/Users/schrockn/.claude/plans/modular-prancing-wombat.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="84081" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 758, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0125U7Hxf5GqPMHN2PS2p1tW">
+     1→# Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+     2→
+     3→## Context
+     4→
+     5→The Runs tab (4th tab) in `erk dash -i` shows GitHub Actions workflow runs. Currently missing: branch names, j/k navigation doesn't work, and no detail view on Enter. This plan adds all three.
+     6→
+     7→## 1. Add branch column to runs table
+     8→
+     9→`WorkflowRun` already has `branch` and `head_sha` from the REST API — just not wired through.
+    10→
+    11→### `src/erk/tui/data/types.py` — Add fields to RunRowData
+    12→- Add `branch: str` and `head_sha: str` fields
+    13→
+    14→### `src/erk/tui/data/real_provider.py` — Populate in fetch_runs()
+    15→- At ~line 303 where RunRowData is constructed, pass `run.branch` and `run.head_sha`
+    16→- Truncate branch for display if &gt; 30 chars
+    17→
+    18→### `src/erk/tui/widgets/run_table.py` — Add column
+    19→- Add "branch" column in `_setup_columns()` after "pr" column (width=30)
+    20→- Add `row.branch` in `_row_to_values()` at matching position
+    21→
+    22→### `src/erk/tui/data/fake_provider.py` — Update make_run_row()
+    23→- Add `branch: str = "main"` and `head_sha: str = "abc1234"` params
+    24→
+    25→## 2. Fix j/k navigation for Runs tab
+    26→
+    27→Bug: `action_cursor_down`/`action_cursor_up` in `NavigationActionsMixin` only delegate to `self._table` (PlanDataTable), ignoring `self._run_table`.
+    28→
+    29→### `src/erk/tui/actions/navigation.py` (~lines 219-227)
+    30→- Check `self._view_mode == ViewMode.RUNS` → delegate to `self._run_table`
+
+... [108 lines omitted] ...
+
+   117→- Job status icons: ✅ success, ❌ failure, ⏳ in_progress, ○ skipped/cancelled
+  </tool_result>
+  <assistant>Here's the plan:
+
+# Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+
+## Context
+
+The Runs tab (4th tab) in `erk dash -i` shows GitHub Actions workflow runs. Currently missing: branch names, j/k navigation doesn't work, and no detail view on Enter. This plan adds all three.
+
+## 1. Add branch column to runs table
+
+`WorkflowRun` already has `branch` and `head_sha` from the REST API — just not wired through.
+
+- **`src/erk/tui/data/types.py`** — Add `branch: str` and `head_sha: str` fields to RunRowData
+- **`src/erk/tui/data/real_provider.py`** — Pass `run.branch` and `run.head_sha` through, truncate branch if &gt; 30 chars
+- **`src/erk/tui/widgets/run_table.py`** — Add "branch" column after "pr" (width=30)
+- **`src/erk/tui/data/fake_provider.py`** — Update `make_run_row()` with branch/head_sha params
+
+## 2. Fix j/k navigation for Runs tab
+
+- **`src/erk/tui/actions/navigation.py`** — Check `ViewMode.RUNS` → delegate to `self._run_table`
+
+## 3. Run detail modal with job breakdown
+
+- **3a.** Add `WorkflowRunJob` frozen dataclass to gateway types
+- **3b.** Add `get_workflow_run_jobs` to gateway (ABC + real + fake + dry_run)
+- **3c.** Add `fetch_run_jobs` to PlanService (ABC + real + fake)
+- **3d.** Create `RunDetailScreen` modal — shows run info, fetches jobs async, displays job breakdown with status/duration
+- **3e.** Wire Enter key via `action_show_detail()` view mode check</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2572" cache_read_input_tokens="84839" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2572}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01VYieeqN1Dfw3QcNPDbYWwA">
+    <param name="questions">[{'question': '📋 Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View\nCurrent cont...[truncated 440 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2572" cache_read_input_tokens="84839" output_tokens="728" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2572, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VYieeqN1Dfw3QcNPDbYWwA">
+User has answered your questions: "📋 Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+Current context: (wt:erk-slot-11) (br:plnd/add-runs-tab-tui-dash-03-09-0622) (pr:#9041)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01L8staBqjTRtv4eFxpWkhRh">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="942" cache_read_input_tokens="87411" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 942, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L8staBqjTRtv4eFxpWkhRh">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="b45ecf4c-cd89-4290-81c4-a1cd91b3590e" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="b45ecf4c-cd89-4290-81c4-a1cd91b3590e" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "b45ecf4c-cd89-4290-81c4-a1cd91b3590e" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "b45ecf4c-cd89-4290-81c4-a1cd91b3590e" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "b45ecf4c-cd89-4290-81c4-a1cd91b3590e" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "b45ecf4c-cd89-4290-81c4-a1cd91b3590e" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan-save workflow.
+
+**Branch slug:** `enhance-runs-tab-detail`
+
+**Plan summary:** Enhances the TUI dashboard Runs tab with three features: adds a branch name column by wiring through the existing WorkflowRun.branch field, fixes j/k vim navigation which currently only works on the PlanDataTable, and adds a RunDetailScreen modal with async job breakdown fetched from the GitHub Actions API.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="88353" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2289}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XZkqKgAEzm3ksF9PGr1koX">
+    <param name="command">erk exec plan-save --format json --session-id="b45ecf4c-cd89-4290-81c4-a1cd91b3590e" --bra...[truncated 245 chars]...dds a RunDetailScreen modal with async job breakdown fetched from the GitHub Actions API."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="88353" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2289, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XZkqKgAEzm3ksF9PGr1koX">
+{"success": true, "plan_number": 9043, "plan_url": "https://github.com/dagster-io/erk/pull/9043", "title": "[erk-plan] Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View", "branch_name": "plnd/enhance-runs-tab-detail-03-09-0729", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/.erk/scratch/sessions/b45ecf4c-cd89-4290-81c4-a1cd91b3590e/plan_snapshots/000001-7f79c1aa"}
+  </tool_result>
+  <assistant>Plan saved. Now let me push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="90642" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 521}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GppXLwwgM749yXoEfHjeme">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="90642" output_tokens="97" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 521, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GppXLwwgM749yXoEfHjeme">
+SESSION_ID=b45ecf4c-cd89-4290-81c4-a1cd91b3590e
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-11/b45ecf4c-cd89-4290-81c4-a1cd91b3590e.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013Jq75Deqz3Tw7NScLh6NiF">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 122 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 9043 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="306" cache_read_input_tokens="91163" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 306, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

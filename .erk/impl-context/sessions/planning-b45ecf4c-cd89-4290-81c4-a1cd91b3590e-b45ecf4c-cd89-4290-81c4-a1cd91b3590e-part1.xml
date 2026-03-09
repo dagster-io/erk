@@ -1,0 +1,1005 @@
+<session>
+  <meta branch="plnd/add-runs-tab-tui-dash-03-09-0622" />
+  <meta model="claude-opus-4-6" />
+  <user>good start. we should join some of this data to pr data. show pr branch name at a minimum.
+
+also be able to navigate with j and k
+
+and finally when we select a run what are some interesting things we could display about it?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="17415" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17415}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the current implementation to understand what we're working with.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="17415" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17415}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01TJiaLyqH521z9r9b2CWX5V">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore TUI runs tab code</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 649 chars]...- read the actual source files for the runs tab and at least one other tab for comparison.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17415" cache_read_input_tokens="9738" output_tokens="415" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17415, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TJiaLyqH521z9r9b2CWX5V">
+Perfect! I now have comprehensive understanding. Let me compile my findings into a thorough report.
+
+## Summary
+
+I've thoroughly explored the TUI dashboard "Runs" tab implementation. Here's what I found:
+
+### 1. **Runs Tab Implementation Files**
+
+**Core files:**
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/widgets/run_table.py` — The `RunDataTable` widget for displaying runs
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/types.py` (lines 154-194) — `RunRowData` dataclass
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/provider_abc.py` (line 54) — `fetch_runs()` abstract method
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/real_provider.py` (lines 179-322) — `fetch_runs()` implementation
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/views/types.py` (lines 9-70) — `ViewMode` enum and `RUNS_VIEW` config
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/app.py` — Main app with view switching logic
+
+### 2. **How Run Data is Fetched and Displayed**
+
+**Data Flow:**
+1. `RealPlanDataProvider.fetch_runs()` calls `ctx.github.list_workflow_runs()` for each registered workflow file from `WORKFLOW_COMMAND_MAP`
+2. Fetches up to 20 runs per workflow (stored in `_PER_WORKFLOW_LIMIT = 20`), max 50 total display runs
+3. Extracts PR and plan numbers from run `display_title` using `extract_pr_number()` and `extract_plan_number()`
+4. Batch-fetches PR details via `ctx.github.get_prs_linked_to_issues()` for plan-based runs
+5. Transforms `WorkflowRun` objects into `RunRowData` with pre-formatted display strings
+
+**RunRowData Fields (15 fields):**
+- `run_id`: Unique workflow run ID
+- `run_url`: Link to GitHub Actions run
+- `status`: Raw status ("queued", "in_progress", "completed")
+- `conclusion`: Raw conclusion ("success", "failure", "cancelled", None)
+
+... [109 lines omitted] ...
+
+- `conclusion` (str | None) — "success", "failure", "cancelled", "skipped", "neutral"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2833" cache_read_input_tokens="27153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2833}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration. Let me read a few key files to understand the current state precisely.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2833" cache_read_input_tokens="27153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2833}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MgghDFAWzk55CXtaMxrcEN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/types.py</param>
+    <param name="offset">150</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2833" cache_read_input_tokens="27153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2833}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MgghDFAWzk55CXtaMxrcEN">
+   150→    lifecycle_display: str
+   151→    status_display: str
+   152→
+   153→
+   154→@dataclass(frozen=True)
+   155→class RunRowData:
+   156→    """Row data for displaying a workflow run in the TUI Runs tab.
+   157→
+   158→    Contains pre-formatted display strings and raw data needed for actions.
+   159→    Immutable to ensure table state consistency.
+   160→
+   161→    Attributes:
+   162→        run_id: GitHub Actions workflow run ID string.
+   163→        run_url: URL to the GitHub Actions run page. None if unavailable.
+   164→        status: Raw run status ("queued", "in_progress", "completed").
+   165→        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+   166→        status_display: Pre-formatted status string for table display.
+   167→        workflow_name: Workflow command name (e.g., "plan-implement", "pr-address").
+   168→        pr_number: Linked PR number. None if no PR.
+   169→        pr_url: URL to the linked PR. None if no PR.
+   170→        pr_display: Formatted PR cell content (e.g., "#123" or "-").
+   171→        pr_title: PR title. None if no PR.
+   172→        title_display: Truncated title for table display.
+   173→        submitted_display: Formatted submission time (e.g., "03-09 14:30").
+   174→        created_at: UTC datetime when run was created. None if unavailable.
+   175→        checks_display: Formatted checks cell content.
+   176→        run_id_display: Formatted run ID for display.
+   177→    """
+   178→
+   179→    run_id: str
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QCiazzdHf6uXMiLuWzn79z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/widgets/run_table.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2833" cache_read_input_tokens="27153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2833}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QCiazzdHf6uXMiLuWzn79z">
+     1→"""Run table widget for TUI dashboard Runs tab."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from textual.events import Click
+     8→from textual.message import Message
+     9→from textual.widgets import DataTable
+    10→
+    11→from erk.tui.data.types import RunRowData
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk.tui.app import ErkDashApp
+    15→
+    16→
+    17→class RunDataTable(DataTable):
+    18→    """DataTable subclass for displaying workflow runs.
+    19→
+    20→    Manages column configuration and row population from RunRowData.
+    21→    Uses row selection mode (not cell selection) for simpler navigation.
+    22→    """
+    23→
+    24→    class RunClicked(Message):
+    25→        """Posted when user clicks run-id column on a row."""
+    26→
+    27→        def __init__(self, row_index: int) -&gt; None:
+    28→            super().__init__()
+    29→            self.row_index = row_index
+    30→
+
+... [143 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011LV5YtRTYL6bf5zDxY5yDN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">265</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2833" cache_read_input_tokens="27153" output_tokens="427" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2833, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011LV5YtRTYL6bf5zDxY5yDN">
+   265→
+   266→# Sentinel instances for WorkflowRun fields not available from nodes() query
+   267→BRANCH_NOT_AVAILABLE = _NotAvailable("branch", "GraphQL nodes() query")
+   268→DISPLAY_TITLE_NOT_AVAILABLE = _NotAvailable("display_title", "GraphQL nodes() query")
+   269→
+   270→
+   271→class WorkflowRun:
+   272→    """Information about a GitHub Actions workflow run.
+   273→
+   274→    Immutable class representing workflow run data. Some fields may not be
+   275→    available depending on the API query used to fetch the data:
+   276→
+   277→    - branch: Not available from GraphQL nodes() query
+   278→    - display_title: Not available from GraphQL nodes() query
+   279→
+   280→    Accessing unavailable fields raises AttributeError.
+   281→    """
+   282→
+   283→    __slots__ = (
+   284→        "_run_id",
+   285→        "_node_id",
+   286→        "_status",
+   287→        "_conclusion",
+   288→        "_branch",
+   289→        "_head_sha",
+   290→        "_display_title",
+   291→        "_created_at",
+   292→    )
+   293→
+   294→    _run_id: str
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5666" cache_read_input_tokens="29986" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5666}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the app's run-related handling and the fetch_runs implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5666" cache_read_input_tokens="29986" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5666}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SrfbWaLNRoth8rS5amuxyL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/app.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5666" cache_read_input_tokens="29986" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5666}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SrfbWaLNRoth8rS5amuxyL">
+     1→"""Main Textual application for erk dash interactive mode."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→import time
+     7→from collections.abc import Iterator
+     8→from datetime import datetime
+     9→from pathlib import Path
+    10→
+    11→from textual import on
+    12→from textual.app import App, ComposeResult, SystemCommand
+    13→from textual.binding import Binding
+    14→from textual.containers import Container
+    15→from textual.screen import Screen
+    16→from textual.widgets import Header, Input, Label
+    17→
+    18→from erk.tui.actions.filter_actions import FilterActionsMixin
+    19→from erk.tui.actions.navigation import NavigationActionsMixin
+    20→from erk.tui.actions.palette import PaletteActionsMixin
+    21→from erk.tui.commands.provider import MainListCommandProvider
+    22→from erk.tui.data.provider_abc import PlanDataProvider
+    23→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+    24→from erk.tui.filtering.logic import filter_plans
+    25→from erk.tui.filtering.types import FilterMode, FilterState
+    26→from erk.tui.operations.logic import build_github_url
+    27→from erk.tui.operations.streaming import StreamingOperationsMixin
+    28→from erk.tui.operations.workers import BackgroundWorkersMixin
+    29→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    30→from erk.tui.sorting.logic import sort_plans
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MGFeFpRoAB8aEKLdMbG3dc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">179</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5666" cache_read_input_tokens="29986" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5666}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MGFeFpRoAB8aEKLdMbG3dc">
+   179→    def fetch_runs(self) -&gt; list[RunRowData]:
+   180→        """Fetch workflow runs for the Runs tab.
+   181→
+   182→        Ports logic from erk.cli.commands.run.list_cmd._list_runs().
+   183→
+   184→        Returns:
+   185→            List of RunRowData for display, sorted by created_at descending
+   186→        """
+   187→        # Lazy import to avoid circular dependency through erk.cli.commands.run.__init__
+   188→        from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+   189→
+   190→        _PER_WORKFLOW_LIMIT = 20
+   191→        _MAX_DISPLAY_RUNS = 50
+   192→        _MAX_TITLE_LENGTH = 50
+   193→
+   194→        # 1. Fetch workflow runs from all registered workflows
+   195→        tagged_runs: list[tuple[WorkflowRun, str]] = []
+   196→        for command_name, workflow_file in WORKFLOW_COMMAND_MAP.items():
+   197→            workflow_runs = self._ctx.github.list_workflow_runs(
+   198→                self._location.root, workflow_file, _PER_WORKFLOW_LIMIT
+   199→            )
+   200→            for run in workflow_runs:
+   201→                tagged_runs.append((run, command_name))
+   202→
+   203→        # Deduplicate by run_id
+   204→        seen: dict[str, tuple[WorkflowRun, str]] = {}
+   205→        for pair in tagged_runs:
+   206→            if pair[0].run_id not in seen:
+   207→                seen[pair[0].run_id] = pair
+   208→        tagged_runs = list(seen.values())
+
+... [120 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01S3Ugav2fJ5GLgYCZRvCCPm">
+    <param name="pattern">j.*k.*vim|action_cursor_down|action_cursor_up|key_j|key_k|on_key</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5666" cache_read_input_tokens="29986" output_tokens="440" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5666, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S3Ugav2fJ5GLgYCZRvCCPm">
+src/erk/tui/actions/navigation.py:28:    action_view_checks, action_cursor_down, action_cursor_up,
+src/erk/tui/actions/navigation.py:219:    def action_cursor_down(self: ErkDashApp) -&gt; None:
+src/erk/tui/actions/navigation.py:222:            self._table.action_cursor_down()
+src/erk/tui/actions/navigation.py:224:    def action_cursor_up(self: ErkDashApp) -&gt; None:
+src/erk/tui/actions/navigation.py:227:            self._table.action_cursor_up()
+src/erk/tui/jsonl_viewer/app.py:53:    def action_cursor_down(self) -&gt; None:
+src/erk/tui/jsonl_viewer/app.py:56:        list_view.action_cursor_down()
+src/erk/tui/jsonl_viewer/app.py:58:    def action_cursor_up(self) -&gt; None:
+src/erk/tui/jsonl_viewer/app.py:61:        list_view.action_cursor_up()
+src/erk/tui/screens/plan_body_screen.py:189:    def on_key(self, event: Key) -&gt; None:
+src/erk/tui/screens/launch_screen.py:104:    def on_key(self, event: Key) -&gt; None:
+src/erk/tui/screens/help_screen.py:142:    def on_key(self, event: Key) -&gt; None:
+src/erk/tui/screens/objective_nodes_screen.py:298:        *after* action_cursor_down/up returns.
+src/erk/tui/screens/objective_nodes_screen.py:318:    def action_cursor_down(self) -&gt; None:
+src/erk/tui/screens/objective_nodes_screen.py:325:        table.action_cursor_down()
+src/erk/tui/screens/objective_nodes_screen.py:327:            table.action_cursor_down()
+src/erk/tui/screens/objective_nodes_screen.py:335:    def action_cursor_up(self) -&gt; None:
+src/erk/tui/screens/objective_nodes_screen.py:342:        table.action_cursor_up()
+src/erk/tui/screens/objective_nodes_screen.py:344:            table.action_cursor_up()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="35652" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4286}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how j/k currently works and whether it applies to the runs view.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="35652" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4286}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RKzraQys8EZCa88YJWxYwJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">210</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="35652" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4286}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RKzraQys8EZCa88YJWxYwJ">
+   210→            ObjectiveNodesScreen(
+   211→                provider=self._provider,
+   212→                service=self._service,
+   213→                plan_id=row.plan_id,
+   214→                plan_body=row.plan_body,
+   215→                full_title=row.full_title,
+   216→            )
+   217→        )
+   218→
+   219→    def action_cursor_down(self: ErkDashApp) -&gt; None:
+   220→        """Move cursor down (vim j key)."""
+   221→        if self._table is not None:
+   222→            self._table.action_cursor_down()
+   223→
+   224→    def action_cursor_up(self: ErkDashApp) -&gt; None:
+   225→        """Move cursor up (vim k key)."""
+   226→        if self._table is not None:
+   227→            self._table.action_cursor_up()
+   228→
+   229→    def action_open_pr(self: ErkDashApp) -&gt; None:
+   230→        """Open selected PR in browser, or objective issue in Objectives view."""
+   231→        row = self._get_selected_row()
+   232→        if row is None:
+   233→            return
+   234→
+   235→        if self._view_mode == ViewMode.OBJECTIVES:
+   236→            if row.plan_url:
+   237→                self._service.browser.launch(row.plan_url)
+   238→                if self._status_bar is not None:
+   239→                    self._status_bar.set_message(f"Opened objective #{row.plan_id}")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AGb2MjzNnaxu476QgfARdT">
+    <param name="pattern">_table|_run_table|current_view|RUNS</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/app.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4286" cache_read_input_tokens="35652" output_tokens="331" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AGb2MjzNnaxu476QgfARdT">
+38:from erk.tui.widgets.plan_table import PlanDataTable
+39:from erk.tui.widgets.run_table import RunDataTable
+133:        self._table: PlanDataTable | None = None
+134:        self._run_table: RunDataTable | None = None
+187:        self._table = self.query_one(PlanDataTable)
+188:        self._run_table = self.query_one(RunDataTable)
+195:        self._table.display = False
+196:        self._run_table.display = False
+216:        if fetched_mode == ViewMode.RUNS:
+258:        self._update_table(
+289:        if self._run_table is not None:
+291:            self._run_table.display = True
+292:            self._run_table.populate(self._run_rows)
+299:    def _update_table(
+335:        if self._table is not None:
+338:            if self._view_mode != ViewMode.RUNS:
+339:                self._table.display = True
+340:            self._table.populate(self._rows)
+462:        is_runs = mode == ViewMode.RUNS
+463:        if self._table is not None:
+464:            self._table.display = not is_runs and not self._loading
+465:        if self._run_table is not None:
+466:            self._run_table.display = is_runs and not self._loading
+473:                if self._run_table is not None:
+475:                    self._run_table.display = True
+476:                    self._run_table.populate(self._run_rows)
+484:        if self._table is not None:
+485:            self._table.reconfigure(
+496:            if self._table is not None:
+497:                self._table.populate(self._rows)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1413" cache_read_input_tokens="39938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1413}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the full WorkflowRun type and how list_workflow_runs works.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1413" cache_read_input_tokens="39938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1413}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011XyBEsVrnu37ZtPDmmscwS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">271</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1413" cache_read_input_tokens="39938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1413}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011XyBEsVrnu37ZtPDmmscwS">
+   271→class WorkflowRun:
+   272→    """Information about a GitHub Actions workflow run.
+   273→
+   274→    Immutable class representing workflow run data. Some fields may not be
+   275→    available depending on the API query used to fetch the data:
+   276→
+   277→    - branch: Not available from GraphQL nodes() query
+   278→    - display_title: Not available from GraphQL nodes() query
+   279→
+   280→    Accessing unavailable fields raises AttributeError.
+   281→    """
+   282→
+   283→    __slots__ = (
+   284→        "_run_id",
+   285→        "_node_id",
+   286→        "_status",
+   287→        "_conclusion",
+   288→        "_branch",
+   289→        "_head_sha",
+   290→        "_display_title",
+   291→        "_created_at",
+   292→    )
+   293→
+   294→    _run_id: str
+   295→    _node_id: str | None
+   296→    _status: WorkflowRunStatus
+   297→    _conclusion: WorkflowRunConclusion | None
+   298→    _branch: str | _NotAvailable
+   299→    _head_sha: str
+   300→    _display_title: str | None | _NotAvailable
+
+... [70 lines omitted] ...
+
+   326→        raise AttributeError(msg)
+   330→        raise AttributeError(msg)
+   353→            str(value)  # Trigger the error
+   365→            str(value)  # Trigger the error
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JubTu2TGRiUoDUg1Qzz2L3">
+    <param name="pattern">def list_workflow_runs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1413" cache_read_input_tokens="39938" output_tokens="754" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JubTu2TGRiUoDUg1Qzz2L3">
+Found 4 files
+packages/erk-shared/src/erk_shared/gateway/github/fake.py
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/abc.py
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2064" cache_read_input_tokens="41351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2064}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me check the existing detail screen pattern to understand what we'd model after.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2064" cache_read_input_tokens="41351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2064}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F4ruHib9VY2DogZULn1MAh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2064" cache_read_input_tokens="41351" output_tokens="629" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2064, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F4ruHib9VY2DogZULn1MAh">
+     1→"""Modal screen showing detailed plan information as an Action Hub."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from collections.abc import Callable
+     7→from pathlib import Path
+     8→from typing import TYPE_CHECKING
+     9→
+    10→from textual import work
+    11→from textual.app import ComposeResult
+    12→from textual.binding import Binding
+    13→from textual.containers import Container, Vertical
+    14→from textual.screen import ModalScreen
+    15→from textual.timer import Timer
+    16→from textual.widgets import Label
+    17→
+    18→from erk.tui.commands.provider import PlanCommandProvider
+    19→from erk.tui.commands.registry import get_copy_text
+    20→from erk.tui.commands.types import CommandContext
+    21→from erk.tui.data.types import PlanRowData
+    22→from erk.tui.views.types import ViewMode
+    23→from erk.tui.widgets.clickable_link import ClickableLink
+    24→from erk.tui.widgets.command_output import CommandOutputPanel
+    25→from erk.tui.widgets.copyable_label import CopyableLabel
+    26→from erk_shared.gateway.command_executor.abc import CommandExecutor
+    27→
+    28→if TYPE_CHECKING:
+    29→    from erk_shared.gateway.browser.abc import BrowserLauncher
+    30→    from erk_shared.gateway.clipboard.abc import Clipboard
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Good. I have a solid understanding now. Let me write the plan and address your question about the detail view.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1522" cache_read_input_tokens="43415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1522}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_018YriswhJhLZ9e6ER48SxHS">
+    <param name="file_path">/Users/schrockn/.claude/plans/modular-prancing-wombat.md</param>
+    <param name="content"># Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+
+## Context
+
+The Runs tab (4...[truncated 1446 chars]...anch column populated
+- Verify j/k moves cursor
+- Verify Enter on a run shows detail view
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1522" cache_read_input_tokens="43415" output_tokens="649" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1522, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018YriswhJhLZ9e6ER48SxHS">
+File created successfully at: /Users/schrockn/.claude/plans/modular-prancing-wombat.md
+  </tool_result>
+  <assistant>For the branch name and j/k fixes, those are straightforward — the data is already available, just not wired through.
+
+For **what to show when selecting a run**, here's what's available and interesting:
+
+**Already have from the data:**
+- Run ID + link to GitHub Actions page
+- Status/conclusion
+- Workflow name
+- Branch name (with the new addition)
+- PR number + link
+- PR title
+- Head SHA (short commit ref)
+- Created timestamp
+
+**Could fetch on-demand (additional API call):**
+- **Duration** (run_started_at → updated_at) — how long did the workflow take?
+- **Job breakdown** — each job in the workflow has its own status/conclusion/steps
+- **Triggering actor** — who dispatched it
+- **Run attempt number** — was it re-run?
+- **Workflow dispatch inputs** — the payload that triggered it (plan number, PR number, etc.)
+
+**Actionable things in the detail view:**
+- Open run in browser
+- Open PR in browser  
+- Copy branch name to clipboard
+- Re-run the workflow
+- View logs (open in browser)
+
+My recommendation: Start simple with a modal showing the data we already have (run info + PR info + branch + head SHA) plus "open in browser" and "copy branch" actions. Duration would be a nice addition if we can get it cheaply from the existing API response.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="799" cache_read_input_tokens="44937" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 799}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Lv5SaJz7cMHvWq5CtFajWd">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="799" cache_read_input_tokens="44937" output_tokens="398" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 799, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lv5SaJz7cMHvWq5CtFajWd">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01DVk7aT1SfBkdaPrbMJbTSk">
+    <param name="questions">[{'question': 'What should the run detail view show when you press Enter on a run?', 'head...[truncated 2577 chars]... and j/k navigation. We can add the detail view in a follow-up.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1654" cache_read_input_tokens="45736" output_tokens="945" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1654, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DVk7aT1SfBkdaPrbMJbTSk">
+User has answered your questions: "What should the run detail view show when you press Enter on a run?"="With job breakdown" selected preview:
+┌─ Run Detail ─────────────────────┐
+│                                   │
+│ Run:      22848439371             │
+│ Status:   ✅ Success              │
+│ Workflow: plan-implement          │
+│ Branch:   plnd/fix-widget-9039    │
+│ PR:       #9039  Duration: 4m 32s │
+│ Commit:   a1b2c3d                 │
+│                                   │
+│ Jobs:                             │
+│  ✅ setup        (12s)            │
+│  ✅ implement    (3m 48s)         │
+│  ✅ verify       (32s)            │
+│                                   │
+│ [o] Open run  [p] Open PR         │
+│ [c] Copy branch  [q] Close        │
+└───────────────────────────────────┘. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2238" cache_read_input_tokens="47390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2238}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what gateway support exists for fetching run jobs and duration.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2238" cache_read_input_tokens="47390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2238}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Y7hsYrHhxuGXYuA7ioLGYt">
+    <param name="pattern">jobs|job.*workflow|workflow.*job|run_started_at|updated_at</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2238" cache_read_input_tokens="47390" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2238}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y7hsYrHhxuGXYuA7ioLGYt">
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:196:        """Fetch logs from the ci-summarize job in a workflow run.
+packages/erk-shared/src/erk_shared/gateway/github/ci_summary_parsing.py:1:"""Parse CI failure summaries from workflow job logs.
+packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py:134:            updated_at=datetime.fromisoformat(item["updated_at"].replace("Z", "+00:00")),
+packages/erk-shared/src/erk_shared/gateway/github/types.py:168:    updated_at: datetime = field(default_factory=_epoch_sentinel)
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:177:            updated_at=now,
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:245:            updated_at=datetime.now(UTC),  # Update timestamp
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:268:            updated_at=datetime.now(UTC),
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:380:                updated_at=current_issue.updated_at,
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:407:                updated_at=current_issue.updated_at,
+packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py:432:            updated_at=current_issue.updated_at,
+packages/erk-shared/src/erk_shared/gateway/github/issues/types.py:22:    updated_at: datetime
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:176:            updated_at=datetime.fromisoformat(data["updated_at"].replace("Z", "+00:00")),
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:305:                updated_at=datetime.fromisoformat(issue["updated_at"].replace("Z", "+00:00")),
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:344:            updated_at=self._time.now().replace(tzinfo=UTC),
+packages/erk-shared/src/erk_shared/gateway/github/real.py:671:        """Fetch logs from the ci-summarize job in a workflow run.
+packages/erk-shared/src/erk_shared/gateway/github/real.py:687:                f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}/jobs",
+packages/erk-shared/src/erk_shared/gateway/github/real.py:689:                '.jobs[] | select(.name == "ci-summarize") | .id',
+packages/erk-shared/src/erk_shared/gateway/github/real.py:703:                f"repos/{{owner}}/{{repo}}/actions/jobs/{job_id}/logs",
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1226:        updated_at_str = node.get("updatedAt", "")
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1228:        updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1249:            updated_at=updated_at,
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1431:        updated_at_str = data.get("updated_at", "")
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1437:        updated_at = (
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1438:            datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1439:            if updated_at_str
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1468:            updated_at=updated_at,
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1681:            updated_at_str = node.get("updatedAt", "")
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1683:            updated_at = datetime.fromisoformat(updated_at_str.replace("Z", "+00:00"))
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1708:                updated_at=updated_at,
+
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01KviN94ytGdvVLd3dW6wA8m">
+    <param name="pattern">class.*Job|WorkflowJob</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2238" cache_read_input_tokens="47390" output_tokens="392" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KviN94ytGdvVLd3dW6wA8m">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GG3vDxnUKHfNkktG3YNF8r">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">665</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1709" cache_read_input_tokens="49628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1709}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GG3vDxnUKHfNkktG3YNF8r">
+   665→            operation_context=f"fetch logs for run {run_id}",
+   666→            cwd=repo_root,
+   667→        )
+   668→        return result.stdout
+   669→
+   670→    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -&gt; str | None:
+   671→        """Fetch logs from the ci-summarize job in a workflow run.
+   672→
+   673→        Finds the ci-summarize job in the run, then fetches its logs.
+   674→
+   675→        Args:
+   676→            repo_root: Repository root directory
+   677→            run_id: GitHub Actions run ID
+   678→
+   679→        Returns:
+   680→            Raw log text, or None if the job doesn't exist or hasn't completed
+   681→        """
+   682→        # GH-API-AUDIT: REST - get job list for a run
+   683→        result = run_subprocess_with_context(
+   684→            cmd=[
+   685→                "gh",
+   686→                "api",
+   687→                f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}/jobs",
+   688→                "--jq",
+   689→                '.jobs[] | select(.name == "ci-summarize") | .id',
+   690→            ],
+   691→            operation_context=f"find ci-summarize job in run {run_id}",
+   692→            cwd=repo_root,
+   693→        )
+   694→        job_id = result.stdout.strip()
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Cv5N7s8bTstrnaUgXJUCGD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">190</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1709" cache_read_input_tokens="49628" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1709, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cv5N7s8bTstrnaUgXJUCGD">
+   190→            RuntimeError: If gh CLI command fails
+   191→        """
+   192→        ...
+   193→
+   194→    @abstractmethod
+   195→    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -&gt; str | None:
+   196→        """Fetch logs from the ci-summarize job in a workflow run.
+   197→
+   198→        Looks for a job named "ci-summarize" in the given run and returns
+   199→        its raw log text containing ERK-CI-SUMMARY markers.
+   200→
+   201→        Args:
+   202→            repo_root: Repository root directory
+   203→            run_id: GitHub Actions run ID
+   204→
+   205→        Returns:
+   206→            Raw log text from the ci-summarize job, or None if the job
+   207→            doesn't exist or hasn't completed yet
+   208→        """
+   209→        ...
+   210→
+   211→    @abstractmethod
+   212→    def get_pr_comment(self, repo_root: Path, comment_id: int) -&gt; str | None:
+   213→        """Fetch a single PR/issue comment by its ID.
+   214→
+   215→        Uses the GitHub REST API to retrieve the comment body.
+   216→
+   217→        Args:
+   218→            repo_root: Repository root directory
+   219→            comment_id: GitHub comment ID
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2599" cache_read_input_tokens="51337" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2599}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01M9qcvm47tVkt3GxjEqJ3Sq">
+    <param name="pattern">def list_workflow_runs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2599" cache_read_input_tokens="51337" output_tokens="315" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2599, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M9qcvm47tVkt3GxjEqJ3Sq">
+573:    def list_workflow_runs(
+  </tool_result>
+  <tool_use name="Read" id="toolu_017mR95yy4UdvZhz1nA96ZMD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">573</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="53936" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017mR95yy4UdvZhz1nA96ZMD">
+   573→    def list_workflow_runs(
+   574→        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+   575→    ) -&gt; list[WorkflowRun]:
+   576→        """List workflow runs for a specific workflow."""
+   577→        # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
+   578→        query_params = f"per_page={limit}"
+   579→        if user is not None:
+   580→            query_params += f"&amp;actor={user}"
+   581→
+   582→        cmd = [
+   583→            "gh",
+   584→            "api",
+   585→            f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?{query_params}",
+   586→            "--jq",
+   587→            ".workflow_runs",
+   588→        ]
+   589→
+   590→        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+   591→
+   592→        # Parse JSON response
+   593→        data = json.loads(stdout)
+   594→
+   595→        # Map to WorkflowRun dataclasses
+   596→        runs = []
+   597→        for run in data:
+   598→            # Parse created_at timestamp if present
+   599→            created_at = None
+   600→            created_at_str = run.get("created_at")
+   601→            if created_at_str:
+   602→                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
+... [50 lines omitted] ...
+
+   624→        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HZ3fQfuRxFB8CUsAmSSENk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">652</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1317" cache_read_input_tokens="54271" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1317, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HZ3fQfuRxFB8CUsAmSSENk">
+   652→                created_at=created_at,
+   653→                node_id=data.get("node_id"),
+   654→            )
+   655→
+   656→        except (RuntimeError, json.JSONDecodeError, KeyError, FileNotFoundError):
+   657→            # gh not installed, not authenticated, or command failed (e.g., 404)
+   658→            return None
+   659→
+   660→    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+   661→        """Get logs for a workflow run using gh CLI."""
+   662→        # GH-API-AUDIT: REST - gh run view uses REST
+   663→        result = run_subprocess_with_context(
+   664→            cmd=["gh", "run", "view", run_id, "--log"],
+   665→            operation_context=f"fetch logs for run {run_id}",
+   666→            cwd=repo_root,
+   667→        )
+   668→        return result.stdout
+   669→
+   670→    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -&gt; str | None:
+   671→        """Fetch logs from the ci-summarize job in a workflow run.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="55588" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the PlanDetailScreen pattern more fully and the fake gateway.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="55588" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q9AveMoWCseaSu8s9zN3DA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">43</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="55588" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q9AveMoWCseaSu8s9zN3DA">
+    43→class PlanDetailScreen(ModalScreen):
+    44→    """Modal screen showing detailed plan information as an Action Hub."""
+    45→
+    46→    COMMANDS = {PlanCommandProvider}  # Register command provider for palette
+    47→
+    48→    BINDINGS = [
+    49→        # Navigation
+    50→        Binding("escape", "dismiss", "Close"),
+    51→        Binding("q", "dismiss", "Close"),
+    52→        Binding("space", "dismiss", "Close"),
+    53→        # Links section
+    54→        Binding("o", "open_browser", "Open"),
+    55→        Binding("i", "open_issue", "Issue"),
+    56→        Binding("p", "open_pr", "PR"),
+    57→        Binding("r", "open_run", "Run"),
+    58→        # Copy section
+    59→        Binding("c", "copy_checkout", "Checkout"),
+    60→        Binding("e", "copy_pr_checkout_script", "PR Checkout"),
+    61→        Binding("y", "copy_output_logs", "Copy Logs"),
+    62→        Binding("1", "copy_prepare", "Prepare"),
+    63→        Binding("4", "copy_prepare_activate", "Activate"),
+    64→        Binding("2", "copy_implement_local", "Implement Local"),
+    65→        Binding("3", "copy_dispatch", "Dispatch"),
+    66→        Binding("5", "rebase_remote", "Rebase"),
+    67→    ]
+    68→
+    69→    DEFAULT_CSS = """
+    70→    PlanDetailScreen {
+    71→        align: center middle;
+    72→    }
+
+... [90 lines omitted] ...
+
+   127→    .badge-failure {
+  </tool_result>
+  <tool_use name="Read" id="toolu_01N2sHfDqv8viXtgWXJVyGSw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="55588" output_tokens="378" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 454, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N2sHfDqv8viXtgWXJVyGSw">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+  </tool_result>
+  <tool_use name="Read" id="toolu_015cAXXPVqn7tgHVZwtPRAmq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">162</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2048" cache_read_input_tokens="56042" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2048, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015cAXXPVqn7tgHVZwtPRAmq">
+   162→
+   163→    .info-value {
+   164→        color: $text;
+   165→        min-width: 20;
+   166→    }
+   167→
+   168→    .copyable-row {
+   169→        layout: horizontal;
+   170→        height: 1;
+   171→    }
+   172→
+   173→    .copyable-text {
+   174→        color: $text;
+   175→    }
+   176→
+   177→    #detail-footer {
+   178→        text-align: center;
+   179→        margin-top: 1;
+   180→        color: $text-muted;
+   181→    }
+   182→
+   183→    .log-entry {
+   184→        color: $text-muted;
+   185→        margin-left: 1;
+   186→    }
+   187→
+   188→    .log-section {
+   189→        margin-top: 1;
+   190→        max-height: 6;
+   191→        overflow-y: auto;
+
+... [90 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I have a thorough understanding of the pattern. Now let me launch a Plan agent to design the implementation with all the context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1455" cache_read_input_tokens="58090" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1455}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Pf18GYGqAcGVSxk8s6kvT5">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Design runs tab enhancements</param>
+    <param name="prompt">Design an implementation plan for enhancing the TUI dashboard Runs tab with three features...[truncated 2386 chars]...entation with specific file changes, new types needed, and the gateway additions required.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1455" cache_read_input_tokens="58090" output_tokens="909" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1455, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pf18GYGqAcGVSxk8s6kvT5">
+I now have a thorough understanding of the codebase. Let me produce the complete implementation plan.
+
+---
+
+## Implementation Plan: Enhance TUI Dashboard Runs Tab
+
+### Feature 1: Add Branch Column to Runs Table
+
+This is a data pipeline change following the established column-addition pattern documented in `docs/learned/tui/column-addition-pattern.md`.
+
+#### Step 1.1: Add `branch` and `head_sha` fields to `RunRowData`
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/types.py`
+
+Add two new fields to the `RunRowData` frozen dataclass (after `run_id_display` at line 193):
+
+- `branch: str | None` -- raw branch name (None if unavailable from `_NotAvailable` sentinel)
+- `head_sha: str | None` -- commit SHA (None if unavailable)
+- `branch_display: str` -- pre-formatted branch for table column (truncated if long, "-" if None)
+
+The `WorkflowRun.branch` property raises `AttributeError` when accessed on runs fetched via GraphQL nodes() query. The `fetch_runs()` method uses REST API `list_workflow_runs` which always has branch available, so this will always have a value in the Runs tab context. However, the field should be `str | None` for type safety.
+
+#### Step 1.2: Populate branch/head_sha in `fetch_runs()`
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/real_provider.py`
+
+In `fetch_runs()` at line 303 where `RunRowData` is constructed, add:
+
+```python
+branch=run.branch,  # Always available from REST list_workflow_runs
+
+... [419 lines omitted] ...
+
+        conclusion: Job conclusion ("success", "failure", "cancelled", "skipped").
+**CSS:** Use `DEFAULT_CSS` inline following the `PlanDetailScreen` pattern. Reuse badge classes (`.badge-success`, `.badge-failure`, `.badge-pending`).
+- Test error state displays error message
+2. **WorkflowRun.branch and _NotAvailable**: The `branch` property on `WorkflowRun` raises `AttributeError` if accessed on GraphQL-sourced runs. In `fetch_runs()`, runs come from REST `list_workflow_runs` which always has branch. But if `RunRowData` is ever constructed from other sources, this needs LBYL. Use `hasattr(run, '_branch')` or a try/except in the data layer (approved EAFP for attribute access on _NotAvailable).
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7122" cache_read_input_tokens="59545" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7122}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify a few key things the Plan agent flagged before finalizing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7122" cache_read_input_tokens="59545" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7122}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019Fg5JfAayvACaYQPqs1kaQ">
+    <param name="pattern">action_show_detail|RowSelected|on_row_selected</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7122" cache_read_input_tokens="59545" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7122}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Fg5JfAayvACaYQPqs1kaQ">
+src/erk/tui/app.py:531:    @on(PlanDataTable.RowSelected)
+src/erk/tui/app.py:532:    def on_row_selected(self, event: PlanDataTable.RowSelected) -&gt; None:
+src/erk/tui/app.py:534:        self.action_show_detail()
+src/erk/tui/actions/navigation.py:27:    action_show_detail, action_view_plan_body, action_view_comments,
+src/erk/tui/actions/navigation.py:100:    def action_show_detail(self: ErkDashApp) -&gt; None:
+src/erk/tui/AGENTS.md:146:- Enter key handling via `RowSelected` event
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Uf7DB1trU53fmGDQKGrdKM">
+    <param name="pattern">class PlanService|class PlanDataProvider</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7122" cache_read_input_tokens="59545" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7122, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Uf7DB1trU53fmGDQKGrdKM">
+src/erk/tui/data/provider_abc.py:9:class PlanDataProvider(ABC):
+packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py:11:class PlanService(ABC):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UzQvKZPyNz45nWKVcpqBXS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">95</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="66667" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 877}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UzQvKZPyNz45nWKVcpqBXS">
+    95→            command_id: The selected command ID, or None if cancelled
+    96→        """
+    97→        if command_id is not None:
+    98→            self.execute_palette_command(command_id)
+    99→
+   100→    def action_show_detail(self: ErkDashApp) -&gt; None:
+   101→        """Show plan detail modal for selected row."""
+   102→        row = self._get_selected_row()
+   103→        if row is None:
+   104→            return
+   105→
+   106→        # Create executor with injected dependencies
+   107→        executor = RealCommandExecutor(
+   108→            browser_launch=self._service.browser.launch,
+   109→            clipboard_copy=self._service.clipboard.copy,
+   110→            close_plan_fn=self._service.close_plan,
+   111→            notify_fn=self._notify_with_severity,
+   112→            refresh_fn=self.action_refresh,
+   113→            dispatch_to_queue_fn=self._service.dispatch_to_queue,
+   114→        )
+   115→
+   116→        self.push_screen(
+   117→            PlanDetailScreen(
+   118→                row=row,
+   119→                clipboard=self._service.clipboard,
+   120→                browser=self._service.browser,
+   121→                executor=executor,
+   122→                repo_root=self._service.repo_root,
+   123→                view_mode=self._view_mode,
+   124→                cmux_integration=self._cmux_integration,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XJf77jZfraSVysjHnVqBSB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-11/src/erk/tui/data/provider_abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="66667" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 877, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

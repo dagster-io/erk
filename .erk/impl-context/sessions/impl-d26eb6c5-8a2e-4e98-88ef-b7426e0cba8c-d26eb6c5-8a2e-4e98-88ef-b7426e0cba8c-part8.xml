@@ -1,0 +1,1048 @@
+<session>
+  <meta source="agent-a431678" />
+  <meta branch="plnd/enhance-runs-tab-detail-03-09-0729" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find and read these files, returning their full paths and content:
+1. packages/erk-shared/src/erk_shared/gateway/github/types.py - look for WorkflowRun class
+2. packages/erk-shared/src/erk_shared/gateway/github/abc.py - look for list_workflow_runs
+3. packages/erk-shared/src/erk_shared/gateway/github/real.py - look for list_workflow_runs
+4. packages/erk-shared/src/erk_shared/gateway/github/fake.py - look for list_workflow_runs and FakeLocalGitHub
+5. packages/erk-shared/src/erk_shared/gateway/github/dry_run.py - look for list_workflow_runs
+
+For each file, report: full path, the relevant class/method locations (line numbers), and the pattern used. I need to understand the 4-place gateway pattern to add a new method.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll start by checking the relevant documentation, then explore the codebase to understand the 4-place gateway pattern.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15235, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S3Kx2q4jEgrBrzg2bhTpbB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15235, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XXv2C3Kjn39n9dF12UTyX2">
+    <param name="pattern">gateway|4-place</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15235, 'ephemeral_1h_input_tokens': 0}" output_tokens="210" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S3Kx2q4jEgrBrzg2bhTpbB">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XXv2C3Kjn39n9dF12UTyX2">
+Found 232 files
+docs/learned/workflows/commit-messages.md
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/stacked-pr-indicator.md
+docs/learned/tui/status-indicators.md
+docs/learned/tui/tripwires.md
+docs/learned/tui/view-switching.md
+docs/learned/uncategorized/tripwires.md
+docs/learned/universal-tripwires.md
+docs/learned/tripwires-index.md
+docs/learned/tui/architecture.md
+docs/learned/tui/column-addition-pattern.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/derived-display-columns.md
+docs/learned/tui/frozen-dataclass-field-management.md
+docs/learned/tui/index.md
+docs/learned/tui/lifecycle-display.md
+docs/learned/tui/modal-widget-embedding.md
+docs/learned/testing/tripwires.md
+docs/learned/testing/tui-subprocess-testing.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/monkeypatch-vs-fakes-decision.md
+docs/learned/testing/submit-pipeline-tests.md
+docs/learned/testing/subprocess-testing.md
+docs/learned/testing/test-layer-migration.md
+docs/learned/testing/testing.md
+docs/learned/testing/time-injection-patterns.md
+docs/learned/testing/backend-testing-composition.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/command-group-testing.md
+
+... [203 lines omitted] ...
+
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/ci/ci-failure-summarization.md
+docs/learned/architecture/gateway-error-boundaries.md
+docs/learned/architecture/discriminated-union-error-handling.md
+docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <assistant>Let me read the gateway implementation documentation and the 4-place pattern documentation:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4659" cache_read_input_tokens="15235" cache_creation="{'ephemeral_5m_input_tokens': 4659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LmPwq6ojsKNND4n6whFMUU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4659" cache_read_input_tokens="15235" cache_creation="{'ephemeral_5m_input_tokens': 4659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T6evpHQNaLqMAVFPbKQvAq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/gateway/index.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4659" cache_read_input_tokens="15235" cache_creation="{'ephemeral_5m_input_tokens': 4659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W7vWftbCNVvbStWfgpoLz7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/index.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4659" cache_read_input_tokens="15235" cache_creation="{'ephemeral_5m_input_tokens': 4659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T6evpHQNaLqMAVFPbKQvAq">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Gateway Documentation
+     5→
+     6→- **[codespace-gateway.md](codespace-gateway.md)** — adding a new codespace SSH operation to the gateway, deciding whether a new gateway needs dry-run and printing implementations, testing code that uses os.execvp or NoReturn methods, choosing between exec_ssh_interactive and run_ssh_command
+     7→- **[codespace-registry.md](codespace-registry.md)** — working with GitHub Codespace registration or lookup, adding a gateway that separates read-only ABC from mutation functions, choosing between ABC methods vs standalone functions for gateway operations
+     8→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01W7vWftbCNVvbStWfgpoLz7">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Architecture Documentation
+     5→
+     6→- **[abc-convenience-methods.md](abc-convenience-methods.md)** — adding non-abstract methods to gateway ABCs, composing primitive gateway operations into higher-level methods, handling exception type differences between real and fake implementations
+     7→- **[agent-backpressure-gates.md](agent-backpressure-gates.md)** — designing validation for agent-generated output, choosing between silent transformation and rejection of invalid input, implementing retry loops for agent-produced values, adding validation to agent-facing APIs
+     8→- **[agent-schema-enforcement.md](agent-schema-enforcement.md)** — processing JSON output from AI agents, normalizing agent-produced data before validation, designing schemas for agent-to-tool communication, debugging tripwire candidate JSON drift
+     9→- **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
+    10→- **[bash-python-integration.md](bash-python-integration.md)** — generating bash commands with heredocs in Claude Code commands or skills, debugging escaping issues where bash mangles content passed to git, gh, or Python, writing Claude Code commands that produce multi-line text via bash
+    11→- **[branch-manager-abstraction.md](branch-manager-abstraction.md)** — working with branch operations (create, delete, checkout, submit), implementing commands that manipulate branches, understanding the Graphite vs Git mode difference, debugging branch-related operations
+    12→- **[branch-manager-decision-tree.md](branch-manager-decision-tree.md)** — deciding between ctx.branch_manager and ctx.git.branch for branch creation, implementing branch operations in erk code, working with placeholder branches or worktree pool slots
+    13→- **[bundled-artifacts.md](bundled-artifacts.md)** — understanding artifact syncing, working with managed artifacts, debugging erk sync
+    14→- **[callback-progress-pattern.md](callback-progress-pattern.md)** — adding progress reporting to operations functions, choosing between callback and event-based progress, implementing synchronous progress feedback
+    15→- **[capability-system.md](capability-system.md)** — creating new erk init capabilities, understanding how erk init works, adding installable features, working with capability tracking in state.toml, understanding how erk doctor filters artifacts by installed capabilities, working with backend-aware capability filtering
+    16→- **[checked-out-branch-handling.md](checked-out-branch-handling.md)** — committing files to a branch that may be checked out in a worktree, using git plumbing to update branches without checkout, working with dispatch or incremental-dispatch branch operations
+    17→- **[circular-import-resolution.md](circular-import-resolution.md)** — encountering circular imports between erk and erk_shared, moving an ABC to erk_shared to break import cycles, using TYPE_CHECKING guards for type-only imports
+    18→- **[claude-cli-error-reporting.md](claude-cli-error-reporting.md)** — handling Claude CLI errors, interpreting PromptResult.error, working with ErrorEvent, NoOutputEvent, NoTurnsEvent, ProcessErrorEvent
+    19→- **[claude-cli-execution-modes.md](claude-cli-execution-modes.md)** — writing multi-phase slash commands that use context: fork, understanding why Task tool is required instead of skill invocation, debugging commands that work interactively but break in --print mode
+    20→- **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
+    21→- **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
+    22→- **[claude-installation-gateway.md](claude-installation-gateway.md)** — working with Claude Code session logs, accessing ~/.claude/ directory, implementing session analysis features, working with plan files or settings operations
+    23→- **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
+    24→- **[cli-to-pipeline-boundary.md](cli-to-pipeline-boundary.md)** — refactoring complex CLI commands, separating business logic from Click layer, deciding when to extract pipeline from CLI command
+    25→- **[click-context-di-pattern.md](click-context-di-pattern.md)** — adding dependency injection to a Click command, using @click.pass*context with require*\*() helpers, testing Click commands with ErkContext
+    26→- **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
+    27→- **[command-composition.md](command-composition.md)** — creating an exec script that orchestrates other exec scripts, understanding setup-impl command architecture, adding CWD injection for testability
+    28→- **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
+    29→- **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
+    30→- **[context-efficiency.md](context-efficiency.md)** — orchestrating multi-agent workflows, parent agent reading large agent output via TaskOutput, designing agent output routing to minimize context usage
+
+... [113 lines omitted] ...
+
+    36→- **[discriminated-union-error-handling.md](discriminated-union-error-handling.md)** — designing return types for operations that may fail, implementing T | ErrorType patterns, handling errors without exceptions
+    40→- **[error-handling-patterns.md](error-handling-patterns.md)** — implementing error handling in exec scripts, deciding between fail-fast and best-effort patterns, handling GitHub API errors gracefully
+    42→- **[exception-logging-patterns.md](exception-logging-patterns.md)** — deciding between logger.debug and UserFacingCliError for error handling, implementing best-effort cleanup alongside primary operations, writing error handling for multi-step CLI operations
+    48→- **[gateway-error-boundaries.md](gateway-error-boundaries.md)** — implementing gateway error handling, converting gateway operations to discriminated unions, deciding where try/except blocks belong in gateways
+    53→- **[gateway-specific-patterns.md](gateway-specific-patterns.md)** — considering mixing discriminated unions with exceptions in gateway methods, designing operations with both expected failures and cleanup steps, reviewing historical gateway error handling experiments
+    60→- **[github-api-diagnostics.md](github-api-diagnostics.md)** — debugging GitHub API failures, investigating repository-specific API issues, GitHub CLI commands returning unexpected errors
+    61→- **[github-api-rate-limits.md](github-api-rate-limits.md)** — using gh CLI commands programmatically, encountering GraphQL rate limit errors, choosing between REST and GraphQL API, implementing GitHub API calls in gateways
+    62→- **[github-api-retry-mechanism.md](github-api-retry-mechanism.md)** — implementing GitHub API calls with retry logic, handling transient network errors, using execute_gh_command_with_retry(), injecting Time for testable retry delays
+    63→- **[github-cli-limits.md](github-cli-limits.md)** — using gh pr diff in production code, working with large pull requests (300+ files), encountering HTTP 406 errors from gh CLI, implementing PR file discovery, working with GitHub codespaces in code, implementing codespace operations
+    93→- **[multi-worktree-state.md](multi-worktree-state.md)** — checkout operations in multi-worktree repositories, landing PRs with worktree cleanup, understanding git single-checkout constraint, debugging checkout failures across worktrees
+    95→- **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
+    98→- **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, debugging "No such option" errors in commands
+   109→- **[pr-footer-validation.md](pr-footer-validation.md)** — working with PR metadata footer format, modifying PR footer generation or parsing, debugging PR footer extraction errors
+   116→- **[rebase-conflict-patterns.md](rebase-conflict-patterns.md)** — resolving merge conflicts after rebase, debugging test failures after rebase, handling auto-generated file conflicts, resuming a rebase with conflicts
+   117→- **[ref-json-migration.md](ref-json-migration.md)** — working with plan-ref.json or ref.json, understanding plan reference file formats, debugging plan reference loading failures
+   121→- **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
+   132→- **[threading-patterns.md](threading-patterns.md)** — running blocking operations (subprocess, network) while yielding progress events, implementing daemon threads for long-running tasks, understanding the result holder + error holder pattern, testing code that uses background threads
+   134→- **[validation-patterns.md](validation-patterns.md)** — adding regex validation to a field or input, implementing input validation with error messages, understanding module-level regex compilation
+  </tool_result>
+  <tool_result tool="toolu_01LmPwq6ojsKNND4n6whFMUU">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "creating a new gateway ABC"
+    11→    warning: "Default is 3-file pattern (abc.py, real.py, fake.py). Only add dry_run.py if the gateway participates in a user-facing --dry-run feature. Most gateways do not."
+    12→  - action: "adding a new method to a dry-run-enabled gateway ABC (Git, LocalGitHub, Graphite)"
+    13→    warning: "Must implement in 4 places: abc.py, real.py, fake.py, dry_run.py."
+    14→  - action: "adding a new method to a 3-file gateway ABC"
+    15→    warning: "Must implement in 3 places: abc.py, real.py, fake.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from all implementation files simultaneously (3 or 4 depending on pattern). Partial removal causes type checker errors. Update all call sites. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all implementations import the new types. For 4-file gateways: abc.py, real.py, fake.py, dry_run.py. For 3-file gateways: abc.py, real.py, fake.py."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [782 lines omitted] ...
+
+    31→    warning: "All implementations must be updated (3 or 4 depending on pattern). Fake may accept but not track new parameters when assertion is not needed for tests."
+    33→    warning: "Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction."
+    35→    warning: "Must also wire into ErkContext: add field to context.py dataclass, add parameter to for_test(), and wire Real* in production factory (src/erk/core/context.py). See 'New Gateway: ErkContext Wiring' section."
+    44→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   172→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   174→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   176→### Decision: Discriminated Union or Exception?
+   180→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   181→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   182→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   186→- [ ] At least one caller branches on the error and continues with different logic
+   187→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   188→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   192→### Checklist: Use Exceptions When
+   194→- [ ] All callers terminate on failure (extract message and stop)
+   195→- [ ] No caller inspects error type or branches on error content
+   196→- [ ] Use `UserFacingCliError` at CLI boundary
+   202→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   217→**Methods using discriminated unions** (callers branch on error):
+   221→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   222→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   223→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   225→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   227→**Methods using exceptions** (all callers terminate):
+   229→| Method              | Exception      | Why                                                         |
+   231→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   232→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   236→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   243→   - [ ] `real.py` - Return appropriate error types for failure cases
+   245→   - [ ] `dry_run.py` - Return appropriate success/error based on mode (4-file gateways only)
+   247→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   252→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   256→- Updated tests to use `isinstance(result, MergeError)`
+   274→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   282→- When error messages from `get_X()` on missing resources are unclear
+   305→    user_output(f"Error: Issue #{issue_number} not found")
+   380→6. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   610→The worktree sub-gateway follows the same 4-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   697→**Partial removal causes type checker errors** - if you remove from abc.py but forget another implementation, the type checker will complain about missing abstract method implementations.
+   715→1. Run type checker (`ty`) to verify no abstract method errors
+   772→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   774→├── fake.py       # Constructor-injected errors, mutation tracking
+   780→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   781→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   782→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   805→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <assistant>Excellent! Now I have the gateway pattern documentation. Let me read the actual code files to show you the 4-place pattern in action:</assistant>
+  <usage input_tokens="7647" cache_creation_input_tokens="12735" cache_read_input_tokens="19894" cache_creation="{'ephemeral_5m_input_tokens': 12735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EWBVH6n95wvBfeQYMDL2nT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="7647" cache_creation_input_tokens="12735" cache_read_input_tokens="19894" cache_creation="{'ephemeral_5m_input_tokens': 12735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019iQYZ8oZCZBQ7JrRu2mKKJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7647" cache_creation_input_tokens="12735" cache_read_input_tokens="19894" cache_creation="{'ephemeral_5m_input_tokens': 12735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DcwbcEj4US8vZYeoaNfjc4">
+    <param name="command">find /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github -name "*.py" -type f</param>
+    <param name="description">List all Python files in GitHub gateway</param>
+  </tool_use>
+  <usage input_tokens="7647" cache_creation_input_tokens="12735" cache_read_input_tokens="19894" cache_creation="{'ephemeral_5m_input_tokens': 12735, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EWBVH6n95wvBfeQYMDL2nT">
+     1→"""Type definitions for GitHub operations."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from typing import Any, Literal, TypedDict
+     7→
+     8→from erk_shared.non_ideal_state import EnsurableResult
+     9→
+    10→PRState = Literal["OPEN", "MERGED", "CLOSED"]
+    11→
+    12→MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+    13→
+    14→
+    15→class StatusCheckRollupData(TypedDict, total=False):
+    16→    state: str
+    17→    contexts: dict[str, Any]
+    18→
+    19→
+    20→def _epoch_sentinel() -&gt; datetime:
+    21→    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    22→    return datetime(2000, 1, 1, tzinfo=UTC)
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class BodyText:
+    27→    """Body content as inline text.
+    28→
+    29→    Used when the body content is a string that should be passed directly
+    30→    to the GitHub API using -f body={content} syntax.
+
+... [367 lines omitted] ...
+
+    92→        conclusion: Result when completed ("success", "failure", "cancelled", etc.).
+   111→class MergeError:
+   112→    """Error result from merging a PR. Implements NonIdealState."""
+   118→    def error_type(self) -&gt; str:
+   119→        return "merge-failed"
+   126→    Used as part of union return types for LBYL-style error handling.
+   200→WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
+   239→    Raises AttributeError when accessed as a string, preventing silent bugs
+   249→        raise AttributeError(msg)
+   260→        raise AttributeError(msg)
+   280→    Accessing unavailable fields raises AttributeError.
+   326→        raise AttributeError(msg)
+   330→        raise AttributeError(msg)
+   353→            str(value)  # Trigger the error
+   365→            str(value)  # Trigger the error
+  </tool_result>
+  <tool_result tool="toolu_019iQYZ8oZCZBQ7JrRu2mKKJ">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class LocalGitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [175 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+  </tool_result>
+  <tool_result tool="toolu_01DcwbcEj4US8vZYeoaNfjc4">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/session.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/constants.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/status_history.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/transient_errors.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/ci_summary_parsing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/emoji.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/label_cache.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me search for and read the `list_workflow_runs` method across all four implementation files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="16335" cache_read_input_tokens="32629" cache_creation="{'ephemeral_5m_input_tokens': 16335, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014BUgyZEizqGK8V5a6cCmdz">
+    <param name="pattern">def list_workflow_runs</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="16335" cache_read_input_tokens="32629" cache_creation="{'ephemeral_5m_input_tokens': 16335, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014BUgyZEizqGK8V5a6cCmdz">
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:107:    def list_workflow_runs(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-108-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-109-    ) -&gt; list[WorkflowRun]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-110-        """Delegate read operation to wrapped implementation."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-111-        return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-112-
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-113-    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-114-        """Delegate read operation to wrapped implementation."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-115-        return self._wrapped.get_workflow_run(repo_root, run_id)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-116-
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-117-    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+--
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:149:    def list_workflow_runs(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-150-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-151-    ) -&gt; list[WorkflowRun]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-152-        """List workflow runs for a specific workflow.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-153-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-154-        Args:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-155-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-156-            workflow: Workflow filename (e.g., "implement-plan.yml")
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-157-            limit: Maximum number of runs to return (default: 50)
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-158-            user: Optional GitHub username to filter runs by (maps to --user flag)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-159-
+--
+packages/erk-shared/src/erk_shared/gateway/github/real.py:573:    def list_workflow_runs(
+packages/erk-shared/src/erk_shared/gateway/github/real.py-574-        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/real.py-575-    ) -&gt; list[WorkflowRun]:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-576-        """List workflow runs for a specific workflow."""
+packages/erk-shared/src/erk_shared/gateway/github/real.py-577-        # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-578-        query_params = f"per_page={limit}"
+
+... [17 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me read the complete implementations for each file:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2184" cache_read_input_tokens="48964" cache_creation="{'ephemeral_5m_input_tokens': 2184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EfpMFxKqqgoPiiTbPvnHX8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">573</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2184" cache_read_input_tokens="48964" cache_creation="{'ephemeral_5m_input_tokens': 2184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U5v8D97Vf5wc64EPKNVgKD">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">404</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2184" cache_read_input_tokens="48964" cache_creation="{'ephemeral_5m_input_tokens': 2184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GmGPpXH3ZRFKBf2agbhiTg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="offset">107</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2184" cache_read_input_tokens="48964" cache_creation="{'ephemeral_5m_input_tokens': 2184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EfpMFxKqqgoPiiTbPvnHX8">
+   573→    def list_workflow_runs(
+   574→        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+   575→    ) -&gt; list[WorkflowRun]:
+   576→        """List workflow runs for a specific workflow."""
+   577→        # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
+   578→        query_params = f"per_page={limit}"
+   579→        if user is not None:
+   580→            query_params += f"&amp;actor={user}"
+   581→
+   582→        cmd = [
+   583→            "gh",
+   584→            "api",
+   585→            f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?{query_params}",
+   586→            "--jq",
+   587→            ".workflow_runs",
+   588→        ]
+   589→
+   590→        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+   591→
+   592→        # Parse JSON response
+   593→        data = json.loads(stdout)
+   594→
+   595→        # Map to WorkflowRun dataclasses
+   596→        runs = []
+   597→        for run in data:
+   598→            # Parse created_at timestamp if present
+   599→            created_at = None
+   600→            created_at_str = run.get("created_at")
+   601→            if created_at_str:
+   602→                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01U5v8D97Vf5wc64EPKNVgKD">
+   404→    def list_workflow_runs(
+   405→        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+   406→    ) -&gt; list[WorkflowRun]:
+   407→        """List workflow runs for a specific workflow (returns pre-configured data).
+   408→
+   409→        Returns the pre-configured list of workflow runs. The workflow, limit and user
+   410→        parameters are accepted but ignored - fake returns all pre-configured runs.
+   411→        """
+   412→        return self._workflow_runs
+   413→
+   414→    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+   415→        """Get details for a specific workflow run by ID (returns pre-configured data).
+   416→
+   417→        Args:
+   418→            repo_root: Repository root directory (ignored in fake)
+   419→            run_id: GitHub Actions run ID to lookup
+   420→
+   421→        Returns:
+   422→            WorkflowRun if found in pre-configured data, None otherwise
+   423→        """
+   424→        for run in self._workflow_runs:
+   425→            if run.run_id == run_id:
+   426→                return run
+   427→        return None
+   428→
+   429→    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+   430→        """Return pre-configured log string for run_id.
+   431→
+   432→        Raises RuntimeError if run_id not found, mimicking gh CLI behavior.
+   433→        """
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GmGPpXH3ZRFKBf2agbhiTg">
+   107→    def list_workflow_runs(
+   108→        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+   109→    ) -&gt; list[WorkflowRun]:
+   110→        """Delegate read operation to wrapped implementation."""
+   111→        return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
+   112→
+   113→    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+   114→        """Delegate read operation to wrapped implementation."""
+   115→        return self._wrapped.get_workflow_run(repo_root, run_id)
+   116→
+   117→    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+   118→        """Delegate read operation to wrapped implementation."""
+   119→        return self._wrapped.get_run_logs(repo_root, run_id)
+   120→
+   121→    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -&gt; str | None:
+   122→        """Delegate read operation to wrapped implementation."""
+   123→        return self._wrapped.get_ci_summary_logs(repo_root, run_id)
+   124→
+   125→    def get_pr_comment(self, repo_root: Path, comment_id: int) -&gt; str | None:
+   126→        """Delegate read operation to wrapped implementation."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me get the FakeLocalGitHub class initialization to understand the constructor pattern:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1987" cache_read_input_tokens="51148" cache_creation="{'ephemeral_5m_input_tokens': 1987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0195ZauFN5AqZNFDYcvTpWZY">
+    <param name="command">grep -n "class FakeLocalGitHub\|class RealLocalGitHub\|class DryRunLocalGitHub" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/*.py</param>
+    <param name="description">Find class definitions in GitHub gateway</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1987" cache_read_input_tokens="51148" cache_creation="{'ephemeral_5m_input_tokens': 1987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0195ZauFN5AqZNFDYcvTpWZY">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:24:class DryRunLocalGitHub(LocalGitHub):
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py:37:class FakeLocalGitHub(LocalGitHub):
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py:95:class RealLocalGitHub(LocalGitHub):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EJc6NcteJZdkYRSgPsYTr7">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">95</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="359" cache_read_input_tokens="53135" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R1mthgZGemF4eMTr2D2FHi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">37</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="359" cache_read_input_tokens="53135" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F4WyD35oDyzdPyyno2QV7j">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="offset">24</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="359" cache_read_input_tokens="53135" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EJc6NcteJZdkYRSgPsYTr7">
+    95→class RealLocalGitHub(LocalGitHub):
+    96→    """Production implementation using gh CLI.
+    97→
+    98→    All GitHub operations execute actual gh commands via subprocess.
+    99→    """
+   100→
+   101→    def __init__(
+   102→        self,
+   103→        time: Time,
+   104→        repo_info: RepoInfo | None,
+   105→        *,
+   106→        issues: GitHubIssues,
+   107→    ):
+   108→        """Initialize RealLocalGitHub.
+   109→
+   110→        Args:
+   111→            time: Time abstraction for sleep operations
+   112→            repo_info: Repository owner/name info (None if not in a GitHub repo)
+   113→            issues: GitHubIssues gateway for issue operations
+   114→        """
+   115→        self._time = time
+   116→        self._repo_info = repo_info
+   117→        self._issues = issues
+   118→        self._default_branch_cache: dict[Path, str] = {}
+   119→
+   120→    @classmethod
+   121→    def for_test(
+   122→        cls,
+   123→        time: Time | None = None,
+   124→        repo_info: RepoInfo | None = None,
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01R1mthgZGemF4eMTr2D2FHi">
+    37→class FakeLocalGitHub(LocalGitHub):
+    38→    """In-memory fake implementation of GitHub operations.
+    39→
+    40→    This class has NO public setup methods. All state is provided via constructor
+    41→    using keyword arguments with sensible defaults (empty dicts).
+    42→    """
+    43→
+    44→    def __init__(
+    45→        self,
+    46→        *,
+    47→        repo_info: RepoInfo | None = None,
+    48→        prs: dict[str, PullRequestInfo] | None = None,
+    49→        pr_bases: dict[int, str] | None = None,
+    50→        pr_details: dict[int, PRDetails] | None = None,
+    51→        prs_by_branch: dict[str, PRDetails] | None = None,
+    52→        workflow_runs: list[WorkflowRun] | None = None,
+    53→        workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
+    54→        run_logs: dict[str, str] | None = None,
+    55→        pr_plan_linkages: dict[int, list[PullRequestInfo]] | None = None,
+    56→        polled_run_id: str | None = None,
+    57→        authenticated: bool = True,
+    58→        auth_username: str | None = "test-user",
+    59→        auth_hostname: str | None = "github.com",
+    60→        issues_gateway: GitHubIssues | None = None,
+    61→        issues_data: list[IssueInfo] | None = None,
+    62→        pr_titles: dict[int, str] | None = None,
+    63→        pr_bodies_by_number: dict[int, str] | None = None,
+    64→        pr_diffs: dict[int, str] | None = None,
+    65→        pr_changed_files: dict[int, list[str]] | None = None,
+    66→        merge_should_succeed: bool = True,
+
+... [35 lines omitted] ...
+
+    72→        resolve_thread_failures: set[str] | None = None,
+    73→        pr_diff_error: str | None = None,
+    74→        workflow_runs_error: str | None = None,
+    82→        add_label_errors: dict[str, str] | None = None,
+  </tool_result>
+  <tool_result tool="toolu_01F4WyD35oDyzdPyyno2QV7j">
+    24→class DryRunLocalGitHub(LocalGitHub):
+    25→    """No-op wrapper for GitHub operations.
+    26→
+    27→    Read operations are delegated to the wrapped implementation.
+    28→    Write operations return without executing (no-op behavior).
+    29→
+    30→    This wrapper prevents destructive GitHub operations from executing in dry-run mode,
+    31→    while still allowing read operations for validation.
+    32→    """
+    33→
+    34→    def __init__(self, wrapped: LocalGitHub) -&gt; None:
+    35→        """Initialize dry-run wrapper with a real implementation.
+    36→
+    37→        Composes DryRunGitHubIssues wrapping the wrapped.issues internally.
+    38→
+    39→        Args:
+    40→            wrapped: The real GitHub operations implementation to wrap
+    41→        """
+    42→        self._wrapped = wrapped
+    43→        self._dry_run_issues = DryRunGitHubIssues(wrapped.issues)
+    44→
+    45→    @property
+    46→    def issues(self) -&gt; GitHubIssues:
+    47→        """Access to issue operations (wrapped with dry-run behavior)."""
+    48→        return self._dry_run_issues
+    49→
+    50→    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -&gt; None:
+    51→        """No-op for updating PR base branch in dry-run mode."""
+    52→        # Do nothing - prevents actual PR base update
+    53→        pass
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary. First, let me get the exact line numbers for each class and method:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2732" cache_read_input_tokens="53494" cache_creation="{'ephemeral_5m_input_tokens': 2732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SrG8YWH56ewqaoytdre1VT">
+    <param name="command">wc -l /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py /...[truncated 143 chars]....py /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="description">Get line counts for gateway files</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2732" cache_read_input_tokens="53494" cache_creation="{'ephemeral_5m_input_tokens': 2732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SrG8YWH56ewqaoytdre1VT">
+   847 /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py
+  2594 /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py
+  1226 /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py
+   388 /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+  5055 total
+  </tool_result>
+  <assistant>Now let me verify the imports and structure:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="450" cache_read_input_tokens="56226" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VrZw1T2qm7VT7kLXpAM2Bh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="450" cache_read_input_tokens="56226" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BPBzTk5FqgQqUPzbk6NkQF">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="450" cache_read_input_tokens="56226" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DkXFjSFEhswF3YZDLXYZxA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="offset">1</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="450" cache_read_input_tokens="56226" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VrZw1T2qm7VT7kLXpAM2Bh">
+     1→"""Production implementation of GitHub operations.
+     2→
+     3→Error Handling Philosophy:
+     4→    gh CLI invocations should let exceptions bubble by default. Callers are
+     5→    responsible for handling failures appropriately. Don't swallow exceptions
+     6→    and return None/False/default values - this masks real errors and makes
+     7→    debugging difficult.
+     8→
+     9→    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    10→    by checking the response data, not by catching exceptions.
+    11→"""
+    12→
+    13→import json
+    14→import logging
+    15→import secrets
+    16→import string
+    17→from datetime import UTC, datetime, timedelta
+    18→from pathlib import Path
+    19→from typing import Any
+    20→
+    21→from erk_shared.debug import debug_log
+    22→from erk_shared.gateway.github.abc import LocalGitHub
+    23→from erk_shared.gateway.github.graphql_queries import (
+    24→    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    25→    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    26→    GET_PR_CHECK_RUNS_QUERY,
+    27→    GET_PR_REVIEW_THREADS_QUERY,
+    28→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    29→    ISSUE_PR_LINKAGE_FRAGMENT,
+    30→    RESOLVE_REVIEW_THREAD_MUTATION,
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01BPBzTk5FqgQqUPzbk6NkQF">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01DkXFjSFEhswF3YZDLXYZxA">
+     1→"""No-op wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.github.abc import LocalGitHub
+     6→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     7→from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+     8→from erk_shared.gateway.github.issues.types import IssueInfo
+     9→from erk_shared.gateway.github.types import (
+    10→    BodyContent,
+    11→    GitHubRepoLocation,
+    12→    IssueFilterState,
+    13→    MergeResult,
+    14→    PRCheckRun,
+    15→    PRDetails,
+    16→    PRListState,
+    17→    PRNotFound,
+    18→    PRReviewThread,
+    19→    PullRequestInfo,
+    20→    WorkflowRun,
+    21→)
+    22→
+    23→
+    24→class DryRunLocalGitHub(LocalGitHub):
+    25→    """No-op wrapper for GitHub operations.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! I now have all the information needed. Let me compile my findings:
+
+## Summary: 4-Place Gateway Pattern - `list_workflow_runs` Example
+
+Based on my exploration of the codebase and the documentation, here's the complete analysis of the 4-place gateway pattern using the `list_workflow_runs` method:
+
+### Documentation Reference
+
+The pattern is documented in `/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md` under the **Extended Gateway Pattern (4 Files)** section (lines 64-77).
+
+---
+
+### 1. **TYPES DEFINITION** 
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`
+
+Lines 196-206 define the types used by `list_workflow_runs`:
+
+```python
+# Workflow run status (lowercase, matches gh CLI and normalized GraphQL responses)
+WorkflowRunStatus = Literal["completed", "in_progress", "queued", "unknown"]
+
+# Workflow run conclusion (lowercase, None when run is not completed)
+WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
+
+class WorkflowRun:
+    """Information about a GitHub Actions workflow run."""
+    # (See lines 271-392 for full class definition)
+    __slots__ = (...)
+    _run_id: str
+    _node_id: str | None
+    _status: WorkflowRunStatus
+    _conclusion: WorkflowRunConclusion | None
+    # ... more slots
+```
+
+**Pattern**: Success type is a frozen-like immutable class (`WorkflowRun`). No error union needed for `list_workflow_runs` since errors are handled via exceptions.
+
+---
+
+### 2. **ABC - ABSTRACT INTERFACE**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+
+Lines 148-163 define the abstract method:
+
+```python
+@abstractmethod
+def list_workflow_runs(
+    self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+) -&gt; list[WorkflowRun]:
+    """List workflow runs for a specific workflow.
+
+    Args:
+        repo_root: Repository root directory
+        workflow: Workflow filename (e.g., "implement-plan.yml")
+        limit: Maximum number of runs to return (default: 50)
+        user: Optional GitHub username to filter runs by (maps to --user flag)
+
+    Returns:
+        List of workflow runs, ordered by creation time (newest first)
+    """
+    ...
+```
+
+**Pattern**: Abstract method with type hints, parameter documentation, and return type annotation.
+
+---
+
+### 3. **REAL - PRODUCTION IMPLEMENTATION**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py`
+
+Lines 573-625 (excerpt showing the key part):
+
+```python
+def list_workflow_runs(
+    self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+) -&gt; list[WorkflowRun]:
+    """List workflow runs for a specific workflow."""
+    # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
+    query_params = f"per_page={limit}"
+    if user is not None:
+        query_params += f"&amp;actor={user}"
+
+    cmd = [
+        "gh",
+        "api",
+        f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?{query_params}",
+        "--jq",
+        ".workflow_runs",
+    ]
+
+    stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+
+    # Parse JSON response
+    data = json.loads(stdout)
+
+    # Map to WorkflowRun dataclasses
+    runs = []
+    for run in data:
+        # Parse created_at timestamp if present
+        created_at = None
+        created_at_str = run.get("created_at")
+        if created_at_str:
+            created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+        # ... build WorkflowRun instances
+```
+
+**Pattern**: 
+- Actual `gh` CLI invocation with proper error handling via `execute_gh_command_with_retry()`
+- Uses **dependency injection**: `self._time` injected in constructor for testable retry delays
+- JSON parsing and object construction from API response
+- Raises exceptions on failure (no discriminated union needed)
+
+---
+
+### 4. **FAKE - TEST IMPLEMENTATION**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py`
+
+Constructor (lines 44-83) accepts pre-configured data:
+
+```python
+def __init__(
+    self,
+    *,
+    repo_info: RepoInfo | None = None,
+    # ... many other parameters
+    workflow_runs: list[WorkflowRun] | None = None,
+    workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
+    # ... more parameters
+) -&gt; None:
+    """Create FakeLocalGitHub with pre-configured state."""
+```
+
+Method implementation (lines 404-412):
+
+```python
+def list_workflow_runs(
+    self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+) -&gt; list[WorkflowRun]:
+    """List workflow runs for a specific workflow (returns pre-configured data).
+
+    Returns the pre-configured list of workflow runs. The workflow, limit and user
+    parameters are accepted but ignored - fake returns all pre-configured runs.
+    """
+    return self._workflow_runs
+```
+
+**Pattern**:
+- Constructor parameter: `workflow_runs: list[WorkflowRun] | None = None`
+- Method accepts same signature but ignores filtering parameters
+- Returns pre-configured data with sensible defaults (empty lists if not provided)
+- **No public setter methods** - all state is immutable after construction
+
+---
+
+### 5. **DRY_RUN - PREVIEW/NO-OP WRAPPER**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py`
+
+Constructor (lines 34-43):
+
+```python
+def __init__(self, wrapped: LocalGitHub) -&gt; None:
+    """Initialize dry-run wrapper with a real implementation."""
+    self._wrapped = wrapped
+    self._dry_run_issues = DryRunGitHubIssues(wrapped.issues)
+```
+
+Method implementation (lines 107-111):
+
+```python
+def list_workflow_runs(
+    self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+) -&gt; list[WorkflowRun]:
+    """Delegate read operation to wrapped implementation."""
+    return self._wrapped.list_workflow_runs(repo_root, workflow, limit, user=user)
+```
+
+**Pattern**:
+- **Decorator/wrapper pattern**: Takes a `LocalGitHub` instance in constructor
+- **Read-only operations** (like `list_workflow_runs`) are delegated to the wrapped implementation
+- **Write operations** (like `update_pr_body`, `merge_pr`) are replaced with no-ops
+- Enables `--dry-run` CLI mode: reads work, writes are prevented
+
+---
+
+## Pattern Summary
+
+| Aspect | Pattern | Notes |
+|--------|---------|-------|
+| **File Organization** | 4 separate files | abc.py, real.py, fake.py, dry_run.py |
+| **Class Hierarchy** | All inherit from ABC | RealLocalGitHub, FakeLocalGitHub, DryRunLocalGitHub |
+| **Abstract Definition** | abc.py (lines 148-163) | Defines interface contract |
+| **Production** | real.py (lines 573-625) | Subprocess calls, error handling, Time dependency injection |
+| **Testing** | fake.py (lines 404-412) | Constructor parameters for pre-configured data, returns without filtering |
+| **Dry-Run** | dry_run.py (lines 107-111) | Delegates reads, no-ops writes, wraps composed gateways |
+| **Read Methods** | Delegated in dry_run | Call wrapped implementation |
+| **Write Methods** | No-op in dry_run | Return success values without executing |
+| **Dependency Injection** | Constructor params | Time, composed gateways (issues), test data (fake only) |
+| **Type Definition** | types.py (lines 196-206, 271-392) | WorkflowRunStatus, WorkflowRunConclusion, WorkflowRun class |
+
+---
+
+## Key Implementation Checklist
+
+When adding a new method to the 4-place GitHub gateway:
+
+1. **Add type definitions** → `types.py` (if needed)
+2. **Add abstract method** → `abc.py` with docstring
+3. **Implement production logic** → `real.py` with subprocess calls
+4. **Implement fake** → `fake.py` with constructor parameter + test data
+5. **Implement dry-run** → `dry_run.py` with delegation (read) or no-op (write)
+6. **Update tests** → Unit tests for Fake, integration tests for Real
+
+This pattern ensures **testability** (Fake), **CLI preview mode** (DryRun), and **production correctness** (Real).</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2078" cache_read_input_tokens="56676" cache_creation="{'ephemeral_5m_input_tokens': 2078, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+</session>

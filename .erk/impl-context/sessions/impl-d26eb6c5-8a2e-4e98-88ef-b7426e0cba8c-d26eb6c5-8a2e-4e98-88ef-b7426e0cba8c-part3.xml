@@ -1,0 +1,1047 @@
+<session>
+  <meta branch="plnd/enhance-runs-tab-detail-03-09-0729" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_013e1fgPx8dud23VP2KvWyxp">
+   414→        Returns the pre-configured list of workflow runs. The workflow, limit and user
+   415→        parameters are accepted but ignored - fake returns all pre-configured runs.
+   416→        """
+   417→        return self._workflow_runs
+   418→
+   419→    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+   420→        """Get details for a specific workflow run by ID (returns pre-configured data).
+   421→
+   422→        Args:
+   423→            repo_root: Repository root directory (ignored in fake)
+   424→            run_id: GitHub Actions run ID to lookup
+   425→
+   426→        Returns:
+   427→            WorkflowRun if found in pre-configured data, None otherwise
+   428→        """
+   429→        for run in self._workflow_runs:
+   430→            if run.run_id == run_id:
+   431→                return run
+   432→        return None
+   433→
+   434→    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+   435→        """Return pre-configured log string for run_id.
+   436→
+   437→        Raises RuntimeError if run_id not found, mimicking gh CLI behavior.
+   438→        """
+   439→        if run_id not in self._run_logs:
+   440→            msg = f"Run {run_id} not found"
+   441→            raise RuntimeError(msg)
+   442→        return self._run_logs[run_id]
+   443→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018CisW3MNBfDmSbgzPbNXBb">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="old_string">    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+        """Return pre-con...[truncated 168 chars]...n_id} not found"
+            raise RuntimeError(msg)
+        return self._run_logs[run_id]</param>
+    <param name="new_string">    def get_workflow_run_jobs(self, repo_root: Path, run_id: str) -&gt; list[WorkflowRunJob]:...[truncated 604 chars]...n_id} not found"
+            raise RuntimeError(msg)
+        return self._run_logs[run_id]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="622" cache_read_input_tokens="133915" cache_creation="{'ephemeral_5m_input_tokens': 622, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018CisW3MNBfDmSbgzPbNXBb">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the dry_run implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="85713" cache_read_input_tokens="20320" cache_creation="{'ephemeral_5m_input_tokens': 85713, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01MbWnvz5EcLaSvqKexc1rKv">
+    <param name="pattern">from erk_shared.gateway.github.types import</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="85713" cache_read_input_tokens="20320" cache_creation="{'ephemeral_5m_input_tokens': 85713, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MbWnvz5EcLaSvqKexc1rKv">
+9:from erk_shared.gateway.github.types import (
+10-    BodyContent,
+11-    GitHubRepoLocation,
+12-    IssueFilterState,
+13-    MergeResult,
+14-    PRCheckRun,
+15-    PRDetails,
+16-    PRListState,
+17-    PRNotFound,
+18-    PRReviewThread,
+19-    PullRequestInfo,
+  </tool_result>
+  <tool_use name="Read" id="toolu_019UsCPExrhvR7ZCBDyn6jz8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="offset">18</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="106033" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019UsCPExrhvR7ZCBDyn6jz8">
+    18→    PRReviewThread,
+    19→    PullRequestInfo,
+    20→    WorkflowRun,
+    21→)
+    22→
+    23→
+    24→class DryRunLocalGitHub(LocalGitHub):
+    25→    """No-op wrapper for GitHub operations.
+    26→
+    27→    Read operations are delegated to the wrapped implementation.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PEkjszCrB2eKJHSkYV1u7U">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="old_string">    PullRequestInfo,
+    WorkflowRun,
+)</param>
+    <param name="new_string">    PullRequestInfo,
+    WorkflowRun,
+    WorkflowRunJob,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="609" cache_read_input_tokens="106308" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PEkjszCrB2eKJHSkYV1u7U">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NTv5zJXGGg3tEwCS9LRUBq">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="old_string">    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+      ...[truncated 79 chars]...w_run(repo_root, run_id)
+
+    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:</param>
+    <param name="new_string">    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+      ...[truncated 306 chars]..._jobs(repo_root, run_id)
+
+    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="106917" cache_creation="{'ephemeral_5m_input_tokens': 216, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NTv5zJXGGg3tEwCS9LRUBq">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 4b done. Now Phase 4c - add `fetch_run_jobs` to PlanService:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="107133" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HeTdCiAQo1JLDopoLzYCd3">
+    <param name="todos">[{'content': 'Phase 1: Add branch/head_sha fields to RunRowData and wire through providers...[truncated 1063 chars]...content': 'Phase 5: Run CI tests', 'status': 'pending', 'activeForm': 'Running CI tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="107133" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HeTdCiAQo1JLDopoLzYCd3">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ji1tutQYaKUGBgX8dNyhi9">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+    <param name="offset">120</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="107555" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ji1tutQYaKUGBgX8dNyhi9">
+   120→        ...
+   121→
+   122→    @abstractmethod
+   123→    def fetch_ci_summaries(self, pr_number: int, *, comment_id: int | None) -&gt; dict[str, str]:
+   124→        """Fetch CI failure summaries for a pull request.
+   125→
+   126→        If comment_id is provided, fetches the comment directly (1 API call).
+   127→        Otherwise falls back to the 4-call path: get PR → find run → find
+   128→        ci-summarize job → fetch logs.
+   129→
+   130→        Args:
+   131→            pr_number: The PR number to fetch summaries for
+   132→            comment_id: Optional GitHub comment ID containing CI summaries
+   133→
+   134→        Returns:
+   135→            Mapping of check name to summary text. Empty dict if no
+   136→            summaries are available.
+   137→        """
+   138→        ...
+   139→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_017bQiY1eJABxuPwhPtt6rSh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="108041" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017bQiY1eJABxuPwhPtt6rSh">
+     1→"""Domain service ABC for plan operations (no TUI type dependencies)."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.browser.abc import BrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+     9→
+    10→
+    11→class PlanService(ABC):
+    12→    """Abstract base class for plan domain operations.
+    13→
+    14→    Contains operations that are independent of TUI display concerns:
+    15→    closing plans, dispatching, fetching content, and GitHub PR data.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now add `fetch_run_jobs` to all three PlanService files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="108491" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Te5bQbBYG3eFdEbsnU5bE3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+    <param name="old_string">from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread</param>
+    <param name="new_string">from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread, WorkflowRunJob</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="108491" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Te5bQbBYG3eFdEbsnU5bE3">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the abstract method at the end of the class. Let me see the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="108871" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01L68RbcMsvhH8o5eLyoD3Zm">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+    <param name="offset">135</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="108871" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L68RbcMsvhH8o5eLyoD3Zm">
+   135→            Mapping of check name to summary text. Empty dict if no
+   136→            summaries are available.
+   137→        """
+   138→        ...
+   139→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014UeMWrpXmMrFTDkXX9VoJg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+    <param name="old_string">            Mapping of check name to summary text. Empty dict if no
+            summaries are available.
+        """
+        ...</param>
+    <param name="new_string">            Mapping of check name to summary text. Empty dict if no
+            summaries ...[truncated 251 chars]...          List of WorkflowRunJob for the run, sorted by started_at
+        """
+        ...</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="563" cache_read_input_tokens="109115" cache_creation="{'ephemeral_5m_input_tokens': 563, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014UeMWrpXmMrFTDkXX9VoJg">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the real PlanService implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="109678" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WH4W6cv1PaiLpd9fQQdonL">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="109678" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WH4W6cv1PaiLpd9fQQdonL">
+     1→"""Real implementation of PlanService for production use."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk_shared.gateway.browser.abc import BrowserLauncher
+     8→from erk_shared.gateway.clipboard.abc import Clipboard
+     9→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    10→from erk_shared.gateway.github.metadata.core import (
+    11→    extract_objective_from_comment,
+    12→    extract_objective_header_comment_id,
+    13→)
+    14→from erk_shared.gateway.github.types import (
+    15→    GitHubRepoId,
+    16→    GitHubRepoLocation,
+    17→    PRCheckRun,
+    18→    PRNotFound,
+    19→    PRReviewThread,
+    20→)
+    21→from erk_shared.gateway.http.abc import HttpClient
+    22→from erk_shared.gateway.plan_service.abc import PlanService
+    23→
+    24→
+    25→class RealPlanService(PlanService):
+    26→    """Production implementation of domain plan operations.
+    27→
+    28→    Contains operations independent of TUI display: closing plans,
+    29→    dispatching, fetching content, and GitHub PR data.
+    30→    """
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012zmrSpCGW2eg13fv41hD6c">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+    <param name="old_string">from erk_shared.gateway.github.types import (
+    GitHubRepoId,
+    GitHubRepoLocation,
+    PRCheckRun,
+    PRNotFound,
+    PRReviewThread,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.types import (
+    GitHubRepoId,
+    GitHubRepoLocation,
+    PRCheckRun,
+    PRNotFound,
+    PRReviewThread,
+    WorkflowRunJob,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="869" cache_read_input_tokens="109997" cache_creation="{'ephemeral_5m_input_tokens': 869, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012zmrSpCGW2eg13fv41hD6c">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now find the end of the RealPlanService class to add the method:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="110866" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SkHpV4rcLrNvE3U3PM2hfo">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+    <param name="offset">240</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="290" cache_read_input_tokens="110866" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SkHpV4rcLrNvE3U3PM2hfo">
+   240→            return {}
+   241→
+   242→        runs_by_branch = self._ctx.github.get_workflow_runs_by_branches(
+   243→            self._location.root, "ci.yml", [pr_result.head_ref_name]
+   244→        )
+   245→        run = runs_by_branch.get(pr_result.head_ref_name)
+   246→        if run is None:
+   247→            return {}
+   248→
+   249→        log_text = self._ctx.github.get_ci_summary_logs(self._location.root, str(run.run_id))
+   250→        if log_text is None:
+   251→            return {}
+   252→
+   253→        return parse_ci_summaries(log_text)
+   254→
+   255→
+   256→def _parse_owner_repo_from_url(url: str) -&gt; tuple[str, str] | None:
+   257→    """Parse owner and repo from a GitHub URL.
+   258→
+   259→    Args:
+   260→        url: GitHub URL (e.g., "https://github.com/owner/repo/issues/123")
+   261→
+   262→    Returns:
+   263→        Tuple of (owner, repo) or None if parsing fails
+   264→    """
+   265→    if not url.startswith("https://github.com/"):
+   266→        return None
+   267→    parts = url.split("/")
+   268→    if len(parts) &lt; 5:
+   269→        return None
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ds6E1A1U11xJsuDn4KZR3h">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+    <param name="old_string">        return parse_ci_summaries(log_text)
+
+
+def _parse_owner_repo_from_url(url: str) -&gt; tuple[str, str] | None:</param>
+    <param name="new_string">        return parse_ci_summaries(log_text)
+
+    def fetch_run_jobs(self, run_id: str) -&gt; ...[truncated 287 chars]...cation.root, run_id)
+
+
+def _parse_owner_repo_from_url(url: str) -&gt; tuple[str, str] | None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="111156" cache_creation="{'ephemeral_5m_input_tokens': 915, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ds6E1A1U11xJsuDn4KZR3h">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the fake PlanService:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="112071" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01R8NVeNNif4p1ehZ97T8t9N">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="112071" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R8NVeNNif4p1ehZ97T8t9N">
+     1→"""Fake plan service for testing."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.browser.abc import BrowserLauncher
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     9→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    10→from erk_shared.gateway.plan_service.abc import PlanService
+    11→
+    12→
+    13→class FakePlanService(PlanService):
+    14→    """Fake implementation of PlanService for testing.
+    15→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01APb25CJeHAWbxtA5DPcXgy">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+    <param name="old_string">from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread</param>
+    <param name="new_string">from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread, WorkflowRunJob</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="112433" cache_creation="{'ephemeral_5m_input_tokens': 706, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01APb25CJeHAWbxtA5DPcXgy">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now find the constructor to add the `_run_jobs` dict:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="113139" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0166WCCGXFKqgZfdEygLVgD9">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+    <param name="offset">25</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="113139" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0166WCCGXFKqgZfdEygLVgD9">
+    25→    ) -&gt; None:
+    26→        """Initialize with optional canned data.
+    27→
+    28→        Args:
+    29→            clipboard: Clipboard interface, defaults to FakeClipboard()
+    30→            browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
+    31→            repo_root: Repository root path, defaults to Path("/fake/repo")
+    32→        """
+    33→        self._clipboard = clipboard if clipboard is not None else FakeClipboard()
+    34→        self._browser = browser if browser is not None else FakeBrowserLauncher()
+    35→        self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
+    36→        self._plan_content_by_plan_id: dict[int, str] = {}
+    37→        self._objective_content_by_plan_id: dict[int, str] = {}
+    38→        self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
+    39→        self._check_runs_by_pr: dict[int, list[PRCheckRun]] = {}
+    40→        self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
+    41→        self._stacks_by_branch: dict[str, list[str]] = {}
+    42→
+    43→    @property
+    44→    def repo_root(self) -&gt; Path:
+    45→        """Get the repository root path."""
+    46→        return self._repo_root
+    47→
+    48→    @property
+    49→    def clipboard(self) -&gt; Clipboard:
+    50→        """Get the clipboard interface for copy operations."""
+    51→        return self._clipboard
+    52→
+    53→    @property
+    54→    def browser(self) -&gt; BrowserLauncher:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WtmehtqFrsLCVptpCovoYb">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+    <param name="old_string">        self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
+        self._stacks_by_branch: dict[str, list[str]] = {}</param>
+    <param name="new_string">        self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
+        self._stacks_by_branch: dict[str, list[str]] = {}
+        self._run_jobs_by_run: dict[str, list[WorkflowRunJob]] = {}</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="990" cache_read_input_tokens="113365" cache_creation="{'ephemeral_5m_input_tokens': 990, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WtmehtqFrsLCVptpCovoYb">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now find the end of FakePlanService to add the method:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="114355" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018BM5rsDggwBxdYWmc4jFhT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+    <param name="offset">170</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="114355" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018BM5rsDggwBxdYWmc4jFhT">
+   170→        return self._review_threads_by_pr.get(pr_number, [])
+   171→
+   172→    def set_review_threads(self, pr_number: int, threads: list[PRReviewThread]) -&gt; None:
+   173→        """Set the review threads to return for a specific PR.
+   174→
+   175→        Args:
+   176→            pr_number: The PR number
+   177→            threads: List of PRReviewThread to return
+   178→        """
+   179→        self._review_threads_by_pr[pr_number] = threads
+   180→
+   181→    def fetch_ci_summaries(self, pr_number: int, *, comment_id: int | None) -&gt; dict[str, str]:
+   182→        """Fake CI summaries fetch implementation.
+   183→
+   184→        Args:
+   185→            pr_number: The PR number to fetch summaries for
+   186→            comment_id: Optional GitHub comment ID (unused in fake)
+   187→
+   188→        Returns:
+   189→            Configured mapping of check name to summary text, or empty dict
+   190→        """
+   191→        return self._ci_summaries_by_pr.get(pr_number, {})
+   192→
+   193→    def set_ci_summaries(self, pr_number: int, summaries: dict[str, str]) -&gt; None:
+   194→        """Set the CI summaries to return for a specific PR.
+   195→
+   196→        Args:
+   197→            pr_number: The PR number
+   198→            summaries: Mapping of check name to summary text
+   199→        """
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Fb9n3Z7oTytbN2ofeTy9g5">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+    <param name="old_string">        self._ci_summaries_by_pr[pr_number] = summaries</param>
+    <param name="new_string">        self._ci_summaries_by_pr[pr_number] = summaries
+
+    def fetch_run_jobs(self, run_...[truncated 478 chars]... List of WorkflowRunJob to return
+        """
+        self._run_jobs_by_run[run_id] = jobs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="114649" cache_creation="{'ephemeral_5m_input_tokens': 944, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fb9n3Z7oTytbN2ofeTy9g5">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 4c done. Now Phase 4d - create the RunDetailScreen modal. Let me first read the CheckRunsScreen for the pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="115593" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_016twnWFoRvm7wPwLBDJRzjM">
+    <param name="todos">[{'content': 'Phase 1: Add branch/head_sha fields to RunRowData and wire through providers...[truncated 1065 chars]...content': 'Phase 5: Run CI tests', 'status': 'pending', 'activeForm': 'Running CI tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="115593" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016twnWFoRvm7wPwLBDJRzjM">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PnHg1PsEXQJxKn7rVhXvXT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/check_runs_screen.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="493" cache_read_input_tokens="115995" cache_creation="{'ephemeral_5m_input_tokens': 493, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PnHg1PsEXQJxKn7rVhXvXT">
+     1→"""Modal screen displaying failing CI check runs for a PR."""
+     2→
+     3→from textual import work
+     4→from textual.app import ComposeResult
+     5→from textual.binding import Binding
+     6→from textual.containers import Container, Vertical
+     7→from textual.screen import ModalScreen
+     8→from textual.widgets import Label, Markdown
+     9→
+    10→from erk.tui.formatting.ci_checks import format_check_runs
+    11→from erk_shared.gateway.github.types import PRCheckRun
+    12→from erk_shared.gateway.plan_service.abc import PlanService
+    13→
+    14→
+    15→class CheckRunsScreen(ModalScreen):
+    16→    """Modal screen displaying failing CI check runs."""
+    17→
+    18→    BINDINGS = [
+    19→        Binding("escape", "dismiss", "Close"),
+    20→        Binding("q", "dismiss", "Close"),
+    21→        Binding("space", "dismiss", "Close"),
+    22→    ]
+    23→
+    24→    DEFAULT_CSS = """
+    25→    CheckRunsScreen {
+    26→        align: center middle;
+    27→    }
+    28→
+    29→    #checks-dialog {
+    30→        width: 90%;
+
+... [206 lines omitted] ...
+
+    84→    #checks-error {
+    85→        color: $error;
+   152→        error: str | None = None
+   156→        except Exception as e:
+   157→            error = str(e)
+   159→        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+   161→    def _on_check_runs_loaded(self, check_runs: list[PRCheckRun], error: str | None) -&gt; None:
+   169→            error: Error message if fetch failed, or None
+   176→        if error is not None:
+   177→            container.mount(Label(f"Error: {error}", id="checks-error"))
+   194→        container.mount(Label("Loading failure summaries...", id="checks-summaries-loading"))
+   199→        """Fetch CI failure summaries in background thread."""
+   206→        except (RuntimeError, ValueError, KeyError):
+   207→            # Summaries are best-effort; silently ignore failures
+  </tool_result>
+  <assistant>Now I have the pattern. Let me create the RunDetailScreen:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2778" cache_read_input_tokens="116488" cache_creation="{'ephemeral_5m_input_tokens': 2778, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_014GogxovpegF12djWSPbMkT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/run_detail_screen.py</param>
+    <param name="content">"""Modal screen displaying workflow run detail with job breakdown."""
+
+from textual import...[truncated 6745 chars]... _format_run_jobs(jobs),
+                id="run-detail-content",
+            )
+        )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2778" cache_read_input_tokens="116488" cache_creation="{'ephemeral_5m_input_tokens': 2778, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014GogxovpegF12djWSPbMkT">
+File created successfully at: /home/runner/work/erk/erk/src/erk/tui/screens/run_detail_screen.py
+  </tool_result>
+  <assistant>Phase 4d done. Now Phase 4e - wire Enter key to RunDetailScreen:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2169" cache_read_input_tokens="119266" cache_creation="{'ephemeral_5m_input_tokens': 2169, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01J6ieaYeVizesM9DKsyjyJb">
+    <param name="todos">[{'content': 'Phase 1: Add branch/head_sha fields to RunRowData and wire through providers...[truncated 1067 chars]...content': 'Phase 5: Run CI tests', 'status': 'pending', 'activeForm': 'Running CI tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2169" cache_read_input_tokens="119266" cache_creation="{'ephemeral_5m_input_tokens': 2169, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J6ieaYeVizesM9DKsyjyJb">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>I need to find how `action_show_detail` is bound (Enter key) and check how the app handles it for different views. Let me check the bindings:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="121435" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UpxwfDqZCCbdyXMaDBSGdd">
+    <param name="pattern">show_detail|action_show_detail"</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/app.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="121435" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UpxwfDqZCCbdyXMaDBSGdd">
+68:        Binding("enter", "show_detail", "Detail"),
+69:        Binding("space", "show_detail", "Detail", show=False),
+534:        self.action_show_detail()
+  </tool_result>
+  <assistant>The Enter key is already bound to `action_show_detail`. I need to modify that action to handle RunRowData when in Runs view. Let me check the navigation.py more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="121916" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016JSQ7Ceru1Egj98YZJKiuX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">100</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="121916" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016JSQ7Ceru1Egj98YZJKiuX">
+   100→    def action_show_detail(self: ErkDashApp) -&gt; None:
+   101→        """Show plan detail modal for selected row."""
+   102→        row = self._get_selected_row()
+   103→        if row is None:
+   104→            return
+   105→
+   106→        # Create executor with injected dependencies
+   107→        executor = RealCommandExecutor(
+   108→            browser_launch=self._service.browser.launch,
+   109→            clipboard_copy=self._service.clipboard.copy,
+   110→            close_plan_fn=self._service.close_plan,
+   111→            notify_fn=self._notify_with_severity,
+   112→            refresh_fn=self.action_refresh,
+   113→            dispatch_to_queue_fn=self._service.dispatch_to_queue,
+   114→        )
+   115→
+   116→        self.push_screen(
+   117→            PlanDetailScreen(
+   118→                row=row,
+   119→                clipboard=self._service.clipboard,
+   120→                browser=self._service.browser,
+   121→                executor=executor,
+   122→                repo_root=self._service.repo_root,
+   123→                view_mode=self._view_mode,
+   124→                cmux_integration=self._cmux_integration,
+   125→            )
+   126→        )
+   127→
+   128→    def action_view_plan_body(self: ErkDashApp) -&gt; None:
+   129→        """Display the plan/objective content in a modal (fetched on-demand)."""
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>I need to modify `action_show_detail` to handle the Runs view. But `_get_selected_row()` returns `PlanRowData | None` - for Runs view I need to get `RunRowData`. Let me check how the app handles this:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="122152" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ADd5FXmhu4fr5i5Ai8WjhE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">330</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="122152" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ADd5FXmhu4fr5i5Ai8WjhE">
+   330→
+   331→        # Show status message
+   332→        if self._status_bar is not None:
+   333→            if success:
+   334→                self._status_bar.set_message(f"Copied: {cmd}")
+   335→            else:
+   336→                self._status_bar.set_message(f"Clipboard unavailable. Copy manually: {cmd}")
+   337→
+   338→    def _get_selected_row(self: ErkDashApp) -&gt; PlanRowData | None:
+   339→        """Get currently selected row data."""
+   340→        if self._table is None:
+   341→            return None
+   342→        return self._table.get_selected_row_data()
+   343→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I need to modify `action_show_detail` to check for Runs view mode and show RunDetailScreen instead. The key change is:
+
+1. When `ViewMode.RUNS`, get selected row from `_run_table`, push `RunDetailScreen`
+2. Otherwise, use existing behavior</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="728" cache_read_input_tokens="122865" cache_creation="{'ephemeral_5m_input_tokens': 728, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WhS9DDTQXEj35vzMyMM9Sf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">from erk.tui.screens.check_runs_screen import CheckRunsScreen
+from erk.tui.screens.help_sc...[truncated 243 chars]...tailScreen
+from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen</param>
+    <param name="new_string">from erk.tui.screens.check_runs_screen import CheckRunsScreen
+from erk.tui.screens.help_sc...[truncated 305 chars]...tailScreen
+from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="728" cache_read_input_tokens="122865" cache_creation="{'ephemeral_5m_input_tokens': 728, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WhS9DDTQXEj35vzMyMM9Sf">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019LWNhLvh5t1sih6fkmJnze">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">    def action_show_detail(self: ErkDashApp) -&gt; None:
+        """Show plan detail modal fo...[truncated 810 chars]...iew_mode,
+                cmux_integration=self._cmux_integration,
+            )
+        )</param>
+    <param name="new_string">    def action_show_detail(self: ErkDashApp) -&gt; None:
+        """Show detail modal for sel...[truncated 1342 chars]...               service=self._service,
+                row=run_row,
+            )
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="123593" cache_creation="{'ephemeral_5m_input_tokens': 521, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019LWNhLvh5t1sih6fkmJnze">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <assistant>Phase 4e done. Now let me also handle the `action_open_run` for Runs view mode - when in Runs tab, pressing 'o' should open the run URL. Let me check if there's already handling:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1124" cache_read_input_tokens="124114" cache_creation="{'ephemeral_5m_input_tokens': 1124, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RJ1Sfg9FFzmQHeUpLtJsMV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">264</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1124" cache_read_input_tokens="124114" cache_creation="{'ephemeral_5m_input_tokens': 1124, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RJ1Sfg9FFzmQHeUpLtJsMV">
+   264→                    self._status_bar.set_message(f"Opened objective #{row.plan_id}")
+   265→            else:
+   266→                if self._status_bar is not None:
+   267→                    self._status_bar.set_message("No URL for this objective")
+   268→        else:
+   269→            if row.pr_url:
+   270→                self._service.browser.launch(row.pr_url)
+   271→                if self._status_bar is not None:
+   272→                    self._status_bar.set_message(f"Opened PR #{row.pr_number}")
+   273→            else:
+   274→                if self._status_bar is not None:
+   275→                    self._status_bar.set_message("No PR linked to this plan")
+   276→
+   277→    def action_open_run(self: ErkDashApp) -&gt; None:
+   278→        """Open selected workflow run in browser."""
+   279→        row = self._get_selected_row()
+   280→        if row is None:
+   281→            return
+   282→
+   283→        if row.run_url is not None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The `action_open_run` and `action_open_pr` use `_get_selected_row()` which returns `PlanRowData`. I need to add Runs view handling for these too. Let me update `action_open_run`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="125238" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01EUvc7ruFs4PeHftquoWkxy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">    def action_open_run(self: ErkDashApp) -&gt; None:
+        """Open selected workflow run i...[truncated 389 chars]... None:
+                self._status_bar.set_message("No workflow run linked to this plan")</param>
+    <param name="new_string">    def action_open_run(self: ErkDashApp) -&gt; None:
+        """Open selected workflow run i...[truncated 870 chars]... None:
+                self._status_bar.set_message("No workflow run linked to this plan")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="125238" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EUvc7ruFs4PeHftquoWkxy">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the CI tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="996" cache_read_input_tokens="125781" cache_creation="{'ephemeral_5m_input_tokens': 996, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01EMZ2t2FALvzTGT4dahDDTi">
+    <param name="todos">[{'content': 'Phase 1: Add branch/head_sha fields to RunRowData and wire through providers...[truncated 1069 chars]...ent': 'Phase 5: Run CI tests', 'status': 'in_progress', 'activeForm': 'Running CI tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="996" cache_read_input_tokens="125781" cache_creation="{'ephemeral_5m_input_tokens': 996, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EMZ2t2FALvzTGT4dahDDTi">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01WsmVotgWLY1spD51Xh8J74">
+    <param name="description">Run ty type checker</param>
+    <param name="prompt">Run `ty check src/erk/tui/` and report all errors. This is read-only - just run and report results.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="126777" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01HHBKaDEoH3kk11FQA8gZXy">
+    <param name="description">Run ruff linter</param>
+    <param name="prompt">Run `ruff check src/erk/tui/ packages/erk-shared/src/erk_shared/gateway/github/ packages/e...[truncated 9 chars]...way/plan_service/` and report all errors. This is read-only - just run and report results.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="126777" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01SADaYDWodQFfwJMF9g9rVC">
+    <param name="description">Run unit tests for TUI</param>
+    <param name="prompt">Run `pytest tests/ -x -q --timeout=30 -k "run_table or run_detail or RunRow or run_row or fake_provider"` and report all results. This is read-only - just run and report results.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="126777" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WsmVotgWLY1spD51Xh8J74">
+Async agent launched successfully.
+agentId: a94c4d5 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01HHBKaDEoH3kk11FQA8gZXy">
+Async agent launched successfully.
+agentId: aa58c7c (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01SADaYDWodQFfwJMF9g9rVC">
+Async agent launched successfully.
+agentId: ac9c313 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>While tests are running, let me also check if the `WorkflowRunJob` needs to be exported from the `erk_shared.gateway.github.types` module's `__all__` or similar:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="127246" cache_creation="{'ephemeral_5m_input_tokens': 1040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NrrbMRi3JsUm6xpF5DZNSP">
+    <param name="pattern">__all__</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="127246" cache_creation="{'ephemeral_5m_input_tokens': 1040, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NrrbMRi3JsUm6xpF5DZNSP">
+No matches found
+  </tool_result>
+  <assistant>Good - no `__all__`, consistent with the "no re-exports" pattern. Now let me get the test results:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="128286" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Bv42UBTzaPRYFbKgnQ8LJA">
+    <param name="task_id">aa58c7c</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="128286" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bv42UBTzaPRYFbKgnQ8LJA">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aa58c7c&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"uv run ruff check src/erk/tui/ packages/erk-shared/src/erk_shared/gateway/github/ packages/erk-shared/src/erk_shared/gateway/plan_service/","description":"Run ruff check on specified directories"}
+[Tool: Bash] {"command":"uv run ruff check src/erk/tui/ packages/erk-shared/src/erk_shared/gateway/github/ packages/erk-shared/src/erk_shared/gateway/plan_service/","description":"Run ruff check on specified directories"}
+
+--- RESULT ---
+ruff failed: 1 error found
+
+**File: src/erk/tui/screens/run_detail_screen.py:35:101**
+- Rule: E501
+- Message: Line too long (104 &gt; 100)
+- Issue: The line exceeds the 100-character limit by 4 characters
+
+The problematic line is:
+```python
+lines.append(f"| {job.name} | {status_icon} {job.status} | {conclusion_display} | {duration} |")
+```
+&lt;/output&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UowXuTBJmfernpKrkivqxL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/run_detail_screen.py</param>
+    <param name="old_string">        lines.append(f"| {job.name} | {status_icon} {job.status} | {conclusion_display} | {duration} |")</param>
+    <param name="new_string">        row_line = f"| {job.name} | {status_icon} {job.status} | {conclusion_display} | {duration} |"
+        lines.append(row_line)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="768" cache_read_input_tokens="128524" cache_creation="{'ephemeral_5m_input_tokens': 768, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UowXuTBJmfernpKrkivqxL">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UTfGHhVY8Z7RV9QWRiuQQ9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/run_detail_screen.py</param>
+    <param name="offset">30</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="129292" cache_creation="{'ephemeral_5m_input_tokens': 245, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UTfGHhVY8Z7RV9QWRiuQQ9">
+    30→
+    31→    for job in jobs:
+    32→        status_icon = _status_icon(job.status, job.conclusion)
+    33→        conclusion_display = job.conclusion or "-"
+    34→        duration = _compute_duration(job.started_at, job.completed_at)
+    35→        lines.append(f"| {job.name} | {status_icon} {job.status} | {conclusion_display} | {duration} |")
+    36→
+    37→    return "\n".join(lines)
+    38→
+    39→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018ACF75iwcRA1EpKLetCLCM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/run_detail_screen.py</param>
+    <param name="old_string">        lines.append(f"| {job.name} | {status_icon} {job.status} | {conclusion_display} | {duration} |")</param>
+    <param name="new_string">        cells = f"| {job.name} | {status_icon} {job.status} | {conclusion_display} | {duration} |"
+        lines.append(cells)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="129537" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018ACF75iwcRA1EpKLetCLCM">
+The file /home/runner/work/erk/erk/src/erk/tui/screens/run_detail_screen.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the other test results:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="547" cache_read_input_tokens="129884" cache_creation="{'ephemeral_5m_input_tokens': 547, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_016MeRf2xAqGiZnJy8HiQh6J">
+    <param name="task_id">ac9c313</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="547" cache_read_input_tokens="129884" cache_creation="{'ephemeral_5m_input_tokens': 547, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016MeRf2xAqGiZnJy8HiQh6J">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ac9c313&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Bash] {"command":"uv run pytest tests/ -x -q --timeout=30 -k \"run_table or run_detail or RunRow or run_row or fake_provider\"","description":"Run pytest with specific test filters"}
+[Tool: Bash] {"command":"uv run pytest tests/ -x -q --timeout=30 -k \"run_table or run_detail or RunRow or run_row or fake_provider\"","description":"Run pytest with specific test filters"}
+[Tool: Bash] {"command":"uv run pytest tests/ -x -q -k \"run_table or run_detail or RunRow or run_row or fake_provider\"","description":"Run pytest with specific test filters (no timeout)"}
+[Tool: Bash] {"command":"uv run pytest tests/ -x -q -k \"run_table or run_detail or RunRow or run_row or fake_provider\"","description":"Run pytest with specific test filters (no timeout)"}
+
+--- RESULT ---
+pytest failed: 1 test failure found
+
+**Failure Summary:**
+
+- **File:** tests/tui/test_run_table.py
+- **Test:** TestRunDataTableRowValues::test_row_to_values_basic
+- **Line:** 97
+- **Error:** AssertionError - Expected 7 values but got 8
+
+The test expects `_row_to_values()` to return 7 columns (run_id, status, submitted, workflow, pr, title, chks) but it's currently returning 8 values. This indicates a column has been added to the RunDataTable output (likely the branch name column based on the context of "Enhance Runs Tab - Branch Names, j/k Nav, Detail View").
+&lt;/output&gt;
+  </tool_result>
+  <assistant>There's a test that needs updating. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="130431" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EDPbCoQN5p6Yev7bVrA3kT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/test_run_table.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="130431" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EDPbCoQN5p6Yev7bVrA3kT">
+     1→"""Tests for RunDataTable widget."""
+     2→
+     3→from erk.tui.data.fake_provider import make_run_row
+     4→from erk.tui.data.types import RunRowData
+     5→from erk.tui.widgets.run_table import RunDataTable
+     6→
+     7→
+     8→class TestRunRowData:
+     9→    """Tests for RunRowData dataclass."""
+    10→
+    11→    def test_make_run_row_defaults(self) -&gt; None:
+    12→        """make_run_row creates row with sensible defaults."""
+    13→        row = make_run_row("12345")
+    14→        assert row.run_id == "12345"
+    15→        assert row.run_url == "https://github.com/test/repo/actions/runs/12345"
+    16→        assert row.status == "completed"
+    17→        assert row.conclusion == "success"
+    18→        assert row.status_display == "\u2705 Success"
+    19→        assert row.workflow_name == "plan-implement"
+    20→        assert row.pr_number is None
+    21→        assert row.pr_url is None
+    22→        assert row.pr_display == "-"
+    23→        assert row.pr_title is None
+    24→        assert row.title_display == "-"
+    25→        assert row.checks_display == "-"
+    26→        assert row.run_id_display == "12345"
+    27→
+    28→    def test_make_run_row_with_pr(self) -&gt; None:
+    29→        """make_run_row with PR data."""
+    30→        row = make_run_row(
+
+... [155 lines omitted] ...
+
+    48→    def test_make_run_row_with_failure(self) -&gt; None:
+    49→        """make_run_row with failed conclusion."""
+    53→            conclusion="failure",
+    54→            status_display="\u274c Failure",
+    56→        assert row.conclusion == "failure"
+    57→        assert row.status_display == "\u274c Failure"
+    64→            raise AssertionError("Should have raised FrozenInstanceError")
+    65→        except AttributeError:
+  </tool_result>
+  <assistant>I see the test failures. I need to update:
+1. `test_row_to_values_basic` - now expects 8 values (added branch column)
+2. `test_row_to_values_no_run_url` - need to add `branch` and `head_sha` fields to the manual `RunRowData` constructor</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2968" cache_read_input_tokens="131001" cache_creation="{'ephemeral_5m_input_tokens': 2968, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VHcN3FBaMhVtbioQ2ACK8c">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/test_run_table.py</param>
+    <param name="old_string">    def test_row_to_values_basic(self) -&gt; None:
+        """_row_to_values returns correct ...[truncated 501 chars]...R
+        assert values[5] == "-"  # no title
+        assert values[6] == "-"  # no checks</param>
+    <param name="new_string">    def test_row_to_values_basic(self) -&gt; None:
+        """_row_to_values returns correct ...[truncated 554 chars]...h
+        assert values[6] == "-"  # no title
+        assert values[7] == "-"  # no checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2968" cache_read_input_tokens="131001" cache_creation="{'ephemeral_5m_input_tokens': 2968, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VHcN3FBaMhVtbioQ2ACK8c">
+The file /home/runner/work/erk/erk/tests/tui/test_run_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the PR linkified test (index shifts):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="133969" cache_creation="{'ephemeral_5m_input_tokens': 691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012BPRuVsJAdDU1iFK7q9pP6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/test_run_table.py</param>
+    <param name="old_string">        values = table._row_to_values(row)
+        # PR cell should be linkified
+        assert "[link=" in values[4]
+        assert "#42" in values[4]</param>
+    <param name="new_string">        values = table._row_to_values(row)
+        # PR cell should be linkified (index 4)...[truncated 24 chars]...  assert "#42" in values[4]
+        # Branch at index 5
+        assert values[5] == "main"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="133969" cache_creation="{'ephemeral_5m_input_tokens': 691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012BPRuVsJAdDU1iFK7q9pP6">
+The file /home/runner/work/erk/erk/tests/tui/test_run_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the `test_row_to_values_no_run_url` needs updating - it constructs RunRowData directly, so it needs branch and head_sha:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="584" cache_read_input_tokens="134660" cache_creation="{'ephemeral_5m_input_tokens': 584, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01HM9KFZoCh2rcv1wfb1ZMMa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/test_run_table.py</param>
+    <param name="old_string">        # Construct directly to set run_url=None
+        row_no_url = RunRowData(
+        ...[truncated 381 chars]...ted_at=None,
+            checks_display="-",
+            run_id_display="12345",
+        )</param>
+    <param name="new_string">        # Construct directly to set run_url=None
+        row_no_url = RunRowData(
+        ...[truncated 440 chars]...n_id_display="12345",
+            branch="main",
+            head_sha="abc1234",
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="584" cache_read_input_tokens="134660" cache_creation="{'ephemeral_5m_input_tokens': 584, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HM9KFZoCh2rcv1wfb1ZMMa">
+The file /home/runner/work/erk/erk/tests/tui/test_run_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also add a test for the new branch field default in make_run_row:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="135244" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+</session>
