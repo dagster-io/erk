@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Remove default MCP server configuration"
+  "plan_id": "9113",
+  "url": "https://github.com/dagster-io/erk/pull/9113",
+  "created_at": "2026-03-09T22:51:15.712053",
+  "synced_at": "2026-03-09T22:51:15.712053",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
