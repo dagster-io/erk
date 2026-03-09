@@ -17,7 +17,7 @@ uv add erk && uv sync
 # Initialize in your repo
 erk init
 
-# Verify setup
+# Verify setup (checks prerequisites and configuration)
 erk doctor
 ```
 
