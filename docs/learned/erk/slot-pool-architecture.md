@@ -157,6 +157,24 @@ Commands that allocate slots via `allocate_slot_for_branch()`:
 | `erk slot assign`     | Assigns existing branch to slot      |
 | `erk pr checkout`     | Assigns branch when checking out PR  |
 
+### Navigation Integration
+
+Navigation commands (`erk up`, `erk down`, `erk land --up`) use the slot pool to auto-create worktrees when navigating to a branch that lacks one. All three entry points follow the same pattern:
+
+```python
+target_path, already_existed = ensure_branch_has_worktree(
+    ctx, repo, branch_name=target_branch, no_slot=False, force=False
+)
+```
+
+| Call Site                   | File                                         | Purpose                                           |
+| --------------------------- | -------------------------------------------- | ------------------------------------------------- |
+| `resolve_up_navigation()`   | `src/erk/cli/commands/navigation_helpers.py` | Allocate slot for child branch during `erk up`    |
+| `resolve_down_navigation()` | `src/erk/cli/commands/navigation_helpers.py` | Allocate slot for parent branch during `erk down` |
+| `_navigate_after_land()`    | `src/erk/cli/commands/land_cmd.py`           | Allocate slot for next branch after landing a PR  |
+
+All calls use `no_slot=False` (allow slot allocation) and `force=False` (no auto-eviction). The user-facing message is "Assigned slot" rather than "Created worktree".
+
 ### The `--new-slot` Flag
 
 <!-- Source: src/erk/cli/commands/branch/create_cmd.py -->

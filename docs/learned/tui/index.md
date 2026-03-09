@@ -27,6 +27,7 @@
 - **[one-shot-prompt-modal.md](one-shot-prompt-modal.md)** — adding a new modal or input screen to the TUI, working with the one-shot dispatch workflow in erk dash, adding global keybindings that trigger modals
 - **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
 - **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
+- **[runs-tab-architecture.md](runs-tab-architecture.md)** — working with TUI Runs tab, adding columns to RunDataTable, understanding branch resolution in runs, modifying workflow run display in TUI
 - **[stacked-pr-indicator.md](stacked-pr-indicator.md)** — adding or modifying PR indicators in the TUI dashboard, understanding blocking vs. informational indicators, working with stacked PR detection
 - **[status-indicators.md](status-indicators.md)** — working with status indicators in TUI dashboard, adding new emoji indicators to plan display, modifying the sts column
 - **[streaming-output.md](streaming-output.md)** — displaying streaming command output in TUI, executing long-running commands with progress, cross-thread UI updates in Textual
