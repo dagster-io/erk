@@ -1,0 +1,375 @@
+<session>
+  <meta branch="plnd/add-runs-tab-tui-dash-03-09-0622" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Read" id="toolu_01XQU8eBBq69YAfnP2jxmq6e">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="offset">354</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="137953" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XQU8eBBq69YAfnP2jxmq6e">
+   354→
+   355→    @pytest.mark.asyncio
+   356→    async def test_right_arrow_cycles_to_next_view(self) -&gt; None:
+   357→        """Right arrow cycles through views: PLANS → LEARN → OBJECTIVES → PLANS."""
+   358→        provider = FakePlanDataProvider(
+   359→            plans=[make_plan_row(1, "Regular Plan")],
+   360→            plans_by_labels={
+   361→                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+   362→                ("erk-objective",): [make_plan_row(10, "Objective A")],
+   363→            },
+   364→        )
+   365→        filters = PlanFilters.default()
+   366→        app = ErkDashApp(
+   367→            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+   368→        )
+   369→
+   370→        async with app.run_test() as pilot:
+   371→            await pilot.pause()
+   372→            assert app._view_mode == ViewMode.PLANS
+   373→
+   374→            # Right arrow: PLANS → LEARN
+   375→            await pilot.press("right")
+   376→            await pilot.pause()
+   377→            assert app._view_mode == ViewMode.LEARN
+   378→
+   379→            # Right arrow: LEARN → OBJECTIVES
+   380→            await pilot.press("right")
+   381→            await pilot.pause()
+   382→            await pilot.pause()
+   383→            assert app._view_mode == ViewMode.OBJECTIVES
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01P13A9iiuYTTpydkVDmX97L">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="offset">403</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1172" cache_read_input_tokens="138141" cache_creation="{'ephemeral_5m_input_tokens': 1172, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P13A9iiuYTTpydkVDmX97L">
+   403→        )
+   404→
+   405→        async with app.run_test() as pilot:
+   406→            await pilot.pause()
+   407→            assert app._view_mode == ViewMode.PLANS
+   408→
+   409→            # Left arrow: PLANS → OBJECTIVES (wrap-around)
+   410→            await pilot.press("left")
+   411→            await pilot.pause()
+   412→            await pilot.pause()
+   413→            assert app._view_mode == ViewMode.OBJECTIVES
+   414→
+   415→            # Left arrow: OBJECTIVES → LEARN
+   416→            await pilot.press("left")
+   417→            await pilot.pause()
+   418→            assert app._view_mode == ViewMode.LEARN
+   419→
+   420→            # Left arrow: LEARN → PLANS
+   421→            await pilot.press("left")
+   422→            await pilot.pause()
+   423→            assert app._view_mode == ViewMode.PLANS
+   424→
+   425→
+   426→def test_display_name_plans_view() -&gt; None:
+   427→    """PLANS view returns 'PRs'."""
+   428→    provider = FakePlanDataProvider()
+   429→    filters = PlanFilters.default()
+   430→    app = ErkDashApp(
+   431→        provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+   432→    )
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>I need to update both cycling tests to account for the 4-view cycle:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="139313" cache_creation="{'ephemeral_5m_input_tokens': 558, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01C4gkH4q9cUBQ6nzqgkDaq8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_right_arrow_cycles_to_next_view(self) -&gt; None:...[truncated 1137 chars]...ight")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_right_arrow_cycles_to_next_view(self) -&gt; None:...[truncated 1306 chars]...ight")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="139313" cache_creation="{'ephemeral_5m_input_tokens': 558, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C4gkH4q9cUBQ6nzqgkDaq8">
+The file /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the left arrow test too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1204" cache_read_input_tokens="139871" cache_creation="{'ephemeral_5m_input_tokens': 1204, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QbiaSWAzGyLGkDKHXpEXp9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_left_arrow_cycles_to_previous_view(self) -&gt; No...[truncated 1133 chars]...left")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_left_arrow_cycles_to_previous_view(self) -&gt; No...[truncated 1300 chars]...left")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.PLANS</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1204" cache_read_input_tokens="139871" cache_creation="{'ephemeral_5m_input_tokens': 1204, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QbiaSWAzGyLGkDKHXpEXp9">
+The file /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py has been updated successfully.
+  </tool_result>
+  <assistant>Now run CI again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="943" cache_read_input_tokens="141075" cache_creation="{'ephemeral_5m_input_tokens': 943, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01YRFnTutV3xcrUKznoWtUdY">
+    <param name="description">Run CI after fixing tests</param>
+    <param name="prompt">Run these commands and report ALL results. Do NOT attempt to fix anything.
+
+1. `cd /home/r...[truncated 384 chars]...gnore=tests/tui/app/test_async_operations.py 2&gt;&amp;1 | tail -80`
+
+Report ALL output verbatim.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="943" cache_read_input_tokens="141075" cache_creation="{'ephemeral_5m_input_tokens': 943, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YRFnTutV3xcrUKznoWtUdY">
+## Results
+
+All commands executed successfully. Here are the results:
+
+**1. ruff check:**
+```
+All checks passed!
+```
+
+**2. ruff format --check:**
+```
+100 files already formatted
+```
+
+**3. pytest tests/tui/ -x -v --ignore=tests/tui/app/test_async_operations.py:**
+```
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_fixture_loop_scope=function
+collected 548 items
+
+tests/tui/app/test_actions.py .............                              [  2%]
+tests/tui/app/test_app_filtering.py ...................                  [  5%]
+tests/tui/app/test_command_palette.py ............                       [  8%]
+tests/tui/app/test_core.py ..........                                    [  9%]
+tests/tui/app/test_filter_mode.py ......                                 [ 10%]
+tests/tui/app/test_incremental_dispatch.py ..                            [ 11%]
+
+... [44 lines omitted] ...
+  </tool_result>
+  <assistant>All 548 tests pass, linting and formatting are clean.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1853" cache_read_input_tokens="142018" cache_creation="{'ephemeral_5m_input_tokens': 1853, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Hd2GjuuZMMrGrZoUocfxGp">
+    <param name="todos">[{'content': 'Add ViewMode.RUNS and RUNS_VIEW config', 'status': 'completed', 'activeForm'...[truncated 1125 chars]...PR', 'status': 'in_progress', 'activeForm': 'Cleaning up impl context and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1853" cache_read_input_tokens="142018" cache_creation="{'ephemeral_5m_input_tokens': 1853, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Hd2GjuuZMMrGrZoUocfxGp">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal completion and clean up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="143871" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01K8owvPKoGmi2bLL4AjCP2Q">
+    <param name="command">erk exec impl-signal ended --session-id "942f00ad-1e29-48f5-a4bc-4a4f79c0bf73" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="143871" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Ny2EJskjxhkPJ4uM7yfu2X">
+    <param name="command">erk exec upload-impl-session --session-id "942f00ad-1e29-48f5-a4bc-4a4f79c0bf73" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="143871" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K8owvPKoGmi2bLL4AjCP2Q">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9041
+}
+  </tool_result>
+  <tool_result tool="toolu_01Ny2EJskjxhkPJ4uM7yfu2X">
+{"uploaded": true, "plan_id": 9041}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014sgXM6tCCMEQX5uTpJdWYy">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="144346" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014sgXM6tCCMEQX5uTpJdWYy">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NnjK3v6KJ4UEea8g7deXMg">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="144676" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NnjK3v6KJ4UEea8g7deXMg">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9041 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9041
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (52,797 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   Still waiting... (12s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01D57Db2bFcYPMK6bmhwicBS">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="144781" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D57Db2bFcYPMK6bmhwicBS">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 9041
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q7DHbAaGPANVxGJphKGGcZ">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="145219" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q7DHbAaGPANVxGJphKGGcZ">
+Exit code 1
+Checking PR #9041 for branch plnd/add-runs-tab-tui-dash-03-09-0622...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9041)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0124qbjxVLVT3kw1gqVkSTMY">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Check impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="145607" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0124qbjxVLVT3kw1gqVkSTMY">
+total 28
+drwxr-xr-x 3 runner runner 4096 Mar  9 10:26 .
+drwxr-xr-x 6 runner runner 4096 Mar  9 10:25 ..
+-rw-r--r-- 1 runner runner 7203 Mar  9 10:25 plan.md
+drwxr-xr-x 2 runner runner 4096 Mar  9 10:44 plnd--add-runs-tab-tui-dash-03-09-0622
+-rw-r--r-- 1 runner runner  263 Mar  9 10:25 ref.json
+-rw-r--r-- 1 runner runner  105 Mar  9 10:25 run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BLXkXqtQSTENtLLQGXqhUF">
+    <param name="command">git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove .erk/impl-context/ after implementation" &amp;&amp; git push</param>
+    <param name="description">Remove impl-context and push</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="145792" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BLXkXqtQSTENtLLQGXqhUF">
+Exit code 128
+fatal: pathspec '.erk/impl-context/' did not match any files
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ASMZ6JVZuAYN2XcrxV8aep">
+    <param name="command">git status .erk/impl-context/</param>
+    <param name="description">Check git status of impl-context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="430" cache_read_input_tokens="146092" cache_creation="{'ephemeral_5m_input_tokens': 430, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ASMZ6JVZuAYN2XcrxV8aep">
+On branch plnd/add-runs-tab-tui-dash-03-09-0622
+Your branch and 'origin/plnd/add-runs-tab-tui-dash-03-09-0622' have diverged,
+and have 1 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+nothing to commit, working tree clean
+  </tool_result>
+  <assistant>The impl-context is not tracked by git (it's in `.gitignore`). The `erk pr check` reports a false positive since the directory exists on disk but isn't in git. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="146522" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015T444H4CKPK1fpdjnTqNAs">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Remove impl-context directory from disk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="146522" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015T444H4CKPK1fpdjnTqNAs">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WRQpYnAvuSAUDuH38DSnY9">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Re-validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="146716" cache_creation="{'ephemeral_5m_input_tokens': 418, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WRQpYnAvuSAUDuH38DSnY9">
+Checking PR #9041 for branch plnd/add-runs-tab-tui-dash-03-09-0622...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Now let me also fix the branch divergence and push:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="147134" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017Sta4Sx8LLUgNxAsX1f6zk">
+    <param name="command">git pull --rebase origin plnd/add-runs-tab-tui-dash-03-09-0622 &amp;&amp; git push</param>
+    <param name="description">Rebase and push to fix divergence</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="147134" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017Sta4Sx8LLUgNxAsX1f6zk">
+From https://github.com/dagster-io/erk
+ * branch                plnd/add-runs-tab-tui-dash-03-09-0622 -&gt; FETCH_HEAD
+warning: skipped previously applied commit 00ad3cf7c
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config set advice.skippedCherryPicks false"
+Successfully rebased and updated refs/heads/plnd/add-runs-tab-tui-dash-03-09-0622.
+Everything up-to-date
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Ajzo85xf9EVa8ZmFry7qdP">
+    <param name="todos">[{'content': 'Add ViewMode.RUNS and RUNS_VIEW config', 'status': 'completed', 'activeForm'...[truncated 1123 chars]...t PR', 'status': 'completed', 'activeForm': 'Cleaning up impl context and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="147291" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ajzo85xf9EVa8ZmFry7qdP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #9041 implementation complete. PR submitted at https://github.com/dagster-io/erk/pull/9041
+
+**Summary of changes:**
+
+**New files:**
+- `src/erk/tui/widgets/run_table.py` — `RunDataTable` widget with 7 columns (run-id, status, submitted, workflow, pr, title, chks), click handlers for run/PR links, cursor preservation on refresh
+- `tests/tui/test_run_table.py` — 14 tests covering `RunRowData`, `RunDataTable`, `make_run_row` factory, and `FakePlanDataProvider.fetch_runs`
+
+**Modified files:**
+- `src/erk/tui/views/types.py` — Added `ViewMode.RUNS` enum member and `RUNS_VIEW` config (key "4", empty labels, display "Runs")
+- `src/erk/tui/data/types.py` — Added `RunRowData` frozen dataclass with 15 fields
+- `src/erk/tui/data/provider_abc.py` — Added abstract `fetch_runs()` method to `PlanDataProvider`
+- `src/erk/tui/data/real_provider.py` — Implemented `fetch_runs()` porting logic from `_list_runs()` CLI command (workflow fetching, PR linkage, dedup, formatting)
+- `src/erk/tui/data/fake_provider.py` — Added `fetch_runs()`/`set_runs()` and `make_run_row()` factory
+- `packages/erk-shared/.../fake.py` — Added `fetch_runs()`/`set_runs()` to shared fake provider
+- `src/erk/tui/app.py` — Integrated runs tab: key "4" binding, `RunDataTable` in compose/mount, `_load_run_data()` async loader, table visibility toggling, run-specific click handlers
+- `src/erk/tui/screens/help_screen.py` — Added "4 Runs view" and runs-specific action hints
+- `tests/tui/views/test_types.py` — Updated for 4-view cycle
+- `tests/tui/test_view_bar.py` — Updated tab region calculations for 4 tabs
+- `tests/tui/app/test_view_switching.py` — Updated cycling tests for 4-view wraparound</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="147843" cache_creation="{'ephemeral_5m_input_tokens': 456, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
