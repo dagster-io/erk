@@ -270,7 +270,7 @@ def _dispatch_planned_pr_plan(
         repo.root, "origin", branch_name, set_upstream=False, force=False
     )
     if isinstance(push_result, PushError):
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
     # Gather submission metadata
