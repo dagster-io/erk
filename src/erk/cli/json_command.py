@@ -35,8 +35,8 @@ def json_command(
 def json_command(
     cmd: click.Command | None = None,
     *,
-    exclude_json_input: frozenset[str] = frozenset(),
-    required_json_input: frozenset[str] = frozenset(),
+    exclude_json_input: frozenset[str] | None = None,
+    required_json_input: frozenset[str] | None = None,
 ) -> click.Command | Any:
     """Add --json flag, JSON input mapping, and JSON error handling to a Click command.
 
@@ -61,11 +61,14 @@ def json_command(
         exclude_json_input: Param names to skip when mapping JSON input
         required_json_input: Param names that must be present and non-None in JSON input
     """
+    resolved_exclude = exclude_json_input if exclude_json_input is not None else frozenset()
+    resolved_required = required_json_input if required_json_input is not None else frozenset()
+
     if cmd is not None:
-        return _apply_json_command(cmd, exclude_json_input, required_json_input)
+        return _apply_json_command(cmd, resolved_exclude, resolved_required)
 
     def decorator(cmd: click.Command) -> click.Command:
-        return _apply_json_command(cmd, exclude_json_input, required_json_input)
+        return _apply_json_command(cmd, resolved_exclude, resolved_required)
 
     return decorator
 
@@ -97,7 +100,6 @@ def _apply_json_command(
     json_option = click.Option(
         ["--json", "json_mode"],
         is_flag=True,
-        default=False,
         help="Output results as JSON",
     )
     cmd.params.append(json_option)
