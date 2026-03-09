@@ -31,16 +31,16 @@ class CreatePlanDraftPRResult:
 
     Attributes:
         success: Whether the entire operation completed successfully
-        plan_number: PR number if created (None on failure)
-        plan_url: PR URL if created (None on failure)
+        pr_number: PR number if created (None on failure)
+        pr_url: PR URL if created (None on failure)
         branch_name: Branch name if created (None on failure)
         title: The title used for the PR (extracted or provided)
         error: Error message if failed, None if success
     """
 
     success: bool
-    plan_number: int | None
-    plan_url: str | None
+    pr_number: int | None
+    pr_url: str | None
     branch_name: str | None
     title: str
     error: str | None
@@ -115,8 +115,8 @@ def create_plan_draft_pr(
     if isinstance(create_result, BranchAlreadyExists):
         return CreatePlanDraftPRResult(
             success=False,
-            plan_number=None,
-            plan_url=None,
+            pr_number=None,
+            pr_url=None,
             branch_name=None,
             title=title,
             error=create_result.message,
@@ -180,23 +180,23 @@ def create_plan_draft_pr(
         summary=summary,
     )
 
-    if not result.plan_id.isdigit():
+    if not result.pr_id.isdigit():
         return CreatePlanDraftPRResult(
             success=False,
-            plan_number=None,
-            plan_url=None,
+            pr_number=None,
+            pr_url=None,
             branch_name=branch_name,
             title=title,
-            error=f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}",
+            error=f"Expected numeric pr_id from planned PR creation, got: {result.pr_id!r}",
         )
 
-    plan_number = int(result.plan_id)
+    pr_number = int(result.pr_id)
 
     # Step 9: Return result
     return CreatePlanDraftPRResult(
         success=True,
-        plan_number=plan_number,
-        plan_url=result.url,
+        pr_number=pr_number,
+        pr_url=result.url,
         branch_name=branch_name,
         title=title,
         error=None,

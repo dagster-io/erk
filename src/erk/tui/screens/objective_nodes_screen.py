@@ -26,7 +26,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
-from erk_shared.gateway.plan_service.abc import PlanService
+from erk_shared.gateway.pr_service.abc import PrService
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp
@@ -243,7 +243,7 @@ class ObjectiveNodesScreen(ModalScreen):
         self,
         *,
         provider: PlanDataProvider,
-        service: PlanService,
+        service: PrService,
         plan_id: int,
         plan_body: str,
         full_title: str,

@@ -51,7 +51,7 @@ class TestGithubIssueToPlan:
         issue = _make_issue(number=42, title="My plan", state="OPEN")
         plan = github_issue_to_plan(issue)
 
-        assert plan.plan_identifier == "42"
+        assert plan.pr_identifier == "42"
         assert plan.title == "My plan"
         assert plan.state == PlanState.OPEN
         assert plan.url == "https://github.com/test/repo/issues/42"

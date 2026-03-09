@@ -70,7 +70,7 @@ class PlanContextProvider:
         )
 
         return PlanContext(
-            plan_id=result.plan_identifier,
+            plan_id=result.pr_identifier,
             plan_content=result.body,
             objective_summary=objective_summary,
         )

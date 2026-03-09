@@ -7,7 +7,7 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.views.types import ViewMode, get_view_config
 from erk.tui.widgets.view_bar import ViewBar
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 class TestViewSwitching:
@@ -19,7 +19,7 @@ class TestViewSwitching:
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test():
@@ -32,7 +32,7 @@ class TestViewSwitching:
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -50,7 +50,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -83,7 +83,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -109,7 +109,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -135,7 +135,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -161,7 +161,7 @@ class TestViewSwitching:
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -182,7 +182,7 @@ class TestViewSwitching:
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -208,7 +208,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -243,7 +243,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -271,7 +271,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -310,7 +310,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -364,7 +364,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -404,7 +404,7 @@ class TestViewSwitching:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -438,7 +438,7 @@ def test_display_name_plans_view() -> None:
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
     app = ErkDashApp(
-        provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
     )
     assert app._display_name_for_view(ViewMode.PLANS) == "PRs"
 
@@ -448,7 +448,7 @@ def test_display_name_non_plans_view() -> None:
     provider = FakePlanDataProvider()
     filters = PlanFilters.default()
     app = ErkDashApp(
-        provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
     )
     expected_learn = get_view_config(ViewMode.LEARN).display_name
     assert app._display_name_for_view(ViewMode.LEARN) == expected_learn

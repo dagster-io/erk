@@ -199,7 +199,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     assert block.key == "erk-worktree-creation"
     assert block.data["worktree_name"] == "feature-name"
     assert block.data["branch_name"] == "feature-branch"
-    assert block.data["plan_number"] == 42
+    assert block.data["pr_number"] == 42
     assert "timestamp" in block.data
     assert isinstance(block.data["timestamp"], str)
     assert len(block.data["timestamp"]) > 0
@@ -507,7 +507,7 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
 
     data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert data["provider"] == "github"
-    assert data["plan_id"] == "42"
+    assert data["pr_id"] == "42"
     assert data["url"] == "https://github.com/owner/repo/issues/42"
     assert data["labels"] == ["erk-plan"]
     assert data["objective_id"] == 99
@@ -568,7 +568,7 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
     ref = read_plan_ref(impl_dir)
     assert ref is not None
     assert ref.provider == "github"
-    assert ref.plan_id == "42"
+    assert ref.pr_id == "42"
     assert ref.url == "https://github.com/owner/repo/issues/42"
     assert ref.labels == ("erk-pr", "erk-learn")
     assert ref.objective_id == 99
@@ -604,7 +604,7 @@ def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -> None:
     ref = read_plan_ref(impl_dir)
     assert ref is not None
     assert ref.provider == "linear"
-    assert ref.plan_id == "PROJ-123"
+    assert ref.pr_id == "PROJ-123"
 
 
 def test_read_plan_ref_not_exists(tmp_path: Path) -> None:

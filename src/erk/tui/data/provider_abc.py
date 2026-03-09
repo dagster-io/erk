@@ -11,7 +11,7 @@ class PlanDataProvider(ABC):
 
     Contains only the methods that produce TUI-specific types
     (PlanRowData, FetchTimings, BranchActivity). Domain operations
-    (close_plan, dispatch, fetch_content, etc.) live in PlanService.
+    (close_pr, dispatch, fetch_content, etc.) live in PrService.
     """
 
     @abstractmethod

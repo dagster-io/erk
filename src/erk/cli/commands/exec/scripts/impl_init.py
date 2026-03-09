@@ -141,7 +141,7 @@ def impl_init(ctx: click.Context, json_output: bool) -> None:
     # Get plan reference info
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
-    plan_number = int(plan_ref.plan_id) if plan_ref else None
+    plan_number = int(plan_ref.pr_id) if plan_ref else None
 
     # Read plan content
     plan_file = impl_dir / "plan.md"

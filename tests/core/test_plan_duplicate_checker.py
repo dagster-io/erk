@@ -9,17 +9,17 @@ from tests.fakes.prompt_executor import FakePromptExecutor
 
 def _make_plan(
     *,
-    plan_identifier: str,
+    pr_identifier: str,
     title: str,
     body: str,
 ) -> Plan:
     """Create a minimal Plan for testing."""
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body,
         state=PlanState.OPEN,
-        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
         labels=["erk-pr", "erk-plan"],
         assignees=[],
         created_at=datetime(2025, 1, 1),
@@ -37,7 +37,7 @@ def test_no_duplicates_found() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd dark mode toggle",
-        [_make_plan(plan_identifier="100", title="Refactor auth", body="Restructure auth flow")],
+        [_make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")],
     )
 
     assert result.has_duplicates is False
@@ -56,7 +56,7 @@ def test_duplicate_detected() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd dark mode",
-        [_make_plan(plan_identifier="100", title="Dark mode support", body="Add dark mode to app")],
+        [_make_plan(pr_identifier="100", title="Dark mode support", body="Add dark mode to app")],
     )
 
     assert result.has_duplicates is True
@@ -76,7 +76,7 @@ def test_executor_failure_graceful_degradation() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -108,7 +108,7 @@ def test_malformed_llm_response_graceful_degradation() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -125,7 +125,7 @@ def test_malformed_json_structure_graceful_degradation() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -142,7 +142,7 @@ def test_duplicate_referencing_unknown_plan_filtered_out() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -158,7 +158,7 @@ def test_uses_haiku_model() -> None:
     checker = PlanDuplicateChecker(executor)
     checker.check(
         "# New Plan\n\nSome plan",
-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
     )
 
     assert len(executor.prompt_calls) == 1
@@ -177,7 +177,7 @@ def test_json_wrapped_in_code_fence() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is True
@@ -201,7 +201,7 @@ def test_code_fence_with_trailing_text() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
-        [_make_plan(plan_identifier="100", title="Existing plan", body="body")],
+        [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
     )
 
     assert result.has_duplicates is False
@@ -224,7 +224,7 @@ def test_code_fence_with_trailing_text_and_duplicate() -> None:
     checker = PlanDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd auth",
-        [_make_plan(plan_identifier="100", title="Add authentication", body="Add auth flow")],
+        [_make_plan(pr_identifier="100", title="Add authentication", body="Add auth flow")],
     )
 
     assert result.has_duplicates is True
@@ -248,8 +248,8 @@ def test_multiple_duplicates() -> None:
     result = checker.check(
         "# New Plan\n\nSome plan",
         [
-            _make_plan(plan_identifier="100", title="Plan A", body="body A"),
-            _make_plan(plan_identifier="200", title="Plan B", body="body B"),
+            _make_plan(pr_identifier="100", title="Plan A", body="body A"),
+            _make_plan(pr_identifier="200", title="Plan B", body="body B"),
         ],
     )
 

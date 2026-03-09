@@ -190,7 +190,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
         impl_dir.mkdir(parents=True, exist_ok=True)
         plan_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
-            plan_id="42",
+            pr_id="42",
             url="https://github.com/test-owner/test-repo/pull/42",
             labels=("erk-plan",),
             objective_id=None,
@@ -264,7 +264,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
         impl_context_dir.mkdir(parents=True)
         plan_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
-            plan_id="42",
+            pr_id="42",
             url="https://github.com/test-owner/test-repo/pull/42",
             labels=("erk-plan",),
             objective_id=None,

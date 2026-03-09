@@ -1,4 +1,4 @@
-"""Real implementation of PlanService for production use."""
+"""Real implementation of PrService for production use."""
 
 import subprocess
 from pathlib import Path
@@ -19,13 +19,13 @@ from erk_shared.gateway.github.types import (
     PRReviewThread,
 )
 from erk_shared.gateway.http.abc import HttpClient
-from erk_shared.gateway.plan_service.abc import PlanService
+from erk_shared.gateway.pr_service.abc import PrService
 
 
-class RealPlanService(PlanService):
-    """Production implementation of domain plan operations.
+class RealPrService(PrService):
+    """Production implementation of domain PR operations.
 
-    Contains operations independent of TUI display: closing plans,
+    Contains operations independent of TUI display: closing PRs,
     dispatching, fetching content, and GitHub PR data.
     """
 
@@ -68,25 +68,25 @@ class RealPlanService(PlanService):
         """Get the browser launcher interface for opening URLs."""
         return self._browser
 
-    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
-        """Close a plan and its linked PRs using direct HTTP calls.
+    def close_pr(self, pr_number: int, pr_url: str) -> list[int]:
+        """Close a PR and its linked PRs using direct HTTP calls.
 
         Args:
-            plan_id: The plan ID to close
-            plan_url: The plan URL for PR linkage lookup
+            pr_number: The PR number to close
+            pr_url: The PR URL for PR linkage lookup
 
         Returns:
             List of PR numbers that were also closed
         """
-        owner_repo = _parse_owner_repo_from_url(plan_url)
+        owner_repo = _parse_owner_repo_from_url(pr_url)
         if owner_repo is None:
             return []
         owner, repo = owner_repo
 
-        closed_prs = self._close_linked_prs_http(plan_id, owner, repo)
+        closed_prs = self._close_linked_prs_http(pr_number, owner, repo)
 
         self._http_client.patch(
-            f"repos/{owner}/{repo}/issues/{plan_id}",
+            f"repos/{owner}/{repo}/issues/{pr_number}",
             data={"state": "closed"},
         )
 
@@ -94,14 +94,14 @@ class RealPlanService(PlanService):
 
     def _close_linked_prs_http(
         self,
-        plan_id: int,
+        pr_number: int,
         owner: str,
         repo: str,
     ) -> list[int]:
         """Close all OPEN PRs linked to an issue using HTTP.
 
         Args:
-            plan_id: The plan ID
+            pr_number: The PR number
             owner: Repository owner
             repo: Repository name
 
@@ -112,8 +112,8 @@ class RealPlanService(PlanService):
             root=self._location.root,
             repo_id=GitHubRepoId(owner=owner, repo=repo),
         )
-        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [plan_id])
-        linked_prs = pr_linkages.get(plan_id, [])
+        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [pr_number])
+        linked_prs = pr_linkages.get(pr_number, [])
 
         closed_prs: list[int] = []
         for pr in linked_prs:
@@ -126,43 +126,43 @@ class RealPlanService(PlanService):
 
         return closed_prs
 
-    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
-        """Dispatch a plan to the implementation queue.
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -> None:
+        """Dispatch a PR to the implementation queue.
 
         Args:
-            plan_id: The plan ID to dispatch
-            plan_url: The plan URL (unused, kept for interface consistency)
+            pr_number: The PR number to dispatch
+            pr_url: The PR URL (unused, kept for interface consistency)
         """
         subprocess.run(
-            ["erk", "pr", "dispatch", str(plan_id), "-f"],
+            ["erk", "pr", "dispatch", str(pr_number), "-f"],
             cwd=self._location.root,
             check=True,
             capture_output=True,
         )
 
-    def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Return plan content from the PR body.
+    def fetch_pr_content(self, pr_number: int, pr_body: str) -> str | None:
+        """Return PR content from the PR body.
 
         Args:
-            plan_id: The GitHub PR number
-            plan_body: The extracted plan content from the PR body
+            pr_number: The GitHub PR number
+            pr_body: The extracted PR content from the PR body
 
         Returns:
-            The plan content, or None if empty
+            The PR content, or None if empty
         """
-        return plan_body if plan_body.strip() else None
+        return pr_body if pr_body.strip() else None
 
-    def fetch_objective_content(self, plan_id: int, plan_body: str) -> str | None:
+    def fetch_objective_content(self, pr_number: int, pr_body: str) -> str | None:
         """Fetch objective content from the first comment of an issue.
 
         Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (to extract objective_comment_id from metadata)
+            pr_number: The GitHub issue number
+            pr_body: The issue body (to extract objective_comment_id from metadata)
 
         Returns:
             The extracted objective content, or None if not found
         """
-        comment_id = extract_objective_header_comment_id(plan_body)
+        comment_id = extract_objective_header_comment_id(pr_body)
         if comment_id is None:
             return None
 

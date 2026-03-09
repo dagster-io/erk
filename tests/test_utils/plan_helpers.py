@@ -35,7 +35,7 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         PRDetails with equivalent data and a generated branch name
     """
     state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
-    branch_name = f"plan-{plan.plan_identifier}"
+    branch_name = f"plan-{plan.pr_identifier}"
 
     # Build PR body: if the plan body has a metadata block, reformat it with separator
     # and wrap plan content in <details> tags (new lifecycle format)
@@ -63,7 +63,7 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
     base_ref = raw_base_ref if isinstance(raw_base_ref, str) else "main"
 
     return PRDetails(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         url=plan.url,
         title=plan.title,
         body=pr_body,

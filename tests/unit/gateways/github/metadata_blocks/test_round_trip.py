@@ -63,7 +63,7 @@ SAMPLE_DATA: dict[str, dict] = {
         "objective_comment_id": None,
     },
     "erk-plan": {
-        "plan_number": 42,
+        "pr_number": 42,
         "worktree_name": "test-worktree",
         "timestamp": "2025-01-15T10:00:00Z",
     },
@@ -82,13 +82,13 @@ SAMPLE_DATA: dict[str, dict] = {
         "started_at": "2025-01-15T10:00:00Z",
         "workflow_run_id": "12345678",
         "workflow_run_url": "https://github.com/owner/repo/actions/runs/12345678",
-        "plan_number": 42,
+        "pr_number": 42,
     },
     "submission-queued": {
         "status": "queued",
         "queued_at": "2025-01-15T10:00:00Z",
         "submitted_by": "testuser",
-        "plan_number": 42,
+        "pr_number": 42,
         "validation_results": {"issue_is_open": True, "has_erk_plan_label": True},
         "expected_workflow": "implement-plan",
         "trigger_mechanism": "label-based-webhook",
@@ -101,18 +101,18 @@ SAMPLE_DATA: dict[str, dict] = {
     "impl-started": {
         "session_id": "abc-123",
         "timestamp": "2025-01-15T10:00:00Z",
-        "plan_number": 42,
+        "pr_number": 42,
     },
     "impl-ended": {
         "session_id": "abc-123",
         "timestamp": "2025-01-15T11:00:00Z",
-        "plan_number": 42,
+        "pr_number": 42,
         "outcome": "success",
     },
     "learn-invoked": {
         "session_id": "abc-123",
         "timestamp": "2025-01-15T12:00:00Z",
-        "plan_number": 42,
+        "pr_number": 42,
     },
     "tripwire-candidates": {
         "source_plan": 42,

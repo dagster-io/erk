@@ -101,8 +101,8 @@ class PlanFileCollector(StatusCollector):
 
         # Read plan reference if present
         plan_ref = read_plan_ref(impl_folder)
-        plan_number = int(plan_ref.plan_id) if plan_ref else None
-        plan_url = plan_ref.url if plan_ref else None
+        pr_number = int(plan_ref.pr_id) if plan_ref else None
+        pr_url = plan_ref.url if plan_ref else None
 
         return PlanStatus(
             exists=True,
@@ -111,6 +111,6 @@ class PlanFileCollector(StatusCollector):
             line_count=line_count,
             first_lines=first_lines,
             format="folder",
-            plan_number=plan_number,
-            plan_url=plan_url,
+            pr_number=pr_number,
+            pr_url=pr_url,
         )

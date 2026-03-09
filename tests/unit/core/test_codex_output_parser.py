@@ -8,7 +8,6 @@ from pathlib import Path
 from erk.core.codex_output_parser import CodexParserState, parse_codex_jsonl_line
 from erk_shared.core.prompt_executor import (
     ErrorEvent,
-    PlanNumberEvent,
     PrNumberEvent,
     PrUrlEvent,
     SpinnerUpdateEvent,
@@ -183,20 +182,6 @@ class TestItemCompletedAgentMessage:
             isinstance(e, PrUrlEvent) and e.url == "https://github.com/o/r/pull/42" for e in events
         )
         assert any(isinstance(e, PrNumberEvent) and e.number == 42 for e in events)
-
-    def test_extracts_plan_number_from_text(self) -> None:
-        events = _parse(
-            {
-                "type": "item.completed",
-                "item": {
-                    "id": "item_0",
-                    "type": "agent_message",
-                    "text": "Linked to issue #123",
-                },
-            }
-        )
-        assert any(isinstance(e, TextEvent) for e in events)
-        assert any(isinstance(e, PlanNumberEvent) and e.number == 123 for e in events)
 
 
 class TestItemCompletedCommandExecution:

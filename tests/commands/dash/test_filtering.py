@@ -24,7 +24,7 @@ def test_plan_list_no_filters() -> None:
     """Test listing all plan issues with no filters (defaults to open plans only)."""
     # Arrange - Create two OPEN plans (no filter defaults to open state)
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue 1",
         body="",
         state=PlanState.OPEN,
@@ -37,7 +37,7 @@ def test_plan_list_no_filters() -> None:
         objective_id=None,
     )
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Issue 2",
         body="",
         state=PlanState.OPEN,  # Changed to OPEN to match default behavior
@@ -73,7 +73,7 @@ def test_plan_list_filter_by_state() -> None:
     """Test filtering plan issues by state."""
     # Arrange
     open_plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Open Issue",
         body="",
         state=PlanState.OPEN,
@@ -86,7 +86,7 @@ def test_plan_list_filter_by_state() -> None:
         objective_id=None,
     )
     closed_plan = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Closed Issue",
         body="",
         state=PlanState.CLOSED,
@@ -124,7 +124,7 @@ def test_plan_list_filter_by_labels() -> None:
     """Test filtering plan issues by labels with AND logic."""
     # Arrange
     plan_with_both = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue with both labels",
         body="",
         state=PlanState.OPEN,
@@ -137,7 +137,7 @@ def test_plan_list_filter_by_labels() -> None:
         objective_id=None,
     )
     plan_with_one = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Issue with one label",
         body="",
         state=PlanState.OPEN,
@@ -185,7 +185,7 @@ def test_plan_list_with_limit() -> None:
     all_plans: list[Plan] = []
     for i in range(1, 6):
         plan = Plan(
-            plan_identifier=str(i),
+            pr_identifier=str(i),
             title=f"Issue {i}",
             body="",
             state=PlanState.OPEN,
@@ -223,7 +223,7 @@ def test_plan_list_combined_filters() -> None:
     """Test combining multiple filters."""
     # Arrange
     matching_plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Matching Issue",
         body="",
         state=PlanState.OPEN,
@@ -236,7 +236,7 @@ def test_plan_list_combined_filters() -> None:
         objective_id=None,
     )
     wrong_state_plan = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Wrong State",
         body="",
         state=PlanState.CLOSED,
@@ -249,7 +249,7 @@ def test_plan_list_combined_filters() -> None:
         objective_id=None,
     )
     wrong_labels_plan = Plan(
-        plan_identifier="3",
+        pr_identifier="3",
         title="Wrong Labels",
         body="",
         state=PlanState.OPEN,
@@ -311,7 +311,7 @@ def test_plan_list_empty_results() -> None:
     """Test querying with filters that match no issues."""
     # Arrange
     plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue",
         body="",
         state=PlanState.OPEN,

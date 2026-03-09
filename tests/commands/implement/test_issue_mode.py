@@ -36,7 +36,7 @@ def test_implement_from_plain_issue_number() -> None:
         # Verify branch-scoped impl folder exists with correct plan ID
         impl_dir = env.cwd / ".erk" / "impl-context" / "current"
         plan_ref_content = (impl_dir / "ref.json").read_text(encoding="utf-8")
-        assert '"plan_id": "123"' in plan_ref_content
+        assert '"pr_id": "123"' in plan_ref_content
 
 
 def test_implement_from_issue_number() -> None:
@@ -90,7 +90,7 @@ def test_implement_from_issue_url() -> None:
         # Verify ref.json contains correct plan ID
         impl_dir = env.cwd / ".erk" / "impl-context" / "current"
         plan_ref_content = (impl_dir / "ref.json").read_text(encoding="utf-8")
-        assert '"plan_id": "123"' in plan_ref_content
+        assert '"pr_id": "123"' in plan_ref_content
 
 
 def test_implement_creates_impl_folder_in_cwd() -> None:

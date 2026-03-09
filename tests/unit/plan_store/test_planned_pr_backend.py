@@ -66,7 +66,7 @@ def test_create_plan_creates_planned_pr() -> None:
     )
 
     # Verify it was created as draft
-    pr = fake_github.get_pr(Path("/repo"), int(result.plan_id))
+    pr = fake_github.get_pr(Path("/repo"), int(result.pr_id))
     assert not isinstance(pr, PRNotFound)
     assert pr.is_draft is True
 
@@ -137,7 +137,7 @@ def test_create_plan_adds_erk_plan_label() -> None:
     )
 
     # Check label was added
-    assert fake_github.has_pr_label(Path("/repo"), int(result.plan_id), "erk-plan")
+    assert fake_github.has_pr_label(Path("/repo"), int(result.pr_id), "erk-plan")
 
 
 def test_create_plan_adds_extra_labels() -> None:
@@ -154,7 +154,7 @@ def test_create_plan_adds_extra_labels() -> None:
         summary="",
     )
 
-    pr_number = int(result.plan_id)
+    pr_number = int(result.pr_id)
     assert fake_github.has_pr_label(Path("/repo"), pr_number, "erk-pr")
     assert fake_github.has_pr_label(Path("/repo"), pr_number, "erk-learn")
 
@@ -173,7 +173,7 @@ def test_create_plan_embeds_plan_content_in_pr_body() -> None:
         summary="",
     )
 
-    pr = fake_github.get_pr(Path("/repo"), int(result.plan_id))
+    pr = fake_github.get_pr(Path("/repo"), int(result.pr_id))
     assert not isinstance(pr, PRNotFound)
     assert "# Detailed Plan" in pr.body
     assert "Step 1: Do things." in pr.body
@@ -199,7 +199,7 @@ def test_resolve_plan_id_for_branch_finds_created_pr() -> None:
     )
 
     plan_id = backend.resolve_plan_id_for_branch(Path("/repo"), "my-plan-branch")
-    assert plan_id == result.plan_id
+    assert plan_id == result.pr_id
 
 
 def test_resolve_plan_id_for_branch_returns_none_for_unknown() -> None:
@@ -258,9 +258,9 @@ def test_update_plan_content_roundtrip() -> None:
         summary="",
     )
 
-    backend.update_plan_content(Path("/repo"), result.plan_id, "Updated content", summary="")
+    backend.update_plan_content(Path("/repo"), result.pr_id, "Updated content", summary="")
 
-    plan = backend.get_plan(Path("/repo"), result.plan_id)
+    plan = backend.get_plan(Path("/repo"), result.pr_id)
     assert not isinstance(plan, PlanNotFound)
     assert plan.body == "Updated content"
 
@@ -340,6 +340,6 @@ def test_create_plan_includes_checkout_footer() -> None:
         summary="",
     )
 
-    pr = fake_github.get_pr(Path("/repo"), int(result.plan_id))
+    pr = fake_github.get_pr(Path("/repo"), int(result.pr_id))
     assert not isinstance(pr, PRNotFound)
     assert "erk pr teleport" in pr.body

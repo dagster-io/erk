@@ -1,4 +1,4 @@
-"""Fake plan service for testing."""
+"""Fake PR service for testing."""
 
 from pathlib import Path
 
@@ -7,11 +7,11 @@ from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
-from erk_shared.gateway.plan_service.abc import PlanService
+from erk_shared.gateway.pr_service.abc import PrService
 
 
-class FakePlanService(PlanService):
-    """Fake implementation of PlanService for testing.
+class FakePrService(PrService):
+    """Fake implementation of PrService for testing.
 
     Returns canned data without making any API calls.
     """
@@ -33,8 +33,8 @@ class FakePlanService(PlanService):
         self._clipboard = clipboard if clipboard is not None else FakeClipboard()
         self._browser = browser if browser is not None else FakeBrowserLauncher()
         self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
-        self._plan_content_by_plan_id: dict[int, str] = {}
-        self._objective_content_by_plan_id: dict[int, str] = {}
+        self._pr_content_by_pr_number: dict[int, str] = {}
+        self._objective_content_by_pr_number: dict[int, str] = {}
         self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
         self._check_runs_by_pr: dict[int, list[PRCheckRun]] = {}
         self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
@@ -55,67 +55,67 @@ class FakePlanService(PlanService):
         """Get the browser launcher interface for opening URLs."""
         return self._browser
 
-    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
-        """Fake close plan implementation.
+    def close_pr(self, pr_number: int, pr_url: str) -> list[int]:
+        """Fake close PR implementation.
 
         Args:
-            plan_id: The plan ID to close
-            plan_url: The plan URL (unused in fake)
+            pr_number: The PR number to close
+            pr_url: The PR URL (unused in fake)
 
         Returns:
             Empty list (no PRs closed in fake)
         """
         return []
 
-    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -> None:
         """Fake dispatch to queue implementation.
 
         Args:
-            plan_id: The plan ID to dispatch
-            plan_url: The plan URL (unused in fake)
+            pr_number: The PR number to dispatch
+            pr_url: The PR URL (unused in fake)
         """
 
-    def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Fake plan content fetch implementation.
+    def fetch_pr_content(self, pr_number: int, pr_body: str) -> str | None:
+        """Fake PR content fetch implementation.
 
         Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (unused in fake)
+            pr_number: The GitHub PR number
+            pr_body: The PR body (unused in fake)
 
         Returns:
-            The configured plan content for this plan, or None
+            The configured PR content for this PR, or None
         """
-        return self._plan_content_by_plan_id.get(plan_id)
+        return self._pr_content_by_pr_number.get(pr_number)
 
-    def set_plan_content(self, plan_id: int, content: str) -> None:
-        """Set the plan content to return for a specific plan.
+    def set_pr_content(self, pr_number: int, content: str) -> None:
+        """Set the PR content to return for a specific PR.
 
         Args:
-            plan_id: The GitHub issue number
-            content: The plan content to return
+            pr_number: The GitHub PR number
+            content: The PR content to return
         """
-        self._plan_content_by_plan_id[plan_id] = content
+        self._pr_content_by_pr_number[pr_number] = content
 
-    def fetch_objective_content(self, plan_id: int, plan_body: str) -> str | None:
+    def fetch_objective_content(self, pr_number: int, pr_body: str) -> str | None:
         """Fake objective content fetch implementation.
 
         Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (unused in fake)
+            pr_number: The GitHub issue number
+            pr_body: The issue body (unused in fake)
 
         Returns:
-            The configured objective content for this plan, or None
+            The configured objective content for this PR, or None
         """
-        return self._objective_content_by_plan_id.get(plan_id)
+        return self._objective_content_by_pr_number.get(pr_number)
 
-    def set_objective_content(self, plan_id: int, content: str) -> None:
-        """Set the objective content to return for a specific plan.
+    def set_objective_content(self, pr_number: int, content: str) -> None:
+        """Set the objective content to return for a specific PR.
 
         Args:
-            plan_id: The GitHub issue number
+            pr_number: The GitHub issue number
             content: The objective content to return
         """
-        self._objective_content_by_plan_id[plan_id] = content
+        self._objective_content_by_pr_number[pr_number] = content
 
     def get_branch_stack(self, branch: str) -> list[str] | None:
         """Fake branch stack lookup.

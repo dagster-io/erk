@@ -364,7 +364,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         # Create a plan with erk-plan label
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Add feature",
             body="# Plan\nImplementation details",
             state=PlanState.OPEN,
@@ -441,7 +441,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
 
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
-            plan_identifier="456",
+            pr_identifier="456",
             title="Fix bug",
             body="# Bug fix plan",
             state=PlanState.OPEN,
@@ -503,7 +503,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
 
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
-            plan_identifier="100",
+            pr_identifier="100",
             title="No slot feature",
             body="# Plan",
             state=PlanState.OPEN,
@@ -676,7 +676,7 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
 
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
-            plan_identifier="200",
+            pr_identifier="200",
             title="Stacked feature",
             body="# Plan\nStacked implementation",
             state=PlanState.OPEN,
@@ -889,7 +889,7 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
 
         now = TEST_PLAN_TIMESTAMP
         plan = Plan(
-            plan_identifier="300",
+            pr_identifier="300",
             title="Stacked plan",
             body="# Plan\nStacked implementation",
             state=PlanState.OPEN,

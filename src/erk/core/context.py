@@ -653,7 +653,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # 8. Create GitHub-related classes (need repo_info, local_config)
     # Create issues first, then compose into github
     # Use plans_repo for cross-repo plan management if configured
-    issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo, time=time)
+    issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.github_repo, time=time)
     github: LocalGitHub = RealLocalGitHub(time, repo_info, issues=issues)
 
     plan_store: PlanBackend = PlannedPRBackend(github, issues, time=RealTime())

@@ -60,7 +60,7 @@ def get_plan_info(
 
     result: dict[str, object] = {
         "success": True,
-        "plan_id": plan.plan_identifier,
+        "plan_id": plan.pr_identifier,
         "title": plan.title,
         "state": plan.state.value,
         "labels": plan.labels,

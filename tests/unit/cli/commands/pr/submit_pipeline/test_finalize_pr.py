@@ -150,7 +150,7 @@ def test_adds_learn_plan_label(tmp_path: Path) -> None:
 
     plan_ref_content = build_plan_ref_json(
         provider="github",
-        plan_id="42",
+        pr_id="42",
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-learn",),
         objective_id=None,

@@ -99,7 +99,7 @@ def _get_impl_issue(
         impl_dir = impl_path.parent
         plan_ref = read_plan_ref(impl_dir)
         if plan_ref is not None:
-            return f"#{plan_ref.plan_id}", plan_ref.url
+            return f"#{plan_ref.pr_id}", plan_ref.url
 
     return None, None
 

@@ -8,7 +8,7 @@ from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.status_bar import StatusBar
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 class _FakePopen:
@@ -37,7 +37,7 @@ class TestOperationTracking:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -61,7 +61,7 @@ class TestOperationTracking:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -87,7 +87,7 @@ class TestOperationTracking:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -120,7 +120,7 @@ class TestOperationTracking:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -157,7 +157,7 @@ class TestOperationTracking:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -193,7 +193,7 @@ class TestOperationTracking:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -235,7 +235,7 @@ class TestOperationTracking:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -272,7 +272,7 @@ class TestOperationTracking:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -304,7 +304,7 @@ class TestOperationTracking:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -327,7 +327,7 @@ class TestOperationTracking:
         )
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:

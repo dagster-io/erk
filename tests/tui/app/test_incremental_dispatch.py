@@ -5,7 +5,7 @@ import pytest
 from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 class TestIncrementalDispatch:
@@ -17,7 +17,7 @@ class TestIncrementalDispatch:
         provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan", pr_number=456)])
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -38,7 +38,7 @@ class TestIncrementalDispatch:
         provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan", pr_number=456)])
         filters = PlanFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:

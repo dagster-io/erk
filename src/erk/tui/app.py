@@ -39,7 +39,7 @@ from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.run_table import RunDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
-from erk_shared.gateway.plan_service.abc import PlanService
+from erk_shared.gateway.pr_service.abc import PrService
 
 
 class ErkDashApp(
@@ -109,7 +109,7 @@ class ErkDashApp(
         self,
         *,
         provider: PlanDataProvider,
-        service: PlanService,
+        service: PrService,
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,

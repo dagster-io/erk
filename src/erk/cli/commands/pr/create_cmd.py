@@ -86,7 +86,7 @@ def pr_create(
     # When plans_repo is configured, plans are stored in a separate repo
     # and source_repo records where implementation will happen
     source_repo: str | None = None
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+    plans_repo = ctx.local_config.github_repo if ctx.local_config else None
     if plans_repo is not None and repo.github is not None:
         source_repo = f"{repo.github.owner}/{repo.github.repo}"
 
@@ -124,14 +124,14 @@ def pr_create(
         raise SystemExit(1)
 
     # Display success message with next steps
-    user_output(f"Created plan #{result.plan_number}")
+    user_output(f"Created plan #{result.pr_number}")
     user_output("")
-    user_output(f"Plan: {result.plan_url}")
+    user_output(f"Plan: {result.pr_url}")
     user_output(f"Branch: {result.branch_name}")
     user_output("")
     if (
-        result.plan_number is not None
+        result.pr_number is not None
         and result.branch_name is not None
-        and result.plan_url is not None
+        and result.pr_url is not None
     ):
-        user_output(format_plan_next_steps_plain(result.plan_number, url=result.plan_url))
+        user_output(format_plan_next_steps_plain(result.pr_number, url=result.pr_url))

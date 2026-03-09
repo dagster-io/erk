@@ -132,7 +132,7 @@ def _build_prompt(
 
     for plan in existing_plans[:_MAX_EXISTING_PLANS]:
         body_preview = (plan.body or "")[:_MAX_EXISTING_PLAN_BODY_CHARS]
-        lines.append(f"### #{plan.plan_identifier}: {plan.title}")
+        lines.append(f"### #{plan.pr_identifier}: {plan.title}")
         lines.append(body_preview)
         lines.append("")
 
@@ -144,7 +144,7 @@ def _parse_response(
     existing_plans: list[Plan],
 ) -> DuplicateCheckResult:
     """Parse the LLM JSON response into a DuplicateCheckResult."""
-    plan_map = {plan.plan_identifier: plan for plan in existing_plans}
+    plan_map = {plan.pr_identifier: plan for plan in existing_plans}
 
     parsed = extract_json_dict(output)
     if parsed is None:

@@ -16,7 +16,7 @@ from tests.test_utils.plan_helpers import create_plan_store_with_plans
 def _plan_to_issue_info(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for FakeRemoteGitHub."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -31,7 +31,7 @@ def _plan_to_issue_info(plan: Plan) -> IssueInfo:
 
 def _make_fake_remote(*plans: Plan) -> FakeRemoteGitHub:
     """Build FakeRemoteGitHub with given plans as issues."""
-    issues = {int(p.plan_identifier): _plan_to_issue_info(p) for p in plans}
+    issues = {int(p.pr_identifier): _plan_to_issue_info(p) for p in plans}
     return FakeRemoteGitHub(
         authenticated_user="test-author",
         default_branch_name="main",
@@ -48,7 +48,7 @@ def test_view_plan_displays_issue() -> None:
     """Test fetching and displaying a plan issue."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue description",
         state=PlanState.OPEN,
@@ -86,7 +86,7 @@ def test_view_plan_infers_from_branch() -> None:
     """Test inferring plan number from current branch name."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="123",
+        pr_identifier="123",
         title="Inferred Plan",
         body="Plan content",
         state=PlanState.OPEN,
@@ -148,7 +148,7 @@ def test_view_plan_with_full_flag() -> None:
     """Test viewing plan with --full flag shows the body."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue description",
         state=PlanState.OPEN,
@@ -183,7 +183,7 @@ def test_view_plan_with_short_full_flag() -> None:
     """Test viewing plan with -f flag (short form of --full)."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue description",
         state=PlanState.OPEN,
@@ -233,7 +233,7 @@ def test_view_plan_minimal_fields() -> None:
     """Test displaying issue with minimal fields (no labels, assignees, body)."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Minimal Issue",
         body="minimal content",
         state=PlanState.CLOSED,
@@ -266,7 +266,7 @@ def test_view_plan_with_github_url() -> None:
     """Test fetching plan using GitHub issue URL."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="123",
+        pr_identifier="123",
         title="URL Test Issue",
         body="Issue from URL",
         state=PlanState.OPEN,
@@ -343,7 +343,7 @@ Some other content here.
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with Header",
         body=issue_body,  # Raw issue body with plan-header goes here
         state=PlanState.OPEN,
@@ -400,7 +400,7 @@ last_local_impl_user: testuser
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with Impl Info",
         body=issue_body,
         state=PlanState.OPEN,
@@ -440,7 +440,7 @@ def test_view_plan_without_header_info() -> None:
     """
     # Arrange - plan without issue_body metadata
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan without Header",
         body="The plan content here",
         state=PlanState.OPEN,
@@ -490,7 +490,7 @@ created_from_session: abc123-session-id
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with no learn",
         body=issue_body,
         state=PlanState.OPEN,
@@ -545,7 +545,7 @@ last_learn_session: def456-learn-session
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with learn data",
         body=issue_body,
         state=PlanState.OPEN,
@@ -595,7 +595,7 @@ learn_status: pending
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with pending learn",
         body=issue_body,
         state=PlanState.OPEN,
@@ -640,7 +640,7 @@ learn_plan_issue: 456
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with completed learn",
         body=issue_body,
         state=PlanState.OPEN,
@@ -685,7 +685,7 @@ learn_plan_pr: 789
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with completed learn PR",
         body=issue_body,
         state=PlanState.OPEN,
@@ -730,7 +730,7 @@ learn_run_id: "12345678"
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with pending learn and run_id",
         body=issue_body,
         state=PlanState.OPEN,
@@ -776,7 +776,7 @@ learn_status: pending
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with pending learn but no run_id",
         body=issue_body,
         state=PlanState.OPEN,

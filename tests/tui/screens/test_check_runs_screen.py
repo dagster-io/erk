@@ -9,7 +9,7 @@ from erk.tui.formatting.ci_checks import format_check_runs
 from erk.tui.screens.check_runs_screen import CheckRunsScreen
 from erk_shared.gateway.github.types import PRCheckRun
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 def _make_check_run(
@@ -174,7 +174,7 @@ async def test_summaries_update_markdown_in_place() -> None:
             )
         ]
     )
-    service = FakePlanService()
+    service = FakePrService()
     service.set_check_runs(
         42,
         [

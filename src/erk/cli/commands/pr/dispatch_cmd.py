@@ -615,8 +615,8 @@ def _detect_plan_number_from_context(
     impl_dir = resolve_impl_dir(repo.root, branch_name=branch_name)
     if impl_dir is not None:
         plan_ref = read_plan_ref(impl_dir)
-        if plan_ref is not None and plan_ref.plan_id.isdigit():
-            return int(plan_ref.plan_id)
+        if plan_ref is not None and plan_ref.pr_id.isdigit():
+            return int(plan_ref.pr_id)
 
     if branch_name is not None:
         plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)

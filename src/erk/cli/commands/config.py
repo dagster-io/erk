@@ -304,10 +304,10 @@ def config_list(ctx: ErkContext) -> None:
             )
 
         # plans.repo with source annotation
-        if cfg.plans_repo:
+        if cfg.github_repo:
             user_output(
-                f"  plans.repo={cfg.plans_repo}"
-                f"{' (local)' if local_only_config.plans_repo is not None else ''}"
+                f"  plans.repo={cfg.github_repo}"
+                f"{' (local)' if local_only_config.github_repo is not None else ''}"
             )
 
         has_no_custom_config = (
@@ -318,7 +318,7 @@ def config_list(ctx: ErkContext) -> None:
             and not cfg.post_create_commands
             and not cfg.pool_checkout_shell
             and not cfg.pool_checkout_commands
-            and not cfg.plans_repo
+            and not cfg.github_repo
         )
         if has_no_custom_config:
             user_output("  (no custom configuration - run 'erk init' to create)")

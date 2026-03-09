@@ -280,7 +280,7 @@ class LoadedConfig:
     env: dict[str, str]
     post_create_commands: list[str]
     post_create_shell: str | None
-    plans_repo: str | None
+    github_repo: str | None
     pool_size: int | None  # None = use default
     pool_checkout_commands: list[str]  # Commands to run after pooled checkout
     pool_checkout_shell: str | None  # Shell to use for checkout commands
@@ -298,7 +298,7 @@ class LoadedConfig:
         env: dict[str, str] | None = None,
         post_create_commands: list[str] | None = None,
         post_create_shell: str | None = None,
-        plans_repo: str | None = None,
+        github_repo: str | None = None,
         pool_size: int | None = None,
         pool_checkout_commands: list[str] | None = None,
         pool_checkout_shell: str | None = None,
@@ -313,7 +313,7 @@ class LoadedConfig:
             env=env if env is not None else {},
             post_create_commands=post_create_commands if post_create_commands is not None else [],
             post_create_shell=post_create_shell,
-            plans_repo=plans_repo,
+            github_repo=github_repo,
             pool_size=pool_size,
             pool_checkout_commands=(
                 pool_checkout_commands if pool_checkout_commands is not None else []

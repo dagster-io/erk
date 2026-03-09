@@ -629,7 +629,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
         fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         def patched_create_plan(self_inner: object, **kwargs: object) -> CreatePlanResult:
-            return CreatePlanResult(plan_id="not-a-number", url="")
+            return CreatePlanResult(pr_id="not-a-number", url="")
 
         with patch.object(PlannedPRBackend, "create_plan", patched_create_plan):
             result = create_plan_draft_pr(

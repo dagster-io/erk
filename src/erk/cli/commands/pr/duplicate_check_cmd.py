@@ -124,14 +124,14 @@ def duplicate_check_plan(
     existing_plans = plan_data.plans
 
     if exclude_plan_id is not None:
-        existing_plans = [p for p in existing_plans if p.plan_identifier != exclude_plan_id]
+        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_plan_id]
 
     if not existing_plans:
         user_output("No existing open plans to compare against.")
     else:
         user_output(f"Checking against {len(existing_plans)} open plan(s):")
         for p in existing_plans:
-            user_output(f"  #{p.plan_identifier}: {p.title}")
+            user_output(f"  #{p.pr_identifier}: {p.title}")
         user_output("")
         user_output("Analyzing for semantic duplicates...")
         user_output("")

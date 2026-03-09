@@ -22,7 +22,7 @@ from erk_shared.gateway.github.types import (
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
-from erk_shared.gateway.plan_service.real import RealPlanService
+from erk_shared.gateway.pr_service.real import RealPrService
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.context import create_test_context
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -523,7 +523,7 @@ class TestClosePlan:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        service = RealPlanService(
+        service = RealPrService(
             ctx,
             location=location,
             clipboard=FakeClipboard(),
@@ -531,7 +531,7 @@ class TestClosePlan:
             http_client=http_client,
         )
 
-        closed_prs = service.close_plan(123, "https://github.com/test/repo/issues/123")
+        closed_prs = service.close_pr(123, "https://github.com/test/repo/issues/123")
 
         # Verify HTTP client was used to close the issue
         assert len(http_client.requests) == 1
@@ -599,7 +599,7 @@ class TestClosePlan:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        service = RealPlanService(
+        service = RealPrService(
             ctx,
             location=location,
             clipboard=FakeClipboard(),
@@ -607,7 +607,7 @@ class TestClosePlan:
             http_client=http_client,
         )
 
-        closed_prs = service.close_plan(123, "https://github.com/test/repo/issues/123")
+        closed_prs = service.close_pr(123, "https://github.com/test/repo/issues/123")
 
         # Verify HTTP client was used to close PR first, then issue
         assert len(http_client.requests) == 2
@@ -617,7 +617,7 @@ class TestClosePlan:
 
     def test_parse_owner_repo_from_url(self) -> None:
         """_parse_owner_repo_from_url should extract owner/repo from URL."""
-        from erk_shared.gateway.plan_service.real import _parse_owner_repo_from_url
+        from erk_shared.gateway.pr_service.real import _parse_owner_repo_from_url
 
         result = _parse_owner_repo_from_url("https://github.com/owner/repo/issues/123")
         assert result == ("owner", "repo")
@@ -674,7 +674,7 @@ class TestCommentCountsDisplay:
 
         # Create test plan and PR linkage with comment counts
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body="",
             state=PlanState.OPEN,
@@ -752,7 +752,7 @@ class TestCommentCountsDisplay:
 
         # Create test plan and PR linkage without comment counts
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body="",
             state=PlanState.OPEN,
@@ -830,7 +830,7 @@ class TestCommentCountsDisplay:
 
         # Create test plan without PR linkage
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body="",
             state=PlanState.OPEN,
@@ -921,7 +921,7 @@ class TestStackedPrDetection:
         )
 
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body="",
             state=PlanState.OPEN,
@@ -1002,7 +1002,7 @@ class TestLearnStatusDisplay:
 
         # Plan without learn_status metadata
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body="",  # No metadata block
             state=PlanState.OPEN,
@@ -1067,7 +1067,7 @@ class TestLearnStatusDisplay:
         # Plan with learn_status: pending in metadata
         plan_body = format_plan_header_body_for_test(learn_status="pending")
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body=plan_body,
             state=PlanState.OPEN,
@@ -1131,7 +1131,7 @@ class TestLearnStatusDisplay:
         # Plan with learn_status: completed_no_plan
         plan_body = format_plan_header_body_for_test(learn_status="completed_no_plan")
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body=plan_body,
             state=PlanState.OPEN,
@@ -1197,7 +1197,7 @@ class TestLearnStatusDisplay:
             learn_status="completed_with_plan", learn_plan_issue=456
         )
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body=plan_body,
             state=PlanState.OPEN,
@@ -1265,7 +1265,7 @@ class TestLearnStatusDisplay:
             learn_status="plan_completed", learn_plan_issue=456, learn_plan_pr=789
         )
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body=plan_body,
             state=PlanState.OPEN,
@@ -1333,7 +1333,7 @@ class TestLearnStatusDisplay:
             learn_status="completed_with_plan", learn_plan_issue=456
         )
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body=plan_body,
             state=PlanState.OPEN,
@@ -1403,7 +1403,7 @@ class TestLearnStatusDisplay:
             learn_status="completed_with_plan", learn_plan_issue=456
         )
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Plan",
             body=plan_body,
             state=PlanState.OPEN,
@@ -1511,7 +1511,7 @@ class TestBlockingDepsPlans:
         )
 
         plan = Plan(
-            plan_identifier="42",
+            pr_identifier="42",
             title="Objective: Test",
             body=body,
             state=PlanState.OPEN,
@@ -1554,7 +1554,7 @@ class TestBlockingDepsPlans:
         )
 
         plan = Plan(
-            plan_identifier="42",
+            pr_identifier="42",
             title="Objective: Test",
             body=body,
             state=PlanState.OPEN,
@@ -1600,7 +1600,7 @@ class TestBlockingDepsPlans:
         )
 
         plan = Plan(
-            plan_identifier="42",
+            pr_identifier="42",
             title="Objective: Test",
             body=body,
             state=PlanState.OPEN,
@@ -1648,7 +1648,7 @@ class TestBlockingDepsPlans:
         )
 
         plan = Plan(
-            plan_identifier="42",
+            pr_identifier="42",
             title="Objective: Test",
             body=body,
             state=PlanState.OPEN,
@@ -1694,7 +1694,7 @@ class TestBlockingDepsPlans:
         )
 
         plan = Plan(
-            plan_identifier="42",
+            pr_identifier="42",
             title="Objective: Test",
             body=body,
             state=PlanState.OPEN,
@@ -1744,7 +1744,7 @@ class TestBlockingDepsPlans:
         )
 
         plan = Plan(
-            plan_identifier="42",
+            pr_identifier="42",
             title="Objective: Test",
             body=body,
             state=PlanState.OPEN,

@@ -55,7 +55,7 @@ def _make_planned_pr_backend_with_plan() -> tuple[PlanBackend, str]:
         metadata={"branch_name": "existing-plan-branch"},
         summary="",
     )
-    return backend, result.plan_id
+    return backend, result.pr_id
 
 
 @pytest.fixture()
@@ -99,16 +99,16 @@ def test_create_and_get_plan_roundtrip(plan_backend: PlanBackend) -> None:
     )
 
     # Verify CreatePlanResult structure
-    assert isinstance(result.plan_id, str)
-    assert len(result.plan_id) > 0
+    assert isinstance(result.pr_id, str)
+    assert len(result.pr_id) > 0
     assert isinstance(result.url, str)
 
     # Retrieve the plan
-    plan = plan_backend.get_plan(Path("/repo"), result.plan_id)
+    plan = plan_backend.get_plan(Path("/repo"), result.pr_id)
     assert not isinstance(plan, PlanNotFound)
 
     # Verify Plan structure
-    assert plan.plan_identifier == result.plan_id
+    assert plan.pr_identifier == result.pr_id
     assert "Test Plan Title" in plan.title
     assert plan.body == "# Plan Content\n\nThis is the plan body."
     assert plan.state == PlanState.OPEN
@@ -134,10 +134,10 @@ def test_list_plans_filters_by_state(
     backend, plan_id = backend_with_plan
 
     open_results = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.OPEN))
-    assert any(p.plan_identifier == plan_id for p in open_results)
+    assert any(p.pr_identifier == plan_id for p in open_results)
 
     closed_results = backend.list_plans(Path("/repo"), PlanQuery(state=PlanState.CLOSED))
-    assert not any(p.plan_identifier == plan_id for p in closed_results)
+    assert not any(p.pr_identifier == plan_id for p in closed_results)
 
 
 def test_close_plan_changes_state(
@@ -177,7 +177,7 @@ def test_get_plan_not_found_returns_plan_not_found(plan_backend: PlanBackend) ->
     """Backend returns PlanNotFound when plan not found."""
     result = plan_backend.get_plan(Path("/repo"), "99999999")
     assert isinstance(result, PlanNotFound)
-    assert result.plan_id == "99999999"
+    assert result.pr_id == "99999999"
 
 
 def test_add_comment_not_found_raises_runtime_error(plan_backend: PlanBackend) -> None:
@@ -216,7 +216,7 @@ def test_plan_identifier_is_string(
 
     plan = backend.get_plan(Path("/repo"), plan_id)
     assert not isinstance(plan, PlanNotFound)
-    assert isinstance(plan.plan_identifier, str)
+    assert isinstance(plan.pr_identifier, str)
 
 
 def test_assignees_is_list(
@@ -292,7 +292,7 @@ def test_create_multiple_plans_have_unique_ids(plan_backend: PlanBackend) -> Non
         )
         results.append(result)
 
-    ids = [r.plan_id for r in results]
+    ids = [r.pr_id for r in results]
     assert len(ids) == len(set(ids))
 
 
@@ -318,7 +318,7 @@ def test_get_metadata_field_returns_none_for_missing_field(plan_backend: PlanBac
         summary="",
     )
 
-    result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
+    result = plan_backend.get_metadata_field(Path("/repo"), created.pr_id, "worktree_name")
     assert result is None
 
 
@@ -337,11 +337,11 @@ def test_get_metadata_field_roundtrips_with_update_metadata(
 
     plan_backend.update_metadata(
         Path("/repo"),
-        created.plan_id,
+        created.pr_id,
         {"worktree_name": "my-worktree"},
     )
 
-    result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
+    result = plan_backend.get_metadata_field(Path("/repo"), created.pr_id, "worktree_name")
     assert result == "my-worktree"
 
 
@@ -369,7 +369,7 @@ def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
         summary="",
     )
 
-    result = plan_backend.get_all_metadata_fields(Path("/repo"), created.plan_id)
+    result = plan_backend.get_all_metadata_fields(Path("/repo"), created.pr_id)
     assert not isinstance(result, PlanNotFound)
     assert isinstance(result, dict)
 
@@ -389,11 +389,11 @@ def test_get_all_metadata_fields_roundtrips_with_update_metadata(
 
     plan_backend.update_metadata(
         Path("/repo"),
-        created.plan_id,
+        created.pr_id,
         {"worktree_name": "my-worktree", "branch_name": "feature-branch"},
     )
 
-    result = plan_backend.get_all_metadata_fields(Path("/repo"), created.plan_id)
+    result = plan_backend.get_all_metadata_fields(Path("/repo"), created.pr_id)
     assert not isinstance(result, PlanNotFound)
     assert result["worktree_name"] == "my-worktree"
     assert result["branch_name"] == "feature-branch"
@@ -452,12 +452,12 @@ def test_post_event_metadata_only(plan_backend: PlanBackend) -> None:
 
     plan_backend.post_event(
         Path("/repo"),
-        created.plan_id,
+        created.pr_id,
         metadata={"worktree_name": "event-wt"},
         comment=None,
     )
 
-    result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
+    result = plan_backend.get_metadata_field(Path("/repo"), created.pr_id, "worktree_name")
     assert result == "event-wt"
 
 
@@ -474,12 +474,12 @@ def test_post_event_metadata_and_comment(plan_backend: PlanBackend) -> None:
 
     plan_backend.post_event(
         Path("/repo"),
-        created.plan_id,
+        created.pr_id,
         metadata={"worktree_name": "event-wt-2"},
         comment="Implementation started",
     )
 
-    result = plan_backend.get_metadata_field(Path("/repo"), created.plan_id, "worktree_name")
+    result = plan_backend.get_metadata_field(Path("/repo"), created.pr_id, "worktree_name")
     assert result == "event-wt-2"
 
 
@@ -525,10 +525,10 @@ def test_get_comments_returns_preconfigured_comments_planned_pr() -> None:
     )
 
     # Pre-configure comments on the underlying fake issues gateway
-    pr_number = int(result.plan_id)
+    pr_number = int(result.pr_id)
     fake_github.issues._comments[pr_number] = ["First comment", "Second comment"]
 
-    comments = backend.get_comments(Path("/repo"), result.plan_id)
+    comments = backend.get_comments(Path("/repo"), result.pr_id)
     assert len(comments) == 2
     assert "First comment" in comments
     assert "Second comment" in comments
@@ -572,7 +572,7 @@ def test_find_sessions_for_plan_reads_header_fields(
         metadata=_create_metadata(plan_backend),
         summary="",
     )
-    plan_id = result.plan_id
+    plan_id = result.pr_id
 
     # Update metadata with session-related fields
     plan_backend.update_metadata(
@@ -656,9 +656,9 @@ def test_update_metadata_accepts_previously_blocked_fields() -> None:
 
     backend.update_metadata(
         Path("/repo"),
-        created.plan_id,
+        created.pr_id,
         {"learn_status": "pending"},
     )
 
-    result = backend.get_metadata_field(Path("/repo"), created.plan_id, "learn_status")
+    result = backend.get_metadata_field(Path("/repo"), created.pr_id, "learn_status")
     assert result == "pending"

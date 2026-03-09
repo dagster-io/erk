@@ -32,7 +32,7 @@ def _make_issue_info(plan: Plan) -> IssueInfo:
     """Helper to convert Plan to IssueInfo for tests needing custom FakeGitHubIssues config."""
     state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state=state,
@@ -67,7 +67,7 @@ def test_log_displays_timeline_chronologically() -> None:
     """Test log command displays events in chronological order."""
     # Arrange: Create plan and comments with metadata blocks
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
@@ -152,7 +152,7 @@ def test_log_json_output() -> None:
     """Test log command with --json flag outputs valid JSON."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
@@ -215,7 +215,7 @@ def test_log_with_no_events() -> None:
     """Test log command when issue has no comments."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
@@ -260,7 +260,7 @@ def test_log_with_all_event_types() -> None:
     """Test log command displays all supported event types."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
@@ -360,7 +360,7 @@ def test_log_multiple_status_updates() -> None:
     """Test log command with multiple implementation status updates."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
@@ -430,7 +430,7 @@ def test_log_json_structure() -> None:
     """Test JSON output has correct structure with metadata."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,

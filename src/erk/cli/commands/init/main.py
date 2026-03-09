@@ -666,8 +666,8 @@ def run_init(
             from erk.cli.config import load_config as load_repo_config
 
             repo_config = load_repo_config(repo_context.root)
-            if repo_config.plans_repo is not None:
-                offer_plans_repo_label_setup(repo_context.root, repo_config.plans_repo)
+            if repo_config.github_repo is not None:
+                offer_plans_repo_label_setup(repo_context.root, repo_config.github_repo)
 
         # Offer to clean up any pending backup files (at end of project setup)
         if not isinstance(pending_backup, NoBackupCreated):

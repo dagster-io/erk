@@ -9,7 +9,7 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.operations.logic import extract_learn_plan_number
 from erk.tui.operations.types import OperationResult
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk_shared.gateway.pr_service.fake import FakePrService
 
 
 class _FakePopen:
@@ -42,7 +42,7 @@ class TestAddressRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -76,7 +76,7 @@ class TestAddressRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -114,7 +114,7 @@ class TestRebaseRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -156,7 +156,7 @@ class TestRebaseRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -190,7 +190,7 @@ class TestRebaseRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -228,7 +228,7 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -278,7 +278,7 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -318,7 +318,7 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -366,7 +366,7 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -416,7 +416,7 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -459,7 +459,7 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -510,7 +510,7 @@ class TestLandPrAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -595,7 +595,7 @@ class TestDispatchToQueueAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -630,7 +630,7 @@ class TestDispatchToQueueAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -664,7 +664,7 @@ class TestDispatchToQueueAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -702,7 +702,7 @@ class TestCloseObjectiveAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -737,7 +737,7 @@ class TestCloseObjectiveAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -775,7 +775,7 @@ class TestCheckObjectiveAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -810,7 +810,7 @@ class TestCheckObjectiveAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -849,7 +849,7 @@ class TestOneShotPlanAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -885,7 +885,7 @@ class TestOneShotPlanAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -923,7 +923,7 @@ class TestOneShotDispatchAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -959,7 +959,7 @@ class TestOneShotDispatchAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -993,7 +993,7 @@ class TestOneShotDispatchAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1031,7 +1031,7 @@ class TestRewriteRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1065,7 +1065,7 @@ class TestRewriteRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1099,7 +1099,7 @@ class TestRewriteRemoteAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1145,7 +1145,7 @@ class TestCmuxCheckoutAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1196,7 +1196,7 @@ class TestCmuxCheckoutAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1234,7 +1234,7 @@ class TestCmuxCheckoutAsync:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1274,7 +1274,7 @@ class TestCmuxFocusWorkspace:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1322,7 +1322,7 @@ class TestCmuxFocusWorkspace:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1361,7 +1361,7 @@ class TestCmuxFocusWorkspace:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1393,7 +1393,7 @@ class TestCmuxFocusWorkspace:
         filters = PlanFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )

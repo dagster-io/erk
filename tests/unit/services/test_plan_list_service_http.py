@@ -79,7 +79,7 @@ def test_http_path_returns_plan_for_pr() -> None:
     )
 
     assert len(result.plans) == 1
-    assert result.plans[0].plan_identifier == "42"
+    assert result.plans[0].pr_identifier == "42"
 
 
 def test_http_path_empty_response() -> None:
@@ -131,7 +131,7 @@ def test_http_path_filters_non_pr_items() -> None:
     )
 
     assert len(result.plans) == 1
-    assert result.plans[0].plan_identifier == "42"
+    assert result.plans[0].pr_identifier == "42"
 
 
 def test_http_path_excludes_labels() -> None:
@@ -157,7 +157,7 @@ def test_http_path_excludes_labels() -> None:
     )
 
     assert len(result.plans) == 1
-    assert result.plans[0].plan_identifier == "1"
+    assert result.plans[0].pr_identifier == "1"
 
 
 def test_http_path_populates_timing_data() -> None:

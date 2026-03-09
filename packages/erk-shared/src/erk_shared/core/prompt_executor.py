@@ -64,13 +64,6 @@ class PrTitleEvent:
 
 
 @dataclass(frozen=True)
-class PlanNumberEvent:
-    """Plan number."""
-
-    number: int
-
-
-@dataclass(frozen=True)
 class ErrorEvent:
     """Error with non-zero exit code."""
 
@@ -106,7 +99,6 @@ ExecutorEvent = (
     | PrUrlEvent
     | PrNumberEvent
     | PrTitleEvent
-    | PlanNumberEvent
     | ErrorEvent
     | NoOutputEvent
     | NoTurnsEvent
@@ -138,7 +130,6 @@ class CommandResult:
         pr_url: Pull request URL if one was created, None otherwise
         pr_number: Pull request number if one was created, None otherwise
         pr_title: Pull request title if one was created, None otherwise
-        plan_number: Plan number if one was linked, None otherwise
         duration_seconds: Execution time in seconds
         error_message: Error description if command failed, None otherwise
         filtered_messages: List of text messages and tool summaries for display
@@ -148,7 +139,6 @@ class CommandResult:
     pr_url: str | None
     pr_number: int | None
     pr_title: str | None
-    plan_number: int | None
     duration_seconds: float
     error_message: str | None
     filtered_messages: list[str] = field(default_factory=list)
@@ -265,7 +255,6 @@ class PromptExecutor(ABC):
         pr_url: str | None = None
         pr_number: int | None = None
         pr_title: str | None = None
-        plan_number: int | None = None
         error_message: str | None = None
         success = True
 
@@ -289,8 +278,6 @@ class PromptExecutor(ABC):
                     pr_number = num
                 case PrTitleEvent(title=title):
                     pr_title = title
-                case PlanNumberEvent(number=num):
-                    plan_number = num
                 case ErrorEvent(message=msg):
                     error_message = msg
                     success = False
@@ -312,7 +299,6 @@ class PromptExecutor(ABC):
             pr_url=pr_url,
             pr_number=pr_number,
             pr_title=pr_title,
-            plan_number=plan_number,
             duration_seconds=duration,
             error_message=error_message,
             filtered_messages=filtered_messages,

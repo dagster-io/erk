@@ -17,7 +17,7 @@ def _make_plan(*, number: int, lifecycle_stage: str | None = None) -> Plan:
     body = format_plan_header_body_for_test(lifecycle_stage=lifecycle_stage)
     now = datetime(2024, 1, 15, 10, 30, tzinfo=UTC)
     return Plan(
-        plan_identifier=str(number),
+        pr_identifier=str(number),
         title=f"Plan #{number}",
         body=body,
         state=PlanState.OPEN,

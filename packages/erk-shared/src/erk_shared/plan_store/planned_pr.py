@@ -147,7 +147,7 @@ class PlannedPRBackend(PlanBackend):
         """
         result = self._github.get_pr_for_branch(repo_root, branch_name)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(plan_id=branch_name)
+            return PlanNotFound(pr_id=branch_name)
         return self._convert_to_plan(result)
 
     def get_plan(self, repo_root: Path, plan_id: str) -> Plan | PlanNotFound:
@@ -163,7 +163,7 @@ class PlannedPRBackend(PlanBackend):
         pr_number = int(plan_id)
         result = self._github.get_pr(repo_root, pr_number)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(plan_id=plan_id)
+            return PlanNotFound(pr_id=plan_id)
         return self._convert_to_plan(result)
 
     def get_comments(self, repo_root: Path, plan_id: str) -> list[str]:
@@ -388,7 +388,7 @@ class PlannedPRBackend(PlanBackend):
         url = pr_result.url if not isinstance(pr_result, PRNotFound) else ""
 
         return CreatePlanResult(
-            plan_id=str(pr_number),
+            pr_id=str(pr_number),
             url=url,
         )
 
@@ -411,7 +411,7 @@ class PlannedPRBackend(PlanBackend):
         pr_number = int(plan_id)
         result = self._github.get_pr(repo_root, pr_number)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(plan_id=plan_id)
+            return PlanNotFound(pr_id=plan_id)
 
         block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:
@@ -437,7 +437,7 @@ class PlannedPRBackend(PlanBackend):
         pr_number = int(plan_id)
         result = self._github.get_pr(repo_root, pr_number)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(plan_id=plan_id)
+            return PlanNotFound(pr_id=plan_id)
 
         block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:

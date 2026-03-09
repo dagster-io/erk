@@ -120,8 +120,8 @@ def create_pr_from_session(
     # Return success result
     output = {
         "success": True,
-        "plan_number": result.plan_number,
-        "plan_url": result.plan_url,
+        "plan_number": result.pr_number,
+        "plan_url": result.pr_url,
         "branch_name": result.branch_name,
         "title": result.title,
     }

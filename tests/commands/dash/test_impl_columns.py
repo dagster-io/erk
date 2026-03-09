@@ -36,7 +36,7 @@ last_dispatched_node_id: 'WFR_all_flag'
 <!-- /erk:metadata-block:plan-header -->"""
 
     plan = Plan(
-        plan_identifier="200",
+        pr_identifier="200",
         title="Plan with PR and Run",
         body=plan_body,
         state=PlanState.OPEN,

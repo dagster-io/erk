@@ -12,7 +12,7 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Label, Markdown
 
-from erk_shared.gateway.plan_service.abc import PlanService
+from erk_shared.gateway.pr_service.abc import PrService
 
 
 class PlanBodyScreen(ModalScreen):
@@ -93,7 +93,7 @@ class PlanBodyScreen(ModalScreen):
     def __init__(
         self,
         *,
-        service: PlanService,
+        service: PrService,
         plan_id: int,
         plan_body: str,
         full_title: str,
@@ -152,7 +152,7 @@ class PlanBodyScreen(ModalScreen):
             if self._content_type == "Objective":
                 content = self._service.fetch_objective_content(self._plan_id, self._plan_body)
             else:
-                content = self._service.fetch_plan_content(self._plan_id, self._plan_body)
+                content = self._service.fetch_pr_content(self._plan_id, self._plan_body)
         except Exception as e:
             error = str(e)
 

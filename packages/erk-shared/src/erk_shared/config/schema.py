@@ -164,7 +164,7 @@ class RepoConfigSchema(BaseModel):
         description="Commands to run after creating a worktree",
         json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "post_create.commands"},
     )
-    plans_repo: str | None = Field(
+    github_repo: str | None = Field(
         description="Repository for storing plan issues (owner/repo format)",
         json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "plans.repo"},
     )

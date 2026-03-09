@@ -12,7 +12,7 @@ class FakePlanDataProvider(PlanDataProvider):
 
     Returns canned data without making any API calls.
     Only handles TUI data assembly methods (fetch_plans, etc.).
-    Domain operations (close_plan, dispatch, etc.) are on FakePlanService.
+    Domain operations (close_pr, dispatch, etc.) are on FakePrService.
     """
 
     def __init__(

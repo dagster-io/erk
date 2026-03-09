@@ -185,7 +185,7 @@ def objective_fetch_context(
         if isinstance(plan_result, PlanNotFound):
             click.echo(_error_json(f"Plan #{plan_number} not found"))
             raise SystemExit(1)
-        plan_id = plan_result.plan_identifier
+        plan_id = plan_result.pr_identifier
     else:
         # Discovery: auto-fill branch from git state
         if branch_name is None:
@@ -201,7 +201,7 @@ def objective_fetch_context(
         if isinstance(plan_result, PlanNotFound):
             click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
             raise SystemExit(1)
-        plan_id = plan_result.plan_identifier
+        plan_id = plan_result.pr_identifier
 
     # Discovery: auto-fill objective from plan metadata
     if objective_number is None:

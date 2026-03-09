@@ -48,7 +48,7 @@ last_dispatched_node_id: 'WFR_running'
 <!-- /erk:metadata-block:plan-header -->"""
 
     queued_plan = Plan(
-        plan_identifier="1010",
+        pr_identifier="1010",
         title="Queued Plan",
         body=queued_plan_body,
         state=PlanState.OPEN,
@@ -62,7 +62,7 @@ last_dispatched_node_id: 'WFR_running'
     )
 
     running_plan = Plan(
-        plan_identifier="1011",
+        pr_identifier="1011",
         title="Running Plan",
         body=running_plan_body,
         state=PlanState.OPEN,
@@ -145,7 +145,7 @@ last_dispatched_node_id: 'WFR_failed'
 <!-- /erk:metadata-block:plan-header -->"""
 
     success_plan = Plan(
-        plan_identifier="1020",
+        pr_identifier="1020",
         title="Success Plan",
         body=success_plan_body,
         state=PlanState.OPEN,
@@ -159,7 +159,7 @@ last_dispatched_node_id: 'WFR_failed'
     )
 
     failed_plan = Plan(
-        plan_identifier="1021",
+        pr_identifier="1021",
         title="Failed Plan",
         body=failed_plan_body,
         state=PlanState.OPEN,
@@ -218,7 +218,7 @@ def test_plan_list_run_state_filter_no_matches() -> None:
     """Test run-state filter with no matching plans."""
     # Arrange - Plan with workflow run that doesn't match filter
     plan = Plan(
-        plan_identifier="1030",
+        pr_identifier="1030",
         title="Regular Plan",
         body="",
         state=PlanState.OPEN,

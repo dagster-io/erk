@@ -43,7 +43,7 @@ def github_issue_to_plan(issue: IssueInfo) -> Plan:
         objective_id = raw_objective
 
     return Plan(
-        plan_identifier=str(issue.number),
+        pr_identifier=str(issue.number),
         title=issue.title,
         body=issue.body,
         state=state,
@@ -90,7 +90,7 @@ def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
     body = plan_body if plan_body is not None else pr.body
 
     return Plan(
-        plan_identifier=str(pr.number),
+        pr_identifier=str(pr.number),
         title=pr.title,
         body=body,
         state=state,

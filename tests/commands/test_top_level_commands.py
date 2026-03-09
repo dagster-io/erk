@@ -17,7 +17,7 @@ from tests.test_utils.plan_helpers import create_plan_store_with_plans
 def plan_to_issue(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -64,7 +64,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
 
     # Arrange
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Test Plan",
         body="",
         state=PlanState.OPEN,
@@ -106,7 +106,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
 
     # Arrange
     open_plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Open Plan",
         body="",
         state=PlanState.OPEN,
@@ -185,7 +185,7 @@ def test_top_level_close_command_works() -> None:
     """Test that 'erk pr close' command works."""
     # Arrange
     issue1 = Plan(
-        plan_identifier="456",
+        pr_identifier="456",
         title="Plan to Close",
         body="content",  # non-empty body required for plan header parsing
         state=PlanState.OPEN,

@@ -23,7 +23,7 @@ from tests.test_utils.output_helpers import strip_ansi
 def plan_to_issue(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -77,7 +77,7 @@ last_dispatched_node_id: 'WFR_abc123'
 Implementation details"""
 
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Implementation",
             body=plan_body,
             state=PlanState.OPEN,
@@ -173,7 +173,7 @@ last_dispatched_node_id: 'WFR_def456'
 <!-- /erk:metadata-block:plan-header -->"""
 
         plan = Plan(
-            plan_identifier="456",
+            pr_identifier="456",
             title="Test with URL",
             body=plan_body,
             state=PlanState.OPEN,
@@ -273,7 +273,7 @@ last_dispatched_node_id: 'WFR_ghi789'
 <!-- /erk:metadata-block:plan-header -->"""
 
         plan = Plan(
-            plan_identifier="789",
+            pr_identifier="789",
             title="Plan without URL",
             body=plan_body,
             state=PlanState.OPEN,
@@ -355,7 +355,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
         )
 
         plan = Plan(
-            plan_identifier="111",
+            pr_identifier="111",
             title="Plan without workflow",
             body="",
             state=PlanState.OPEN,
@@ -431,7 +431,7 @@ def test_plan_list_handles_batch_query_failure() -> None:
         )
 
         plan = Plan(
-            plan_identifier="222",
+            pr_identifier="222",
             title="Plan with API failure",
             body="",
             state=PlanState.OPEN,
@@ -542,7 +542,7 @@ last_dispatched_node_id: 'WFR_node2'
 <!-- /erk:metadata-block:plan-header -->"""
 
         plan1 = Plan(
-            plan_identifier="301",
+            pr_identifier="301",
             title="First Implementation",
             body=plan1_body,
             state=PlanState.OPEN,
@@ -556,7 +556,7 @@ last_dispatched_node_id: 'WFR_node2'
         )
 
         plan2 = Plan(
-            plan_identifier="302",
+            pr_identifier="302",
             title="Second Implementation",
             body=plan2_body,
             state=PlanState.OPEN,
@@ -628,7 +628,7 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan WITHOUT corresponding .impl/issue.json
         plan = Plan(
-            plan_identifier="999",
+            pr_identifier="999",
             title="Plan without worktree",
             body="",
             state=PlanState.OPEN,

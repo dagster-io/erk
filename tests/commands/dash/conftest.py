@@ -9,7 +9,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 def plan_to_issue(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -34,7 +34,7 @@ def make_plan(
 ) -> Plan:
     """Create a Plan with common defaults for testing."""
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=plan_identifier,
         title=title,
         body=body,
         state=state,
