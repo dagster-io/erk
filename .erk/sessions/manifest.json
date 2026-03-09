@@ -37,6 +37,23 @@
       "raw_size_kb": 203,
       "xml_size_kb": 95,
       "git_branch": "plnd/fix-slot-reuse-worktree-03-09-0759"
+    },
+    {
+      "session_id": "4230893c-899a-4ffb-a1bd-8dddc9c605fb",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T13:10:20.902311+00:00",
+      "files": [
+        "address-4230893c-899a-4ffb-a1bd-8dddc9c605fb-4230893c-899a-4ffb-a1bd-8dddc9c605fb-part1.xml",
+        "address-4230893c-899a-4ffb-a1bd-8dddc9c605fb-4230893c-899a-4ffb-a1bd-8dddc9c605fb-part2.xml",
+        "address-4230893c-899a-4ffb-a1bd-8dddc9c605fb-4230893c-899a-4ffb-a1bd-8dddc9c605fb-part3.xml",
+        "address-4230893c-899a-4ffb-a1bd-8dddc9c605fb-4230893c-899a-4ffb-a1bd-8dddc9c605fb-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 187,
+      "xml_size_kb": 93,
+      "git_branch": "plnd/fix-slot-reuse-worktree-03-09-0759"
     }
   ]
 }
