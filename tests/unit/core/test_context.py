@@ -3,12 +3,16 @@
 from pathlib import Path
 from unittest.mock import patch
 
+from tests.fakes.prompt_executor import FakePromptExecutor
+
 from erk.core.codex_prompt_executor import CodexCliPromptExecutor
 from erk.core.context import (
     context_for_test,
     create_prompt_executor,
     regenerate_context,
+    select_prompt_executor,
 )
+from erk.core.fallback_prompt_executor import FallbackPromptExecutor
 from erk.core.prompt_executor import ClaudeCliPromptExecutor
 from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
 from erk_shared.gateway.console.fake import FakeConsole
@@ -81,3 +85,33 @@ def test_create_prompt_executor_defaults_to_claude_when_config_is_none() -> None
     executor = create_prompt_executor(global_config=None, console=_test_console())
 
     assert isinstance(executor, ClaudeCliPromptExecutor)
+
+
+def test_select_prompt_executor_returns_fallback_when_fast_path_enabled() -> None:
+    """select_prompt_executor wraps with FallbackPromptExecutor when API fast path is on."""
+    config = GlobalConfig.test(Path("/test/erks"), anthropic_api_fast_path=True)
+    fake = FakePromptExecutor()
+
+    result = select_prompt_executor(cli_executor=fake, global_config=config)
+
+    assert isinstance(result, FallbackPromptExecutor)
+    assert result.cli_executor is fake
+
+
+def test_select_prompt_executor_returns_cli_executor_when_fast_path_disabled() -> None:
+    """select_prompt_executor returns cli_executor unchanged when fast path is off."""
+    config = GlobalConfig.test(Path("/test/erks"))
+    fake = FakePromptExecutor()
+
+    result = select_prompt_executor(cli_executor=fake, global_config=config)
+
+    assert result is fake
+
+
+def test_select_prompt_executor_returns_cli_executor_when_config_is_none() -> None:
+    """select_prompt_executor returns cli_executor unchanged when global_config is None."""
+    fake = FakePromptExecutor()
+
+    result = select_prompt_executor(cli_executor=fake, global_config=None)
+
+    assert result is fake

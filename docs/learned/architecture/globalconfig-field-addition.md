@@ -62,17 +62,7 @@ Existing `~/.erk/config.toml` files won't have the new key. The default value in
 
 ## Current Fields
 
-Key fields in GlobalConfig (as of this writing):
-
-- `erk_root: Path` — path to erk installation
-- `use_graphite: bool` — whether to use Graphite for PR management
-- `shell_setup_complete: bool` — shell integration status
-- `github_planning: bool` — GitHub-based planning enabled
-- `live_dangerously: bool` — skip safety confirmations
-- `show_hidden_commands: bool` — expose hidden CLI commands
-- `prompt_learn_on_land: bool` — prompt for learn extraction after landing PRs
-- `cmux_integration: bool` — enable cmux workspace creation on PR checkout
-- `interactive_agent: InteractiveAgentConfig` — interactive agent settings
+See `GlobalConfig` in `packages/erk-shared/src/erk_shared/context/types.py` for the current field list.
 
 ## Related Documentation
 

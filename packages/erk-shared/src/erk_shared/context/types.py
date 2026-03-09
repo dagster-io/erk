@@ -237,6 +237,7 @@ class GlobalConfig:
     show_hidden_commands: bool = False
     prompt_learn_on_land: bool = True
     cmux_integration: bool = False
+    anthropic_api_fast_path: bool = False
     interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()
 
     @staticmethod
@@ -250,6 +251,7 @@ class GlobalConfig:
         show_hidden_commands: bool = False,
         prompt_learn_on_land: bool = True,
         cmux_integration: bool = False,
+        anthropic_api_fast_path: bool = False,
         interactive_agent: InteractiveAgentConfig | None = None,
     ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""
@@ -262,6 +264,7 @@ class GlobalConfig:
             show_hidden_commands=show_hidden_commands,
             prompt_learn_on_land=prompt_learn_on_land,
             cmux_integration=cmux_integration,
+            anthropic_api_fast_path=anthropic_api_fast_path,
             interactive_agent=(
                 interactive_agent
                 if interactive_agent is not None
