@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from erk_mcp.server import _run_erk, create_mcp, one_shot, plan_list, plan_view
+from erk_mcp.server import _run_erk, create_mcp, one_shot, plan_list, plan_view, release_notes
 
 
 class TestRunErk:
@@ -149,6 +149,43 @@ class TestOneShot:
             one_shot(prompt="Do something")
 
 
+class TestReleaseNotes:
+    """Tests for release_notes MCP tool."""
+
+    @patch("erk_mcp.server._run_erk")
+    def test_without_version(self, mock_run_erk: patch) -> None:
+        mock_run_erk.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="Release notes for erk 0.3.0\n...", stderr=""
+        )
+
+        result = release_notes(version=None)
+
+        assert result == "Release notes for erk 0.3.0\n..."
+        mock_run_erk.assert_called_once_with(["release-notes"])
+
+    @patch("erk_mcp.server._run_erk")
+    def test_with_specific_version(self, mock_run_erk: patch) -> None:
+        mock_run_erk.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="[0.2.1] - 2025-12-11\n...", stderr=""
+        )
+
+        result = release_notes(version="0.2.1")
+
+        assert result == "[0.2.1] - 2025-12-11\n..."
+        mock_run_erk.assert_called_once_with(["release-notes", "--version", "0.2.1"])
+
+    @patch("erk_mcp.server._run_erk")
+    def test_with_all_versions(self, mock_run_erk: patch) -> None:
+        mock_run_erk.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="# erk Changelog\n...", stderr=""
+        )
+
+        result = release_notes(version="all")
+
+        assert result == "# erk Changelog\n..."
+        mock_run_erk.assert_called_once_with(["release-notes", "--all"])
+
+
 class TestCreateMcp:
     """Tests for create_mcp() factory function."""
 
@@ -173,4 +210,4 @@ class TestCreateMcp:
         tools = asyncio.run(server.list_tools())
         tool_names = {t.name for t in tools}
 
-        assert tool_names == {"plan_list", "plan_view", "one_shot"}
+        assert tool_names == {"plan_list", "plan_view", "one_shot", "release_notes"}

@@ -59,6 +59,27 @@ def one_shot(prompt: str) -> str:
     return result.stdout
 
 
+def release_notes(version: str | None = None) -> str:
+    """View erk release notes and changelog.
+
+    Shows what's new in erk, including added features, changes, and fixes.
+    Call this when users ask "what's new", want to see release notes, or
+    ask about the changelog.
+
+    By default returns notes for the current installed version.
+    Pass version to see notes for a specific version (e.g., "0.2.1"),
+    or pass "all" to see the full changelog.
+    """
+    args = ["release-notes"]
+    if version is not None:
+        if version == "all":
+            args.append("--all")
+        else:
+            args.extend(["--version", version])
+    result = _run_erk(args)
+    return result.stdout
+
+
 def create_mcp() -> FastMCP:
     """Create and configure the FastMCP server instance."""
     from fastmcp import FastMCP
@@ -67,4 +88,5 @@ def create_mcp() -> FastMCP:
     server.tool()(plan_list)
     server.tool()(plan_view)
     server.tool()(one_shot)
+    server.tool()(release_notes)
     return server

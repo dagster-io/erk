@@ -36,13 +36,14 @@ Non-zero exit codes raise `RuntimeError` with the stderr message. MCP clients re
 
 ## MCP Tools
 
-Three tools are registered:
+Four tools are registered:
 
-| Tool        | Delegates To             | Purpose                                       |
-| ----------- | ------------------------ | --------------------------------------------- |
-| `plan_list` | `erk exec dash-data`     | List plans with status, labels, metadata      |
-| `plan_view` | `erk exec get-plan-info` | View a specific plan's metadata and body      |
-| `one_shot`  | `erk one-shot <prompt>`  | Submit a task for autonomous remote execution |
+| Tool             | Delegates To             | Purpose                                       |
+| ---------------- | ------------------------ | --------------------------------------------- |
+| `plan_list`      | `erk exec dash-data`     | List plans with status, labels, metadata      |
+| `plan_view`      | `erk exec get-plan-info` | View a specific plan's metadata and body      |
+| `one_shot`       | `erk one-shot <prompt>`  | Submit a task for autonomous remote execution |
+| `release_notes`  | `erk release-notes`      | View release notes and changelog              |
 
 ### `plan_list(state: str | None = None) -> str`
 
@@ -55,6 +56,10 @@ Returns plan title, state, labels, and full markdown body for the given plan ID.
 ### `one_shot(prompt: str) -> str`
 
 Dispatches a task for fully autonomous execution: creates a branch, draft PR, and triggers a GitHub Actions workflow. Returns after dispatch (~10-30s) with PR and workflow run URLs.
+
+### `release_notes(version: str | None = None) -> str`
+
+Returns release notes from the erk changelog. By default shows the current version's notes. Pass a version string (e.g., `"0.2.1"`) for a specific version, or `"all"` for the full changelog.
 
 ## Configuration
 
