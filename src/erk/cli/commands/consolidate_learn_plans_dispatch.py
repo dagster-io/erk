@@ -253,9 +253,9 @@ def dispatch_consolidate_learn_plans(
 
     except SystemExit:
         raise
-    except Exception as exc:
+    except Exception:
         user_output(click.style(f"Failed during: {current_step}", fg="red"))
-        raise exc from exc
+        raise
 
     # Display results
     elapsed = time.monotonic() - start_monotonic
