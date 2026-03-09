@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: `erk pr list` and `erk dash` should show same PR list"
+  "plan_id": "9114",
+  "url": "https://github.com/dagster-io/erk/pull/9114",
+  "created_at": "2026-03-09T19:17:13.445271",
+  "synced_at": "2026-03-09T19:17:13.445271",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
