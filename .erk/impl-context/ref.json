@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Move CI-only command to system folder + add documentation"
+}
