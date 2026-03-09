@@ -156,6 +156,9 @@ jobs:
         run: |
           git fetch origin "$BRANCH_NAME"
           git checkout "$BRANCH_NAME"
+          # Reset to remote tip — the plan job may have pushed commits after
+          # actions/checkout resolved github.sha at workflow dispatch time
+          git reset --hard "origin/$BRANCH_NAME"
           if [ -f .erk/impl-context/plan.md ]; then
             echo "Using pre-committed impl-context from branch"
           else
