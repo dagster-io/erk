@@ -1,0 +1,637 @@
+<session>
+  <meta branch="plnd/enhance-runs-tab-detail-03-09-0729" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01HypwwHB8HgeUVPqbYFrmQp">
+   277→def test_fetch_runs_status_fields_populated(tmp_path: Path) -&gt; None:
+   278→    """fetch_runs populates status and conclusion fields."""
+   279→    runs = [
+   280→        _make_workflow_run(
+   281→            "1001",
+   282→            status="completed",
+   283→            conclusion="failure",
+   284→            created_at=datetime(2026, 3, 1, 10, 0, tzinfo=UTC),
+   285→        ),
+   286→    ]
+   287→    provider = _make_provider(tmp_path, workflow_runs=runs)
+   288→    rows = provider.fetch_runs()
+   289→
+   290→    assert len(rows) == 1
+   291→    assert rows[0].status == "completed"
+   292→    assert rows[0].conclusion == "failure"
+   293→
+   294→
+   295→def test_fetch_runs_in_progress_has_no_conclusion(tmp_path: Path) -&gt; None:
+   296→    """In-progress runs have None conclusion."""
+   297→    runs = [
+   298→        _make_workflow_run(
+   299→            "1001",
+   300→            status="in_progress",
+   301→            conclusion=None,
+   302→            created_at=datetime(2026, 3, 1, 10, 0, tzinfo=UTC),
+   303→        ),
+   304→    ]
+   305→    provider = _make_provider(tmp_path, workflow_runs=runs)
+   306→    rows = provider.fetch_runs()
+
+... [56 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check what the `FakeLocalGitHub` looks like to understand how to add a new method.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="72449" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1278}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GVuYkCczkaw5nnARbyuTbu">
+    <param name="pattern">class FakeLocalGitHub</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="72449" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GVuYkCczkaw5nnARbyuTbu">
+37:class FakeLocalGitHub(LocalGitHub):
+38-    """In-memory fake implementation of GitHub operations.
+39-
+40-    This class has NO public setup methods. All state is provided via constructor
+41-    using keyword arguments with sensible defaults (empty dicts).
+42-    """
+43-
+44-    def __init__(
+45-        self,
+46-        *,
+47-        repo_info: RepoInfo | None = None,
+48-        prs: dict[str, PullRequestInfo] | None = None,
+49-        pr_bases: dict[int, str] | None = None,
+50-        pr_details: dict[int, PRDetails] | None = None,
+51-        prs_by_branch: dict[str, PRDetails] | None = None,
+52-        workflow_runs: list[WorkflowRun] | None = None,
+53-        workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
+54-        run_logs: dict[str, str] | None = None,
+55-        pr_plan_linkages: dict[int, list[PullRequestInfo]] | None = None,
+56-        polled_run_id: str | None = None,
+57-        authenticated: bool = True,
+58-        auth_username: str | None = "test-user",
+59-        auth_hostname: str | None = "github.com",
+60-        issues_gateway: GitHubIssues | None = None,
+61-        issues_data: list[IssueInfo] | None = None,
+62-        pr_titles: dict[int, str] | None = None,
+63-        pr_bodies_by_number: dict[int, str] | None = None,
+64-        pr_diffs: dict[int, str] | None = None,
+65-        pr_changed_files: dict[int, list[str]] | None = None,
+66-        merge_should_succeed: bool = True,
+
+... [21 lines omitted] ...
+
+72-        resolve_thread_failures: set[str] | None = None,
+73-        pr_diff_error: str | None = None,
+74-        workflow_runs_error: str | None = None,
+82-        add_label_errors: dict[str, str] | None = None,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1166" cache_read_input_tokens="73727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1166}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the ABC structure to understand where to add the new method.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1166" cache_read_input_tokens="73727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1166}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RG5ZWDQTnvb4MPZnVbpG2C">
+    <param name="pattern">class LocalGitHub</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1166" cache_read_input_tokens="73727" output_tokens="3827" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1166, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RG5ZWDQTnvb4MPZnVbpG2C">
+29:class LocalGitHub(ABC):
+30-    """Abstract interface for GitHub operations.
+31-
+32-    All implementations (real and fake) must implement this interface.
+33-    """
+34-
+  </tool_result>
+  <assistant>Now let me also quickly check the `DryRunGitHub` to see how it delegates.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3922" cache_read_input_tokens="74893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3922}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012UuHmdADf3yARxsSBrcE6t">
+    <param name="pattern">class DryRunGitHub</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3922" cache_read_input_tokens="74893" output_tokens="194" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3922, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012UuHmdADf3yARxsSBrcE6t">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016Sxa1G1P89iyqtZ6EomcVa">
+    <param name="pattern">class Dry.*GitHub</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="78815" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 209, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Sxa1G1P89iyqtZ6EomcVa">
+24:class DryRunLocalGitHub(LocalGitHub):
+25-    """No-op wrapper for GitHub operations.
+26-
+27-    Read operations are delegated to the wrapped implementation.
+28-    Write operations return without executing (no-op behavior).
+29-
+30-    This wrapper prevents destructive GitHub operations from executing in dry-run mode,
+31-    while still allowing read operations for validation.
+32-    """
+33-
+34-    def __init__(self, wrapped: LocalGitHub) -&gt; None:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NbM5gfqd8dHD3LH2sKBiFD">
+    <param name="pattern">def get_prs_linked_to_issues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="79024" output_tokens="176" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NbM5gfqd8dHD3LH2sKBiFD">
+129:    def get_prs_linked_to_issues(
+130-        self,
+131-        location: GitHubRepoLocation,
+132-        plan_numbers: list[int],
+133-    ) -&gt; dict[int, list[PullRequestInfo]]:
+134-        """Delegate read operation to wrapped implementation."""
+135-        return self._wrapped.get_prs_linked_to_issues(location, plan_numbers)
+136-
+137-    def get_workflow_runs_by_branches(
+  </tool_result>
+  <assistant>Good - dry-run delegates read operations. Now I have enough context to write the plan. Let me also quickly verify what the existing plan PR says about this change.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="79328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RvRYjYNa9LjUgT8bqrPnjv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/.erk/impl-context/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="79328" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 309, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RvRYjYNa9LjUgT8bqrPnjv">
+File does not exist. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01H3DqEBRpf6Doz2nagv3eVB">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Check recent commits on this branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="79637" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H3DqEBRpf6Doz2nagv3eVB">
+898b1980b Remove .erk/impl-context/ from tree
+d2adb98a2 Address PR review comments (batch 1/2)
+8f02ce5ec update
+e944aa5cc Add plan for PR #9043
+217177641 Add plan: Plan: Enhance Runs Tab - Branch Names, j/k Nav, Detail View
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="79938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what was already done on this branch to understand the current state.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="79938" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XoaPgFETMWWfu5XgYBSzDo">
+    <param name="command">git diff master...HEAD --stat | head -30</param>
+    <param name="description">See files changed in this branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="79938" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XoaPgFETMWWfu5XgYBSzDo">
+ .../erk_shared/gateway/plan_data_provider/fake.py  |  19 +-
+ src/erk/tui/actions/navigation.py                  |  10 +-
+ src/erk/tui/app.py                                 | 114 ++++-
+ src/erk/tui/data/fake_provider.py                  |  85 +++-
+ src/erk/tui/data/provider_abc.py                   |  11 +-
+ src/erk/tui/data/real_provider.py                  | 155 ++++++-
+ src/erk/tui/data/types.py                          |  44 ++
+ src/erk/tui/screens/help_screen.py                 |  20 +-
+ src/erk/tui/views/types.py                         |  11 +-
+ src/erk/tui/widgets/run_table.py                   | 175 ++++++++
+ tests/tui/app/test_app_runs.py                     | 470 +++++++++++++++++++++
+ tests/tui/app/test_view_switching.py               |  28 +-
+ tests/tui/data/test_real_provider_runs.py          | 361 ++++++++++++++++
+ tests/tui/test_run_table.py                        | 182 ++++++++
+ tests/tui/test_view_bar.py                         |   9 +-
+ tests/tui/views/test_types.py                      |  47 ++-
+ 16 files changed, 1698 insertions(+), 43 deletions(-)
+  </tool_result>
+  <assistant>OK, now I have the full picture. This is an existing PR that added the Runs tab, and the review feedback is that the branch column incorrectly shows "master" for all runs. Let me now write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="80113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01ViKZCWeoux9EQ9H2Bavbdw">
+    <param name="file_path">/Users/schrockn/.claude/plans/witty-knitting-grove.md</param>
+    <param name="content"># Fix Runs Tab Branch Column
+
+## Context
+
+PR review feedback: The "branch" column in the R...[truncated 2816 chars]...`, switch to Runs tab, verify branch column shows actual branch names instead of "master"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="80113" output_tokens="1091" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ViKZCWeoux9EQ9H2Bavbdw">
+File created successfully at: /Users/schrockn/.claude/plans/witty-knitting-grove.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01EggDqTfXhSejw5bAi9A6LH">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2327" cache_read_input_tokens="80801" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2327, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EggDqTfXhSejw5bAi9A6LH">
+
+  </tool_result>
+  <assistant>
+
+The plan is straightforward. The key insight: `workflow_dispatch` runs always report `head_branch` as "master" because that's the dispatch ref. The actual target branch lives on the associated PR's `headRefName`. The fix adds a batch GraphQL method to fetch PR head branches and uses that instead of `run.branch`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="83128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01VZbNba9JnqQ2T36TdihRUF">
+    <param name="plan"># Fix Runs Tab Branch Column
+
+## Context
+
+PR review feedback: The "branch" column in the R...[truncated 2816 chars]...`, switch to Runs tab, verify branch column shows actual branch names instead of "master"
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="83128" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VZbNba9JnqQ2T36TdihRUF">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/witty-knitting-grove.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix Runs Tab Branch Column
+Current context: (wt:enhance-runs-tab-detail-03-09-0729) (br:plnd/enhance-runs-tab-detail-03-09-0729) (pr:#9043)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/enha"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 95a4979b-1b3e-4c78-8b0c-03807ee82af0 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/witty-knitting-grove.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0193efaXTawT9DYKtrTH8so3">
+    <param name="file_path">/Users/schrockn/.claude/plans/witty-knitting-grove.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="83866" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0193efaXTawT9DYKtrTH8so3">
+     1→# Fix Runs Tab Branch Column
+     2→
+     3→## Context
+     4→
+     5→PR review feedback: The "branch" column in the Runs tab shows "master" for all workflow runs. This happens because `workflow_dispatch` runs use the default branch (master) as their `head_branch` in the GitHub API. The actual target branch is the PR's head branch, not the dispatch ref.
+     6→
+     7→## Root Cause
+     8→
+     9→In `real_provider.py:303`:
+    10→```python
+    11→branch = run.branch if hasattr(run, "branch") else "-"
+    12→```
+    13→`run.branch` comes from the GitHub REST API's `head_branch` field, which is always "master" for `workflow_dispatch` events since they're dispatched on the default branch.
+    14→
+    15→## Fix
+    16→
+    17→Use the PR's head branch instead of the workflow run's `head_branch`. Two data paths exist:
+    18→
+    19→1. **Plan-linked runs** (plan-implement): `pr_info_map[pr_num].head_branch` already populated from `get_prs_linked_to_issues` GraphQL query (includes `headRefName`)
+    20→2. **Direct-PR runs** (pr-address, pr-rebase): PR number extracted from display_title but no `PullRequestInfo` fetched - need to add fetching
+    21→
+    22→### Approach: Add `get_pr_head_branches` to gateway
+    23→
+    24→Add a batch GraphQL method that fetches `headRefName` for a list of PR numbers in a single API call. This avoids O(n) sequential `get_pr()` calls.
+    25→
+    26→## Files to Modify
+    27→
+    28→### 1. `packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+    29→- Add abstract method `get_pr_head_branches(self, location: GitHubRepoLocation, pr_numbers: list[int]) -&gt; dict[int, str]`
+    30→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>## Fix Runs Tab Branch Column
+
+### Context
+
+PR review feedback: The "branch" column in the Runs tab shows "master" for all workflow runs. This happens because `workflow_dispatch` runs use the default branch (master) as their `head_branch` in the GitHub API. The actual target branch is the PR's head branch, not the dispatch ref.
+
+### Root Cause
+
+In `real_provider.py:303`:
+```python
+branch = run.branch if hasattr(run, "branch") else "-"
+```
+`run.branch` comes from the GitHub REST API's `head_branch` field, which is always "master" for `workflow_dispatch` events since they're dispatched on the default branch.
+
+### Fix
+
+Use the PR's head branch instead of the workflow run's `head_branch`. Two data paths exist:
+
+1. **Plan-linked runs** (plan-implement): `pr_info_map[pr_num].head_branch` already populated from `get_prs_linked_to_issues` GraphQL query (includes `headRefName`)
+2. **Direct-PR runs** (pr-address, pr-rebase): PR number extracted from display_title but no `PullRequestInfo` fetched - need to add fetching
+
+### Approach: Add `get_pr_head_branches` to gateway
+
+Add a batch GraphQL method that fetches `headRefName` for a list of PR numbers in a single API call. This avoids O(n) sequential `get_pr()` calls.
+
+### Files to Modify
+
+1. **`abc.py`** - Add abstract method `get_pr_head_branches`
+2. **`real.py`** - Implement with batch GraphQL query
+3. **`fake.py`** - Return from stored PR data
+4. **`dry_run.py`** - Delegate to wrapped
+5. **`real_provider.py`** - Use PR head branches instead of `run.branch`
+6. **Tests** - Verify branch from PR info, direct-PR fetch, and no-PR fallback</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1251" cache_read_input_tokens="84617" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1251}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01UT4mYfGNtevGP7zSmdwUMJ">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1251" cache_read_input_tokens="84617" output_tokens="549" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1251, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UT4mYfGNtevGP7zSmdwUMJ">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_011DdgDjzUqQDx3UMA4z8T5S">
+    <param name="questions">[{'question': '📋 Fix Runs Tab Branch Column\nCurrent context: (wt:enhance-runs-tab-detail-...[truncated 430 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1900" cache_read_input_tokens="85868" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1900, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011DdgDjzUqQDx3UMA4z8T5S">
+User has answered your questions: "📋 Fix Runs Tab Branch Column
+Current context: (wt:enhance-runs-tab-detail-03-09-0729) (br:plnd/enhance-runs-tab-detail-03-09-0729) (pr:#9043)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_012nu9PDrHBc9pdVBi2D7Avs">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="87768" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012nu9PDrHBc9pdVBi2D7Avs">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="95a4979b-1b3e-4c78-8b0c-03807ee82af0" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="95a4979b-1b3e-4c78-8b0c-03807ee82af0" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "95a4979b-1b3e-4c78-8b0c-03807ee82af0" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "95a4979b-1b3e-4c78-8b0c-03807ee82af0" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "95a4979b-1b3e-4c78-8b0c-03807ee82af0" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "95a4979b-1b3e-4c78-8b0c-03807ee82af0" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Step 1: Parse Arguments** - No flags passed, so all flags are empty.
+
+**Step 2: Generate Branch Slug** - From the plan title "Fix Runs Tab Branch Column": `fix-runs-branch-column`
+
+**Step 3: Generate Plan Summary** - The branch column in the Runs tab incorrectly shows "master" for all workflow runs because workflow_dispatch events use the default branch as head_branch. This fix resolves the actual target branch from the associated PR's headRefName via a new batch GraphQL gateway method.
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2405" cache_read_input_tokens="88127" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2405}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Ryqws6EcRhaEEMby8ZBKB6">
+    <param name="command">erk exec plan-save --format json --session-id="95a4979b-1b3e-4c78-8b0c-03807ee82af0" --bra...[truncated 207 chars]...target branch from the associated PRs headRefName via a new batch GraphQL gateway method."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2405" cache_read_input_tokens="88127" output_tokens="345" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ryqws6EcRhaEEMby8ZBKB6">
+{"success": true, "plan_number": 9062, "plan_url": "https://github.com/dagster-io/erk/pull/9062", "title": "[erk-plan] Fix Runs Tab Branch Column", "branch_name": "plnd/fix-runs-branch-column-03-09-0931", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/.erk/scratch/sessions/95a4979b-1b3e-4c78-8b0c-03807ee82af0/plan_snapshots/000001-021a58ad"}
+  </tool_result>
+  <assistant>Plan saved successfully. No objective link to verify (Step 5/6 skipped).
+
+**Step 5: Push Planning Session**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="90532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 545}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01D2HgfmHut7CBxh24CaB1yd">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="90532" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 545, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D2HgfmHut7CBxh24CaB1yd">
+SESSION_ID=95a4979b-1b3e-4c78-8b0c-03807ee82af0
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-plnd-enhance-runs-tab-detail-03-09-0729/95a4979b-1b3e-4c78-8b0c-03807ee82af0.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KhzmNg2396zVYfGEw3XTMm">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 114 chars]...4c78-8b0c-03807ee82af0" --stage planning --source local --plan-id 9062 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="91077" output_tokens="230" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

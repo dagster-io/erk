@@ -1,0 +1,1090 @@
+<session>
+  <meta branch="plnd/fix-runs-branch-column-03-09-0931" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="7b2b4b0a-a253-46d9-b4bc-9b42a9a688e6" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="7b2b4b0a-a253-46d9-b4bc-9b42a9a688e6" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="7b2b4b0a-a253-46d9-b4bc-9b42a9a688e6" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="7b2b4b0a-a253-46d9-b4bc-9b42a9a688e6" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15480" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15480}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15480" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15480}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013fA6vuUNsD2F3PwWP4SVX8">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Set up implementation from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15480" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15480}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013fA6vuUNsD2F3PwWP4SVX8">
+Found existing impl dir for plan #9062, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/.erk/impl-context/plnd--fix-runs-branch-column-03-09-0931", "plan_number": 9062, "plan_url": "https://github.com/dagster-io/erk/pull/9062", "branch": "plnd/fix-runs-branch-column-03-09-0931", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9062, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="25218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 350}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U8Dgm5vKdPXv6i8c4Tpkz9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/.erk/impl-context/plnd--fix-runs-branch-column-03-09-0931/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="25218" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 350, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U8Dgm5vKdPXv6i8c4Tpkz9">
+     1→# Fix Runs Tab Branch Column
+     2→
+     3→## Context
+     4→
+     5→PR review feedback: The "branch" column in the Runs tab shows "master" for all workflow runs. This happens because `workflow_dispatch` runs use the default branch (master) as their `head_branch` in the GitHub API. The actual target branch is the PR's head branch, not the dispatch ref.
+     6→
+     7→## Root Cause
+     8→
+     9→In `real_provider.py:303`:
+    10→```python
+    11→branch = run.branch if hasattr(run, "branch") else "-"
+    12→```
+    13→`run.branch` comes from the GitHub REST API's `head_branch` field, which is always "master" for `workflow_dispatch` events since they're dispatched on the default branch.
+    14→
+    15→## Fix
+    16→
+    17→Use the PR's head branch instead of the workflow run's `head_branch`. Two data paths exist:
+    18→
+    19→1. **Plan-linked runs** (plan-implement): `pr_info_map[pr_num].head_branch` already populated from `get_prs_linked_to_issues` GraphQL query (includes `headRefName`)
+    20→2. **Direct-PR runs** (pr-address, pr-rebase): PR number extracted from display_title but no `PullRequestInfo` fetched - need to add fetching
+    21→
+    22→### Approach: Add `get_pr_head_branches` to gateway
+    23→
+    24→Add a batch GraphQL method that fetches `headRefName` for a list of PR numbers in a single API call. This avoids O(n) sequential `get_pr()` calls.
+    25→
+    26→## Files to Modify
+    27→
+    28→### 1. `packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+    29→- Add abstract method `get_pr_head_branches(self, location: GitHubRepoLocation, pr_numbers: list[int]) -&gt; dict[int, str]`
+    30→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1296" cache_read_input_tokens="25568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1296}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the relevant source files to understand the current code.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1296" cache_read_input_tokens="25568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1296}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S6kRGutNjYSkuupTYMPE6A">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1296" cache_read_input_tokens="25568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1296}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S6kRGutNjYSkuupTYMPE6A">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class LocalGitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [838 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   190→            RuntimeError: If gh CLI command fails
+   277→        2. Failed completed runs (failures are more actionable than successes)
+   462→            Empty dict if no PRs match or on API failure.
+   514→            RuntimeError: If gh command fails
+   527→            RuntimeError: If gh command fails
+   543→            RuntimeError: If gh command fails
+   562→            RuntimeError: If gh command fails
+   576→            RuntimeError: If gh command fails
+   732→            RuntimeError: If update fails
+   772→            False if deletion failed (e.g., protected branch)
+   791→            Empty list if no PRs match or on API failure.
+   860→            state: Status state - one of "success", "failure", "pending", "error"
+   865→            True on success, False on failure
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QYCcyU65Ri9sbnSzTvgrUf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/src/erk/tui/data/real_provider.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1296" cache_read_input_tokens="25568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1296}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QYCcyU65Ri9sbnSzTvgrUf">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+     7→from erk.core.context import ErkContext
+     8→from erk.core.display_utils import (
+     9→    format_relative_time,
+    10→    format_submission_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→    strip_rich_markup,
+    15→)
+    16→from erk.core.pr_utils import select_display_pr
+    17→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    18→from erk.tui.data.provider_abc import PlanDataProvider
+    19→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+    20→from erk.tui.sorting.types import BranchActivity
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.metadata.core import (
+    23→    extract_objective_slug,
+    24→)
+    25→from erk_shared.gateway.github.metadata.dependency_graph import (
+    26→    _TERMINAL_STATUSES,
+    27→    build_graph,
+    28→    build_state_sparkline,
+    29→    compute_graph_summary,
+    30→    find_graph_next_node,
+
+... [840 lines omitted] ...
+
+   171→            warnings=plan_data.warnings,
+   469→        except Exception:
+   470→            logger.debug("Failed to write timing log", exc_info=True)
+   685→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CSai1LVeyPQaiBZLCkHoz9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1296" cache_read_input_tokens="25568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1296}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CSai1LVeyPQaiBZLCkHoz9">
+&lt;persisted-output&gt;
+Output too large (56.1KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-16/7b2b4b0a-a253-46d9-b4bc-9b42a9a688e6/tool-results/toolu_01CSai1LVeyPQaiBZLCkHoz9.txt
+
+Preview (first 2KB):
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+
+... [29 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017HxLDxBSNvAUQJWzFdzZhV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1296" cache_read_input_tokens="25568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1296}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017HxLDxBSNvAUQJWzFdzZhV">
+     1→"""No-op wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.github.abc import LocalGitHub
+     6→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     7→from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+     8→from erk_shared.gateway.github.issues.types import IssueInfo
+     9→from erk_shared.gateway.github.types import (
+    10→    BodyContent,
+    11→    GitHubRepoLocation,
+    12→    IssueFilterState,
+    13→    MergeResult,
+    14→    PRCheckRun,
+    15→    PRDetails,
+    16→    PRListState,
+    17→    PRNotFound,
+    18→    PRReviewThread,
+    19→    PullRequestInfo,
+    20→    WorkflowRun,
+    21→)
+    22→
+    23→
+    24→class DryRunLocalGitHub(LocalGitHub):
+    25→    """No-op wrapper for GitHub operations.
+    26→
+    27→    Read operations are delegated to the wrapped implementation.
+    28→    Write operations return without executing (no-op behavior).
+    29→
+    30→    This wrapper prevents destructive GitHub operations from executing in dry-run mode,
+
+... [365 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FQXzkAAnYcPdfguqYMGp6M">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1296" cache_read_input_tokens="25568" output_tokens="476" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1296, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FQXzkAAnYcPdfguqYMGp6M">
+File content (25740 tokens) exceeds maximum allowed tokens (25000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="31021" cache_read_input_tokens="26864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31021}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I see the ABC already has `get_pr_head_branches` and dry_run already delegates it. Let me check if the real and fake implementations exist already.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="31021" cache_read_input_tokens="26864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31021}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PnYxjAS7oEDHUdoqEaU49F">
+    <param name="pattern">get_pr_head_branches</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31021" cache_read_input_tokens="26864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31021}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PnYxjAS7oEDHUdoqEaU49F">
+Found 4 files
+packages/erk-shared/src/erk_shared/gateway/github/abc.py
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/github/fake.py
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01M7vgoKYU8ah6dUhg2PZQTT">
+    <param name="pattern">def get_pr_head_branches</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31021" cache_read_input_tokens="26864" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31021, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M7vgoKYU8ah6dUhg2PZQTT">
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:249:    def get_pr_head_branches(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:932:    def get_pr_head_branches(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:483:    def get_pr_head_branches(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:137:    def get_pr_head_branches(
+  </tool_result>
+  <assistant>Good - all 4 implementations already exist. The gateway layer is complete. The plan mentions the real issue is in `real_provider.py` where we need to use these PR head branches instead of `run.branch`. Let me check the current `fetch_runs` method more carefully.
+
+Looking at `real_provider.py:317-329`, I can see the branch resolution logic already exists:
+
+```python
+# Format branch column: prefer PR's head_branch (original feature branch)
+# over run.branch, which becomes "master" after merge+branch deletion
+pr_info_for_branch = pr_info_map.get(pr_num) if pr_num is not None else None
+if pr_info_for_branch is not None and pr_info_for_branch.head_branch is not None:
+    branch_name = pr_info_for_branch.head_branch
+elif run.branch != "master" and run.branch != "main":
+    branch_name = run.branch
+else:
+    branch_name = "-"
+```
+
+The logic already uses `pr_info_map` to get head branches. But the issue is that step 5 (lines 259-264) fetches PR info via `list_prs` which returns `PullRequestInfo` - let me check if `list_prs` populates `head_branch`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="548" cache_read_input_tokens="57885" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 548}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0176aC4uBR6GAnmYwE3zcG1C">
+    <param name="pattern">head_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="548" cache_read_input_tokens="57885" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 548}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0176aC4uBR6GAnmYwE3zcG1C">
+224-    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
+225-    will_close_target: bool = False
+226-    # Head branch name (the source branch) - optional, populated by some API calls
+227:    head_branch: str | None = None
+228-    # Review thread counts: (resolved_count, total_count) or None if not fetched
+229-    review_thread_counts: tuple[int, int] | None = None
+230-    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01E716kZN2wCfZ3roLrS7acz">
+    <param name="pattern">def list_prs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="58433" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 617, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E716kZN2wCfZ3roLrS7acz">
+1507:    def list_prs(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JKcQ2KMdoMMUydL3A3psDr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1507</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="59050" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 179, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JKcQ2KMdoMMUydL3A3psDr">
+  1507→    def list_prs(
+  1508→        self,
+  1509→        repo_root: Path,
+  1510→        *,
+  1511→        state: PRListState,
+  1512→        labels: list[str] | None = None,
+  1513→        author: str | None = None,
+  1514→        draft: bool | None = None,
+  1515→    ) -&gt; dict[str, PullRequestInfo]:
+  1516→        """List PRs for the repository, keyed by head branch name.
+  1517→
+  1518→        Uses REST API to fetch PRs in a single call. Filters by labels, author,
+  1519→        and draft status are applied client-side on the REST response data
+  1520→        (the REST pulls endpoint does not support these filters natively).
+  1521→
+  1522→        Args:
+  1523→            repo_root: Repository root directory
+  1524→            state: Filter by state - "open", "closed", or "all"
+  1525→            labels: Filter to PRs with ALL specified labels. None means no label filter.
+  1526→            author: Filter to PRs by this author username. None means no author filter.
+  1527→            draft: Filter by draft status. True=only drafts, False=only non-drafts,
+  1528→                None=no draft filter.
+  1529→
+  1530→        Returns:
+  1531→            Dict mapping head branch name to PullRequestInfo.
+  1532→            Empty dict if no PRs match or on API failure.
+  1533→        """
+  1534→        assert self._repo_info is not None, "repo_info required for list_prs"
+  1535→
+  1536→        # GH-API-AUDIT: REST - GET pulls (list)
+
+... [50 lines omitted] ...
+
+  1545→        except RuntimeError:
+  1546→            # API call failed - return empty dict for graceful degradation
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KtEUfEmzkNmGSZ1jUF3SHD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1586</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1299" cache_read_input_tokens="59229" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1299, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KtEUfEmzkNmGSZ1jUF3SHD">
+  1586→                checks_passing=None,  # Not fetched in batch API
+  1587→                owner=self._repo_info.owner,
+  1588→                repo=self._repo_info.name,
+  1589→                has_conflicts=None,  # Not fetched in batch API
+  1590→                checks_counts=None,
+  1591→                will_close_target=False,
+  1592→                base_ref_name=pr_data.get("base", {}).get("ref"),
+  1593→            )
+  1594→
+  1595→        return result
+  1596→
+  1597→    def list_plan_prs_with_details(
+  1598→        self,
+  1599→        location: GitHubRepoLocation,
+  1600→        *,
+  1601→        labels: list[str],
+  1602→        state: IssueFilterState,
+  1603→        limit: int | None,
+  1604→        author: str | None,
+  1605→        exclude_labels: list[str] | None = None,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="60528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 413}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand the issue. In `real.py:list_prs()` at line 1580, `PullRequestInfo` is created with the branch as the dict key but `head_branch` defaults to `None`. The branch resolution logic in `real_provider.py:319-325` checks `pr_info_for_branch.head_branch` but it's always `None` for PRs fetched via `list_prs`.
+
+The fix is simple: populate `head_branch` in `list_prs()`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="60528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 413}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QKdanvF9Zhikyqh1KyLLxF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">            branch = pr_data["head"]["ref"]
+            result[branch] = PullRequestInfo(
+...[truncated 460 chars]...get=False,
+                base_ref_name=pr_data.get("base", {}).get("ref"),
+            )</param>
+    <param name="new_string">            branch = pr_data["head"]["ref"]
+            result[branch] = PullRequestInfo(
+...[truncated 496 chars]...ch=branch,
+                base_ref_name=pr_data.get("base", {}).get("ref"),
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="60528" output_tokens="1595" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QKdanvF9Zhikyqh1KyLLxF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the existing test file and the fake's `list_prs` to ensure consistency.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1779" cache_read_input_tokens="60941" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1779}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N7F9dFkN4YrtGPGtGKi7QK">
+    <param name="pattern">def list_prs</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1779" cache_read_input_tokens="60941" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1779, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N7F9dFkN4YrtGPGtGKi7QK">
+743:    def list_prs(
+  </tool_result>
+  <tool_use name="Read" id="toolu_015K48mXkNNKb9H4h8dB274W">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">743</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="201" cache_read_input_tokens="62720" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 201, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015K48mXkNNKb9H4h8dB274W">
+   743→    def list_prs(
+   744→        self,
+   745→        repo_root: Path,
+   746→        *,
+   747→        state: PRListState,
+   748→        labels: list[str] | None = None,
+   749→        author: str | None = None,
+   750→        draft: bool | None = None,
+   751→    ) -&gt; dict[str, PullRequestInfo]:
+   752→        """List PRs from pre-configured state, filtered by state and optional filters.
+   753→
+   754→        Label filtering uses pr_details (which have labels). Author filtering is
+   755→        not supported in the fake (no author data stored on PullRequestInfo).
+   756→
+   757→        Args:
+   758→            repo_root: Repository root directory (ignored in fake)
+   759→            state: Filter by state - "open", "closed", or "all"
+   760→            labels: Filter to PRs with ALL specified labels. Uses pr_details for lookup.
+   761→            author: Filter by author (not supported in fake, ignored).
+   762→            draft: Filter by draft status. True=only drafts, False=only non-drafts.
+   763→
+   764→        Returns:
+   765→            Dict mapping head branch name to PullRequestInfo.
+   766→        """
+   767→        result: dict[str, PullRequestInfo] = {}
+   768→        for branch, pr in self._prs.items():
+   769→            # State filter
+   770→            if state != "all" and pr.state != state.upper():
+   771→                continue
+   772→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UCHYvyMTTPWLDPytGbGKrG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">782</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="53863" cache_read_input_tokens="9738" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 53863, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UCHYvyMTTPWLDPytGbGKrG">
+   782→                if not all(label in pr_details.labels for label in labels):
+   783→                    continue
+   784→
+   785→            result[branch] = pr
+   786→
+   787→        return result
+   788→
+   789→    def list_plan_prs_with_details(
+   790→        self,
+   791→        location: GitHubRepoLocation,
+   792→        *,
+   793→        labels: list[str],
+   794→        state: IssueFilterState,
+   795→        limit: int | None,
+   796→        author: str | None,
+  </tool_result>
+  <assistant>The fake's `list_prs` returns `self._prs` dict entries directly. The `PullRequestInfo` objects stored in the fake would need `head_branch` set by the test setup. That's fine - the fake just returns what it's configured with.
+
+Now let me check the existing test file for runs.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="63601" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017Z9yFtnHN47UFPtqEFvncJ">
+    <param name="pattern">tests/tui/data/test_real_provider_runs*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="63601" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 294, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Z9yFtnHN47UFPtqEFvncJ">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/tui/data/test_real_provider_runs.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01X2ec76cthd2iTfmu2FttEj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/tui/data/test_real_provider_runs.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="63895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 192}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X2ec76cthd2iTfmu2FttEj">
+     1→"""Integration tests for RealPlanDataProvider.fetch_runs().
+     2→
+     3→Tests the fetch_runs() method which aggregates workflow runs from
+     4→multiple registered workflows, deduplicates, links to PRs, and
+     5→builds RunRowData objects for the TUI Runs tab.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→from pathlib import Path
+    10→
+    11→from erk.core.context import GlobalConfig
+    12→from erk.core.repo_discovery import RepoContext
+    13→from erk.tui.data.real_provider import RealPlanDataProvider
+    14→from erk_shared.gateway.git.abc import WorktreeInfo
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.types import (
+    18→    GitHubRepoId,
+    19→    GitHubRepoLocation,
+    20→    PullRequestInfo,
+    21→    WorkflowRun,
+    22→)
+    23→from erk_shared.gateway.graphite.fake import FakeGraphite
+    24→from erk_shared.gateway.http.fake import FakeHttpClient
+    25→from tests.fakes.context import create_test_context
+    26→
+    27→
+    28→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    29→    """Create a RepoContext for testing."""
+    30→    erk_dir = tmp_path / ".erk"
+
+... [490 lines omitted] ...
+
+   287→            conclusion="failure",
+   296→    assert rows[0].conclusion == "failure"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9874" cache_read_input_tokens="64087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9874}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify `get_prs_linked_to_issues` already populates `head_branch`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9874" cache_read_input_tokens="64087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9874}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XA7BHYi5aqC57yycTDdz5G">
+    <param name="pattern">get_prs_linked_to_issues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9874" cache_read_input_tokens="64087" output_tokens="608" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9874, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XA7BHYi5aqC57yycTDdz5G">
+225:        # WHY GRAPHQL: Used by get_prs_linked_to_issues for erk dash batch queries
+743:    def get_prs_linked_to_issues(
+  </tool_result>
+  <tool_use name="Read" id="toolu_011TiG6YGPHF99PNNofqaWWH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">743</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="73961" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 660, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011TiG6YGPHF99PNNofqaWWH">
+   743→    def get_prs_linked_to_issues(
+   744→        self,
+   745→        location: GitHubRepoLocation,
+   746→        plan_numbers: list[int],
+   747→    ) -&gt; dict[int, list[PullRequestInfo]]:
+   748→        """Get PRs linked to issues via CrossReferencedEvent timeline.
+   749→
+   750→        Uses GraphQL CrossReferencedEvent to find all PRs that reference each plan,
+   751→        regardless of whether they will close the issue when merged. Includes open,
+   752→        closed, and draft PRs. Used by erk dash for batch queries with full PR data
+   753→        (CI status, mergeability).
+   754→
+   755→        For simpler single-issue queries, see GitHubIssues.get_prs_referencing_issue().
+   756→
+   757→        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+   758→        availability and authentication. We cannot reliably check gh installation
+   759→        and authentication status a priori without duplicating gh's logic.
+   760→        """
+   761→        if not plan_numbers:
+   762→            return {}
+   763→
+   764→        try:
+   765→            # Build and execute GraphQL query to fetch all issues
+   766→            query = self._build_issue_pr_linkage_query(plan_numbers, location.repo_id)
+   767→            response = self._execute_batch_pr_query(query, location.root)
+   768→
+   769→            # Parse response and build inverse mapping
+   770→            return self._parse_issue_pr_linkages(response, location.repo_id)
+   771→        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
+   772→            # gh not installed, not authenticated, or parsing failed
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HtoMFQbh12zCyC4vL4jZXN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">842</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1618" cache_read_input_tokens="74621" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1618, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HtoMFQbh12zCyC4vL4jZXN">
+   842→
+   843→            # Extract plan number from alias
+   844→            plan_number = int(key.removeprefix("issue_"))
+   845→
+   846→            # Collect PRs with timestamps for sorting
+   847→            prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
+   848→
+   849→            timeline_items = issue_data.get("timelineItems", {})
+   850→            nodes = timeline_items.get("nodes", [])
+   851→
+   852→            for node in nodes:
+   853→                if node is None:
+   854→                    continue
+   855→
+   856→                source = node.get("source")
+   857→                if source is None:
+   858→                    continue
+   859→
+   860→                # Extract required PR fields
+   861→                pr_number = source.get("number")
+   862→                state = source.get("state")
+   863→                url = source.get("url")
+   864→
+   865→                # Skip if essential fields are missing (source may be Issue, not PR)
+   866→                if pr_number is None or state is None or url is None:
+   867→                    continue
+   868→
+   869→                # Extract optional fields (title no longer fetched for efficiency)
+   870→                is_draft = source.get("isDraft")
+   871→                created_at = source.get("createdAt")
+
+... [30 lines omitted] ...
+
+   881→                    elif rollup_state in ("FAILURE", "ERROR"):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KZvcpYUYJtAxm8kHh3NV63">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">901</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="891" cache_read_input_tokens="76239" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KZvcpYUYJtAxm8kHh3NV63">
+   901→                    has_conflicts = False
+   902→
+   903→                # Extract head branch (source branch) for landing
+   904→                head_ref_name = source.get("headRefName")
+   905→
+   906→                # Note: title and labels not fetched (not needed for dash)
+   907→                pr_info = PullRequestInfo(
+   908→                    number=pr_number,
+   909→                    state=state,
+   910→                    url=url,
+   911→                    is_draft=is_draft if is_draft is not None else False,
+   912→                    title=None,  # Not fetched for efficiency
+   913→                    checks_passing=checks_passing,
+   914→                    owner=repo_id.owner,
+   915→                    repo=repo_id.repo,
+   916→                    has_conflicts=has_conflicts,
+   917→                    checks_counts=checks_counts,
+   918→                    head_branch=head_ref_name,
+   919→                )
+   920→
+   921→                # Store with timestamp for sorting
+   922→                if created_at:
+   923→                    prs_with_timestamps.append((pr_info, created_at))
+   924→
+   925→            # Sort by created_at descending and store
+   926→            if prs_with_timestamps:
+   927→                prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
+   928→                result[plan_number] = [pr for pr, _ in prs_with_timestamps]
+   929→
+   930→        return result
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Good - `get_prs_linked_to_issues` already sets `head_branch=head_ref_name` (line 918). So plan-linked runs already work. The fix I made to `list_prs` fixes the direct-PR runs path.
+
+Now let me add a test that specifically covers the direct-PR scenario where `head_branch` from `list_prs` is used for the branch display. The existing test `test_fetch_runs_branch_display_uses_pr_head_branch` already tests this but uses `prs={"feat/fix-auth": pr}` with `head_branch="feat/fix-auth"` explicitly set. Let me verify my fix is actually needed by checking what was happening before...
+
+Looking at the existing test at line 434-459: it passes a `PullRequestInfo` with `head_branch="feat/fix-auth"` explicitly set in the test data. In production, the `list_prs` call wouldn't set `head_branch`, so this test was passing but production was broken. My fix makes `list_prs` populate `head_branch` so production matches the test's expectation.
+
+Now let me add a test that verifies `list_prs` populates `head_branch` correctly, which is the actual bug fix location.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="77130" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 790}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PUbBz1ypaU3Fc2dWTFtgCy">
+    <param name="pattern">tests/real/test_real_github*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="77130" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 790, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PUbBz1ypaU3Fc2dWTFtgCy">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01MDQDBGn8XcR9ngdnPUuavi">
+    <param name="pattern">tests/**/test_real_github*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="77920" output_tokens="60" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 371, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MDQDBGn8XcR9ngdnPUuavi">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/integration/__pycache__/test_real_github.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/integration/__pycache__/test_real_github_admin.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/integration/test_real_github.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/integration/test_real_github_admin.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/integration/test_real_github_pr_enrichment.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0162td4fSp3o1Fbv2abR9p7o">
+    <param name="pattern">def test.*list_prs</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="78291" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0162td4fSp3o1Fbv2abR9p7o">
+tests/tui/data/test_real_provider_runs.py:349:def test_fetch_runs_direct_pr_number_fetches_title_from_list_prs(tmp_path: Path) -&gt; None:
+tests/integration/test_real_github.py:898:def test_list_prs_success(monkeypatch: MonkeyPatch) -&gt; None:
+tests/integration/test_real_github.py:955:def test_list_prs_with_closed_state(monkeypatch: MonkeyPatch) -&gt; None:
+tests/integration/test_real_github.py:997:def test_list_prs_merged_state(monkeypatch: MonkeyPatch) -&gt; None:
+tests/integration/test_real_github.py:1030:def test_list_prs_api_failure_returns_empty(monkeypatch: MonkeyPatch) -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Bc389YheGvtpQuVKFPuiS4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/integration/test_real_github.py</param>
+    <param name="offset">898</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="78603" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bc389YheGvtpQuVKFPuiS4">
+   898→def test_list_prs_success(monkeypatch: MonkeyPatch) -&gt; None:
+   899→    """Test list_prs returns dict of PRs keyed by branch name."""
+   900→    called_with: list[list[str]] = []
+   901→
+   902→    sample_response = json.dumps(
+   903→        [
+   904→            {
+   905→                "number": 123,
+   906→                "state": "open",
+   907→                "html_url": "https://github.com/owner/repo/pull/123",
+   908→                "draft": False,
+   909→                "title": "Feature A",
+   910→                "head": {"ref": "feature-a"},
+   911→            },
+   912→            {
+   913→                "number": 456,
+   914→                "state": "open",
+   915→                "html_url": "https://github.com/owner/repo/pull/456",
+   916→                "draft": True,
+   917→                "title": "Feature B",
+   918→                "head": {"ref": "feature-b"},
+   919→            },
+   920→        ]
+   921→    )
+   922→
+   923→    def mock_run(cmd: list[str], **kwargs) -&gt; subprocess.CompletedProcess:
+   924→        called_with.append(cmd)
+   925→        return subprocess.CompletedProcess(
+   926→            args=cmd,
+   927→            returncode=0,
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>I should add a `head_branch` assertion to the existing `test_list_prs_success` test. Let me update it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1681" cache_read_input_tokens="78931" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1681}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01S13SGnfkeXjYG4zxrmz5si">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/integration/test_real_github.py</param>
+    <param name="old_string">        assert result["feature-a"].number == 123
+        assert result["feature-a"].state ...[truncated 53 chars]...sert result["feature-b"].number == 456
+        assert result["feature-b"].is_draft is True</param>
+    <param name="new_string">        assert result["feature-a"].number == 123
+        assert result["feature-a"].state ...[truncated 177 chars]...feature-b"].is_draft is True
+        assert result["feature-b"].head_branch == "feature-b"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1681" cache_read_input_tokens="78931" output_tokens="329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1681, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S13SGnfkeXjYG4zxrmz5si">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16/tests/integration/test_real_github.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also add a test to the runs test file that specifically tests the end-to-end scenario from the plan: a `workflow_dispatch` run with `branch="master"` where the branch should be resolved via the PR info from `list_prs` (which now populates `head_branch`).
+
+Looking at the existing tests, `test_fetch_runs_branch_display_uses_pr_head_branch` at line 434 already tests exactly this scenario - it creates a run with `branch="master"` and a PR with `head_branch="feat/fix-auth"` and verifies `branch_display` is `"feat/fix-auth"`. The issue was just that production `list_prs` wasn't setting `head_branch`. My fix resolves that.
+
+Let me now run the tests to verify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="404" cache_read_input_tokens="80612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 404}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_012LzaCxE8qy829nFYeWqxZn">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run runs and github tests</param>
+    <param name="prompt">Run these two test commands and report results:
+1. `uv run pytest tests/tui/data/test_real...[truncated 67 chars]...t_prs_success -v`
+
+Working directory: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="404" cache_read_input_tokens="80612" output_tokens="377" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 404, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012LzaCxE8qy829nFYeWqxZn">
+**Results Summary:**
+
+1. **test_real_provider_runs.py**: pytest passed - 20 passed in 0.64s
+2. **test_real_github.py::test_list_prs_success**: pytest passed - 1 passed in 0.05s
+
+Both test commands executed successfully with no failures.
+agentId: aa841f5b140fd745c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13987
+tool_uses: 2
+duration_ms: 3703&lt;/usage&gt;
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="631" cache_read_input_tokens="81016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>All 21 tests pass. The fix was a one-line change: adding `head_branch=branch` to the `PullRequestInfo` constructor in `real.py:list_prs()`.
+
+Let me now proceed with the implementation lifecycle steps.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="631" cache_read_input_tokens="81016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 631}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EQoLzXkDqWngvRT2AN5H6j">
+    <param name="command">erk exec impl-signal started --session-id="7b2b4b0a-a253-46d9-b4bc-9b42a9a688e6" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="631" cache_read_input_tokens="81016" output_tokens="255" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 631, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EQoLzXkDqWngvRT2AN5H6j">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 9062
+}
+  </tool_result>
+  <assistant>Now let me run a broader CI check to make sure nothing else is broken.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="68583" cache_read_input_tokens="13316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 68583}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_012TqL9zF3rqQTc6qkNiPnbH">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run `make fast-ci` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-16 and report results. This runs lint, format, type checking, and unit tests.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="68583" cache_read_input_tokens="13316" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 68583, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012TqL9zF3rqQTc6qkNiPnbH">
+make fast-ci passed: All checks passed successfully
+
+**Summary:**
+- **Lint:** All checks passed
+- **Format Check:** 1688 files already formatted
+- **Prettier Check:** All matched files use Prettier code style
+- **Markdown Check:** AGENTS.md standard passed, no violations
+- **Exec Reference Check:** Reference documentation up to date
+- **Type Checking (ty):** All checks passed
+- **Unit Tests (erk):** 5970 passed, 2 deprecation warnings
+- **Unit Tests (erk-dev):** 136 passed
+- **Unit Tests (erk-statusline):** 115 passed
+- **Unit Tests (erk-mcp):** All passed
+
+The entire fast-ci suite completed successfully with no failures.
+agentId: a5fbca7e8a3332993 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14729
+tool_uses: 1
+duration_ms: 29648&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass. Let me complete the remaining lifecycle steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="81899" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 405}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011TEp7AEjdExJ9KWNfFeXjz">
+    <param name="command">erk exec impl-signal ended --session-id="7b2b4b0a-a253-46d9-b4bc-9b42a9a688e6" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="81899" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 405}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LsViWUcNMeptseUDwEoPEy">
+    <param name="command">erk exec upload-impl-session --session-id="7b2b4b0a-a253-46d9-b4bc-9b42a9a688e6" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="81899" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011TEp7AEjdExJ9KWNfFeXjz">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9062
+}
+  </tool_result>
+</session>

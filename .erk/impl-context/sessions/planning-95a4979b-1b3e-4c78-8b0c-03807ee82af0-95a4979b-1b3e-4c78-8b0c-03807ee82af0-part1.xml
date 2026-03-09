@@ -1,0 +1,998 @@
+<session>
+  <meta branch="plnd/enhance-runs-tab-detail-03-09-0729" />
+  <meta model="claude-opus-4-6" />
+  <user>branch name incorrect. branch should be what the workflw run targeted</user>
+  <usage input_tokens="3" cache_creation_input_tokens="16009" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16009}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I can see the issue - the "branch" column in the Runs tab shows "master" for every run, but it should show the branch that each workflow run targeted. Let me explore the codebase to understand how this data is fetched and displayed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16009" cache_read_input_tokens="9738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16009}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01H7ewo14oSkVSfNFvQs7AtZ">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore runs tab TUI code</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 670 chars]...ble from the GitHub API.
+
+Be thorough - trace from the TUI display back to the data fetch.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16009" cache_read_input_tokens="9738" output_tokens="458" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16009, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H7ewo14oSkVSfNFvQs7AtZ">
+Now I have enough information. Let me write a comprehensive summary of my findings:
+
+## Summary: Runs Tab Branch Column Data Flow
+
+Based on my thorough investigation of the codebase, here's the complete data flow and findings:
+
+### 1. **Data Flow: GitHub API → RunRowData → UI Display**
+
+**Source: GitHub REST API** (`/repos/{owner}/{repo}/actions/workflows/{id}/runs`)
+- The `gh api` command returns workflow run data including the `head_branch` field
+- This is a standard GitHub Actions REST API field
+
+**Processing in `RealPlanDataProvider.fetch_runs()`** (src/erk/tui/data/real_provider.py, lines 179-325)
+- Calls `self._ctx.github.list_workflow_runs()` at line 197-201
+- This populates a list of `WorkflowRun` objects from the GitHub API response
+
+**Gateway Layer: `RealGitHub.list_workflow_runs()`** (packages/erk-shared/src/erk_shared/gateway/github/real.py, lines 573-615)
+- Uses `gh api repos/{owner}/{repo}/actions/workflows/{workflow}/runs` 
+- Maps REST API response to `WorkflowRun` objects
+- **Critically**: At line 608, populates `branch=run["head_branch"]` from the API response
+- This is the canonical source of branch data from GitHub
+
+**RunRowData Construction** (src/erk/tui/data/real_provider.py, lines 303-324)
+- Line 303: `branch = run.branch if hasattr(run, "branch") else "-"`
+- This checks if the `WorkflowRun` object has a `branch` attribute
+- If present, uses `run.branch`; otherwise falls back to "-"
+
+**Table Display** (src/erk/tui/widgets/run_table.py, lines 76 and 135)
+- Line 76: Column defined as `self.add_column("branch", key="branch", width=30)`
+- Line 135: Cell value is `row.branch` directly (no further formatting)
+
+... [80 lines omitted] ...
+
+  - Raises `AttributeError` if the value is a `_NotAvailable` sentinel
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2424" cache_read_input_tokens="25747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2424}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to understand the exact issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2424" cache_read_input_tokens="25747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2424}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AMQTFEPDj2wXkyEeUsLYZD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">270</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2424" cache_read_input_tokens="25747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2424}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AMQTFEPDj2wXkyEeUsLYZD">
+   270→
+   271→            # Format submission time
+   272→            submitted_display = strip_rich_markup(format_submission_time(run.created_at))
+   273→
+   274→            # Format PR-related columns
+   275→            pr_url: str | None = None
+   276→            pr_title: str | None = None
+   277→            pr_display = "-"
+   278→            title_display = "-"
+   279→            checks_display = "-"
+   280→
+   281→            if pr_num is not None:
+   282→                pr_info = pr_info_map.get(pr_num)
+   283→                if pr_info is not None:
+   284→                    graphite_url = self._ctx.graphite.get_graphite_url(
+   285→                        GitHubRepoId(pr_info.owner, pr_info.repo), pr_info.number
+   286→                    )
+   287→                    pr_url = graphite_url if use_graphite and graphite_url else pr_info.url
+   288→                    pr_display = f"#{pr_info.number}"
+   289→                    pr_title = pr_info.title
+   290→                    title = pr_info.title or "-"
+   291→                    if len(title) &gt; _MAX_TITLE_LENGTH:
+   292→                        title = title[: _MAX_TITLE_LENGTH - 3] + "..."
+   293→                    title_display = title
+   294→                    checks_display = strip_rich_markup(format_checks_cell(pr_info))
+   295→                else:
+   296→                    # Have PR number but no details
+   297→                    pr_url = (
+   298→                        f"https://github.com/{self._location.repo_id.owner}/"
+   299→                        f"{self._location.repo_id.repo}/pull/{pr_num}"
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017iTjgejYTGXJiFwnPwmsag">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">573</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2424" cache_read_input_tokens="25747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2424}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017iTjgejYTGXJiFwnPwmsag">
+   573→    def list_workflow_runs(
+   574→        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+   575→    ) -&gt; list[WorkflowRun]:
+   576→        """List workflow runs for a specific workflow."""
+   577→        # GH-API-AUDIT: REST - GET actions/workflows/{id}/runs
+   578→        query_params = f"per_page={limit}"
+   579→        if user is not None:
+   580→            query_params += f"&amp;actor={user}"
+   581→
+   582→        cmd = [
+   583→            "gh",
+   584→            "api",
+   585→            f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?{query_params}",
+   586→            "--jq",
+   587→            ".workflow_runs",
+   588→        ]
+   589→
+   590→        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+   591→
+   592→        # Parse JSON response
+   593→        data = json.loads(stdout)
+   594→
+   595→        # Map to WorkflowRun dataclasses
+   596→        runs = []
+   597→        for run in data:
+   598→            # Parse created_at timestamp if present
+   599→            created_at = None
+   600→            created_at_str = run.get("created_at")
+   601→            if created_at_str:
+   602→                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016w1K6tTQxYG1LkkR9pTLBf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">271</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2424" cache_read_input_tokens="25747" output_tokens="485" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2424, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016w1K6tTQxYG1LkkR9pTLBf">
+   271→class WorkflowRun:
+   272→    """Information about a GitHub Actions workflow run.
+   273→
+   274→    Immutable class representing workflow run data. Some fields may not be
+   275→    available depending on the API query used to fetch the data:
+   276→
+   277→    - branch: Not available from GraphQL nodes() query
+   278→    - display_title: Not available from GraphQL nodes() query
+   279→
+   280→    Accessing unavailable fields raises AttributeError.
+   281→    """
+   282→
+   283→    __slots__ = (
+   284→        "_run_id",
+   285→        "_node_id",
+   286→        "_status",
+   287→        "_conclusion",
+   288→        "_branch",
+   289→        "_head_sha",
+   290→        "_display_title",
+   291→        "_created_at",
+   292→    )
+   293→
+   294→    _run_id: str
+   295→    _node_id: str | None
+   296→    _status: WorkflowRunStatus
+   297→    _conclusion: WorkflowRunConclusion | None
+   298→    _branch: str | _NotAvailable
+   299→    _head_sha: str
+   300→    _display_title: str | None | _NotAvailable
+
+... [60 lines omitted] ...
+
+   326→        raise AttributeError(msg)
+   330→        raise AttributeError(msg)
+   353→            str(value)  # Trigger the error
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5143" cache_read_input_tokens="28171" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5143}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand the issue. These are `workflow_dispatch` runs, so `head_branch` from the GitHub API is always "master" (the branch the dispatch was triggered from). The actual target branch is the one associated with the PR. Let me check what PR info is available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5143" cache_read_input_tokens="28171" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5143}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FjpC1zLJ3KoedV2G81y1MQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">179</param>
+    <param name="limit">95</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5143" cache_read_input_tokens="28171" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5143}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FjpC1zLJ3KoedV2G81y1MQ">
+   179→    def fetch_runs(self) -&gt; list[RunRowData]:
+   180→        """Fetch workflow runs for the Runs tab.
+   181→
+   182→        Ports logic from erk.cli.commands.run.list_cmd._list_runs().
+   183→
+   184→        Returns:
+   185→            List of RunRowData for display, sorted by created_at descending
+   186→        """
+   187→        # Lazy import to avoid circular dependency through erk.cli.commands.run.__init__
+   188→        from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+   189→
+   190→        _PER_WORKFLOW_LIMIT = 20
+   191→        _MAX_DISPLAY_RUNS = 50
+   192→        _MAX_TITLE_LENGTH = 50
+   193→
+   194→        # 1. Fetch workflow runs from all registered workflows
+   195→        tagged_runs: list[tuple[WorkflowRun, str]] = []
+   196→        for command_name, workflow_file in WORKFLOW_COMMAND_MAP.items():
+   197→            workflow_runs = self._ctx.github.list_workflow_runs(
+   198→                self._location.root, workflow_file, _PER_WORKFLOW_LIMIT
+   199→            )
+   200→            for run in workflow_runs:
+   201→                tagged_runs.append((run, command_name))
+   202→
+   203→        # Deduplicate by run_id
+   204→        seen: dict[str, tuple[WorkflowRun, str]] = {}
+   205→        for pair in tagged_runs:
+   206→            if pair[0].run_id not in seen:
+   207→                seen[pair[0].run_id] = pair
+   208→        tagged_runs = list(seen.values())
+
+... [65 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FJtwem9A4mLb9cS3v995Vz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/tui/data/types.py</param>
+    <param name="offset">140</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5143" cache_read_input_tokens="28171" output_tokens="777" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5143, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FJtwem9A4mLb9cS3v995Vz">
+   140→    objective_state_display: str
+   141→    objective_deps_display: str
+   142→    objective_deps_plans: tuple[tuple[str, str], ...]
+   143→    objective_next_node_display: str
+   144→    updated_at: datetime
+   145→    updated_display: str
+   146→    created_at: datetime
+   147→    created_display: str
+   148→    author: str
+   149→    is_learn_plan: bool
+   150→    lifecycle_display: str
+   151→    status_display: str
+   152→
+   153→
+   154→@dataclass(frozen=True)
+   155→class RunRowData:
+   156→    """Row data for displaying a workflow run in the TUI Runs tab.
+   157→
+   158→    Contains pre-formatted display strings and raw data needed for actions.
+   159→    Immutable to ensure table state consistency.
+   160→
+   161→    Attributes:
+   162→        run_id: GitHub Actions workflow run ID string.
+   163→        run_url: URL to the GitHub Actions run page. None if unavailable.
+   164→        status: Raw run status ("queued", "in_progress", "completed").
+   165→        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+   166→        status_display: Pre-formatted status string for table display.
+   167→        workflow_name: Workflow command name (e.g., "plan-implement", "pr-address").
+   168→        pr_number: Linked PR number. None if no PR.
+   169→        pr_url: URL to the linked PR. None if no PR.
+
+... [30 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3059" cache_read_input_tokens="33314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3059}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what fields `PullRequestInfo` has - specifically whether it includes the head branch.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3059" cache_read_input_tokens="33314" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3059}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KjzWSRWBYZZWWnkuyiJN6U">
+    <param name="pattern">class PullRequestInfo</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3059" cache_read_input_tokens="33314" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3059, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KjzWSRWBYZZWWnkuyiJN6U">
+Found 2 files
+tests/test_utils/builders.py
+packages/erk-shared/src/erk_shared/gateway/github/types.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01M2nkMEr89nhBVXG5DU8rbE">
+    <param name="pattern">class PullRequestInfo</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="36373" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 488, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M2nkMEr89nhBVXG5DU8rbE">
+210:class PullRequestInfo:
+211-    """Information about a GitHub pull request."""
+212-
+213-    number: int
+214-    state: str  # "OPEN", "MERGED", "CLOSED"
+215-    url: str
+216-    is_draft: bool
+217-    title: str | None
+218-    checks_passing: bool | None  # None if no checks, True if all pass, False if any fail
+219-    owner: str  # GitHub repo owner (e.g., "schrockn")
+220-    repo: str  # GitHub repo name (e.g., "erk")
+221-    # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
+222-    has_conflicts: bool | None = None
+223-    checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
+224-    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
+225-    will_close_target: bool = False
+226-    # Head branch name (the source branch) - optional, populated by some API calls
+227-    head_branch: str | None = None
+228-    # Review thread counts: (resolved_count, total_count) or None if not fetched
+229-    review_thread_counts: tuple[int, int] | None = None
+230-    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+231-    review_decision: str | None = None
+232-    # Base branch name (the target branch) - optional, populated by some API calls
+233-    base_ref_name: str | None = None
+234-
+235-
+236-class _NotAvailable:
+237-    """Sentinel for fields not available from certain API queries.
+238-
+239-    Raises AttributeError when accessed as a string, preventing silent bugs
+
+... [21 lines omitted] ...
+
+249-        raise AttributeError(msg)
+260-        raise AttributeError(msg)
+  </tool_result>
+  <assistant>`PullRequestInfo` has `head_branch: str | None` at line 227. Now I need to check whether it's populated when fetched for the runs tab. Let me check how `get_prs_linked_to_issues` works and whether `head_branch` is included.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="910" cache_read_input_tokens="36861" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 910}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01335xeqwvVphHZvNPwcJ9CX">
+    <param name="pattern">get_prs_linked_to_issues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="910" cache_read_input_tokens="36861" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 910, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01335xeqwvVphHZvNPwcJ9CX">
+225:        # WHY GRAPHQL: Used by get_prs_linked_to_issues for erk dash batch queries
+226-        cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
+227-        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+228-        return json.loads(stdout)
+--
+743:    def get_prs_linked_to_issues(
+744-        self,
+745-        location: GitHubRepoLocation,
+746-        plan_numbers: list[int],
+  </tool_result>
+  <tool_use name="Read" id="toolu_014V1DqFSPKQtXmQbk8Qpu5i">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">743</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="391" cache_read_input_tokens="37771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 391}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014V1DqFSPKQtXmQbk8Qpu5i">
+   743→    def get_prs_linked_to_issues(
+   744→        self,
+   745→        location: GitHubRepoLocation,
+   746→        plan_numbers: list[int],
+   747→    ) -&gt; dict[int, list[PullRequestInfo]]:
+   748→        """Get PRs linked to issues via CrossReferencedEvent timeline.
+   749→
+   750→        Uses GraphQL CrossReferencedEvent to find all PRs that reference each plan,
+   751→        regardless of whether they will close the issue when merged. Includes open,
+   752→        closed, and draft PRs. Used by erk dash for batch queries with full PR data
+   753→        (CI status, mergeability).
+   754→
+   755→        For simpler single-issue queries, see GitHubIssues.get_prs_referencing_issue().
+   756→
+   757→        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+   758→        availability and authentication. We cannot reliably check gh installation
+   759→        and authentication status a priori without duplicating gh's logic.
+   760→        """
+   761→        if not plan_numbers:
+   762→            return {}
+   763→
+   764→        try:
+   765→            # Build and execute GraphQL query to fetch all issues
+   766→            query = self._build_issue_pr_linkage_query(plan_numbers, location.repo_id)
+   767→            response = self._execute_batch_pr_query(query, location.root)
+   768→
+   769→            # Parse response and build inverse mapping
+   770→            return self._parse_issue_pr_linkages(response, location.repo_id)
+   771→        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
+   772→            # gh not installed, not authenticated, or parsing failed
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01P1mSWW76f1apGaBkBMY7Qs">
+    <param name="pattern">ISSUE_PR_LINKAGE_FRAGMENT</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1282" cache_read_input_tokens="38162" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1282, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P1mSWW76f1apGaBkBMY7Qs">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py
+docs/learned/integrations/github-review-decision.md
+docs/learned/architecture/tripwires.md
+docs/learned/architecture/github-interface-patterns.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XtQXnQvMXx9h4NDG6qXyWi">
+    <param name="pattern">ISSUE_PR_LINKAGE_FRAGMENT</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="39444" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XtQXnQvMXx9h4NDG6qXyWi">
+56:ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedEvent {
+57-  willCloseTarget
+58-  source {
+59-    ... on PullRequest {
+60-      number
+61-      state
+62-      url
+63-      isDraft
+64-      createdAt
+65-      headRefName
+66-      baseRefName
+67-      statusCheckRollup {
+68-        state
+69-        contexts(last: 1) {
+70-          totalCount
+71-          checkRunCountsByState { state count }
+72-          statusContextCountsByState { state count }
+73-        }
+74-      }
+75-      mergeable
+76-      reviewDecision
+77-    }
+78-  }
+79-}"""
+80-
+81-# Parameterized query for workflow runs by node IDs
+82-# Uses the nodes(ids: [...]) interface for efficient batch fetching
+83-GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY = """query($nodeIds: [ID!]!) {
+84-  nodes(ids: $nodeIds) {
+85-    ... on WorkflowRun {
+
+... [21 lines omitted] ...
+  </tool_result>
+  <assistant>The GraphQL query fetches `headRefName` at line 65. Now let me check how `_parse_issue_pr_linkages` maps this to `PullRequestInfo`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="39730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 660}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AQfftXnbiEYy8KgqmRn5of">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">819</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="39730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 660}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AQfftXnbiEYy8KgqmRn5of">
+   819→    def _parse_issue_pr_linkages(
+   820→        self, response: dict[str, Any], repo_id: GitHubRepoId
+   821→    ) -&gt; dict[int, list[PullRequestInfo]]:
+   822→        """Parse GraphQL response from issue timeline query.
+   823→
+   824→        Processes CrossReferencedEvent timeline items to extract all PRs that
+   825→        reference each plan.
+   826→
+   827→        Args:
+   828→            response: GraphQL response data
+   829→            repo_id: GitHub repository identity (owner and repo name)
+   830→
+   831→        Returns:
+   832→            Mapping of plan_number -&gt; list of PRs sorted by created_at descending
+   833→        """
+   834→        result: dict[int, list[PullRequestInfo]] = {}
+   835→        repo_data = response.get("data", {}).get("repository", {})
+   836→
+   837→        # Iterate over aliased issue results
+   838→        for key, issue_data in repo_data.items():
+   839→            # Skip non-issue aliases or missing issues
+   840→            if not key.startswith("issue_") or issue_data is None:
+   841→                continue
+   842→
+   843→            # Extract plan number from alias
+   844→            plan_number = int(key.removeprefix("issue_"))
+   845→
+   846→            # Collect PRs with timestamps for sorting
+   847→            prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
+   848→
+
+... [50 lines omitted] ...
+
+   881→                    elif rollup_state in ("FAILURE", "ERROR"):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TgiXg3nmEoe2z7Vfw7i39o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">899</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1216" cache_read_input_tokens="40390" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TgiXg3nmEoe2z7Vfw7i39o">
+   899→                    has_conflicts = True
+   900→                elif mergeable == "MERGEABLE":
+   901→                    has_conflicts = False
+   902→
+   903→                # Extract head branch (source branch) for landing
+   904→                head_ref_name = source.get("headRefName")
+   905→
+   906→                # Note: title and labels not fetched (not needed for dash)
+   907→                pr_info = PullRequestInfo(
+   908→                    number=pr_number,
+   909→                    state=state,
+   910→                    url=url,
+   911→                    is_draft=is_draft if is_draft is not None else False,
+   912→                    title=None,  # Not fetched for efficiency
+   913→                    checks_passing=checks_passing,
+   914→                    owner=repo_id.owner,
+   915→                    repo=repo_id.repo,
+   916→                    has_conflicts=has_conflicts,
+   917→                    checks_counts=checks_counts,
+   918→                    head_branch=head_ref_name,
+   919→                )
+   920→
+   921→                # Store with timestamp for sorting
+   922→                if created_at:
+   923→                    prs_with_timestamps.append((pr_info, created_at))
+   924→
+   925→            # Sort by created_at descending and store
+   926→            if prs_with_timestamps:
+   927→                prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
+   928→                result[plan_number] = [pr for pr, _ in prs_with_timestamps]
+
+... [20 lines omitted] ...
+
+   940→        2. Failed completed runs (failures are more actionable than successes)
+   944→        errors gracefully.
+  </tool_result>
+  <assistant>Now I have the full picture. The `PullRequestInfo.head_branch` is populated from the GraphQL `headRefName` field (line 904, 918). The fix is straightforward: instead of using `run.branch` (which is always "master" for `workflow_dispatch` runs), use `pr_info.head_branch` when available.
+
+Let me also check how runs with direct PR numbers (not plan-linked) get their PR info fetched.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="804" cache_read_input_tokens="41606" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 804}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NLvxf4TMWbArnzvPSicYxt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">220</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="804" cache_read_input_tokens="41606" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 804, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NLvxf4TMWbArnzvPSicYxt">
+   220→        # 2. Extract PR numbers and plan numbers from display_titles
+   221→        run_pr_numbers: dict[str, int] = {}
+   222→        plan_numbers: list[int] = []
+   223→
+   224→        for run, _workflow_name in tagged_runs:
+   225→            pr_num = extract_pr_number(run.display_title)
+   226→            if pr_num is not None:
+   227→                run_pr_numbers[run.run_id] = pr_num
+   228→            else:
+   229→                plan_num = extract_plan_number(run.display_title)
+   230→                if plan_num is not None:
+   231→                    plan_numbers.append(plan_num)
+   232→
+   233→        # 3. Build plan→run_ids lookup for batch PR linkage
+   234→        plan_to_run_ids: dict[int, list[str]] = {}
+   235→        for run, _wf in tagged_runs:
+   236→            if run.run_id in run_pr_numbers:
+   237→                continue
+   238→            run_plan = extract_plan_number(run.display_title)
+   239→            if run_plan is not None:
+   240→                plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
+   241→
+   242→        # 4. Batch fetch PR linkages for plan-number runs
+   243→        pr_info_map: dict[int, PullRequestInfo] = {}
+   244→        if plan_numbers:
+   245→            pr_linkages = self._ctx.github.get_prs_linked_to_issues(self._location, plan_numbers)
+   246→            for plan_num, prs in pr_linkages.items():
+   247→                selected_pr = select_display_pr(prs, exclude_pr_numbers=None)
+   248→                if selected_pr is None:
+   249→                    continue
+
+... [25 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1339" cache_read_input_tokens="42410" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1339}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I need to understand whether there's an existing method to batch-fetch PR info by PR number.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1339" cache_read_input_tokens="42410" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1339}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01H4otfXgZQF71tTZZGtBYBT">
+    <param name="pattern">def (get_pr|fetch_pr|get_pull_request|batch.*pr)</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1339" cache_read_input_tokens="42410" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1339}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H4otfXgZQF71tTZZGtBYBT">
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:212:    def get_pr_comment(self, repo_root: Path, comment_id: int) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:227:    def get_prs_linked_to_issues(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:388:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:405:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:512:    def get_pr_diff(self, repo_root: Path, pr_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:528:    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:575:    def get_pr_review_threads(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:598:    def get_pr_check_runs(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:125:    def get_pr_comment(self, repo_root: Path, comment_id: int) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:129:    def get_prs_linked_to_issues(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:191:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:195:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:243:    def get_pr_diff(self, repo_root: Path, pr_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:247:    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:259:    def get_pr_review_threads(
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:271:    def get_pr_check_runs(
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py:24:def get_pr_status_emoji(pr: PullRequestInfo) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py:269:    def get_prs_referencing_issue(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:446:    def get_pr_comment(self, repo_root: Path, comment_id: int) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:462:    def get_prs_linked_to_issues(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:695:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:705:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:840:    def get_pr_diff(self, repo_root: Path, pr_number: int) -&gt; str:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:862:    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:905:    def get_pr_review_threads(
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:946:    def get_pr_check_runs(
+packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py:111:    def get_prs_referencing_issue(
+packages/erk-shared/src/erk_shared/gateway/github/issues/real.py:554:    def get_prs_referencing_issue(
+packages/erk-shared/src/erk_shared/gateway/github/real.py:713:    def get_pr_comment(self, repo_root: Path, comment_id: int) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/github/real.py:743:    def get_prs_linked_to_issues(
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01VBDb6vRS5QX1JXnN5NoXMw">
+    <param name="pattern">headRefName|head_ref_name|headBranch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1339" cache_read_input_tokens="42410" output_tokens="1532" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1339, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VBDb6vRS5QX1JXnN5NoXMw">
+packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py:65:      headRefName
+packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py:139:                  headRefName
+packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py:219:        headRefName
+packages/erk-shared/src/erk_shared/gateway/github/types.py:156:    head_ref_name: str
+packages/erk-shared/src/erk_shared/gateway/github/real.py:904:                head_ref_name = source.get("headRefName")
+packages/erk-shared/src/erk_shared/gateway/github/real.py:918:                    head_branch=head_ref_name,
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1280:        head_ref_name = source.get("headRefName")
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1296:            head_branch=head_ref_name,
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1460:            head_ref_name=data["head"]["ref"],
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1700:                head_ref_name=node.get("headRefName", ""),
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1731:                head_branch=node.get("headRefName"),
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1765:            headRefName
+packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py:114:        head_ref_name = gql.get("headRefName", rest_head_ref)
+packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py:126:            head_ref_name=head_ref_name,
+packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py:164:            head_branch=head_ref_name,
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:226:            if old.head_ref_name in self._prs_by_branch:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:227:                self._prs_by_branch[old.head_ref_name] = updated
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:246:            if old.head_ref_name in self._prs_by_branch:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:247:                self._prs_by_branch[old.head_ref_name] = updated
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:336:            head_ref_name=branch,
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:381:            if old.head_ref_name in self._prs_by_branch:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:382:                self._prs_by_branch[old.head_ref_name] = updated
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:813:            if old.head_ref_name in self._prs_by_branch:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:814:                self._prs_by_branch[old.head_ref_name] = updated
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:827:            if old.head_ref_name in self._prs_by_branch:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:828:                self._prs_by_branch[old.head_ref_name] = updated
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:884:                if old.head_ref_name in self._prs_by_branch:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:885:                    self._prs_by_branch[old.head_ref_name] = updated
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4424" cache_read_input_tokens="43749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4424}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the `get_pr` method and whether there's a batch PR query we can reuse.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4424" cache_read_input_tokens="43749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4424}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016QPKdeZF7MFTTfax7kUSZi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1345</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4424" cache_read_input_tokens="43749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4424}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016QPKdeZF7MFTTfax7kUSZi">
+  1345→    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+  1346→        """Get comprehensive PR details via GitHub REST API.
+  1347→
+  1348→        Uses gh api to call GET /repos/{owner}/{repo}/pulls/{pr_number}
+  1349→        which returns all PR fields in a single request.
+  1350→
+  1351→        Returns:
+  1352→            PRDetails with all PR fields, or PRNotFound if PR doesn't exist
+  1353→        """
+  1354→        assert self._repo_info is not None, "repo_info required for get_pr"
+  1355→        endpoint = f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls/{pr_number}"
+  1356→
+  1357→        # GH-API-AUDIT: REST - GET pulls/{number}
+  1358→        cmd = ["gh", "api", endpoint]
+  1359→        try:
+  1360→            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+  1361→        except RuntimeError:
+  1362→            # API call failed - PR not found or other error
+  1363→            return PRNotFound(pr_number=pr_number)
+  1364→
+  1365→        data = json.loads(stdout)
+  1366→        return self._parse_pr_details_from_rest_api(data, self._repo_info)
+  1367→
+  1368→    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+  1369→        """Get comprehensive PR details for a branch via GitHub REST API.
+  1370→
+  1371→        Uses gh api to call GET /repos/{owner}/{repo}/pulls?head={owner}:{branch}&amp;state=all
+  1372→        which returns PRs for the branch in a single request.
+  1373→
+  1374→        Returns:
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Mr1KnyBbYXekrjcBGkoe4i">
+    <param name="pattern">def (fetch_prs_by_number|batch_fetch_prs|get_prs_by_numbers|fetch_pr_head_branches)</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4424" cache_read_input_tokens="43749" output_tokens="1091" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4424, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mr1KnyBbYXekrjcBGkoe4i">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3073" cache_read_input_tokens="48173" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3073}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how the CLI `_list_runs` handles the branch column, since the TUI was ported from it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3073" cache_read_input_tokens="48173" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3073}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GiVuQfW7higQkVTEgNRvMd">
+    <param name="pattern">branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3073" cache_read_input_tokens="48173" output_tokens="285" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3073, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GiVuQfW7higQkVTEgNRvMd">
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-16-
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-17-    If RUN_ID is not provided, shows logs for the most recent run
+src/erk/cli/commands/run/logs_cmd.py:18:    on the current branch.
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-19-    """
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-20-    # Validate preconditions upfront (LBYL)
+--
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-25-
+src/erk/cli/commands/run/logs_cmd.py-26-    if run_id is None:
+src/erk/cli/commands/run/logs_cmd.py:27:        # Auto-detect: find most recent run for current branch
+src/erk/cli/commands/run/logs_cmd.py:28:        current_branch = Ensure.not_none(
+src/erk/cli/commands/run/logs_cmd.py:29:            ctx.git.branch.get_current_branch(ctx.cwd), "Could not determine current branch"
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-30-        )
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-31-
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-32-        runs = ctx.github.list_workflow_runs(repo.root, "implement-plan.yml", limit=50)
+src/erk/cli/commands/run/logs_cmd.py:33:        branch_runs = [r for r in runs if r.branch == current_branch]
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-34-
+src/erk/cli/commands/run/logs_cmd.py:35:        if not branch_runs:
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-36-            user_output(
+src/erk/cli/commands/run/logs_cmd.py:37:                f"No workflow runs found for branch: {click.style(current_branch, fg='yellow')}"
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-38-            )
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-39-            raise SystemExit(1)
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-40-
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-41-        # Most recent is first (list_workflow_runs returns newest first)
+src/erk/cli/commands/run/logs_cmd.py:42:        run_id = branch_runs[0].run_id
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-43-        user_output(
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-44-            f"Showing logs for run {click.style(run_id, fg='cyan')} "
+src/erk/cli/commands/run/logs_cmd.py:45:            f"on branch {click.style(current_branch, fg='yellow')}\n"
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-46-        )
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/cli/commands/run/logs_cmd.py-47-
+--
+
+... [5 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2038" cache_read_input_tokens="51246" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2038}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how erk dispatches workflows to understand why `head_branch` is always "master".</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2038" cache_read_input_tokens="51246" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2038}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FJfmctKshUCz5ipPb3QxCE">
+    <param name="pattern">workflow.*dispatch|dispatch.*workflow|workflow_dispatch|run_workflow</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2038" cache_read_input_tokens="51246" output_tokens="1867" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2038, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FJfmctKshUCz5ipPb3QxCE">
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/abc.py-259-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-260-        Args:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-261-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:262:            workflow: Workflow filename (e.g., "dispatch-erk-queue.yml")
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-263-            branches: List of branch names to query
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/abc.py-264-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-265-        Returns:
+--
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/abc.py-282-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-283-        Args:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-284-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:285:            workflow: Workflow filename (e.g., "dispatch-erk-queue.yml")
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-286-            branch_name: Expected branch name to match
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-287-            timeout: Maximum seconds to poll (default: 30)
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-288-            poll_interval: Seconds between poll attempts (default: 2)
+--
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py-469-        branch_name: Git branch name for this plan (nullable)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py-470-        plan_comment_id: GitHub comment ID containing the plan content (nullable)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py-471-        ci_summary_comment_id: GitHub comment ID containing CI failure summaries (nullable)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:472:        last_dispatched_run_id: Updated by workflow, enables direct run lookup (nullable)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:473:        last_dispatched_at: Updated by workflow (nullable)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py-474-        last_local_impl_at: Updated by local implementation, tracks last event timestamp (nullable)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py-475-        last_local_impl_event: Event type - "started" or "ended" (nullable)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py-476-        last_local_impl_session: Claude Code session ID from environment (nullable)
+--
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-101-        worktree_name: Optional worktree name (set when worktree is created)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-102-        branch_name: Optional git branch name for this plan
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py-103-        plan_comment_id: Optional GitHub comment ID containing plan content
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:104:        last_dispatched_run_id: Optional workflow run ID (set by workflow)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:105:        last_dispatched_node_id: Optional GraphQL node ID (set by workflow, for batch queries)
+
+... [76 lines omitted] ...
+
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/real.py-295-            return MergeError(pr_number=pr_number, message=str(e))
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7156" cache_read_input_tokens="53284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7156}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CV3saieYYvGDnB4ANJ1rAz">
+    <param name="pattern">class PRDetails</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7156" cache_read_input_tokens="53284" output_tokens="1183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CV3saieYYvGDnB4ANJ1rAz">
+134:class PRDetails(EnsurableResult):
+135-    """Comprehensive PR information from a single GitHub API call.
+136-
+137-    This dataclass contains all commonly-needed PR fields, allowing call sites
+138-    to fetch everything they need in one API call instead of multiple separate
+139-    calls for title, body, base branch, etc.
+140-    """
+141-
+142-    # Identity
+143-    number: int
+144-    url: str
+145-
+146-    # Content
+147-    title: str
+148-    body: str
+149-
+150-    # State
+151-    state: str  # "OPEN", "MERGED", "CLOSED"
+152-    is_draft: bool
+153-
+154-    # Structure
+155-    base_ref_name: str
+156-    head_ref_name: str
+157-    is_cross_repository: bool
+158-
+159-    # Mergeability
+160-    mergeable: MergeableStatus
+161-    merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY"
+162-
+163-    # Metadata
+
+... [1 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1567" cache_read_input_tokens="60440" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have enough context. Let me check the test infrastructure and fake provider.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1567" cache_read_input_tokens="60440" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GEHW57SXgMpsV5kMNAGE8o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/src/erk/tui/data/fake_provider.py</param>
+    <param name="offset">339</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1567" cache_read_input_tokens="60440" output_tokens="2475" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1567, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GEHW57SXgMpsV5kMNAGE8o">
+   339→def make_run_row(
+   340→    run_id: str,
+   341→    *,
+   342→    run_url: str | None = None,
+   343→    status: str = "completed",
+   344→    conclusion: str | None = "success",
+   345→    status_display: str = "✅ Success",
+   346→    workflow_name: str = "plan-implement",
+   347→    pr_number: int | None = None,
+   348→    pr_url: str | None = None,
+   349→    pr_display: str = "-",
+   350→    pr_title: str | None = None,
+   351→    title_display: str = "-",
+   352→    submitted_display: str = "03-09 14:30",
+   353→    created_at: datetime | None = None,
+   354→    checks_display: str = "-",
+   355→    run_id_display: str | None = None,
+   356→    branch: str = "-",
+   357→) -&gt; RunRowData:
+   358→    """Create a RunRowData for testing with sensible defaults.
+   359→
+   360→    Args:
+   361→        run_id: GitHub Actions workflow run ID
+   362→        run_url: URL to the GitHub Actions run page
+   363→        status: Raw run status
+   364→        conclusion: Raw run conclusion
+   365→        status_display: Pre-formatted status string
+   366→        workflow_name: Workflow command name
+   367→        pr_number: Linked PR number
+   368→        pr_url: URL to the linked PR
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the test for `fetch_runs` and how the fake GitHub gateway handles `get_pr_head_branches` or related methods.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3297" cache_read_input_tokens="62007" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3297}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017eFZwT2kAnEY9BAedkcEff">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/tests/tui/data/test_real_provider_runs.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3297" cache_read_input_tokens="62007" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3297, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017eFZwT2kAnEY9BAedkcEff">
+     1→"""Integration tests for RealPlanDataProvider.fetch_runs().
+     2→
+     3→Tests the fetch_runs() method which aggregates workflow runs from
+     4→multiple registered workflows, deduplicates, links to PRs, and
+     5→builds RunRowData objects for the TUI Runs tab.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→from pathlib import Path
+    10→
+    11→from erk.core.context import GlobalConfig
+    12→from erk.core.repo_discovery import RepoContext
+    13→from erk.tui.data.real_provider import RealPlanDataProvider
+    14→from erk_shared.gateway.git.abc import WorktreeInfo
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    17→from erk_shared.gateway.github.types import (
+    18→    GitHubRepoId,
+    19→    GitHubRepoLocation,
+    20→    PullRequestInfo,
+    21→    WorkflowRun,
+    22→)
+    23→from erk_shared.gateway.graphite.fake import FakeGraphite
+    24→from erk_shared.gateway.http.fake import FakeHttpClient
+    25→from tests.fakes.context import create_test_context
+    26→
+    27→
+    28→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    29→    """Create a RepoContext for testing."""
+    30→    erk_dir = tmp_path / ".erk"
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0195mx3SyJtsafnsQmk4ULfU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/tests/tui/data/test_real_provider_runs.py</param>
+    <param name="offset">80</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4044" cache_read_input_tokens="65304" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4044, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0195mx3SyJtsafnsQmk4ULfU">
+    80→    github = FakeLocalGitHub(
+    81→        workflow_runs=workflow_runs or [],
+    82→        pr_plan_linkages=pr_plan_linkages or {},
+    83→    )
+    84→
+    85→    global_config = GlobalConfig.test(tmp_path / ".erk", use_graphite=use_graphite)
+    86→
+    87→    ctx = create_test_context(
+    88→        git=git,
+    89→        github=github,
+    90→        graphite=FakeGraphite(),
+    91→        cwd=repo_root,
+    92→        global_config=global_config,
+    93→        repo=_make_repo_context(repo_root, tmp_path),
+    94→    )
+    95→
+    96→    location = GitHubRepoLocation(
+    97→        root=repo_root,
+    98→        repo_id=GitHubRepoId(owner="test", repo="repo"),
+    99→    )
+   100→    return RealPlanDataProvider(
+   101→        ctx=ctx,
+   102→        location=location,
+   103→        http_client=FakeHttpClient(),
+   104→    )
+   105→
+   106→
+   107→def test_fetch_runs_empty_when_no_workflow_runs(tmp_path: Path) -&gt; None:
+   108→    """fetch_runs returns empty list when no workflow runs exist."""
+   109→    provider = _make_provider(tmp_path)
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YbtSTtuuzHnAFJj9JbV8k3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/tests/tui/data/test_real_provider_runs.py</param>
+    <param name="offset">179</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1634" cache_read_input_tokens="69348" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1634, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YbtSTtuuzHnAFJj9JbV8k3">
+   179→    pr = PullRequestInfo(
+   180→        number=99,
+   181→        state="OPEN",
+   182→        url="https://github.com/test/repo/pull/99",
+   183→        is_draft=False,
+   184→        title="Plan 123 implementation",
+   185→        checks_passing=True,
+   186→        owner="test",
+   187→        repo="repo",
+   188→    )
+   189→    provider = _make_provider(
+   190→        tmp_path,
+   191→        workflow_runs=runs,
+   192→        pr_plan_linkages={123: [pr]},
+   193→    )
+   194→    rows = provider.fetch_runs()
+   195→
+   196→    assert len(rows) == 1
+   197→    assert rows[0].pr_number == 99
+   198→    assert rows[0].pr_display == "#99"
+   199→    assert rows[0].pr_url == "https://github.com/test/repo/pull/99"
+   200→    assert rows[0].title_display == "Plan 123 implementation"
+   201→
+   202→
+   203→def test_fetch_runs_run_url_format(tmp_path: Path) -&gt; None:
+   204→    """fetch_runs builds correct GitHub Actions run URL."""
+   205→    runs = [
+   206→        _make_workflow_run(
+   207→            "1001",
+   208→            created_at=datetime(2026, 3, 1, 10, 0, tzinfo=UTC),
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HypwwHB8HgeUVPqbYFrmQp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/enhance-runs-tab-detail-03-09-0729/tests/tui/data/test_real_provider_runs.py</param>
+    <param name="offset">277</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1467" cache_read_input_tokens="70982" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1467, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
