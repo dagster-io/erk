@@ -56,6 +56,8 @@ Rules triggered by matching actions in code.
 
 **adding a new setup path to a command with existing cleanup** → Read [Convergence Points Architecture](convergence-points.md) first. Ensure the new path calls the same convergence function. Multiple setup paths must converge at a single cleanup point to prevent resource leaks.
 
+**adding a new workflow handler to launch_cmd.py** → Read [Unified Dispatch Pattern](unified-dispatch-pattern.md) first. Follow the existing handler signature: (remote, \*, owner, repo_name, ...) -> tuple[str, str]. See unified-dispatch-pattern.md.
+
 **adding a parameter to an erk exec script without updating the calling slash command** → Read [Parameter Threading Pattern](parameter-threading-pattern.md) first. 3-layer parameter threading: When adding a parameter, update all three layers: skill SKILL.md argument-hint, slash command .md, and erk exec script. Verify all invocations thread the parameter through.
 
 **adding a subgateway property to a gateway ABC** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Must implement property in 4 places: ABC with TYPE_CHECKING import guard, Real with concrete instance, Fake with linked state, DryRun wrapping inner subgateway.
@@ -136,6 +138,8 @@ Rules triggered by matching actions in code.
 
 **calling time.sleep() or time.monotonic() directly in progress feedback code** → Read [Progress Feedback Two-Layer Threading](progress-feedback-threading.md) first. Use ctx.time.sleep() and ctx.time.monotonic() for testability. All production call sites pass time=ctx.time.
 
+**calling update_local_ref on a branch without checking if it's checked out** → Read [sync_branch_to_sha Pattern](sync-branch-to-sha-pattern.md) first. Use sync_branch_to_sha() instead — it handles checked-out branches by using git reset --hard. Raw update_local_ref on checked-out branches causes index desync.
+
 **changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
 
 **changing config section names ([interactive-claude] or [interactive-agent])** → Read [Interactive Agent Configuration](interactive-agent-config.md) first. Maintain fallback from [interactive-agent] to [interactive-claude] for backward compatibility.
@@ -187,6 +191,8 @@ Rules triggered by matching actions in code.
 **creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
 
 **creating fake subgateway without shared state** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Fake subgateways must share state containers with parent via constructor parameters and call link_mutation_tracking(). Without this, mutations through subgateway won't be visible to parent queries.
+
+**creating separate local and remote dispatch functions for a workflow** → Read [Unified Dispatch Pattern](unified-dispatch-pattern.md) first. Use the unified handler pattern — single RemoteGitHub-based handler for both local and remote. See unified-dispatch-pattern.md.
 
 **deleting a gateway after consolidating into another** → Read [Gateway Removal Pattern](gateway-removal-pattern.md) first. Follow complete removal checklist: verify no references, delete all 5 layers, clean up compositions, update docs, run full test suite.
 
@@ -353,6 +359,8 @@ Rules triggered by matching actions in code.
 **using gh pr diff --name-only in production code** [pattern: `gh\s+pr\s+diff\s+--name-only`] → Read [GitHub CLI Limits](github-cli-limits.md) first. For PRs with 300+ files, gh pr diff fails with HTTP 406. Use REST API with pagination instead.
 
 **using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+
+**using git checkout to sync a branch to a remote SHA** → Read [sync_branch_to_sha Pattern](sync-branch-to-sha-pattern.md) first. Use sync_branch_to_sha() from dispatch_helpers.py. It avoids checkout and handles both checked-out and non-checked-out branches.
 
 **using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
 

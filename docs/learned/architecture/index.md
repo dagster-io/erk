@@ -127,10 +127,12 @@
 - **[state-threading-pattern.md](state-threading-pattern.md)** — designing linear pipelines with immutable state, understanding SubmitState or pipeline architecture, implementing multi-step workflows with frozen dataclasses
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
+- **[sync-branch-to-sha-pattern.md](sync-branch-to-sha-pattern.md)** — syncing a local branch to a remote SHA, updating a branch that might be checked out in a worktree, working with dispatch_helpers.py
 - **[task-context-isolation.md](task-context-isolation.md)** — fetching large JSON responses from APIs, parsing PR review comments or GitHub issues, analyzing verbose API responses that pollute context, need to reduce context window usage, returning structured data from subagents, choosing between context: fork vs manual Task delegation
 - **[test-context-composition.md](test-context-composition.md)** — using build_workspace_test_context with custom fakes, debugging invisible metadata writes in tests, understanding issues_explicitly_passed flag
 - **[threading-patterns.md](threading-patterns.md)** — running blocking operations (subprocess, network) while yielding progress events, implementing daemon threads for long-running tasks, understanding the result holder + error holder pattern, testing code that uses background threads
 - **[type-safety-patterns.md](type-safety-patterns.md)** — designing flexible collection types, working with union types in Python, handling mixed-type lists
+- **[unified-dispatch-pattern.md](unified-dispatch-pattern.md)** — adding a new workflow to erk launch, modifying launch_cmd.py dispatch logic, understanding how local and remote dispatch are unified
 - **[validation-patterns.md](validation-patterns.md)** — adding regex validation to a field or input, implementing input validation with error messages, understanding module-level regex compilation
 - **[workflow-capability-pattern.md](workflow-capability-pattern.md)** — creating GitHub workflow capabilities, adding CI review workflows
 - **[worktree-dispatch-detection.md](worktree-dispatch-detection.md)** — modifying dispatch command logic, working with worktree branch detection

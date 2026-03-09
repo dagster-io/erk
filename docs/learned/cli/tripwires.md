@@ -26,6 +26,8 @@ Rules triggered by matching actions in code.
 
 **adding --json flag to a command without using @json_output decorator** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands.
 
+**adding --repo option manually to a Click command** → Read [Repo Resolution Pattern](repo-resolution-pattern.md) first. Use @repo_option or @resolved_repo_option decorator from repo_resolution.py. Do NOT add --repo manually.
+
 **adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
 
 **adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
@@ -76,6 +78,8 @@ Rules triggered by matching actions in code.
 
 **committing .impl/ folder to git** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/ lives in .gitignore and should never be committed. Only .erk/impl-context/ (remote execution artifact) gets committed and later removed.
 
+**constructing RemoteGitHub directly in a command** → Read [Repo Resolution Pattern](repo-resolution-pattern.md) first. Use get_remote_github(ctx) from repo_resolution.py. It handles test injection of FakeRemoteGitHub.
+
 **creating an MCP tool that parses human-readable CLI output** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. MCP tools must call CLI commands with --json flag and parse structured JSON. Never parse human-readable text output.
 
 **creating exec scripts for operations requiring LLM reasoning between steps** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront.
@@ -99,6 +103,8 @@ Rules triggered by matching actions in code.
 **flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
 
 **generating directory-change commands using erk br co without source** → Read [Shell Activation Pattern for Worktree Navigation](shell-activation-pattern.md) first. Subprocess directory changes do NOT persist to the parent shell. erk br co runs in a subprocess — its chdir() is invisible to the caller. Use the shell activation pattern: source "$(erk br co <branch> --script)" to actually navigate.
+
+**implementing --ref and --ref-current handling manually in a command** → Read [Ref Resolution Patterns](ref-resolution-patterns.md) first. Use resolve_dispatch_ref() from ref_resolution.py. It handles mutual exclusivity, config fallback, and detached HEAD validation.
 
 **implementing a command with user confirmations interleaved between mutations** → Read [Two-Phase Validation Model](two-phase-validation-model.md) first. Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline.
 
@@ -133,6 +139,8 @@ Rules triggered by matching actions in code.
 **mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
 **naming a JSON output flag --json-output instead of --json** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Standardized flag name is --json (not --json-output). See agent-friendly-cli.md for the naming decision.
+
+**parsing owner/repo string in a CLI command** → Read [Repo Resolution Pattern](repo-resolution-pattern.md) first. Use resolve_owner_repo() from repo_resolution.py. It handles validation and local git fallback.
 
 **parsing roadmap tables to update PR cells** → Read [Update Objective Node Command](commands/update-objective-node.md) first. Use the update-objective-node command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers.
 
@@ -173,6 +181,8 @@ Rules triggered by matching actions in code.
 **submitting PRs** → Read [PR Submission Decision Framework](pr-submission.md) first. Before creating PRs, understand the workflow tradeoffs
 
 **testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
+
+**using --ref-current in remote mode (--repo)** → Read [Ref Resolution Patterns](ref-resolution-patterns.md) first. --ref-current requires a local git repository. The launch command validates this and raises UsageError in remote mode.
 
 **using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
 

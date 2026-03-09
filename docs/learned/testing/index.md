@@ -34,6 +34,7 @@
 - **[monkeypatch-vs-fakes-decision.md](monkeypatch-vs-fakes-decision.md)** — choosing between monkeypatch and fakes for a test, deciding how to test code that uses Path.home(), unsure whether to create a gateway or use monkeypatch
 - **[parameter-injection-pattern.md](parameter-injection-pattern.md)** — adding functions that need access to bundled .claude/ directory, testing code that references get_bundled_claude_dir(), making internal path lookups testable
 - **[rebase-conflicts.md](rebase-conflicts.md)** — fixing merge conflicts in erk tests, ErkContext API changes during rebase, env_helpers conflicts
+- **[remote-paths-testing.md](remote-paths-testing.md)** — testing commands with --repo flag, writing tests for remote-mode CLI commands, using NoRepoSentinel or FakeRemoteGitHub in tests
 - **[session-log-fixtures.md](session-log-fixtures.md)** — creating JSONL fixtures for session log tests, testing session plan extraction, writing integration tests for session parsing
 - **[session-store-testing.md](session-store-testing.md)** — testing code that reads session data, using FakeClaudeInstallation, mocking session ID lookup
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for a new submit pipeline step, writing \_make_state helpers for pipeline step tests, deciding what to test at the step level vs the runner level
