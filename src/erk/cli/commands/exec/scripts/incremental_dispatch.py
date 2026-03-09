@@ -15,6 +15,7 @@ import click
 
 from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
 from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import DISPATCH_WORKFLOW_NAME
 from erk_shared.context.helpers import (
@@ -22,6 +23,7 @@ from erk_shared.context.helpers import (
     require_context,
     require_git,
     require_github,
+    require_plan_backend,
     require_repo_root,
     require_time,
 )
@@ -179,6 +181,23 @@ def incremental_dispatch(
         ref=ref,
     )
     user_output(click.style("✓", fg="green") + " Workflow dispatched")
+
+    # Update plan-header dispatch metadata (best-effort)
+    try:
+        plan_backend = require_plan_backend(ctx)
+        write_dispatch_metadata(
+            plan_backend=plan_backend,
+            github=github,
+            repo_root=repo_root,
+            plan_number=pr_number,
+            run_id=run_id,
+            dispatched_at=time.now().isoformat(),
+        )
+        user_output(click.style("✓", fg="green") + " Dispatch metadata written")
+    except Exception as e:
+        user_output(
+            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+        )
 
     # Build workflow URL
     owner_repo = extract_owner_repo_from_github_url(pr_result.url)

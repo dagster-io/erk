@@ -11,8 +11,11 @@ from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_pr(number: int, *, state: str = "OPEN", branch: str = "feature-branch") -> PRDetails:
@@ -214,3 +217,64 @@ def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
     # Verify stage_files() was called with the impl-context files
     assert ".erk/impl-context/plan.md" in fake_git.commit.staged_files
     assert ".erk/impl-context/ref.json" in fake_git.commit.staged_files
+
+
+def test_incremental_dispatch_writes_dispatch_metadata(tmp_path: Path) -> None:
+    """Dispatch metadata (run_id, node_id, timestamp) is written to plan-header after dispatch."""
+    plan_file = tmp_path / "plan.md"
+    plan_file.write_text("# Metadata Plan\n\n- Step 1", encoding="utf-8")
+
+    branch = "feature/metadata-test"
+    plan_header_body = format_plan_header_body_for_test(branch_name=branch)
+    pr = PRDetails(
+        number=42,
+        url="https://github.com/test-owner/test-repo/pull/42",
+        title="Test PR #42",
+        body=plan_header_body,
+        state="OPEN",
+        is_draft=True,
+        base_ref_name="main",
+        head_ref_name=branch,
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+        labels=["erk-pr"],
+    )
+    fake_git = _make_fake_git(tmp_path)
+    prs = {
+        branch: PullRequestInfo(
+            number=42,
+            state="OPEN",
+            url=pr.url,
+            is_draft=True,
+            title=pr.title,
+            checks_passing=None,
+            owner="test-owner",
+            repo="test-repo",
+            head_branch=branch,
+        ),
+    }
+    fake_github = FakeLocalGitHub(pr_details={42: pr}, prs=prs)
+    plan_store = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+
+    runner = CliRunner()
+    result = runner.invoke(
+        incremental_dispatch,
+        ["--plan-file", str(plan_file), "--pr", "42", "--format", "json"],
+        obj=ErkContext.for_test(
+            git=fake_git, github=fake_github, plan_store=plan_store, repo_root=tmp_path
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output.strip().split("\n")[-1])
+    assert output["success"] is True
+
+    # Verify dispatch metadata was written to the plan-header
+    assert len(fake_github.updated_pr_bodies) >= 1
+    _, updated_body = fake_github.updated_pr_bodies[-1]
+    assert "last_dispatched_run_id" in updated_body
+    assert "last_dispatched_node_id" in updated_body
+    assert "last_dispatched_at" in updated_body
