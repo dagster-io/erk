@@ -194,7 +194,7 @@ def incremental_dispatch(
             dispatched_at=time.now().isoformat(),
         )
         user_output(click.style("✓", fg="green") + " Dispatch metadata written")
-    except Exception as e:
+    except RuntimeError as e:
         user_output(
             click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
         )
