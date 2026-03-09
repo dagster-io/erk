@@ -5,17 +5,17 @@
     {
       "session_id": "b2caafb9-7268-449c-8ece-461804386609",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-09T10:13:51.358158+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T10:14:48.489067+00:00",
       "files": [
         "impl-b2caafb9-7268-449c-8ece-461804386609-b2caafb9-7268-449c-8ece-461804386609-part1.xml",
         "impl-b2caafb9-7268-449c-8ece-461804386609-b2caafb9-7268-449c-8ece-461804386609-part2.xml",
         "impl-b2caafb9-7268-449c-8ece-461804386609-b2caafb9-7268-449c-8ece-461804386609-part3.xml"
       ],
       "user_turns": 2,
-      "duration_minutes": 3,
-      "raw_size_kb": 78,
-      "xml_size_kb": 37,
+      "duration_minutes": 4,
+      "raw_size_kb": 100,
+      "xml_size_kb": 45,
       "git_branch": "plnd/fix-simplifier-ternary-fp-03-09-0609"
     }
   ]
