@@ -22,13 +22,15 @@ Commands in `.claude/commands/erk/system/` are not intended for direct user invo
 
 Commands in `system/` automatically get the `/erk:system:` prefix. A file at `.claude/commands/erk/system/foo.md` is invoked as `/erk:system:foo`.
 
-## Current System Commands
+## Discovering System Commands
 
-| Command                              | Purpose                                                    |
-| ------------------------------------ | ---------------------------------------------------------- |
-| `consolidate-learn-plans-plan.md`    | CI-only skill for autonomous learn plan consolidation      |
-| `objective-plan-node.md`             | Inner skill for creating a plan for a known objective node |
-| `objective-update-with-landed-pr.md` | Inner skill for updating objectives after landing a PR     |
+List current system commands by inspecting the directory:
+
+```bash
+ls .claude/commands/erk/system/
+```
+
+Each file's frontmatter `description` field documents its purpose.
 
 ## User-Facing Commands Stay in `erk/`
 
