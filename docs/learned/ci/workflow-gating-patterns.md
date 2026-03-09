@@ -134,7 +134,7 @@ format:
 
 <!-- Source: .github/workflows/ci.yml, fix-formatting job outputs -->
 
-`fix-formatting` exposes a second output (`pushed`) that downstream validation jobs check alongside `check-submission.outputs.skip`. When `pushed` is `'true'`, downstream jobs skip because the auto-fix commit will trigger a fresh CI run on the corrected HEAD.
+`fix-formatting` exposes a second output (`pushed`) that format-sensitive jobs (`format`, `docs-check`) check alongside `check-submission.outputs.skip`. When `pushed` is `'true'`, these jobs skip because the auto-fix commit will trigger a fresh CI run on the corrected HEAD. Speculative jobs (`lint`, `ty`, `unit-tests`, `integration-tests`, `erk-mcp-tests`) don't check `pushed` — they run immediately and rely on `cancel-in-progress: true` for cancellation.
 
 <!-- Source: .github/workflows/ci.yml, format job if: condition -->
 
@@ -143,7 +143,8 @@ See the `fix-formatting` job's `outputs:` block and the `format` job's `if:` con
 This pattern separates:
 
 - "should repo validation run at all?" (`check-submission`)
-- "should validation run on this commit, or wait for the auto-fix rerun?" (`fix-formatting`)
+- "should format-sensitive validation run on this commit, or wait for the auto-fix rerun?" (`fix-formatting.pushed`)
+- Speculative jobs skip this second check entirely — they start immediately and get cancelled if fix-formatting pushes
 
 ## Plan-Review Branch Gating
 

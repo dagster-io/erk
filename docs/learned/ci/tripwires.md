@@ -40,7 +40,7 @@ Rules triggered by matching actions in code.
 
 **adding a new CI job that invokes Claude without checking CLAUDE_ENABLED** → Read [Claude Kill Switch](claude-kill-switch.md) first. All Claude CI jobs must check vars.CLAUDE_ENABLED != 'false' before invoking Claude. See claude-kill-switch.md.
 
-**adding a new CI job without including fix-formatting in its needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily.
+**adding a new format-sensitive CI job without including fix-formatting in its needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Format-sensitive jobs (format, docs-check) must depend on both check-submission and fix-formatting. Test jobs (lint, ty, unit-tests, integration-tests, erk-mcp-tests) run speculatively with only check-submission.
 
 **adding code review execution to ci.yml** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Keep shipped review behavior in code-reviews.yml. Repo-local ci.yml should only own formatting, validation, and CI summaries.
 
