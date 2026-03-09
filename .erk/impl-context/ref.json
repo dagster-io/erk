@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Consolidated Documentation from 23 erk-learn Plans"
+  "plan_id": "9059",
+  "url": "https://github.com/dagster-io/erk/pull/9059",
+  "created_at": "2026-03-09T13:28:46.103371",
+  "synced_at": "2026-03-09T13:28:46.103371",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
