@@ -31,6 +31,7 @@ def _make_config(
         installed_capabilities=frozenset(),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
 
 

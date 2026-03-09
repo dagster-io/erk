@@ -1,6 +1,7 @@
 """Fake implementation of the Skills CLI gateway for testing."""
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from erk_shared.gateway.skills_cli.abc import SkillsCli
 from erk_shared.gateway.skills_cli.types import SkillsCliResult
@@ -13,6 +14,7 @@ class AddSkillsCall:
     source: str
     skill_names: list[str]
     agents: list[str]
+    cwd: Path | None
 
 
 @dataclass(frozen=True)
@@ -21,6 +23,7 @@ class RemoveSkillsCall:
 
     skill_names: list[str]
     agents: list[str]
+    cwd: Path | None
 
 
 class FakeSkillsCli(SkillsCli):
@@ -69,12 +72,14 @@ class FakeSkillsCli(SkillsCli):
         source: str,
         skill_names: list[str],
         agents: list[str],
+        cwd: Path | None,
     ) -> SkillsCliResult:
         self._add_calls.append(
             AddSkillsCall(
                 source=source,
                 skill_names=list(skill_names),
                 agents=list(agents),
+                cwd=cwd,
             )
         )
         return self._add_result
@@ -84,11 +89,13 @@ class FakeSkillsCli(SkillsCli):
         *,
         skill_names: list[str],
         agents: list[str],
+        cwd: Path | None,
     ) -> SkillsCliResult:
         self._remove_calls.append(
             RemoveSkillsCall(
                 skill_names=list(skill_names),
                 agents=list(agents),
+                cwd=cwd,
             )
         )
         return self._remove_result

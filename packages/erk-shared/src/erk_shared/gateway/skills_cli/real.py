@@ -1,6 +1,7 @@
 """Real implementation of the Skills CLI gateway using npx."""
 
 import shutil
+from pathlib import Path
 
 from erk_shared.gateway.skills_cli.abc import SkillsCli
 from erk_shared.gateway.skills_cli.types import SkillsCliResult
@@ -34,6 +35,7 @@ class RealSkillsCli(SkillsCli):
         source: str,
         skill_names: list[str],
         agents: list[str],
+        cwd: Path | None,
     ) -> SkillsCliResult:
         """Install skills from a source repository."""
         cmd = ["npx", "skills", "add", source]
@@ -46,6 +48,7 @@ class RealSkillsCli(SkillsCli):
             cmd=cmd,
             operation_context=f"install skills from {source}",
             check=False,
+            cwd=cwd,
         )
         return SkillsCliResult(
             success=result.returncode == 0,
@@ -58,6 +61,7 @@ class RealSkillsCli(SkillsCli):
         *,
         skill_names: list[str],
         agents: list[str],
+        cwd: Path | None,
     ) -> SkillsCliResult:
         """Remove installed skills."""
         cmd = ["npx", "skills", "remove"]
@@ -70,6 +74,7 @@ class RealSkillsCli(SkillsCli):
             cmd=cmd,
             operation_context="remove skills",
             check=False,
+            cwd=cwd,
         )
         return SkillsCliResult(
             success=result.returncode == 0,

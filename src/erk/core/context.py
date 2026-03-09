@@ -83,6 +83,7 @@ from erk_shared.gateway.http.auth import fetch_github_token_or_none
 from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
+from erk_shared.gateway.skills_cli.abc import SkillsCli
 from erk_shared.gateway.skills_cli.real import RealSkillsCli
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -217,6 +218,7 @@ def context_for_test(
     graphite: Graphite | None = None,
     console: Console | None = None,
     shell: Shell | None = None,
+    skills_cli: SkillsCli | None = None,
     codespace: Codespace | None = None,
     cmux: Cmux | None = None,
     agent_launcher: AgentLauncher | None = None,
@@ -435,7 +437,7 @@ def context_for_test(
         graphite_branch_ops=graphite_branch_ops,
         console=console,
         shell=shell,
-        skills_cli=FakeSkillsCli(available=True),
+        skills_cli=skills_cli if skills_cli is not None else FakeSkillsCli(available=True),
         codespace=codespace,
         cmux=cmux,
         agent_launcher=agent_launcher,

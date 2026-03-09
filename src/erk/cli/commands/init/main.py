@@ -47,11 +47,55 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.real import RealGitHubIssues
 from erk_shared.gateway.github.objective_issues import get_erk_label_definitions
 from erk_shared.gateway.shell.abc import Shell
+from erk_shared.gateway.skills_cli.abc import SkillsCli
+from erk_shared.gateway.skills_cli.types import backend_to_skills_agent
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
 
 # Console for init command prompts (always interactive)
 _console = InteractiveConsole()
+
+
+def _install_skills_via_npx(
+    skills_cli: SkillsCli,
+    *,
+    repo_root: Path,
+    backend: AgentBackend,
+) -> bool:
+    """Attempt to install skills via npx skills CLI.
+
+    Returns True if skills were installed successfully, False if the caller
+    should fall back to bundled artifact sync for skills.
+    """
+    if not skills_cli.is_available():
+        user_output("  npx not available, falling back to bundled skills sync")
+        return False
+
+    from erk.artifacts.paths import get_skills_source_path
+
+    source_path = get_skills_source_path()
+    if source_path is None:
+        user_output("  Skills source not available (wheel install), using bundled sync")
+        return False
+
+    from erk.capabilities.skills.bundled import bundled_skills
+
+    skill_names = list(bundled_skills().keys())
+    agent = backend_to_skills_agent(backend)
+
+    result = skills_cli.add_skills(
+        source=str(source_path),
+        skill_names=skill_names,
+        agents=[agent],
+        cwd=repo_root,
+    )
+
+    if not result.success:
+        user_output("  npx skills install failed, falling back to bundled sync")
+        return False
+
+    user_output(click.style("  ✓ ", fg="green") + f"Installed {len(skill_names)} skills via npx")
+    return True
 
 
 def _build_repo_config_toml() -> str:
@@ -548,8 +592,17 @@ def run_init(
         else:
             backend = "claude"
 
+        # Try npx skills install (skip in erk repo — skills exist at source)
+        from erk.artifacts.detection import is_in_erk_repo
+
+        npx_success = False
+        if not is_in_erk_repo(repo_root):
+            npx_success = _install_skills_via_npx(
+                ctx.skills_cli, repo_root=repo_root, backend=backend
+            )
+
         # Sync artifacts with force=True to ensure all files are updated
-        config = create_artifact_sync_config(repo_root, backend=backend)
+        config = create_artifact_sync_config(repo_root, backend=backend, skip_skills=npx_success)
         sync_result = sync_artifacts(repo_root, True, config=config)
         if sync_result.success:
             user_output(click.style("  ✓ ", fg="green") + sync_result.message)
@@ -625,8 +678,19 @@ def run_init(
         version_file.write_text(f"{get_current_version()}\n", encoding="utf-8")
         user_output(f"  Wrote {version_file}")
 
+        # Try npx skills install (skip in erk repo — skills exist at source)
+        from erk.artifacts.detection import is_in_erk_repo
+
+        npx_success = False
+        if not is_in_erk_repo(repo_context.root):
+            npx_success = _install_skills_via_npx(
+                ctx.skills_cli, repo_root=repo_context.root, backend=backend
+            )
+
         # Sync artifacts (skills, commands, agents, workflows, actions)
-        config = create_artifact_sync_config(repo_context.root, backend=backend)
+        config = create_artifact_sync_config(
+            repo_context.root, backend=backend, skip_skills=npx_success
+        )
         sync_result = sync_artifacts(repo_context.root, force=False, config=config)
         if sync_result.success:
             user_output(click.style("  ✓ ", fg="green") + sync_result.message)

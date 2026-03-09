@@ -11,6 +11,7 @@ from erk.artifacts.paths import (
     get_bundled_claude_dir,
     get_bundled_codex_dir,
     get_bundled_github_dir,
+    get_skills_source_path,
 )
 from erk.artifacts.sync import (
     ArtifactSyncConfig,
@@ -26,6 +27,7 @@ from erk.core.claude_settings import (
     ERK_USER_PROMPT_HOOK_COMMAND,
     add_erk_hooks,
 )
+from erk_shared.gateway.skills_cli.types import backend_to_skills_agent
 
 # Test-only constants matching the capabilities registry
 # These mirror what's registered in src/erk/core/capabilities/registry.py
@@ -47,6 +49,7 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
         installed_capabilities=frozenset(),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(tmp_path, force=False, config=config)
 
@@ -69,6 +72,7 @@ def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -> None:
         installed_capabilities=frozenset(),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(tmp_path, force=False, config=config)
 
@@ -103,6 +107,7 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
         installed_capabilities=frozenset({"learned-docs"}),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -136,6 +141,7 @@ def test_sync_artifacts_saves_state(tmp_path: Path) -> None:
         installed_capabilities=frozenset(),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     sync_artifacts(target_dir, force=False, config=config)
 
@@ -252,6 +258,40 @@ def test_get_bundled_github_dir_wheel_install() -> None:
     get_bundled_github_dir.cache_clear()
 
 
+def test_get_skills_source_path_editable_install() -> None:
+    """Returns erk repo root for editable installs."""
+    _get_erk_package_dir.cache_clear()
+    with patch(
+        "erk.artifacts.paths._get_erk_package_dir",
+        return_value=Path("/home/user/code/erk/src/erk"),
+    ):
+        result = get_skills_source_path()
+        assert result == Path("/home/user/code/erk")
+    _get_erk_package_dir.cache_clear()
+
+
+def test_get_skills_source_path_wheel_install() -> None:
+    """Returns None for wheel installs."""
+    _get_erk_package_dir.cache_clear()
+    with patch(
+        "erk.artifacts.paths._get_erk_package_dir",
+        return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
+    ):
+        result = get_skills_source_path()
+        assert result is None
+    _get_erk_package_dir.cache_clear()
+
+
+def test_backend_to_skills_agent_claude() -> None:
+    """Maps claude backend to claude-code agent."""
+    assert backend_to_skills_agent("claude") == "claude-code"
+
+
+def test_backend_to_skills_agent_codex() -> None:
+    """Maps codex backend to codex agent."""
+    assert backend_to_skills_agent("codex") == "codex"
+
+
 def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
     """Syncs erk-managed workflow files from bundled to target."""
     # Create bundled .claude/ directory
@@ -280,6 +320,7 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
         installed_capabilities=frozenset({"erk-impl-workflow"}),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -469,6 +510,7 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
         installed_capabilities=frozenset({"learned-docs", "devrun-agent"}),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -517,6 +559,7 @@ def test_sync_artifacts_syncs_installed_capabilities(tmp_path: Path) -> None:
         installed_capabilities=frozenset(),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -608,6 +651,7 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
         installed_capabilities=frozenset({"code-reviews-system"}),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -645,6 +689,7 @@ def test_sync_artifacts_includes_code_reviews_workflow(tmp_path: Path) -> None:
         installed_capabilities=frozenset({"code-reviews-system"}),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -682,6 +727,7 @@ def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> No
         installed_capabilities=frozenset(),
         sync_capabilities=False,
         backend="claude",
+        skip_skills=False,
     )
     result = sync_artifacts(tmp_path, force=False, config=config)
 

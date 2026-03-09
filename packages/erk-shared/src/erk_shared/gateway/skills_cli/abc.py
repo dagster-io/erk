@@ -1,6 +1,7 @@
 """Abstract interface for the vercel-labs/skills CLI."""
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from erk_shared.gateway.skills_cli.types import SkillsCliResult
 
@@ -36,6 +37,7 @@ class SkillsCli(ABC):
         source: str,
         skill_names: list[str],
         agents: list[str],
+        cwd: Path | None,
     ) -> SkillsCliResult:
         """Install skills from a source repository.
 
@@ -43,6 +45,7 @@ class SkillsCli(ABC):
             source: Local path or GitHub owner/repo for skill source.
             skill_names: Names of skills to install.
             agents: Agent backends to install for (e.g. "claude-code").
+            cwd: Working directory for the skills CLI. If None, uses current directory.
 
         Returns:
             SkillsCliResult with installation outcome.
@@ -55,12 +58,14 @@ class SkillsCli(ABC):
         *,
         skill_names: list[str],
         agents: list[str],
+        cwd: Path | None,
     ) -> SkillsCliResult:
         """Remove installed skills.
 
         Args:
             skill_names: Names of skills to remove.
             agents: Agent backends to remove from.
+            cwd: Working directory for the skills CLI. If None, uses current directory.
 
         Returns:
             SkillsCliResult with removal outcome.

@@ -4,6 +4,8 @@ Verifies that FakeSkillsCli correctly records calls and returns
 configured results for test assertions.
 """
 
+from pathlib import Path
+
 from erk_shared.gateway.skills_cli.fake import FakeSkillsCli
 from erk_shared.gateway.skills_cli.types import SkillsCliResult
 
@@ -41,6 +43,7 @@ def test_fake_skills_cli_add_records_calls() -> None:
         source="/path/to/erk",
         skill_names=["dignified-python", "fake-driven-testing"],
         agents=["claude-code"],
+        cwd=None,
     )
 
     assert len(cli.add_calls) == 1
@@ -48,6 +51,23 @@ def test_fake_skills_cli_add_records_calls() -> None:
     assert call.source == "/path/to/erk"
     assert call.skill_names == ["dignified-python", "fake-driven-testing"]
     assert call.agents == ["claude-code"]
+    assert call.cwd is None
+
+
+def test_fake_skills_cli_add_records_cwd() -> None:
+    """Test add_skills records cwd for assertion."""
+    cli = FakeSkillsCli(available=True)
+    target = Path("/tmp/project")
+
+    cli.add_skills(
+        source="/path/to/erk",
+        skill_names=["dignified-python"],
+        agents=["claude-code"],
+        cwd=target,
+    )
+
+    assert len(cli.add_calls) == 1
+    assert cli.add_calls[0].cwd == target
 
 
 def test_fake_skills_cli_remove_records_calls() -> None:
@@ -57,12 +77,14 @@ def test_fake_skills_cli_remove_records_calls() -> None:
     cli.remove_skills(
         skill_names=["dignified-python"],
         agents=["claude-code"],
+        cwd=None,
     )
 
     assert len(cli.remove_calls) == 1
     call = cli.remove_calls[0]
     assert call.skill_names == ["dignified-python"]
     assert call.agents == ["claude-code"]
+    assert call.cwd is None
 
 
 def test_fake_skills_cli_add_returns_configured_result() -> None:
@@ -74,6 +96,7 @@ def test_fake_skills_cli_add_returns_configured_result() -> None:
         source="/path",
         skill_names=["test"],
         agents=["claude-code"],
+        cwd=None,
     )
 
     assert result.success is False
@@ -84,8 +107,8 @@ def test_fake_skills_cli_multiple_add_calls() -> None:
     """Test multiple add calls are tracked independently."""
     cli = FakeSkillsCli(available=True)
 
-    cli.add_skills(source="/path1", skill_names=["skill-a"], agents=["claude-code"])
-    cli.add_skills(source="/path2", skill_names=["skill-b"], agents=["codex"])
+    cli.add_skills(source="/path1", skill_names=["skill-a"], agents=["claude-code"], cwd=None)
+    cli.add_skills(source="/path2", skill_names=["skill-b"], agents=["codex"], cwd=None)
 
     assert len(cli.add_calls) == 2
     assert cli.add_calls[0].source == "/path1"

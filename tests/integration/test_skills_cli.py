@@ -58,27 +58,20 @@ def test_real_skills_cli_add_skill(
     erk_repo_root: Path,
     temp_project: Path,
 ) -> None:
-    """Test installing a skill to a temporary project."""
-    # Change to temp project so skills CLI installs there
-    import os
+    """Test installing a skill to a temporary project using cwd parameter."""
+    result = skills_cli.add_skills(
+        source=str(erk_repo_root),
+        skill_names=["dignified-python"],
+        agents=["claude-code"],
+        cwd=temp_project,
+    )
+    assert result.success is True
+    assert result.exit_code == 0
 
-    original_cwd = os.getcwd()
-    os.chdir(temp_project)
-    try:
-        result = skills_cli.add_skills(
-            source=str(erk_repo_root),
-            skill_names=["dignified-python"],
-            agents=["claude-code"],
-        )
-        assert result.success is True
-        assert result.exit_code == 0
-
-        # Verify the skill was installed
-        agents_dir = temp_project / ".agents" / "skills" / "dignified-python"
-        assert agents_dir.exists()
-        assert (agents_dir / "SKILL.md").exists()
-    finally:
-        os.chdir(original_cwd)
+    # Verify the skill was installed
+    agents_dir = temp_project / ".agents" / "skills" / "dignified-python"
+    assert agents_dir.exists()
+    assert (agents_dir / "SKILL.md").exists()
 
 
 @pytest.mark.skipif(shutil.which("npx") is None, reason="npx not available")
@@ -88,24 +81,19 @@ def test_real_skills_cli_remove_skill(
     temp_project: Path,
 ) -> None:
     """Test removing a skill after installing it."""
-    import os
+    # Install first
+    skills_cli.add_skills(
+        source=str(erk_repo_root),
+        skill_names=["dignified-python"],
+        agents=["claude-code"],
+        cwd=temp_project,
+    )
 
-    original_cwd = os.getcwd()
-    os.chdir(temp_project)
-    try:
-        # Install first
-        skills_cli.add_skills(
-            source=str(erk_repo_root),
-            skill_names=["dignified-python"],
-            agents=["claude-code"],
-        )
-
-        # Then remove
-        result = skills_cli.remove_skills(
-            skill_names=["dignified-python"],
-            agents=["claude-code"],
-        )
-        assert result.success is True
-        assert result.exit_code == 0
-    finally:
-        os.chdir(original_cwd)
+    # Then remove
+    result = skills_cli.remove_skills(
+        skill_names=["dignified-python"],
+        agents=["claude-code"],
+        cwd=temp_project,
+    )
+    assert result.success is True
+    assert result.exit_code == 0
