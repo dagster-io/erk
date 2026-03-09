@@ -3,15 +3,14 @@
 import json
 from datetime import UTC, datetime
 
-from erk.cli.commands.exec.scripts.dash_data import _serialize_plan_row
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PlanRowData, serialize_plan_row
 from erk_shared.gateway.plan_data_provider.fake import make_plan_row
 
 
-def test_serialize_plan_row_basic() -> None:
+def testserialize_plan_row_basic() -> None:
     """Test basic serialization of PlanRowData to dict."""
     row = make_plan_row(123, "Test Plan")
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     assert result["plan_id"] == 123
     assert result["plan_url"] == "https://github.com/test/repo/issues/123"
@@ -21,7 +20,7 @@ def test_serialize_plan_row_basic() -> None:
     assert result["last_remote_impl_at"] is None
 
 
-def test_serialize_plan_row_datetime_fields() -> None:
+def testserialize_plan_row_datetime_fields() -> None:
     """Test that datetime fields are converted to ISO 8601 strings."""
     now = datetime(2025, 6, 15, 12, 30, 0, tzinfo=UTC)
     row = PlanRowData(
@@ -84,13 +83,13 @@ def test_serialize_plan_row_datetime_fields() -> None:
         status_display="-",
     )
 
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     assert result["last_local_impl_at"] == "2025-06-15T12:30:00+00:00"
     assert result["last_remote_impl_at"] == "2025-06-15T12:30:00+00:00"
 
 
-def test_serialize_plan_row_tuple_to_list() -> None:
+def testserialize_plan_row_tuple_to_list() -> None:
     """Test that tuple fields (log_entries) are converted to lists."""
     row = PlanRowData(
         plan_id=789,
@@ -152,14 +151,14 @@ def test_serialize_plan_row_tuple_to_list() -> None:
         status_display="-",
     )
 
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     assert isinstance(result["log_entries"], list)
     assert len(result["log_entries"]) == 1
     assert result["log_entries"][0] == ["started", "2025-01-01T00:00:00Z", "https://example.com"]
 
 
-def test_serialize_plan_row_with_pr_data() -> None:
+def testserialize_plan_row_with_pr_data() -> None:
     """Test serialization includes PR data when present."""
     row = make_plan_row(
         100,
@@ -169,7 +168,7 @@ def test_serialize_plan_row_with_pr_data() -> None:
         pr_title="Fix something",
         pr_state="OPEN",
     )
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     assert result["pr_number"] == 200
     assert result["pr_url"] == "https://github.com/test/repo/pull/200"
@@ -177,10 +176,10 @@ def test_serialize_plan_row_with_pr_data() -> None:
     assert result["pr_state"] == "OPEN"
 
 
-def test_serialize_plan_row_all_fields_present() -> None:
+def testserialize_plan_row_all_fields_present() -> None:
     """Test that all PlanRowData fields appear in serialized output."""
     row = make_plan_row(1, "All Fields")
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
 
     expected_fields = {
         "plan_id",
@@ -244,7 +243,7 @@ def test_serialize_plan_row_all_fields_present() -> None:
     assert set(result.keys()) == expected_fields
 
 
-def test_serialize_plan_row_json_roundtrip() -> None:
+def testserialize_plan_row_json_roundtrip() -> None:
     """Test that serialized output is valid JSON."""
     now = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
     row = PlanRowData(
@@ -307,7 +306,7 @@ def test_serialize_plan_row_json_roundtrip() -> None:
         status_display="-",
     )
 
-    result = _serialize_plan_row(row)
+    result = serialize_plan_row(row)
     json_str = json.dumps(result)
     parsed = json.loads(json_str)
 

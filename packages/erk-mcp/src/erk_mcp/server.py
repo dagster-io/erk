@@ -32,10 +32,15 @@ def _run_erk(args: list[str]) -> subprocess.CompletedProcess[str]:
     return result
 
 
-def _run_erk_json(command: str, params: dict[str, Any]) -> str:
-    """Run erk command with --json, piping params as JSON stdin."""
+def _run_erk_json(command_path: tuple[str, ...], params: dict[str, Any]) -> str:
+    """Run erk command with --json, piping params as JSON stdin.
+
+    Args:
+        command_path: Tuple of subcommand names, e.g. ("pr", "list") or ("one-shot",).
+        params: JSON-serializable dict piped to stdin.
+    """
     result = subprocess.run(
-        ["erk", command, "--json"],
+        ["erk", *command_path, "--json"],
         input=json.dumps(params),
         capture_output=True,
         text=True,
@@ -52,11 +57,15 @@ class JsonCommandTool(Tool):
     values before piping params as JSON to the CLI.
     """
 
-    cli_command: str
+    cli_command_path: tuple[str, ...]
 
     async def run(self, arguments: dict[str, Any]) -> ToolResult:
-        params = {k: v for k, v in arguments.items() if v is not None}
-        result = await to_thread.run_sync(lambda: _run_erk_json(self.cli_command, params))
+        params: dict[str, Any] = {}
+        for k, v in arguments.items():
+            if v is not None:
+                params[k] = v
+        path = self.cli_command_path
+        result = await to_thread.run_sync(lambda: _run_erk_json(path, params))
         return self.convert_result(result)
 
 
@@ -65,12 +74,12 @@ def _build_json_command_tools() -> tuple[JsonCommandTool, ...]:
     from erk.cli.cli import cli
 
     tools: list[JsonCommandTool] = []
-    for cmd, meta in discover_mcp_commands(cli):
+    for cmd, meta, command_path in discover_mcp_commands(cli):
         assert cmd.name is not None
         tools.append(
             JsonCommandTool(
                 name=meta.name,
-                cli_command=cmd.name,
+                cli_command_path=command_path,
                 description=meta.description,
                 parameters=command_input_schema(cmd),
             )
@@ -78,36 +87,11 @@ def _build_json_command_tools() -> tuple[JsonCommandTool, ...]:
     return tuple(tools)
 
 
-def plan_list(state: str | None = None) -> str:
-    """List erk plans with their status, labels, and metadata.
-
-    Returns structured JSON from the erk dashboard.
-    Use the state parameter to filter by 'open' or 'closed'.
-    """
-    args = ["exec", "dash-data"]
-    if state is not None:
-        args.extend(["--state", state])
-    result = _run_erk(args)
-    return result.stdout
-
-
-def plan_view(plan_id: int) -> str:
-    """View a specific plan's metadata and body content.
-
-    Returns the plan's title, state, labels, and full markdown body.
-    """
-    result = _run_erk(["exec", "get-plan-info", str(plan_id), "--include-body"])
-    return result.stdout
-
-
 def create_mcp() -> FastMCP:
     """Create and configure the FastMCP server instance."""
     from fastmcp import FastMCP
 
     server = FastMCP(DEFAULT_MCP_NAME)
-    # Hand-written tools (no input schema class yet)
-    server.tool()(plan_list)
-    server.tool()(plan_view)
     # Auto-discovered @mcp_exposed @json_command tools
     for tool in _build_json_command_tools():
         server.add_tool(tool)
