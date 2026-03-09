@@ -99,7 +99,7 @@ Parity tests enforce:
 
 ## Configuration
 
-The MCP server is configured in `.mcp.json` at the repository root:
+The repository does not ship a default `.mcp.json`. To use the MCP server locally, create a `.mcp.json` in the project root (it is gitignored) or add the server to your user-level Claude Code settings:
 
 ```json
 {
@@ -113,7 +113,7 @@ The MCP server is configured in `.mcp.json` at the repository root:
 }
 ```
 
-This uses `uv run` to execute the `erk-mcp` entry point via stdio IPC (the `"type": "stdio"` in `.mcp.json` describes the Claude-to-server protocol). Internally, `__main__.py` defaults to `streamable-http` transport when no `--transport` arg is given.
+This uses `uv run` to execute the `erk-mcp` entry point via stdio IPC. Internally, `__main__.py` defaults to `streamable-http` transport when no `--transport` arg is given.
 
 ## Makefile Targets
 

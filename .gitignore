@@ -24,6 +24,7 @@ activate.sh
 .env
 
 CLAUDE.local.md
+.mcp.json
 
 # MkDocs build output
 site/
