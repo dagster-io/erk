@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Simplify CI job ordering by removing fix-formatting dependency from speculative test jobs"
+}

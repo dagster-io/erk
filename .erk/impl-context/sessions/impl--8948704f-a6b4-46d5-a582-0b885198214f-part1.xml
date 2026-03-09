@@ -1,0 +1,1193 @@
+<session>
+  <meta branch="plnd/speculative-ci-tests-03-09-0559" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9035&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9035` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9035.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11293" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11293, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WsAYea1TtjxZyRzvqN8L4P">
+    <param name="command">erk exec setup-impl --issue 9035</param>
+    <param name="description">Set up implementation for plan #9035</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11293" cache_read_input_tokens="17255" cache_creation="{'ephemeral_5m_input_tokens': 11293, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WsAYea1TtjxZyRzvqN8L4P">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--speculative-ci-tests-03-09-0559", "plan_number": 9035, "plan_url": "https://github.com/dagster-io/erk/pull/9035", "branch": "plnd/speculative-ci-tests-03-09-0559", "plan_title": "[erk-plan] Speculative Test Execution in CI", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9035, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/speculative-ci-tests-03-09-0559', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="28548" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018YBJkkPwjuU6ieMDAYduTc">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--speculative-ci-tests-03-09-0559/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="340" cache_read_input_tokens="28548" cache_creation="{'ephemeral_5m_input_tokens': 340, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018YBJkkPwjuU6ieMDAYduTc">
+     1→# Speculative Test Execution in CI
+     2→
+     3→## Context
+     4→
+     5→Currently all 7 validation jobs wait for `fix-formatting` to complete before starting (~1-3 min). Most test jobs (ty, unit-tests, integration-tests, erk-mcp-tests, lint) are unaffected by formatting changes, so they waste time waiting. By running them speculatively in parallel with `fix-formatting`, we save 1-3 minutes of wall-clock time on every CI run where code is already formatted (the common case). If fix-formatting pushes changes, `cancel-in-progress: true` already cancels the old run and starts a fresh one.
+     6→
+     7→## Design: Two-Track Architecture
+     8→
+     9→```
+    10→check-submission (gate)
+    11→    ├── fix-formatting ──→ format, docs-check  (wait for clean code)
+    12→    └── lint, ty, unit-tests, integration-tests, erk-mcp-tests  (speculative)
+    13→```
+    14→
+    15→**Format-sensitive jobs** (`format`, `docs-check`): Keep depending on `fix-formatting` — they'd fail on unformatted code.
+    16→
+    17→**Speculative jobs** (`lint`, `ty`, `unit-tests`, `integration-tests`, `erk-mcp-tests`): Depend only on `check-submission`. Start immediately. If fix-formatting pushes, `cancel-in-progress` kills the old run and a new run starts with clean code.
+    18→
+    19→## Changes
+    20→
+    21→### 1. `.github/workflows/ci.yml`
+    22→
+    23→For each speculative job (`lint`, `ty`, `unit-tests`, `integration-tests`, `erk-mcp-tests`):
+    24→- Change `needs: [check-submission, fix-formatting]` → `needs: [check-submission]`
+    25→- Remove `needs.fix-formatting.outputs.pushed != 'true'` from the `if:` condition
+    26→
+    27→Keep `format` and `docs-check` unchanged (still depend on `fix-formatting` + check `pushed`).
+    28→
+    29→Keep `ci-summarize` unchanged (still depends on all jobs including `fix-formatting`).
+    30→
+
+... [21 lines omitted] ...
+
+    45→3. Confirm `ci-summarize` still triggers correctly on failures
+  </tool_result>
+  <assistant>Good, I understand the plan. Now let me load the CI tripwires and relevant docs, and read the current CI workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1053" cache_read_input_tokens="28888" cache_creation="{'ephemeral_5m_input_tokens': 1053, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EXJ213pbR2qWCuTq9yHB36">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1053" cache_read_input_tokens="28888" cache_creation="{'ephemeral_5m_input_tokens': 1053, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Rr7yZ68LVXisbu6VUSh34H">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1053" cache_read_input_tokens="28888" cache_creation="{'ephemeral_5m_input_tokens': 1053, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015rYUxofWRid9hvx5hCPy4R">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1053" cache_read_input_tokens="28888" cache_creation="{'ephemeral_5m_input_tokens': 1053, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WEaeSDqKmQp2GovJ13xxoa">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1053" cache_read_input_tokens="28888" cache_creation="{'ephemeral_5m_input_tokens': 1053, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016MJBJEvpemTLdPn4oubUDu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/formatting-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1053" cache_read_input_tokens="28888" cache_creation="{'ephemeral_5m_input_tokens': 1053, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EXJ213pbR2qWCuTq9yHB36">
+     1→---
+     2→title: Ci Tripwires
+     3→read_when:
+     4→  - "working on ci code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from ci/*.md frontmatter --&gt;
+    10→
+    11→# Ci Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing
+    16→
+    17→**CI job timing out in post-job cleanup** → Read [UV Cache Management in CI](uv-cache-management.md) first. check if UV cache pruning is enabled. Use prune-cache: false for ephemeral CI runners.
+    18→
+    19→**Creating or modifying .prettierignore** → Read [Makefile Prettier Ignore Path](makefile-prettier-ignore-path.md) first. The Makefile uses `prettier --ignore-path .gitignore`, NOT `.prettierignore`. Adding rules to .prettierignore has no effect. Modify .gitignore to control what Prettier ignores.
+    20→
+    21→**GitHub Actions cannot interpolate Python constants** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. label strings must be hardcoded in YAML
+    22→
+    23→**GitHub Actions workflow needs to perform operations like gist creation, or session uploads fail in CI** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. GitHub Actions GITHUB_TOKEN has restricted scope by default. Check token capabilities or use personal access token (PAT) for elevated permissions like gist creation.
+    24→
+    25→**Include cache keys for downloaded binaries** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run.
+    26→
+    27→**Label checks in push event workflows** → Read [GitHub Actions Label Queries](github-actions-label-queries.md) first. Job-level label access via github.event.pull_request.labels is ONLY available in pull_request events, NOT push events. For push events, you must use step-level GitHub API queries with gh cli or REST API.
+    28→
+    29→**Renaming a GitHub label used in CI automation** → Read [CI Label Rename Checklist](label-rename-checklist.md) first. Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates.
+    30→
+
+... [101 lines omitted] ...
+
+    51→**asking devrun agent to fix errors** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output.
+    57→**changing the ci-summarize job `needs` array** → Read [CI Failure Summarization](ci-failure-summarization.md) first. The `needs` array must reference actual job names in ci.yml. Broken references silently skip the job. Verify every name exists.
+    75→**editing markdown files in docs/** → Read [Markdown Formatting in CI Workflows](markdown-formatting.md) first. Run `make prettier` via devrun after markdown edits. Multi-line edits trigger Prettier failures. Never manually format - use the command.
+    83→**matching check names from summaries to GitHub check runs** → Read [CI Failure Summarization](ci-failure-summarization.md) first. GitHub prepends 'ci / ' to check names in statusCheckRollup. Use match_summary_to_check() which strips this prefix.
+    85→**parsing ERK-CI-SUMMARY markers without re.DOTALL** → Read [CI Failure Summarization](ci-failure-summarization.md) first. Summary content is multiline. The regex uses re.DOTALL so `.` matches newlines. Without it, multiline summaries won't be captured.
+   117→**using heredoc (&lt;&lt;) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
+  </tool_result>
+  <tool_result tool="toolu_01Rr7yZ68LVXisbu6VUSh34H">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: read
+    12→
+    13→concurrency:
+    14→  group: ci-${{ github.head_ref || github.ref }}
+    15→  cancel-in-progress: true
+    16→
+    17→jobs:
+    18→  check-submission:
+    19→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    20→    runs-on: ubuntu-latest
+    21→    timeout-minutes: 5
+    22→    outputs:
+    23→      skip: ${{ steps.check.outputs.skip }}
+    24→    steps:
+    25→      - uses: actions/checkout@v4
+    26→      - name: Check for submission folder
+    27→        id: check
+    28→        uses: ./.github/actions/check-impl-context
+    29→
+    30→  no-impl-context:
+
+... [218 lines omitted] ...
+
+    39→            echo "::error::.erk/impl-context/ must be removed before merging. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit &amp;&amp; git push"
+    99→            echo "::error::Files need formatting or docs are out of sync"
+   109→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   195→  # === CI Failure Summarization (Haiku) ===
+   214→      (needs.format.result == 'failure' ||
+   215→       needs.lint.result == 'failure' ||
+   216→       needs.fix-formatting.result == 'failure' ||
+   217→       needs.docs-check.result == 'failure' ||
+   218→       needs.ty.result == 'failure' ||
+   219→       needs.unit-tests.result == 'failure' ||
+   220→       needs.integration-tests.result == 'failure' ||
+   221→       needs.erk-mcp-tests.result == 'failure')
+   238→      - name: Summarize failures
+  </tool_result>
+  <tool_result tool="toolu_015rYUxofWRid9hvx5hCPy4R">
+     1→---
+     2→title: CI Job Ordering Strategy
+     3→read_when:
+     4→  - "modifying CI job dependencies"
+     5→  - "adding new CI jobs"
+     6→  - "understanding fix-formatting gating"
+     7→  - "debugging why CI restarted after a push"
+     8→tripwires:
+     9→  - action: "adding a new CI job without including fix-formatting in its needs list"
+    10→    warning: "All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily."
+    11→  - action: "adding code review execution to ci.yml"
+    12→    warning: "Keep shipped review behavior in code-reviews.yml. Repo-local ci.yml should only own formatting, validation, and CI summaries."
+    13→---
+    14→
+    15→# CI Job Ordering Strategy
+    16→
+    17→The repo-local CI workflow uses a three-tier architecture: a gate job controls entry, `fix-formatting` is the single mutating boundary, and seven validation jobs run against the cleaned state. Convention-based reviews run separately in `code-reviews.yml`.
+    18→
+    19→&lt;!-- Source: .github/workflows/ci.yml --&gt;
+    20→
+    21→## Three-Tier Architecture
+    22→
+    23→```
+    24→Tier 1: check-submission (gate)
+    25→    │
+    26→Tier 2: fix-formatting (auto-fix, independent of parallel jobs)
+    27→    │
+    28→Tier 3: ┌──────┬──────┬───────────┬────┬────────────┬─────────────┬──────────────┐
+    29→         format  lint  docs-check  ty  unit-tests  integration  erk-mcp-tests
+    30→```
+
+... [51 lines omitted] ...
+
+    61→- `pushed=false` — no changes needed (or error exit on master/fork)
+    69→**`ci-summarize`** depends on all validation jobs and runs only on failure. It uses a lightweight model to summarize CI failures for developers.
+  </tool_result>
+  <tool_result tool="toolu_01WEaeSDqKmQp2GovJ13xxoa">
+     1→---
+     2→title: GitHub Actions Workflow Gating Patterns
+     3→read_when:
+     4→  - adding conditional execution to GitHub Actions workflows
+     5→  - implementing label-based CI skipping
+     6→  - understanding why CI was skipped on a PR
+     7→tripwires:
+     8→  - action: "Use !contains() pattern for label-based gating"
+     9→    warning: "Negation is critical — contains() without ! skips all push events"
+    10→    score: 5
+    11→  - action: "Add branches-ignore for ephemeral branch patterns"
+    12→    warning: "Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing"
+    13→    score: 4
+    14→  - action: "using branches-ignore for planned/* branches"
+    15→    warning: "planned/ branches contain both metadata AND code. Use paths-ignore instead to skip CI only when commits touch exclusively metadata paths (.erk/impl-context/**, .worker-impl/**)."
+    16→    score: 4
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# GitHub Actions Workflow Gating Patterns
+    22→
+    23→GitHub Actions offers multiple mechanisms for controlling workflow execution. Choosing the right layer for each gate determines both safety and cost efficiency.
+    24→
+    25→## Why Multiple Gating Layers Exist
+    26→
+    27→GitHub Actions evaluates conditions at different points in the workflow lifecycle:
+    28→
+    29→&lt;!-- Source: .github/workflows/ci.yml, on: triggers, job if: conditions, step if: conditions --&gt;
+    30→
+
+... [158 lines omitted] ...
+
+   164→| Upstream job failure                            | Downstream job `if:`                | Use `needs.job.result` or job outputs               |
+  </tool_result>
+  <tool_result tool="toolu_016MJBJEvpemTLdPn4oubUDu">
+     1→---
+     2→title: Formatting Workflow Decision Tree
+     3→read_when:
+     4→  - "unsure whether to run make format or make prettier"
+     5→  - "encountering CI formatting failures"
+     6→  - "working with multiple file types in a PR"
+     7→  - "setting up CI iteration workflow"
+     8→tripwires:
+     9→  - action: "running only prettier after editing Python files"
+    10→    warning: "Prettier silently skips Python files. Always use 'make format' for .py files."
+    11→  - action: "pushing code without running formatters locally first"
+    12→    warning: "Format-then-commit: run ruff format (Python) and prettier (Markdown) locally before pushing. CI may auto-fix same-repo PRs, but that causes a restart and does not help on master pushes or fork PRs."
+    13→    score: 6
+    14→last_audited: "2026-02-16 14:20 PT"
+    15→audit_result: clean
+    16→---
+    17→
+    18→# Formatting Workflow Decision Tree
+    19→
+    20→Erk uses two formatters: **ruff** (Python) and **prettier** (Markdown). Each tool is file-type-specific and silently ignores files it doesn't handle. This creates a trap where running the wrong formatter appears to succeed but does nothing.
+    21→
+    22→## The Core Problem
+    23→
+    24→**Prettier silently skips Python files.** When you run `make prettier` after editing `.py` files, the command succeeds with exit code 0 but performs no formatting. CI then fails because `ruff format --check` detects the unformatted Python code.
+    25→
+    26→This is the most common formatting failure pattern: an agent edits Python code, runs `make prettier` (the wrong formatter), sees success, and commits. CI immediately fails on the format check.
+    27→
+    28→## Why This Trap Exists
+    29→
+    30→The tools are mutually exclusive by design:
+
+... [53 lines omitted] ...
+
+    45→When in doubt, run both. The cost is negligible compared to a CI failure.
+    52→The current CI workflow validates Python formatting in `format` and auto-fixes markdown/docs/Python formatting in `fix-formatting` before rerunning validation. To avoid restarts and fork/master failures, match that intent locally:
+  </tool_result>
+  <assistant>Now I have full context. Let me create the todo list and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14127" cache_read_input_tokens="29941" cache_creation="{'ephemeral_5m_input_tokens': 14127, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01EMZ6TVLSaSVoqVBtADi8qw">
+    <param name="todos">[{'content': 'Update ci.yml: Change speculative jobs to depend only on check-submission', ...[truncated 705 chars]...c'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14127" cache_read_input_tokens="29941" cache_creation="{'ephemeral_5m_input_tokens': 14127, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EMZ6TVLSaSVoqVBtADi8qw">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01M9RYeo1mUnDqFcy2Xgq2Vi">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="44068" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M9RYeo1mUnDqFcy2Xgq2Vi">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01USAzQw52AkDQQxq32s9k35">
+    <param name="todos">[{'content': 'Update ci.yml: Change speculative jobs to depend only on check-submission', ...[truncated 709 chars]...c'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="44415" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01USAzQw52AkDQQxq32s9k35">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me implement the CI workflow changes. For each speculative job (`lint`, `ty`, `unit-tests`, `integration-tests`, `erk-mcp-tests`), I need to:
+1. Change `needs: [check-submission, fix-formatting]` → `needs: [check-submission]`
+2. Remove `needs.fix-formatting.outputs.pushed != 'true'` from the `if:` condition</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="44587" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01D8DRwWw15FS3pJzztPDuRu">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="old_string">  lint:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+    <param name="new_string">  lint:
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="44587" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NtMoYFhvoC6b13Gv2cKZJQ">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="old_string">  ty:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+    <param name="new_string">  ty:
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="44587" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018MvcwYMfDXezujM4KN9TGD">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="old_string">  unit-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_requ...[truncated 6 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+    <param name="new_string">  unit-tests:
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="44587" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TNEq2k2BHpubjKsrhXxFWz">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="old_string">  integration-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pu...[truncated 13 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+    <param name="new_string">  integration-tests:
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="44587" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Kn6cDnH4onRtd1bNdoSb17">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="old_string">  erk-mcp-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_r...[truncated 9 chars]....check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'</param>
+    <param name="new_string">  erk-mcp-tests:
+    needs: [check-submission]
+    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="44587" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D8DRwWw15FS3pJzztPDuRu">
+The file /home/runner/work/erk/erk/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01NtMoYFhvoC6b13Gv2cKZJQ">
+The file /home/runner/work/erk/erk/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018MvcwYMfDXezujM4KN9TGD">
+The file /home/runner/work/erk/erk/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TNEq2k2BHpubjKsrhXxFWz">
+The file /home/runner/work/erk/erk/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Kn6cDnH4onRtd1bNdoSb17">
+The file /home/runner/work/erk/erk/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify `format` and `docs-check` are unchanged, and verify `ci-summarize` still references all jobs correctly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1601" cache_read_input_tokens="44919" cache_creation="{'ephemeral_5m_input_tokens': 1601, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01N5ECct6DuPpbk2XPXC2cLW">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="offset">43</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1601" cache_read_input_tokens="44919" cache_creation="{'ephemeral_5m_input_tokens': 1601, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N5ECct6DuPpbk2XPXC2cLW">
+    43→  # === Style Checks (parallel) ===
+    44→  format:
+    45→    needs: [check-submission, fix-formatting]
+    46→    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false' &amp;&amp; needs.fix-formatting.outputs.pushed != 'true'
+    47→    runs-on: ubuntu-latest
+    48→    timeout-minutes: 15
+    49→    steps:
+    50→      - uses: actions/checkout@v4
+    51→      - uses: ./.github/actions/setup-python-uv
+    52→      - name: Check Python formatting
+    53→        run: make format-check
+    54→
+    55→  lint:
+    56→    needs: [check-submission]
+    57→    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'
+    58→    runs-on: ubuntu-latest
+    59→    timeout-minutes: 15
+    60→    steps:
+    61→      - uses: actions/checkout@v4
+    62→      - uses: ./.github/actions/setup-python-uv
+    63→      - name: Run ruff linting
+    64→        run: make lint
+    65→
+    66→  fix-formatting:
+    67→    needs: check-submission
+    68→    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'
+    69→    runs-on: ubuntu-latest
+    70→    timeout-minutes: 15
+    71→    outputs:
+    72→      pushed: ${{ steps.commit.outputs.pushed }}
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Good — `format` and `docs-check` still depend on `fix-formatting` with the `pushed` check. The speculative jobs (`lint`, `ty`, `unit-tests`, `integration-tests`, `erk-mcp-tests`) now only depend on `check-submission`. Let me also verify `ci-summarize` still lists `fix-formatting` in its needs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="46520" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RUAo8K3rHUeNAoLGfPdSvD">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="offset">190</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="46520" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RUAo8K3rHUeNAoLGfPdSvD">
+   190→      - name: Run erk-mcp tests
+   191→        run: make test-erk-mcp
+   192→
+   193→
+   194→
+   195→  # === CI Failure Summarization (Haiku) ===
+   196→  ci-summarize:
+   197→    needs:
+   198→      [
+   199→        format,
+   200→        lint,
+   201→        fix-formatting,
+   202→        docs-check,
+   203→        ty,
+   204→        unit-tests,
+   205→        integration-tests,
+   206→        erk-mcp-tests,
+   207→      ]
+   208→    if: |
+   209→      vars.CLAUDE_ENABLED != 'false' &amp;&amp;
+   210→      always() &amp;&amp;
+   211→      (github.event_name == 'pull_request') &amp;&amp;
+   212→      (github.event.pull_request.draft != true) &amp;&amp;
+   213→      !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &amp;&amp;
+   214→      (needs.format.result == 'failure' ||
+   215→       needs.lint.result == 'failure' ||
+   216→       needs.fix-formatting.result == 'failure' ||
+   217→       needs.docs-check.result == 'failure' ||
+   218→       needs.ty.result == 'failure' ||
+   219→       needs.unit-tests.result == 'failure' ||
+
+... [29 lines omitted] ...
+
+   220→       needs.integration-tests.result == 'failure' ||
+   221→       needs.erk-mcp-tests.result == 'failure')
+   238→      - name: Summarize failures
+  </tool_result>
+  <assistant>`ci-summarize` is unchanged — still depends on all jobs including `fix-formatting`. CI workflow changes are complete.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1236" cache_read_input_tokens="47164" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_018SVv5tkZHWhEmf2zTw83qp">
+    <param name="todos">[{'content': 'Update ci.yml: Change speculative jobs to depend only on check-submission', ...[truncated 711 chars]...c'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1236" cache_read_input_tokens="47164" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018SVv5tkZHWhEmf2zTw83qp">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `docs/learned/ci/job-ordering-strategy.md` to reflect the two-track architecture:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="48400" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01CzbyXt4X5boQUXk8wqswMV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md</param>
+    <param name="old_string">tripwires:
+  - action: "adding a new CI job without including fix-formatting in its needs ...[truncated 270 chars]...-reviews.yml. Repo-local ci.yml should only own formatting, validation, and CI summaries."</param>
+    <param name="new_string">tripwires:
+  - action: "adding a new format-sensitive CI job without including fix-formatt...[truncated 334 chars]...-reviews.yml. Repo-local ci.yml should only own formatting, validation, and CI summaries."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="48400" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CzbyXt4X5boQUXk8wqswMV">
+The file /home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LmrtmN8YyefEdRmnX6sSne">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md</param>
+    <param name="old_string">The repo-local CI workflow uses a three-tier architecture: a gate job controls entry, `fix...[truncated 2665 chars]... the new run starts from the autofix push, it cancels any remaining jobs from the old run.</param>
+    <param name="new_string">The repo-local CI workflow uses a two-track architecture: a gate job controls entry, then ...[truncated 2854 chars]...ith `cancel-in-progress: true` as the primary cancellation mechanism for speculative jobs.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="48759" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1624" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LmrtmN8YyefEdRmnX6sSne">
+The file /home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01MyayKXkGsi3fyF8KJdDrJd">
+    <param name="todos">[{'content': 'Update ci.yml: Change speculative jobs to depend only on check-submission', ...[truncated 713 chars]...c'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1668" cache_read_input_tokens="49197" cache_creation="{'ephemeral_5m_input_tokens': 1668, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MyayKXkGsi3fyF8KJdDrJd">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `workflow-gating-patterns.md` — the "pushed" output section needs to reflect that only format-sensitive jobs check `pushed`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="50865" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013MrVqvvchSpUPCRin2dsR8">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+    <param name="old_string">`fix-formatting` exposes a second output (`pushed`) that downstream validation jobs check ...[truncated 59 chars]...m jobs skip because the auto-fix commit will trigger a fresh CI run on the corrected HEAD.</param>
+    <param name="new_string">`fix-formatting` exposes a second output (`pushed`) that format-sensitive jobs (`format`, ...[truncated 259 chars]...k `pushed` — they run immediately and rely on `cancel-in-progress: true` for cancellation.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="50865" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013MrVqvvchSpUPCRin2dsR8">
+The file /home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HE6SzAvAYCvWAjSjXBjYPd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+    <param name="old_string">This pattern separates:
+
+- "should repo validation run at all?" (`check-submission`)
+- "should validation run on this commit, or wait for the auto-fix rerun?" (`fix-formatting`)</param>
+    <param name="new_string">This pattern separates:
+
+- "should repo validation run at all?" (`check-submission`)
+- "sh...[truncated 120 chars]... second check entirely — they start immediately and get cancelled if fix-formatting pushes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="51197" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HE6SzAvAYCvWAjSjXBjYPd">
+The file /home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01QF9rcUdso9kyoVoHFWdtaK">
+    <param name="todos">[{'content': 'Update ci.yml: Change speculative jobs to depend only on check-submission', ...[truncated 715 chars]...c'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="51570" cache_creation="{'ephemeral_5m_input_tokens': 279, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QF9rcUdso9kyoVoHFWdtaK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `formatting-workflow.md` integration points:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="51849" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012ufRQy17qeV3G6DWMvZRDR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/formatting-workflow.md</param>
+    <param name="old_string">## Integration Points
+
+- **Edit tool behavior**: [Edit Tool Formatting](edit-tool-formatti...[truncated 134 chars]... Python formatting
+- **Make targets**: See Makefile:3-14 for formatter command definitions</param>
+    <param name="new_string">## Integration Points
+
+- **Edit tool behavior**: [Edit Tool Formatting](edit-tool-formatti...[truncated 333 chars]...ng pushes changes.
+- **Make targets**: See Makefile:3-14 for formatter command definitions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="51849" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012ufRQy17qeV3G6DWMvZRDR">
+The file /home/runner/work/erk/erk/docs/learned/ci/formatting-workflow.md has been updated successfully.
+  </tool_result>
+  <assistant>Now I also need to update the tripwire in `docs/learned/ci/tripwires.md` — but that file is auto-generated. The tripwire text comes from the frontmatter of `job-ordering-strategy.md`, which I already updated. Let me run `erk docs sync` to regenerate.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="52181" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01JTQrkkowveypkgVwy7LSLY">
+    <param name="todos">[{'content': 'Update ci.yml: Change speculative jobs to depend only on check-submission', ...[truncated 717 chars]...c'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="52181" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JTQrkkowveypkgVwy7LSLY">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01B3BiFQbHNJzvygUjGCtxMU">
+    <param name="description">Run erk docs sync</param>
+    <param name="prompt">Run the command `erk docs sync` and report the results. Do NOT fix any errors - just report what happened.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="52567" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B3BiFQbHNJzvygUjGCtxMU">
+**Result:** erk docs sync completed successfully
+
+The command scanned documentation files and updated the tripwires metadata. Here's what happened:
+
+- **Files Updated:** 1 file changed
+  - `ci/tripwires.md` was regenerated
+
+- **Files Unchanged:** 56 files remain current
+
+- **Tripwires Collected:** 859 total tripwires across 32 categories
+  - Largest categories: planning (126), testing (67), architecture (195), cli (99)
+  - 26 pattern-based tripwires in architecture
+  - 5 pattern-based tripwires in testing
+
+The sync completed successfully with 1 change made to the CI tripwires documentation.
+agentId: add5419 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>`erk docs sync` ran successfully and updated `ci/tripwires.md`. Let me verify the updated tripwire text:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="52972" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SNs1eUHsBeDL7Lb8ewKP1V">
+    <param name="pattern">fix-formatting in its needs</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/ci/tripwires.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="52972" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SNs1eUHsBeDL7Lb8ewKP1V">
+43:**adding a new format-sensitive CI job without including fix-formatting in its needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Format-sensitive jobs (format, docs-check) must depend on both check-submission and fix-formatting. Test jobs (lint, ty, unit-tests, integration-tests, erk-mcp-tests) run speculatively with only check-submission.
+  </tool_result>
+  <assistant>The tripwire has been regenerated with the updated text.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="53281" cache_creation="{'ephemeral_5m_input_tokens': 252, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0119vCibALy2kozkUaR2hE6M">
+    <param name="todos">[{'content': 'Update ci.yml: Change speculative jobs to depend only on check-submission', ...[truncated 719 chars]... {'content': 'Run CI checks', 'status': 'in_progress', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="53281" cache_creation="{'ephemeral_5m_input_tokens': 252, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0119vCibALy2kozkUaR2hE6M">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me check if there's a post-plan-implement CI hook and run formatting before CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="53533" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01CM4kNhTxDTCF5EaRM4YRT8">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="53533" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CM4kNhTxDTCF5EaRM4YRT8">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T7TDtiofddBNzfafEsmGo4">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="53879" cache_creation="{'ephemeral_5m_input_tokens': 130, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01T7TDtiofddBNzfafEsmGo4">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I need to run `make fast-ci` and load the `ci-iteration` skill. Let me first run formatting on the markdown files I edited, then run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="54009" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01BYm6DXX76AACmD31rNL1Mv">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="54009" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BYm6DXX76AACmD31rNL1Mv">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run `make fast-ci` to validate the changes:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1722" cache_read_input_tokens="54238" cache_creation="{'ephemeral_5m_input_tokens': 1722, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01URZLLmq3nbaryDoi4u5DNB">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root (/home/runner/work/erk/erk) and report the results. Do NOT fix any errors - just report what happened.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1722" cache_read_input_tokens="54238" cache_creation="{'ephemeral_5m_input_tokens': 1722, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01URZLLmq3nbaryDoi4u5DNB">
+## Results Summary
+
+**make fast-ci failed with exit code 2**
+
+The command executed most checks successfully, but failed at the Prettier check step:
+
+### Prettier Check - FAILED
+Code style issues found in 3 files:
+- `docs/learned/ci/job-ordering-strategy.md`
+- `docs/learned/integrations/github-review-decision.md`
+- `docs/learned/tui/status-indicators.md`
+
+The error message states: "Code style issues found in 3 files. Run Prettier with --write to fix."
+
+### Checks That PASSED
+
+1. **Lint**: `ruff` - All checks passed
+2. **Format Check**: ruff format - 1667 files already formatted
+3. **Markdown Check**: OK (passed)
+4. **Exec Reference Check**: OK
+5. **ty**: All checks passed
+6. **Unit Tests (erk)**: 5903 passed in 23.32s
+7. **Tests (erk-dev)**: 136 passed in 4.55s
+8. **Tests (erk-statusline)**: 115 passed in 0.88s
+9. **Tests (erk-mcp)**: 24 passed
+
+### CLAUDE.md Validation
+- AGENTS.md standard: PASSED
+- All CLAUDE.md and AGENTS.md files properly paired
+- CLAUDE.md files checked: 19
+
+... [4 lines omitted] ...
+
+The make target failed due to the Prettier formatting issues in the three markdown files listed above.
+  </tool_result>
+  <assistant>Prettier formatting issues in 3 markdown files. Let me fix those:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="780" cache_read_input_tokens="55960" cache_creation="{'ephemeral_5m_input_tokens': 780, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017W6d18EAFUYC177jsFt9PG">
+    <param name="description">Run make prettier fix</param>
+    <param name="prompt">Run `make prettier` from the repository root (/home/runner/work/erk/erk) and report the results. Do NOT fix any errors - just report what happened.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="780" cache_read_input_tokens="55960" cache_creation="{'ephemeral_5m_input_tokens': 780, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017W6d18EAFUYC177jsFt9PG">
+prettier passed: All matched files use Prettier code style!
+
+The output shows that Prettier checked all markdown files (`**/*.md`) while respecting the `.gitignore` file. Every file listed shows `(unchanged)`, which means all files conform to the Prettier formatting standard. The command executed successfully with no formatting issues found.
+agentId: a86fe34 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Prettier auto-fixed the formatting. Let me re-run fast-ci to confirm everything passes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="687" cache_read_input_tokens="56740" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01W2im5tSGEQmSGjzE3Wh2PK">
+    <param name="description">Run make fast-ci again</param>
+    <param name="prompt">Run `make fast-ci` from the repository root (/home/runner/work/erk/erk) and report the results. Do NOT fix any errors - just report what happened.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="687" cache_read_input_tokens="56740" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W2im5tSGEQmSGjzE3Wh2PK">
+## Results: make fast-ci PASSED
+
+All checks passed successfully:
+
+- **Lint**: All checks passed!
+- **Format Check**: 1667 files already formatted
+- **Prettier Check**: All matched files use Prettier code style!
+- **Markdown Check**: OK
+- **Exec Reference Check**: OK (.claude/skills/erk-exec/reference.md is up to date)
+- **Type Check (ty)**: All checks passed!
+- **Unit Tests (erk)**: 5903 passed in 12.61s
+- **Unit Tests (erk-dev)**: 136 passed in 4.45s
+- **Unit Tests (erk-statusline)**: 115 passed in 0.80s
+- **Unit Tests (erk-mcp)**: 24 passed
+- **CLAUDE.md/AGENTS.md Standard**: PASSED (19 files checked, 0 violations)
+
+**Summary**: The fast-ci target completed successfully with all linting, formatting, type checking, and unit tests passing.
+agentId: a5d56c2 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Let me finalize.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="670" cache_read_input_tokens="57427" cache_creation="{'ephemeral_5m_input_tokens': 670, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_018tmcJdwUrVkFan2zAxWxgR">
+    <param name="todos">[{'content': 'Update ci.yml: Change speculative jobs to depend only on check-submission', ...[truncated 717 chars]...}, {'content': 'Run CI checks', 'status': 'completed', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="670" cache_read_input_tokens="57427" cache_creation="{'ephemeral_5m_input_tokens': 670, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018tmcJdwUrVkFan2zAxWxgR">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now signal completion and submit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="58097" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DuVepx12oCnBp3Xwf9bppi">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="58097" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01PKJvHtESYNhVEnVKNLcJGd">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="58097" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DuVepx12oCnBp3Xwf9bppi">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 9035
+}
+  </tool_result>
+</session>
