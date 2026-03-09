@@ -547,8 +547,7 @@ def resolve_up_navigation(
     _worktree_path, already_existed = ensure_branch_has_worktree(
         ctx, repo, branch_name=target_branch, no_slot=False, force=False
     )
-    was_created = not already_existed
-    return target_branch, was_created
+    return target_branch, not already_existed
 
 
 def resolve_down_navigation(
@@ -608,8 +607,7 @@ def resolve_down_navigation(
         _worktree_path, already_existed = ensure_branch_has_worktree(
             ctx, repo, branch_name=parent_branch, no_slot=False, force=False
         )
-        was_created = not already_existed
-        return parent_branch, was_created
+        return parent_branch, not already_existed
 
 
 @dataclass(frozen=True)
