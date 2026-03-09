@@ -16,6 +16,23 @@
       "raw_size_kb": 437,
       "xml_size_kb": 59,
       "git_branch": "plnd/add-api-fast-path-config-03-09-1224"
+    },
+    {
+      "session_id": "0c008d77-39ac-4d55-8bd4-788a84f6cd53",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T16:58:26.185662+00:00",
+      "files": [
+        "address-0c008d77-39ac-4d55-8bd4-788a84f6cd53-0c008d77-39ac-4d55-8bd4-788a84f6cd53-part1.xml",
+        "address-0c008d77-39ac-4d55-8bd4-788a84f6cd53-0c008d77-39ac-4d55-8bd4-788a84f6cd53-part2.xml",
+        "address-0c008d77-39ac-4d55-8bd4-788a84f6cd53-0c008d77-39ac-4d55-8bd4-788a84f6cd53-part3.xml",
+        "address-0c008d77-39ac-4d55-8bd4-788a84f6cd53-0c008d77-39ac-4d55-8bd4-788a84f6cd53-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 133,
+      "xml_size_kb": 92,
+      "git_branch": "plnd/add-api-fast-path-config-03-09-1224"
     }
   ]
 }
