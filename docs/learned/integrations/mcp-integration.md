@@ -33,7 +33,7 @@ The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp>=2
 Two internal wrappers in `server.py` delegate to the erk CLI:
 
 - **Standard wrapper** — Runs `erk <args>`, raises `RuntimeError` on non-zero exit. Used by hand-written tools (`plan_list`, `plan_view`).
-- **JSON wrapper** — Runs `erk <command> --json`, pipes params as JSON stdin. Does NOT raise on non-zero exit — `--json` guarantees structured error output flows through to the agent. Used by `JsonCommandTool`.
+- **JSON wrapper** — Runs `erk <command> --json`, pipes params as JSON stdin. Does NOT raise on non-zero exit — `--json` guarantees structured error output flows through to the agent. Used by auto-discovered MCP tools.
 
 ## MCP Tools
 
@@ -61,7 +61,7 @@ Returns plan title, state, labels, and full markdown body for a given plan ID.
 
 Dispatches a task for fully autonomous execution via `erk one-shot --json`. Returns structured JSON indicating success or failure. On success, includes the created PR reference and CI run details. With `dry_run`: preview without executing.
 
-Parameters are auto-derived from Click parameters via `command_input_schema()` — no separate schema class needed.
+Parameters are auto-derived from Click parameters — no separate schema class needed.
 
 ## Auto-Discovery from Click Command Tree
 
@@ -72,7 +72,7 @@ CLI commands decorated with both `@json_command` and `@mcp_exposed` are automati
 ### Adding a new MCP tool
 
 1. Add `@mcp_exposed(name="tool_name", description="...")` above `@json_command` on the Click command
-2. Done — `create_mcp()` walks the Click tree and registers it automatically
+2. Done — the server walks the Click tree at startup and registers it automatically
 
 ```python
 @mcp_exposed(name="one_shot", description="Submit a task for...")
