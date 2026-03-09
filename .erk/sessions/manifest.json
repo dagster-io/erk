@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "plan_id": 9047,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-09T11:49:35.473684+00:00",
+      "files": [
+        "impl--db296653-b923-40f2-87f0-06ac901b9330-part1.xml",
+        "impl--db296653-b923-40f2-87f0-06ac901b9330-part2.xml",
+        "impl--db296653-b923-40f2-87f0-06ac901b9330-part3.xml",
+        "impl--db296653-b923-40f2-87f0-06ac901b9330-part4.xml",
+        "impl--db296653-b923-40f2-87f0-06ac901b9330-part5.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 454,
+      "xml_size_kb": 106,
+      "git_branch": "plnd/fix-incremental-dispatch-m-03-09-0743"
+    }
+  ]
+}
