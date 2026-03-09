@@ -1,0 +1,1211 @@
+<session>
+  <meta branch="plnd/fix-incremental-dispatch-m-03-09-0743" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9047&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9047` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9047.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11286" cache_read_input_tokens="17297" cache_creation="{'ephemeral_5m_input_tokens': 11286, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01AnNDFCVBsukMggX6NaXs56">
+    <param name="command">erk exec setup-impl --issue 9047</param>
+    <param name="description">Set up implementation for plan #9047</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11286" cache_read_input_tokens="17297" cache_creation="{'ephemeral_5m_input_tokens': 11286, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AnNDFCVBsukMggX6NaXs56">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-incremental-dispatch-m-03-09-0743", "plan_number": 9047, "plan_url": "https://github.com/dagster-io/erk/pull/9047", "branch": "plnd/fix-incremental-dispatch-m-03-09-0743", "plan_title": "[erk-plan] Fix: Incremental dispatch does not update plan-header dispatch metadata", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 9047, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-incremental-dispatch-m-03-09-0743', teleporting from remote...
+  </tool_result>
+  <assistant>Setup complete. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="28583" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YR4WMdpRY561zaYexHszrm">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-incremental-dispatch-m-03-09-0743/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="28583" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YR4WMdpRY561zaYexHszrm">
+     1→# Fix: Incremental dispatch does not update plan-header dispatch metadata
+     2→
+     3→## Context
+     4→
+     5→When `erk exec incremental-dispatch` triggers a workflow run against a PR, the dashboard's `run-id` and `run` columns show nothing because the plan-header metadata is never updated. Regular `erk pr dispatch` calls `write_dispatch_metadata()` after triggering the workflow, which writes `last_dispatched_run_id`, `last_dispatched_node_id`, and `last_dispatched_at` to the PR's plan-header metadata block. The TUI dashboard reads these fields to display workflow run status. Incremental dispatch skips this step entirely.
+     6→
+     7→## Fix
+     8→
+     9→Add a best-effort `write_dispatch_metadata()` call to `incremental_dispatch.py` after the workflow is triggered, matching the pattern used in `dispatch_cmd.py` lines 308-322.
+    10→
+    11→### File: `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+    12→
+    13→After line 181 (`user_output("Workflow dispatched")`), add:
+    14→
+    15→```python
+    16→# Update plan-header dispatch metadata (best-effort)
+    17→try:
+    18→    plan_backend = require_plan_backend(ctx)
+    19→    write_dispatch_metadata(
+    20→        plan_backend=plan_backend,
+    21→        github=github,
+    22→        repo_root=repo_root,
+    23→        plan_number=pr_number,
+    24→        run_id=run_id,
+    25→        dispatched_at=time.now().isoformat(),
+    26→    )
+    27→    user_output(click.style("✓", fg="green") + " Dispatch metadata written")
+    28→except Exception as e:
+    29→    user_output(
+    30→        click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+
+... [21 lines omitted] ...
+  </tool_result>
+  <assistant>Good, the plan is clear. Now let me load the relevant tripwires and explore the codebase to understand the existing patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="28935" cache_creation="{'ephemeral_5m_input_tokens': 971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0151X2De75PmJZ21N6roce9P">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="28935" cache_creation="{'ephemeral_5m_input_tokens': 971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DVXpuKLsiubR6C4rneKqyX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="28935" cache_creation="{'ephemeral_5m_input_tokens': 971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AZQqiENp9qmjvkVMvrPFf3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="971" cache_read_input_tokens="28935" cache_creation="{'ephemeral_5m_input_tokens': 971, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DVXpuKLsiubR6C4rneKqyX">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
+     2→
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
+     5→
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-plan label — just an OPEN PR.
+     9→"""
+    10→
+    11→import json
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    17→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+    18→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    19→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    20→from erk_shared.context.helpers import (
+    21→    require_branch_manager,
+    22→    require_context,
+    23→    require_git,
+    24→    require_github,
+    25→    require_repo_root,
+    26→    require_time,
+    27→)
+    28→from erk_shared.context.types import NoRepoSentinel
+    29→from erk_shared.gateway.git.remote_ops.types import PushError
+    30→from erk_shared.gateway.github.parsing import (
+
+... [189 lines omitted] ...
+
+    83→        _output_error(output_format, f"PR #{pr_number} not found")
+    87→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+    98→        _output_error(output_format, "Not in a git repository")
+   147→    if isinstance(push_result, PushError):
+   148→        _output_error(output_format, f"Push failed: {push_result.message}")
+   208→def _output_error(output_format: str, message: str) -&gt; None:
+   209→    """Output error in the requested format."""
+   211→        click.echo(json.dumps({"success": False, "error": message}))
+   213→        user_output(click.style("Error: ", fg="red") + message)
+  </tool_result>
+  <tool_result tool="toolu_01AZQqiENp9qmjvkVMvrPFf3">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import LocalGitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: LocalGitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+
+... [81 lines omitted] ...
+
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <tool_result tool="toolu_0151X2De75PmJZ21N6roce9P">
+     1→---
+     2→title: Planning Tripwires
+     3→read_when:
+     4→  - "working on planning code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from planning/*.md frontmatter --&gt;
+    10→
+    11→# Planning Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding &lt;code&gt; inside &lt;summary&gt; elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render &lt;code&gt; inside &lt;summary&gt; — use plain text instead. GitHub renders it but Graphite does not. The correct format is &lt;summary&gt;original-plan&lt;/summary&gt; not &lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;.
+    16→
+    17→**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+    18→
+    19→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+    20→
+    21→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+    22→
+    23→**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md.
+    24→
+    25→**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+    26→
+    27→**adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+    28→
+    29→**adding dry-run support to one-shot commands** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot dry-run mode must NOT create skeleton issues
+    30→
+
+... [241 lines omitted] ...
+
+    45→**after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier).
+    67→**calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
+    79→**calling update_metadata() on PlannedPRBackend without verifying plan exists** → Read [Planned PR Backend](planned-pr-backend.md) first. PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata.
+    81→**capturing subagent output inline when it may exceed 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents.
+    83→**catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
+    89→**checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture.
+    95→**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+    97→**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+   141→**grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
+   159→**making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
+   161→**making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
+   187→**pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
+   193→**reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
+   205→**renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
+   213→**reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit -m 'Remove leaked impl-context'
+   223→**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
+   229→**treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+   241→**using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
+   263→**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+  </tool_result>
+  <assistant>Now let me check the existing test file and how `dispatch_cmd.py` uses `write_dispatch_metadata` for reference:</assistant>
+  <usage input_tokens="4460" cache_creation_input_tokens="10328" cache_read_input_tokens="29906" cache_creation="{'ephemeral_5m_input_tokens': 10328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016UUYoULmczMga3iS7EDPrq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="4460" cache_creation_input_tokens="10328" cache_read_input_tokens="29906" cache_creation="{'ephemeral_5m_input_tokens': 10328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015K4v1MeegsTEZNSeHQbfry">
+    <param name="pattern">write_dispatch_metadata</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="4460" cache_creation_input_tokens="10328" cache_read_input_tokens="29906" cache_creation="{'ephemeral_5m_input_tokens': 10328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TPRCpA32zNew8qcQf9TMJx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="offset">39</param>
+    <param name="limit">3</param>
+  </tool_use>
+  <usage input_tokens="4460" cache_creation_input_tokens="10328" cache_read_input_tokens="29906" cache_creation="{'ephemeral_5m_input_tokens': 10328, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016UUYoULmczMga3iS7EDPrq">
+     1→"""Unit tests for incremental-dispatch command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.context.testing import context_for_test
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeLocalGitHub
+    14→from erk_shared.gateway.github.types import PRDetails
+    15→from erk_shared.gateway.graphite.fake import FakeGraphite
+    16→
+    17→
+    18→def _make_pr(number: int, *, state: str = "OPEN", branch: str = "feature-branch") -&gt; PRDetails:
+    19→    return PRDetails(
+    20→        number=number,
+    21→        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+    22→        title=f"Test PR #{number}",
+    23→        body="PR body",
+    24→        state=state,
+    25→        is_draft=False,
+    26→        base_ref_name="main",
+    27→        head_ref_name=branch,
+    28→        is_cross_repository=False,
+    29→        mergeable="MERGEABLE",
+    30→        merge_state_status="CLEAN",
+
+... [192 lines omitted] ...
+
+    63→    assert result.exit_code == 0, f"Failed: {result.output}"
+    91→    """Test error when PR does not exist."""
+   107→    assert "not found" in output["error"]
+   111→    """Test error when PR is not OPEN."""
+   128→    assert "CLOSED" in output["error"]
+   147→    assert result.exit_code == 0, f"Failed: {result.output}"
+   189→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01TPRCpA32zNew8qcQf9TMJx">
+    39→**adding post-dispatch operations without matching dispatch_cmd.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. dispatch_one_shot() and \_dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
+    40→
+    41→**adding redundant branch-location guards to learn status checks** → Read [Remote Branch Learn Support](remote-branch-learn.md) first. Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via planned-pr-context branches.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_015K4v1MeegsTEZNSeHQbfry">
+7-from pathlib import Path
+8-
+9-import click
+10-
+11-from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+12:from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+13-from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+14-from erk.cli.commands.slot.common import is_placeholder_branch
+15-from erk.cli.constants import (
+16-    DISPATCH_WORKFLOW_METADATA_NAME,
+17-    DISPATCH_WORKFLOW_NAME,
+--
+305-    # Compute workflow URL
+306-    workflow_url = _build_workflow_run_url(validated.url, run_id)
+307-
+308-    # Write dispatch metadata FIRST (before any PR body modification)
+309-    try:
+310:        write_dispatch_metadata(
+311-            plan_backend=ctx.plan_backend,
+312-            github=ctx.github,
+313-            repo_root=repo.root,
+314-            plan_number=plan_number,
+315-            run_id=run_id,
+  </tool_result>
+  <assistant>Let me also check the relevant tripwire about assertive vs best-effort metadata writes, and look at how dispatch_cmd.py uses write_dispatch_metadata with its try/except:</assistant>
+  <usage input_tokens="314" cache_creation_input_tokens="8641" cache_read_input_tokens="40234" cache_creation="{'ephemeral_5m_input_tokens': 8641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011eP3Cgb4Hda8kyreucAPoi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-update-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="314" cache_creation_input_tokens="8641" cache_read_input_tokens="40234" cache_creation="{'ephemeral_5m_input_tokens': 8641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016L6wMnwrtjiWw22W6E1UtV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">300</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="314" cache_creation_input_tokens="8641" cache_read_input_tokens="40234" cache_creation="{'ephemeral_5m_input_tokens': 8641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FRGzjc3BbR2uTZzERH8ZDT">
+    <param name="pattern">require_plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk_shared/context/helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="314" cache_creation_input_tokens="8641" cache_read_input_tokens="40234" cache_creation="{'ephemeral_5m_input_tokens': 8641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FRGzjc3BbR2uTZzERH8ZDT">
+&lt;tool_use_error&gt;Path does not exist: /home/runner/work/erk/erk/src/erk_shared/context/helpers.py&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_011eP3Cgb4Hda8kyreucAPoi">
+     1→---
+     2→title: Metadata Update Patterns
+     3→read_when:
+     4→  - "writing plan dispatch metadata updates"
+     5→  - "choosing between assertive and best-effort metadata operations"
+     6→  - "working with write_dispatch_metadata or maybe_update_plan_dispatch_metadata"
+     7→tripwires:
+     8→  - action: "using assertive metadata writes in a best-effort context"
+     9→    warning: "write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation."
+    10→---
+    11→
+    12→# Metadata Update Patterns
+    13→
+    14→Two contrasting patterns for plan dispatch metadata updates exist in `src/erk/cli/commands/pr/metadata_helpers.py`.
+    15→
+    16→## Assertive: `write_dispatch_metadata()`
+    17→
+    18→&lt;!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, write_dispatch_metadata --&gt;
+    19→
+    20→Raises `RuntimeError` on any failure. Used when dispatch metadata is a hard requirement.
+    21→
+    22→- Calls `get_workflow_run_node_id()` — raises if None
+    23→- Calls `get_plan()` — raises if PlanNotFound
+    24→- Calls `update_metadata()` directly
+    25→
+    26→**Use when:** The caller cannot proceed without metadata being written.
+    27→
+    28→## Best-Effort: `maybe_update_plan_dispatch_metadata()`
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata --&gt;
+
+... [19 lines omitted] ...
+
+    32→Uses LBYL guards and returns silently when preconditions aren't met. Prints a warning for partial failures.
+    37→- Prints dim-styled warning if plan-header is incomplete, then returns
+  </tool_result>
+  <tool_result tool="toolu_016L6wMnwrtjiWw22W6E1UtV">
+   300→        inputs=inputs,
+   301→        ref=ref,
+   302→    )
+   303→    user_output(click.style("✓", fg="green") + " Workflow dispatched.")
+   304→
+   305→    # Compute workflow URL
+   306→    workflow_url = _build_workflow_run_url(validated.url, run_id)
+   307→
+   308→    # Write dispatch metadata FIRST (before any PR body modification)
+   309→    try:
+   310→        write_dispatch_metadata(
+   311→            plan_backend=ctx.plan_backend,
+   312→            github=ctx.github,
+   313→            repo_root=repo.root,
+   314→            plan_number=plan_number,
+   315→            run_id=run_id,
+   316→            dispatched_at=queued_at,
+   317→        )
+   318→        user_output(click.style("✓", fg="green") + " Dispatch metadata written")
+   319→    except Exception as e:
+   320→        user_output(
+   321→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   322→        )
+   323→
+   324→    # Update PR body with workflow run link (best-effort)
+   325→    # Guard: only append if body is non-empty to avoid overwriting metadata block
+   326→    try:
+   327→        pr_details = ctx.github.get_pr(repo.root, plan_number)
+   328→        if not isinstance(pr_details, PRNotFound) and pr_details.body:
+   329→            updated_body = pr_details.body + f"\n\n**Workflow run:** {workflow_url}"
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NVsxzWQCSCjR2ZBHgxYc99">
+    <param name="pattern">require_plan_backend</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="73" cache_creation_input_tokens="2097" cache_read_input_tokens="48875" cache_creation="{'ephemeral_5m_input_tokens': 2097, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NVsxzWQCSCjR2ZBHgxYc99">
+docs/learned/ci/exec-script-environment-requirements.md:59:    backend = require_plan_backend(ctx)      # needs GH_TOKEN
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:33:    require_plan_backend,
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:160:    backend = require_plan_backend(ctx)
+docs/learned/cli/backend-aware-display.md:35:Use this in exec scripts where `require_plan_backend()` is already in scope.
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py:35:    require_plan_backend,
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py:103:    plan_backend = require_plan_backend(ctx)
+src/erk/cli/commands/exec/scripts/update_plan_header.py:21:from erk_shared.context.helpers import require_plan_backend, require_repo_root
+src/erk/cli/commands/exec/scripts/update_plan_header.py:126:    backend = require_plan_backend(ctx)
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:43:    require_plan_backend,
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:189:    plan_backend = require_plan_backend(ctx)
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <assistant>Now I have a clear picture. Let me create the todo list and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="50972" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01PNNoD198isZxRG8HZyc7Gi">
+    <param name="todos">[{'content': 'Add write_dispatch_metadata call to incremental_dispatch.py after workflow d...[truncated 284 chars]...t': 'Run CI checks (pytest, ty)', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="50972" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PNNoD198isZxRG8HZyc7Gi">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011ALTevVaQfhxRKL9aNKt7L">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="228" cache_read_input_tokens="51544" cache_creation="{'ephemeral_5m_input_tokens': 228, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011ALTevVaQfhxRKL9aNKt7L">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Now let me implement the fix. The plan says to add `write_dispatch_metadata()` after line 181 (the "Workflow dispatched" message), wrapped in try/except for best-effort behavior — matching `dispatch_cmd.py` lines 308-322.
+
+I need to add:
+1. Import for `write_dispatch_metadata` and `require_plan_backend`
+2. The try/except block after the workflow dispatch</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="51772" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_017t6SXiq1eSwnc4XQ1zhcWw">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="51772" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017t6SXiq1eSwnc4XQ1zhcWw">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>
+
+I need to read the core dignified-python standards and the version-specific file.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="974" cache_read_input_tokens="51943" cache_creation="{'ephemeral_5m_input_tokens': 974, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HRsNS4Li2tNPgTRZ3RafVH">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="974" cache_read_input_tokens="51943" cache_creation="{'ephemeral_5m_input_tokens': 974, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0138FeH916gL5BdpRaWsLva6">
+    <param name="command">grep -m1 'requires-python' /home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="description">Check Python version requirement</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="974" cache_read_input_tokens="51943" cache_creation="{'ephemeral_5m_input_tokens': 974, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HRsNS4Li2tNPgTRZ3RafVH">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_0138FeH916gL5BdpRaWsLva6">
+requires-python = "&gt;=3.11"
+  </tool_result>
+  <assistant>Good, Python 3.11+. Now I have all the context I need. Let me check how the `dispatch_cmd.py` accesses `plan_backend` — it uses `ctx.plan_backend` (via ErkContext), while `incremental_dispatch.py` uses `require_*` helpers from `erk_shared.context.helpers`. Let me check which pattern to use:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6438" cache_read_input_tokens="52917" cache_creation="{'ephemeral_5m_input_tokens': 6438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01A5Gffzm85gHrHVoPojUp4P">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">230</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6438" cache_read_input_tokens="52917" cache_creation="{'ephemeral_5m_input_tokens': 6438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A5Gffzm85gHrHVoPojUp4P">
+   230→    ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+   231→    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+   232→    if checked_out_path is None:
+   233→        ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+   234→    else:
+   235→        remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{branch_name}")
+   236→        if remote_sha is not None:
+   237→            sync_branch_to_sha(ctx, repo.root, branch_name, remote_sha)
+   238→
+   239→    # Commit impl-context files directly to branch (no checkout required)
+   240→    user_output("Committing plan to branch...")
+   241→    files = build_impl_context_files(
+   242→        plan_content=plan.body,
+   243→        plan_id=str(plan_number),
+   244→        url=validated.url,
+   245→        provider="github-draft-pr",
+   246→        objective_id=plan.objective_id,
+   247→        now_iso=ctx.time.now().isoformat(),
+   248→        node_ids=None,
+   249→    )
+   250→    ctx.git.commit.commit_files_to_branch(
+   251→        repo.root,
+   252→        branch=branch_name,
+   253→        files=files,
+   254→        message=f"Add plan for PR #{plan_number}",
+   255→    )
+   256→
+   257→    # If branch is checked out, sync index for committed files to avoid stale staged changes
+   258→    if checked_out_path is not None:
+   259→        try:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>I see — `dispatch_cmd.py` uses `ctx.plan_backend` where `ctx` is an `ErkContext`. In `incremental_dispatch.py`, the Click context object is used with `require_*` helpers. Let me check if `require_plan_backend` exists in the helpers module used by this file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="765" cache_read_input_tokens="59355" cache_creation="{'ephemeral_5m_input_tokens': 765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SYAbjzsvW5bvS7csWoqWF3">
+    <param name="pattern">def require_plan_backend</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="765" cache_read_input_tokens="59355" cache_creation="{'ephemeral_5m_input_tokens': 765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SYAbjzsvW5bvS7csWoqWF3">
+packages/erk-shared/src/erk_shared/context/helpers.py:397:def require_plan_backend(ctx: click.Context) -&gt; PlanBackend:
+  </tool_result>
+  <assistant>Good — `require_plan_backend` is available from `erk_shared.context.helpers`. Now let me implement the change. The plan says to add the metadata call after line 181. Looking at the code, I need to:
+
+1. Add `require_plan_backend` to the existing import from `erk_shared.context.helpers`
+2. Add the `write_dispatch_metadata` import from `erk.cli.commands.pr.metadata_helpers`
+3. Add the try/except block after the "Workflow dispatched" message</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="60120" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012APp7YNSVgbygouyJEATrY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="old_string">from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha</param>
+    <param name="new_string">from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+from erk.cli.commands.pr...[truncated 27 chars]...ync_branch_to_sha
+from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="60120" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012APp7YNSVgbygouyJEATrY">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018Y7XdNBKhnjoVipTCoYZRH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="old_string">from erk_shared.context.helpers import (
+    require_branch_manager,
+    require_context,
+    require_git,
+    require_github,
+    require_repo_root,
+    require_time,
+)</param>
+    <param name="new_string">from erk_shared.context.helpers import (
+    require_branch_manager,
+    require_context,
+    require_git,
+    require_github,
+    require_plan_backend,
+    require_repo_root,
+    require_time,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="60514" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Y7XdNBKhnjoVipTCoYZRH">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the write_dispatch_metadata call after the "Workflow dispatched" message:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="60924" cache_creation="{'ephemeral_5m_input_tokens': 456, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_015MZkDAFNpgbrXDXV7WNKih">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="old_string">    user_output(click.style("✓", fg="green") + " Workflow dispatched")
+
+    # Build workflow URL</param>
+    <param name="new_string">    user_output(click.style("✓", fg="green") + " Workflow dispatched")
+
+    # Update plan-...[truncated 500 chars]..."yellow") + f"Failed to update dispatch metadata: {e}"
+        )
+
+    # Build workflow URL</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="60924" cache_creation="{'ephemeral_5m_input_tokens': 456, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015MZkDAFNpgbrXDXV7WNKih">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify the file looks correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="61380" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PGmuphTvoTWj3eWBLYoC7L">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="offset">175</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="61380" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PGmuphTvoTWj3eWBLYoC7L">
+   175→
+   176→    user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
+   177→    run_id = github.trigger_workflow(
+   178→        repo_root=repo_root,
+   179→        workflow=DISPATCH_WORKFLOW_NAME,
+   180→        inputs=inputs,
+   181→        ref=ref,
+   182→    )
+   183→    user_output(click.style("✓", fg="green") + " Workflow dispatched")
+   184→
+   185→    # Update plan-header dispatch metadata (best-effort)
+   186→    try:
+   187→        plan_backend = require_plan_backend(ctx)
+   188→        write_dispatch_metadata(
+   189→            plan_backend=plan_backend,
+   190→            github=github,
+   191→            repo_root=repo_root,
+   192→            plan_number=pr_number,
+   193→            run_id=run_id,
+   194→            dispatched_at=time.now().isoformat(),
+   195→        )
+   196→        user_output(click.style("✓", fg="green") + " Dispatch metadata written")
+   197→    except Exception as e:
+   198→        user_output(
+   199→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   200→        )
+   201→
+   202→    # Build workflow URL
+   203→    owner_repo = extract_owner_repo_from_github_url(pr_result.url)
+   204→    if owner_repo is not None:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>The production code change looks correct. Now let me move to the test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="795" cache_read_input_tokens="61797" cache_creation="{'ephemeral_5m_input_tokens': 795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_019Mbte7exMN5HPSWE1kwC7w">
+    <param name="todos">[{'content': 'Add write_dispatch_metadata call to incremental_dispatch.py after workflow d...[truncated 286 chars]...t': 'Run CI checks (pytest, ty)', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="795" cache_read_input_tokens="61797" cache_creation="{'ephemeral_5m_input_tokens': 795, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019Mbte7exMN5HPSWE1kwC7w">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>I need to understand how the fake plan backend works to write the test properly. Let me check the FakeLocalGitHub and plan backend fakes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="62592" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KqZcDcAgx6VXUfVPo9Z7hH">
+    <param name="pattern">get_workflow_run_node_id</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="62592" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FnYNV65BU8fd241YtGUe7A">
+    <param name="pattern">class FakePlanBackend|class.*PlanBackend.*fake</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="62592" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KqZcDcAgx6VXUfVPo9Z7hH">
+614-        """
+615-        if self._workflow_runs_error is not None:
+616-            raise RuntimeError(self._workflow_runs_error)
+617-        return {node_id: self._workflow_runs_by_node_id.get(node_id) for node_id in node_ids}
+618-
+619:    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -&gt; str | None:
+620-        """Get node ID for a workflow run (returns pre-configured fake data).
+621-
+622-        Looks up the run_id in the pre-configured workflow_runs_by_node_id mapping
+623-        (reverse lookup) to find the corresponding node_id.
+624-
+  </tool_result>
+  <tool_result tool="toolu_01FnYNV65BU8fd241YtGUe7A">
+.claude/skills/fake-driven-testing/references/gateway-architecture.md:551:class FakePlanBackend(PlanBackend):  # DON'T DO THIS
+.claude/skills/fake-driven-testing/references/anti-patterns.md:750:class FakePlanBackend(PlanBackend):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WZtfU4ZhCLS2abZ6eNNN15">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">619</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="62818" cache_creation="{'ephemeral_5m_input_tokens': 618, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Hhxie4ymZ6Tz6Bh6svNGmH">
+    <param name="pattern">class.*PlanBackend</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="62818" cache_creation="{'ephemeral_5m_input_tokens': 618, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WZtfU4ZhCLS2abZ6eNNN15">
+   619→    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -&gt; str | None:
+   620→        """Get node ID for a workflow run (returns pre-configured fake data).
+   621→
+   622→        Looks up the run_id in the pre-configured workflow_runs_by_node_id mapping
+   623→        (reverse lookup) to find the corresponding node_id.
+   624→
+   625→        Args:
+   626→            repo_root: Repository root directory (ignored in fake)
+   627→            run_id: GitHub Actions run ID
+   628→
+   629→        Returns:
+   630→            Node ID if found in pre-configured data, or a generated fake node_id
+   631→        """
+   632→        # Reverse lookup: find node_id by run_id
+   633→        for node_id, run in self._workflow_runs_by_node_id.items():
+   634→            if run is not None and run.run_id == run_id:
+   635→                return node_id
+   636→
+   637→        # If not in node_id mapping, check regular workflow runs and generate fake node_id
+   638→        for run in self._workflow_runs:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Hhxie4ymZ6Tz6Bh6svNGmH">
+packages/erk-shared/src/erk_shared/plan_store/backend.py:51:class PlanBackend(ABC):
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:79:class PlannedPRBackend(PlanBackend):
+  </tool_result>
+  <tool_use name="Read" id="toolu_019WxZNr2P1L46WsYnB51vuJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">638</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="63436" cache_creation="{'ephemeral_5m_input_tokens': 755, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019xJZNjZ6ecppUkfXFLHQuG">
+    <param name="pattern">def update_metadata</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="63436" cache_creation="{'ephemeral_5m_input_tokens': 755, 'ephemeral_1h_input_tokens': 0}" output_tokens="259" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019WxZNr2P1L46WsYnB51vuJ">
+   638→        for run in self._workflow_runs:
+   639→            if run.run_id == run_id:
+   640→                return f"WFR_fake_node_id_{run_id}"
+   641→
+   642→        # Default: return a fake node_id for any run_id (convenience for tests)
+   643→        return f"WFR_fake_node_id_{run_id}"
+   644→
+   645→    def get_issues_with_pr_linkages(
+   646→        self,
+   647→        *,
+   648→        location: GitHubRepoLocation,
+   649→        labels: list[str],
+   650→        state: IssueFilterState = "open",
+   651→        limit: int | None = None,
+   652→        creator: str | None = None,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_019xJZNjZ6ecppUkfXFLHQuG">
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-443-        if block is None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-444-            return {}
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-445-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-446-        return dict(block.data)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-447-
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:448:    def update_metadata(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-449-        self,
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-450-        repo_root: Path,
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-451-        plan_id: str,
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-452-        metadata: Mapping[str, object],
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-453-    ) -&gt; None:
+--
+packages/erk-shared/src/erk_shared/plan_store/backend.py-310-            RuntimeError: If provider fails
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-311-        """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-312-        ...
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-313-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-314-    @abstractmethod
+packages/erk-shared/src/erk_shared/plan_store/backend.py:315:    def update_metadata(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-316-        self,
+packages/erk-shared/src/erk_shared/plan_store/backend.py-317-        repo_root: Path,
+packages/erk-shared/src/erk_shared/plan_store/backend.py-318-        plan_id: str,
+packages/erk-shared/src/erk_shared/plan_store/backend.py-319-        metadata: Mapping[str, object],
+packages/erk-shared/src/erk_shared/plan_store/backend.py-320-    ) -&gt; None:
+  </tool_result>
+  <assistant>Now I need to understand how `ErkContext.for_test` takes a plan_backend and how PlannedPRBackend works in tests. Let me check the ErkContext.for_test signature and how the existing test passes context:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1586" cache_read_input_tokens="64191" cache_creation="{'ephemeral_5m_input_tokens': 1586, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0168p94xSkjUfrfqrwkTpC2B">
+    <param name="pattern">def for_test</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1586" cache_read_input_tokens="64191" cache_creation="{'ephemeral_5m_input_tokens': 1586, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0168p94xSkjUfrfqrwkTpC2B">
+193-        """
+194-        # Check if Graphite is disabled (also handles DryRunGraphite wrapping GraphiteDisabled)
+195-        graphite = self.graphite
+196-        if isinstance(graphite, DryRunGraphite):
+197-            graphite = graphite._wrapped
+198-        if isinstance(graphite, GraphiteDisabled):
+199-            return GitBranchManager(
+200-                git=self.git,
+201-                github=self.github,
+202-            )
+203-        if self.graphite_branch_ops is None:
+204-            raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
+205-        return GraphiteBranchManager(
+206-            git=self.git,
+207-            graphite=self.graphite,
+208-            graphite_branch_ops=self.graphite_branch_ops,
+209-            github=self.github,
+210-        )
+211-
+212-    @staticmethod
+213:    def for_test(
+214-        *,
+215-        github_issues: GitHubIssues | None = None,
+216-        git: Git | None = None,
+217-        github: LocalGitHub | None = None,
+218-        github_admin: GitHubAdmin | None = None,
+219-        claude_installation: ClaudeInstallation | None = None,
+220-        prompt_executor: PromptExecutor | None = None,
+221-        plan_store: PlanBackend | None = None,
+222-        cmux: Cmux | None = None,
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>The parameter is `plan_store`, not `plan_backend`. Now I need to see what `require_plan_backend` returns and how `write_dispatch_metadata` uses it. Let me also check the fake for PlannedPRBackend and how it's constructed for tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="764" cache_read_input_tokens="65777" cache_creation="{'ephemeral_5m_input_tokens': 764, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
