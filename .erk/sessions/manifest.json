@@ -5,16 +5,16 @@
     {
       "session_id": "8f9c023d-bedf-4c79-b77c-8d71db1049be",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-09T16:31:34.329914+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T16:33:20.370331+00:00",
       "files": [
         "impl-8f9c023d-bedf-4c79-b77c-8d71db1049be-8f9c023d-bedf-4c79-b77c-8d71db1049be-part1.xml",
         "impl-8f9c023d-bedf-4c79-b77c-8d71db1049be-8f9c023d-bedf-4c79-b77c-8d71db1049be-part2.xml"
       ],
       "user_turns": 2,
-      "duration_minutes": 4,
-      "raw_size_kb": 409,
-      "xml_size_kb": 49,
+      "duration_minutes": 5,
+      "raw_size_kb": 437,
+      "xml_size_kb": 59,
       "git_branch": "plnd/add-api-fast-path-config-03-09-1224"
     }
   ]
