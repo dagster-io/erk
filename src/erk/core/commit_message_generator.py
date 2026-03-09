@@ -124,7 +124,7 @@ class CommitMessageGenerator:
         yield ProgressEvent(f"Diff loaded ({diff_size:,} chars)", style="success")
 
         # Build prompt with context
-        yield ProgressEvent("Analyzing changes with Claude...")
+        yield ProgressEvent(f"Analyzing changes with {self._executor.prompt_label}...")
 
         user_prompt = self._build_user_prompt(
             diff_content=diff_content,
