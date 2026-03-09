@@ -6,7 +6,7 @@ from rich.markup import escape
 from rich.table import Table
 
 from erk.cli.alias import alias
-from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.gateway.github.metadata.core import extract_objective_slug
@@ -20,6 +20,7 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     find_graph_next_node,
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase, parse_roadmap
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.plan_store.conversion import github_issue_to_plan
 from erk_shared.plan_store.types import Plan
 
@@ -136,17 +137,16 @@ def _compute_enriched_fields(plan: Plan) -> dict[str, str]:
 
 @alias("ls")
 @click.command("list")
-@repo_option
+@resolved_repo_option
 @click.pass_obj
-def list_objectives(ctx: ErkContext, *, target_repo: str | None) -> None:
+def list_objectives(ctx: ErkContext, *, repo_id: GitHubRepoId) -> None:
     """List open objectives (GitHub issues with erk-objective label)."""
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
 
     # Fetch objectives via RemoteGitHub
     issues = remote.list_issues(
-        owner=owner,
-        repo=repo_name,
+        owner=repo_id.owner,
+        repo=repo_id.repo,
         labels=("erk-objective",),
         state="open",
         limit=None,

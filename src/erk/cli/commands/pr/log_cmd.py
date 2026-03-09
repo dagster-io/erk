@@ -8,15 +8,12 @@ from typing import Literal, TypeAlias, TypedDict
 import click
 
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.repo_resolution import (
-    get_remote_github,
-    repo_option,
-    resolve_owner_repo,
-)
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
 from erk_shared.gateway.github.metadata.types import BlockKeys
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
 
 # Event type literals
@@ -110,14 +107,14 @@ EventExtractor: TypeAlias = Callable[[dict], Event | None]
     is_flag=True,
     help="Output events as JSON instead of human-readable timeline",
 )
-@repo_option
+@resolved_repo_option
 @click.pass_obj
 def pr_log(
     ctx: ErkContext,
     identifier: str,
     output_json: bool,
     *,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
     """Display chronological event log for a plan.
 
@@ -140,17 +137,18 @@ def pr_log(
         $ erk pr log 42 --repo owner/repo
     """
     try:
-        owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
         remote = get_remote_github(ctx)
 
         plan_number = parse_issue_identifier(identifier)
 
-        issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
+        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
         if isinstance(issue, IssueNotFound):
             user_output(click.style("Error: ", fg="red") + f"Plan '{identifier}' not found")
             raise SystemExit(1)
 
-        comment_bodies = remote.get_issue_comments(owner=owner, repo=repo_name, number=plan_number)
+        comment_bodies = remote.get_issue_comments(
+            owner=repo_id.owner, repo=repo_id.repo, number=plan_number
+        )
 
         events = _extract_events_from_comments(comment_bodies)
         events.sort(key=lambda e: e["timestamp"])

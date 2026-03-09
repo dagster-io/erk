@@ -11,11 +11,7 @@ from rich.table import Table
 from rich.text import Text
 
 from erk.cli.core import discover_repo_context
-from erk.cli.repo_resolution import (
-    get_remote_github,
-    repo_option,
-    resolve_owner_repo,
-)
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.display_utils import strip_rich_markup
 from erk.core.repo_discovery import ensure_erk_metadata_dir
@@ -252,10 +248,8 @@ def _pr_list_impl(
     limit: int | None,
     all_users: bool,
     sort: str,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
-
     http_client = ctx.http_client
     if http_client is None:
         user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
@@ -279,7 +273,7 @@ def _pr_list_impl(
 
     location = GitHubRepoLocation(
         root=root,
-        repo_id=GitHubRepoId(owner, repo_name),
+        repo_id=repo_id,
     )
 
     provider = RealPlanDataProvider(
@@ -442,7 +436,7 @@ def _run_interactive_mode(
 
 @click.command("list")
 @pr_filter_options
-@repo_option
+@resolved_repo_option
 @click.pass_obj
 def pr_list(
     ctx: ErkContext,
@@ -454,7 +448,7 @@ def pr_list(
     limit: int | None,
     all_users: bool,
     sort: str,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
     """List plans as a static table.
 
@@ -482,7 +476,7 @@ def pr_list(
         limit=limit,
         all_users=all_users,
         sort=sort,
-        target_repo=target_repo,
+        repo_id=repo_id,
     )
 
 

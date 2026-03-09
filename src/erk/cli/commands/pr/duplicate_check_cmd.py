@@ -8,11 +8,7 @@ import click
 
 from erk.cli.ensure import Ensure
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.repo_resolution import (
-    get_remote_github,
-    repo_option,
-    resolve_owner_repo,
-)
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.plan_duplicate_checker import PlanDuplicateChecker
 from erk.core.plan_relevance_checker import PlanRelevanceChecker
@@ -35,14 +31,14 @@ from erk_shared.output.output import user_output
     type=str,
     help="Existing plan ID to check (fetches body and excludes self from comparison)",
 )
-@repo_option
+@resolved_repo_option
 @click.pass_obj
 def duplicate_check_plan(
     ctx: ErkContext,
     file: Path | None,
     plan: str | None,
     *,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
     """Check if a plan duplicates any existing open plans.
 
@@ -70,8 +66,6 @@ def duplicate_check_plan(
     if plan is not None and file is not None:
         Ensure.invariant(False, "Cannot use both --plan and --file. Choose one input mode.")
 
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
-
     # Resolve plan content
     exclude_plan_id: str | None = None
     content: str
@@ -79,7 +73,7 @@ def duplicate_check_plan(
     if plan is not None:
         remote = get_remote_github(ctx)
         plan_number = parse_issue_identifier(plan)
-        issue = remote.get_issue(owner=owner, repo=repo_name, number=plan_number)
+        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
         if isinstance(issue, IssueNotFound):
             user_output(click.style("Error: ", fg="red") + f"Plan {plan_number} not found.")
             raise SystemExit(1)
@@ -118,7 +112,7 @@ def duplicate_check_plan(
 
     location = GitHubRepoLocation(
         root=root,
-        repo_id=GitHubRepoId(owner, repo_name),
+        repo_id=repo_id,
     )
     plan_data = ctx.plan_list_service.get_plan_list_data(
         location=location,

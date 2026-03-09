@@ -1,4 +1,4 @@
-"""Tests for launch command remote paths (--repo flag / NoRepoSentinel)."""
+"""Tests for launch command with --repo flag (no local repo)."""
 
 from pathlib import Path
 
@@ -97,7 +97,7 @@ def test_pr_rebase_remote_requires_pr_option() -> None:
     result = runner.invoke(cli, ["launch", "pr-rebase", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
-    assert "--pr is required for pr-rebase in remote mode" in result.output
+    assert "--pr is required for pr-rebase without a local repo" in result.output
 
 
 def test_pr_rebase_remote_closed_pr_fails() -> None:

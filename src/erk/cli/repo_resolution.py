@@ -4,10 +4,13 @@ Provides helpers for resolving owner/repo from either a --repo flag
 or local git context, and constructing RemoteGitHub instances.
 """
 
+import functools
+
 import click
 
 from erk.cli.ensure import UserFacingCliError
 from erk.core.context import ErkContext, NoRepoSentinel
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.real import RealRemoteGitHub
 
@@ -79,3 +82,22 @@ repo_option = click.option(
     default=None,
     help="Target repo (owner/repo) for remote operation without local git clone",
 )
+
+
+def resolved_repo_option(fn):  # noqa: ANN001, ANN201
+    """Decorator that resolves --repo into a GitHubRepoId.
+
+    Wraps a Click command handler to resolve the --repo flag
+    (or local git context) into a GitHubRepoId before calling
+    the handler. The handler receives ``repo_id: GitHubRepoId``
+    instead of ``target_repo: str | None``.
+    """
+
+    @repo_option
+    @functools.wraps(fn)
+    def wrapper(*, target_repo: str | None, **kwargs):  # noqa: ANN003, ANN202
+        ctx = click.get_current_context().obj
+        owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
+        return fn(repo_id=GitHubRepoId(owner=owner, repo=repo_name), **kwargs)
+
+    return wrapper

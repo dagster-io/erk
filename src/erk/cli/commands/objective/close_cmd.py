@@ -4,9 +4,10 @@ import click
 
 from erk.cli.alias import alias
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
@@ -16,14 +17,14 @@ ERK_OBJECTIVE_LABEL = "erk-objective"
 @click.command("close")
 @click.argument("issue_ref")
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
-@repo_option
+@resolved_repo_option
 @click.pass_obj
 def close_objective(
     ctx: ErkContext,
     issue_ref: str,
     *,
     force: bool,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
     """Close an objective GitHub issue.
 
@@ -31,12 +32,11 @@ def close_objective(
 
     The issue must have the 'erk-objective' label and be in an open state.
     """
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
     issue_number = parse_issue_identifier(issue_ref)
 
     # Fetch the issue
-    issue = remote.get_issue(owner=owner, repo=repo_name, number=issue_number)
+    issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=issue_number)
     if isinstance(issue, IssueNotFound):
         user_output(click.style("Error: ", fg="red") + f"Issue #{issue_number} not found")
         raise SystemExit(1)
@@ -64,6 +64,6 @@ def close_objective(
             raise SystemExit(0)
 
     # Close the issue
-    remote.close_issue(owner=owner, repo=repo_name, number=issue_number)
+    remote.close_issue(owner=repo_id.owner, repo=repo_id.repo, number=issue_number)
 
     user_output(click.style("✓ ", fg="green") + f"Closed objective #{issue_number}: {issue.url}")

@@ -14,7 +14,7 @@ from erk.cli.alias import alias
 from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk.cli.ensure import UserFacingCliError
 from erk.cli.github_parsing import parse_issue_identifier
-from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.context.types import NoRepoSentinel
@@ -35,6 +35,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     serialize_phases,
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys
+from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
 
 
@@ -176,14 +177,14 @@ def _display_json(
     default=False,
     help="Output structured JSON for programmatic use",
 )
-@repo_option
+@resolved_repo_option
 @click.pass_obj
 def view_objective(
     ctx: ErkContext,
     objective_ref: str | None,
     *,
     json_mode: bool,
-    target_repo: str | None,
+    repo_id: GitHubRepoId,
 ) -> None:
     """Fetch and display an objective by identifier.
 
@@ -192,7 +193,6 @@ def view_objective(
 
     If omitted, infers the objective from the current branch.
     """
-    owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
 
     # Resolve issue number: explicit ref or inferred from branch
@@ -220,7 +220,7 @@ def view_objective(
         issue_number = objective_id
 
     # Fetch issue from GitHub
-    result = remote.get_issue(owner=owner, repo=repo_name, number=issue_number)
+    result = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=issue_number)
     if isinstance(result, IssueNotFound):
         raise UserFacingCliError(f"Issue #{issue_number} not found")
     issue = result
