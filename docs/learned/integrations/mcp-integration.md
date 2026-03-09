@@ -65,7 +65,7 @@ Parameters are auto-derived from Click parameters — no separate schema class n
 
 ## Auto-Discovery from Click Command Tree
 
-<!-- Source: src/erk/cli/mcp_exposed.py, packages/erk-mcp/src/erk_mcp/server.py -->
+<!-- Source: packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py, packages/erk-mcp/src/erk_mcp/server.py -->
 
 CLI commands decorated with both `@json_command` and `@mcp_exposed` are automatically discovered and registered as MCP tools. One source of truth (Click parameters), two interfaces (CLI and MCP).
 
@@ -74,11 +74,9 @@ CLI commands decorated with both `@json_command` and `@mcp_exposed` are automati
 1. Add `@mcp_exposed(name="tool_name", description="...")` above `@json_command` on the Click command
 2. Done — the server walks the Click tree at startup and registers it automatically
 
-```python
-@mcp_exposed(name="one_shot", description="Submit a task for...")
-@json_command(exclude_json_input=..., output_types=...)
-@click.command("one-shot")
-```
+<!-- Source: src/erk/cli/commands/one_shot.py, one_shot command decorator stack -->
+
+See the `one_shot` command decorator stack in `src/erk/cli/commands/one_shot.py` for the canonical example of `@mcp_exposed` / `@json_command` / `@click.command` layering.
 
 ### How it works
 

@@ -1,7 +1,7 @@
 """JSON Schema generation for @json_command Click commands.
 
 Provides:
-- Click parameter type → JSON Schema type mapping
+- Click parameter type -> JSON Schema type mapping
 - Input schema generation from Click command parameters
 - Output schema generation from result types with json_schema() or plain dataclasses
 - Full schema document assembly (input + output + error)
@@ -13,7 +13,7 @@ from typing import Any, Union, get_args, get_origin
 
 import click
 
-from erk.cli.json_command import JsonCommandMeta
+from erk_shared.agentclick.json_command import JsonCommandMeta
 
 # Internal params injected by the decorator that should never appear in schemas
 _INTERNAL_PARAMS = frozenset({"json_mode", "schema_mode", "ctx"})

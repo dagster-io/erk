@@ -211,7 +211,7 @@ def test_json_stdin_input() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, remote_github=remote)
 
         with patch(
-            "erk.cli.json_command.read_stdin_json",
+            "erk_shared.agentclick.json_command.read_stdin_json",
             return_value={"prompt": "fix bug from stdin"},
         ):
             result = runner.invoke(

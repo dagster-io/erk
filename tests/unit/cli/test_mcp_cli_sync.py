@@ -5,9 +5,9 @@ from __future__ import annotations
 import asyncio
 
 from erk.cli.cli import cli
-from erk.cli.json_schema import command_input_schema
-from erk.cli.mcp_exposed import discover_mcp_commands
 from erk_mcp.server import _build_json_command_tools, create_mcp
+from erk_shared.agentclick.json_schema import command_input_schema
+from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
 
 
 def test_every_mcp_exposed_command_is_registered_as_mcp_tool() -> None:

@@ -5,8 +5,8 @@ from typing import Any
 
 import click
 
-from erk.cli.json_command import json_command
-from erk.cli.json_schema import (
+from erk_shared.agentclick.json_command import json_command
+from erk_shared.agentclick.json_schema import (
     ERROR_SCHEMA,
     build_schema_document,
     click_param_to_json_schema,
