@@ -189,4 +189,187 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 9041
 }
   </tool_result>
+  <tool_result tool="toolu_01Ny2EJskjxhkPJ4uM7yfu2X">
+{"uploaded": true, "plan_id": 9041}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014sgXM6tCCMEQX5uTpJdWYy">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="144346" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014sgXM6tCCMEQX5uTpJdWYy">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NnjK3v6KJ4UEea8g7deXMg">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="144676" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NnjK3v6KJ4UEea8g7deXMg">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9041 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9041
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (52,797 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   Still waiting... (12s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01D57Db2bFcYPMK6bmhwicBS">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="144781" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D57Db2bFcYPMK6bmhwicBS">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 9041
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q7DHbAaGPANVxGJphKGGcZ">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="145219" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q7DHbAaGPANVxGJphKGGcZ">
+Exit code 1
+Checking PR #9041 for branch plnd/add-runs-tab-tui-dash-03-09-0622...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9041)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0124qbjxVLVT3kw1gqVkSTMY">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Check impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="145607" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0124qbjxVLVT3kw1gqVkSTMY">
+total 28
+drwxr-xr-x 3 runner runner 4096 Mar  9 10:26 .
+drwxr-xr-x 6 runner runner 4096 Mar  9 10:25 ..
+-rw-r--r-- 1 runner runner 7203 Mar  9 10:25 plan.md
+drwxr-xr-x 2 runner runner 4096 Mar  9 10:44 plnd--add-runs-tab-tui-dash-03-09-0622
+-rw-r--r-- 1 runner runner  263 Mar  9 10:25 ref.json
+-rw-r--r-- 1 runner runner  105 Mar  9 10:25 run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BLXkXqtQSTENtLLQGXqhUF">
+    <param name="command">git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove .erk/impl-context/ after implementation" &amp;&amp; git push</param>
+    <param name="description">Remove impl-context and push</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="145792" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BLXkXqtQSTENtLLQGXqhUF">
+Exit code 128
+fatal: pathspec '.erk/impl-context/' did not match any files
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ASMZ6JVZuAYN2XcrxV8aep">
+    <param name="command">git status .erk/impl-context/</param>
+    <param name="description">Check git status of impl-context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="430" cache_read_input_tokens="146092" cache_creation="{'ephemeral_5m_input_tokens': 430, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ASMZ6JVZuAYN2XcrxV8aep">
+On branch plnd/add-runs-tab-tui-dash-03-09-0622
+Your branch and 'origin/plnd/add-runs-tab-tui-dash-03-09-0622' have diverged,
+and have 1 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+nothing to commit, working tree clean
+  </tool_result>
+  <assistant>The impl-context is not tracked by git (it's in `.gitignore`). The `erk pr check` reports a false positive since the directory exists on disk but isn't in git. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="146522" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015T444H4CKPK1fpdjnTqNAs">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Remove impl-context directory from disk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="146522" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015T444H4CKPK1fpdjnTqNAs">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WRQpYnAvuSAUDuH38DSnY9">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Re-validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="146716" cache_creation="{'ephemeral_5m_input_tokens': 418, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WRQpYnAvuSAUDuH38DSnY9">
+Checking PR #9041 for branch plnd/add-runs-tab-tui-dash-03-09-0622...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Now let me also fix the branch divergence and push:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="147134" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017Sta4Sx8LLUgNxAsX1f6zk">
+    <param name="command">git pull --rebase origin plnd/add-runs-tab-tui-dash-03-09-0622 &amp;&amp; git push</param>
+    <param name="description">Rebase and push to fix divergence</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="147134" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017Sta4Sx8LLUgNxAsX1f6zk">
+From https://github.com/dagster-io/erk
+ * branch                plnd/add-runs-tab-tui-dash-03-09-0622 -&gt; FETCH_HEAD
+warning: skipped previously applied commit 00ad3cf7c
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config set advice.skippedCherryPicks false"
+Successfully rebased and updated refs/heads/plnd/add-runs-tab-tui-dash-03-09-0622.
+Everything up-to-date
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Ajzo85xf9EVa8ZmFry7qdP">
+    <param name="todos">[{'content': 'Add ViewMode.RUNS and RUNS_VIEW config', 'status': 'completed', 'activeForm'...[truncated 1123 chars]...t PR', 'status': 'completed', 'activeForm': 'Cleaning up impl context and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="147291" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ajzo85xf9EVa8ZmFry7qdP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #9041 implementation complete. PR submitted at https://github.com/dagster-io/erk/pull/9041
+
+**Summary of changes:**
+
+**New files:**
+- `src/erk/tui/widgets/run_table.py` — `RunDataTable` widget with 7 columns (run-id, status, submitted, workflow, pr, title, chks), click handlers for run/PR links, cursor preservation on refresh
+- `tests/tui/test_run_table.py` — 14 tests covering `RunRowData`, `RunDataTable`, `make_run_row` factory, and `FakePlanDataProvider.fetch_runs`
+
+**Modified files:**
+- `src/erk/tui/views/types.py` — Added `ViewMode.RUNS` enum member and `RUNS_VIEW` config (key "4", empty labels, display "Runs")
+- `src/erk/tui/data/types.py` — Added `RunRowData` frozen dataclass with 15 fields
+- `src/erk/tui/data/provider_abc.py` — Added abstract `fetch_runs()` method to `PlanDataProvider`
+- `src/erk/tui/data/real_provider.py` — Implemented `fetch_runs()` porting logic from `_list_runs()` CLI command (workflow fetching, PR linkage, dedup, formatting)
+- `src/erk/tui/data/fake_provider.py` — Added `fetch_runs()`/`set_runs()` and `make_run_row()` factory
+- `packages/erk-shared/.../fake.py` — Added `fetch_runs()`/`set_runs()` to shared fake provider
+- `src/erk/tui/app.py` — Integrated runs tab: key "4" binding, `RunDataTable` in compose/mount, `_load_run_data()` async loader, table visibility toggling, run-specific click handlers
+- `src/erk/tui/screens/help_screen.py` — Added "4 Runs view" and runs-specific action hints
+- `tests/tui/views/test_types.py` — Updated for 4-view cycle
+- `tests/tui/test_view_bar.py` — Updated tab region calculations for 4 tabs
+- `tests/tui/app/test_view_switching.py` — Updated cycling tests for 4-view wraparound</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="147843" cache_creation="{'ephemeral_5m_input_tokens': 456, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>

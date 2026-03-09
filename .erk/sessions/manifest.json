@@ -5,8 +5,8 @@
     {
       "session_id": "942f00ad-1e29-48f5-a4bc-4a4f79c0bf73",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-09T10:44:17.390854+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-09T10:45:58.891114+00:00",
       "files": [
         "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part1.xml",
         "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part10.xml",
@@ -24,9 +24,9 @@
         "impl-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-942f00ad-1e29-48f5-a4bc-4a4f79c0bf73-part9.xml"
       ],
       "user_turns": 3,
-      "duration_minutes": 18,
-      "raw_size_kb": 1948,
-      "xml_size_kb": 394,
+      "duration_minutes": 20,
+      "raw_size_kb": 1980,
+      "xml_size_kb": 405,
       "git_branch": "plnd/add-runs-tab-tui-dash-03-09-0622"
     }
   ]
